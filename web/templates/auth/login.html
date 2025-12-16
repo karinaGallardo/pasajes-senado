@@ -1,0 +1,41 @@
+{{ define "auth/login.html" }}
+{{ template "layout_start" . }}
+
+<div class="flex items-center justify-center min-h-[80vh]">
+  <div class="bg-white p-8 rounded-lg shadow-lg w-full max-w-md border border-gray-200">
+    <div class="text-center mb-6">
+      <h2 class="text-2xl font-bold text-senado-primary">Bienvenido</h2>
+      <p class="text-gray-500 text-sm">Sistema de Gestión de Pasajes</p>
+    </div>
+
+    {{ if .Error }}
+    <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-4" role="alert">
+      <p>{{ .Error }}</p>
+    </div>
+    {{ end }}
+
+    <form action="/login" method="POST" class="space-y-4">
+      <div>
+        <label for="username" class="block text-sm font-medium text-gray-700">Usuario</label>
+        <input type="text" name="username" id="username" required
+          class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-senado-secondary focus:border-senado-secondary">
+      </div>
+
+      <div>
+        <label for="password" class="block text-sm font-medium text-gray-700">Contraseña</label>
+        <input type="password" name="password" id="password" required
+          class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-senado-secondary focus:border-senado-secondary">
+      </div>
+
+      <div>
+        <button type="submit"
+          class="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-senado-primary hover:bg-senado-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-senado-secondary transition-colors">
+          Ingresar
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+{{ template "layout_end" . }}
+{{ end }}

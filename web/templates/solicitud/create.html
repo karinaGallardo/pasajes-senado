@@ -1,0 +1,139 @@
+{{ define "solicitud/create.html" }}
+{{ template "layout_start" . }}
+
+<div class="max-w-4xl mx-auto">
+  <div class="md:flex md:items-center md:justify-between mb-6">
+    <div class="flex-1 min-w-0">
+      <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">Nueva Solicitud de Pasaje</h2>
+      <p class="text-sm text-gray-500 mt-1">Formulario de registro inicial (FV-01)</p>
+    </div>
+    <div class="mt-4 flex md:mt-0 md:ml-4">
+      <a href="/solicitudes"
+        class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
+        Cancelar
+      </a>
+    </div>
+  </div>
+
+  <form action="/solicitudes" method="POST" class="bg-white shadow rounded-lg overflow-hidden border border-gray-200">
+    <div class="p-6 space-y-6">
+
+      {{ if .Error }}
+      <div class="bg-red-50 border-l-4 border-red-400 p-4">
+        <div class="flex">
+          <div class="flex-shrink-0">
+            <!-- Heroicon name: solid/exclamation -->
+            <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"
+              aria-hidden="true">
+              <path fill-rule="evenodd"
+                d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+                clip-rule="evenodd" />
+            </svg>
+          </div>
+          <div class="ml-3">
+            <p class="text-sm text-red-700">{{ .Error }}</p>
+          </div>
+        </div>
+      </div>
+      {{ end }}
+
+      <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+        <!-- Tipo de Viaje -->
+        <div class="sm:col-span-3">
+          <label for="tipo_viaje" class="block text-sm font-medium text-gray-700">Tipo de Viaje</label>
+          <div class="mt-1">
+            <select id="tipo_viaje" name="tipo_viaje"
+              class="shadow-sm focus:ring-senado-secondary focus:border-senado-secondary block w-full sm:text-sm border-gray-300 rounded-md p-2 border">
+              <option value="DERECHO">Pasaje por Derecho (Mensual)</option>
+              <option value="COMISION">Comisión Oficial</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Origen y Destino -->
+        <div class="sm:col-span-3">
+          <label for="origen" class="block text-sm font-medium text-gray-700">Lugar de Origen</label>
+          <div class="mt-1">
+            <select id="origen" name="origen" required
+              class="shadow-sm focus:ring-senado-secondary focus:border-senado-secondary block w-full sm:text-sm border-gray-300 rounded-md p-2 border">
+              <option value="" disabled selected>Seleccione origen...</option>
+              {{ range .Destinos }}
+              <option value="{{ .Code }}">{{ .Nombre }} ({{ .Code }})</option>
+              {{ end }}
+            </select>
+          </div>
+        </div>
+
+        <div class="sm:col-span-3">
+          <label for="destino" class="block text-sm font-medium text-gray-700">Lugar de Destino</label>
+          <div class="mt-1">
+            <select id="destino" name="destino" required
+              class="shadow-sm focus:ring-senado-secondary focus:border-senado-secondary block w-full sm:text-sm border-gray-300 rounded-md p-2 border">
+              <option value="" disabled selected>Seleccione destino...</option>
+              {{ range .Destinos }}
+              <option value="{{ .Code }}">{{ .Nombre }} ({{ .Code }})</option>
+              {{ end }}
+            </select>
+          </div>
+        </div>
+
+        <!-- Tipo de Itinerario (Nuevo) -->
+        <div class="sm:col-span-6" x-data="{ tipo: 'IDA_VUELTA' }">
+          <div class="flex items-center space-x-4 mb-4">
+            <label class="inline-flex items-center">
+              <input type="radio" x-model="tipo" value="IDA_VUELTA" name="tipo_itinerario"
+                class="form-radio text-senado-secondary focus:ring-senado-secondary">
+              <span class="ml-2 text-gray-700">Ida y Vuelta</span>
+            </label>
+            <label class="inline-flex items-center">
+              <input type="radio" x-model="tipo" value="SOLO_IDA" name="tipo_itinerario"
+                class="form-radio text-senado-secondary focus:ring-senado-secondary">
+              <span class="ml-2 text-gray-700">Solo Ida</span>
+            </label>
+          </div>
+
+          <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-2">
+            <!-- Fechas -->
+            <div class="">
+              <label for="fecha_salida" class="block text-sm font-medium text-gray-700">Fecha y Hora Salida
+                (Aprox)</label>
+              <div class="mt-1">
+                <input type="datetime-local" name="fecha_salida" id="fecha_salida" required
+                  class="shadow-sm focus:ring-senado-secondary focus:border-senado-secondary block w-full sm:text-sm border-gray-300 rounded-md p-2 border">
+              </div>
+            </div>
+
+            <div class="" x-show="tipo === 'IDA_VUELTA'">
+              <label for="fecha_retorno" class="block text-sm font-medium text-gray-700">Fecha y Hora Retorno
+                (Aprox)</label>
+              <div class="mt-1">
+                <input type="datetime-local" name="fecha_retorno" id="fecha_retorno"
+                  class="shadow-sm focus:ring-senado-secondary focus:border-senado-secondary block w-full sm:text-sm border-gray-300 rounded-md p-2 border">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Motivo -->
+        <div class="sm:col-span-6">
+          <label for="motivo" class="block text-sm font-medium text-gray-700">Motivo del Viaje / Justificación</label>
+          <div class="mt-1">
+            <textarea id="motivo" name="motivo" rows="3"
+              class="shadow-sm focus:ring-senado-secondary focus:border-senado-secondary block w-full sm:text-sm border border-gray-300 rounded-md p-2"></textarea>
+          </div>
+          <p class="mt-2 text-sm text-gray-500">Breve descripción de la razón del viaje.</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="px-4 py-3 bg-gray-50 text-right sm:px-6 flex justify-end">
+      <button type="submit"
+        class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-senado-primary hover:bg-senado-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-senado-primary">
+        Guardar Solicitud
+      </button>
+    </div>
+  </form>
+</div>
+
+{{ template "layout_end" . }}
+{{ end }}

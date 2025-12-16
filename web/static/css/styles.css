@@ -1,0 +1,108 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+   --base-teal-dark: #03738C;
+   /* Color 1 */
+   --base-teal-light: #0396A6;
+   /* Color 2 */
+   --base-orange: #F29A2E;
+   /* Color 3 */
+   --base-salmon: #F2884B;
+   /* Color 4 */
+   --base-red-orange: #F2490C;
+   /* Color 5 */
+
+   --base-gray: #575756;
+   /* Text Base Preserved */
+   --base-offwhite: #f5f5f5;
+   /* Bg Base Preserved */
+   --base-white: #ffffff;
+
+   /* =========================================
+     1. (Texto y Fondos)
+     ========================================= */
+   --neutral-50: #fbfbfb;
+   --neutral-100: #f5f5f5;
+   --neutral-200: #e6e6e6;
+   --neutral-300: #d1d1d0;
+   --neutral-400: #a3a3a2;
+   --neutral-500: #787877;
+   --neutral-600: #575756;
+   --neutral-700: #464645;
+   --neutral-800: #353534;
+   --neutral-900: #232322;
+
+   /* =========================================
+     2. Marca Principal
+     ========================================= */
+   --primary-50: #eef9fb;
+   --primary-100: #d6eff4;
+   --primary-200: #b2e0e9;
+   --primary-300: #80c9d8;
+   --primary-400: #4baac3;
+   --primary-500: #03738C;
+   /* Main Brand */
+   --primary-600: #065d74;
+   --primary-700: #094d61;
+   --primary-800: #0c4051;
+   --primary-900: #0e3644;
+
+   /* =========================================
+     3. Complementario
+     ========================================= */
+   --secondary-50: #effdfd;
+   --secondary-100: #cff6f9;
+   --secondary-200: #9feaf0;
+   --secondary-300: #6bdbe7;
+   --secondary-400: #34c4d8;
+   --secondary-500: #0396A6;
+   /* Secondary Brand */
+   --secondary-600: #05788a;
+   --secondary-700: #086171;
+   --secondary-800: #0b4e5b;
+   --secondary-900: #0d414d;
+
+   /* =========================================
+     4. Delineados
+     ========================================= */
+   --accent-50: #fefce8;
+   --accent-100: #fef5cc;
+   --accent-200: #F29A2E;
+   /* Gold/Orange */
+   --accent-300: #F2884B;
+   /* Salmon */
+   --accent-400: #fdac7e;
+   --accent-500: #F2490C;
+   /* Red Orange - Action/Danger */
+   --accent-600: #d63d08;
+   --accent-700: #b03008;
+   --accent-800: #8d280a;
+   --accent-900: #73230d;
+
+   /* =========================================
+     5. Aliases
+     ========================================= */
+   --bg-app: var(--neutral-100);
+   --bg-card: var(--base-white);
+   --bg-sidebar: var(--primary-900);
+   /* Dark Teal Sidebar */
+
+   --text-main: var(--neutral-900);
+   --text-muted: var(--neutral-500);
+   --text-inverse: var(--base-white);
+
+   --brand-color: var(--primary-500);
+   --brand-hover: var(--primary-600);
+
+   /* VARIABLES DE CONFIGURACIÓN */
+   --font: "Montserrat", sans-serif;
+   --radius-md: 8px;
+   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+   --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+body {
+   font-family: var(--font);
+   background-color: var(--bg-app);
+   color: var(--text-main);
+}

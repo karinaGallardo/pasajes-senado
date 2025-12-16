@@ -1,0 +1,38 @@
+package routes
+
+import (
+	"sistema-pasajes/internal/controllers"
+	"sistema-pasajes/internal/middleware"
+
+	"github.com/gin-gonic/gin"
+)
+
+func SetupRoutes(r *gin.Engine) {
+	authCtrl := controllers.NewAuthController()
+	solicitudCtrl := controllers.NewSolicitudController()
+	pasajeCtrl := controllers.NewPasajeController()
+	dashboardCtrl := controllers.NewDashboardController()
+
+	r.GET("/login", authCtrl.ShowLogin)
+	r.POST("/login", authCtrl.Login)
+	r.GET("/logout", authCtrl.Logout)
+
+	protected := r.Group("/")
+	protected.Use(middleware.AuthRequired())
+	{
+		protected.GET("/dashboard", dashboardCtrl.Index)
+
+		protected.GET("/solicitudes", solicitudCtrl.Index)
+		protected.GET("/solicitudes/nueva", solicitudCtrl.Create)
+		protected.POST("/solicitudes", solicitudCtrl.Store)
+		protected.GET("/solicitudes/:id", solicitudCtrl.Show)
+
+		protected.POST("/solicitudes/:id/pasajes", pasajeCtrl.Store)
+
+		descargoCtrl := controllers.NewDescargoController()
+		protected.GET("/descargos", descargoCtrl.Index)
+		protected.GET("/descargos/nuevo", descargoCtrl.Create)
+		protected.POST("/descargos", descargoCtrl.Store)
+		protected.GET("/descargos/:id", descargoCtrl.Show)
+	}
+}

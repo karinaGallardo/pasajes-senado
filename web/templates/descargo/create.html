@@ -1,0 +1,74 @@
+{{ define "descargo/create.html" }}
+{{ template "layout_start" . }}
+
+<div class="max-w-4xl mx-auto">
+  <div class="md:flex md:items-center md:justify-between mb-6">
+    <div class="flex-1 min-w-0">
+      <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">Realizar Descargo (FV-05)</h2>
+      <p class="text-sm text-gray-500 mt-1">
+        Para Solicitud #{{ .Solicitud.ID }} - {{ .Solicitud.Destino }}
+      </p>
+    </div>
+  </div>
+
+  <form action="/descargos" method="POST" class="bg-white shadow rounded-lg overflow-hidden border border-gray-200">
+    <input type="hidden" name="solicitud_id" value="{{ .Solicitud.ID }}">
+
+    <div class="p-6 space-y-6">
+      <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+
+        <div class="sm:col-span-6 bg-senado-50 p-4 rounded-md border border-senado-100">
+          <h4 class="text-sm font-bold text-senado-primary mb-2">Resumen del Viaje</h4>
+          <p class="text-sm text-senado-primary"><strong>Motivo:</strong> {{ .Solicitud.Motivo }}</p>
+          <p class="text-sm text-senado-primary"><strong>Fechas:</strong> {{ .Solicitud.FechaSalida.Format "02/01/2006"
+            }} -
+            {{ .Solicitud.FechaRetorno.Format "02/01/2006" }}</p>
+        </div>
+
+        <div class="sm:col-span-3">
+          <label class="block text-sm font-medium text-gray-700">Fecha de Presentación</label>
+          <div class="mt-1">
+            <input type="date" name="fecha_presentacion" required
+              class="shadow-sm focus:ring-senado-secondary focus:border-senado-secondary block w-full sm:text-sm border-gray-300 rounded-md border p-2">
+          </div>
+        </div>
+
+        <div class="sm:col-span-3">
+          <label class="block text-sm font-medium text-gray-700">Monto Devolución (Bs)</label>
+          <p class="text-xs text-gray-500 mb-1">Si no utilizó algún pasaje o hubo saldo a favor.</p>
+          <div class="mt-1">
+            <input type="number" step="0.01" name="monto_devolucion" value="0.00"
+              class="shadow-sm focus:ring-senado-secondary focus:border-senado-secondary block w-full sm:text-sm border-gray-300 rounded-md border p-2">
+          </div>
+        </div>
+
+        <div class="sm:col-span-6">
+          <label class="block text-sm font-medium text-gray-700">Informe de Actividades</label>
+          <div class="mt-1">
+            <textarea name="informe_actividades" rows="5" required
+              class="shadow-sm focus:ring-senado-secondary focus:border-senado-secondary block w-full sm:text-sm border border-gray-300 rounded-md p-2"
+              placeholder="Detalle las actividades realizadas durante el viaje..."></textarea>
+          </div>
+        </div>
+
+        <div class="sm:col-span-6">
+          <label class="block text-sm font-medium text-gray-700">Observaciones</label>
+          <div class="mt-1">
+            <textarea name="observaciones" rows="2"
+              class="shadow-sm focus:ring-senado-secondary focus:border-senado-secondary block w-full sm:text-sm border border-gray-300 rounded-md p-2"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="px-4 py-3 bg-gray-50 text-right sm:px-6 flex justify-end">
+      <button type="submit"
+        class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-senado-primary hover:bg-senado-800 focus:outline-none">
+        Registrar Descargo
+      </button>
+    </div>
+  </form>
+</div>
+
+{{ template "layout_end" . }}
+{{ end }}
