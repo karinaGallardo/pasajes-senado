@@ -4,7 +4,6 @@ import (
 	"net/http"
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
-	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -79,17 +78,25 @@ func (ctrl *SolicitudController) Store(c *gin.Context) {
 }
 
 func (ctrl *SolicitudController) Show(c *gin.Context) {
-	id, _ := strconv.Atoi(c.Param("id"))
-	solicitud, err := ctrl.repo.FindByID(uint(id))
+	id := c.Param("id")
+	solicitud, err := ctrl.repo.FindByID(id)
 
 	if err != nil {
 		c.Redirect(http.StatusFound, "/solicitudes")
 		return
 	}
 
+	st := solicitud.Estado
+	step1 := true
+	step2 := st == "APROBADO" || st == "FINALIZADO"
+	step3 := st == "FINALIZADO"
+
 	c.HTML(http.StatusOK, "solicitud/show.html", gin.H{
-		"Title":     "Detalle Solicitud #" + strconv.Itoa(id),
+		"Title":     "Detalle Solicitud #" + id,
 		"Solicitud": solicitud,
 		"User":      c.MustGet("User"),
+		"Step1":     step1,
+		"Step2":     step2,
+		"Step3":     step3,
 	})
 }

@@ -6,13 +6,13 @@ import (
 	"gorm.io/gorm"
 )
 
-type ModeloBase struct {
-	ID        uint      `gorm:"primarykey"`
+type BaseModel struct {
+	ID        string    `gorm:"primaryKey;type:varchar(36);default:gen_random_uuid()"`
 	CreatedAt time.Time `gorm:"index"`
 	UpdatedAt time.Time
 	DeletedAt gorm.DeletedAt `gorm:"index"`
 
-	CreatedBy *uint `gorm:"default:null"`
-	UpdatedBy *uint `gorm:"default:null"`
-	DeletedBy *uint `gorm:"default:null"`
+	CreatedBy *string `gorm:"size:36;default:null"`
+	UpdatedBy *string `gorm:"size:36;default:null"`
+	DeletedBy *string `gorm:"size:36;default:null"`
 }

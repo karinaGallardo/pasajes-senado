@@ -1,9 +1,10 @@
 {{ define "solicitud/show.html" }}
 {{ template "layout_start" . }}
 
-<div class="max-w-5xl mx-auto space-y-6">
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
   <!-- Header -->
-  <div class="flex items-center justify-between">
+  <div class="mb-6 flex items-center justify-between">
     <div>
       <h2 class="text-3xl font-bold text-gray-900">Solicitud #{{ .Solicitud.ID }}</h2>
       <p class="text-sm text-gray-500">
@@ -23,168 +24,203 @@
     </div>
   </div>
 
-  <!-- Workflow Stepper -->
-  <div class="px-4 py-6">
-    <div class="flex items-center">
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-      <!-- Step 1: Solicitado -->
-      <div class="flex items-center relative">
-        <div
-          class="rounded-full transition duration-500 ease-in-out h-10 w-10 py-3 border-2 {{ if or (eq .Solicitud.Estado "
-          SOLICITADO") (eq .Solicitud.Estado "APROBADO" ) (eq .Solicitud.Estado "FINALIZADO" ) }}bg-senado-primary
-          border-senado-primary text-white{{ else }}border-gray-300 text-gray-500{{ end }} flex items-center
-          justify-center">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-          </svg>
+    <!-- Left Column: Main Content -->
+    <div class="lg:col-span-2 space-y-6">
+
+      <!-- Workflow Stepper Card -->
+      <div class="bg-white shadow rounded-lg p-6">
+        <div class="flex items-center">
+
+          <!-- Step 1: Solicitado -->
+          <div class="flex items-center relative">
+            <div
+              class="rounded-full transition duration-500 ease-in-out h-10 w-10 py-3 border-2 {{ if .Step1 }}bg-senado-primary border-senado-primary text-white{{ else }}border-gray-300 text-gray-500{{ end }} flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+            </div>
+            <div
+              class="hidden sm:block absolute top-0 -ml-10 text-center mt-12 w-32 text-xs font-medium uppercase {{ if eq .Solicitud.Estado "SOLICITADO" }}text-senado-primary{{ else }}text-gray-500{{ end }}">Solicitado</div>
+          </div>
+
+          <div
+            class="flex-auto border-t-2 transition duration-500 ease-in-out {{ if .Step2 }}border-senado-primary{{ else }}border-gray-300{{ end }}">
+          </div>
+
+          <!-- Step 2: Aprobado -->
+          <div class="flex items-center relative">
+            <div
+              class="rounded-full transition duration-500 ease-in-out h-10 w-10 py-3 border-2 {{ if .Step2 }}bg-senado-primary border-senado-primary text-white{{ else }}border-gray-300 text-gray-500{{ end }} flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div
+              class="hidden sm:block absolute top-0 -ml-10 text-center mt-12 w-32 text-xs font-medium uppercase {{ if eq .Solicitud.Estado "APROBADO" }}text-senado-primary{{ else }}text-gray-500{{ end }}">Aprobado</div>
+          </div>
+
+          <div
+            class="flex-auto border-t-2 transition duration-500 ease-in-out {{ if .Step3 }}border-senado-primary{{ else }}border-gray-300{{ end }}">
+          </div>
+
+          <!-- Step 3: Finalizado -->
+          <div class="flex items-center relative">
+            <div
+              class="rounded-full transition duration-500 ease-in-out h-10 w-10 py-3 border-2 {{ if .Step3 }}bg-senado-primary border-senado-primary text-white{{ else }}border-gray-300 text-gray-500{{ end }} flex items-center justify-center">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24"
+                stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                  d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+              </svg>
+            </div>
+            <div
+              class="hidden sm:block absolute top-0 -ml-10 text-center mt-12 w-32 text-xs font-medium uppercase {{ if eq .Solicitud.Estado "FINALIZADO" }}text-senado-primary{{ else }}text-gray-500{{ end }}">Finalizado</div>
+          </div>
+
         </div>
-        <div
-          class="hidden sm:block absolute top-0 -ml-10 text-center mt-12 w-32 text-xs font-medium uppercase {{ if eq .Solicitud.Estado "
-          SOLICITADO" }}text-senado-primary{{ else }}text-gray-500{{ end }}">Solicitado</div>
       </div>
 
-      <div class="flex-auto border-t-2 transition duration-500 ease-in-out {{ if (ne .Solicitud.Estado " SOLICITADO")
-        }}border-senado-primary{{ else }}border-gray-300{{ end }}"></div>
+      <!-- Status Card -->
+      <div class="bg-white shadow rounded-lg p-6 border-l-4 {{ if eq .Solicitud.Estado "SOLICITADO" }}border-yellow-400{{ else }}border-green-500{{ end }}">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">Estado Actual</p>
+            <h3 class="text-2xl font-bold text-gray-900 mt-1">{{ .Solicitud.Estado }}</h3>
+          </div>
 
-      <!-- Step 2: Aprobado (Reserva) -->
-      <div class="flex items-center relative">
-        <div
-          class="rounded-full transition duration-500 ease-in-out h-10 w-10 py-3 border-2 {{ if or (eq .Solicitud.Estado "
-          APROBADO") (eq .Solicitud.Estado "FINALIZADO" ) }}bg-senado-primary border-senado-primary text-white{{ else
-          }}border-gray-300 text-gray-500{{ end }} flex items-center justify-center">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
+          <div class="flex space-x-2">
+            <!-- Workflow Actions -->
+            {{ if eq .Solicitud.Estado "SOLICITADO" }}
+            <!-- Botones de aprobación -->
+            {{ end }}
+
+            <a href="/descargos/nuevo?solicitud_id={{ .Solicitud.ID }}"
+              class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-senado-accent hover:bg-red-700 focus:outline-none">
+              Realizar Descargo
+            </a>
+          </div>
         </div>
-        <div
-          class="hidden sm:block absolute top-0 -ml-10 text-center mt-12 w-32 text-xs font-medium uppercase {{ if eq .Solicitud.Estado "
-          APROBADO" }}text-senado-primary{{ else }}text-gray-500{{ end }}">Aprobado</div>
       </div>
 
-      <div class="flex-auto border-t-2 transition duration-500 ease-in-out {{ if (or (eq .Solicitud.Estado " APROBADO")
-        (eq .Solicitud.Estado "FINALIZADO" )) }}border-senado-primary{{ else }}border-gray-300{{ end }}"></div>
+      <!-- Pasajes Asignados -->
+      <div class="bg-white shadow sm:rounded-lg overflow-hidden border border-gray-200" x-data="{ openModal: false }">
+        <div class="px-4 py-5 sm:px-6 flex justify-between items-center">
+          <h3 class="text-lg leading-6 font-medium text-gray-900">Pasajes Asignados</h3>
 
-      <!-- Step 3: Descargo/Finalizado -->
-      <div class="flex items-center relative">
-        <div
-          class="rounded-full transition duration-500 ease-in-out h-10 w-10 py-3 border-2 {{ if eq .Solicitud.Estado "
-          FINALIZADO" }}bg-senado-primary border-senado-primary text-white{{ else }}border-gray-300 text-gray-500{{ end
-          }} flex items-center justify-center">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-          </svg>
+          <button @click="openModal = true"
+            class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-senado-secondary hover:bg-senado-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-senado-secondary">
+            + Asignar Pasaje
+          </button>
         </div>
-        <div
-          class="hidden sm:block absolute top-0 -ml-10 text-center mt-12 w-32 text-xs font-medium uppercase {{ if eq .Solicitud.Estado "
-          FINALIZADO" }}text-senado-primary{{ else }}text-gray-500{{ end }}">Finalizado</div>
+
+        <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+          <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4" id="modal-title">Asignar Nuevo Pasaje</h3>
+
+          <form action="/solicitudes/{{ .Solicitud.ID }}/pasajes" method="POST">
+            <div class="grid grid-cols-6 gap-6">
+              <div class="col-span-6">
+                <label class="block text-sm font-medium text-gray-700">Ruta (Origen - Destino)</label>
+                <input type="text" name="ruta" required
+                  class="mt-1 focus:ring-senado-secondary focus:border-senado-secondary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md border p-2"
+                  value="{{ .Solicitud.Origen.Nombre }} - {{ .Solicitud.Destino.Nombre }}">
+              </div>
+
+              <div class="col-span-3">
+                <label class="block text-sm font-medium text-gray-700">Aerolínea</label>
+                <input type="text" name="aerolinea" required
+                  class="mt-1 focus:ring-senado-secondary focus:border-senado-secondary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md border p-2"
+                  placeholder="BoA">
+              </div>
+              <div class="col-span-3">
+                <label class="block text-sm font-medium text-gray-700">Nº Vuelo</label>
+                <input type="text" name="numero_vuelo"
+                  class="mt-1 focus:ring-senado-secondary focus:border-senado-secondary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md border p-2"
+                  placeholder="OB-123">
+              </div>
+
+              <div class="col-span-6">
+                <label class="block text-sm font-medium text-gray-700">Fecha y Hora Vuelo</label>
+                <input type="datetime-local" name="fecha_vuelo" required
+                  class="mt-1 focus:ring-senado-secondary focus:border-senado-secondary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md border p-2">
+              </div>
+
+              <div class="col-span-3">
+                <label class="block text-sm font-medium text-gray-700">Nº Boleto</label>
+                <input type="text" name="numero_boleto" required
+                  class="mt-1 focus:ring-senado-secondary focus:border-senado-secondary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md border p-2">
+              </div>
+
+              <div class="col-span-3">
+                <label class="block text-sm font-medium text-gray-700">Costo (Bs)</label>
+                <input type="number" step="0.01" name="costo" required
+                  class="mt-1 focus:ring-senado-secondary focus:border-senado-secondary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md border p-2">
+              </div>
+
+              <div class="col-span-6">
+                <label class="block text-sm font-medium text-gray-700">Código Reserva (PNR)</label>
+                <input type="text" name="codigo_reserva"
+                  class="mt-1 focus:ring-senado-secondary focus:border-senado-secondary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md border p-2">
+              </div>
+            </div>
+
+            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+              <button type="submit"
+                class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-senado-primary text-base font-medium text-white hover:bg-senado-800 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">
+                Guardar Pasaje
+              </button>
+              <button type="button" @click="openModal = false"
+                class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+                Cancelar
+              </button>
+            </div>
+          </form>
+        </div>
       </div>
 
     </div>
+
+    <!-- Right Column: Sidebar -->
+    <div class="space-y-6">
+
+      <div class="bg-white shadow rounded-lg p-6 sticky top-6">
+        <h3 class="text-lg font-bold text-gray-900 mb-4 border-b pb-2">Seguimiento de Trámite</h3>
+        <div class="mermaid">
+          graph TD
+          subgraph "Oficina Solic./Senador"
+            A[Solicitud FV-01] --> B[Firma y Sello]
+          end
+
+          subgraph "Área de Pasajes"
+            B --> C[Verificación]
+            C --> D[Reserva y Emisión]
+            D --> E[Envío Boleto]
+          end
+
+          subgraph "Beneficiario"
+            E --> F[Realización del Viaje]
+          end
+
+          classDef default fill:#fff,stroke:#999,stroke-width:2px,color:#999
+          classDef active fill:#03738C,stroke:#03738C,stroke-width:3px,color:#fff
+
+          class A,B active
+          {{ if .Step2 }}class C,D,E active{{ end }}
+          {{ if .Step3 }}class F active{{ end }}
+        </div>
+        <p class="text-xs text-gray-500 mt-4 italic">
+          El diagrama se actualiza automáticamente según el estado de la solicitud.
+        </p>
+      </div>
+
+    </div>
+
   </div>
-
-  <!-- Status Card -->
-  <div class="bg-white shadow rounded-lg p-6 border-l-4 {{ if eq .Solicitud.Estado " SOLICITADO" }}border-yellow-400{{
-    else }}border-green-500{{ end }}">
-    <div class="flex items-center justify-between">
-      <div>
-        <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">Estado Actual</p>
-        <h3 class="text-2xl font-bold text-gray-900 mt-1">{{ .Solicitud.Estado }}</h3>
-      </div>
-
-      <div class="flex space-x-2">
-        <!-- Workflow Actions -->
-        {{ if eq .Solicitud.Estado "SOLICITADO" }}
-        <!-- Botones de aprobación -->
-        {{ end }}
-
-        <a href="/descargos/nuevo?solicitud_id={{ .Solicitud.ID }}"
-          class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-senado-accent hover:bg-red-700 focus:outline-none">
-          Realizar Descargo
-        </a>
-      </div>
-    </div>
-  </div>
-
-  <!-- Details Grid -->
-
-  <!-- Pasajes Asignados -->
-  <div class="bg-white shadow sm:rounded-lg overflow-hidden border border-gray-200" x-data="{ openModal: false }">
-    <div class="px-4 py-5 sm:px-6 flex justify-between items-center">
-      <h3 class="text-lg leading-6 font-medium text-gray-900">Pasajes Asignados</h3>
-
-      <button @click="openModal = true"
-        class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-senado-secondary hover:bg-senado-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-senado-secondary">
-        + Asignar Pasaje
-      </button>
-    </div>
-
-    <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-      <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4" id="modal-title">Asignar Nuevo Pasaje</h3>
-
-      <div class="grid grid-cols-6 gap-6">
-        <div class="col-span-6">
-          <label class="block text-sm font-medium text-gray-700">Ruta (Origen - Destino)</label>
-          <input type="text" name="ruta" required
-            class="mt-1 focus:ring-senado-secondary focus:border-senado-secondary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md border p-2"
-            value="{{ .Solicitud.Origen.Nombre }} - {{ .Solicitud.Destino.Nombre }}">
-        </div>
-
-        <div class="col-span-3">
-          <label class="block text-sm font-medium text-gray-700">Aerolínea</label>
-          <input type="text" name="aerolinea" required
-            class="mt-1 focus:ring-senado-secondary focus:border-senado-secondary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md border p-2"
-            placeholder="BoA">
-        </div>
-        <div class="col-span-3">
-          <label class="block text-sm font-medium text-gray-700">Nº Vuelo</label>
-          <input type="text" name="numero_vuelo"
-            class="mt-1 focus:ring-senado-secondary focus:border-senado-secondary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md border p-2"
-            placeholder="OB-123">
-        </div>
-
-        <div class="col-span-6">
-          <label class="block text-sm font-medium text-gray-700">Fecha y Hora Vuelo</label>
-          <input type="datetime-local" name="fecha_vuelo" required
-            class="mt-1 focus:ring-senado-secondary focus:border-senado-secondary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md border p-2">
-        </div>
-
-        <div class="col-span-3">
-          <label class="block text-sm font-medium text-gray-700">Nº Boleto</label>
-          <input type="text" name="numero_boleto" required
-            class="mt-1 focus:ring-senado-secondary focus:border-senado-secondary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md border p-2">
-        </div>
-
-        <div class="col-span-3">
-          <label class="block text-sm font-medium text-gray-700">Costo (Bs)</label>
-          <input type="number" step="0.01" name="costo" required
-            class="mt-1 focus:ring-senado-secondary focus:border-senado-secondary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md border p-2">
-        </div>
-
-        <div class="col-span-6">
-          <label class="block text-sm font-medium text-gray-700">Código Reserva (PNR)</label>
-          <input type="text" name="codigo_reserva"
-            class="mt-1 focus:ring-senado-secondary focus:border-senado-secondary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md border p-2">
-        </div>
-      </div>
-
-      <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-        <button type="submit"
-          class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-senado-primary text-base font-medium text-white hover:bg-senado-800 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm">
-          Guardar Pasaje
-        </button>
-        <button type="button" @click="openModal = false"
-          class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-          Cancelar
-        </button>
-      </div>
-      </form>
-    </div>
-  </div>
-</div>
-</div>
 </div>
 
 {{ template "layout_end" . }}

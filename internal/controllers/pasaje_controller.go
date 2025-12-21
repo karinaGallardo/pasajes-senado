@@ -24,14 +24,14 @@ func NewPasajeController() *PasajeController {
 }
 
 func (ctrl *PasajeController) Store(c *gin.Context) {
-	solicitudID, _ := strconv.Atoi(c.Param("id"))
+	solicitudID := c.Param("id")
 
 	costo, _ := strconv.ParseFloat(c.PostForm("costo"), 64)
 
 	fechaVuelo, _ := time.Parse("2006-01-02T15:04", c.PostForm("fecha_vuelo"))
 
 	nuevoPasaje := models.Pasaje{
-		SolicitudID:   uint(solicitudID),
+		SolicitudID:   solicitudID,
 		Aerolinea:     c.PostForm("aerolinea"),
 		NumeroVuelo:   c.PostForm("numero_vuelo"),
 		Ruta:          c.PostForm("ruta"),
@@ -44,9 +44,9 @@ func (ctrl *PasajeController) Store(c *gin.Context) {
 
 	if err := ctrl.repo.Create(&nuevoPasaje); err != nil {
 		log.Printf("Error creando pasaje: %v", err)
-		c.Redirect(http.StatusFound, fmt.Sprintf("/solicitudes/%d?error=ErrorCrearPasaje", solicitudID))
+		c.Redirect(http.StatusFound, fmt.Sprintf("/solicitudes/%s?error=ErrorCrearPasaje", solicitudID))
 		return
 	}
 
-	c.Redirect(http.StatusFound, fmt.Sprintf("/solicitudes/%d?success=PasajeCreado", solicitudID))
+	c.Redirect(http.StatusFound, fmt.Sprintf("/solicitudes/%s?success=PasajeCreado", solicitudID))
 }

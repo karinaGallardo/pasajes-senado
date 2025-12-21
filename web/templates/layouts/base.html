@@ -1,137 +1,324 @@
 {{ define "layout_start" }}
 <!DOCTYPE html>
 <html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>{{ .Title }} - Sistema de Pasajes</title>
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>{{ .Title }} - Sistema de Pasajes</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/css/styles.css" />
 
-  <link rel="stylesheet" href="/static/css/styles.css">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            fontFamily: {
+              sans: ["Inter", "sans-serif"],
+              brand: ["Montserrat", "sans-serif"],
+            },
+            colors: {
+              senado: {
+                50: "#eef9fb",
+                100: "#d6eff4",
 
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    tailwind.config = {
-      theme: {
-        extend: {
-          fontFamily: {
-            sans: ['Inter', 'sans-serif'],
-            brand: ['Montserrat', 'sans-serif'],
+                primary: "#03738C",
+                secondary: "#0396A6",
+                gold: "#F29A2E",
+                salmon: "#F2884B",
+                accent: "#F2490C",
+
+                500: "#03738C",
+                600: "#025a6e",
+                800: "#024655",
+                900: "#01323d",
+
+                neutral: "#575756",
+              },
+            },
           },
-          colors: {
-            senado: {
-              50: '#eef9fb',
-              100: '#d6eff4',
+        },
+      };
+    </script>
 
-              primary: '#03738C',
-              secondary: '#0396A6',
-              gold: '#F29A2E',
-              salmon: '#F2884B',
-              accent: '#F2490C',
+    <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+    <script
+      defer
+      src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"
+    ></script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>
+      mermaid.initialize({ startOnLoad: true });
+    </script>
+  </head>
 
-              500: '#03738C',
-              600: '#025a6e',
-              800: '#024655',
-              900: '#01323d',
-
-              neutral: '#575756',
-            }
-          }
-        }
-      }
-    }
-  </script>
-
-  <script src="https://unpkg.com/htmx.org@1.9.10"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-</head>
-
-<body class="bg-gray-50 font-sans antialiased text-gray-900" x-data="{ sidebarOpen: false }">
-
-  <!-- App Container -->
-  <div class="flex h-screen overflow-hidden">
-
-    <!-- SIDEBAR -->
-    {{ if .User }}
-    <aside
-      class="flex flex-col w-64 transition-transform transform bg-senado-primary border-r border-gray-200 lg:translate-x-0 lg:static fixed z-30 h-full"
-      :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'">
-
-      <!-- Logo area -->
-      <div class="flex items-center justify-center h-16 bg-senado-secondary shadow-md">
-        <span class="text-white font-bold text-lg tracking-wider uppercase">Senado Pasajes</span>
-      </div>
-
-      <!-- Nav Links -->
-      <div class="flex-1 overflow-y-auto py-4">
-        <nav class="space-y-1 px-2">
-          <a href="/dashboard"
-            class="group flex items-center px-2 py-2 text-base font-medium rounded-md text-gray-100 hover:bg-senado-secondary hover:text-white transition-colors">
-            <svg class="mr-3 h-6 w-6 text-gray-300 group-hover:text-white" fill="none" viewBox="0 0 24 24"
-              stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
-            </svg>
-            Dashboard
-          </a>
-
-          <div class="mt-8 mb-2 px-3 text-xs font-semibold text-gray-400 uppercase tracking-wider">
-            Trámites
-          </div>
-
-          <a href="/solicitudes"
-            class="group flex items-center px-2 py-2 text-base font-medium rounded-md text-gray-300 hover:bg-senado-800 hover:text-white">
-            <svg class="mr-3 h-6 w-6 text-gray-400 group-hover:text-white" fill="none" viewBox="0 0 24 24"
-              stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-            </svg>
-            Solicitudes
-          </a>
-        </nav>
-      </div>
-
-      <div class="bg-senado-900 px-4 py-4 border-t border-gray-800 flex items-center">
-        <div class="flex-shrink-0">
-          <div class="h-8 w-8 rounded-full bg-gray-600 flex items-center justify-center text-white font-bold">U</div>
-        </div>
-        <div class="ml-3">
-          <p class="text-sm font-medium text-white">Usuario</p>
-          <p class="text-xs text-gray-400 hover:text-gray-300"><a href="/logout">Cerrar Sesión</a></p>
-        </div>
-      </div>
-    </aside>
-    {{ end }}
-
-    <!-- CONTENT AREA -->
-    <div class="flex-1 flex flex-col overflow-hidden relative">
-
+  <body
+    class="bg-gray-50 font-sans antialiased text-gray-900"
+    x-data="{ sidebarOpen: false }"
+  >
+    <div class="flex h-screen overflow-hidden">
+      <!-- SIDEBAR -->
       {{ if .User }}
-      <header class="h-16 bg-white shadow flex items-center justify-between px-4 sm:px-6 lg:px-8">
-        <div class="flex items-center">
-          <button @click="sidebarOpen = !sidebarOpen"
-            class="lg:hidden text-gray-500 hover:text-gray-700 focus:outline-none p-2">
-            <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          </button>
-          <h1 class="text-2xl font-semibold text-gray-800 ml-2 lg:ml-0">{{ .Title }}</h1>
+      <aside
+        class="flex flex-col w-64 bg-white border-r border-gray-200 transition-transform transform lg:translate-x-0 lg:static fixed z-30 h-full"
+        :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+      >
+        <!-- Logo Area -->
+        <div class="flex items-center h-16 px-6 border-b border-gray-100">
+          <img
+            src="/static/img/logo_senado.webp"
+            alt="Logo Senado"
+            class="h-8 w-auto mr-2"
+          />
+          <span
+            class="text-xl font-brand font-bold text-gray-800 tracking-tight"
+            >Pasajes</span
+          >
         </div>
-      </header>
+
+        <!-- Navigation -->
+        <div class="flex-1 overflow-y-auto py-6">
+          <nav class="space-y-1 px-4">
+            <p
+              class="px-2 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2"
+            >
+              Main
+            </p>
+
+            <a
+              href="/dashboard"
+              class="group flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors
+            {{ if eq .Title `Dashboard` }} bg-senado-primary/10 text-senado-primary {{ else }} text-gray-600 hover:bg-gray-50 hover:text-gray-900 {{ end }}"
+            >
+              <svg
+                class="mr-3 h-5 w-5 {{ if eq .Title `Dashboard` }} text-senado-primary {{ else }} text-gray-400 group-hover:text-gray-500 {{ end }}"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
+                />
+              </svg>
+              Dashboard
+            </a>
+
+            <div
+              class="mt-8 mb-2 px-2 text-xs font-semibold text-gray-400 uppercase tracking-wider"
+            >
+              Gestión
+            </div>
+
+            <a
+              href="/solicitudes"
+              class="group flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors
+             {{ if eq .Title `Solicitudes` }} bg-senado-primary/10 text-senado-primary {{ else }} text-gray-600 hover:bg-gray-50 hover:text-gray-900 {{ end }}"
+            >
+              <svg
+                class="mr-3 h-5 w-5 {{ if eq .Title `Solicitudes` }} text-senado-primary {{ else }} text-gray-400 group-hover:text-gray-500 {{ end }}"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"
+                />
+              </svg>
+              Solicitudes
+            </a>
+
+            <a
+              href="/descargos"
+              class="group flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors
+             {{ if eq .Title `Descargos` }} bg-senado-primary/10 text-senado-primary {{ else }} text-gray-600 hover:bg-gray-50 hover:text-gray-900 {{ end }}"
+            >
+              <svg
+                class="mr-3 h-5 w-5 {{ if eq .Title `Descargos` }} text-senado-primary {{ else }} text-gray-400 group-hover:text-gray-500 {{ end }}"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
+              </svg>
+              Descargos
+            </a>
+          </nav>
+        </div>
+
+        <!-- Bottom Actions -->
+        <div class="p-4 border-t border-gray-200">
+          <button
+            class="flex items-center w-full px-4 py-2 text-sm font-medium text-gray-600 hover:text-senado-primary transition-colors"
+          >
+            <svg
+              class="mr-3 h-5 w-5"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+              />
+            </svg>
+            <span class="text-xs">Colapsar barra (WIP)</span>
+          </button>
+        </div>
+      </aside>
       {{ end }}
 
-      <!-- MAIN CONTENT -->
-      <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-6">
+      <!-- MAIN COLUMN -->
+      <div class="flex-1 flex flex-col overflow-hidden relative">
+        <!-- HEADER -->
+        {{ if .User }}
+        <header
+          class="h-20 bg-white border-b border-gray-200 flex items-center justify-between px-6 lg:px-8"
+        >
+          <!-- Search Bar -->
+          <div class="flex-1 max-w-lg flex items-center">
+            <button
+              @click="sidebarOpen = !sidebarOpen"
+              class="lg:hidden mr-4 text-gray-500 hover:text-gray-700"
+            >
+              <svg
+                class="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              </svg>
+            </button>
+            <div class="relative w-full">
+              <span
+                class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none"
+              >
+                <svg
+                  class="h-5 w-5 text-gray-400"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
+                </svg>
+              </span>
+              <input
+                type="text"
+                class="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg leading-5 bg-gray-50 placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:border-senado-primary focus:ring-1 focus:ring-senado-primary sm:text-sm transition duration-150 ease-in-out"
+                placeholder="Buscar trámites, personas..."
+              />
+            </div>
+          </div>
+
+          <!-- Right Header Actions -->
+          <div class="ml-4 flex items-center space-x-4">
+            <!-- Notifications (Mock) -->
+            <button class="p-2 text-gray-400 hover:text-gray-500 relative">
+              <span
+                class="absolute top-2 right-2 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"
+              ></span>
+              <svg
+                class="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+                />
+              </svg>
+            </button>
+
+            <!-- User Profile -->
+            <div
+              class="flex items-center pl-4 border-l border-gray-200"
+              x-data="{ open: false }"
+            >
+              <div
+                class="flex items-center cursor-pointer"
+                @click="open = !open"
+              >
+                <div class="text-right mr-3 hidden md:block">
+                  <div class="text-sm font-medium text-gray-900">
+                    {{ .User.GetNombreCompleto }}
+                  </div>
+                  <div class="text-xs text-gray-500">
+                    {{ .User.Rol.Codigo }}
+                  </div>
+                </div>
+                <div
+                  class="h-10 w-10 rounded-full bg-senado-primary flex items-center justify-center text-white font-bold shadow-sm"
+                >
+                  {{ printf "%.1s" .User.GetNombreCompleto }}
+                </div>
+              </div>
+              <div
+                x-show="open"
+                @click.away="open = false"
+                class="origin-top-right absolute right-6 top-16 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-40"
+                style="display: none"
+              >
+                <div class="py-1">
+                  <a
+                    href="#"
+                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >Mi Perfil</a
+                  >
+                  <a
+                    href="#"
+                    class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    >Configuración</a
+                  >
+                  <div class="border-t border-gray-100"></div>
+                  <a
+                    href="/auth/logout"
+                    class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100"
+                    >Cerrar Sesión</a
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+        </header>
         {{ end }}
 
-        {{ define "layout_end" }}
-      </main>
+        <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-6">
+          {{ end }} {{ define "layout_end" }}
+        </main>
+      </div>
     </div>
-  </div>
-</body>
-
+  </body>
 </html>
 {{ end }}

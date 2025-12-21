@@ -15,6 +15,7 @@ import (
 
 var DB *gorm.DB
 var MongoChat *mongo.Database
+var MongoRRHH *mongo.Database
 
 func ConnectDB() {
 	viper.SetConfigFile(".env")
@@ -62,6 +63,7 @@ func ConnectDB() {
 		} else {
 			log.Println("Conexión a MongoDB Exitosa")
 			MongoChat = client.Database(viper.GetString("MONGO_USERS_DB"))
+			MongoRRHH = client.Database(viper.GetString("MONGO_RRHH_DB"))
 		}
 	}
 }

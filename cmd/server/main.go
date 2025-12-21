@@ -9,6 +9,8 @@ import (
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/routes"
 
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
 )
@@ -25,10 +27,13 @@ func main() {
 
 		err := configs.DB.AutoMigrate(
 			&models.Usuario{},
+			&models.Rol{},
+			&models.Permiso{},
 			&models.Solicitud{},
 			&models.Pasaje{},
 			&models.Descargo{},
 			&models.Ciudad{},
+			&models.Genero{},
 		)
 		if err != nil {
 			log.Fatalf("Error en migración: %v", err)
@@ -39,6 +44,9 @@ func main() {
 	}
 
 	r := gin.Default()
+
+	store := cookie.NewStore([]byte(viper.GetString("SESSION_SECRET")))
+	r.Use(sessions.Sessions("pasajes_session", store))
 
 	r.Static("/static", "./web/static")
 

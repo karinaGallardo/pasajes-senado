@@ -33,21 +33,21 @@ func (ctrl *DescargoController) Index(c *gin.Context) {
 }
 
 func (ctrl *DescargoController) Create(c *gin.Context) {
-	solicitudID, _ := strconv.Atoi(c.Query("solicitud_id"))
-	if solicitudID == 0 {
+	solicitudID := c.Query("solicitud_id")
+	if solicitudID == "" {
 		c.Redirect(http.StatusFound, "/solicitudes")
 		return
 	}
 
-	solicitud, err := ctrl.solicitudRepo.FindByID(uint(solicitudID))
+	solicitud, err := ctrl.solicitudRepo.FindByID(solicitudID)
 	if err != nil {
 		c.Redirect(http.StatusFound, "/solicitudes")
 		return
 	}
 
-	existe, _ := ctrl.repo.FindBySolicitudID(uint(solicitudID))
-	if existe != nil && existe.ID > 0 {
-		c.Redirect(http.StatusFound, "/descargos/"+strconv.Itoa(int(existe.ID)))
+	existe, _ := ctrl.repo.FindBySolicitudID(solicitudID)
+	if existe != nil && existe.ID != "" {
+		c.Redirect(http.StatusFound, "/descargos/"+existe.ID)
 		return
 	}
 
@@ -59,7 +59,7 @@ func (ctrl *DescargoController) Create(c *gin.Context) {
 }
 
 func (ctrl *DescargoController) Store(c *gin.Context) {
-	solicitudID, _ := strconv.Atoi(c.PostForm("solicitud_id"))
+	solicitudID := c.PostForm("solicitud_id")
 
 	fechaPresentacion, _ := time.Parse("2006-01-02", c.PostForm("fecha_presentacion"))
 
@@ -68,7 +68,7 @@ func (ctrl *DescargoController) Store(c *gin.Context) {
 	userContext := c.MustGet("User").(models.Usuario)
 
 	nuevoDescargo := models.Descargo{
-		SolicitudID:        uint(solicitudID),
+		SolicitudID:        solicitudID,
 		UsuarioID:          userContext.ID,
 		FechaPresentacion:  fechaPresentacion,
 		InformeActividades: c.PostForm("informe_actividades"),
@@ -87,16 +87,11 @@ func (ctrl *DescargoController) Store(c *gin.Context) {
 }
 
 func (ctrl *DescargoController) Show(c *gin.Context) {
-	idParam := c.Param("id")
-	id, err := strconv.Atoi(idParam)
-	if err != nil {
-		c.Redirect(http.StatusFound, "/descargos")
-		return
-	}
+	id := c.Param("id")
 
-	descargo, err := ctrl.repo.FindByID(uint(id))
+	descargo, err := ctrl.repo.FindByID(id)
 	if err != nil {
-		log.Printf("Error buscando descargo %d: %v", id, err)
+		log.Printf("Error buscando descargo %s: %v", id, err)
 		c.Redirect(http.StatusFound, "/descargos")
 		return
 	}

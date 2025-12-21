@@ -3,8 +3,8 @@ package models
 import "time"
 
 type Descargo struct {
-	ModeloBase
-	SolicitudID uint   `gorm:"not null;uniqueIndex"`
+	BaseModel
+	SolicitudID string `gorm:"not null;size:36;uniqueIndex"`
 	UsuarioID   string `gorm:"size:24;not null"`
 
 	FechaPresentacion  time.Time `gorm:"not null"`

@@ -13,13 +13,16 @@ func SetupRoutes(r *gin.Engine) {
 	pasajeCtrl := controllers.NewPasajeController()
 	dashboardCtrl := controllers.NewDashboardController()
 
-	r.GET("/login", authCtrl.ShowLogin)
-	r.POST("/login", authCtrl.Login)
-	r.GET("/logout", authCtrl.Logout)
+	r.GET("/auth/login", authCtrl.ShowLogin)
+	r.POST("/auth/login", authCtrl.Login)
+	r.GET("/auth/logout", authCtrl.Logout)
 
 	protected := r.Group("/")
 	protected.Use(middleware.AuthRequired())
 	{
+		protected.GET("/", func(c *gin.Context) {
+			c.Redirect(302, "/dashboard")
+		})
 		protected.GET("/dashboard", dashboardCtrl.Index)
 
 		protected.GET("/solicitudes", solicitudCtrl.Index)

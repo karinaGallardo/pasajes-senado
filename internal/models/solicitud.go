@@ -3,7 +3,7 @@ package models
 import "time"
 
 type Solicitud struct {
-	ModeloBase
+	BaseModel
 	UsuarioID string  `gorm:"size:24;not null"`
 	Usuario   Usuario `gorm:"constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
 

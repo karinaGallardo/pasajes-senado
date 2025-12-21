@@ -21,7 +21,7 @@ func (r *SolicitudRepository) FindAll() ([]models.Solicitud, error) {
 	return solicitudes, err
 }
 
-func (r *SolicitudRepository) FindByID(id uint) (*models.Solicitud, error) {
+func (r *SolicitudRepository) FindByID(id string) (*models.Solicitud, error) {
 	var solicitud models.Solicitud
 	err := configs.DB.Preload("Usuario").Preload("Origen").Preload("Destino").Preload("Pasajes").First(&solicitud, id).Error
 	if err != nil {

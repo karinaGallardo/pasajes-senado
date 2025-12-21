@@ -3,8 +3,8 @@ package models
 import "time"
 
 type Pasaje struct {
-	ModeloBase
-	SolicitudID uint `gorm:"not null"`
+	BaseModel
+	SolicitudID string `gorm:"not null;size:36"`
 
 	Aerolinea   string `gorm:"size:100"`
 	NumeroVuelo string `gorm:"size:50"`

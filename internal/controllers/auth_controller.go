@@ -2,72 +2,58 @@ package controllers
 
 import (
 	"net/http"
-	"sistema-pasajes/internal/configs"
-	"sistema-pasajes/internal/models"
-	"sistema-pasajes/internal/repositories"
-	"strings"
+	"sistema-pasajes/internal/services"
 
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
-	"golang.org/x/crypto/bcrypt"
 )
 
 type AuthController struct {
-	mongoRepo *repositories.MongoUserRepository
-	sqlRepo   *repositories.UsuarioRepository
+	authService *services.AuthService
 }
 
 func NewAuthController() *AuthController {
 	return &AuthController{
-		mongoRepo: repositories.NewMongoUserRepository(),
-		sqlRepo:   repositories.NewUsuarioRepository(),
+		authService: services.NewAuthService(),
 	}
 }
 
-func (ctrl *AuthController) ShowLogin(c *gin.Context) {
+func (ac *AuthController) ShowLogin(c *gin.Context) {
 	c.HTML(http.StatusOK, "auth/login.html", gin.H{
-		"Title": "Iniciar Sesión",
+		"title": "Iniciar Sesión",
 	})
 }
 
-func (ctrl *AuthController) Login(c *gin.Context) {
-	username := strings.TrimSpace(c.PostForm("username"))
-	password := strings.TrimSpace(c.PostForm("password"))
+func (ac *AuthController) Login(c *gin.Context) {
+	username := c.PostForm("username")
+	password := c.PostForm("password")
 
-	mongoUser, err := ctrl.mongoRepo.FindByUsername(username)
+	user, err := ac.authService.AuthenticateAndSync(username, password)
 	if err != nil {
 		c.HTML(http.StatusUnauthorized, "auth/login.html", gin.H{
-			"Error": "Usuario no encontrado (Mongo)",
+			"error": err.Error(),
 		})
 		return
 	}
 
-	err = bcrypt.CompareHashAndPassword([]byte(mongoUser.Password), []byte(password))
-	if err != nil {
-		c.HTML(http.StatusUnauthorized, "auth/login.html", gin.H{
-			"Error": "Contraseña incorrecta",
-		})
-		return
-	}
+	session := sessions.Default(c)
+	session.Set("user_id", user.ID)
+	session.Set("username", user.Username)
 
-	sqlUser := models.Usuario{
-		ID:       mongoUser.ID.Hex(),
-		Username: mongoUser.Username,
-		CI:       mongoUser.CI,
+	roleCode := "FUNCIONARIO"
+	if user.Rol != nil {
+		roleCode = user.Rol.Codigo
 	}
-
-	if err := configs.DB.Where("username = ?", sqlUser.Username).FirstOrCreate(&sqlUser).Error; err != nil {
-		configs.DB.Model(&models.Usuario{}).Where("username = ?", sqlUser.Username).Updates(models.Usuario{
-			CI: mongoUser.CI,
-		})
-		configs.DB.Where("username = ?", sqlUser.Username).First(&sqlUser)
-	}
-
-	c.SetCookie("user_id", sqlUser.Username, 3600*8, "/", "", false, true)
+	session.Set("role", roleCode)
+	session.Set("nombre", user.GetNombreCompleto())
+	session.Save()
 
 	c.Redirect(http.StatusFound, "/dashboard")
 }
 
-func (ctrl *AuthController) Logout(c *gin.Context) {
-	c.SetCookie("user_id", "", -1, "/", "", false, true)
-	c.Redirect(http.StatusFound, "/login")
+func (ac *AuthController) Logout(c *gin.Context) {
+	session := sessions.Default(c)
+	session.Clear()
+	session.Save()
+	c.Redirect(http.StatusFound, "/auth/login")
 }

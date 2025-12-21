@@ -15,13 +15,13 @@ func (r *DescargoRepository) Create(descargo *models.Descargo) error {
 	return configs.DB.Create(descargo).Error
 }
 
-func (r *DescargoRepository) FindBySolicitudID(solicitudID uint) (*models.Descargo, error) {
+func (r *DescargoRepository) FindBySolicitudID(solicitudID string) (*models.Descargo, error) {
 	var descargo models.Descargo
 	err := configs.DB.Where("solicitud_id = ?", solicitudID).First(&descargo).Error
 	return &descargo, err
 }
 
-func (r *DescargoRepository) FindByID(id uint) (*models.Descargo, error) {
+func (r *DescargoRepository) FindByID(id string) (*models.Descargo, error) {
 	var descargo models.Descargo
 	err := configs.DB.Preload("Solicitud").Preload("Solicitud.Usuario").Preload("Solicitud.Origen").Preload("Solicitud.Destino").First(&descargo, id).Error
 	return &descargo, err
