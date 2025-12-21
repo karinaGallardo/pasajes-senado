@@ -1,15 +1,22 @@
-{{ define "dashboard/index.html" }}
-{{ template "layout_start" . }}
+{{ define "dashboard/index.html" }} {{ template "layout_start" . }}
 
 <div class="space-y-8">
   <!-- Welcome Section -->
-  <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-senado-primary flex justify-between items-center">
+  <div
+    class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-senado-primary flex justify-between items-center"
+  >
     <div>
-      <h2 class="text-2xl font-brand font-bold text-senado-900">Bienvenido, {{ .User.NombreCompleto }}</h2>
-      <p class="text-senado-neutral mt-1">Panel de control del Sistema de Pasajes y Viáticos</p>
+      <h2 class="text-2xl font-brand font-bold text-senado-900">
+        Bienvenido, {{ .User.GetNombreCompleto }}
+      </h2>
+      <p class="text-senado-neutral mt-1">
+        Panel de control del Sistema de Pasajes y Viáticos
+      </p>
     </div>
     <div>
-      <span class="px-4 py-2 rounded-full bg-senado-50 text-senado-800 text-sm font-bold shadow-sm">
+      <span
+        class="px-4 py-2 rounded-full bg-senado-50 text-senado-800 text-sm font-bold shadow-sm"
+      >
         {{ .User.Rol }}
       </span>
     </div>
@@ -19,23 +26,39 @@
   <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
     <!-- Card 1: Solicitudes Pendientes -->
     <div
-      class="bg-white rounded-xl shadow-md p-6 border-t-4 border-senado-gold hover:shadow-lg transition-shadow duration-300">
+      class="bg-white rounded-xl shadow-md p-6 border-t-4 border-senado-gold hover:shadow-lg transition-shadow duration-300"
+    >
       <div class="flex items-center justify-between pointer-events-none">
         <!-- pointer-events-none prevents icon selection -->
         <div>
-          <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">Pendientes de Aprobación</p>
-          <p class="text-4xl font-black text-senado-neutral mt-2">{{ .Pendientes }}</p>
+          <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">
+            Pendientes de Aprobación
+          </p>
+          <p class="text-4xl font-black text-senado-neutral mt-2">
+            {{ .Pendientes }}
+          </p>
         </div>
         <div class="p-3 bg-yellow-50 rounded-full">
-          <svg class="w-8 h-8 text-senado-gold" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          <svg
+            class="w-8 h-8 text-senado-gold"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+            ></path>
           </svg>
         </div>
       </div>
       <div class="mt-4">
-        <a href="/solicitudes"
-          class="text-sm font-semibold text-senado-neutral hover:text-senado-primary flex items-center">
+        <a
+          href="/solicitudes"
+          class="text-sm font-semibold text-senado-neutral hover:text-senado-primary flex items-center"
+        >
           Ver listado <span aria-hidden="true" class="ml-1">&rarr;</span>
         </a>
       </div>
@@ -43,22 +66,38 @@
 
     <!-- Card 2: Aprobados -->
     <div
-      class="bg-white rounded-xl shadow-md p-6 border-t-4 border-senado-secondary hover:shadow-lg transition-shadow duration-300">
+      class="bg-white rounded-xl shadow-md p-6 border-t-4 border-senado-secondary hover:shadow-lg transition-shadow duration-300"
+    >
       <div class="flex items-center justify-between">
         <div>
-          <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">Viajes Aprobados</p>
-          <p class="text-4xl font-black text-senado-neutral mt-2">{{ .Aprobados }}</p>
+          <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">
+            Viajes Aprobados
+          </p>
+          <p class="text-4xl font-black text-senado-neutral mt-2">
+            {{ .Aprobados }}
+          </p>
         </div>
         <div class="p-3 bg-blue-50 rounded-full">
-          <svg class="w-8 h-8 text-senado-secondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+          <svg
+            class="w-8 h-8 text-senado-secondary"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+            ></path>
           </svg>
         </div>
       </div>
       <div class="mt-4">
-        <a href="/solicitudes"
-          class="text-sm font-semibold text-senado-secondary hover:text-senado-primary flex items-center">
+        <a
+          href="/solicitudes"
+          class="text-sm font-semibold text-senado-secondary hover:text-senado-primary flex items-center"
+        >
           Gestionar boletos <span aria-hidden="true" class="ml-1">&rarr;</span>
         </a>
       </div>
@@ -66,22 +105,38 @@
 
     <!-- Card 3: Descargos -->
     <div
-      class="bg-white rounded-xl shadow-md p-6 border-t-4 border-senado-accent hover:shadow-lg transition-shadow duration-300">
+      class="bg-white rounded-xl shadow-md p-6 border-t-4 border-senado-accent hover:shadow-lg transition-shadow duration-300"
+    >
       <div class="flex items-center justify-between">
         <div>
-          <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">Descargos Realizados</p>
-          <p class="text-4xl font-black text-senado-neutral mt-2">{{ .Descargos }}</p>
+          <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">
+            Descargos Realizados
+          </p>
+          <p class="text-4xl font-black text-senado-neutral mt-2">
+            {{ .Descargos }}
+          </p>
         </div>
         <div class="p-3 bg-red-50 rounded-full">
-          <svg class="w-8 h-8 text-senado-accent" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-              d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
-            </path>
+          <svg
+            class="w-8 h-8 text-senado-accent"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              stroke-width="2"
+              d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+            ></path>
           </svg>
         </div>
       </div>
       <div class="mt-4">
-        <a href="/descargos" class="text-sm font-semibold text-senado-accent hover:text-red-800 flex items-center">
+        <a
+          href="/descargos"
+          class="text-sm font-semibold text-senado-accent hover:text-red-800 flex items-center"
+        >
           Revisar informes <span aria-hidden="true" class="ml-1">&rarr;</span>
         </a>
       </div>
@@ -89,39 +144,83 @@
   </div>
 
   <!-- Recent Activity Table -->
-  <div class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-    <div class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
-      <h3 class="text-lg font-brand font-bold text-gray-900">Actividad Reciente</h3>
-      <a href="/solicitudes/nueva" class="text-sm font-medium text-senado-secondary hover:text-senado-900">+ Nueva
-        Solicitud</a>
+  <div
+    class="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden"
+  >
+    <div
+      class="px-6 py-4 border-b border-gray-200 bg-gray-50 flex justify-between items-center"
+    >
+      <h3 class="text-lg font-brand font-bold text-gray-900">
+        Actividad Reciente
+      </h3>
+      <a
+        href="/solicitudes/nueva"
+        class="text-sm font-medium text-senado-secondary hover:text-senado-900"
+        >+ Nueva Solicitud</a
+      >
     </div>
     <div class="overflow-x-auto">
       <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
           <tr>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Destino</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha Salida</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
+            <th
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              ID
+            </th>
+            <th
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Destino
+            </th>
+            <th
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Fecha Salida
+            </th>
+            <th
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            >
+              Estado
+            </th>
+            <th
+              class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+            ></th>
           </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
           {{ range .Recent }}
           <tr class="hover:bg-gray-50 transition-colors">
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-bold">#{{ .ID }}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">{{ .Destino }}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ .FechaSalida.Format "02/01/2006" }}</td>
+            <td
+              class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-bold"
+            >
+              #{{ .ID }}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+              {{ .Destino }}
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+              {{ .FechaSalida.Format "02/01/2006" }}
+            </td>
             <td class="px-6 py-4 whitespace-nowrap">
-              <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                            {{ if eq .Estado " SOLICITADO" }} bg-yellow-100 text-yellow-800 {{ end }} {{ if eq
-                .Estado "APROBADO" }} bg-green-100 text-green-800 {{ end }} {{ if eq .Estado "FINALIZADO" }} bg-gray-100
-                text-gray-800 {{ end }}">
+              <span
+                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                    {{ if eq .Estado `SOLICITADO` }} bg-yellow-100 text-yellow-800 {{ end }}
+                    {{ if eq .Estado `APROBADO` }} bg-green-100 text-green-800 {{ end }}
+                    {{ if eq .Estado `FINALIZADO` }} bg-gray-100 text-gray-800 {{ end }}
+                    "
+              >
                 {{ .Estado }}
               </span>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-              <a href="/solicitudes/{{ .ID }}" class="text-senado-secondary hover:text-senado-900">Detalles</a>
+            <td
+              class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium"
+            >
+              <a
+                href="/solicitudes/{{ .ID }}"
+                class="text-senado-secondary hover:text-senado-900"
+                >Detalles</a
+              >
             </td>
           </tr>
           {{ end }}
@@ -131,5 +230,4 @@
   </div>
 </div>
 
-{{ template "layout_end" . }}
-{{ end }}
+{{ template "layout_end" . }} {{ end }}

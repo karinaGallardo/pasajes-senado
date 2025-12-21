@@ -1,0 +1,72 @@
+{{ define "usuarios/edit_modal" }}
+<div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+  <div class="sm:flex sm:items-start">
+    <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+      <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+        Editar Rol de Usuario
+      </h3>
+      <div class="mt-2">
+        <p class="text-sm text-gray-500 mb-4">
+          Estás editando el rol para
+          <strong>{{ .Usuario.GetNombreCompleto }}</strong> ({{ .Usuario.CI }}).
+        </p>
+
+        <form
+          id="edit-rol-form"
+          hx-post="/usuarios/{{ .Usuario.ID }}"
+          hx-target="#modal-container"
+          hx-swap="none"
+          @submit="modalOpen = false"
+        >
+          <!-- Cerrar modal localmente al enviar -->
+
+          <div class="mb-4">
+            <label for="rol_id" class="block text-sm font-medium text-gray-700"
+              >Rol Asignado</label
+            >
+            <select
+              id="rol_id"
+              name="rol_id"
+              class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-senado-primary focus:border-senado-primary sm:text-sm"
+            >
+              {{ $currentRol := .Usuario.RolID }} {{ range .Roles }}
+              <option
+                value="{{ .Codigo }}"
+                {{
+                if
+                eq
+                .Codigo
+                $currentRol
+                }}selected{{
+                end
+                }}
+              >
+                {{ .Nombre }}
+              </option>
+              {{ end }}
+            </select>
+          </div>
+
+          <div
+            class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse -mx-6 -mb-4 mt-6"
+          >
+            <button
+              type="submit"
+              class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-senado-primary text-base font-medium text-white hover:bg-senado-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-senado-500 sm:ml-3 sm:w-auto sm:text-sm"
+            >
+              Guardar Cambios
+            </button>
+            <button
+              type="button"
+              class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-senado-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+              @click="modalOpen = false"
+            >
+              Cancelar
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{{ end }}

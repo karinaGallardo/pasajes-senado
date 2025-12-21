@@ -37,5 +37,15 @@ func SetupRoutes(r *gin.Engine) {
 		protected.GET("/descargos/nuevo", descargoCtrl.Create)
 		protected.POST("/descargos", descargoCtrl.Store)
 		protected.GET("/descargos/:id", descargoCtrl.Show)
+
+		adminOnly := protected.Group("/")
+		adminOnly.Use(middleware.RequireRole("ADMIN"))
+		{
+			usuarioCtrl := controllers.NewUsuarioController()
+			adminOnly.GET("/usuarios", usuarioCtrl.Index)
+			adminOnly.GET("/usuarios/table", usuarioCtrl.Table)
+			adminOnly.GET("/usuarios/:id/editar", usuarioCtrl.Edit)
+			adminOnly.POST("/usuarios/:id", usuarioCtrl.Update)
+		}
 	}
 }

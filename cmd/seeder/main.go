@@ -24,8 +24,8 @@ func main() {
 func seedRolesAndPermissions() {
 	roles := []models.Rol{
 		{Codigo: "ADMIN", Nombre: "Administrador del Sistema"},
-		{Codigo: "SENADOR_TITULAR", Nombre: "Senador Titular"},
-		{Codigo: "SENADOR_SUPLENTE", Nombre: "Senador Suplente"},
+		{Codigo: "TECNICO", Nombre: "Técnico de Sistema"},
+		{Codigo: "SENADOR", Nombre: "Honorable Senador"},
 		{Codigo: "FUNCIONARIO", Nombre: "Funcionario Administrativo"},
 	}
 
@@ -49,6 +49,7 @@ func seedRolesAndPermissions() {
 		{Codigo: "descargo:ver", Nombre: "Ver Descargos", Descripcion: "Permite ver descargos"},
 
 		{Codigo: "usuario:ver", Nombre: "Ver Usuarios", Descripcion: "Permite listar usuarios"},
+		{Codigo: "usuario:editar", Nombre: "Editar Usuarios", Descripcion: "Permite editar roles de usuarios"},
 		{Codigo: "reporte:ver", Nombre: "Ver Reportes", Descripcion: "Permite ver reportes globales"},
 	}
 
@@ -69,13 +70,23 @@ func seedRolesAndPermissions() {
 		permisoMap["descargo:ver"],
 	}
 
+	rolTecnicoPermisos := []*models.Permiso{
+		permisoMap["solicitud:crear"],
+		permisoMap["solicitud:ver_propias"],
+		permisoMap["solicitud:ver_todas"],
+		permisoMap["descargo:crear"],
+		permisoMap["descargo:ver"],
+		permisoMap["usuario:ver"],
+	}
+
 	var allPermisos []*models.Permiso
 	for _, p := range permisoMap {
 		allPermisos = append(allPermisos, p)
 	}
+
 	assignPermsToRole(roleMap["FUNCIONARIO"], rolBasicoPermisos)
-	assignPermsToRole(roleMap["SENADOR_TITULAR"], rolBasicoPermisos)
-	assignPermsToRole(roleMap["SENADOR_SUPLENTE"], rolBasicoPermisos)
+	assignPermsToRole(roleMap["SENADOR"], rolBasicoPermisos)
+	assignPermsToRole(roleMap["TECNICO"], rolTecnicoPermisos)
 	assignPermsToRole(roleMap["ADMIN"], allPermisos)
 
 	fmt.Println("Roles y Permisos sincronizados correctamente.")

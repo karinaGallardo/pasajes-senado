@@ -34,3 +34,28 @@ func AuthRequired() gin.HandlerFunc {
 		c.Next()
 	}
 }
+
+func RequireRole(allowedRoles ...string) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		userVal, exists := c.Get("User")
+		if !exists {
+			c.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+
+		user, ok := userVal.(*models.Usuario)
+		if !ok || user.Rol == nil {
+			c.AbortWithStatus(http.StatusForbidden)
+			return
+		}
+
+		for _, role := range allowedRoles {
+			if user.Rol.Codigo == role {
+				c.Next()
+				return
+			}
+		}
+
+		c.AbortWithStatus(http.StatusForbidden)
+	}
+}

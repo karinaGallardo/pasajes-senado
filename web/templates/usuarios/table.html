@@ -1,0 +1,96 @@
+{{ define "usuarios/table" }}
+<div class="overflow-x-auto bg-white rounded-lg shadow">
+  <table class="min-w-full divide-y divide-gray-200">
+    <thead class="bg-gray-50">
+      <tr>
+        <th
+          scope="col"
+          class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+        >
+          Usuario / CI
+        </th>
+        <th
+          scope="col"
+          class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+        >
+          Nombre Completo
+        </th>
+        <th
+          scope="col"
+          class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+        >
+          Rol Actual
+        </th>
+        <th
+          scope="col"
+          class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
+        >
+          Estado
+        </th>
+        <th scope="col" class="relative px-6 py-3">
+          <span class="sr-only">Acciones</span>
+        </th>
+      </tr>
+    </thead>
+    <tbody class="divide-y divide-gray-200 bg-white">
+      {{ range .Usuarios }}
+      <tr>
+        <td class="px-6 py-4 whitespace-nowrap">
+          <div class="flex items-center">
+            <div class="flex-shrink-0 h-10 w-10">
+              <span
+                class="inline-flex items-center justify-center h-10 w-10 rounded-full bg-gray-500"
+              >
+                <span class="text-sm font-medium leading-none text-white"
+                  >{{ printf "%.1s" .Username }}</span
+                >
+              </span>
+            </div>
+            <div class="ml-4">
+              <div class="text-sm font-medium text-gray-900">
+                {{ .Username }}
+              </div>
+              <div class="text-sm text-gray-500">{{ .CI }}</div>
+            </div>
+          </div>
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap">
+          <div class="text-sm text-gray-900">{{ .GetNombreCompleto }}</div>
+          <div class="text-sm text-gray-500">
+            {{ if .Email }}{{ .Email }}{{ else }}-{{ end }}
+          </div>
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap">
+          {{ if .Rol }}
+          <span
+            class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800"
+          >
+            {{ .Rol.Codigo }}
+          </span>
+          {{ else }}
+          <span
+            class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800"
+          >
+            Sin Rol
+          </span>
+          {{ end }}
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+          Sincronizado
+        </td>
+        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+          <button
+            class="text-senado-primary hover:text-senado-900 font-bold"
+            hx-get="/usuarios/{{ .ID }}/editar"
+            hx-target="#modal-container"
+            @click="modalOpen = true"
+          >
+            Editar Rol
+          </button>
+        </td>
+      </tr>
+      {{ end }}
+    </tbody>
+  </table>
+</div>
+{{ end }}

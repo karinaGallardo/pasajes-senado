@@ -4,8 +4,9 @@ import "time"
 
 type Descargo struct {
 	BaseModel
-	SolicitudID string `gorm:"not null;size:36;uniqueIndex"`
-	UsuarioID   string `gorm:"size:24;not null"`
+	SolicitudID string     `gorm:"not null;size:36;uniqueIndex"`
+	Solicitud   *Solicitud `gorm:"foreignKey:SolicitudID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
+	UsuarioID   string     `gorm:"size:24;not null"`
 
 	FechaPresentacion  time.Time `gorm:"not null"`
 	InformeActividades string    `gorm:"type:text"`

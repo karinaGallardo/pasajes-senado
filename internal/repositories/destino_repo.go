@@ -25,7 +25,7 @@ func (r *DestinoRepository) SeedDefaults() error {
 	var count int64
 	configs.DB.Model(&models.Ciudad{}).Count(&count)
 	if count > 0 {
-		return nil // Ya existen datos
+		return nil
 	}
 
 	defaults := []models.Ciudad{

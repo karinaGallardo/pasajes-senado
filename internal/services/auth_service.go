@@ -67,7 +67,7 @@ func (s *AuthService) fetchUserProfile(ci string) (bson.M, error) {
 }
 
 func (s *AuthService) syncUserToPostgres(authUser, profile bson.M, username string) (*models.Usuario, error) {
-	user, err := s.getOrInitUser(username, authUser)
+	user, err := s.getOrInitUser(username, authUser, profile)
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +77,7 @@ func (s *AuthService) syncUserToPostgres(authUser, profile bson.M, username stri
 	if err := s.resolveGender(user, profile); err != nil {
 		return nil, err
 	}
-	if err := s.ensureDefaultRole(user); err != nil {
+	if err := s.ensureDefaultRole(user, profile); err != nil {
 		return nil, err
 	}
 
@@ -91,13 +91,22 @@ func (s *AuthService) syncUserToPostgres(authUser, profile bson.M, username stri
 	return user, nil
 }
 
-func (s *AuthService) getOrInitUser(username string, authUser bson.M) (*models.Usuario, error) {
+func (s *AuthService) getOrInitUser(username string, authUser, profile bson.M) (*models.Usuario, error) {
 	var user models.Usuario
 	err := configs.DB.Preload("Rol").Where("username = ?", username).First(&user).Error
 
 	if err != nil {
-		if idObj, ok := authUser["_id"].(primitive.ObjectID); ok {
-			user.ID = idObj.Hex()
+		idSet := false
+		if profile != nil {
+			if idObj, ok := profile["_id"].(primitive.ObjectID); ok {
+				user.ID = idObj.Hex()
+				idSet = true
+			}
+		}
+		if !idSet {
+			if idObj, ok := authUser["_id"].(primitive.ObjectID); ok {
+				user.ID = idObj.Hex()
+			}
 		}
 		user.Username = username
 	}
@@ -112,6 +121,7 @@ func (s *AuthService) mapProfileToUser(user *models.Usuario, profile bson.M) {
 	user.CI = utils.CleanString(getString(profile, "ci"))
 	user.Phone = utils.CleanString(getString(profile, "phone"))
 	user.Address = utils.CleanString(getString(profile, "address"))
+	user.Tipo = utils.CleanString(getString(profile, "tipo_funcionario"))
 
 	if email := getString(profile, "email"); email != "" {
 		user.Email = utils.CleanString(email)
@@ -132,17 +142,23 @@ func (s *AuthService) resolveGender(user *models.Usuario, profile bson.M) error 
 	return nil
 }
 
-func (s *AuthService) ensureDefaultRole(user *models.Usuario) error {
+func (s *AuthService) ensureDefaultRole(user *models.Usuario, profile bson.M) error {
 	if user.RolID != nil {
 		return nil
 	}
 
-	var rolDefault models.Rol
-	if err := configs.DB.Where("codigo = ?", "FUNCIONARIO").First(&rolDefault).Error; err != nil {
+	targetRole := "FUNCIONARIO"
+
+	if tipo := getString(profile, "tipo_funcionario"); tipo == "SENADOR_TITULAR" || tipo == "SENADOR_SUPLENTE" {
+		targetRole = "SENADOR"
+	}
+
+	var rol models.Rol
+	if err := configs.DB.Where("codigo = ?", targetRole).First(&rol).Error; err != nil {
 		return nil
 	}
-	user.RolID = &rolDefault.Codigo
-	user.Rol = &rolDefault
+	user.RolID = &rol.Codigo
+	user.Rol = &rol
 	return nil
 }
 

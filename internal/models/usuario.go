@@ -22,6 +22,8 @@ type Usuario struct {
 	GeneroID *string `gorm:"size:36;index"`
 	Genero   *Genero `gorm:"foreignKey:GeneroID"`
 
+	Tipo string `gorm:"size:50;index;default:'FUNCIONARIO'"`
+
 	RolID *string `gorm:"size:36;index"`
 	Rol   *Rol    `gorm:"foreignKey:RolID"`
 }

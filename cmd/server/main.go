@@ -39,6 +39,15 @@ func main() {
 			log.Fatalf("Error en migración: %v", err)
 		}
 
+		roles := []models.Rol{
+			{Codigo: "ADMIN", Nombre: "Administrador del Sistema"},
+			{Codigo: "TECNICO", Nombre: "Técnico de Sistema"},
+			{Codigo: "USUARIO", Nombre: "Usuario Estándar"},
+		}
+		for _, r := range roles {
+			configs.DB.FirstOrCreate(&r, models.Rol{Codigo: r.Codigo})
+		}
+
 		fmt.Println("¡Migraciones completadas!")
 		os.Exit(0)
 	}
