@@ -1,0 +1,127 @@
+{{ define "auth/profile.html" }} {{ template "layout_start" . }}
+
+<div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+  <div class="md:flex md:items-center md:justify-between mb-6">
+    <div class="flex-1 min-w-0">
+      <h2
+        class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate"
+      >
+        Mi Perfil
+      </h2>
+    </div>
+  </div>
+
+  <div class="bg-white shadow overflow-hidden sm:rounded-lg">
+    <div class="p-6 space-y-8">
+      <!-- Información Básica -->
+      <div>
+        <h3 class="text-lg leading-6 font-medium text-gray-900">
+          Información de Usuario
+        </h3>
+        <p class="mt-1 text-sm text-gray-500">
+          Datos registrados en el sistema de RRHH.
+        </p>
+
+        <div class="mt-4 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+          <div class="sm:col-span-3">
+            <label class="block text-sm font-medium text-gray-500"
+              >Nombre Completo</label
+            >
+            <div
+              class="mt-1 text-sm text-gray-900 font-bold border-b border-gray-100 pb-1"
+            >
+              {{ .User.GetNombreCompleto }}
+            </div>
+          </div>
+          <div class="sm:col-span-3">
+            <label class="block text-sm font-medium text-gray-500"
+              >Cargo / Rol</label
+            >
+            <div
+              class="mt-1 text-sm text-gray-900 font-bold border-b border-gray-100 pb-1"
+            >
+              {{ if .User.Rol }}{{ .User.Rol.Nombre }}{{ else }} - {{ end }}
+            </div>
+          </div>
+          <div class="sm:col-span-3">
+            <label class="block text-sm font-medium text-gray-500">C.I.</label>
+            <div
+              class="mt-1 text-sm text-gray-900 border-b border-gray-100 pb-1"
+            >
+              {{ .User.CI }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="border-t border-gray-200 pt-8">
+        <h3 class="text-lg leading-6 font-medium text-gray-900">
+          Configuración de Viajes
+        </h3>
+        <p class="mt-1 text-sm text-gray-500">
+          Configuración utilizada para sus solicitudes.
+        </p>
+
+        <div
+          class="mt-4 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6 bg-gray-50 p-4 rounded-md border border-gray-200"
+        >
+          <div class="sm:col-span-4">
+            <label class="block text-sm font-bold text-gray-700"
+              >Lugar de Origen Habitual</label
+            >
+
+            <div class="mt-1 text-base text-gray-900 font-medium">
+              {{ $origen := .User.GetOrigenCode }} {{ if ne $origen "" }} {{
+              $origen }} {{ else }}
+              <span class="text-red-600 font-bold flex items-center">
+                <svg
+                  class="w-4 h-4 mr-1"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                  ></path>
+                </svg>
+                No Configurado
+              </span>
+              {{ end }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="border-t border-gray-200 pt-8">
+        <h3 class="text-lg leading-6 font-medium text-gray-900">Contacto</h3>
+        <div class="mt-4 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+          <div class="sm:col-span-3">
+            <label class="block text-sm font-medium text-gray-700"
+              >Correo Electrónico</label
+            >
+            <div
+              class="mt-1 p-2 bg-gray-50 rounded border border-gray-200 text-gray-700"
+            >
+              {{ if .User.Email }}{{ .User.Email }}{{ else }}-{{ end }}
+            </div>
+          </div>
+          <div class="sm:col-span-3">
+            <label class="block text-sm font-medium text-gray-700"
+              >Teléfono / Celular</label
+            >
+            <div
+              class="mt-1 p-2 bg-gray-50 rounded border border-gray-200 text-gray-700"
+            >
+              {{ if .User.Phone }}{{ .User.Phone }}{{ else }}-{{ end }}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{ template "layout_end" . }} {{ end }}

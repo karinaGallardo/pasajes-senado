@@ -8,14 +8,16 @@ import (
 )
 
 type UsuarioController struct {
-	userService *services.UsuarioService
-	rolService  *services.RolService
+	userService   *services.UsuarioService
+	rolService    *services.RolService
+	ciudadService *services.CiudadService
 }
 
 func NewUsuarioController() *UsuarioController {
 	return &UsuarioController{
-		userService: services.NewUsuarioService(),
-		rolService:  services.NewRolService(),
+		userService:   services.NewUsuarioService(),
+		rolService:    services.NewRolService(),
+		ciudadService: services.NewCiudadService(),
 	}
 }
 
@@ -47,19 +49,37 @@ func (ctrl *UsuarioController) Edit(c *gin.Context) {
 		return
 	}
 	roles, _ := ctrl.rolService.GetAll()
+	destinos, _ := ctrl.ciudadService.GetAll()
 
 	c.HTML(http.StatusOK, "usuarios/edit_modal", gin.H{
-		"Usuario": usuario,
-		"Roles":   roles,
+		"Usuario":  usuario,
+		"Roles":    roles,
+		"Destinos": destinos,
 	})
 }
 
 func (ctrl *UsuarioController) Update(c *gin.Context) {
 	id := c.Param("id")
-	rolCodigo := c.PostForm("rol_id")
+	usuario, err := ctrl.userService.GetByID(id)
+	if err != nil {
+		c.String(http.StatusNotFound, "Usuario no encontrado")
+		return
+	}
 
-	if err := ctrl.userService.UpdateRol(id, rolCodigo); err != nil {
-		c.String(http.StatusInternalServerError, "Error actualizando rol")
+	rolID := c.PostForm("rol_id")
+	if rolID != "" {
+		usuario.RolID = &rolID
+	}
+
+	origen := c.PostForm("origen")
+	if origen != "" {
+		usuario.OrigenCode = &origen
+	} else {
+		usuario.OrigenCode = nil
+	}
+
+	if err := ctrl.userService.Update(usuario); err != nil {
+		c.String(http.StatusInternalServerError, "Error actualizando usuario")
 		return
 	}
 

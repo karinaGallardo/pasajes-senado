@@ -5,20 +5,59 @@ import (
 	"log"
 	"sistema-pasajes/internal/configs"
 	"sistema-pasajes/internal/models"
-	"sistema-pasajes/internal/repositories"
 )
 
 func main() {
 	configs.ConnectDB()
 
-	ciudadRepo := repositories.NewCiudadRepository()
-	if err := ciudadRepo.SeedDefaults(); err != nil {
-		log.Printf("Error seeding ciudades: %v", err)
-	} else {
-		fmt.Println("Ciudades inicializadas.")
-	}
-
+	seedCiudades()
 	seedRolesAndPermissions()
+	seedCatalogosViaje()
+}
+
+func seedCatalogosViaje() {
+	fmt.Println("Sincronizando Catálogos de Viaje...")
+
+	ambitoNac := models.AmbitoViaje{Codigo: "NACIONAL", Nombre: "Nacional"}
+	ambitoInt := models.AmbitoViaje{Codigo: "INTERNACIONAL", Nombre: "Internacional"}
+	configs.DB.FirstOrCreate(&ambitoNac, models.AmbitoViaje{Codigo: "NACIONAL"})
+	configs.DB.FirstOrCreate(&ambitoInt, models.AmbitoViaje{Codigo: "INTERNACIONAL"})
+
+	conceptoDer := models.ConceptoViaje{Codigo: "DERECHO", Nombre: "Pasaje por Derecho"}
+	conceptoOfi := models.ConceptoViaje{Codigo: "OFICIAL", Nombre: "Misión Oficial"}
+	configs.DB.FirstOrCreate(&conceptoDer, models.ConceptoViaje{Codigo: "DERECHO"})
+	configs.DB.FirstOrCreate(&conceptoOfi, models.ConceptoViaje{Codigo: "OFICIAL"})
+
+	tipoCupo := models.TipoSolicitud{
+		Codigo:          "USO_CUPO",
+		Nombre:          "Uso de Cupo Mensual",
+		ConceptoViajeID: conceptoDer.ID,
+	}
+	configs.DB.FirstOrCreate(&tipoCupo, models.TipoSolicitud{Codigo: "USO_CUPO"})
+
+	configs.DB.Model(&tipoCupo).Association("Ambitos").Append(&ambitoNac)
+
+	tipoComision := models.TipoSolicitud{
+		Codigo:          "COMISION",
+		Nombre:          "Comisión Oficial",
+		ConceptoViajeID: conceptoOfi.ID,
+	}
+	configs.DB.FirstOrCreate(&tipoComision, models.TipoSolicitud{Codigo: "COMISION"})
+	configs.DB.Model(&tipoComision).Association("Ambitos").Append(&ambitoNac, &ambitoInt)
+	tipoInvitacion := models.TipoSolicitud{
+		Codigo:          "INVITACION",
+		Nombre:          "Invitación Institucional",
+		ConceptoViajeID: conceptoOfi.ID,
+	}
+	configs.DB.FirstOrCreate(&tipoInvitacion, models.TipoSolicitud{Codigo: "INVITACION"})
+	configs.DB.Model(&tipoInvitacion).Association("Ambitos").Append(&ambitoNac, &ambitoInt)
+
+	itinIdaVuelta := models.TipoItinerario{Codigo: "IDA_VUELTA", Nombre: "Ida y Vuelta"}
+	itinSoloIda := models.TipoItinerario{Codigo: "SOLO_IDA", Nombre: "Solo Ida"}
+	configs.DB.FirstOrCreate(&itinIdaVuelta, models.TipoItinerario{Codigo: "IDA_VUELTA"})
+	configs.DB.FirstOrCreate(&itinSoloIda, models.TipoItinerario{Codigo: "SOLO_IDA"})
+
+	fmt.Println("Catálogos sincronizados.")
 }
 
 func seedRolesAndPermissions() {
@@ -97,4 +136,24 @@ func assignPermsToRole(rol *models.Rol, perms []*models.Permiso) {
 		return
 	}
 	configs.DB.Model(rol).Association("Permisos").Replace(perms)
+}
+
+func seedCiudades() {
+	fmt.Println("Sincronizando Ciudades...")
+	defaults := []models.Ciudad{
+		{Nombre: "La Paz - El Alto", Code: "LPB"},
+		{Nombre: "Santa Cruz - Viru Viu", Code: "VVI"},
+		{Nombre: "Cochabamba - J. Wilstermann", Code: "CBB"},
+		{Nombre: "Sucre - Alcantarí", Code: "SRE"},
+		{Nombre: "Tarija - Cap. Oriel Lea Plaza", Code: "TJA"},
+		{Nombre: "Trinidad - Tte. Jorge Henrich", Code: "TDD"},
+		{Nombre: "Cobija - Cap. Aníbal Arab", Code: "CIJ"},
+		{Nombre: "Oruro - Juan Mendoza", Code: "ORU"},
+		{Nombre: "Potosí - Cap. Nicolás Rojas", Code: "POI"},
+		{Nombre: "Uyuni - Joya Andina", Code: "UYU"},
+	}
+
+	for _, d := range defaults {
+		configs.DB.Where("code = ?", d.Code).FirstOrCreate(&d)
+	}
 }

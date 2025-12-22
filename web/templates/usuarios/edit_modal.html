@@ -1,14 +1,14 @@
 {{ define "usuarios/edit_modal" }}
-<div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+<div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4" x-init="modalOpen = true">
   <div class="sm:flex sm:items-start">
     <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-      <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-        Editar Rol de Usuario
+      <h3 class="text-lg leading-6 font-bold text-gray-900" id="modal-title">
+        Editar Usuario : {{ .Usuario.GetNombreCompleto }}
       </h3>
       <div class="mt-2">
         <p class="text-sm text-gray-500 mb-4">
-          Estás editando el rol para
-          <strong>{{ .Usuario.GetNombreCompleto }}</strong> ({{ .Usuario.CI }}).
+          Edite el Rol y el Lugar de Origen para
+          <strong>{{ .Usuario.Username }}</strong>.
         </p>
 
         <form
@@ -29,19 +29,54 @@
               name="rol_id"
               class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-senado-primary focus:border-senado-primary sm:text-sm"
             >
-              {{ $currentRol := .Usuario.RolID }} {{ range .Roles }}
+              {{ range .Roles }}
               <option
                 value="{{ .Codigo }}"
                 {{
                 if
+                $.Usuario.Rol
+                }}
+                {{
+                if
                 eq
                 .Codigo
-                $currentRol
+                $.Usuario.Rol.Codigo
                 }}selected{{
+                end
+                }}
+                {{
                 end
                 }}
               >
                 {{ .Nombre }}
+              </option>
+              {{ end }}
+            </select>
+          </div>
+
+          <div class="mb-4">
+            <label for="origen" class="block text-sm font-medium text-gray-700"
+              >Lugar de Origen</label
+            >
+            <select
+              id="origen"
+              name="origen"
+              class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-senado-primary focus:border-senado-primary sm:text-sm"
+            >
+              <option value="">-- No asignado --</option>
+              {{ range .Destinos }}
+              <option
+                value="{{ .Code }}"
+                {{
+                if
+                eq
+                .Code
+                $.Usuario.GetOrigenCode
+                }}selected{{
+                end
+                }}
+              >
+                {{ .Nombre }} ({{ .Code }})
               </option>
               {{ end }}
             </select>

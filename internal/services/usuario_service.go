@@ -30,3 +30,7 @@ func (s *UsuarioService) GetByID(id string) (*models.Usuario, error) {
 func (s *UsuarioService) UpdateRol(id string, rolCodigo string) error {
 	return s.repo.UpdateRol(id, rolCodigo)
 }
+
+func (s *UsuarioService) Update(usuario *models.Usuario) error {
+	return s.repo.Update(usuario)
+}

@@ -1,6 +1,6 @@
 {{ define "usuarios/index.html" }} {{ template "layout_start" . }}
 
-<div class="space-y-6">
+<div class="space-y-6" x-data="{ modalOpen: false }">
   <!-- Header -->
   <div class="flex items-center justify-between">
     <div>
@@ -82,7 +82,11 @@
   </div>
 
   <!-- Table Container -->
-  <div id="usuarios-table" hx-get="/usuarios/table" hx-trigger="load">
+  <div
+    id="usuarios-table"
+    hx-get="/usuarios/table"
+    hx-trigger="load, reloadTable from:body"
+  >
     <!-- Initial data loaded directly if passed, otherwise HTMX loads it -->
     {{ if .Usuarios }} {{ template "usuarios/table" . }} {{ else }}
     <div class="text-center py-10">
@@ -113,7 +117,6 @@
 
   <!-- Modal Container (Placeholder for Alpine/HTMX modals) -->
   <div
-    x-data="{ modalOpen: false }"
     x-show="modalOpen"
     class="fixed inset-0 z-50 overflow-y-auto"
     style="display: none"

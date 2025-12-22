@@ -24,6 +24,9 @@ type Usuario struct {
 
 	Tipo string `gorm:"size:50;index;default:'FUNCIONARIO'"`
 
+	OrigenCode *string `gorm:"size:4;default:null"`
+	Origen     *Ciudad `gorm:"foreignKey:OrigenCode"`
+
 	RolID *string `gorm:"size:36;index"`
 	Rol   *Rol    `gorm:"foreignKey:RolID"`
 }
@@ -37,6 +40,13 @@ func (u *Usuario) GetNombreCompleto() string {
 		}
 	}
 	return strings.Join(clean, " ")
+}
+
+func (u *Usuario) GetOrigenCode() string {
+	if u.OrigenCode == nil {
+		return ""
+	}
+	return *u.OrigenCode
 }
 
 func (Usuario) TableName() string {

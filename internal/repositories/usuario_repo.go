@@ -41,3 +41,7 @@ func (r *UsuarioRepository) FindByID(id string) (*models.Usuario, error) {
 func (r *UsuarioRepository) UpdateRol(id string, rolCodigo string) error {
 	return configs.DB.Model(&models.Usuario{}).Where("id = ?", id).Update("rol_id", rolCodigo).Error
 }
+
+func (r *UsuarioRepository) Update(usuario *models.Usuario) error {
+	return configs.DB.Save(usuario).Error
+}

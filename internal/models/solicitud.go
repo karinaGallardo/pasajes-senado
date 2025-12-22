@@ -7,7 +7,14 @@ type Solicitud struct {
 	UsuarioID string  `gorm:"size:24;not null"`
 	Usuario   Usuario `gorm:"constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
 
-	TipoViaje string `gorm:"size:50;not null"`
+	TipoSolicitudID string         `gorm:"size:36;not null;index"`
+	TipoSolicitud   *TipoSolicitud `gorm:"foreignKey:TipoSolicitudID"`
+
+	AmbitoViajeID string       `gorm:"size:36;not null;index"`
+	AmbitoViaje   *AmbitoViaje `gorm:"foreignKey:AmbitoViajeID"`
+
+	TipoItinerarioID string          `gorm:"size:36;not null;index"`
+	TipoItinerario   *TipoItinerario `gorm:"foreignKey:TipoItinerarioID"`
 
 	OrigenCode string `gorm:"size:4;not null"`
 	Origen     Ciudad `gorm:"foreignKey:OrigenCode"`

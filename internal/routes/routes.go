@@ -12,6 +12,7 @@ func SetupRoutes(r *gin.Engine) {
 	solicitudCtrl := controllers.NewSolicitudController()
 	pasajeCtrl := controllers.NewPasajeController()
 	dashboardCtrl := controllers.NewDashboardController()
+	perfilCtrl := controllers.NewPerfilController()
 
 	r.GET("/auth/login", authCtrl.ShowLogin)
 	r.POST("/auth/login", authCtrl.Login)
@@ -25,10 +26,13 @@ func SetupRoutes(r *gin.Engine) {
 		})
 		protected.GET("/dashboard", dashboardCtrl.Index)
 
+		protected.GET("/perfil", perfilCtrl.Show)
+
 		protected.GET("/solicitudes", solicitudCtrl.Index)
 		protected.GET("/solicitudes/nueva", solicitudCtrl.Create)
 		protected.POST("/solicitudes", solicitudCtrl.Store)
 		protected.GET("/solicitudes/:id", solicitudCtrl.Show)
+		protected.GET("/solicitudes/check-cupo", solicitudCtrl.CheckCupo)
 
 		protected.POST("/solicitudes/:id/pasajes", pasajeCtrl.Store)
 
@@ -37,6 +41,10 @@ func SetupRoutes(r *gin.Engine) {
 		protected.GET("/descargos/nuevo", descargoCtrl.Create)
 		protected.POST("/descargos", descargoCtrl.Store)
 		protected.GET("/descargos/:id", descargoCtrl.Show)
+
+		catalogoCtrl := controllers.NewCatalogoController()
+		protected.GET("/catalogos/tipos", catalogoCtrl.GetTipos)
+		protected.GET("/catalogos/ambitos", catalogoCtrl.GetAmbitos)
 
 		adminOnly := protected.Group("/")
 		adminOnly.Use(middleware.RequireRole("ADMIN"))

@@ -33,6 +33,10 @@ func main() {
 			&models.Pasaje{},
 			&models.Descargo{},
 			&models.Ciudad{},
+			&models.ConceptoViaje{},
+			&models.TipoSolicitud{},
+			&models.AmbitoViaje{},
+			&models.TipoItinerario{},
 			&models.Genero{},
 		)
 		if err != nil {
