@@ -33,6 +33,8 @@ func SetupRoutes(r *gin.Engine) {
 		protected.POST("/solicitudes", solicitudCtrl.Store)
 		protected.GET("/solicitudes/:id", solicitudCtrl.Show)
 		protected.GET("/solicitudes/check-cupo", solicitudCtrl.CheckCupo)
+		protected.POST("/solicitudes/:id/aprobar", solicitudCtrl.Approve)
+		protected.POST("/solicitudes/:id/rechazar", solicitudCtrl.Reject)
 
 		protected.POST("/solicitudes/:id/pasajes", pasajeCtrl.Store)
 

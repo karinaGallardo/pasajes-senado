@@ -161,7 +161,7 @@ func (ctrl *SolicitudController) Show(c *gin.Context) {
 	solicitud, err := ctrl.service.FindByID(id)
 
 	if err != nil {
-		c.Redirect(http.StatusFound, "/solicitudes")
+		c.String(http.StatusInternalServerError, "Error retrieving solicitud: "+err.Error())
 		return
 	}
 
@@ -170,12 +170,43 @@ func (ctrl *SolicitudController) Show(c *gin.Context) {
 	step2 := st == "APROBADO" || st == "FINALIZADO"
 	step3 := st == "FINALIZADO"
 
+	mermaidGraph := "graph TD; A[Registro Solicitud] --> B{¿Autorización?}; B -- Aprobado --> C[Gestión Pasajes]; C --> D[Viaje / Finalizado]; B -- Rechazado --> E[Solicitud Rechazada];\n"
+	mermaidGraph += "classDef default fill:#fff,stroke:#333,stroke-width:1px; classDef active fill:#03738C,stroke:#03738C,stroke-width:2px,color:#fff;\n"
+
+	switch st {
+	case "SOLICITADO":
+		mermaidGraph += "class A active;"
+	case "APROBADO":
+		mermaidGraph += "class C active;"
+	case "FINALIZADO":
+		mermaidGraph += "class D active;"
+	case "RECHAZADO":
+		mermaidGraph += "class E active;"
+	}
+
 	c.HTML(http.StatusOK, "solicitud/show.html", gin.H{
-		"Title":     "Detalle Solicitud #" + id,
-		"Solicitud": solicitud,
-		"User":      c.MustGet("User"),
-		"Step1":     step1,
-		"Step2":     step2,
-		"Step3":     step3,
+		"Title":        "Detalle Solicitud #" + id,
+		"Solicitud":    solicitud,
+		"User":         c.MustGet("User"),
+		"Step1":        step1,
+		"Step2":        step2,
+		"Step3":        step3,
+		"MermaidGraph": mermaidGraph,
 	})
+}
+
+func (ctrl *SolicitudController) Approve(c *gin.Context) {
+	id := c.Param("id")
+	if err := ctrl.service.Approve(id); err != nil {
+		fmt.Printf("Error approving solicitud: %v\n", err)
+	}
+	c.Redirect(http.StatusFound, "/solicitudes/"+id)
+}
+
+func (ctrl *SolicitudController) Reject(c *gin.Context) {
+	id := c.Param("id")
+	if err := ctrl.service.Reject(id); err != nil {
+		fmt.Printf("Error rejecting solicitud: %v\n", err)
+	}
+	c.Redirect(http.StatusFound, "/solicitudes/"+id)
 }

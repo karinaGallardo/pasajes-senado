@@ -1,0 +1,10 @@
+{
+    "editor.wordWrap": "off",
+    "[html]": {
+        "editor.defaultFormatter": "esbenp.prettier-vscode",
+        "editor.wordWrap": "off",
+        "editor.formatOnSave": true
+    },
+    "prettier.printWidth": 150,
+    "html.format.wrapLineLength": 0
+}

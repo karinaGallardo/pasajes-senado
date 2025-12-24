@@ -43,3 +43,21 @@ func (s *SolicitudService) FindAll() ([]models.Solicitud, error) {
 func (s *SolicitudService) FindByID(id string) (*models.Solicitud, error) {
 	return s.repo.FindByID(id)
 }
+
+func (s *SolicitudService) Approve(id string) error {
+	solicitud, err := s.repo.FindByID(id)
+	if err != nil {
+		return err
+	}
+	solicitud.Estado = "APROBADO"
+	return s.repo.Update(solicitud)
+}
+
+func (s *SolicitudService) Reject(id string) error {
+	solicitud, err := s.repo.FindByID(id)
+	if err != nil {
+		return err
+	}
+	solicitud.Estado = "RECHAZADO"
+	return s.repo.Update(solicitud)
+}

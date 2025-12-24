@@ -1,17 +1,35 @@
 {{ define "solicitud/show.html" }} {{ template "layout_start" . }}
+<script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+<script>
+  mermaid.initialize({ startOnLoad: false });
+  document.addEventListener("DOMContentLoaded", async function () {
+    const loader = document.getElementById("mermaid-loader");
+    const mermaidEl = document.querySelector(".mermaid");
+
+    if (mermaidEl) {
+      try {
+        await mermaid.run({
+          nodes: [mermaidEl],
+        });
+      } catch (e) {
+        console.error("Mermaid render error:", e);
+      }
+
+      if (loader) loader.style.display = "none";
+      mermaidEl.classList.remove("opacity-0");
+      mermaidEl.classList.add("opacity-100");
+    }
+  });
+</script>
 
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
   <!-- Header -->
   <div class="mb-6 flex items-center justify-between">
     <div>
-      <h2 class="text-3xl font-bold text-gray-900">
-        Solicitud #{{ .Solicitud.ID }}
-      </h2>
+      <h2 class="text-3xl font-bold text-gray-900">Solicitud #{{ .Solicitud.ID }}</h2>
       <p class="text-sm text-gray-500">
         Creado el {{ .Solicitud.CreatedAt.Format "02 Jan 2006" }} por
-        <span class="font-medium text-gray-700"
-          >{{ .Solicitud.Usuario.Username }}</span
-        >
+        <span class="font-medium text-gray-700">{{ .Solicitud.Usuario.Username }}</span>
       </p>
     </div>
     <div class="flex space-x-3">
@@ -41,13 +59,7 @@
             <div
               class="rounded-full transition duration-500 ease-in-out h-10 w-10 py-3 border-2 {{ if .Step1 }}bg-senado-primary border-senado-primary text-white{{ else }}border-gray-300 text-gray-500{{ end }} flex items-center justify-center"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="w-6 h-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path
                   stroke-linecap="round"
                   stroke-linejoin="round"
@@ -63,28 +75,15 @@
             </div>
           </div>
 
-          <div
-            class="flex-auto border-t-2 transition duration-500 ease-in-out {{ if .Step2 }}border-senado-primary{{ else }}border-gray-300{{ end }}"
-          ></div>
+          <div class="flex-auto border-t-2 transition duration-500 ease-in-out {{ if .Step2 }}border-senado-primary{{ else }}border-gray-300{{ end }}"></div>
 
           <!-- Step 2: Aprobado -->
           <div class="flex items-center relative">
             <div
               class="rounded-full transition duration-500 ease-in-out h-10 w-10 py-3 border-2 {{ if .Step2 }}bg-senado-primary border-senado-primary text-white{{ else }}border-gray-300 text-gray-500{{ end }} flex items-center justify-center"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="w-6 h-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
             <div
@@ -94,22 +93,14 @@
             </div>
           </div>
 
-          <div
-            class="flex-auto border-t-2 transition duration-500 ease-in-out {{ if .Step3 }}border-senado-primary{{ else }}border-gray-300{{ end }}"
-          ></div>
+          <div class="flex-auto border-t-2 transition duration-500 ease-in-out {{ if .Step3 }}border-senado-primary{{ else }}border-gray-300{{ end }}"></div>
 
           <!-- Step 3: Finalizado -->
           <div class="flex items-center relative">
             <div
               class="rounded-full transition duration-500 ease-in-out h-10 w-10 py-3 border-2 {{ if .Step3 }}bg-senado-primary border-senado-primary text-white{{ else }}border-gray-300 text-gray-500{{ end }} flex items-center justify-center"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="w-6 h-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path
                   stroke-linecap="round"
                   stroke-linejoin="round"
@@ -128,26 +119,35 @@
       </div>
 
       <!-- Status Card -->
-      <div
-        class="bg-white shadow rounded-lg p-6 border-l-4 {{ if eq .Solicitud.Estado `SOLICITADO` }}border-yellow-400{{ else }}border-green-500{{ end }}"
-      >
+      <div class="bg-white shadow rounded-lg p-6 border-l-4 {{ if eq .Solicitud.Estado `SOLICITADO` }}border-yellow-400{{ else }}border-green-500{{ end }}">
         <div class="flex items-center justify-between">
           <div>
-            <p
-              class="text-sm font-medium text-gray-500 uppercase tracking-wider"
-            >
-              Estado Actual
-            </p>
-            <h3 class="text-2xl font-bold text-gray-900 mt-1">
-              {{ .Solicitud.Estado }}
-            </h3>
+            <p class="text-sm font-medium text-gray-500 uppercase tracking-wider">Estado Actual</p>
+            <h3 class="text-2xl font-bold text-gray-900 mt-1">{{ .Solicitud.Estado }}</h3>
           </div>
 
           <div class="flex space-x-2">
             <!-- Workflow Actions -->
-            {{ if eq .Solicitud.Estado `SOLICITADO` }}
-            <!-- Botones de aprobación -->
-            {{ end }}
+            {{ if eq .Solicitud.Estado `SOLICITADO` }} {{ if and .User.Rol (or (eq .User.Rol.Codigo "ADMIN") (eq .User.Rol.Codigo "TECNICO")) }}
+            <div class="flex space-x-2">
+              <form action="/solicitudes/{{ .Solicitud.ID }}/aprobar" method="POST" class="inline">
+                <button
+                  type="submit"
+                  class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none"
+                >
+                  Aprobar
+                </button>
+              </form>
+              <form action="/solicitudes/{{ .Solicitud.ID }}/rechazar" method="POST" class="inline">
+                <button
+                  type="submit"
+                  class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none"
+                >
+                  Rechazar
+                </button>
+              </form>
+            </div>
+            {{ end }} {{ end }}
 
             <a
               href="/descargos/nuevo?solicitud_id={{ .Solicitud.ID }}"
@@ -160,37 +160,27 @@
       </div>
 
       <!-- Pasajes Asignados -->
-      <div
-        class="bg-white shadow sm:rounded-lg overflow-hidden border border-gray-200"
-        x-data="{ openModal: false }"
-      >
+      <div class="bg-white shadow sm:rounded-lg overflow-hidden border border-gray-200" x-data="{ openModal: false }">
         <div class="px-4 py-5 sm:px-6 flex justify-between items-center">
-          <h3 class="text-lg leading-6 font-medium text-gray-900">
-            Pasajes Asignados
-          </h3>
+          <h3 class="text-lg leading-6 font-medium text-gray-900">Pasajes Asignados</h3>
 
+          {{ if and .User.Rol (or (eq .User.Rol.Codigo "ADMIN") (eq .User.Rol.Codigo "TECNICO")) }}
           <button
             @click="openModal = true"
             class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-senado-secondary hover:bg-senado-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-senado-secondary"
           >
             + Asignar Pasaje
           </button>
+          {{ end }}
         </div>
 
         <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-          <h3
-            class="text-lg leading-6 font-medium text-gray-900 mb-4"
-            id="modal-title"
-          >
-            Asignar Nuevo Pasaje
-          </h3>
+          <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4" id="modal-title">Asignar Nuevo Pasaje</h3>
 
           <form action="/solicitudes/{{ .Solicitud.ID }}/pasajes" method="POST">
             <div class="grid grid-cols-6 gap-6">
               <div class="col-span-6">
-                <label class="block text-sm font-medium text-gray-700"
-                  >Ruta (Origen - Destino)</label
-                >
+                <label class="block text-sm font-medium text-gray-700">Ruta (Origen - Destino)</label>
                 <input
                   type="text"
                   name="ruta"
@@ -201,9 +191,7 @@
               </div>
 
               <div class="col-span-3">
-                <label class="block text-sm font-medium text-gray-700"
-                  >Aerolínea</label
-                >
+                <label class="block text-sm font-medium text-gray-700">Aerolínea</label>
                 <input
                   type="text"
                   name="aerolinea"
@@ -213,9 +201,7 @@
                 />
               </div>
               <div class="col-span-3">
-                <label class="block text-sm font-medium text-gray-700"
-                  >Nº Vuelo</label
-                >
+                <label class="block text-sm font-medium text-gray-700">Nº Vuelo</label>
                 <input
                   type="text"
                   name="numero_vuelo"
@@ -225,9 +211,7 @@
               </div>
 
               <div class="col-span-6">
-                <label class="block text-sm font-medium text-gray-700"
-                  >Fecha y Hora Vuelo</label
-                >
+                <label class="block text-sm font-medium text-gray-700">Fecha y Hora Vuelo</label>
                 <input
                   type="datetime-local"
                   name="fecha_vuelo"
@@ -237,9 +221,7 @@
               </div>
 
               <div class="col-span-3">
-                <label class="block text-sm font-medium text-gray-700"
-                  >Nº Boleto</label
-                >
+                <label class="block text-sm font-medium text-gray-700">Nº Boleto</label>
                 <input
                   type="text"
                   name="numero_boleto"
@@ -249,9 +231,7 @@
               </div>
 
               <div class="col-span-3">
-                <label class="block text-sm font-medium text-gray-700"
-                  >Costo (Bs)</label
-                >
+                <label class="block text-sm font-medium text-gray-700">Costo (Bs)</label>
                 <input
                   type="number"
                   step="0.01"
@@ -262,9 +242,7 @@
               </div>
 
               <div class="col-span-6">
-                <label class="block text-sm font-medium text-gray-700"
-                  >Código Reserva (PNR)</label
-                >
+                <label class="block text-sm font-medium text-gray-700">Código Reserva (PNR)</label>
                 <input
                   type="text"
                   name="codigo_reserva"
@@ -273,9 +251,7 @@
               </div>
             </div>
 
-            <div
-              class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse"
-            >
+            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
               <button
                 type="submit"
                 class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-senado-primary text-base font-medium text-white hover:bg-senado-800 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm"
@@ -298,23 +274,12 @@
     <!-- Right Column: Sidebar -->
     <div class="space-y-6">
       <div class="bg-white shadow rounded-lg p-6 sticky top-6">
-        <h3 class="text-lg font-bold text-gray-900 mb-4 border-b pb-2">
-          Seguimiento de Trámite
-        </h3>
-        <div class="mermaid">
-          graph TD subgraph "Oficina Solic./Senador" A[Solicitud FV-01] -->
-          B[Firma y Sello] end subgraph "Área de Pasajes" B --> C[Verificación]
-          C --> D[Reserva y Emisión] D --> E[Envío Boleto] end subgraph
-          "Beneficiario" E --> F[Realización del Viaje] end classDef default
-          fill:#fff,stroke:#999,stroke-width:2px,color:#999 classDef active
-          fill:#03738C,stroke:#03738C,stroke-width:3px,color:#fff class A,B
-          active {{ if .Step2 }}class C,D,E active{{ end }} {{ if .Step3 }}class
-          F active{{ end }}
+        <div id="mermaid-loader" class="flex flex-col justify-center items-center py-12 space-y-3">
+          <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-senado-primary"></div>
+          <span class="text-sm text-gray-400 font-medium">Renderizando diagrama...</span>
         </div>
-        <p class="text-xs text-gray-500 mt-4 italic">
-          El diagrama se actualiza automáticamente según el estado de la
-          solicitud.
-        </p>
+        <div class="mermaid opacity-0 transition-opacity duration-500 ease-in-out">{{ .MermaidGraph }}</div>
+        <p class="text-xs text-gray-500 mt-4 italic">El diagrama se actualiza automáticamente según el estado de la solicitud.</p>
       </div>
     </div>
   </div>
