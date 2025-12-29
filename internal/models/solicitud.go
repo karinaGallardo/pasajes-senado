@@ -4,6 +4,7 @@ import "time"
 
 type Solicitud struct {
 	BaseModel
+	Codigo    string  `gorm:"size:8;uniqueIndex"`
 	UsuarioID string  `gorm:"size:24;not null"`
 	Usuario   Usuario `gorm:"constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
 
@@ -24,6 +25,8 @@ type Solicitud struct {
 	FechaSalida  time.Time `gorm:"not null"`
 	FechaRetorno time.Time `gorm:"not null"`
 	Motivo       string    `gorm:"type:text"`
+
+	AerolineaSugerida string `gorm:"size:100"`
 
 	Estado string `gorm:"size:50;default:'SOLICITADO';index"`
 

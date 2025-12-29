@@ -3,14 +3,8 @@
 <div class="max-w-4xl mx-auto">
   <div class="md:flex md:items-center md:justify-between mb-6">
     <div class="flex-1 min-w-0">
-      <h2
-        class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate"
-      >
-        Nueva Solicitud de Pasaje
-      </h2>
-      <p class="text-sm text-gray-500 mt-1">
-        Formulario de registro inicial (FV-01)
-      </p>
+      <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">Nueva Solicitud de Pasaje</h2>
+      <p class="text-sm text-gray-500 mt-1">Formulario de registro inicial (FV-01)</p>
     </div>
     <div class="mt-4 flex md:mt-0 md:ml-4">
       <a
@@ -22,24 +16,38 @@
     </div>
   </div>
 
-  <form
-    action="/solicitudes"
-    method="POST"
-    class="bg-white shadow rounded-lg overflow-hidden border border-gray-200"
-  >
+  <form action="/solicitudes" method="POST" class="bg-white shadow rounded-lg overflow-hidden border border-gray-200">
+    <!-- Si estamos creando para otro usuario (como gestor), enviamos el ID -->
+    {{ if ne .User.ID .CurrentUser.ID }}
+    <input type="hidden" name="target_user_id" value="{{ .User.ID }}" />
+    <div class="bg-blue-50 border-l-4 border-blue-400 p-4">
+      <div class="flex">
+        <div class="flex-shrink-0">
+          <svg class="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+            <path
+              fill-rule="evenodd"
+              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+              clip-rule="evenodd"
+            />
+          </svg>
+        </div>
+        <div class="ml-3">
+          <p class="text-sm text-blue-700">
+            Está registrando una solicitud a nombre de:
+            <strong>{{ .User.GetNombreCompleto }}</strong>
+          </p>
+        </div>
+      </div>
+    </div>
+    {{ end }}
+
     <div class="p-6 space-y-6">
       {{ if .Error }}
       <div class="bg-red-50 border-l-4 border-red-400 p-4">
         <div class="flex">
           <div class="flex-shrink-0">
             <!-- Heroicon name: solid/exclamation -->
-            <svg
-              class="h-5 w-5 text-red-400"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-              aria-hidden="true"
-            >
+            <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
               <path
                 fill-rule="evenodd"
                 d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
@@ -57,12 +65,7 @@
         <div class="flex">
           <div class="flex-shrink-0">
             <!-- Icono Alert -->
-            <svg
-              class="h-5 w-5 text-yellow-400"
-              xmlns="http://www.w3.org/2000/svg"
-              viewBox="0 0 20 20"
-              fill="currentColor"
-            >
+            <svg class="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
               <path
                 fill-rule="evenodd"
                 d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
@@ -74,7 +77,8 @@
             <p class="text-sm text-yellow-700 font-bold">{{ .AlertaOrigen }}</p>
             <p class="text-xs text-yellow-600 mt-1">
               Puede configurar su origen en su
-              <a href="/perfil" class="underline">Perfil de Usuario</a>.
+              <a href="/perfil" class="underline">Perfil de Usuario</a>
+              .
             </p>
           </div>
         </div>
@@ -85,11 +89,7 @@
         <!-- Tipo de Viaje -->
         <!-- 1. Concepto de Viaje -->
         <div class="sm:col-span-2">
-          <label
-            for="concepto_id"
-            class="block text-sm font-medium text-gray-700"
-            >Concepto de Viaje</label
-          >
+          <label for="concepto_id" class="block text-sm font-medium text-gray-700">Concepto de Viaje</label>
           <div class="mt-1">
             <select
               id="concepto_id"
@@ -110,11 +110,7 @@
 
         <!-- 2. Tipo de Solicitud (Carga Dinámica) -->
         <div class="sm:col-span-2">
-          <label
-            for="tipo_solicitud_id"
-            class="block text-sm font-medium text-gray-700"
-            >Tipo de Solicitud</label
-          >
+          <label for="tipo_solicitud_id" class="block text-sm font-medium text-gray-700">Tipo de Solicitud</label>
           <div class="mt-1">
             <select
               id="tipo_solicitud_id"
@@ -140,11 +136,7 @@
 
         <!-- 3. Ámbito de Viaje (Carga Dinámica) -->
         <div class="sm:col-span-2">
-          <label
-            for="ambito_viaje_id"
-            class="block text-sm font-medium text-gray-700"
-            >Ámbito</label
-          >
+          <label for="ambito_viaje_id" class="block text-sm font-medium text-gray-700">Ámbito</label>
           <div class="mt-1">
             <select
               id="ambito_viaje_id"
@@ -183,45 +175,53 @@
         >
           <!-- 1. BLOQUE ITINERARIO (Primero) -->
           <div class="sm:col-span-6 border-b border-gray-100 pb-4 mb-4">
-            <label class="block text-sm font-medium text-gray-700 mb-2"
-              >Tipo de Itinerario</label
-            >
-            <div class="flex items-center space-x-6">
-              <label class="inline-flex items-center cursor-pointer">
-                <input
-                  type="radio"
-                  x-model="tipo"
-                  value="IDA_VUELTA"
-                  name="tipo_itinerario"
-                  class="form-radio h-4 w-4 text-senado-secondary focus:ring-senado-secondary border-gray-300"
-                />
-                <span class="ml-2 text-gray-900 font-medium">Ida y Vuelta</span>
-              </label>
-              <label class="inline-flex items-center cursor-pointer">
-                <input
-                  type="radio"
-                  x-model="tipo"
-                  value="SOLO_IDA"
-                  name="tipo_itinerario"
-                  class="form-radio h-4 w-4 text-senado-secondary focus:ring-senado-secondary border-gray-300"
-                />
-                <span class="ml-2 text-gray-900 font-medium">Solo Ida</span>
-              </label>
+            <div class="grid grid-cols-6 gap-6">
+              <div class="col-span-6 sm:col-span-3">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Tipo de Itinerario</label>
+                <div class="flex items-center space-x-6">
+                  <label class="inline-flex items-center cursor-pointer">
+                    <input
+                      type="radio"
+                      x-model="tipo"
+                      value="IDA_VUELTA"
+                      name="tipo_itinerario"
+                      class="form-radio h-4 w-4 text-senado-secondary focus:ring-senado-secondary border-gray-300"
+                    />
+                    <span class="ml-2 text-gray-900 font-medium">Ida y Vuelta</span>
+                  </label>
+                  <label class="inline-flex items-center cursor-pointer">
+                    <input
+                      type="radio"
+                      x-model="tipo"
+                      value="SOLO_IDA"
+                      name="tipo_itinerario"
+                      class="form-radio h-4 w-4 text-senado-secondary focus:ring-senado-secondary border-gray-300"
+                    />
+                    <span class="ml-2 text-gray-900 font-medium">Solo Ida</span>
+                  </label>
+                </div>
+                <p class="text-xs text-gray-500 mt-2" x-show="tipo === 'IDA_VUELTA'">* En pasajes Ida y Vuelta, la ruta se fija automáticamente (Sede <-> Origen).</p>
+              </div>
+
+              <div class="col-span-6 sm:col-span-3">
+                <label for="aerolinea" class="block text-sm font-medium text-gray-700 mb-2">Línea Aérea Sugerida</label>
+                <select
+                  id="aerolinea"
+                  name="aerolinea"
+                  class="shadow-sm focus:ring-senado-secondary focus:border-senado-secondary block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
+                >
+                  <option value="" selected>-- Cualquiera / No preferencia --</option>
+                  {{ range .Aerolineas }}
+                  <option value="{{ . }}">{{ . }}</option>
+                  {{ end }}
+                </select>
+              </div>
             </div>
-            <p
-              class="text-xs text-gray-500 mt-2"
-              x-show="tipo === 'IDA_VUELTA'"
-            >
-              * En pasajes Ida y Vuelta, la ruta se fija automáticamente (Sede
-              <-> Origen).
-            </p>
           </div>
 
           <!-- 2. BLOQUE ORIGEN / DESTINO -->
           <div class="sm:col-span-3">
-            <label for="origen" class="block text-sm font-medium text-gray-700"
-              >Lugar de Origen</label
-            >
+            <label for="origen" class="block text-sm font-medium text-gray-700">Lugar de Origen</label>
             <div class="mt-1">
               <select
                 id="origen"
@@ -232,10 +232,7 @@
                 class="shadow-sm focus:ring-senado-secondary focus:border-senado-secondary block w-full sm:text-sm border-gray-300 rounded-md p-2 border transition-colors"
               >
                 {{ if .User.GetOrigenCode }}
-                <option
-                  value="{{ .User.GetOrigenCode }}"
-                  x-text="userOrigenName + ' (' + userOrigenCode + ')'"
-                ></option>
+                <option value="{{ .User.GetOrigenCode }}" x-text="userOrigenName + ' (' + userOrigenCode + ')'"></option>
                 {{ else }}
                 <option value="" disabled>Configure su perfil...</option>
                 {{ end }} {{ if ne .User.GetOrigenCode "LPB" }}
@@ -246,9 +243,7 @@
           </div>
 
           <div class="sm:col-span-3">
-            <label class="block text-sm font-medium text-gray-700"
-              >Lugar de Destino</label
-            >
+            <label class="block text-sm font-medium text-gray-700">Lugar de Destino</label>
             <div class="mt-1 relative">
               <!-- Input Visual (readonly) que muestra el Nombre -->
               <input
@@ -259,21 +254,10 @@
               />
 
               <!-- Input Hidden (para enviar el código en el POST) -->
-              <input
-                type="hidden"
-                name="destino"
-                :value="origen === 'LPB' ? userOrigenCode : 'LPB'"
-              />
+              <input type="hidden" name="destino" :value="origen === 'LPB' ? userOrigenCode : 'LPB'" />
 
-              <div
-                class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none"
-              >
-                <svg
-                  class="h-4 w-4 text-gray-400"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
+              <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
                     stroke-linecap="round"
                     stroke-linejoin="round"
@@ -283,18 +267,12 @@
                 </svg>
               </div>
             </div>
-            <p class="text-xs text-gray-500 mt-1">
-              El destino se asigna automáticamente según su origen.
-            </p>
+            <p class="text-xs text-gray-500 mt-1">El destino se asigna automáticamente según su origen.</p>
           </div>
 
           <!-- 3. BLOQUE FECHAS -->
           <div class="sm:col-span-3">
-            <label
-              for="fecha_salida"
-              class="block text-sm font-medium text-gray-700"
-              >Fecha y Hora Salida (Aprox)</label
-            >
+            <label for="fecha_salida" class="block text-sm font-medium text-gray-700">Fecha y Hora Salida (Aprox)</label>
             <div class="mt-1">
               <input
                 type="datetime-local"
@@ -306,16 +284,8 @@
             </div>
           </div>
 
-          <div
-            class="sm:col-span-3"
-            x-show="tipo === 'IDA_VUELTA'"
-            x-transition
-          >
-            <label
-              for="fecha_retorno"
-              class="block text-sm font-medium text-gray-700"
-              >Fecha y Hora Retorno (Aprox)</label
-            >
+          <div class="sm:col-span-3" x-show="tipo === 'IDA_VUELTA'" x-transition>
+            <label for="fecha_retorno" class="block text-sm font-medium text-gray-700">Fecha y Hora Retorno (Aprox)</label>
             <div class="mt-1">
               <input
                 type="datetime-local"
@@ -329,9 +299,7 @@
 
         <!-- Motivo -->
         <div class="sm:col-span-6">
-          <label for="motivo" class="block text-sm font-medium text-gray-700"
-            >Motivo del Viaje / Justificación</label
-          >
+          <label for="motivo" class="block text-sm font-medium text-gray-700">Motivo del Viaje / Justificación</label>
           <div class="mt-1">
             <textarea
               id="motivo"
@@ -340,9 +308,7 @@
               class="shadow-sm focus:ring-senado-secondary focus:border-senado-secondary block w-full sm:text-sm border border-gray-300 rounded-md p-2"
             ></textarea>
           </div>
-          <p class="mt-2 text-sm text-gray-500">
-            Breve descripción de la razón del viaje.
-          </p>
+          <p class="mt-2 text-sm text-gray-500">Breve descripción de la razón del viaje.</p>
         </div>
       </div>
     </div>

@@ -33,3 +33,9 @@ func (r *SolicitudRepository) FindByID(id string) (*models.Solicitud, error) {
 func (r *SolicitudRepository) Update(solicitud *models.Solicitud) error {
 	return configs.DB.Save(solicitud).Error
 }
+
+func (r *SolicitudRepository) ExistsByCodigo(codigo string) (bool, error) {
+	var count int64
+	err := configs.DB.Model(&models.Solicitud{}).Where("codigo = ?", codigo).Count(&count).Error
+	return count > 0, err
+}

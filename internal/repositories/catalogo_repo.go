@@ -43,3 +43,21 @@ func (r *CatalogoRepository) FindTipoItinerarioByCodigo(codigo string) (*models.
 	err := configs.DB.Where("codigo = ?", codigo).First(&tipo).Error
 	return &tipo, err
 }
+
+func (r *CatalogoRepository) FindAllTiposItinerario() ([]models.TipoItinerario, error) {
+	var tipos []models.TipoItinerario
+	err := configs.DB.Find(&tipos).Error
+	return tipos, err
+}
+
+func (r *CatalogoRepository) FindAllTiposSolicitud() ([]models.TipoSolicitud, error) {
+	var tipos []models.TipoSolicitud
+	err := configs.DB.Preload("ConceptoViaje").Find(&tipos).Error
+	return tipos, err
+}
+
+func (r *CatalogoRepository) FindAllAmbitosViaje() ([]models.AmbitoViaje, error) {
+	var ambitos []models.AmbitoViaje
+	err := configs.DB.Find(&ambitos).Error
+	return ambitos, err
+}

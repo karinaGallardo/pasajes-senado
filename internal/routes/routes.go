@@ -32,9 +32,12 @@ func SetupRoutes(r *gin.Engine) {
 		protected.GET("/solicitudes/nueva", solicitudCtrl.Create)
 		protected.POST("/solicitudes", solicitudCtrl.Store)
 		protected.GET("/solicitudes/:id", solicitudCtrl.Show)
+		protected.GET("/solicitudes/:id/print", solicitudCtrl.PrintPV01)
 		protected.GET("/solicitudes/check-cupo", solicitudCtrl.CheckCupo)
 		protected.POST("/solicitudes/:id/aprobar", solicitudCtrl.Approve)
 		protected.POST("/solicitudes/:id/rechazar", solicitudCtrl.Reject)
+		protected.GET("/solicitudes/:id/editar", solicitudCtrl.Edit)
+		protected.POST("/solicitudes/:id/actualizar", solicitudCtrl.Update)
 
 		protected.POST("/solicitudes/:id/pasajes", pasajeCtrl.Store)
 
@@ -43,6 +46,7 @@ func SetupRoutes(r *gin.Engine) {
 		protected.GET("/descargos/nuevo", descargoCtrl.Create)
 		protected.POST("/descargos", descargoCtrl.Store)
 		protected.GET("/descargos/:id", descargoCtrl.Show)
+		protected.POST("/descargos/:id/aprobar", descargoCtrl.Approve)
 
 		catalogoCtrl := controllers.NewCatalogoController()
 		protected.GET("/catalogos/tipos", catalogoCtrl.GetTipos)

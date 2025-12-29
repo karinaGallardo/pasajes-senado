@@ -51,10 +51,13 @@ func (ctrl *UsuarioController) Edit(c *gin.Context) {
 	roles, _ := ctrl.rolService.GetAll()
 	destinos, _ := ctrl.ciudadService.GetAll()
 
+	funcionarios, _ := ctrl.userService.GetByRoleType("FUNCIONARIO")
+
 	c.HTML(http.StatusOK, "usuarios/edit_modal", gin.H{
-		"Usuario":  usuario,
-		"Roles":    roles,
-		"Destinos": destinos,
+		"Usuario":      usuario,
+		"Roles":        roles,
+		"Destinos":     destinos,
+		"Funcionarios": funcionarios,
 	})
 }
 
@@ -76,6 +79,13 @@ func (ctrl *UsuarioController) Update(c *gin.Context) {
 		usuario.OrigenCode = &origen
 	} else {
 		usuario.OrigenCode = nil
+	}
+
+	encargadoID := c.PostForm("encargado_id")
+	if encargadoID != "" {
+		usuario.EncargadoID = &encargadoID
+	} else {
+		usuario.EncargadoID = nil
 	}
 
 	if err := ctrl.userService.Update(usuario); err != nil {

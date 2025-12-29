@@ -34,7 +34,7 @@ func (r *UsuarioRepository) FindByRoleType(roleType string) ([]models.Usuario, e
 
 func (r *UsuarioRepository) FindByID(id string) (*models.Usuario, error) {
 	var usuario models.Usuario
-	err := configs.DB.Preload("Rol").Preload("Genero").First(&usuario, "id = ?", id).Error
+	err := configs.DB.Preload("Rol").Preload("Genero").Preload("Encargado").First(&usuario, "id = ?", id).Error
 	return &usuario, err
 }
 

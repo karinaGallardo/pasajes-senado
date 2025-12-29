@@ -33,12 +33,21 @@
       </p>
     </div>
     <div class="flex space-x-3">
-      <button
-        onclick="window.print()"
+      {{ if eq .Solicitud.Estado "SOLICITADO" }}
+      <a
+        href="/solicitudes/{{ .Solicitud.ID }}/editar"
+        class="inline-flex items-center px-4 py-2 border border-blue-600 shadow-sm text-sm font-medium rounded-md text-blue-600 bg-white hover:bg-blue-50 focus:outline-none"
+      >
+        Editar
+      </a>
+      {{ end }}
+      <a
+        href="/solicitudes/{{ .Solicitud.ID }}/print"
+        target="_blank"
         class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none"
       >
         Imprimir
-      </button>
+      </a>
       <a
         href="/solicitudes"
         class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none"
@@ -53,6 +62,7 @@
     <div class="lg:col-span-2 space-y-6">
       <!-- Workflow Stepper Card -->
       <div class="bg-white shadow rounded-lg p-6">
+        <!-- ... (contenido stepper existente) ... -->
         <div class="flex items-center">
           <!-- Step 1: Solicitado -->
           <div class="flex items-center relative">
@@ -118,6 +128,49 @@
         </div>
       </div>
 
+      <!-- Request Details Card -->
+      <div class="bg-white shadow rounded-lg p-6">
+        <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4">Detalles de la Solicitud</h3>
+        <dl class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-6">
+          <div class="sm:col-span-1">
+            <dt class="text-sm font-medium text-gray-500">Origen</dt>
+            <dd class="mt-1 text-sm text-gray-900">{{ .Solicitud.Origen.Nombre }}</dd>
+          </div>
+          <div class="sm:col-span-1">
+            <dt class="text-sm font-medium text-gray-500">Destino</dt>
+            <dd class="mt-1 text-sm text-gray-900">{{ .Solicitud.Destino.Nombre }}</dd>
+          </div>
+          <div class="sm:col-span-1">
+            <dt class="text-sm font-medium text-gray-500">Fecha Salida</dt>
+            <dd class="mt-1 text-sm text-gray-900">{{ .Solicitud.FechaSalida.Format "02 Jan 2006, 15:04" }}</dd>
+          </div>
+          <div class="sm:col-span-1">
+            <dt class="text-sm font-medium text-gray-500">Fecha Retorno</dt>
+            <dd class="mt-1 text-sm text-gray-900">
+              {{ if .Solicitud.FechaRetorno }} {{ .Solicitud.FechaRetorno.Format "02 Jan 2006, 15:04" }} {{ else }}
+              <span class="text-gray-400 italic">Sólo ida</span>
+              {{ end }}
+            </dd>
+          </div>
+          <div class="sm:col-span-1">
+            <dt class="text-sm font-medium text-gray-500">Aerolínea Sugerida</dt>
+            <dd class="mt-1 text-sm font-bold text-senado-primary">
+              {{ if .Solicitud.AerolineaSugerida }} {{ .Solicitud.AerolineaSugerida }} {{ else }}
+              <span class="text-gray-400 font-normal italic">Sin preferencia</span>
+              {{ end }}
+            </dd>
+          </div>
+          <div class="sm:col-span-1">
+            <dt class="text-sm font-medium text-gray-500">Tipo de Viaje</dt>
+            <dd class="mt-1 text-sm text-gray-900">{{ if .Solicitud.TipoItinerario }}{{ .Solicitud.TipoItinerario.Nombre }}{{ else }}-{{ end }}</dd>
+          </div>
+          <div class="sm:col-span-2">
+            <dt class="text-sm font-medium text-gray-500">Motivo del Viaje</dt>
+            <dd class="mt-1 text-sm text-gray-900 bg-gray-50 p-2 rounded border border-gray-100">{{ .Solicitud.Motivo }}</dd>
+          </div>
+        </dl>
+      </div>
+
       <!-- Status Card -->
       <div class="bg-white shadow rounded-lg p-6 border-l-4 {{ if eq .Solicitud.Estado `SOLICITADO` }}border-yellow-400{{ else }}border-green-500{{ end }}">
         <div class="flex items-center justify-between">
@@ -130,20 +183,24 @@
             <!-- Workflow Actions -->
             {{ if eq .Solicitud.Estado `SOLICITADO` }} {{ if and .User.Rol (or (eq .User.Rol.Codigo "ADMIN") (eq .User.Rol.Codigo "TECNICO")) }}
             <div class="flex space-x-2">
-              <form action="/solicitudes/{{ .Solicitud.ID }}/aprobar" method="POST" class="inline">
+              <form action="/solicitudes/{{ .Solicitud.ID }}/aprobar" method="POST" class="inline" x-data="{ loading: false }" @submit="loading = true">
                 <button
                   type="submit"
-                  class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none"
+                  :disabled="loading"
+                  class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none disabled:opacity-50"
                 >
-                  Aprobar
+                  <span x-show="!loading">Aprobar</span>
+                  <span x-show="loading">Procesando...</span>
                 </button>
               </form>
-              <form action="/solicitudes/{{ .Solicitud.ID }}/rechazar" method="POST" class="inline">
+              <form action="/solicitudes/{{ .Solicitud.ID }}/rechazar" method="POST" class="inline" x-data="{ loading: false }" @submit="loading = true">
                 <button
                   type="submit"
-                  class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none"
+                  :disabled="loading"
+                  class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none disabled:opacity-50"
                 >
-                  Rechazar
+                  <span x-show="!loading">Rechazar</span>
+                  <span x-show="loading">Procesando...</span>
                 </button>
               </form>
             </div>
@@ -174,10 +231,57 @@
           {{ end }}
         </div>
 
-        <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+        <!-- List of Assigned Passages -->
+        <div class="border-t border-gray-200">
+          {{ if .Solicitud.Pasajes }}
+          <ul role="list" class="divide-y divide-gray-200">
+            {{ range .Solicitud.Pasajes }}
+            <li class="px-4 py-4 sm:px-6">
+              <div class="flex items-center justify-between">
+                <div class="text-sm font-medium text-senado-primary truncate">{{ .Aerolinea }} - Vuelo {{ .NumeroVuelo }}</div>
+                <div class="ml-2 flex-shrink-0 flex">
+                  <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">{{ .Estado }}</span>
+                </div>
+              </div>
+              <div class="mt-2 sm:flex sm:justify-between">
+                <div class="sm:flex">
+                  <p class="flex items-center text-sm text-gray-500 mr-6">
+                    <!-- Heroicon name: solid/calendar -->
+                    <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                      <path
+                        fill-rule="evenodd"
+                        d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"
+                        clip-rule="evenodd"
+                      />
+                    </svg>
+                    {{ .FechaVuelo.Format "02 Jan 2006, 15:04" }}
+                  </p>
+                  <p class="flex items-center text-sm text-gray-500">
+                    <!-- Heroicon name: solid/ticket -->
+                    <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                      <path d="M2 6a2 2 0 012-2h12a2 2 0 012 2v2a2 2 0 100 4v2a2 2 0 01-2 2H4a2 2 0 01-2-2v-2a2 2 0 100-4V6z" />
+                    </svg>
+                    Boleto: {{ .NumeroBoleto }} (Reserva: {{ .CodigoReserva }})
+                  </p>
+                </div>
+                <div class="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
+                  <p class="font-medium text-gray-900">Bs {{ printf "%.2f" .Costo }}</p>
+                </div>
+              </div>
+            </li>
+            {{ end }}
+          </ul>
+          {{ else }}
+          <div class="text-center py-6">
+            <p class="text-sm text-gray-500">No se han emitido pasajes para esta solicitud aún.</p>
+          </div>
+          {{ end }}
+        </div>
+
+        <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4" x-show="openModal" x-cloak>
           <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4" id="modal-title">Asignar Nuevo Pasaje</h3>
 
-          <form action="/solicitudes/{{ .Solicitud.ID }}/pasajes" method="POST">
+          <form action="/solicitudes/{{ .Solicitud.ID }}/pasajes" method="POST" x-data="{ loading: false }" @submit="loading = true">
             <div class="grid grid-cols-6 gap-6">
               <div class="col-span-6">
                 <label class="block text-sm font-medium text-gray-700">Ruta (Origen - Destino)</label>
@@ -192,13 +296,15 @@
 
               <div class="col-span-3">
                 <label class="block text-sm font-medium text-gray-700">Aerolínea</label>
-                <input
-                  type="text"
+                <select
                   name="aerolinea"
                   required
                   class="mt-1 focus:ring-senado-secondary focus:border-senado-secondary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md border p-2"
-                  placeholder="BoA"
-                />
+                >
+                  {{ range .Aerolineas }}
+                  <option value="{{ . }}">{{ . }}</option>
+                  {{ end }}
+                </select>
               </div>
               <div class="col-span-3">
                 <label class="block text-sm font-medium text-gray-700">Nº Vuelo</label>
@@ -254,9 +360,11 @@
             <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
               <button
                 type="submit"
-                class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-senado-primary text-base font-medium text-white hover:bg-senado-800 focus:outline-none sm:ml-3 sm:w-auto sm:text-sm"
+                :disabled="loading"
+                class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-senado-primary text-base font-medium text-white hover:bg-senado-800 focus:outline-none disabled:opacity-50 sm:ml-3 sm:w-auto sm:text-sm"
               >
-                Guardar Pasaje
+                <span x-show="!loading">Guardar Pasaje</span>
+                <span x-show="loading">Guardando...</span>
               </button>
               <button
                 type="button"

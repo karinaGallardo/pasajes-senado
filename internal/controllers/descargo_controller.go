@@ -101,4 +101,33 @@ func (ctrl *DescargoController) Show(c *gin.Context) {
 		"Descargo": descargo,
 		"User":     c.MustGet("User"),
 	})
+	c.HTML(http.StatusOK, "descargo/show.html", gin.H{
+		"Title":    "Detalle de Descargo",
+		"Descargo": descargo,
+		"User":     c.MustGet("User"),
+	})
+}
+
+func (ctrl *DescargoController) Approve(c *gin.Context) {
+	id := c.Param("id")
+
+	descargo, err := ctrl.repo.FindByID(id)
+	if err != nil {
+		log.Printf("Error aprobando descargo: %v", err)
+		c.Redirect(http.StatusFound, "/descargos/"+id)
+		return
+	}
+
+	descargo.Estado = "APROBADO"
+	ctrl.repo.Update(descargo)
+
+	if descargo.SolicitudID != "" {
+		solicitud, err := ctrl.solicitudRepo.FindByID(descargo.SolicitudID)
+		if err == nil {
+			solicitud.Estado = "FINALIZADO"
+			ctrl.solicitudRepo.Update(solicitud)
+		}
+	}
+
+	c.Redirect(http.StatusFound, "/descargos/"+id)
 }

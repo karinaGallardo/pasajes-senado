@@ -34,3 +34,15 @@ func (s *CatalogoService) GetTipoByID(id string) (*models.TipoSolicitud, error) 
 func (s *CatalogoService) GetTipoItinerarioByCodigo(codigo string) (*models.TipoItinerario, error) {
 	return s.repo.FindTipoItinerarioByCodigo(codigo)
 }
+
+func (s *CatalogoService) GetTiposItinerario() ([]models.TipoItinerario, error) {
+	return s.repo.FindAllTiposItinerario()
+}
+
+func (s *CatalogoService) GetTiposSolicitud() ([]models.TipoSolicitud, error) {
+	return s.repo.FindAllTiposSolicitud()
+}
+
+func (s *CatalogoService) GetAmbitosViaje() ([]models.AmbitoViaje, error) {
+	return s.repo.FindAllAmbitosViaje()
+}

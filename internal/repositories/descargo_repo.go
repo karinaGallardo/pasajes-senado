@@ -32,3 +32,6 @@ func (r *DescargoRepository) FindAll() ([]models.Descargo, error) {
 	err := configs.DB.Preload("Solicitud").Preload("Solicitud.Usuario").Order("created_at desc").Find(&descargos).Error
 	return descargos, err
 }
+func (r *DescargoRepository) Update(descargo *models.Descargo) error {
+	return configs.DB.Save(descargo).Error
+}

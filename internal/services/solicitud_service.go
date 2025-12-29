@@ -5,6 +5,8 @@ import (
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
 	"strings"
+
+	gonanoid "github.com/matoous/go-nanoid/v2"
 )
 
 type SolicitudService struct {
@@ -33,6 +35,24 @@ func (s *SolicitudService) Create(solicitud *models.Solicitud, usuario *models.U
 
 	solicitud.Estado = "SOLICITADO"
 
+	const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+	var codigo string
+	for i := 0; i < 10; i++ {
+		generated, err := gonanoid.Generate(alphabet, 5)
+		if err != nil {
+			return errors.New("error generando código solicitud")
+		}
+		exists, _ := s.repo.ExistsByCodigo(generated)
+		if !exists {
+			codigo = generated
+			break
+		}
+	}
+	if codigo == "" {
+		return errors.New("no se pudo generar un código único después de varios intentos")
+	}
+	solicitud.Codigo = codigo
+
 	return s.repo.Create(solicitud)
 }
 
@@ -59,5 +79,9 @@ func (s *SolicitudService) Reject(id string) error {
 		return err
 	}
 	solicitud.Estado = "RECHAZADO"
+	return s.repo.Update(solicitud)
+}
+
+func (s *SolicitudService) Update(solicitud *models.Solicitud) error {
 	return s.repo.Update(solicitud)
 }
