@@ -3,6 +3,7 @@ package repositories
 import (
 	"sistema-pasajes/internal/models"
 
+	"sistema-pasajes/internal/configs"
 	"gorm.io/gorm"
 )
 
@@ -10,8 +11,8 @@ type PasajeRepository struct {
 	db *gorm.DB
 }
 
-func NewPasajeRepository(db *gorm.DB) *PasajeRepository {
-	return &PasajeRepository{db: db}
+func NewPasajeRepository() *PasajeRepository {
+	return &PasajeRepository{db: configs.DB}
 }
 
 func (r *PasajeRepository) Create(pasaje *models.Pasaje) error {

@@ -3,6 +3,7 @@ package repositories
 import (
 	"sistema-pasajes/internal/models"
 
+	"sistema-pasajes/internal/configs"
 	"gorm.io/gorm"
 )
 
@@ -18,8 +19,8 @@ type viaticoRepository struct {
 	db *gorm.DB
 }
 
-func NewViaticoRepository(db *gorm.DB) ViaticoRepository {
-	return &viaticoRepository{db: db}
+func NewViaticoRepository() ViaticoRepository {
+	return &viaticoRepository{db: configs.DB}
 }
 
 func (r *viaticoRepository) Create(viatico *models.Viatico) error {

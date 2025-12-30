@@ -8,22 +8,19 @@ import (
 	"strings"
 
 	gonanoid "github.com/matoous/go-nanoid/v2"
-	"gorm.io/gorm"
 )
 
 type SolicitudService struct {
-	db                *gorm.DB
 	repo              *repositories.SolicitudRepository
 	tipoSolicitudRepo *repositories.TipoSolicitudRepository
 	cupoService       *CupoService
 }
 
-func NewSolicitudService(db *gorm.DB) *SolicitudService {
+func NewSolicitudService() *SolicitudService {
 	return &SolicitudService{
-		db:                db,
-		repo:              repositories.NewSolicitudRepository(db),
-		tipoSolicitudRepo: repositories.NewTipoSolicitudRepository(db),
-		cupoService:       NewCupoService(db),
+		repo:              repositories.NewSolicitudRepository(),
+		tipoSolicitudRepo: repositories.NewTipoSolicitudRepository(),
+		cupoService:       NewCupoService(),
 	}
 }
 

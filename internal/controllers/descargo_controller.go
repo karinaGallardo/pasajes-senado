@@ -4,10 +4,9 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"sistema-pasajes/internal/configs"
 	"sistema-pasajes/internal/dtos"
 	"sistema-pasajes/internal/models"
-	"sistema-pasajes/internal/repositories"
+	"sistema-pasajes/internal/services"
 	"strconv"
 	"time"
 
@@ -16,20 +15,19 @@ import (
 )
 
 type DescargoController struct {
-	repo          *repositories.DescargoRepository
-	solicitudRepo *repositories.SolicitudRepository
+	descargoService  *services.DescargoService
+	solicitudService *services.SolicitudService
 }
 
 func NewDescargoController() *DescargoController {
-	db := configs.DB
 	return &DescargoController{
-		repo:          repositories.NewDescargoRepository(db),
-		solicitudRepo: repositories.NewSolicitudRepository(db),
+		descargoService:  services.NewDescargoService(),
+		solicitudService: services.NewSolicitudService(),
 	}
 }
 
 func (ctrl *DescargoController) Index(c *gin.Context) {
-	descargos, _ := ctrl.repo.FindAll()
+	descargos, _ := ctrl.descargoService.FindAll()
 	c.HTML(http.StatusOK, "descargo/index.html", gin.H{
 		"Title":     "Bandeja de Descargos (FV-05)",
 		"Descargos": descargos,
@@ -44,13 +42,13 @@ func (ctrl *DescargoController) Create(c *gin.Context) {
 		return
 	}
 
-	solicitud, err := ctrl.solicitudRepo.FindByID(solicitudID)
+	solicitud, err := ctrl.solicitudService.FindByID(solicitudID)
 	if err != nil {
 		c.Redirect(http.StatusFound, "/solicitudes")
 		return
 	}
 
-	existe, _ := ctrl.repo.FindBySolicitudID(solicitudID)
+	existe, _ := ctrl.descargoService.FindBySolicitudID(solicitudID)
 	if existe != nil && existe.ID != "" {
 		c.Redirect(http.StatusFound, "/descargos/"+existe.ID)
 		return
@@ -79,7 +77,7 @@ func (ctrl *DescargoController) Store(c *gin.Context) {
 
 	monto, err := strconv.ParseFloat(req.MontoDevolucion, 64)
 	if err != nil {
-		monto = 0 // Default to 0 if invalid or empty
+		monto = 0
 	}
 
 	userContext := c.MustGet("User").(models.Usuario)
@@ -120,7 +118,7 @@ func (ctrl *DescargoController) Store(c *gin.Context) {
 	}
 	nuevoDescargo.Documentos = docs
 
-	if err := ctrl.repo.Create(&nuevoDescargo); err != nil {
+	if err := ctrl.descargoService.Create(&nuevoDescargo); err != nil {
 		log.Printf("Error creando descargo: %v", err)
 		c.Redirect(http.StatusFound, "/solicitudes")
 		return
@@ -132,7 +130,7 @@ func (ctrl *DescargoController) Store(c *gin.Context) {
 func (ctrl *DescargoController) Show(c *gin.Context) {
 	id := c.Param("id")
 
-	descargo, err := ctrl.repo.FindByID(id)
+	descargo, err := ctrl.descargoService.FindByID(id)
 	if err != nil {
 		log.Printf("Error buscando descargo %s: %v", id, err)
 		c.Redirect(http.StatusFound, "/descargos")
@@ -149,7 +147,7 @@ func (ctrl *DescargoController) Show(c *gin.Context) {
 func (ctrl *DescargoController) Approve(c *gin.Context) {
 	id := c.Param("id")
 
-	descargo, err := ctrl.repo.FindByID(id)
+	descargo, err := ctrl.descargoService.FindByID(id)
 	if err != nil {
 		log.Printf("Error aprobando descargo: %v", err)
 		c.Redirect(http.StatusFound, "/descargos/"+id)
@@ -160,14 +158,14 @@ func (ctrl *DescargoController) Approve(c *gin.Context) {
 	userContext := c.MustGet("User").(models.Usuario)
 	descargo.UpdatedBy = &userContext.ID
 
-	ctrl.repo.Update(descargo)
+	ctrl.descargoService.Update(descargo)
 
 	if descargo.SolicitudID != "" {
-		solicitud, err := ctrl.solicitudRepo.FindByID(descargo.SolicitudID)
+		solicitud, err := ctrl.solicitudService.FindByID(descargo.SolicitudID)
 		if err == nil {
 			solicitud.Estado = "FINALIZADO"
 			solicitud.UpdatedBy = &userContext.ID
-			ctrl.solicitudRepo.Update(solicitud)
+			ctrl.solicitudService.Update(solicitud)
 		}
 	}
 

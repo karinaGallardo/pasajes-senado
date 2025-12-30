@@ -2,28 +2,26 @@ package controllers
 
 import (
 	"net/http"
-	"sistema-pasajes/internal/configs"
-	"sistema-pasajes/internal/repositories"
+	"sistema-pasajes/internal/services"
 
 	"github.com/gin-gonic/gin"
 )
 
 type DashboardController struct {
-	solicitudRepo *repositories.SolicitudRepository
-	descargoRepo  *repositories.DescargoRepository
+	solicitudService *services.SolicitudService
+	descargoService  *services.DescargoService
 }
 
 func NewDashboardController() *DashboardController {
-	db := configs.DB
 	return &DashboardController{
-		solicitudRepo: repositories.NewSolicitudRepository(db),
-		descargoRepo:  repositories.NewDescargoRepository(db),
+		solicitudService: services.NewSolicitudService(),
+		descargoService:  services.NewDescargoService(),
 	}
 }
 
 func (ctrl *DashboardController) Index(c *gin.Context) {
-	solicitudes, _ := ctrl.solicitudRepo.FindAll()
-	descargos, _ := ctrl.descargoRepo.FindAll()
+	solicitudes, _ := ctrl.solicitudService.FindAll()
+	descargos, _ := ctrl.descargoService.FindAll()
 
 	var pendientes, aprobados, finalizados int
 	for _, s := range solicitudes {

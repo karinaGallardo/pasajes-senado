@@ -3,10 +3,8 @@ package controllers
 import (
 	"fmt"
 	"net/http"
-	"sistema-pasajes/internal/configs"
 	"sistema-pasajes/internal/dtos"
 	"sistema-pasajes/internal/models"
-	"sistema-pasajes/internal/repositories"
 	"sistema-pasajes/internal/services"
 	"sistema-pasajes/internal/utils"
 	"strconv"
@@ -19,15 +17,12 @@ import (
 type ViaticoController struct {
 	viaticoService *services.ViaticoService
 	solService     *services.SolicitudService
-	catRepo        *repositories.CategoriaViaticoRepository
 }
 
 func NewViaticoController() *ViaticoController {
-	db := configs.DB
 	return &ViaticoController{
-		viaticoService: services.NewViaticoService(db),
-		solService:     services.NewSolicitudService(db),
-		catRepo:        repositories.NewCategoriaViaticoRepository(db),
+		viaticoService: services.NewViaticoService(),
+		solService:     services.NewSolicitudService(),
 	}
 }
 
@@ -50,7 +45,7 @@ func (ctrl *ViaticoController) Create(c *gin.Context) {
 		dias = 1
 	}
 
-	categorias, _ := ctrl.catRepo.FindAll()
+	categorias, _ := ctrl.viaticoService.GetCategorias()
 
 	c.HTML(http.StatusOK, "viatico/create.html", gin.H{
 		"Title":       "Asignación de Viáticos",

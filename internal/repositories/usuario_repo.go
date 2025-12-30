@@ -3,6 +3,7 @@ package repositories
 import (
 	"sistema-pasajes/internal/models"
 
+	"sistema-pasajes/internal/configs"
 	"gorm.io/gorm"
 )
 
@@ -10,8 +11,8 @@ type UsuarioRepository struct {
 	db *gorm.DB
 }
 
-func NewUsuarioRepository(db *gorm.DB) *UsuarioRepository {
-	return &UsuarioRepository{db: db}
+func NewUsuarioRepository() *UsuarioRepository {
+	return &UsuarioRepository{db: configs.DB}
 }
 
 func (r *UsuarioRepository) FindAll() ([]models.Usuario, error) {

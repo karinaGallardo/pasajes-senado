@@ -3,6 +3,7 @@ package repositories
 import (
 	"sistema-pasajes/internal/models"
 
+	"sistema-pasajes/internal/configs"
 	"gorm.io/gorm"
 )
 
@@ -10,8 +11,8 @@ type TipoSolicitudRepository struct {
 	db *gorm.DB
 }
 
-func NewTipoSolicitudRepository(db *gorm.DB) *TipoSolicitudRepository {
-	return &TipoSolicitudRepository{db: db}
+func NewTipoSolicitudRepository() *TipoSolicitudRepository {
+	return &TipoSolicitudRepository{db: configs.DB}
 }
 
 func (r *TipoSolicitudRepository) FindByID(id string) (*models.TipoSolicitud, error) {

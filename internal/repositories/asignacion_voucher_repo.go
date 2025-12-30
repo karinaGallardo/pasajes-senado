@@ -3,6 +3,8 @@ package repositories
 import (
 	"sistema-pasajes/internal/models"
 
+	"sistema-pasajes/internal/configs"
+
 	"gorm.io/gorm"
 )
 
@@ -10,8 +12,8 @@ type AsignacionVoucherRepository struct {
 	db *gorm.DB
 }
 
-func NewAsignacionVoucherRepository(db *gorm.DB) *AsignacionVoucherRepository {
-	return &AsignacionVoucherRepository{db: db}
+func NewAsignacionVoucherRepository() *AsignacionVoucherRepository {
+	return &AsignacionVoucherRepository{db: configs.DB}
 }
 
 func (r *AsignacionVoucherRepository) Create(voucher *models.AsignacionVoucher) error {
@@ -44,4 +46,8 @@ func (r *AsignacionVoucherRepository) FindByID(id string) (*models.AsignacionVou
 	var v models.AsignacionVoucher
 	err := r.db.First(&v, "id = ?", id).Error
 	return &v, err
+}
+
+func (r *AsignacionVoucherRepository) DeleteUnscoped(v *models.AsignacionVoucher) error {
+	return r.db.Unscoped().Delete(v).Error
 }

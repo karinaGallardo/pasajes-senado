@@ -4,16 +4,15 @@ import (
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
 
-	"gorm.io/gorm"
 )
 
 type ConfiguracionService struct {
 	repo *repositories.ConfiguracionRepository
 }
 
-func NewConfiguracionService(db *gorm.DB) *ConfiguracionService {
+func NewConfiguracionService() *ConfiguracionService {
 	return &ConfiguracionService{
-		repo: repositories.NewConfiguracionRepository(db),
+		repo: repositories.NewConfiguracionRepository(),
 	}
 }
 

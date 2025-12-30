@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"sistema-pasajes/internal/configs"
 	"sistema-pasajes/internal/models"
 
 	"gorm.io/gorm"
@@ -10,8 +11,8 @@ type CargoRepository struct {
 	db *gorm.DB
 }
 
-func NewCargoRepository(db *gorm.DB) *CargoRepository {
-	return &CargoRepository{db: db}
+func NewCargoRepository() *CargoRepository {
+	return &CargoRepository{db: configs.DB}
 }
 
 func (r *CargoRepository) FindAll() ([]models.Cargo, error) {

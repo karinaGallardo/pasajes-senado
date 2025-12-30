@@ -3,6 +3,7 @@ package repositories
 import (
 	"sistema-pasajes/internal/models"
 
+	"sistema-pasajes/internal/configs"
 	"gorm.io/gorm"
 )
 
@@ -10,8 +11,8 @@ type TipoItinerarioRepository struct {
 	db *gorm.DB
 }
 
-func NewTipoItinerarioRepository(db *gorm.DB) *TipoItinerarioRepository {
-	return &TipoItinerarioRepository{db: db}
+func NewTipoItinerarioRepository() *TipoItinerarioRepository {
+	return &TipoItinerarioRepository{db: configs.DB}
 }
 
 func (r *TipoItinerarioRepository) FindByCodigo(codigo string) (*models.TipoItinerario, error) {

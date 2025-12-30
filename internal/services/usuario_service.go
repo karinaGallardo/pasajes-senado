@@ -4,16 +4,15 @@ import (
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
 
-	"gorm.io/gorm"
 )
 
 type UsuarioService struct {
 	repo *repositories.UsuarioRepository
 }
 
-func NewUsuarioService(db *gorm.DB) *UsuarioService {
+func NewUsuarioService() *UsuarioService {
 	return &UsuarioService{
-		repo: repositories.NewUsuarioRepository(db),
+		repo: repositories.NewUsuarioRepository(),
 	}
 }
 

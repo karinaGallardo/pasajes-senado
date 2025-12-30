@@ -4,16 +4,15 @@ import (
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
 
-	"gorm.io/gorm"
 )
 
 type CiudadService struct {
 	repo *repositories.CiudadRepository
 }
 
-func NewCiudadService(db *gorm.DB) *CiudadService {
+func NewCiudadService() *CiudadService {
 	return &CiudadService{
-		repo: repositories.NewCiudadRepository(db),
+		repo: repositories.NewCiudadRepository(),
 	}
 }
 

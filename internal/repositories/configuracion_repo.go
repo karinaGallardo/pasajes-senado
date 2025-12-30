@@ -3,6 +3,7 @@ package repositories
 import (
 	"sistema-pasajes/internal/models"
 
+	"sistema-pasajes/internal/configs"
 	"gorm.io/gorm"
 )
 
@@ -10,8 +11,8 @@ type ConfiguracionRepository struct {
 	db *gorm.DB
 }
 
-func NewConfiguracionRepository(db *gorm.DB) *ConfiguracionRepository {
-	return &ConfiguracionRepository{db: db}
+func NewConfiguracionRepository() *ConfiguracionRepository {
+	return &ConfiguracionRepository{db: configs.DB}
 }
 
 func (r *ConfiguracionRepository) FindAll() ([]models.Configuracion, error) {

@@ -3,6 +3,7 @@ package repositories
 import (
 	"sistema-pasajes/internal/models"
 
+	"sistema-pasajes/internal/configs"
 	"gorm.io/gorm"
 )
 
@@ -10,8 +11,8 @@ type ConceptoViajeRepository struct {
 	db *gorm.DB
 }
 
-func NewConceptoViajeRepository(db *gorm.DB) *ConceptoViajeRepository {
-	return &ConceptoViajeRepository{db: db}
+func NewConceptoViajeRepository() *ConceptoViajeRepository {
+	return &ConceptoViajeRepository{db: configs.DB}
 }
 
 func (r *ConceptoViajeRepository) FindConceptos() ([]models.ConceptoViaje, error) {

@@ -3,6 +3,7 @@ package repositories
 import (
 	"sistema-pasajes/internal/models"
 
+	"sistema-pasajes/internal/configs"
 	"gorm.io/gorm"
 )
 
@@ -10,8 +11,8 @@ type RolRepository struct {
 	db *gorm.DB
 }
 
-func NewRolRepository(db *gorm.DB) *RolRepository {
-	return &RolRepository{db: db}
+func NewRolRepository() *RolRepository {
+	return &RolRepository{db: configs.DB}
 }
 
 func (r *RolRepository) FindAll() ([]models.Rol, error) {

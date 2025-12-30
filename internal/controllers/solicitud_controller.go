@@ -3,10 +3,8 @@ package controllers
 import (
 	"fmt"
 	"net/http"
-	"sistema-pasajes/internal/configs"
 	"sistema-pasajes/internal/dtos"
 	"sistema-pasajes/internal/models"
-	"sistema-pasajes/internal/repositories"
 	"sistema-pasajes/internal/services"
 	"strings"
 	"time"
@@ -21,19 +19,17 @@ type SolicitudController struct {
 	catalogoService *services.CatalogoService
 	cupoService     *services.CupoService
 	userService     *services.UsuarioService
-	peopleRepo      *repositories.PeopleViewRepository
+	peopleService   *services.PeopleService
 }
 
 func NewSolicitudController() *SolicitudController {
-	db := configs.DB
-	mongoDB := configs.MongoRRHH
 	return &SolicitudController{
-		service:         services.NewSolicitudService(db),
-		ciudadService:   services.NewCiudadService(db),
-		catalogoService: services.NewCatalogoService(db),
-		cupoService:     services.NewCupoService(db),
-		userService:     services.NewUsuarioService(db),
-		peopleRepo:      repositories.NewPeopleViewRepository(mongoDB),
+		service:         services.NewSolicitudService(),
+		ciudadService:   services.NewCiudadService(),
+		catalogoService: services.NewCatalogoService(),
+		cupoService:     services.NewCupoService(),
+		userService:     services.NewUsuarioService(),
+		peopleService:   services.NewPeopleService(),
 	}
 }
 
@@ -326,7 +322,7 @@ func (ctrl *SolicitudController) PrintPV01(c *gin.Context) {
 		origenUser = solicitud.Usuario.Origen.Nombre
 	}
 
-	personaView, errMongo := ctrl.peopleRepo.FindSenatorDataByCI(solicitud.Usuario.CI)
+	personaView, errMongo := ctrl.peopleService.FindSenatorDataByCI(solicitud.Usuario.CI)
 
 	tipoUsuario := solicitud.Usuario.Tipo
 	unit := "COMISION"

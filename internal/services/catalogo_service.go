@@ -4,7 +4,6 @@ import (
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
 
-	"gorm.io/gorm"
 )
 
 type CatalogoService struct {
@@ -14,12 +13,12 @@ type CatalogoService struct {
 	tipoItinerarioRepo *repositories.TipoItinerarioRepository
 }
 
-func NewCatalogoService(db *gorm.DB) *CatalogoService {
+func NewCatalogoService() *CatalogoService {
 	return &CatalogoService{
-		conceptoRepo:       repositories.NewConceptoViajeRepository(db),
-		tipoSolicitudRepo:  repositories.NewTipoSolicitudRepository(db),
-		ambitoRepo:         repositories.NewAmbitoViajeRepository(db),
-		tipoItinerarioRepo: repositories.NewTipoItinerarioRepository(db),
+		conceptoRepo:       repositories.NewConceptoViajeRepository(),
+		tipoSolicitudRepo:  repositories.NewTipoSolicitudRepository(),
+		ambitoRepo:         repositories.NewAmbitoViajeRepository(),
+		tipoItinerarioRepo: repositories.NewTipoItinerarioRepository(),
 	}
 }
 

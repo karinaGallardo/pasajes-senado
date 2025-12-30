@@ -4,16 +4,15 @@ import (
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
 
-	"gorm.io/gorm"
 )
 
 type AgenciaService struct {
 	repo *repositories.AgenciaRepository
 }
 
-func NewAgenciaService(db *gorm.DB) *AgenciaService {
+func NewAgenciaService() *AgenciaService {
 	return &AgenciaService{
-		repo: repositories.NewAgenciaRepository(db),
+		repo: repositories.NewAgenciaRepository(),
 	}
 }
 

@@ -4,6 +4,7 @@ import (
 	"sistema-pasajes/internal/models"
 	"time"
 
+	"sistema-pasajes/internal/configs"
 	"gorm.io/gorm"
 )
 
@@ -11,8 +12,8 @@ type SolicitudRepository struct {
 	db *gorm.DB
 }
 
-func NewSolicitudRepository(db *gorm.DB) *SolicitudRepository {
-	return &SolicitudRepository{db: db}
+func NewSolicitudRepository() *SolicitudRepository {
+	return &SolicitudRepository{db: configs.DB}
 }
 
 func (r *SolicitudRepository) Create(solicitud *models.Solicitud) error {

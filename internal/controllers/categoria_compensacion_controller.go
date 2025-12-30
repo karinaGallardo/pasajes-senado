@@ -3,27 +3,25 @@ package controllers
 import (
 	"fmt"
 	"net/http"
-	"sistema-pasajes/internal/configs"
 	"sistema-pasajes/internal/models"
-	"sistema-pasajes/internal/repositories"
+	"sistema-pasajes/internal/services"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
 type CategoriaCompensacionController struct {
-	repo *repositories.CategoriaCompensacionRepository
+	service *services.CompensacionService
 }
 
 func NewCategoriaCompensacionController() *CategoriaCompensacionController {
-	db := configs.DB
 	return &CategoriaCompensacionController{
-		repo: repositories.NewCategoriaCompensacionRepository(db),
+		service: services.NewCompensacionService(),
 	}
 }
 
 func (ctrl *CategoriaCompensacionController) Index(c *gin.Context) {
-	cats, _ := ctrl.repo.FindAll()
+	cats, _ := ctrl.service.GetAllCategorias()
 	c.HTML(http.StatusOK, "admin/categorias_compensacion.html", gin.H{
 		"Categorias": cats,
 		"User":       c.MustGet("User"),
@@ -36,17 +34,17 @@ func (ctrl *CategoriaCompensacionController) Store(c *gin.Context) {
 	monto, _ := strconv.ParseFloat(c.PostForm("monto"), 64)
 
 	if dep != "" && tipo != "" && monto > 0 {
-		existing, _ := ctrl.repo.FindByDepartamentoAndTipo(dep, tipo)
+		existing, _ := ctrl.service.FindCategoriaByDepartamentoAndTipo(dep, tipo)
 		if existing.ID != "" {
 			existing.Monto = monto
-			ctrl.repo.Save(existing)
+			ctrl.service.SaveCategoria(existing)
 		} else {
 			cat := models.CategoriaCompensacion{
 				Departamento: dep,
 				TipoSenador:  tipo,
 				Monto:        monto,
 			}
-			err := ctrl.repo.Save(&cat)
+			err := ctrl.service.SaveCategoria(&cat)
 			if err != nil {
 				fmt.Printf("Error create cat comp: %v", err)
 			}
@@ -57,6 +55,6 @@ func (ctrl *CategoriaCompensacionController) Store(c *gin.Context) {
 
 func (ctrl *CategoriaCompensacionController) Delete(c *gin.Context) {
 	id := c.Param("id")
-	ctrl.repo.Delete(id)
+	ctrl.service.DeleteCategoria(id)
 	c.Redirect(http.StatusFound, "/admin/compensaciones/categorias")
 }

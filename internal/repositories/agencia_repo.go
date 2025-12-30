@@ -3,6 +3,7 @@ package repositories
 import (
 	"sistema-pasajes/internal/models"
 
+	"sistema-pasajes/internal/configs"
 	"gorm.io/gorm"
 )
 
@@ -10,8 +11,8 @@ type AgenciaRepository struct {
 	db *gorm.DB
 }
 
-func NewAgenciaRepository(db *gorm.DB) *AgenciaRepository {
-	return &AgenciaRepository{db: db}
+func NewAgenciaRepository() *AgenciaRepository {
+	return &AgenciaRepository{db: configs.DB}
 }
 
 func (r *AgenciaRepository) FindAllActive() ([]models.Agencia, error) {

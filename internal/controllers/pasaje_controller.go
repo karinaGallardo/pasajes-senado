@@ -3,10 +3,8 @@ package controllers
 import (
 	"log"
 	"net/http"
-	"sistema-pasajes/internal/configs"
 	"sistema-pasajes/internal/dtos"
 	"sistema-pasajes/internal/models"
-	"sistema-pasajes/internal/repositories"
 	"sistema-pasajes/internal/services"
 	"strconv"
 
@@ -17,15 +15,14 @@ import (
 )
 
 type PasajeController struct {
-	repo             *repositories.PasajeRepository
+	pasajeService    *services.PasajeService
 	aerolineaService *services.AerolineaService
 }
 
 func NewPasajeController() *PasajeController {
-	db := configs.DB
 	return &PasajeController{
-		repo:             repositories.NewPasajeRepository(db),
-		aerolineaService: services.NewAerolineaService(db),
+		pasajeService:    services.NewPasajeService(),
+		aerolineaService: services.NewAerolineaService(),
 	}
 }
 
@@ -66,7 +63,7 @@ func (ctrl *PasajeController) Store(c *gin.Context) {
 		Estado:        "EMITIDO",
 	}
 
-	if err := ctrl.repo.Create(&nuevoPasaje); err != nil {
+	if err := ctrl.pasajeService.Create(&nuevoPasaje); err != nil {
 		log.Printf("Error creando pasaje: %v", err)
 		c.Redirect(http.StatusFound, fmt.Sprintf("/solicitudes/%s?error=ErrorCrearPasaje", solicitudID))
 		return

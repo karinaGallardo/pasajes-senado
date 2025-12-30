@@ -3,8 +3,6 @@ package controllers
 import (
 	"fmt"
 	"net/http"
-	"sistema-pasajes/internal/configs"
-	"sistema-pasajes/internal/repositories"
 	"sistema-pasajes/internal/services"
 	"strconv"
 	"time"
@@ -13,15 +11,14 @@ import (
 )
 
 type CupoController struct {
-	service  *services.CupoService
-	userRepo *repositories.UsuarioRepository
+	service     *services.CupoService
+	userService *services.UsuarioService
 }
 
 func NewCupoController() *CupoController {
-	db := configs.DB
 	return &CupoController{
-		service:  services.NewCupoService(db),
-		userRepo: repositories.NewUsuarioRepository(db),
+		service:     services.NewCupoService(),
+		userService: services.NewUsuarioService(),
 	}
 }
 
@@ -41,7 +38,7 @@ func (ctrl *CupoController) Index(c *gin.Context) {
 		nombreMes = meses[mes]
 	}
 
-	users, _ := ctrl.userRepo.FindAll()
+	users, _ := ctrl.userService.GetAll()
 
 	c.HTML(http.StatusOK, "admin/cupos.html", gin.H{
 		"User":      c.MustGet("User"),

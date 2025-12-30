@@ -3,6 +3,7 @@ package repositories
 import (
 	"sistema-pasajes/internal/models"
 
+	"sistema-pasajes/internal/configs"
 	"gorm.io/gorm"
 )
 
@@ -10,8 +11,8 @@ type CupoRepository struct {
 	db *gorm.DB
 }
 
-func NewCupoRepository(db *gorm.DB) *CupoRepository {
-	return &CupoRepository{db: db}
+func NewCupoRepository() *CupoRepository {
+	return &CupoRepository{db: configs.DB}
 }
 
 func (r *CupoRepository) Create(cupo *models.Cupo) error {

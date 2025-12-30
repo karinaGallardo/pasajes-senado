@@ -3,19 +3,15 @@ package services
 import (
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
-
-	"gorm.io/gorm"
 )
 
 type RutaService struct {
-	db       *gorm.DB
 	rutaRepo *repositories.RutaRepository
 }
 
-func NewRutaService(db *gorm.DB) *RutaService {
+func NewRutaService() *RutaService {
 	return &RutaService{
-		db:       db,
-		rutaRepo: repositories.NewRutaRepository(db),
+		rutaRepo: repositories.NewRutaRepository(),
 	}
 }
 
@@ -39,11 +35,9 @@ func (s *RutaService) AssignContract(rutaID, aerolineaID string, monto float64) 
 		AerolineaID:      aerolineaID,
 		MontoReferencial: monto,
 	}
-	return s.db.Create(&contrato).Error
+	return s.rutaRepo.AssignContract(&contrato)
 }
 
 func (s *RutaService) GetContractsByRuta(rutaID string) ([]models.RutaContrato, error) {
-	var contratos []models.RutaContrato
-	err := s.db.Preload("Aerolinea").Where("ruta_id = ?", rutaID).Find(&contratos).Error
-	return contratos, err
+	return s.rutaRepo.GetContractsByRuta(rutaID)
 }

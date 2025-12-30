@@ -7,22 +7,21 @@ import (
 	"time"
 
 	gonanoid "github.com/matoous/go-nanoid/v2"
-	"gorm.io/gorm"
 )
 
 type ViaticoService struct {
-	db            *gorm.DB
 	repo          repositories.ViaticoRepository
 	solicitudRepo *repositories.SolicitudRepository
+	catRepo       *repositories.CategoriaViaticoRepository
 	configService *ConfiguracionService
 }
 
-func NewViaticoService(db *gorm.DB) *ViaticoService {
+func NewViaticoService() *ViaticoService {
 	return &ViaticoService{
-		db:            db,
-		repo:          repositories.NewViaticoRepository(db),
-		solicitudRepo: repositories.NewSolicitudRepository(db),
-		configService: NewConfiguracionService(db),
+		repo:          repositories.NewViaticoRepository(),
+		solicitudRepo: repositories.NewSolicitudRepository(),
+		catRepo:       repositories.NewCategoriaViaticoRepository(),
+		configService: NewConfiguracionService(),
 	}
 }
 
@@ -107,6 +106,10 @@ func (s *ViaticoService) FindBySolicitud(solicitudID string) ([]models.Viatico, 
 
 func (s *ViaticoService) FindByID(id string) (*models.Viatico, error) {
 	return s.repo.FindByID(id)
+}
+
+func (s *ViaticoService) GetCategorias() ([]models.CategoriaViatico, error) {
+	return s.catRepo.FindAll()
 }
 
 func generateViaticoCode() string {

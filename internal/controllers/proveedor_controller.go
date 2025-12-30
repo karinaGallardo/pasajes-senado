@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"net/http"
-	"sistema-pasajes/internal/configs"
 	"sistema-pasajes/internal/services"
 
 	"github.com/gin-gonic/gin"
@@ -15,8 +14,8 @@ type ProveedorController struct {
 
 func NewProveedorController() *ProveedorController {
 	return &ProveedorController{
-		aerolineaService: services.NewAerolineaService(configs.DB),
-		agenciaService:   services.NewAgenciaService(configs.DB),
+		aerolineaService: services.NewAerolineaService(),
+		agenciaService:   services.NewAgenciaService(),
 	}
 }
 

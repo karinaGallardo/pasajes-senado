@@ -3,6 +3,7 @@ package repositories
 import (
 	"sistema-pasajes/internal/models"
 
+	"sistema-pasajes/internal/configs"
 	"gorm.io/gorm"
 )
 
@@ -10,8 +11,8 @@ type CiudadRepository struct {
 	db *gorm.DB
 }
 
-func NewCiudadRepository(db *gorm.DB) *CiudadRepository {
-	return &CiudadRepository{db: db}
+func NewCiudadRepository() *CiudadRepository {
+	return &CiudadRepository{db: configs.DB}
 }
 
 func (r *CiudadRepository) FindAll() ([]models.Ciudad, error) {

@@ -2,29 +2,25 @@ package controllers
 
 import (
 	"net/http"
-	"sistema-pasajes/internal/configs"
 	"sistema-pasajes/internal/models"
-	"sistema-pasajes/internal/repositories"
+	"sistema-pasajes/internal/services"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
 
 type OrganigramaController struct {
-	cargoRepo   *repositories.CargoRepository
-	oficinaRepo *repositories.OficinaRepository
+	service *services.OrganigramaService
 }
 
 func NewOrganigramaController() *OrganigramaController {
-	db := configs.DB
 	return &OrganigramaController{
-		cargoRepo:   repositories.NewCargoRepository(db),
-		oficinaRepo: repositories.NewOficinaRepository(db),
+		service: services.NewOrganigramaService(),
 	}
 }
 
 func (ctrl *OrganigramaController) IndexCargos(c *gin.Context) {
-	cargos, _ := ctrl.cargoRepo.FindAll()
+	cargos, _ := ctrl.service.GetAllCargos()
 	c.HTML(http.StatusOK, "admin/cargos.html", gin.H{
 		"Cargos": cargos,
 		"User":   c.MustGet("User"),
@@ -42,19 +38,19 @@ func (ctrl *OrganigramaController) StoreCargo(c *gin.Context) {
 		Categoria:   categoria,
 	}
 
-	if err := ctrl.cargoRepo.Create(&cargo); err != nil {
+	if err := ctrl.service.CreateCargo(&cargo); err != nil {
 	}
 	c.Redirect(http.StatusFound, "/admin/cargos")
 }
 
 func (ctrl *OrganigramaController) DeleteCargo(c *gin.Context) {
 	id := c.Param("id")
-	ctrl.cargoRepo.Delete(id)
+	ctrl.service.DeleteCargo(id)
 	c.Redirect(http.StatusFound, "/admin/cargos")
 }
 
 func (ctrl *OrganigramaController) IndexOficinas(c *gin.Context) {
-	oficinas, _ := ctrl.oficinaRepo.FindAll()
+	oficinas, _ := ctrl.service.GetAllOficinas()
 	c.HTML(http.StatusOK, "admin/oficinas.html", gin.H{
 		"Oficinas": oficinas,
 		"User":     c.MustGet("User"),
@@ -74,13 +70,13 @@ func (ctrl *OrganigramaController) StoreOficina(c *gin.Context) {
 		Presupuesto: presupuesto,
 	}
 
-	if err := ctrl.oficinaRepo.Create(&oficina); err != nil {
+	if err := ctrl.service.CreateOficina(&oficina); err != nil {
 	}
 	c.Redirect(http.StatusFound, "/admin/oficinas")
 }
 
 func (ctrl *OrganigramaController) DeleteOficina(c *gin.Context) {
 	id := c.Param("id")
-	ctrl.oficinaRepo.Delete(id)
+	ctrl.service.DeleteOficina(id)
 	c.Redirect(http.StatusFound, "/admin/oficinas")
 }

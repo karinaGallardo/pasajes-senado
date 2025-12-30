@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"net/http"
-	"sistema-pasajes/internal/configs"
 	"sistema-pasajes/internal/services"
 
 	"github.com/gin-gonic/gin"
@@ -13,9 +12,8 @@ type ConfiguracionController struct {
 }
 
 func NewConfiguracionController() *ConfiguracionController {
-	db := configs.DB
 	return &ConfiguracionController{
-		service: services.NewConfiguracionService(db),
+		service: services.NewConfiguracionService(),
 	}
 }
 

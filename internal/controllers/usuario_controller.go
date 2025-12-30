@@ -2,7 +2,6 @@ package controllers
 
 import (
 	"net/http"
-	"sistema-pasajes/internal/configs"
 	"sistema-pasajes/internal/services"
 
 	"github.com/gin-gonic/gin"
@@ -15,11 +14,10 @@ type UsuarioController struct {
 }
 
 func NewUsuarioController() *UsuarioController {
-	db := configs.DB
 	return &UsuarioController{
-		userService:   services.NewUsuarioService(db),
-		rolService:    services.NewRolService(db),
-		ciudadService: services.NewCiudadService(db),
+		userService:   services.NewUsuarioService(),
+		rolService:    services.NewRolService(),
+		ciudadService: services.NewCiudadService(),
 	}
 }
 

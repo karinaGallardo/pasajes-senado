@@ -3,6 +3,7 @@ package repositories
 import (
 	"sistema-pasajes/internal/models"
 
+	"sistema-pasajes/internal/configs"
 	"gorm.io/gorm"
 )
 
@@ -10,8 +11,8 @@ type AerolineaRepository struct {
 	db *gorm.DB
 }
 
-func NewAerolineaRepository(db *gorm.DB) *AerolineaRepository {
-	return &AerolineaRepository{db: db}
+func NewAerolineaRepository() *AerolineaRepository {
+	return &AerolineaRepository{db: configs.DB}
 }
 
 func (r *AerolineaRepository) FindAllActive() ([]models.Aerolinea, error) {

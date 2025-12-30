@@ -3,9 +3,8 @@ package controllers
 import (
 	"fmt"
 	"net/http"
-	"sistema-pasajes/internal/configs"
 	"sistema-pasajes/internal/models"
-	"sistema-pasajes/internal/repositories"
+	"sistema-pasajes/internal/services"
 	"strconv"
 	"time"
 
@@ -14,22 +13,19 @@ import (
 )
 
 type CompensacionController struct {
-	repo     *repositories.CompensacionRepository
-	userRepo *repositories.UsuarioRepository
-	catRepo  *repositories.CategoriaCompensacionRepository
+	compService *services.CompensacionService
+	userService *services.UsuarioService
 }
 
 func NewCompensacionController() *CompensacionController {
-	db := configs.DB
 	return &CompensacionController{
-		repo:     repositories.NewCompensacionRepository(db),
-		userRepo: repositories.NewUsuarioRepository(db),
-		catRepo:  repositories.NewCategoriaCompensacionRepository(db),
+		compService: services.NewCompensacionService(),
+		userService: services.NewUsuarioService(),
 	}
 }
 
 func (ctrl *CompensacionController) Index(c *gin.Context) {
-	list, _ := ctrl.repo.FindAll()
+	list, _ := ctrl.compService.GetAll()
 	c.HTML(http.StatusOK, "compensacion/index.html", gin.H{
 		"Title": "Gestión de Compensaciones",
 		"Lista": list,
@@ -38,8 +34,8 @@ func (ctrl *CompensacionController) Index(c *gin.Context) {
 }
 
 func (ctrl *CompensacionController) Create(c *gin.Context) {
-	users, _ := ctrl.userRepo.FindAll()
-	cats, _ := ctrl.catRepo.FindAll()
+	users, _ := ctrl.userService.GetAll()
+	cats, _ := ctrl.compService.GetAllCategorias()
 
 	c.HTML(http.StatusOK, "compensacion/create.html", gin.H{
 		"Title":      "Nueva Compensación",
@@ -74,7 +70,7 @@ func (ctrl *CompensacionController) Store(c *gin.Context) {
 		Informe:         c.PostForm("informe"),
 	}
 
-	if err := ctrl.repo.Create(&comp); err != nil {
+	if err := ctrl.compService.Create(&comp); err != nil {
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}

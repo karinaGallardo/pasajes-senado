@@ -7,12 +7,9 @@ import (
 	"time"
 
 	"fmt"
-
-	"gorm.io/gorm"
 )
 
 type CupoService struct {
-	db       *gorm.DB
 	repo     *repositories.CupoRepository
 	userRepo *repositories.UsuarioRepository
 }
@@ -25,11 +22,10 @@ type CupoInfo struct {
 	Mensaje      string
 }
 
-func NewCupoService(db *gorm.DB) *CupoService {
+func NewCupoService() *CupoService {
 	return &CupoService{
-		db:       db,
-		repo:     repositories.NewCupoRepository(db),
-		userRepo: repositories.NewUsuarioRepository(db),
+		repo:     repositories.NewCupoRepository(),
+		userRepo: repositories.NewUsuarioRepository(),
 	}
 }
 
@@ -39,7 +35,7 @@ func (s *CupoService) CalcularCupo(usuarioID string, fecha time.Time) (*CupoInfo
 
 	_ = s.GenerateVouchersForMonth(year, month)
 
-	voucherRepo := repositories.NewAsignacionVoucherRepository(s.db)
+	voucherRepo := repositories.NewAsignacionVoucherRepository()
 	vouchers, err := voucherRepo.FindByUsuarioAndPeriodo(usuarioID, year, month)
 
 	if err != nil || len(vouchers) == 0 {
@@ -94,7 +90,7 @@ func (s *CupoService) GenerateVouchersForMonth(gestion int, mes int) error {
 		return errors.New("error calculando semanas")
 	}
 
-	voucherRepo := repositories.NewAsignacionVoucherRepository(s.db)
+	voucherRepo := repositories.NewAsignacionVoucherRepository()
 
 	for _, user := range senadores {
 		existing, _ := voucherRepo.FindByUsuarioAndPeriodo(user.ID, gestion, mes)
@@ -129,7 +125,7 @@ func (s *CupoService) GenerateVouchersForMonth(gestion int, mes int) error {
 }
 
 func (s *CupoService) TransferirVoucher(voucherID string, destinoID string, motivo string) error {
-	repo := repositories.NewAsignacionVoucherRepository(s.db)
+	repo := repositories.NewAsignacionVoucherRepository()
 
 	voucher, err := repo.FindByID(voucherID)
 	if err != nil {
@@ -161,7 +157,7 @@ func (s *CupoService) GetAllByPeriodo(gestion, mes int) ([]models.Cupo, error) {
 }
 
 func (s *CupoService) GetAllVouchersByPeriodo(gestion, mes int) ([]models.AsignacionVoucher, error) {
-	repo := repositories.NewAsignacionVoucherRepository(s.db)
+	repo := repositories.NewAsignacionVoucherRepository()
 	return repo.FindByPeriodo(gestion, mes)
 }
 
@@ -170,7 +166,7 @@ func (s *CupoService) GetCupo(usuarioID string, gestion, mes int) (*models.Cupo,
 }
 
 func (s *CupoService) IncrementarUso(usuarioID string, gestion, mes int) error {
-	voucherRepo := repositories.NewAsignacionVoucherRepository(s.db)
+	voucherRepo := repositories.NewAsignacionVoucherRepository()
 
 	voucher, err := voucherRepo.FindAvailableByUsuarioAndPeriodo(usuarioID, gestion, mes)
 	if err != nil {
@@ -186,7 +182,7 @@ func (s *CupoService) IncrementarUso(usuarioID string, gestion, mes int) error {
 }
 
 func (s *CupoService) RevertirUso(usuarioID string, gestion, mes int) error {
-	voucherRepo := repositories.NewAsignacionVoucherRepository(s.db)
+	voucherRepo := repositories.NewAsignacionVoucherRepository()
 	vouchers, err := voucherRepo.FindByUsuarioAndPeriodo(usuarioID, gestion, mes)
 	if err != nil {
 		return err
@@ -202,7 +198,7 @@ func (s *CupoService) RevertirUso(usuarioID string, gestion, mes int) error {
 }
 
 func (s *CupoService) ResetVouchersForMonth(gestion, mes int) error {
-	repo := repositories.NewAsignacionVoucherRepository(s.db)
+	repo := repositories.NewAsignacionVoucherRepository()
 	vouchers, _ := repo.FindByPeriodo(gestion, mes)
 	for _, v := range vouchers {
 		if v.Estado == "USADO" {
@@ -210,7 +206,7 @@ func (s *CupoService) ResetVouchersForMonth(gestion, mes int) error {
 		}
 	}
 	for _, v := range vouchers {
-		s.db.Unscoped().Delete(&v)
+		repo.DeleteUnscoped(&v)
 	}
 	return nil
 }

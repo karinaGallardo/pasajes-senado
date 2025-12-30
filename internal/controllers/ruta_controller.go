@@ -3,7 +3,6 @@ package controllers
 import (
 	"log"
 	"net/http"
-	"sistema-pasajes/internal/configs"
 	"sistema-pasajes/internal/dtos"
 	"sistema-pasajes/internal/services"
 	"strconv"
@@ -17,10 +16,9 @@ type RutaController struct {
 }
 
 func NewRutaController() *RutaController {
-	db := configs.DB
 	return &RutaController{
-		rutaService:      services.NewRutaService(db),
-		aerolineaService: services.NewAerolineaService(db),
+		rutaService:      services.NewRutaService(),
+		aerolineaService: services.NewAerolineaService(),
 	}
 }
 

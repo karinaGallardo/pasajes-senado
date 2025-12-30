@@ -4,16 +4,15 @@ import (
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
 
-	"gorm.io/gorm"
 )
 
 type AerolineaService struct {
 	repo *repositories.AerolineaRepository
 }
 
-func NewAerolineaService(db *gorm.DB) *AerolineaService {
+func NewAerolineaService() *AerolineaService {
 	return &AerolineaService{
-		repo: repositories.NewAerolineaRepository(db),
+		repo: repositories.NewAerolineaRepository(),
 	}
 }
 
