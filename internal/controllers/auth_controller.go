@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"net/http"
+	"sistema-pasajes/internal/configs"
 	"sistema-pasajes/internal/services"
 
 	"github.com/gin-contrib/sessions"
@@ -13,8 +14,11 @@ type AuthController struct {
 }
 
 func NewAuthController() *AuthController {
+	db := configs.DB
+	mongoChat := configs.MongoChat
+	mongoRRHH := configs.MongoRRHH
 	return &AuthController{
-		authService: services.NewAuthService(),
+		authService: services.NewAuthService(db, mongoChat, mongoRRHH),
 	}
 }
 

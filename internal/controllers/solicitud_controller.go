@@ -3,6 +3,8 @@ package controllers
 import (
 	"fmt"
 	"net/http"
+	"sistema-pasajes/internal/configs"
+	"sistema-pasajes/internal/dtos"
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
 	"sistema-pasajes/internal/services"
@@ -19,15 +21,19 @@ type SolicitudController struct {
 	catalogoService *services.CatalogoService
 	cupoService     *services.CupoService
 	userService     *services.UsuarioService
+	peopleRepo      *repositories.PeopleViewRepository
 }
 
 func NewSolicitudController() *SolicitudController {
+	db := configs.DB
+	mongoDB := configs.MongoRRHH
 	return &SolicitudController{
-		service:         services.NewSolicitudService(),
-		ciudadService:   services.NewCiudadService(),
-		catalogoService: services.NewCatalogoService(),
-		cupoService:     services.NewCupoService(),
-		userService:     services.NewUsuarioService(),
+		service:         services.NewSolicitudService(db),
+		ciudadService:   services.NewCiudadService(db),
+		catalogoService: services.NewCatalogoService(db),
+		cupoService:     services.NewCupoService(db),
+		userService:     services.NewUsuarioService(db),
+		peopleRepo:      repositories.NewPeopleViewRepository(mongoDB),
 	}
 }
 
@@ -127,12 +133,23 @@ func (ctrl *SolicitudController) CheckCupo(c *gin.Context) {
 }
 
 func (ctrl *SolicitudController) Store(c *gin.Context) {
+	var req dtos.CreateSolicitudRequest
+	if err := c.ShouldBind(&req); err != nil {
+		destinos, _ := ctrl.ciudadService.GetAll()
+		c.HTML(http.StatusOK, "solicitud/create.html", gin.H{
+			"Error":    "Datos inválidos: " + err.Error(),
+			"User":     c.MustGet("User"),
+			"Destinos": destinos,
+		})
+		return
+	}
+
 	layout := "2006-01-02T15:04"
-	fechaSalida, _ := time.Parse(layout, c.PostForm("fecha_salida"))
+	fechaSalida, _ := time.Parse(layout, req.FechaSalida)
 
 	var fechaRetorno time.Time
-	if c.PostForm("fecha_retorno") != "" {
-		fechaRetorno, _ = time.Parse(layout, c.PostForm("fecha_retorno"))
+	if req.FechaRetorno != "" {
+		fechaRetorno, _ = time.Parse(layout, req.FechaRetorno)
 	}
 
 	userContext, exists := c.Get("User")
@@ -142,17 +159,14 @@ func (ctrl *SolicitudController) Store(c *gin.Context) {
 	}
 	usuario := userContext.(*models.Usuario)
 
-	targetUserID := c.PostForm("target_user_id")
 	var realSolicitanteID string
-
-	if targetUserID != "" {
-		realSolicitanteID = targetUserID
-		realSolicitanteID = targetUserID
+	if req.TargetUserID != "" {
+		realSolicitanteID = req.TargetUserID
 	} else {
 		realSolicitanteID = usuario.ID
 	}
 
-	itinCode := c.PostForm("tipo_itinerario")
+	itinCode := req.TipoItinerarioCode
 	if itinCode == "" {
 		itinCode = "IDA_VUELTA"
 	}
@@ -164,15 +178,15 @@ func (ctrl *SolicitudController) Store(c *gin.Context) {
 
 	nuevaSolicitud := models.Solicitud{
 		UsuarioID:         realSolicitanteID,
-		TipoSolicitudID:   c.PostForm("tipo_solicitud_id"),
-		AmbitoViajeID:     c.PostForm("ambito_viaje_id"),
+		TipoSolicitudID:   req.TipoSolicitudID,
+		AmbitoViajeID:     req.AmbitoViajeID,
 		TipoItinerarioID:  itinID,
-		OrigenCode:        c.PostForm("origen"),
-		DestinoCode:       c.PostForm("destino"),
+		OrigenCode:        req.OrigenCode,
+		DestinoCode:       req.DestinoCode,
 		FechaSalida:       fechaSalida,
 		FechaRetorno:      fechaRetorno,
-		Motivo:            c.PostForm("motivo"),
-		AerolineaSugerida: c.PostForm("aerolinea"),
+		Motivo:            req.Motivo,
+		AerolineaSugerida: req.AerolineaSugerida,
 		Estado:            "SOLICITADO",
 	}
 
@@ -312,8 +326,7 @@ func (ctrl *SolicitudController) PrintPV01(c *gin.Context) {
 		origenUser = solicitud.Usuario.Origen.Nombre
 	}
 
-	repoMongo := repositories.NewPeopleViewRepository()
-	personaView, errMongo := repoMongo.FindSenatorDataByCI(solicitud.Usuario.CI)
+	personaView, errMongo := ctrl.peopleRepo.FindSenatorDataByCI(solicitud.Usuario.CI)
 
 	tipoUsuario := solicitud.Usuario.Tipo
 	unit := "COMISION"
@@ -499,17 +512,7 @@ func (ctrl *SolicitudController) Edit(c *gin.Context) {
 
 func (ctrl *SolicitudController) Update(c *gin.Context) {
 	id := c.Param("id")
-	var req struct {
-		TipoSolicitudID   string `form:"tipo_solicitud_id" binding:"required"`
-		AmbitoViajeID     string `form:"ambito_viaje_id" binding:"required"`
-		TipoItinerarioID  string `form:"tipo_itinerario_id" binding:"required"`
-		OrigenCod         string `form:"origen_cod" binding:"required"`
-		DestinoCod        string `form:"destino_cod" binding:"required"`
-		FechaSalida       string `form:"fecha_salida" binding:"required"`
-		FechaRetorno      string `form:"fecha_retorno"`
-		Motivo            string `form:"motivo" binding:"required"`
-		AerolineaSugerida string `form:"aerolinea_sugerida"`
-	}
+	var req dtos.UpdateSolicitudRequest
 
 	if err := c.ShouldBind(&req); err != nil {
 		c.String(http.StatusBadRequest, "Datos inválidos: "+err.Error())

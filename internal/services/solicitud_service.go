@@ -2,27 +2,33 @@ package services
 
 import (
 	"errors"
+	"log"
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
 	"strings"
 
 	gonanoid "github.com/matoous/go-nanoid/v2"
+	"gorm.io/gorm"
 )
 
 type SolicitudService struct {
-	repo         *repositories.SolicitudRepository
-	catalogoRepo *repositories.CatalogoRepository
+	db                *gorm.DB
+	repo              *repositories.SolicitudRepository
+	tipoSolicitudRepo *repositories.TipoSolicitudRepository
+	cupoService       *CupoService
 }
 
-func NewSolicitudService() *SolicitudService {
+func NewSolicitudService(db *gorm.DB) *SolicitudService {
 	return &SolicitudService{
-		repo:         repositories.NewSolicitudRepository(),
-		catalogoRepo: repositories.NewCatalogoRepository(),
+		db:                db,
+		repo:              repositories.NewSolicitudRepository(db),
+		tipoSolicitudRepo: repositories.NewTipoSolicitudRepository(db),
+		cupoService:       NewCupoService(db),
 	}
 }
 
 func (s *SolicitudService) Create(solicitud *models.Solicitud, usuario *models.Usuario) error {
-	tipoSolicitud, err := s.catalogoRepo.FindTipoSolicitudByID(solicitud.TipoSolicitudID)
+	tipoSolicitud, err := s.tipoSolicitudRepo.FindByID(solicitud.TipoSolicitudID)
 	if err != nil {
 		return errors.New("tipo de solicitud inválido o no encontrado")
 	}
@@ -69,6 +75,17 @@ func (s *SolicitudService) Approve(id string) error {
 	if err != nil {
 		return err
 	}
+
+	if solicitud.TipoSolicitud != nil && solicitud.TipoSolicitud.ConceptoViaje != nil && solicitud.TipoSolicitud.ConceptoViaje.Codigo == "DERECHO" {
+		year := solicitud.FechaSalida.Year()
+		month := int(solicitud.FechaSalida.Month())
+
+		if err := s.cupoService.ProcesarConsumoPasaje(solicitud.UsuarioID, year, month); err != nil {
+			log.Printf("Advertencia: No se pudo actualizar cupo para usuario %s: %v", solicitud.UsuarioID, err)
+			return err
+		}
+	}
+
 	solicitud.Estado = "APROBADO"
 	return s.repo.Update(solicitud)
 }

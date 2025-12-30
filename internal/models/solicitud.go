@@ -31,6 +31,8 @@ type Solicitud struct {
 	Estado string `gorm:"size:50;default:'SOLICITADO';index"`
 
 	Pasajes []Pasaje `gorm:"foreignKey:SolicitudID"`
+
+	Viaticos []Viatico `gorm:"foreignKey:SolicitudID"`
 }
 
 func (Solicitud) TableName() string {

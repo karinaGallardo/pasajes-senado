@@ -3,10 +3,10 @@ package repositories
 import (
 	"context"
 	"errors"
-	"sistema-pasajes/internal/configs"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type SenadorData struct {
@@ -41,18 +41,20 @@ type MongoPersonaView struct {
 	FuncionarioEventual   FuncionarioEventual   `bson:"funcionario_eventual"`
 }
 
-type PeopleViewRepository struct{}
+type PeopleViewRepository struct {
+	db *mongo.Database
+}
 
-func NewPeopleViewRepository() *PeopleViewRepository {
-	return &PeopleViewRepository{}
+func NewPeopleViewRepository(db *mongo.Database) *PeopleViewRepository {
+	return &PeopleViewRepository{db: db}
 }
 
 func (r *PeopleViewRepository) FindSenatorDataByCI(ci string) (*MongoPersonaView, error) {
-	if configs.MongoRRHH == nil {
+	if r.db == nil {
 		return nil, errors.New("conexión a MongoDB RRHH no establecida")
 	}
 
-	collection := configs.MongoRRHH.Collection("view_people_pasajes")
+	collection := r.db.Collection("view_people_pasajes")
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 

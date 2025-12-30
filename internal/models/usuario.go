@@ -32,6 +32,12 @@ type Usuario struct {
 
 	EncargadoID *string  `gorm:"size:36;index"`
 	Encargado   *Usuario `gorm:"foreignKey:EncargadoID"`
+
+	CargoID *string `gorm:"size:36;index"`
+	Cargo   *Cargo  `gorm:"foreignKey:CargoID"`
+
+	OficinaID *string  `gorm:"size:36;index"`
+	Oficina   *Oficina `gorm:"foreignKey:OficinaID"`
 }
 
 func (u *Usuario) GetNombreCompleto() string {

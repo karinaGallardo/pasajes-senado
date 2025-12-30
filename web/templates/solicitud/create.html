@@ -17,7 +17,6 @@
   </div>
 
   <form action="/solicitudes" method="POST" class="bg-white shadow rounded-lg overflow-hidden border border-gray-200">
-    <!-- Si estamos creando para otro usuario (como gestor), enviamos el ID -->
     {{ if ne .User.ID .CurrentUser.ID }}
     <input type="hidden" name="target_user_id" value="{{ .User.ID }}" />
     <div class="bg-blue-50 border-l-4 border-blue-400 p-4">
@@ -46,7 +45,6 @@
       <div class="bg-red-50 border-l-4 border-red-400 p-4">
         <div class="flex">
           <div class="flex-shrink-0">
-            <!-- Heroicon name: solid/exclamation -->
             <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
               <path
                 fill-rule="evenodd"
@@ -164,12 +162,12 @@
              }"
           x-effect="
                 if (tipo === 'IDA_VUELTA') {
-                    isLocked = true;
-                    if (userOrigenCode !== 'LPB' && userOrigenCode !== '') {
-                        origen = userOrigenCode;
-                    }
+                  isLocked = true;
+                  if (userOrigenCode !== 'LPB' && userOrigenCode !== '') {
+                      origen = userOrigenCode;
+                  }
                 } else {
-                    isLocked = false;
+                  isLocked = false;
                 }
              "
         >

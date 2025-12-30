@@ -1,37 +1,40 @@
 package repositories
 
 import (
-	"sistema-pasajes/internal/configs"
 	"sistema-pasajes/internal/models"
+
+	"gorm.io/gorm"
 )
 
-type DescargoRepository struct{}
+type DescargoRepository struct {
+	db *gorm.DB
+}
 
-func NewDescargoRepository() *DescargoRepository {
-	return &DescargoRepository{}
+func NewDescargoRepository(db *gorm.DB) *DescargoRepository {
+	return &DescargoRepository{db: db}
 }
 
 func (r *DescargoRepository) Create(descargo *models.Descargo) error {
-	return configs.DB.Create(descargo).Error
+	return r.db.Create(descargo).Error
 }
 
 func (r *DescargoRepository) FindBySolicitudID(solicitudID string) (*models.Descargo, error) {
 	var descargo models.Descargo
-	err := configs.DB.Where("solicitud_id = ?", solicitudID).First(&descargo).Error
+	err := r.db.Preload("Documentos").Where("solicitud_id = ?", solicitudID).First(&descargo).Error
 	return &descargo, err
 }
 
 func (r *DescargoRepository) FindByID(id string) (*models.Descargo, error) {
 	var descargo models.Descargo
-	err := configs.DB.Preload("Solicitud").Preload("Solicitud.Usuario").Preload("Solicitud.Origen").Preload("Solicitud.Destino").First(&descargo, id).Error
+	err := r.db.Preload("Documentos").Preload("Solicitud").Preload("Solicitud.Usuario").Preload("Solicitud.Origen").Preload("Solicitud.Destino").First(&descargo, "id = ?", id).Error
 	return &descargo, err
 }
 
 func (r *DescargoRepository) FindAll() ([]models.Descargo, error) {
 	var descargos []models.Descargo
-	err := configs.DB.Preload("Solicitud").Preload("Solicitud.Usuario").Order("created_at desc").Find(&descargos).Error
+	err := r.db.Preload("Solicitud").Preload("Solicitud.Usuario").Order("created_at desc").Find(&descargos).Error
 	return descargos, err
 }
 func (r *DescargoRepository) Update(descargo *models.Descargo) error {
-	return configs.DB.Save(descargo).Error
+	return r.db.Save(descargo).Error
 }

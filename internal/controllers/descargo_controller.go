@@ -1,14 +1,18 @@
 package controllers
 
 import (
+	"fmt"
 	"log"
 	"net/http"
+	"sistema-pasajes/internal/configs"
+	"sistema-pasajes/internal/dtos"
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
 	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
+	gonanoid "github.com/matoous/go-nanoid/v2"
 )
 
 type DescargoController struct {
@@ -17,9 +21,10 @@ type DescargoController struct {
 }
 
 func NewDescargoController() *DescargoController {
+	db := configs.DB
 	return &DescargoController{
-		repo:          repositories.NewDescargoRepository(),
-		solicitudRepo: repositories.NewSolicitudRepository(),
+		repo:          repositories.NewDescargoRepository(db),
+		solicitudRepo: repositories.NewSolicitudRepository(db),
 	}
 }
 
@@ -59,23 +64,61 @@ func (ctrl *DescargoController) Create(c *gin.Context) {
 }
 
 func (ctrl *DescargoController) Store(c *gin.Context) {
-	solicitudID := c.PostForm("solicitud_id")
+	var req dtos.CreateDescargoRequest
+	if err := c.ShouldBind(&req); err != nil {
+		c.Redirect(http.StatusFound, "/solicitudes?error=DatosInvalidos")
+		return
+	}
 
-	fechaPresentacion, _ := time.Parse("2006-01-02", c.PostForm("fecha_presentacion"))
+	solicitudID := req.SolicitudID
+	fechaPresentacion, err := time.Parse("2006-01-02", req.FechaPresentacion)
+	if err != nil {
+		c.Redirect(http.StatusFound, "/solicitudes?error=FechaInvalida")
+		return
+	}
 
-	monto, _ := strconv.ParseFloat(c.PostForm("monto_devolucion"), 64)
+	monto, err := strconv.ParseFloat(req.MontoDevolucion, 64)
+	if err != nil {
+		monto = 0 // Default to 0 if invalid or empty
+	}
 
 	userContext := c.MustGet("User").(models.Usuario)
+
+	const alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+	codeSuffix, _ := gonanoid.Generate(alphabet, 6)
+	codigo := fmt.Sprintf("D-%d-%s", time.Now().Year(), codeSuffix)
 
 	nuevoDescargo := models.Descargo{
 		SolicitudID:        solicitudID,
 		UsuarioID:          userContext.ID,
+		Codigo:             codigo,
+		NumeroCite:         req.NumeroCite,
 		FechaPresentacion:  fechaPresentacion,
-		InformeActividades: c.PostForm("informe_actividades"),
+		InformeActividades: req.InformeActividades,
 		MontoDevolucion:    monto,
-		Observaciones:      c.PostForm("observaciones"),
+		Observaciones:      req.Observaciones,
 		Estado:             "EN_REVISION",
 	}
+	nuevoDescargo.CreatedBy = &userContext.ID
+
+	tipos := req.DocTipo
+	numeros := req.DocNumero
+	fechas := req.DocFecha
+	detalles := req.DocDetalle
+
+	var docs []models.DocumentoDescargo
+	for i := range tipos {
+		if i < len(numeros) && numeros[i] != "" {
+			f, _ := time.Parse("2006-01-02", fechas[i])
+			docs = append(docs, models.DocumentoDescargo{
+				Tipo:    tipos[i],
+				Numero:  numeros[i],
+				Fecha:   f,
+				Detalle: detalles[i],
+			})
+		}
+	}
+	nuevoDescargo.Documentos = docs
 
 	if err := ctrl.repo.Create(&nuevoDescargo); err != nil {
 		log.Printf("Error creando descargo: %v", err)
@@ -101,11 +144,6 @@ func (ctrl *DescargoController) Show(c *gin.Context) {
 		"Descargo": descargo,
 		"User":     c.MustGet("User"),
 	})
-	c.HTML(http.StatusOK, "descargo/show.html", gin.H{
-		"Title":    "Detalle de Descargo",
-		"Descargo": descargo,
-		"User":     c.MustGet("User"),
-	})
 }
 
 func (ctrl *DescargoController) Approve(c *gin.Context) {
@@ -119,12 +157,16 @@ func (ctrl *DescargoController) Approve(c *gin.Context) {
 	}
 
 	descargo.Estado = "APROBADO"
+	userContext := c.MustGet("User").(models.Usuario)
+	descargo.UpdatedBy = &userContext.ID
+
 	ctrl.repo.Update(descargo)
 
 	if descargo.SolicitudID != "" {
 		solicitud, err := ctrl.solicitudRepo.FindByID(descargo.SolicitudID)
 		if err == nil {
 			solicitud.Estado = "FINALIZADO"
+			solicitud.UpdatedBy = &userContext.ID
 			ctrl.solicitudRepo.Update(solicitud)
 		}
 	}

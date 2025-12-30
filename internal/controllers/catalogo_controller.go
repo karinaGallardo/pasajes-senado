@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"net/http"
+	"sistema-pasajes/internal/configs"
 	"sistema-pasajes/internal/services"
 
 	"github.com/gin-gonic/gin"
@@ -12,8 +13,9 @@ type CatalogoController struct {
 }
 
 func NewCatalogoController() *CatalogoController {
+	db := configs.DB
 	return &CatalogoController{
-		service: services.NewCatalogoService(),
+		service: services.NewCatalogoService(db),
 	}
 }
 

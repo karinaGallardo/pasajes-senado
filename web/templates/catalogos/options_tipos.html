@@ -1,13 +1,9 @@
-{{ define "catalogos/options_tipos.html" }} {{ if eq (len .Tipos) 1 }} {{ range
-.Tipos }}
+{{ define "catalogos/options_tipos.html" }} {{ if eq (len .Tipos) 1 }} {{ range .Tipos }}
 <option value="{{ .ID }}" selected>{{ .Nombre }}</option>
 {{ end }}
 <script>
-  // Disparar evento para cargar el siguiente nivel (Ámbitos)
   setTimeout(() => {
-    document
-      .getElementById("tipo_solicitud_id")
-      .dispatchEvent(new Event("change", { bubbles: true }));
+    document.getElementById("tipo_solicitud_id").dispatchEvent(new Event("change", { bubbles: true }));
   }, 50);
 </script>
 {{ else }}

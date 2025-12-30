@@ -3,15 +3,17 @@ package services
 import (
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
+
+	"gorm.io/gorm"
 )
 
 type RolService struct {
 	repo *repositories.RolRepository
 }
 
-func NewRolService() *RolService {
+func NewRolService(db *gorm.DB) *RolService {
 	return &RolService{
-		repo: repositories.NewRolRepository(),
+		repo: repositories.NewRolRepository(db),
 	}
 }
 

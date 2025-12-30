@@ -20,9 +20,9 @@
         <div class="sm:col-span-6 bg-senado-50 p-4 rounded-md border border-senado-100">
           <h4 class="text-sm font-bold text-senado-primary mb-2">Resumen del Viaje</h4>
           <p class="text-sm text-senado-primary"><strong>Motivo:</strong> {{ .Solicitud.Motivo }}</p>
-          <p class="text-sm text-senado-primary"><strong>Fechas:</strong> {{ .Solicitud.FechaSalida.Format "02/01/2006"
-            }} -
-            {{ .Solicitud.FechaRetorno.Format "02/01/2006" }}</p>
+          <p class="text-sm text-senado-primary">
+            <strong>Fechas:</strong> {{ .Solicitud.FechaSalida.Format "02/01/2006" }} - {{ .Solicitud.FechaRetorno.Format "02/01/2006" }}
+          </p>
         </div>
 
         <div class="sm:col-span-3">
@@ -42,6 +42,27 @@
           </div>
         </div>
 
+        <div class="sm:col-span-3">
+          <label class="block text-sm font-medium text-gray-700">Nº de Cite de Remisión</label>
+          <div class="mt-1">
+            <input type="text" name="numero_cite"
+              class="shadow-sm focus:ring-senado-secondary focus:border-senado-secondary block w-full sm:text-sm border-gray-300 rounded-md border p-2"
+              placeholder="Ej: CITE-001/2025">
+          </div>
+        </div>
+
+        <div class="sm:col-span-6 bg-white border border-gray-200 rounded p-4">
+             <div class="flex justify-between items-center mb-4">
+                 <h3 class="text-sm font-bold text-gray-700">Documentos de Respaldo (Facturas / Pases a Bordo)</h3>
+                 <button type="button" onclick="addDocRow()" class="text-xs bg-indigo-50 text-indigo-700 px-2 py-1 rounded border border-indigo-200 hover:bg-indigo-100">
+                     + Agregar Documento
+                 </button>
+             </div>
+             <div id="docs-container" class="space-y-2">
+                 <!-- Rows will be added here via JS -->
+             </div>
+        </div>
+
         <div class="sm:col-span-6">
           <label class="block text-sm font-medium text-gray-700">Informe de Actividades</label>
           <div class="mt-1">
@@ -58,6 +79,39 @@
               class="shadow-sm focus:ring-senado-secondary focus:border-senado-secondary block w-full sm:text-sm border border-gray-300 rounded-md p-2"></textarea>
           </div>
         </div>
+      </div>
+    </div>
+
+    <script>
+        function addDocRow() {
+            const container = document.getElementById('docs-container');
+            const row = document.createElement('div');
+            row.className = 'grid grid-cols-12 gap-2 items-center bg-gray-50 p-2 rounded border border-gray-100';
+            row.innerHTML = `
+                <div class="col-span-2">
+                    <select name="doc_tipo[]" class="w-full text-xs border-gray-300 rounded">
+                        <option value="FACTURA">Factura</option>
+                        <option value="PASE_ABORDAJE">Pase Abordaje</option>
+                        <option value="OTRO">Otro</option>
+                    </select>
+                </div>
+                <div class="col-span-2">
+                    <input type="date" name="doc_fecha[]" required class="w-full text-xs border-gray-300 rounded">
+                </div>
+                <div class="col-span-3">
+                    <input type="text" name="doc_numero[]" required placeholder="Nº Doc" class="w-full text-xs border-gray-300 rounded">
+                </div>
+                <div class="col-span-4">
+                    <input type="text" name="doc_detalle[]" placeholder="Detalle (Ej: Transporte)" class="w-full text-xs border-gray-300 rounded">
+                </div>
+                <div class="col-span-1 text-right">
+                    <button type="button" onclick="this.parentElement.parentElement.remove()" class="text-red-500 hover:text-red-700 font-bold">×</button>
+                </div>
+            `;
+            container.appendChild(row);
+        }
+        document.addEventListener('DOMContentLoaded', addDocRow);
+    </script>
       </div>
     </div>
 

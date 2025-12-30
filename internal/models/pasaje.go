@@ -6,10 +6,16 @@ type Pasaje struct {
 	BaseModel
 	SolicitudID string `gorm:"not null;size:36"`
 
-	Aerolinea   string `gorm:"size:100"`
+	AerolineaID *string    `gorm:"size:36"`
+	Aerolinea   *Aerolinea `gorm:"foreignKey:AerolineaID"`
+
+	AgenciaID *string  `gorm:"size:36"`
+	Agencia   *Agencia `gorm:"foreignKey:AgenciaID"`
+
 	NumeroVuelo string `gorm:"size:50"`
 	Ruta        string `gorm:"size:255"`
-	FechaVuelo  time.Time
+
+	FechaVuelo time.Time
 
 	CodigoReserva string  `gorm:"size:50"`
 	NumeroBoleto  string  `gorm:"size:100;index"`

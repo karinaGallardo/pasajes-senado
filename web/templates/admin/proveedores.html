@@ -1,0 +1,99 @@
+{{ define "admin/proveedores.html" }} {{ template "layout_start" . }}
+
+<div class="max-w-6xl mx-auto mt-8">
+  <h1 class="text-2xl font-bold text-senado-800 mb-6 flex items-center">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mr-2 text-senado-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        stroke-width="2"
+        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
+      />
+    </svg>
+    Gestión de Proveedores
+  </h1>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+    <!-- Aerolineas -->
+    <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+      <div class="bg-senado-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+        <h2 class="text-lg font-bold text-senado-800">Aerolíneas</h2>
+      </div>
+
+      <div class="p-4 bg-gray-50 border-b border-gray-100">
+        <form action="/admin/aerolineas" method="POST" class="flex gap-2">
+          <input
+            type="text"
+            name="nombre"
+            placeholder="Nueva Aerolínea..."
+            class="flex-1 rounded-md border-gray-300 shadow-sm focus:border-senado-500 focus:ring-senado-500"
+            required
+          />
+          <button type="submit" class="bg-senado-600 text-white px-3 py-2 rounded hover:bg-senado-700">Agregar</button>
+        </form>
+      </div>
+
+      <ul class="divide-y divide-gray-200">
+        {{ range .Aerolineas }}
+        <li class="px-6 py-4 flex items-center justify-between hover:bg-gray-50">
+          <div class="flex items-center">
+            <span class="font-medium text-gray-900">{{ .Nombre }}</span>
+            {{ if not .Estado }}
+            <span class="ml-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Inactiva</span>
+            {{ end }}
+          </div>
+          <form action="/admin/aerolineas/{{ .ID }}/toggle" method="POST">
+            <button type="submit" class="text-sm {{ if .Estado }}text-red-600 hover:text-red-900{{ else }}text-green-600 hover:text-green-900{{ end }}">
+              {{ if .Estado }}Desactivar{{ else }}Activar{{ end }}
+            </button>
+          </form>
+        </li>
+        {{ else }}
+        <li class="px-6 py-4 text-gray-500 text-sm text-center">No hay aerolíneas registradas.</li>
+        {{ end }}
+      </ul>
+    </div>
+
+    <!-- Agencias -->
+    <div class="bg-white rounded-lg shadow-lg overflow-hidden">
+      <div class="bg-senado-50 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+        <h2 class="text-lg font-bold text-senado-800">Agencias de Viaje</h2>
+      </div>
+
+      <div class="p-4 bg-gray-50 border-b border-gray-100">
+        <form action="/admin/agencias" method="POST" class="grid grid-cols-1 gap-2">
+          <input type="text" name="nombre" placeholder="Nombre Agencia..." class="rounded-md border-gray-300 shadow-sm focus:border-senado-500 focus:ring-senado-500" required />
+          <div class="flex gap-2">
+            <input type="text" name="telefono" placeholder="Teléfono" class="flex-1 rounded-md border-gray-300 shadow-sm focus:border-senado-500 focus:ring-senado-500" />
+            <button type="submit" class="bg-senado-600 text-white px-3 py-2 rounded hover:bg-senado-700">Agregar</button>
+          </div>
+        </form>
+      </div>
+
+      <ul class="divide-y divide-gray-200">
+        {{ range .Agencias }}
+        <li class="px-6 py-4 flex items-center justify-between hover:bg-gray-50">
+          <div>
+            <div class="flex items-center">
+              <span class="font-medium text-gray-900">{{ .Nombre }}</span>
+              {{ if not .Estado }}
+              <span class="ml-2 px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">Inactiva</span>
+              {{ end }}
+            </div>
+            <div class="text-sm text-gray-500">{{ .Telefono }}</div>
+          </div>
+          <form action="/admin/agencias/{{ .ID }}/toggle" method="POST">
+            <button type="submit" class="text-sm {{ if .Estado }}text-red-600 hover:text-red-900{{ else }}text-green-600 hover:text-green-900{{ end }}">
+              {{ if .Estado }}Desactivar{{ else }}Activar{{ end }}
+            </button>
+          </form>
+        </li>
+        {{ else }}
+        <li class="px-6 py-4 text-gray-500 text-sm text-center">No hay agencias registradas.</li>
+        {{ end }}
+      </ul>
+    </div>
+  </div>
+</div>
+
+{{ template "layout_end" . }} {{ end }}

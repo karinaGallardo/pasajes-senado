@@ -1,12 +1,9 @@
 package main
 
 import (
-	"flag"
-	"fmt"
+	"html/template"
 	"log"
-	"os"
 	"sistema-pasajes/internal/configs"
-	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/routes"
 
 	"github.com/gin-contrib/sessions"
@@ -18,45 +15,13 @@ import (
 func main() {
 	configs.ConnectDB()
 
-	migrateFlag := flag.Bool("migrate", false, "Run database migrations and exit")
-	flag.Parse()
-
-	if *migrateFlag {
-		configs.ConnectDB()
-		log.Println("Ejecutando migraciones (GORM AutoMigrate)...")
-
-		err := configs.DB.AutoMigrate(
-			&models.Usuario{},
-			&models.Rol{},
-			&models.Permiso{},
-			&models.Solicitud{},
-			&models.Pasaje{},
-			&models.Descargo{},
-			&models.Ciudad{},
-			&models.ConceptoViaje{},
-			&models.TipoSolicitud{},
-			&models.AmbitoViaje{},
-			&models.TipoItinerario{},
-			&models.Genero{},
-		)
-		if err != nil {
-			log.Fatalf("Error en migración: %v", err)
-		}
-
-		roles := []models.Rol{
-			{Codigo: "ADMIN", Nombre: "Administrador del Sistema"},
-			{Codigo: "TECNICO", Nombre: "Técnico de Sistema"},
-			{Codigo: "USUARIO", Nombre: "Usuario Estándar"},
-		}
-		for _, r := range roles {
-			configs.DB.FirstOrCreate(&r, models.Rol{Codigo: r.Codigo})
-		}
-
-		fmt.Println("¡Migraciones completadas!")
-		os.Exit(0)
-	}
-
 	r := gin.Default()
+
+	r.SetFuncMap(template.FuncMap{
+		"add": func(a, b float64) float64 {
+			return a + b
+		},
+	})
 
 	store := cookie.NewStore([]byte(viper.GetString("SESSION_SECRET")))
 	r.Use(sessions.Sessions("pasajes_session", store))

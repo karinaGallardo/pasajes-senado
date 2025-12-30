@@ -1,29 +1,32 @@
 package repositories
 
 import (
-	"sistema-pasajes/internal/configs"
 	"sistema-pasajes/internal/models"
+
+	"gorm.io/gorm"
 )
 
-type DestinoRepository struct{}
+type DestinoRepository struct {
+	db *gorm.DB
+}
 
-func NewDestinoRepository() *DestinoRepository {
-	return &DestinoRepository{}
+func NewDestinoRepository(db *gorm.DB) *DestinoRepository {
+	return &DestinoRepository{db: db}
 }
 
 func (r *DestinoRepository) FindAll() ([]models.Ciudad, error) {
 	var destinos []models.Ciudad
-	err := configs.DB.Order("ciudad asc").Find(&destinos).Error
+	err := r.db.Order("ciudad asc").Find(&destinos).Error
 	return destinos, err
 }
 
 func (r *DestinoRepository) Create(destino *models.Ciudad) error {
-	return configs.DB.Create(destino).Error
+	return r.db.Create(destino).Error
 }
 
 func (r *DestinoRepository) SeedDefaults() error {
 	var count int64
-	configs.DB.Model(&models.Ciudad{}).Count(&count)
+	r.db.Model(&models.Ciudad{}).Count(&count)
 	if count > 0 {
 		return nil
 	}
@@ -41,5 +44,5 @@ func (r *DestinoRepository) SeedDefaults() error {
 		{Nombre: "Uyuni", Code: "UYU"},
 	}
 
-	return configs.DB.Create(&defaults).Error
+	return r.db.Create(&defaults).Error
 }

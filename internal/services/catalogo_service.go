@@ -3,46 +3,54 @@ package services
 import (
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
+
+	"gorm.io/gorm"
 )
 
 type CatalogoService struct {
-	repo *repositories.CatalogoRepository
+	conceptoRepo       *repositories.ConceptoViajeRepository
+	tipoSolicitudRepo  *repositories.TipoSolicitudRepository
+	ambitoRepo         *repositories.AmbitoViajeRepository
+	tipoItinerarioRepo *repositories.TipoItinerarioRepository
 }
 
-func NewCatalogoService() *CatalogoService {
+func NewCatalogoService(db *gorm.DB) *CatalogoService {
 	return &CatalogoService{
-		repo: repositories.NewCatalogoRepository(),
+		conceptoRepo:       repositories.NewConceptoViajeRepository(db),
+		tipoSolicitudRepo:  repositories.NewTipoSolicitudRepository(db),
+		ambitoRepo:         repositories.NewAmbitoViajeRepository(db),
+		tipoItinerarioRepo: repositories.NewTipoItinerarioRepository(db),
 	}
 }
 
 func (s *CatalogoService) GetAllConceptos() ([]models.ConceptoViaje, error) {
-	return s.repo.FindConceptos()
+	return s.conceptoRepo.FindConceptos()
 }
 
 func (s *CatalogoService) GetTiposByConcepto(conceptoID string) ([]models.TipoSolicitud, error) {
-	return s.repo.FindTiposByConceptoID(conceptoID)
+	return s.tipoSolicitudRepo.FindByConceptoID(conceptoID)
 }
 
 func (s *CatalogoService) GetAmbitosByTipo(tipoID string) ([]models.AmbitoViaje, error) {
-	return s.repo.FindAmbitosByTipoID(tipoID)
+	return s.tipoSolicitudRepo.FindAmbitosByTipoID(tipoID)
 }
 
 func (s *CatalogoService) GetTipoByID(id string) (*models.TipoSolicitud, error) {
-	return s.repo.FindTipoSolicitudByID(id)
+	return s.tipoSolicitudRepo.FindByID(id)
 }
 
 func (s *CatalogoService) GetTipoItinerarioByCodigo(codigo string) (*models.TipoItinerario, error) {
-	return s.repo.FindTipoItinerarioByCodigo(codigo)
+	return s.tipoItinerarioRepo.FindByCodigo(codigo)
 }
 
 func (s *CatalogoService) GetTiposItinerario() ([]models.TipoItinerario, error) {
-	return s.repo.FindAllTiposItinerario()
+	return s.tipoItinerarioRepo.FindAll()
 }
 
 func (s *CatalogoService) GetTiposSolicitud() ([]models.TipoSolicitud, error) {
-	return s.repo.FindAllTiposSolicitud()
+	return s.tipoSolicitudRepo.FindAll()
 }
 
 func (s *CatalogoService) GetAmbitosViaje() ([]models.AmbitoViaje, error) {
-	return s.repo.FindAllAmbitosViaje()
+	return s.ambitoRepo.FindAll()
 }

@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"net/http"
+	"sistema-pasajes/internal/configs"
 	"sistema-pasajes/internal/repositories"
 
 	"github.com/gin-gonic/gin"
@@ -13,9 +14,10 @@ type DashboardController struct {
 }
 
 func NewDashboardController() *DashboardController {
+	db := configs.DB
 	return &DashboardController{
-		solicitudRepo: repositories.NewSolicitudRepository(),
-		descargoRepo:  repositories.NewDescargoRepository(),
+		solicitudRepo: repositories.NewSolicitudRepository(db),
+		descargoRepo:  repositories.NewDescargoRepository(db),
 	}
 }
 

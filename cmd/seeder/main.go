@@ -11,8 +11,61 @@ func main() {
 	configs.ConnectDB()
 
 	seedCiudades()
+	seedProveedores()
 	seedRolesAndPermissions()
 	seedCatalogosViaje()
+	seedViaticosAndConfig()
+}
+
+func seedViaticosAndConfig() {
+	fmt.Println("Sincronizando Categorías de Viáticos y Configuración...")
+
+	categorias := []models.CategoriaViatico{
+		{Nombre: "PRIMERA CATEGORIA", Codigo: 1, Monto: 359.00, Moneda: "Bs", Ubicacion: "INTERIOR"},
+		{Nombre: "SEGUNDA CATEGORIA", Codigo: 2, Monto: 279.00, Moneda: "Bs", Ubicacion: "INTERIOR"},
+		{Nombre: "TERCERA CATEGORIA", Codigo: 3, Monto: 212.00, Moneda: "Bs", Ubicacion: "INTERIOR"},
+		{Nombre: "VIAJE AL EXTERIOR (ESCALA BASICA)", Codigo: 4, Monto: 300.00, Moneda: "USD", Ubicacion: "EXTERIOR"},
+	}
+
+	for _, c := range categorias {
+		configs.DB.Where("nombre = ? AND ubicacion = ?", c.Nombre, c.Ubicacion).FirstOrCreate(&c)
+	}
+
+	confList := []models.Configuracion{
+		{Clave: "RC_IVA_TASA", Valor: "0.13", Tipo: "FLOAT"},
+		{Clave: "TC_USD_OFICIAL", Valor: "6.96", Tipo: "FLOAT"},
+		{Clave: "GESTION_ACTUAL", Valor: "2025", Tipo: "INT"},
+	}
+
+	for _, cf := range confList {
+		var existing models.Configuracion
+		result := configs.DB.Where("clave = ?", cf.Clave).First(&existing)
+		if result.Error != nil {
+			configs.DB.Create(&cf)
+		} else {
+		}
+	}
+}
+
+func seedProveedores() {
+	fmt.Println("Sincronizando Proveedores (Aerolineas y Agencias)...")
+
+	aerolineas := []models.Aerolinea{
+		{Nombre: "BoA - Boliviana de Aviación", Estado: true},
+		{Nombre: "EcoJet", Estado: true},
+	}
+	for _, a := range aerolineas {
+		configs.DB.Where("nombre = ?", a.Nombre).FirstOrCreate(&a)
+	}
+
+	agencias := []models.Agencia{
+		{Nombre: "Agencia de Viajes Cuarta Dimensión", Estado: true},
+		{Nombre: "Tropical Tours", Estado: true},
+		{Nombre: "Mundo Viajes", Estado: true},
+	}
+	for _, a := range agencias {
+		configs.DB.Where("nombre = ?", a.Nombre).FirstOrCreate(&a)
+	}
 }
 
 func seedCatalogosViaje() {

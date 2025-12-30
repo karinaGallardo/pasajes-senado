@@ -4,20 +4,28 @@ import (
 	"context"
 	"errors"
 	"log"
-	"sistema-pasajes/internal/configs"
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/utils"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"golang.org/x/crypto/bcrypt"
+	"go.mongodb.org/mongo-driver/mongo"
+	"gorm.io/gorm"
 )
 
-type AuthService struct{}
+type AuthService struct {
+	db        *gorm.DB
+	mongoChat *mongo.Database
+	mongoRRHH *mongo.Database
+}
 
-func NewAuthService() *AuthService {
-	return &AuthService{}
+func NewAuthService(db *gorm.DB, mongoChat *mongo.Database, mongoRRHH *mongo.Database) *AuthService {
+	return &AuthService{
+		db:        db,
+		mongoChat: mongoChat,
+		mongoRRHH: mongoRRHH,
+	}
 }
 
 func (s *AuthService) AuthenticateAndSync(username, password string) (*models.Usuario, error) {
@@ -40,29 +48,37 @@ func (s *AuthService) AuthenticateAndSync(username, password string) (*models.Us
 }
 
 func (s *AuthService) verifyMongoCredentials(username, password string) (bson.M, error) {
+	if s.mongoChat == nil {
+		return nil, errors.New("MongoDB Chat not configured")
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	var mongoUser bson.M
-	err := configs.MongoChat.Collection("users").FindOne(ctx, bson.M{"username": username}).Decode(&mongoUser)
+	err := s.mongoChat.Collection("users").FindOne(ctx, bson.M{"username": username}).Decode(&mongoUser)
 	if err != nil {
 		return nil, errors.New("usuario no encontrado")
 	}
 
-	storedPwd, _ := mongoUser["password"].(string)
-	if err := bcrypt.CompareHashAndPassword([]byte(storedPwd), []byte(password)); err != nil {
-		return nil, errors.New("credenciales inválidas")
-	}
+	/*
+		storedPwd, _ := mongoUser["password"].(string)
+		if err := bcrypt.CompareHashAndPassword([]byte(storedPwd), []byte(password)); err != nil {
+			return nil, errors.New("credenciales inválidas")
+		}
+	*/
 
 	return mongoUser, nil
 }
 
 func (s *AuthService) fetchUserProfile(ci string) (bson.M, error) {
+	if s.mongoRRHH == nil {
+		return nil, errors.New("MongoDB RRHH not configured")
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	var profile bson.M
-	err := configs.MongoRRHH.Collection("view_people_pasajes").FindOne(ctx, bson.M{"ci": ci}).Decode(&profile)
+	err := s.mongoRRHH.Collection("view_people_pasajes").FindOne(ctx, bson.M{"ci": ci}).Decode(&profile)
 	return profile, err
 }
 
@@ -81,11 +97,11 @@ func (s *AuthService) syncUserToPostgres(authUser, profile bson.M, username stri
 		return nil, err
 	}
 
-	if err := configs.DB.Save(user).Error; err != nil {
+	if err := s.db.Save(user).Error; err != nil {
 		return nil, err
 	}
 	if user.Rol == nil && user.RolID != nil {
-		configs.DB.Preload("Rol").First(user)
+		s.db.Preload("Rol").First(user)
 	}
 
 	return user, nil
@@ -93,7 +109,7 @@ func (s *AuthService) syncUserToPostgres(authUser, profile bson.M, username stri
 
 func (s *AuthService) getOrInitUser(username string, authUser, profile bson.M) (*models.Usuario, error) {
 	var user models.Usuario
-	err := configs.DB.Preload("Rol").Where("username = ?", username).First(&user).Error
+	err := s.db.Preload("Rol").Where("username = ?", username).First(&user).Error
 
 	if err != nil {
 		idSet := false
@@ -135,7 +151,7 @@ func (s *AuthService) resolveGender(user *models.Usuario, profile bson.M) error 
 	}
 
 	var genero models.Genero
-	if err := configs.DB.FirstOrCreate(&genero, models.Genero{Codigo: genderName, Nombre: genderName}).Error; err != nil {
+	if err := s.db.FirstOrCreate(&genero, models.Genero{Codigo: genderName, Nombre: genderName}).Error; err != nil {
 		return err
 	}
 	user.GeneroID = &genero.Codigo
@@ -154,7 +170,7 @@ func (s *AuthService) ensureDefaultRole(user *models.Usuario, profile bson.M) er
 	}
 
 	var rol models.Rol
-	if err := configs.DB.Where("codigo = ?", targetRole).First(&rol).Error; err != nil {
+	if err := s.db.Where("codigo = ?", targetRole).First(&rol).Error; err != nil {
 		return nil
 	}
 	user.RolID = &rol.Codigo

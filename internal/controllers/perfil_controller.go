@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"net/http"
+	"sistema-pasajes/internal/configs"
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/services"
 
@@ -13,8 +14,9 @@ type PerfilController struct {
 }
 
 func NewPerfilController() *PerfilController {
+	db := configs.DB
 	return &PerfilController{
-		ciudadService: services.NewCiudadService(),
+		ciudadService: services.NewCiudadService(db),
 	}
 }
 

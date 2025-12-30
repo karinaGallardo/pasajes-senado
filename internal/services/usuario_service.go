@@ -3,15 +3,17 @@ package services
 import (
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
+
+	"gorm.io/gorm"
 )
 
 type UsuarioService struct {
 	repo *repositories.UsuarioRepository
 }
 
-func NewUsuarioService() *UsuarioService {
+func NewUsuarioService(db *gorm.DB) *UsuarioService {
 	return &UsuarioService{
-		repo: repositories.NewUsuarioRepository(),
+		repo: repositories.NewUsuarioRepository(db),
 	}
 }
 

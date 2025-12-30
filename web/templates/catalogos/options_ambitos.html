@@ -1,5 +1,4 @@
-{{ define "catalogos/options_ambitos.html" }} {{ if eq (len .Ambitos) 1 }} {{
-range .Ambitos }}
+{{ define "catalogos/options_ambitos.html" }} {{ if eq (len .Ambitos) 1 }} {{ range .Ambitos }}
 <option value="{{ .ID }}" selected>{{ .Nombre }}</option>
 {{ end }} {{ else }}
 <option value="" disabled selected>Seleccione Ámbito...</option>

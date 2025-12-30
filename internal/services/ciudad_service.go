@@ -3,15 +3,17 @@ package services
 import (
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
+
+	"gorm.io/gorm"
 )
 
 type CiudadService struct {
 	repo *repositories.CiudadRepository
 }
 
-func NewCiudadService() *CiudadService {
+func NewCiudadService(db *gorm.DB) *CiudadService {
 	return &CiudadService{
-		repo: repositories.NewCiudadRepository(),
+		repo: repositories.NewCiudadRepository(db),
 	}
 }
 
