@@ -4,6 +4,7 @@ import (
 	"sistema-pasajes/internal/models"
 
 	"sistema-pasajes/internal/configs"
+
 	"gorm.io/gorm"
 )
 
@@ -19,4 +20,10 @@ func (r *RolRepository) FindAll() ([]models.Rol, error) {
 	var roles []models.Rol
 	err := r.db.Order("nombre asc").Find(&roles).Error
 	return roles, err
+}
+
+func (r *RolRepository) FindByCodigo(codigo string) (*models.Rol, error) {
+	var rol models.Rol
+	err := r.db.Where("codigo = ?", codigo).First(&rol).Error
+	return &rol, err
 }

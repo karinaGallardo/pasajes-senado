@@ -36,7 +36,7 @@ func (s *CupoService) CalcularCupo(usuarioID string, fecha time.Time) (*CupoInfo
 	_ = s.GenerateVouchersForMonth(year, month)
 
 	voucherRepo := repositories.NewAsignacionVoucherRepository()
-	vouchers, err := voucherRepo.FindByUsuarioAndPeriodo(usuarioID, year, month)
+	vouchers, err := voucherRepo.FindByHolderAndPeriodo(usuarioID, year, month)
 
 	if err != nil || len(vouchers) == 0 {
 		return &CupoInfo{EsDisponible: false, Mensaje: "No tiene pasajes habilitados para este mes."}, nil
@@ -67,17 +67,24 @@ func (s *CupoService) CalcularCupo(usuarioID string, fecha time.Time) (*CupoInfo
 	return info, nil
 }
 
-func (s *CupoService) CountMondaysInMonth(year int, month time.Month) int {
-	t := time.Date(year, month, 1, 0, 0, 0, 0, time.UTC)
+type WeekRange struct {
+	Inicio time.Time
+	Fin    time.Time
+}
+
+func (s *CupoService) GetWeeksInMonth(year int, month time.Month) []WeekRange {
+	t := time.Date(year, month, 1, 0, 0, 0, 0, time.Local)
 	lastDay := t.AddDate(0, 1, -1)
 
-	count := 0
+	var weeks []WeekRange
 	for d := t; !d.After(lastDay); d = d.AddDate(0, 0, 1) {
 		if d.Weekday() == time.Monday {
-			count++
+			monday := d
+			sunday := d.AddDate(0, 0, 6)
+			weeks = append(weeks, WeekRange{Inicio: monday, Fin: sunday})
 		}
 	}
-	return count
+	return weeks
 }
 
 func (s *CupoService) GenerateVouchersForMonth(gestion int, mes int) error {
@@ -85,7 +92,8 @@ func (s *CupoService) GenerateVouchersForMonth(gestion int, mes int) error {
 	if err != nil {
 		return err
 	}
-	semanas := s.CountMondaysInMonth(gestion, time.Month(mes))
+	weeksInfo := s.GetWeeksInMonth(gestion, time.Month(mes))
+	semanas := len(weeksInfo)
 	if semanas == 0 {
 		return errors.New("error calculando semanas")
 	}
@@ -93,35 +101,75 @@ func (s *CupoService) GenerateVouchersForMonth(gestion int, mes int) error {
 	voucherRepo := repositories.NewAsignacionVoucherRepository()
 
 	for _, user := range senadores {
-		existing, _ := voucherRepo.FindByUsuarioAndPeriodo(user.ID, gestion, mes)
-		if len(existing) > 0 {
+		if user.Tipo != "SENADOR_TITULAR" {
 			continue
 		}
+		targetTotal := semanas
 
-		if user.Tipo == "SENADOR_TITULAR" {
-			count := semanas - 1
-			for i := 1; i <= count; i++ {
-				v := models.AsignacionVoucher{
-					UsuarioID: user.ID,
-					Gestion:   gestion,
-					Mes:       mes,
-					Semana:    fmt.Sprintf("SEMANA %d", i),
-					Estado:    "DISPONIBLE",
+		// 1. Asegurar que el Cupo exista y esté actualizado
+		cupo, err := s.repo.FindByTitularAndPeriodo(user.ID, gestion, mes)
+		if err != nil {
+			newCupo := models.Cupo{
+				SenadorID:    user.ID,
+				Gestion:      gestion,
+				Mes:          mes,
+				TotalSemanas: semanas,
+				CupoTotal:    targetTotal,
+			}
+			if err := s.repo.Create(&newCupo); err != nil {
+				return fmt.Errorf("error creando cupo mensual para %s: %w", user.Username, err)
+			}
+			cupo = &newCupo
+		} else {
+			if cupo.TotalSemanas != semanas || cupo.CupoTotal != targetTotal {
+				cupo.TotalSemanas = semanas
+				cupo.CupoTotal = targetTotal
+				if err := s.repo.Update(cupo); err != nil {
+					return fmt.Errorf("error actualizando cupo para %s: %w", user.Username, err)
 				}
-				voucherRepo.Create(&v)
 			}
-		} else if user.Tipo == "SENADOR_SUPLENTE" {
-			v := models.AsignacionVoucher{
-				UsuarioID: user.ID,
-				Gestion:   gestion,
-				Mes:       mes,
-				Semana:    fmt.Sprintf("SEMANA %d (REGIONAL)", semanas),
-				Estado:    "DISPONIBLE",
+		}
+
+		// 2. Sincronizar Vouchers
+		existingVouchers, _ := voucherRepo.FindByCupoID(cupo.ID)
+		count := len(existingVouchers)
+
+		if count < targetTotal {
+			for i := count; i < targetTotal; i++ {
+				weekNum := i + 1
+				label := fmt.Sprintf("SEMANA %d", weekNum)
+
+				if weekNum == semanas {
+					label = fmt.Sprintf("SEMANA %d (REGIONAL)", weekNum)
+				}
+
+				var startDate, endDate *time.Time
+				if i < len(weeksInfo) {
+					sDate := weeksInfo[i].Inicio
+					eDate := weeksInfo[i].Fin
+					startDate = &sDate
+					endDate = &eDate
+				}
+
+				v := models.AsignacionVoucher{
+					SenadorID:  user.ID,
+					Gestion:    gestion,
+					Mes:        mes,
+					Semana:     label,
+					Estado:     "DISPONIBLE",
+					CupoID:     cupo.ID,
+					FechaDesde: startDate,
+					FechaHasta: endDate,
+				}
+				if err := voucherRepo.Create(&v); err != nil {
+					return fmt.Errorf("error creando voucher adicional para %s: %w", user.Username, err)
+				}
 			}
-			voucherRepo.Create(&v)
 		}
 	}
-	return nil
+
+	// 3. Sincronizar saldos de uso para todos
+	return s.SyncUsoForPeriod(gestion, mes)
 }
 
 func (s *CupoService) TransferirVoucher(voucherID string, destinoID string, motivo string) error {
@@ -136,12 +184,10 @@ func (s *CupoService) TransferirVoucher(voucherID string, destinoID string, moti
 		return errors.New("el voucher no está disponible para transferencia (ya usado o transferido)")
 	}
 
-	origenID := voucher.UsuarioID
 	now := time.Now()
 
 	voucher.EsTransferido = true
-	voucher.UsuarioOrigenID = &origenID
-	voucher.UsuarioID = destinoID
+	voucher.BeneficiarioID = &destinoID
 	voucher.FechaTransfer = &now
 	voucher.MotivoTransfer = motivo
 
@@ -162,28 +208,33 @@ func (s *CupoService) GetAllVouchersByPeriodo(gestion, mes int) ([]models.Asigna
 }
 
 func (s *CupoService) GetCupo(usuarioID string, gestion, mes int) (*models.Cupo, error) {
-	return s.repo.FindByUsuarioAndPeriodo(usuarioID, gestion, mes)
+	return s.repo.FindByTitularAndPeriodo(usuarioID, gestion, mes)
 }
 
 func (s *CupoService) IncrementarUso(usuarioID string, gestion, mes int) error {
 	voucherRepo := repositories.NewAsignacionVoucherRepository()
 
-	voucher, err := voucherRepo.FindAvailableByUsuarioAndPeriodo(usuarioID, gestion, mes)
+	voucher, err := voucherRepo.FindAvailableByHolderAndPeriodo(usuarioID, gestion, mes)
 	if err != nil {
 		_ = s.GenerateVouchersForMonth(gestion, mes)
-		voucher, err = voucherRepo.FindAvailableByUsuarioAndPeriodo(usuarioID, gestion, mes)
+		voucher, err = voucherRepo.FindAvailableByHolderAndPeriodo(usuarioID, gestion, mes)
 		if err != nil {
 			return errors.New("no hay pasajes disponibles para asignar (cupo agotado)")
 		}
 	}
 
 	voucher.Estado = "USADO"
-	return voucherRepo.Update(voucher)
+	if err := voucherRepo.Update(voucher); err != nil {
+		return err
+	}
+
+	// Sincronizar el cupo
+	return s.SyncCupoUsado(voucher.SenadorID, gestion, mes)
 }
 
 func (s *CupoService) RevertirUso(usuarioID string, gestion, mes int) error {
 	voucherRepo := repositories.NewAsignacionVoucherRepository()
-	vouchers, err := voucherRepo.FindByUsuarioAndPeriodo(usuarioID, gestion, mes)
+	vouchers, err := voucherRepo.FindByHolderAndPeriodo(usuarioID, gestion, mes)
 	if err != nil {
 		return err
 	}
@@ -191,22 +242,62 @@ func (s *CupoService) RevertirUso(usuarioID string, gestion, mes int) error {
 	for _, v := range vouchers {
 		if v.Estado == "USADO" {
 			v.Estado = "DISPONIBLE"
-			return voucherRepo.Update(&v)
+			if err := voucherRepo.Update(&v); err != nil {
+				return err
+			}
+			return s.SyncCupoUsado(v.SenadorID, gestion, mes)
 		}
 	}
 	return errors.New("no se encontró uso de pasaje para revertir")
 }
 
 func (s *CupoService) ResetVouchersForMonth(gestion, mes int) error {
-	repo := repositories.NewAsignacionVoucherRepository()
-	vouchers, _ := repo.FindByPeriodo(gestion, mes)
-	for _, v := range vouchers {
-		if v.Estado == "USADO" {
-			return fmt.Errorf("no se puede reiniciar el mes: hay pasajes ya usuados (Usuario: %s)", v.UsuarioID)
+	// Ahora "Reset" significa sincronizar y asegurar que todo esté correcto según las reglas
+	return s.GenerateVouchersForMonth(gestion, mes)
+}
+
+func (s *CupoService) SyncUsoForPeriod(gestion, mes int) error {
+	cupos, err := s.repo.FindByPeriodo(gestion, mes)
+	if err != nil {
+		return err
+	}
+
+	for _, c := range cupos {
+		if err := s.SyncCupoUsado(c.SenadorID, gestion, mes); err != nil {
+			fmt.Printf("Error sincronizando uso para %s: %v\n", c.SenadorID, err)
 		}
 	}
-	for _, v := range vouchers {
-		repo.DeleteUnscoped(&v)
-	}
 	return nil
+}
+
+func (s *CupoService) SyncCupoUsado(senadorID string, gestion, mes int) error {
+	cupo, err := s.repo.FindByTitularAndPeriodo(senadorID, gestion, mes)
+	if err != nil {
+		return err
+	}
+
+	voucherRepo := repositories.NewAsignacionVoucherRepository()
+	vouchers, err := voucherRepo.FindByCupoID(cupo.ID)
+	if err != nil {
+		return err
+	}
+
+	usados := 0
+	for _, v := range vouchers {
+		if v.Estado == "USADO" {
+			usados++
+		}
+	}
+
+	if cupo.CupoUsado != usados {
+		cupo.CupoUsado = usados
+		return s.repo.Update(cupo)
+	}
+
+	return nil
+}
+
+func (s *CupoService) GetVouchersByCupoID(cupoID string) ([]models.AsignacionVoucher, error) {
+	repo := repositories.NewAsignacionVoucherRepository()
+	return repo.FindByCupoID(cupoID)
 }

@@ -4,6 +4,7 @@ import (
 	"sistema-pasajes/internal/models"
 
 	"sistema-pasajes/internal/configs"
+
 	"gorm.io/gorm"
 )
 
@@ -21,6 +22,8 @@ func (r *CiudadRepository) FindAll() ([]models.Ciudad, error) {
 	return ciudades, err
 }
 
-func (r *CiudadRepository) Create(destino *models.Ciudad) error {
-	return r.db.Create(destino).Error
+func (r *CiudadRepository) FindByNombre(nombre string) (*models.Ciudad, error) {
+	var ciudad models.Ciudad
+	err := r.db.Where("LOWER(nombre) = LOWER(?)", nombre).First(&ciudad).Error
+	return &ciudad, err
 }

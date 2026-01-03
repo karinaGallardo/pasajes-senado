@@ -4,8 +4,8 @@ import "time"
 
 type AsignacionVoucher struct {
 	BaseModel
-	UsuarioID string   `gorm:"size:36;not null;index"`
-	Usuario   *Usuario `gorm:"foreignKey:UsuarioID"`
+	SenadorID string   `gorm:"size:36;not null;index"`
+	Senador   *Usuario `gorm:"foreignKey:SenadorID"`
 
 	Gestion int    `gorm:"not null;index"`
 	Mes     int    `gorm:"not null;index"`
@@ -17,10 +17,14 @@ type AsignacionVoucher struct {
 	Estado      string  `gorm:"size:50;default:'DISPONIBLE'"`
 	SolicitudID *string `gorm:"size:36;index;default:null"`
 
-	EsTransferido   bool    `gorm:"default:false"`
-	UsuarioOrigenID *string `gorm:"size:36;index;default:null"`
-	FechaTransfer   *time.Time
-	MotivoTransfer  string `gorm:"size:255"`
+	EsTransferido  bool     `gorm:"default:false"`
+	BeneficiarioID *string  `gorm:"size:36;index;default:null"`
+	Beneficiario   *Usuario `gorm:"foreignKey:BeneficiarioID"`
+	FechaTransfer  *time.Time
+	MotivoTransfer string `gorm:"size:255"`
+
+	FechaDesde *time.Time
+	FechaHasta *time.Time
 }
 
 func (AsignacionVoucher) TableName() string {

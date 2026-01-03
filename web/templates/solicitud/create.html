@@ -16,6 +16,40 @@
     </div>
   </div>
 
+  {{ if .AlertaOrigen }}
+  <!-- QUICK CONFIG FORM: Placed outside the main form -->
+  <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 shadow rounded-lg">
+    <div class="flex">
+      <div class="flex-shrink-0">
+        <!-- Icono Alert -->
+        <svg class="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+          <path
+            fill-rule="evenodd"
+            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+            clip-rule="evenodd"
+          />
+        </svg>
+      </div>
+      <div class="ml-3 w-full">
+        <p class="text-sm text-yellow-700 font-bold mb-2">{{ .AlertaOrigen }}</p>
+
+        <div class="p-3 bg-yellow-100 rounded-md border border-yellow-200">
+          <p class="text-xs text-yellow-800 mb-2 font-semibold uppercase tracking-wide">Configuración Rápida de Origen</p>
+          <form action="/usuarios/{{ .User.ID }}/update-origin" method="POST" class="flex items-center gap-2">
+            <select name="origen_code" class="text-sm border-yellow-300 rounded px-2 py-1 focus:ring-yellow-500 focus:border-yellow-500 bg-white shadow-sm" required>
+              <option value="" disabled selected>Seleccione Ciudad de Origen...</option>
+              {{ range .Destinos }}
+              <option value="{{ .Code }}">{{ .Nombre }} ({{ .Code }})</option>
+              {{ end }}
+            </select>
+            <button type="submit" class="px-3 py-1 bg-yellow-600 text-white text-xs font-bold rounded hover:bg-yellow-700 transition shadow-sm">Guardar Origen</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+  {{ end }}
+
   <form action="/solicitudes" method="POST" class="bg-white shadow rounded-lg overflow-hidden border border-gray-200">
     {{ if ne .User.ID .CurrentUser.ID }}
     <input type="hidden" name="target_user_id" value="{{ .User.ID }}" />
@@ -42,7 +76,7 @@
 
     <div class="p-6 space-y-6">
       {{ if .Error }}
-      <div class="bg-red-50 border-l-4 border-red-400 p-4">
+      <div class="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
         <div class="flex">
           <div class="flex-shrink-0">
             <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
@@ -55,29 +89,6 @@
           </div>
           <div class="ml-3">
             <p class="text-sm text-red-700">{{ .Error }}</p>
-          </div>
-        </div>
-      </div>
-      {{ end }} {{ if .AlertaOrigen }}
-      <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
-        <div class="flex">
-          <div class="flex-shrink-0">
-            <!-- Icono Alert -->
-            <svg class="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-              <path
-                fill-rule="evenodd"
-                d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                clip-rule="evenodd"
-              />
-            </svg>
-          </div>
-          <div class="ml-3">
-            <p class="text-sm text-yellow-700 font-bold">{{ .AlertaOrigen }}</p>
-            <p class="text-xs text-yellow-600 mt-1">
-              Puede configurar su origen en su
-              <a href="/perfil" class="underline">Perfil de Usuario</a>
-              .
-            </p>
           </div>
         </div>
       </div>

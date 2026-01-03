@@ -4,6 +4,7 @@ import (
 	"sistema-pasajes/internal/models"
 
 	"sistema-pasajes/internal/configs"
+
 	"gorm.io/gorm"
 )
 
@@ -23,9 +24,9 @@ func (r *CupoRepository) Update(cupo *models.Cupo) error {
 	return r.db.Save(cupo).Error
 }
 
-func (r *CupoRepository) FindByUsuarioAndPeriodo(usuarioID string, gestion, mes int) (*models.Cupo, error) {
+func (r *CupoRepository) FindByTitularAndPeriodo(titularID string, gestion, mes int) (*models.Cupo, error) {
 	var cupo models.Cupo
-	err := r.db.Where("usuario_id = ? AND gestion = ? AND mes = ?", usuarioID, gestion, mes).First(&cupo).Error
+	err := r.db.Where("senador_id = ? AND gestion = ? AND mes = ?", titularID, gestion, mes).First(&cupo).Error
 	if err != nil {
 		return nil, err
 	}
@@ -34,12 +35,12 @@ func (r *CupoRepository) FindByUsuarioAndPeriodo(usuarioID string, gestion, mes 
 
 func (r *CupoRepository) FindByPeriodo(gestion, mes int) ([]models.Cupo, error) {
 	var cupos []models.Cupo
-	err := r.db.Preload("Usuario").Where("gestion = ? AND mes = ?", gestion, mes).Find(&cupos).Error
+	err := r.db.Preload("Senador").Where("gestion = ? AND mes = ?", gestion, mes).Find(&cupos).Error
 	return cupos, err
 }
 
-func (r *CupoRepository) FindByUsuario(usuarioID string, gestion int) ([]models.Cupo, error) {
+func (r *CupoRepository) FindByTitular(titularID string, gestion int) ([]models.Cupo, error) {
 	var cupos []models.Cupo
-	err := r.db.Where("usuario_id = ? AND gestion = ?", usuarioID, gestion).Order("mes asc").Find(&cupos).Error
+	err := r.db.Where("senador_id = ? AND gestion = ?", titularID, gestion).Order("mes asc").Find(&cupos).Error
 	return cupos, err
 }

@@ -11,6 +11,7 @@ func main() {
 	configs.ConnectDB()
 
 	seedCiudades()
+	seedDepartamentos()
 	seedProveedores()
 	seedRolesAndPermissions()
 	seedCatalogosViaje()
@@ -208,5 +209,24 @@ func seedCiudades() {
 
 	for _, d := range defaults {
 		configs.DB.Where("code = ?", d.Code).FirstOrCreate(&d)
+	}
+}
+
+func seedDepartamentos() {
+	fmt.Println("Sincronizando Departamentos...")
+	departamentos := []models.Departamento{
+		{Nombre: "LA PAZ", Codigo: "LP"},
+		{Nombre: "SANTA CRUZ", Codigo: "SC"},
+		{Nombre: "COCHABAMBA", Codigo: "CB"},
+		{Nombre: "CHUQUISACA", Codigo: "CH"},
+		{Nombre: "TARIJA", Codigo: "TJ"},
+		{Nombre: "BENI", Codigo: "BE"},
+		{Nombre: "PANDO", Codigo: "PA"},
+		{Nombre: "ORURO", Codigo: "OR"},
+		{Nombre: "POTOSI", Codigo: "PT"},
+	}
+
+	for _, d := range departamentos {
+		configs.DB.Where("codigo = ?", d.Codigo).FirstOrCreate(&d)
 	}
 }

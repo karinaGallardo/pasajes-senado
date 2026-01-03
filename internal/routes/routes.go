@@ -13,6 +13,7 @@ func SetupRoutes(r *gin.Engine) {
 	pasajeCtrl := controllers.NewPasajeController()
 	dashboardCtrl := controllers.NewDashboardController()
 	perfilCtrl := controllers.NewPerfilController()
+	usuarioCtrl := controllers.NewUsuarioController()
 
 	r.GET("/auth/login", authCtrl.ShowLogin)
 	r.POST("/auth/login", authCtrl.Login)
@@ -25,6 +26,8 @@ func SetupRoutes(r *gin.Engine) {
 			c.Redirect(302, "/dashboard")
 		})
 		protected.GET("/dashboard", dashboardCtrl.Index)
+
+		protected.POST("/usuarios/:id/update-origin", usuarioCtrl.UpdateOrigin)
 
 		protected.GET("/perfil", perfilCtrl.Show)
 
@@ -65,9 +68,9 @@ func SetupRoutes(r *gin.Engine) {
 		adminOnly := protected.Group("/")
 		adminOnly.Use(middleware.RequireRole("ADMIN"))
 		{
-			usuarioCtrl := controllers.NewUsuarioController()
 			adminOnly.GET("/usuarios", usuarioCtrl.Index)
 			adminOnly.GET("/usuarios/table", usuarioCtrl.Table)
+			adminOnly.POST("/usuarios/sync", usuarioCtrl.Sync)
 			adminOnly.GET("/usuarios/:id/editar", usuarioCtrl.Edit)
 			adminOnly.POST("/usuarios/:id", usuarioCtrl.Update)
 		}
@@ -78,6 +81,7 @@ func SetupRoutes(r *gin.Engine) {
 			cupoCtrl := controllers.NewCupoController()
 			sysAdmin.GET("/admin/cupos", cupoCtrl.Index)
 			sysAdmin.POST("/admin/cupos/generar", cupoCtrl.Generar)
+			sysAdmin.GET("/admin/cupos/:id/vouchers", cupoCtrl.GetVouchersByCupo)
 			sysAdmin.POST("/admin/cupos/transferir", cupoCtrl.Transferir)
 			sysAdmin.POST("/admin/cupos/reset", cupoCtrl.Reset)
 

@@ -3,7 +3,6 @@ package services
 import (
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
-
 )
 
 type PasajeService struct {

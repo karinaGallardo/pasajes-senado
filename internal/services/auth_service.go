@@ -1,110 +1,25 @@
 package services
 
 import (
-	"context"
 	"errors"
 	"log"
 
-	"sistema-pasajes/internal/configs"
 	"sistema-pasajes/internal/models"
+	"sistema-pasajes/internal/repositories"
 	"sistema-pasajes/internal/utils"
-	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"golang.org/x/crypto/bcrypt"
 )
 
-type AuthService struct {
-}
-
-func NewAuthService() *AuthService {
-	return &AuthService{}
-}
-
-func (s *AuthService) AuthenticateAndSync(username, password string) (*models.Usuario, error) {
-	mongoAuthUser, err := s.verifyMongoCredentials(username, password)
-	if err != nil {
-		return nil, err
-	}
-	profileCI := getString(mongoAuthUser, "ci")
-	if profileCI == "" {
-		profileCI = username
-	}
-
-	userProfile, err := s.fetchUserProfile(profileCI)
-	if err != nil {
-		log.Printf("Warn: No perfil extendido para CI %s. Usando básicos.", profileCI)
-		userProfile = mongoAuthUser
-	}
-
-	return s.syncUserToPostgres(mongoAuthUser, userProfile, username)
-}
-
-func (s *AuthService) verifyMongoCredentials(username, password string) (bson.M, error) {
-	if configs.MongoChat == nil {
-		return nil, errors.New("MongoDB Chat not configured")
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	var mongoUser bson.M
-	err := configs.MongoChat.Collection("users").FindOne(ctx, bson.M{"username": username}).Decode(&mongoUser)
-	if err != nil {
-		return nil, errors.New("usuario no encontrado")
-	}
-
-	/*
-		storedPwd, _ := mongoUser["password"].(string)
-		if err := bcrypt.CompareHashAndPassword([]byte(storedPwd), []byte(password)); err != nil {
-			return nil, errors.New("credenciales inválidas")
-		}
-	*/
-
-	return mongoUser, nil
-}
-
-func (s *AuthService) fetchUserProfile(ci string) (bson.M, error) {
-	if configs.MongoRRHH == nil {
-		return nil, errors.New("MongoDB RRHH not configured")
-	}
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-
-	var profile bson.M
-	err := configs.MongoRRHH.Collection("view_people_pasajes").FindOne(ctx, bson.M{"ci": ci}).Decode(&profile)
-	return profile, err
-}
-
-func (s *AuthService) syncUserToPostgres(authUser, profile bson.M, username string) (*models.Usuario, error) {
-	user, err := s.getOrInitUser(username, authUser, profile)
-	if err != nil {
-		return nil, err
-	}
-
-	s.mapProfileToUser(user, profile)
-
-	if err := s.resolveGender(user, profile); err != nil {
-		return nil, err
-	}
-	if err := s.ensureDefaultRole(user, profile); err != nil {
-		return nil, err
-	}
-
-	if err := configs.DB.Save(user).Error; err != nil {
-		return nil, err
-	}
-	if user.Rol == nil && user.RolID != nil {
-		configs.DB.Preload("Rol").First(user)
-	}
-
-	return user, nil
-}
-
 func (s *AuthService) getOrInitUser(username string, authUser, profile bson.M) (*models.Usuario, error) {
-	var user models.Usuario
-	err := configs.DB.Preload("Rol").Where("username = ?", username).First(&user).Error
+	user, err := s.userRepo.FindByUsername(username)
 
 	if err != nil {
+		user = &models.Usuario{}
+		user.Username = username
+
 		idSet := false
 		if profile != nil {
 			if idObj, ok := profile["_id"].(primitive.ObjectID); ok {
@@ -117,9 +32,8 @@ func (s *AuthService) getOrInitUser(username string, authUser, profile bson.M) (
 				user.ID = idObj.Hex()
 			}
 		}
-		user.Username = username
 	}
-	return &user, nil
+	return user, nil
 }
 
 func (s *AuthService) mapProfileToUser(user *models.Usuario, profile bson.M) {
@@ -143,16 +57,125 @@ func (s *AuthService) resolveGender(user *models.Usuario, profile bson.M) error 
 		return nil
 	}
 
-	var genero models.Genero
-	if err := configs.DB.FirstOrCreate(&genero, models.Genero{Codigo: genderName, Nombre: genderName}).Error; err != nil {
+	genero, err := s.generoRepo.FirstOrCreate(genderName, genderName)
+	if err != nil {
 		return err
 	}
-	user.GeneroID = &genero.Codigo
+	user.GeneroCodigo = &genero.Codigo
 	return nil
 }
 
+type AuthService struct {
+	userRepo   *repositories.UsuarioRepository
+	mongoUser  *repositories.MongoUserRepository
+	peopleRepo *repositories.PeopleViewRepository
+	rolRepo    *repositories.RolRepository
+	generoRepo *repositories.GeneroRepository
+}
+
+func NewAuthService() *AuthService {
+	return &AuthService{
+		userRepo:   repositories.NewUsuarioRepository(),
+		mongoUser:  repositories.NewMongoUserRepository(),
+		peopleRepo: repositories.NewPeopleViewRepository(),
+		rolRepo:    repositories.NewRolRepository(),
+		generoRepo: repositories.NewGeneroRepository(),
+	}
+}
+
+func (s *AuthService) AuthenticateAndSync(username, password string) (*models.Usuario, error) {
+	mongoAuthUser, err := s.verifyMongoCredentials(username, password)
+	if err != nil {
+		return nil, err
+	}
+	profileCI := getString(mongoAuthUser, "ci")
+	if profileCI == "" {
+		profileCI = username
+	}
+
+	userProfile, err := s.fetchUserProfile(profileCI)
+	if err != nil {
+		log.Printf("Warn: No perfil extendido para CI %s. Usando básicos.", profileCI)
+		userProfile = mongoAuthUser
+	}
+
+	return s.syncUserToPostgres(mongoAuthUser, userProfile, username)
+}
+
+func (s *AuthService) verifyMongoCredentials(username, password string) (bson.M, error) {
+	user, err := s.mongoUser.FindByUsername(username)
+	if err != nil {
+		return nil, errors.New("usuario no encontrado")
+	}
+
+	storedPwd := user.Password
+	if err := bcrypt.CompareHashAndPassword([]byte(storedPwd), []byte(password)); err != nil {
+		return nil, errors.New("credenciales inválidas")
+	}
+
+	result := bson.M{
+		"_id":      user.ID,
+		"username": user.Username,
+		"ci":       user.CI,
+		// "password": user.Password,
+		// "role_rrhh": user.Roles,
+	}
+	return result, nil
+}
+
+func (s *AuthService) fetchUserProfile(ci string) (bson.M, error) {
+	persona, err := s.peopleRepo.FindSenatorDataByCI(ci)
+	if err != nil {
+		return nil, err
+	}
+	if persona == nil {
+		return nil, errors.New("perfil no encontrado")
+	}
+
+	result := bson.M{
+		"_id":              persona.ID,
+		"ci":               persona.CI,
+		"firstname":        persona.Firstname,
+		"secondname":       persona.Secondname,
+		"lastname":         persona.Lastname,
+		"surname":          persona.Surname,
+		"phone":            persona.Phone,
+		"address":          persona.Address,
+		"email":            persona.Email,
+		"gender":           persona.Gender,
+		"tipo_funcionario": persona.TipoFuncionario,
+	}
+
+	return result, nil
+}
+
+func (s *AuthService) syncUserToPostgres(authUser, profile bson.M, username string) (*models.Usuario, error) {
+	user, err := s.getOrInitUser(username, authUser, profile)
+	if err != nil {
+		return nil, err
+	}
+
+	s.mapProfileToUser(user, profile)
+
+	if err := s.resolveGender(user, profile); err != nil {
+		return nil, err
+	}
+	if err := s.ensureDefaultRole(user, profile); err != nil {
+		return nil, err
+	}
+
+	if err := s.userRepo.Save(user); err != nil {
+		return nil, err
+	}
+
+	if user.Rol == nil && user.RolCodigo != nil {
+		s.userRepo.Refresh(user)
+	}
+	return user, nil
+}
+
 func (s *AuthService) ensureDefaultRole(user *models.Usuario, profile bson.M) error {
-	if user.RolID != nil {
+	if user.RolCodigo != nil {
 		return nil
 	}
 
@@ -162,12 +185,12 @@ func (s *AuthService) ensureDefaultRole(user *models.Usuario, profile bson.M) er
 		targetRole = "SENADOR"
 	}
 
-	var rol models.Rol
-	if err := configs.DB.Where("codigo = ?", targetRole).First(&rol).Error; err != nil {
+	rol, err := s.rolRepo.FindByCodigo(targetRole)
+	if err != nil {
 		return nil
 	}
-	user.RolID = &rol.Codigo
-	user.Rol = &rol
+	user.RolCodigo = &rol.Codigo
+	user.Rol = rol
 	return nil
 }
 

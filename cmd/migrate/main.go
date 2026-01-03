@@ -24,6 +24,7 @@ func main() {
 
 		// Catálogos Geográficos y de Transporte
 		&models.Ciudad{},
+		&models.Departamento{},
 		&models.Aerolinea{},
 		&models.Agencia{},
 		&models.Ruta{},

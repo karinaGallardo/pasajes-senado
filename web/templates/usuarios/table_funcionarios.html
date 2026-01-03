@@ -1,0 +1,54 @@
+{{ define "usuarios/table_funcionarios" }}
+<table class="min-w-full divide-y divide-gray-200">
+  <thead class="bg-gray-50">
+    <tr>
+      <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-10">#</th>
+      <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Usuario / CI</th>
+      <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nombre Completo</th>
+      <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Rol Sistema</th>
+      <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cargo / Dependencia</th>
+      <th scope="col" class="relative px-6 py-3"><span class="sr-only">Acciones</span></th>
+    </tr>
+  </thead>
+  <tbody class="divide-y divide-gray-200 bg-white">
+    {{ range $index, $user := .Usuarios }}
+    <tr>
+      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-medium">{{ inc $index }}</td>
+      <td class="px-6 py-4 whitespace-nowrap">
+        <div class="flex items-center">
+          <div class="flex-shrink-0 h-10 w-10">
+            <span class="inline-flex items-center justify-center h-10 w-10 rounded-full bg-gray-500">
+              <span class="text-sm font-medium leading-none text-white">{{ printf "%.1s" $user.Username }}</span>
+            </span>
+          </div>
+          <div class="ml-4">
+            <div class="text-sm font-medium text-gray-900">{{ $user.Username }}</div>
+            <div class="text-sm text-gray-500">{{ $user.CI }}</div>
+          </div>
+        </div>
+      </td>
+      <td class="px-6 py-4 whitespace-nowrap">
+        <div class="text-sm text-gray-900">{{ $user.GetNombreCompleto }}</div>
+        <div class="text-sm text-gray-500">{{ if $user.Email }}{{ $user.Email }}{{ else }}-{{ end }}</div>
+      </td>
+      <td class="px-6 py-4 whitespace-nowrap">
+        {{ if $user.Rol }}
+        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">{{ $user.Rol.Codigo }}</span>
+        {{ else }}
+        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">Sin Rol</span>
+        {{ end }}
+      </td>
+      <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+        {{ if $user.Cargo }}
+        <div class="text-sm text-gray-900">{{ $user.Cargo.Nombre }}</div>
+        {{ else }}
+        <span class="text-gray-400 italic">No especificado</span>
+        {{ end }}
+        <div class="text-xs text-gray-400 font-medium">{{ $user.Tipo }}</div>
+      </td>
+      <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">{{ template "usuarios/actions" $user }}</td>
+    </tr>
+    {{ end }}
+  </tbody>
+</table>
+{{ end }}

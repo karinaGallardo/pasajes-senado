@@ -2,7 +2,9 @@ package controllers
 
 import (
 	"net/http"
+	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/services"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -22,22 +24,26 @@ func NewUsuarioController() *UsuarioController {
 }
 
 func (ctrl *UsuarioController) Index(c *gin.Context) {
-	usuarios, _ := ctrl.userService.GetByRoleType("SENADOR")
+	roleType := c.DefaultQuery("rol", "SENADOR")
+	msg := c.Query("msg")
+	usuarios, _ := ctrl.userService.GetByRoleType(roleType)
 
 	c.HTML(http.StatusOK, "usuarios/index.html", gin.H{
 		"Title":    "Gestión de Usuarios",
 		"User":     c.MustGet("User"),
 		"Usuarios": usuarios,
-		"Type":     "SENADOR",
+		"Rol":      roleType,
+		"Msg":      msg,
 	})
 }
 
 func (ctrl *UsuarioController) Table(c *gin.Context) {
-	roleType := c.DefaultQuery("type", "SENADOR")
+	roleType := c.DefaultQuery("rol", "SENADOR")
 	usuarios, _ := ctrl.userService.GetByRoleType(roleType)
 
 	c.HTML(http.StatusOK, "usuarios/table", gin.H{
 		"Usuarios": usuarios,
+		"Rol":      roleType,
 	})
 }
 
@@ -69,9 +75,9 @@ func (ctrl *UsuarioController) Update(c *gin.Context) {
 		return
 	}
 
-	rolID := c.PostForm("rol_id")
-	if rolID != "" {
-		usuario.RolID = &rolID
+	rolCodigo := c.PostForm("rol_codigo")
+	if rolCodigo != "" {
+		usuario.RolCodigo = &rolCodigo
 	}
 
 	origen := c.PostForm("origen")
@@ -95,4 +101,62 @@ func (ctrl *UsuarioController) Update(c *gin.Context) {
 
 	c.Header("HX-Trigger", "reloadTable")
 	c.Status(http.StatusOK)
+}
+
+func (ctrl *UsuarioController) UpdateOrigin(c *gin.Context) {
+	targetID := c.Param("id")
+	origenCode := c.PostForm("origen_code")
+
+	if origenCode == "" {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Debe seleccionar una ciudad"})
+		return
+	}
+
+	targetUser, err := ctrl.userService.GetByID(targetID)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Usuario no encontrado"})
+		return
+	}
+
+	currentUser := c.MustGet("User").(*models.Usuario)
+
+	isEncargado := targetUser.EncargadoID != nil && *targetUser.EncargadoID == currentUser.ID
+	isAdmin := currentUser.Rol != nil && currentUser.Rol.Codigo == "ADMIN"
+	isSelf := targetUser.ID == currentUser.ID
+
+	if !isEncargado && !isAdmin && !isSelf {
+		c.JSON(http.StatusForbidden, gin.H{"error": "No tiene permisos para modificar este usuario"})
+		return
+	}
+
+	targetUser.OrigenCode = &origenCode
+	if err := ctrl.userService.Update(targetUser); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al guardar: " + err.Error()})
+		return
+	}
+
+	referer := c.Request.Header.Get("Referer")
+	if referer == "" {
+		referer = "/dashboard"
+	}
+	c.Redirect(http.StatusFound, referer)
+}
+
+func (ctrl *UsuarioController) Sync(c *gin.Context) {
+	roleType := c.DefaultQuery("rol", "SENADOR")
+	var count int
+	var err error
+
+	if roleType == "SENADOR" {
+		count, err = ctrl.userService.SyncSenators()
+	} else {
+		count, err = ctrl.userService.SyncStaff()
+	}
+
+	if err != nil {
+		c.String(http.StatusInternalServerError, "Error sincronizando: "+err.Error())
+		return
+	}
+
+	c.Redirect(http.StatusFound, "/usuarios?rol="+roleType+"&msg=Sincronizados "+strconv.Itoa(count)+" registros")
 }

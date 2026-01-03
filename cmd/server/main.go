@@ -1,10 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"html/template"
 	"log"
 	"sistema-pasajes/internal/configs"
 	"sistema-pasajes/internal/routes"
+	"time"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
@@ -20,6 +22,21 @@ func main() {
 	r.SetFuncMap(template.FuncMap{
 		"add": func(a, b float64) float64 {
 			return a + b
+		},
+		"inc": func(i int) int {
+			return i + 1
+		},
+		"dt": func(t *time.Time) string {
+			if t == nil {
+				return "-"
+			}
+			return t.Format("02/01/2006")
+		},
+		"df": func(ini, fin *time.Time) string {
+			if ini == nil || fin == nil {
+				return "-"
+			}
+			return fmt.Sprintf("%s - %s", ini.Format("02/01"), fin.Format("02/01"))
 		},
 	})
 

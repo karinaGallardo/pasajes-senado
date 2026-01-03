@@ -7,6 +7,7 @@
         <p class="text-sm text-gray-500 mb-4">
           Edite el Rol y el Lugar de Origen para
           <strong>{{ .Usuario.Username }}</strong>
+          <span class="ml-2 px-2 py-0.5 text-xs font-semibold bg-gray-100 text-gray-600 rounded">{{ if .Usuario.Tipo }}{{ .Usuario.Tipo }}{{ else }}FUNCIONARIO{{ end }}</span>
           .
         </p>
 
@@ -14,10 +15,10 @@
           <!-- Cerrar modal localmente al enviar -->
 
           <div class="mb-4">
-            <label for="rol_id" class="block text-sm font-medium text-gray-700">Rol Asignado</label>
+            <label for="rol_codigo" class="block text-sm font-medium text-gray-700">Rol Asignado</label>
             <select
-              id="rol_id"
-              name="rol_id"
+              id="rol_codigo"
+              name="rol_codigo"
               class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-senado-primary focus:border-senado-primary sm:text-sm"
             >
               {{ range .Roles }}

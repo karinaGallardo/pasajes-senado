@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"fmt"
 	"net/http"
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/services"
@@ -46,7 +45,7 @@ func (ctrl *CategoriaCompensacionController) Store(c *gin.Context) {
 			}
 			err := ctrl.service.SaveCategoria(&cat)
 			if err != nil {
-				fmt.Printf("Error create cat comp: %v", err)
+				// log.Printf("Error create cat comp: %v", err)
 			}
 		}
 	}

@@ -20,15 +20,21 @@ func (r *AsignacionVoucherRepository) Create(voucher *models.AsignacionVoucher) 
 	return r.db.Create(voucher).Error
 }
 
-func (r *AsignacionVoucherRepository) FindByUsuarioAndPeriodo(usuarioID string, gestion, mes int) ([]models.AsignacionVoucher, error) {
+func (r *AsignacionVoucherRepository) FindByTitularAndPeriodo(titularID string, gestion, mes int) ([]models.AsignacionVoucher, error) {
 	var list []models.AsignacionVoucher
-	err := r.db.Where("usuario_id = ? AND gestion = ? AND mes = ?", usuarioID, gestion, mes).Find(&list).Error
+	err := r.db.Where("senador_id = ? AND gestion = ? AND mes = ?", titularID, gestion, mes).Find(&list).Error
 	return list, err
 }
 
-func (r *AsignacionVoucherRepository) FindAvailableByUsuarioAndPeriodo(usuarioID string, gestion, mes int) (*models.AsignacionVoucher, error) {
+func (r *AsignacionVoucherRepository) FindByHolderAndPeriodo(userID string, gestion, mes int) ([]models.AsignacionVoucher, error) {
+	var list []models.AsignacionVoucher
+	err := r.db.Where("(beneficiario_id = ? OR (beneficiario_id IS NULL AND senador_id = ?)) AND gestion = ? AND mes = ?", userID, userID, gestion, mes).Find(&list).Error
+	return list, err
+}
+
+func (r *AsignacionVoucherRepository) FindAvailableByHolderAndPeriodo(userID string, gestion, mes int) (*models.AsignacionVoucher, error) {
 	var voucher models.AsignacionVoucher
-	err := r.db.Where("usuario_id = ? AND gestion = ? AND mes = ? AND estado = 'DISPONIBLE'", usuarioID, gestion, mes).First(&voucher).Error
+	err := r.db.Where("(beneficiario_id = ? OR (beneficiario_id IS NULL AND senador_id = ?)) AND gestion = ? AND mes = ? AND estado = 'DISPONIBLE'", userID, userID, gestion, mes).First(&voucher).Error
 	return &voucher, err
 }
 
@@ -38,7 +44,7 @@ func (r *AsignacionVoucherRepository) Update(voucher *models.AsignacionVoucher) 
 
 func (r *AsignacionVoucherRepository) FindByPeriodo(gestion, mes int) ([]models.AsignacionVoucher, error) {
 	var list []models.AsignacionVoucher
-	err := r.db.Preload("Usuario").Where("gestion = ? AND mes = ?", gestion, mes).Find(&list).Error
+	err := r.db.Preload("Senador").Preload("Beneficiario").Where("gestion = ? AND mes = ?", gestion, mes).Find(&list).Error
 	return list, err
 }
 
@@ -50,4 +56,10 @@ func (r *AsignacionVoucherRepository) FindByID(id string) (*models.AsignacionVou
 
 func (r *AsignacionVoucherRepository) DeleteUnscoped(v *models.AsignacionVoucher) error {
 	return r.db.Unscoped().Delete(v).Error
+}
+
+func (r *AsignacionVoucherRepository) FindByCupoID(cupoID string) ([]models.AsignacionVoucher, error) {
+	var list []models.AsignacionVoucher
+	err := r.db.Preload("Senador").Preload("Beneficiario").Where("cupo_id = ?", cupoID).Find(&list).Error
+	return list, err
 }
