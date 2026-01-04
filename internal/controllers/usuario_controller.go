@@ -2,8 +2,9 @@ package controllers
 
 import (
 	"net/http"
-	"sistema-pasajes/internal/models"
+	"sistema-pasajes/internal/appcontext"
 	"sistema-pasajes/internal/services"
+	"sistema-pasajes/internal/utils"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -25,25 +26,58 @@ func NewUsuarioController() *UsuarioController {
 
 func (ctrl *UsuarioController) Index(c *gin.Context) {
 	roleType := c.DefaultQuery("rol", "SENADOR")
-	msg := c.Query("msg")
-	usuarios, _ := ctrl.userService.GetByRoleType(roleType)
+	searchTerm := c.Query("q")
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "15"))
 
-	c.HTML(http.StatusOK, "usuarios/index.html", gin.H{
-		"Title":    "Gestión de Usuarios",
-		"User":     c.MustGet("User"),
-		"Usuarios": usuarios,
-		"Rol":      roleType,
-		"Msg":      msg,
+	msg := c.Query("msg")
+
+	var result interface{}
+	var err error
+
+	if roleType == "FUNCIONARIO" {
+		result, err = ctrl.userService.GetPaginated(roleType, page, limit, searchTerm)
+	} else {
+		usuarios, _ := ctrl.userService.GetByRoleType(roleType)
+		result = gin.H{"Usuarios": usuarios}
+	}
+
+	if err != nil {
+		// log.Printf("Error: %v", err)
+	}
+
+	utils.Render(c, "usuarios/index.html", gin.H{
+		"Title":      "Gestión de Usuarios",
+		"Result":     result,
+		"Rol":        roleType,
+		"Msg":        msg,
+		"SearchTerm": searchTerm,
 	})
 }
 
 func (ctrl *UsuarioController) Table(c *gin.Context) {
 	roleType := c.DefaultQuery("rol", "SENADOR")
-	usuarios, _ := ctrl.userService.GetByRoleType(roleType)
+	searchTerm := c.Query("q")
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "15"))
 
-	c.HTML(http.StatusOK, "usuarios/table", gin.H{
-		"Usuarios": usuarios,
-		"Rol":      roleType,
+	var result interface{}
+	var err error
+
+	if roleType == "FUNCIONARIO" {
+		result, err = ctrl.userService.GetPaginated(roleType, page, limit, searchTerm)
+	} else {
+		usuarios, _ := ctrl.userService.GetByRoleType(roleType)
+		result = gin.H{"Usuarios": usuarios}
+	}
+
+	if err != nil {
+		// log.Printf("Error: %v", err)
+	}
+
+	utils.Render(c, "usuarios/table", gin.H{
+		"Result": result,
+		"Rol":    roleType,
 	})
 }
 
@@ -59,7 +93,7 @@ func (ctrl *UsuarioController) Edit(c *gin.Context) {
 
 	funcionarios, _ := ctrl.userService.GetByRoleType("FUNCIONARIO")
 
-	c.HTML(http.StatusOK, "usuarios/edit_modal", gin.H{
+	utils.Render(c, "usuarios/edit_modal", gin.H{
 		"Usuario":      usuario,
 		"Roles":        roles,
 		"Destinos":     destinos,
@@ -118,7 +152,11 @@ func (ctrl *UsuarioController) UpdateOrigin(c *gin.Context) {
 		return
 	}
 
-	currentUser := c.MustGet("User").(*models.Usuario)
+	currentUser := appcontext.CurrentUser(c)
+	if currentUser == nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "No autorizado"})
+		return
+	}
 
 	isEncargado := targetUser.EncargadoID != nil && *targetUser.EncargadoID == currentUser.ID
 	isAdmin := currentUser.Rol != nil && currentUser.Rol.Codigo == "ADMIN"

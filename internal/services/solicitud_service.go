@@ -5,14 +5,14 @@ import (
 	"log"
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
+	"sistema-pasajes/internal/utils"
 	"strings"
-
-	gonanoid "github.com/matoous/go-nanoid/v2"
 )
 
 type SolicitudService struct {
 	repo              *repositories.SolicitudRepository
 	tipoSolicitudRepo *repositories.TipoSolicitudRepository
+	usuarioRepo       *repositories.UsuarioRepository
 	cupoService       *CupoService
 }
 
@@ -20,6 +20,7 @@ func NewSolicitudService() *SolicitudService {
 	return &SolicitudService{
 		repo:              repositories.NewSolicitudRepository(),
 		tipoSolicitudRepo: repositories.NewTipoSolicitudRepository(),
+		usuarioRepo:       repositories.NewUsuarioRepository(),
 		cupoService:       NewCupoService(),
 	}
 }
@@ -30,18 +31,22 @@ func (s *SolicitudService) Create(solicitud *models.Solicitud, usuario *models.U
 		return errors.New("tipo de solicitud inválido o no encontrado")
 	}
 	if tipoSolicitud.ConceptoViaje != nil && tipoSolicitud.ConceptoViaje.Codigo == "DERECHO" {
-		esSenador := strings.HasPrefix(usuario.Tipo, "SENADOR")
+		beneficiary, err := s.usuarioRepo.FindByID(solicitud.UsuarioID)
+		if err != nil {
+			return errors.New("usuario beneficiario no encontrado")
+		}
+
+		esSenador := strings.HasPrefix(beneficiary.Tipo, "SENADOR")
 		if !esSenador {
-			return errors.New("solo los Senadores pueden solicitar pasajes por derecho")
+			return errors.New("solo los Senadores pueden recibir pasajes por derecho")
 		}
 	}
 
 	solicitud.Estado = "SOLICITADO"
 
-	const alphabet = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
 	var codigo string
-	for i := 0; i < 10; i++ {
-		generated, err := gonanoid.Generate(alphabet, 5)
+	for range 10 {
+		generated, err := utils.GenerateCode(5)
 		if err != nil {
 			return errors.New("error generando código solicitud")
 		}

@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/services"
+	"sistema-pasajes/internal/utils"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -21,9 +22,8 @@ func NewCategoriaCompensacionController() *CategoriaCompensacionController {
 
 func (ctrl *CategoriaCompensacionController) Index(c *gin.Context) {
 	cats, _ := ctrl.service.GetAllCategorias()
-	c.HTML(http.StatusOK, "admin/categorias_compensacion.html", gin.H{
+	utils.Render(c, "admin/categorias_compensacion.html", gin.H{
 		"Categorias": cats,
-		"User":       c.MustGet("User"),
 	})
 }
 

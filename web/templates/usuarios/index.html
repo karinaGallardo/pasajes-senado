@@ -171,7 +171,7 @@
           type="button"
           class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors focus:outline-none"
           :class="activeTab === 'FUNCIONARIO' ? 'border-senado-primary text-senado-primary' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'"
-          @click="activeTab = 'FUNCIONARIO'"
+          @click="activeTab = 'FUNCIONARIO'; $nextTick(() => { document.querySelector('input[name=q]').value = '' })"
           hx-get="/usuarios/table?rol=FUNCIONARIO"
           hx-target="#usuarios-table"
           hx-indicator="#table-loader"
@@ -194,11 +194,18 @@
           <input
             type="text"
             name="q"
-            disabled
-            class="bg-gray-100 block w-full pl-10 sm:text-sm border-gray-300 rounded-md cursor-not-allowed"
-            placeholder="Búsqueda global (Próximamente)"
-            title="Funcionalidad pendiente"
+            value="{{ .SearchTerm }}"
+            class="block w-full pl-10 sm:text-sm border-gray-300 rounded-md focus:ring-senado-primary focus:border-senado-primary"
+            placeholder="Buscar por Nombre, CI, Usuario o Email..."
+            hx-get="/usuarios/table"
+            hx-trigger="keyup changed delay:500ms"
+            hx-target="#usuarios-table"
+            hx-include="[name='rol']"
+            hx-indicator="#table-loader"
+            @keydown.enter="$event.preventDefault()"
           />
+          <!-- We need a hidden input to keep the active role in HTMX request -->
+          <input type="hidden" name="rol" :value="activeTab" />
         </div>
       </div>
     </div>
@@ -219,15 +226,7 @@
 
     <div id="usuarios-table" hx-get="/usuarios/table?rol={{ .Rol }}" hx-trigger="load, reloadTable from:body" hx-indicator="#table-loader">
       <!-- Initial data loaded directly if passed, otherwise HTMX loads it -->
-      {{ if .Usuarios }} {{ template "usuarios/table" . }} {{ else }}
-      <div class="text-center py-20 bg-white rounded-lg border border-gray-100 shadow-sm">
-        <svg class="animate-spin h-10 w-10 text-senado-primary mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-        <p class="mt-4 text-sm font-medium text-gray-500">Cargando usuarios por primera vez...</p>
-      </div>
-      {{ end }}
+      {{ template "usuarios/table" . }}
     </div>
   </div>
 
@@ -255,7 +254,7 @@
 
       <div
         id="modal-container"
-        class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full"
+        class="inline-block align-bottom bg-white rounded-lg text-left shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full overflow-visible"
       >
         <!-- HTMX will inject the edit form here -->
       </div>

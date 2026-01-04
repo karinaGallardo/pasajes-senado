@@ -151,6 +151,7 @@ func (s *UsuarioService) SyncSenators() (int, error) {
 				titular, err := s.repo.FindByCI(titularCI)
 				if err == nil {
 					user.TitularID = &titular.ID
+					user.EncargadoID = titular.EncargadoID
 					s.repo.Save(user)
 				}
 			}
@@ -160,6 +161,7 @@ func (s *UsuarioService) SyncSenators() (int, error) {
 				suplente, err := s.repo.FindByCI(suplenteCI)
 				if err == nil {
 					suplente.TitularID = &user.ID
+					suplente.EncargadoID = user.EncargadoID
 					s.repo.Save(suplente)
 				}
 			}
@@ -177,6 +179,10 @@ func (s *UsuarioService) GetByRoleType(roleType string) ([]models.Usuario, error
 	return s.repo.FindByRoleType(roleType)
 }
 
+func (s *UsuarioService) GetPaginated(roleType string, page, limit int, searchTerm string) (*repositories.PaginatedUsers, error) {
+	return s.repo.FindPaginated(roleType, page, limit, searchTerm)
+}
+
 func (s *UsuarioService) GetByID(id string) (*models.Usuario, error) {
 	return s.repo.FindByID(id)
 }
@@ -186,7 +192,20 @@ func (s *UsuarioService) UpdateRol(id string, rolCodigo string) error {
 }
 
 func (s *UsuarioService) Update(usuario *models.Usuario) error {
-	return s.repo.Update(usuario)
+	err := s.repo.Update(usuario)
+	if err != nil {
+		return err
+	}
+
+	if usuario.Tipo == "SENADOR_TITULAR" {
+		suplente, err := s.repo.FindSuplenteByTitularID(usuario.ID)
+		if err == nil && suplente != nil {
+			suplente.EncargadoID = usuario.EncargadoID
+			return s.repo.Update(suplente)
+		}
+	}
+
+	return nil
 }
 
 func (s *UsuarioService) GetSenatorsByEncargado(encargadoID string) ([]models.Usuario, error) {

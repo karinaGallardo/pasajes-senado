@@ -1,12 +1,14 @@
 package main
 
 import (
-	"fmt"
-	"html/template"
 	"log"
+	"os"
+	"path/filepath"
+	"strings"
+
 	"sistema-pasajes/internal/configs"
 	"sistema-pasajes/internal/routes"
-	"time"
+	"sistema-pasajes/internal/utils"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
@@ -19,33 +21,27 @@ func main() {
 
 	r := gin.Default()
 
-	r.SetFuncMap(template.FuncMap{
-		"add": func(a, b float64) float64 {
-			return a + b
-		},
-		"inc": func(i int) int {
-			return i + 1
-		},
-		"dt": func(t *time.Time) string {
-			if t == nil {
-				return "-"
-			}
-			return t.Format("02/01/2006")
-		},
-		"df": func(ini, fin *time.Time) string {
-			if ini == nil || fin == nil {
-				return "-"
-			}
-			return fmt.Sprintf("%s - %s", ini.Format("02/01"), fin.Format("02/01"))
-		},
-	})
+	r.SetFuncMap(utils.TemplateFuncs())
 
 	store := cookie.NewStore([]byte(viper.GetString("SESSION_SECRET")))
 	r.Use(sessions.Sessions("pasajes_session", store))
 
 	r.Static("/static", "./web/static")
 
-	r.LoadHTMLGlob("web/templates/**/*")
+	var files []string
+	err := filepath.Walk("web/templates", func(path string, info os.FileInfo, err error) error {
+		if err != nil {
+			return err
+		}
+		if !info.IsDir() && strings.HasSuffix(path, ".html") {
+			files = append(files, path)
+		}
+		return nil
+	})
+	if err != nil {
+		log.Fatalf("Error finding templates: %v", err)
+	}
+	r.LoadHTMLFiles(files...)
 
 	routes.SetupRoutes(r)
 

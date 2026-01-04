@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/services"
+	"sistema-pasajes/internal/utils"
 	"strconv"
 	"time"
 
@@ -26,10 +27,9 @@ func NewCompensacionController() *CompensacionController {
 
 func (ctrl *CompensacionController) Index(c *gin.Context) {
 	list, _ := ctrl.compService.GetAll()
-	c.HTML(http.StatusOK, "compensacion/index.html", gin.H{
+	utils.Render(c, "compensacion/index.html", gin.H{
 		"Title": "Gestión de Compensaciones",
 		"Lista": list,
-		"User":  c.MustGet("User"),
 	})
 }
 
@@ -37,11 +37,10 @@ func (ctrl *CompensacionController) Create(c *gin.Context) {
 	users, _ := ctrl.userService.GetAll()
 	cats, _ := ctrl.compService.GetAllCategorias()
 
-	c.HTML(http.StatusOK, "compensacion/create.html", gin.H{
+	utils.Render(c, "compensacion/create.html", gin.H{
 		"Title":      "Nueva Compensación",
 		"Usuarios":   users,
 		"Categorias": cats,
-		"User":       c.MustGet("User"),
 	})
 }
 

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"sistema-pasajes/internal/dtos"
 	"sistema-pasajes/internal/services"
+	"sistema-pasajes/internal/utils"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -26,8 +27,7 @@ func (ctrl *RutaController) Index(c *gin.Context) {
 	rutas, _ := ctrl.rutaService.GetAll()
 	aerolineas, _ := ctrl.aerolineaService.GetAll()
 
-	c.HTML(http.StatusOK, "admin/rutas.html", gin.H{
-		"User":       c.MustGet("User"),
+	utils.Render(c, "admin/rutas.html", gin.H{
 		"Rutas":      rutas,
 		"Aerolineas": aerolineas,
 		"Title":      "Gestión de Rutas y Tarifas",

@@ -100,7 +100,14 @@
           </svg>
         </div>
         <div class="flex-1 min-w-0">
-          <p class="text-sm font-medium text-gray-900 truncate">{{ .GetNombreCompleto }}</p>
+          <div class="flex items-center space-x-2">
+            <p class="text-sm font-bold text-gray-900 truncate">{{ .GetNombreCompleto }}</p>
+            {{ if eq .Tipo "SENADOR_TITULAR" }}
+            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-700">TITULAR</span>
+            {{ else if eq .Tipo "SENADOR_SUPLENTE" }}
+            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-cyan-100 text-cyan-700">SUPLENTE</span>
+            {{ end }}
+          </div>
           <p class="text-sm text-gray-500 truncate">{{ .CI }}</p>
           <div class="flex items-center text-xs text-gray-400 mt-1">
             <svg class="h-3 w-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">

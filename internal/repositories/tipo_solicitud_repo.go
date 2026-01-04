@@ -4,6 +4,7 @@ import (
 	"sistema-pasajes/internal/models"
 
 	"sistema-pasajes/internal/configs"
+
 	"gorm.io/gorm"
 )
 
@@ -40,4 +41,9 @@ func (r *TipoSolicitudRepository) FindAmbitosByTipoID(tipoID string) ([]models.A
 		return nil, err
 	}
 	return tipo.Ambitos, nil
+}
+func (r *TipoSolicitudRepository) FindByCodigo(codigo string) (*models.TipoSolicitud, error) {
+	var tipo models.TipoSolicitud
+	err := r.db.Preload("ConceptoViaje").Where("codigo = ?", codigo).First(&tipo).Error
+	return &tipo, err
 }

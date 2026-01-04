@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"sistema-pasajes/internal/appcontext"
 	"sistema-pasajes/internal/dtos"
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/services"
+	"sistema-pasajes/internal/utils"
 	"strconv"
 	"time"
 
@@ -28,10 +30,9 @@ func NewDescargoController() *DescargoController {
 
 func (ctrl *DescargoController) Index(c *gin.Context) {
 	descargos, _ := ctrl.descargoService.FindAll()
-	c.HTML(http.StatusOK, "descargo/index.html", gin.H{
+	utils.Render(c, "descargo/index.html", gin.H{
 		"Title":     "Bandeja de Descargos (FV-05)",
 		"Descargos": descargos,
-		"User":      c.MustGet("User"),
 	})
 }
 
@@ -54,10 +55,9 @@ func (ctrl *DescargoController) Create(c *gin.Context) {
 		return
 	}
 
-	c.HTML(http.StatusOK, "descargo/create.html", gin.H{
+	utils.Render(c, "descargo/create.html", gin.H{
 		"Title":     "Nuevo Descargo",
 		"Solicitud": solicitud,
-		"User":      c.MustGet("User"),
 	})
 }
 
@@ -80,7 +80,11 @@ func (ctrl *DescargoController) Store(c *gin.Context) {
 		monto = 0
 	}
 
-	userContext := c.MustGet("User").(models.Usuario)
+	userContext := appcontext.CurrentUser(c)
+	if userContext == nil {
+		c.Redirect(http.StatusFound, "/auth/login")
+		return
+	}
 
 	const alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	codeSuffix, _ := gonanoid.Generate(alphabet, 6)
@@ -137,10 +141,9 @@ func (ctrl *DescargoController) Show(c *gin.Context) {
 		return
 	}
 
-	c.HTML(http.StatusOK, "descargo/show.html", gin.H{
+	utils.Render(c, "descargo/show.html", gin.H{
 		"Title":    "Detalle de Descargo",
 		"Descargo": descargo,
-		"User":     c.MustGet("User"),
 	})
 }
 
@@ -155,7 +158,11 @@ func (ctrl *DescargoController) Approve(c *gin.Context) {
 	}
 
 	descargo.Estado = "APROBADO"
-	userContext := c.MustGet("User").(models.Usuario)
+	userContext := appcontext.CurrentUser(c)
+	if userContext == nil {
+		c.Redirect(http.StatusFound, "/auth/login")
+		return
+	}
 	descargo.UpdatedBy = &userContext.ID
 
 	ctrl.descargoService.Update(descargo)

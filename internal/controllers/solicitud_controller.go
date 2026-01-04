@@ -3,42 +3,45 @@ package controllers
 import (
 	"fmt"
 	"net/http"
+	"sistema-pasajes/internal/appcontext"
 	"sistema-pasajes/internal/dtos"
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/services"
+	"sistema-pasajes/internal/utils"
 	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
 type SolicitudController struct {
-	service         *services.SolicitudService
-	ciudadService   *services.CiudadService
-	catalogoService *services.CatalogoService
-	cupoService     *services.CupoService
-	userService     *services.UsuarioService
-	peopleService   *services.PeopleService
-	reportService   *services.ReportService
+	service          *services.SolicitudService
+	ciudadService    *services.CiudadService
+	catalogoService  *services.CatalogoService
+	cupoService      *services.CupoService
+	userService      *services.UsuarioService
+	peopleService    *services.PeopleService
+	reportService    *services.ReportService
+	aerolineaService *services.AerolineaService
 }
 
 func NewSolicitudController() *SolicitudController {
 	return &SolicitudController{
-		service:         services.NewSolicitudService(),
-		ciudadService:   services.NewCiudadService(),
-		catalogoService: services.NewCatalogoService(),
-		cupoService:     services.NewCupoService(),
-		userService:     services.NewUsuarioService(),
-		peopleService:   services.NewPeopleService(),
-		reportService:   services.NewReportService(),
+		service:          services.NewSolicitudService(),
+		ciudadService:    services.NewCiudadService(),
+		catalogoService:  services.NewCatalogoService(),
+		cupoService:      services.NewCupoService(),
+		userService:      services.NewUsuarioService(),
+		peopleService:    services.NewPeopleService(),
+		reportService:    services.NewReportService(),
+		aerolineaService: services.NewAerolineaService(),
 	}
 }
 
 func (ctrl *SolicitudController) Index(c *gin.Context) {
 	solicitudes, _ := ctrl.service.FindAll()
-	c.HTML(http.StatusOK, "solicitud/index.html", gin.H{
+	utils.Render(c, "solicitud/index.html", gin.H{
 		"Title":       "Bandeja de Solicitudes",
 		"Solicitudes": solicitudes,
-		"User":        c.MustGet("User"),
 	})
 }
 
@@ -46,9 +49,7 @@ func (ctrl *SolicitudController) Create(c *gin.Context) {
 	destinos, _ := ctrl.ciudadService.GetAll()
 	conceptos, _ := ctrl.catalogoService.GetAllConceptos()
 
-	userContext, _ := c.Get("User")
-	currentUser := userContext.(*models.Usuario)
-
+	currentUser := appcontext.CurrentUser(c)
 	targetUserID := c.Query("user_id")
 	var targetUser *models.Usuario
 
@@ -68,22 +69,102 @@ func (ctrl *SolicitudController) Create(c *gin.Context) {
 		alertaOrigen = "Este usuario no tiene configurado su LUGAR DE ORIGEN en el perfil. El sistema no podrá calcular rutas automáticamente."
 	}
 
-	aerolineas := []string{"BoA - Boliviana de Aviación", "EcoJet"}
+	aereos, _ := ctrl.aerolineaService.GetAllActive()
+	var aerolineas []string
+	for _, a := range aereos {
+		aerolineas = append(aerolineas, a.Nombre)
+	}
 
-	c.HTML(http.StatusOK, "solicitud/create.html", gin.H{
+	now := time.Now()
+	vouchers, _ := ctrl.cupoService.GetVouchersByUsuario(targetUser.ID, now.Year(), int(now.Month()))
+
+	utils.Render(c, "solicitud/create.html", gin.H{
 		"Title":        "Nueva Solicitud de Pasaje",
-		"User":         targetUser,
-		"CurrentUser":  currentUser,
+		"TargetUser":   targetUser,
 		"Destinos":     destinos,
 		"Conceptos":    conceptos,
 		"Aerolineas":   aerolineas,
 		"AlertaOrigen": alertaOrigen,
+		"Vouchers":     vouchers,
 	})
 }
 
+func (ctrl *SolicitudController) CreateDerecho(c *gin.Context) {
+	destinos, _ := ctrl.ciudadService.GetAll()
+	conceptos, _ := ctrl.catalogoService.GetAllConceptos()
+
+	currentUser := appcontext.CurrentUser(c)
+	targetUserParamID := c.Param("id")
+	var targetUser *models.Usuario
+
+	if targetUserParamID != "" && targetUserParamID != "me" {
+		u, err := ctrl.userService.GetByID(targetUserParamID)
+		if err == nil {
+			targetUser = u
+		} else {
+			targetUser = currentUser
+		}
+	} else {
+		targetUser = currentUser
+	}
+
+	var alertaOrigen string
+	if targetUser.GetOrigenCode() == "" {
+		alertaOrigen = "Este usuario no tiene configurado su LUGAR DE ORIGEN en el perfil. El sistema no podrá calcular rutas automáticamente."
+	}
+
+	aereos, _ := ctrl.aerolineaService.GetAllActive()
+	var aerolineas []string
+	for _, a := range aereos {
+		aerolineas = append(aerolineas, a.Nombre)
+	}
+	now := time.Now()
+	vouchers, _ := ctrl.cupoService.GetVouchersByUsuario(targetUser.ID, now.Year(), int(now.Month()))
+
+	conceptoDer, _ := ctrl.catalogoService.GetConceptoByCodigo("DERECHO")
+	tipoCupo, _ := ctrl.catalogoService.GetTipoSolicitudByCodigo("USO_CUPO")
+	ambitoNac, _ := ctrl.catalogoService.GetAmbitoByCodigo("NACIONAL")
+
+	utils.Render(c, "solicitud/create.html", gin.H{
+		"Title":                  "Pasaje por Derecho - " + targetUser.GetNombreCompleto(),
+		"TargetUser":             targetUser,
+		"Destinos":               destinos,
+		"Conceptos":              conceptos,
+		"Aerolineas":             aerolineas,
+		"AlertaOrigen":           alertaOrigen,
+		"Vouchers":               vouchers,
+		"DefaultConceptoID":      getObjectID(conceptoDer),
+		"DefaultTipoSolicitudID": getObjectID(tipoCupo),
+		"DefaultAmbitoID":        getObjectID(ambitoNac),
+	})
+}
+
+func getObjectID(obj interface{}) string {
+	if obj == nil {
+		return ""
+	}
+	switch v := obj.(type) {
+	case *models.ConceptoViaje:
+		return v.ID
+	case *models.TipoSolicitud:
+		return v.ID
+	case *models.AmbitoViaje:
+		return v.ID
+	}
+	return ""
+}
+
 func (ctrl *SolicitudController) CheckCupo(c *gin.Context) {
-	userContext, _ := c.Get("User")
-	usuario := userContext.(*models.Usuario)
+	usuario := appcontext.CurrentUser(c)
+	if usuario == nil {
+		c.String(http.StatusUnauthorized, "No autorizado")
+		return
+	}
+
+	targetUserID := c.Query("target_user_id")
+	if targetUserID == "" {
+		targetUserID = usuario.ID
+	}
 
 	tipoID := c.Query("tipo_solicitud_id")
 	if tipoID == "" {
@@ -106,7 +187,7 @@ func (ctrl *SolicitudController) CheckCupo(c *gin.Context) {
 		}
 	}
 
-	info, err := ctrl.cupoService.CalcularCupo(usuario.ID, fecha)
+	info, err := ctrl.cupoService.CalcularCupo(targetUserID, fecha)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Error calculando cupo")
 		return
@@ -117,12 +198,21 @@ func (ctrl *SolicitudController) CheckCupo(c *gin.Context) {
 		colorClass = "bg-red-50 text-red-800 border-red-200"
 	}
 
+	var statusIcon string
+	if info.EsDisponible {
+		statusIcon = `<svg class="h-4 w-4 text-green-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`
+	} else {
+		statusIcon = `<svg class="h-4 w-4 text-red-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`
+	}
+
 	html := fmt.Sprintf(`
-		<div class="border rounded-md p-3 mt-2 %s">
-			<label class="block text-xs font-bold uppercase tracking-wide opacity-70 mb-1">*Por Derecho :</label>
-			<p class="text-lg font-mono font-bold">%s</p>
+		<div class="flex items-center p-2 rounded border %s">
+			%s
+			<div class="flex-1">
+				<p class="text-sm font-bold leading-tight">%s</p>
+			</div>
 		</div>
-	`, colorClass, info.Mensaje)
+	`, colorClass, statusIcon, info.Mensaje)
 
 	c.Writer.Header().Set("Content-Type", "text/html")
 	c.String(http.StatusOK, html)
@@ -132,9 +222,8 @@ func (ctrl *SolicitudController) Store(c *gin.Context) {
 	var req dtos.CreateSolicitudRequest
 	if err := c.ShouldBind(&req); err != nil {
 		destinos, _ := ctrl.ciudadService.GetAll()
-		c.HTML(http.StatusOK, "solicitud/create.html", gin.H{
+		utils.Render(c, "solicitud/create.html", gin.H{
 			"Error":    "Datos inválidos: " + err.Error(),
-			"User":     c.MustGet("User"),
 			"Destinos": destinos,
 		})
 		return
@@ -148,12 +237,11 @@ func (ctrl *SolicitudController) Store(c *gin.Context) {
 		fechaRetorno, _ = time.Parse(layout, req.FechaRetorno)
 	}
 
-	userContext, exists := c.Get("User")
-	if !exists {
-		c.Redirect(http.StatusFound, "/login")
+	usuario := appcontext.CurrentUser(c)
+	if usuario == nil {
+		c.Redirect(http.StatusFound, "/auth/login")
 		return
 	}
-	usuario := userContext.(*models.Usuario)
 
 	var realSolicitanteID string
 	if req.TargetUserID != "" {
@@ -189,9 +277,8 @@ func (ctrl *SolicitudController) Store(c *gin.Context) {
 	if err := ctrl.service.Create(&nuevaSolicitud, usuario); err != nil {
 		destinos, _ := ctrl.ciudadService.GetAll()
 
-		c.HTML(http.StatusOK, "solicitud/create.html", gin.H{
+		utils.Render(c, "solicitud/create.html", gin.H{
 			"Error":    "Error: " + err.Error(),
-			"User":     c.MustGet("User"),
 			"Destinos": destinos,
 		})
 		return
@@ -230,10 +317,9 @@ func (ctrl *SolicitudController) Show(c *gin.Context) {
 
 	aerolineas := []string{"BoA - Boliviana de Aviación", "EcoJet"}
 
-	c.HTML(http.StatusOK, "solicitud/show.html", gin.H{
+	utils.Render(c, "solicitud/show.html", gin.H{
 		"Title":        "Detalle Solicitud #" + id,
 		"Solicitud":    solicitud,
-		"User":         c.MustGet("User"),
 		"Step1":        step1,
 		"Step2":        step2,
 		"Step3":        step3,
@@ -252,10 +338,7 @@ func (ctrl *SolicitudController) PrintPV01(c *gin.Context) {
 	}
 
 	personaView, errMongo := ctrl.peopleService.FindSenatorDataByCI(solicitud.Usuario.CI)
-	// We pass personaView even if error, service handles nil
 	if errMongo != nil {
-		// Log error but proceed? Or maybe personaView is nil.
-		// Original logic: if errMongo == nil && personaView != nil
 		personaView = nil
 	}
 
@@ -295,8 +378,11 @@ func (ctrl *SolicitudController) Edit(c *gin.Context) {
 		return
 	}
 
-	user, _ := c.Get("User")
-	currentUser := user.(*models.Usuario)
+	currentUser := appcontext.CurrentUser(c)
+	if currentUser == nil {
+		c.Redirect(http.StatusFound, "/auth/login")
+		return
+	}
 
 	if solicitud.UsuarioID != currentUser.ID && currentUser.Rol.Codigo != "ADMIN" {
 		c.String(http.StatusForbidden, "No tiene permisos para editar esta solicitud")
@@ -308,14 +394,13 @@ func (ctrl *SolicitudController) Edit(c *gin.Context) {
 	ciudades, _ := ctrl.ciudadService.GetAll()
 	tiposItinerario, _ := ctrl.catalogoService.GetTiposItinerario()
 
-	c.HTML(http.StatusOK, "solicitud/edit.html", gin.H{
+	utils.Render(c, "solicitud/edit.html", gin.H{
 		"Title":           "Editar Solicitud",
 		"Solicitud":       solicitud,
 		"TiposSolicitud":  tipos,
 		"AmbitosViaje":    ambitos,
 		"Ciudades":        ciudades,
 		"TiposItinerario": tiposItinerario,
-		"User":            currentUser,
 	})
 }
 

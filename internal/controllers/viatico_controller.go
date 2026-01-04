@@ -3,8 +3,8 @@ package controllers
 import (
 	"fmt"
 	"net/http"
+	"sistema-pasajes/internal/appcontext"
 	"sistema-pasajes/internal/dtos"
-	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/services"
 	"sistema-pasajes/internal/utils"
 	"strconv"
@@ -47,12 +47,11 @@ func (ctrl *ViaticoController) Create(c *gin.Context) {
 
 	categorias, _ := ctrl.viaticoService.GetCategorias()
 
-	c.HTML(http.StatusOK, "viatico/create.html", gin.H{
+	utils.Render(c, "viatico/create.html", gin.H{
 		"Title":       "Asignación de Viáticos",
 		"Solicitud":   solicitud,
 		"DefaultDias": fmt.Sprintf("%.1f", dias),
 		"Categorias":  categorias,
-		"User":        c.MustGet("User"),
 	})
 }
 
@@ -61,7 +60,11 @@ func (ctrl *ViaticoController) Calculate(c *gin.Context) {
 
 func (ctrl *ViaticoController) Store(c *gin.Context) {
 	solicitudID := c.Param("id")
-	currentUser := c.MustGet("User").(*models.Usuario)
+	currentUser := appcontext.CurrentUser(c)
+	if currentUser == nil {
+		c.Redirect(http.StatusFound, "/auth/login")
+		return
+	}
 
 	var req dtos.CreateViaticoRequest
 	if err := c.ShouldBind(&req); err != nil {
@@ -263,7 +266,11 @@ func (ctrl *ViaticoController) Print(c *gin.Context) {
 	pdf.SetXY(80, ySig+2)
 	pdf.CellFormat(50, 4, tr("ELABORADO POR"), "", 1, "C", false, 0, "")
 	pdf.SetXY(80, ySig+6)
-	currentUserName := c.MustGet("User").(*models.Usuario).GetNombreCompleto()
+	currentUser := appcontext.CurrentUser(c)
+	currentUserName := ""
+	if currentUser != nil {
+		currentUserName = currentUser.GetNombreCompleto()
+	}
 	pdf.CellFormat(50, 4, tr(currentUserName), "", 1, "C", false, 0, "")
 
 	pdf.SetXY(140, ySig)

@@ -4,6 +4,7 @@ import (
 	"sistema-pasajes/internal/models"
 
 	"sistema-pasajes/internal/configs"
+
 	"gorm.io/gorm"
 )
 
@@ -19,4 +20,9 @@ func (r *AmbitoViajeRepository) FindAll() ([]models.AmbitoViaje, error) {
 	var ambitos []models.AmbitoViaje
 	err := r.db.Find(&ambitos).Error
 	return ambitos, err
+}
+func (r *AmbitoViajeRepository) FindByCodigo(codigo string) (*models.AmbitoViaje, error) {
+	var ambito models.AmbitoViaje
+	err := r.db.Where("codigo = ?", codigo).First(&ambito).Error
+	return &ambito, err
 }

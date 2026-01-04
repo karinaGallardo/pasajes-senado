@@ -1,6 +1,8 @@
 {
-  "printWidth": 120,
+  "printWidth": 180,
   "htmlWhitespaceSensitivity": "ignore",
+  "endOfLine": "lf",
+  "bracketSameLine": true,
   "overrides": [
     {
       "files": "*.html",

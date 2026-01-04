@@ -1,6 +1,7 @@
 package dtos
 
 type CreateSolicitudRequest struct {
+	ConceptoID      string `form:"concepto_id"`
 	TipoSolicitudID string `form:"tipo_solicitud_id" binding:"required"`
 	AmbitoViajeID   string `form:"ambito_viaje_id" binding:"required"`
 	TargetUserID    string `form:"target_user_id"`

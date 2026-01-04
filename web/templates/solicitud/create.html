@@ -1,336 +1,267 @@
 {{ define "solicitud/create.html" }} {{ template "layout_start" . }}
 
-<div class="max-w-4xl mx-auto">
-  <div class="md:flex md:items-center md:justify-between mb-6">
-    <div class="flex-1 min-w-0">
-      <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">Nueva Solicitud de Pasaje</h2>
-      <p class="text-sm text-gray-500 mt-1">Formulario de registro inicial (FV-01)</p>
+<div
+  class="max-w-5xl mx-auto space-y-6"
+  x-data="{
+    showForm: false,
+    tipo: 'IDA_VUELTA',
+    origen: '{{ .TargetUser.GetOrigenCode }}',
+    userOrigenCode: '{{ .TargetUser.GetOrigenCode }}',
+    userOrigenName: '{{ if .TargetUser.Origen }}{{ .TargetUser.Origen.Nombre }}{{ else }}Ciudad No Configurada{{ end }}',
+    targetShortName: '{{ .TargetUser.Firstname }}',
+    lpbCode: 'LPB',
+    lpbName: 'La Paz - El Alto',
+    isLocked: true,
+    voucherSelected: '',
+    
+    activeTab: 'IDA', // IDA, VUELTA, DESCARGO
+    
+    minDate: '',
+    maxDate: '',
+    weekDays: [],
+    
+    selectedDaySalida: '',
+    selectedTimeSalida: '08:00',
+
+    initSelection(min, max) {
+        this.minDate = min;
+        this.maxDate = max;
+        this.generateWeek(min);
+        
+        this.selectedDaySalida = min;
+    },
+
+    selectVoucher(voucherId, min, max, tab) {
+        this.voucherSelected = voucherId;
+        this.activeTab = tab;
+        this.showForm = true;
+        this.tipo = 'SOLO_IDA';
+        
+        if (tab === 'VUELTA') {
+            this.origen = 'LPB';
+        } else {
+            if (this.userOrigenCode) {
+                 this.origen = this.userOrigenCode;
+            }
+        }
+        
+        this.initSelection(min, max);
+        
+        setTimeout(() => {
+             const formElement = document.getElementById('main-form-container');
+             if (formElement) formElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+    },
+
+    generateWeek(startStr) {
+        const days = [];
+        const start = new Date(startStr + 'T12:00:00');
+        const names = ['Dom', 'Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab'];
+        const fullNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+        
+        for (let i = 0; i < 7; i++) {
+            const d = new Date(start);
+            d.setDate(start.getDate() + i);
+            const yyyy = d.getFullYear();
+            const mm = String(d.getMonth() + 1).padStart(2, '0');
+            const dd = String(d.getDate()).padStart(2, '0');
+            const dateStr = `${yyyy}-${mm}-${dd}`;
+            
+            days.push({
+                date: dateStr,
+                name: names[d.getDay()],
+                fullName: fullNames[d.getDay()],
+                dayNum: dd
+            });
+        }
+        this.weekDays = days;
+    }
+}"
+  x-effect="
+    if (tipo === 'IDA_VUELTA') {
+        isLocked = true;
+        if (userOrigenCode !== 'LPB' && userOrigenCode !== '') {
+            origen = userOrigenCode;
+        }
+    } else {
+        isLocked = false;
+    }
+">
+  <!-- HEADER -->
+  <div class="flex justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+    <div>
+      <h2 class="text-xl font-bold text-gray-800 tracking-tight">Nueva Solicitud</h2>
+      <p class="text-sm text-gray-500">Siga los pasos para emitir su pasaje</p>
     </div>
-    <div class="mt-4 flex md:mt-0 md:ml-4">
+    <div class="flex items-center space-x-3">
       <a
         href="/solicitudes"
-        class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none"
-      >
+        class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 transition-colors">
         Cancelar
       </a>
     </div>
   </div>
 
   {{ if .AlertaOrigen }}
-  <!-- QUICK CONFIG FORM: Placed outside the main form -->
-  <div class="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6 shadow rounded-lg">
+  <div class="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-md">
     <div class="flex">
       <div class="flex-shrink-0">
-        <!-- Icono Alert -->
-        <svg class="h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+        <svg class="h-5 w-5 text-amber-400" viewBox="0 0 20 20" fill="currentColor">
           <path
             fill-rule="evenodd"
             d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-            clip-rule="evenodd"
-          />
+            clip-rule="evenodd" />
         </svg>
       </div>
-      <div class="ml-3 w-full">
-        <p class="text-sm text-yellow-700 font-bold mb-2">{{ .AlertaOrigen }}</p>
-
-        <div class="p-3 bg-yellow-100 rounded-md border border-yellow-200">
-          <p class="text-xs text-yellow-800 mb-2 font-semibold uppercase tracking-wide">Configuración Rápida de Origen</p>
-          <form action="/usuarios/{{ .User.ID }}/update-origin" method="POST" class="flex items-center gap-2">
-            <select name="origen_code" class="text-sm border-yellow-300 rounded px-2 py-1 focus:ring-yellow-500 focus:border-yellow-500 bg-white shadow-sm" required>
-              <option value="" disabled selected>Seleccione Ciudad de Origen...</option>
-              {{ range .Destinos }}
-              <option value="{{ .Code }}">{{ .Nombre }} ({{ .Code }})</option>
-              {{ end }}
-            </select>
-            <button type="submit" class="px-3 py-1 bg-yellow-600 text-white text-xs font-bold rounded hover:bg-yellow-700 transition shadow-sm">Guardar Origen</button>
-          </form>
-        </div>
+      <div class="ml-3">
+        <p class="text-sm text-amber-700 font-medium">
+          {{ .AlertaOrigen }}
+          <a href="/perfil" class="font-bold underline hover:text-amber-800 ml-1">Configurar ahora</a>
+        </p>
       </div>
     </div>
   </div>
   {{ end }}
 
-  <form action="/solicitudes" method="POST" class="bg-white shadow rounded-lg overflow-hidden border border-gray-200">
-    {{ if ne .User.ID .CurrentUser.ID }}
-    <input type="hidden" name="target_user_id" value="{{ .User.ID }}" />
-    <div class="bg-blue-50 border-l-4 border-blue-400 p-4">
-      <div class="flex">
-        <div class="flex-shrink-0">
-          <svg class="h-5 w-5 text-blue-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-            <path
-              fill-rule="evenodd"
-              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-              clip-rule="evenodd"
-            />
-          </svg>
-        </div>
-        <div class="ml-3">
-          <p class="text-sm text-blue-700">
-            Está registrando una solicitud a nombre de:
-            <strong>{{ .User.GetNombreCompleto }}</strong>
-          </p>
-        </div>
+  <!-- PASO 1: SELECCIÓN DE VOUCHER -->
+  <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+    <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+      <div>
+        <h3 class="text-xs font-bold text-senado-secondary uppercase tracking-wider mb-1">Paso 1: Selección de Bolsa</h3>
+        <p class="text-sm font-medium text-gray-600">Disponibilidad del Mes</p>
       </div>
-    </div>
-    {{ end }}
-
-    <div class="p-6 space-y-6">
-      {{ if .Error }}
-      <div class="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
-        <div class="flex">
-          <div class="flex-shrink-0">
-            <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-              <path
-                fill-rule="evenodd"
-                d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                clip-rule="evenodd"
-              />
-            </svg>
-          </div>
-          <div class="ml-3">
-            <p class="text-sm text-red-700">{{ .Error }}</p>
-          </div>
-        </div>
-      </div>
-      {{ end }}
-
-      <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
-        <!-- Tipo de Viaje -->
-        <!-- 1. Concepto de Viaje -->
-        <div class="sm:col-span-2">
-          <label for="concepto_id" class="block text-sm font-medium text-gray-700">Concepto de Viaje</label>
-          <div class="mt-1">
-            <select
-              id="concepto_id"
-              name="concepto_id"
-              required
-              hx-get="/catalogos/tipos"
-              hx-target="#tipo_solicitud_id"
-              hx-trigger="change"
-              class="shadow-sm focus:ring-senado-secondary focus:border-senado-secondary block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
-            >
-              <option value="" disabled selected>Seleccione Concepto...</option>
-              {{ range .Conceptos }}
-              <option value="{{ .ID }}">{{ .Nombre }}</option>
-              {{ end }}
-            </select>
-          </div>
-        </div>
-
-        <!-- 2. Tipo de Solicitud (Carga Dinámica) -->
-        <div class="sm:col-span-2">
-          <label for="tipo_solicitud_id" class="block text-sm font-medium text-gray-700">Tipo de Solicitud</label>
-          <div class="mt-1">
-            <select
-              id="tipo_solicitud_id"
-              name="tipo_solicitud_id"
-              required
-              hx-get="/catalogos/ambitos"
-              hx-target="#ambito_viaje_id"
-              hx-trigger="change"
-              class="shadow-sm focus:ring-senado-secondary focus:border-senado-secondary block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
-            >
-              <option value="" disabled selected>---</option>
-            </select>
-            <!-- Info de Cupo (Dinámico) -->
-            <div
-              id="info-cupo"
-              hx-get="/solicitudes/check-cupo"
-              hx-trigger="change from:#tipo_solicitud_id, change from:#fecha_salida"
-              hx-target="this"
-              hx-include="closest form"
-            ></div>
-          </div>
-        </div>
-
-        <!-- 3. Ámbito de Viaje (Carga Dinámica) -->
-        <div class="sm:col-span-2">
-          <label for="ambito_viaje_id" class="block text-sm font-medium text-gray-700">Ámbito</label>
-          <div class="mt-1">
-            <select
-              id="ambito_viaje_id"
-              name="ambito_viaje_id"
-              required
-              class="shadow-sm focus:ring-senado-secondary focus:border-senado-secondary block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
-            >
-              <option value="" disabled selected>---</option>
-            </select>
-          </div>
-        </div>
-
-        <!-- Origen y Destino -->
-        <!-- Main Container x-data -->
-        <div
-          class="sm:col-span-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6"
-          x-data="{ 
-                tipo: 'IDA_VUELTA',
-                origen: '{{ .User.GetOrigenCode }}',
-                userOrigenCode: '{{ .User.GetOrigenCode }}',
-                userOrigenName: '{{ if .User.Origen }}{{ .User.Origen.Nombre }}{{ else }}Mi Origen{{ end }}',
-                lpbCode: 'LPB',
-                lpbName: 'La Paz - El Alto',
-                isLocked: true
-             }"
-          x-effect="
-                if (tipo === 'IDA_VUELTA') {
-                  isLocked = true;
-                  if (userOrigenCode !== 'LPB' && userOrigenCode !== '') {
-                      origen = userOrigenCode;
-                  }
-                } else {
-                  isLocked = false;
-                }
-             "
-        >
-          <!-- 1. BLOQUE ITINERARIO (Primero) -->
-          <div class="sm:col-span-6 border-b border-gray-100 pb-4 mb-4">
-            <div class="grid grid-cols-6 gap-6">
-              <div class="col-span-6 sm:col-span-3">
-                <label class="block text-sm font-medium text-gray-700 mb-2">Tipo de Itinerario</label>
-                <div class="flex items-center space-x-6">
-                  <label class="inline-flex items-center cursor-pointer">
-                    <input
-                      type="radio"
-                      x-model="tipo"
-                      value="IDA_VUELTA"
-                      name="tipo_itinerario"
-                      class="form-radio h-4 w-4 text-senado-secondary focus:ring-senado-secondary border-gray-300"
-                    />
-                    <span class="ml-2 text-gray-900 font-medium">Ida y Vuelta</span>
-                  </label>
-                  <label class="inline-flex items-center cursor-pointer">
-                    <input
-                      type="radio"
-                      x-model="tipo"
-                      value="SOLO_IDA"
-                      name="tipo_itinerario"
-                      class="form-radio h-4 w-4 text-senado-secondary focus:ring-senado-secondary border-gray-300"
-                    />
-                    <span class="ml-2 text-gray-900 font-medium">Solo Ida</span>
-                  </label>
-                </div>
-                <p class="text-xs text-gray-500 mt-2" x-show="tipo === 'IDA_VUELTA'">* En pasajes Ida y Vuelta, la ruta se fija automáticamente (Sede <-> Origen).</p>
-              </div>
-
-              <div class="col-span-6 sm:col-span-3">
-                <label for="aerolinea" class="block text-sm font-medium text-gray-700 mb-2">Línea Aérea Sugerida</label>
-                <select
-                  id="aerolinea"
-                  name="aerolinea"
-                  class="shadow-sm focus:ring-senado-secondary focus:border-senado-secondary block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
-                >
-                  <option value="" selected>-- Cualquiera / No preferencia --</option>
-                  {{ range .Aerolineas }}
-                  <option value="{{ . }}">{{ . }}</option>
-                  {{ end }}
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <!-- 2. BLOQUE ORIGEN / DESTINO -->
-          <div class="sm:col-span-3">
-            <label for="origen" class="block text-sm font-medium text-gray-700">Lugar de Origen</label>
-            <div class="mt-1">
-              <select
-                id="origen"
-                name="origen"
-                x-model="origen"
-                :class="{ 'bg-gray-100 pointer-events-none text-gray-500': isLocked }"
-                required
-                class="shadow-sm focus:ring-senado-secondary focus:border-senado-secondary block w-full sm:text-sm border-gray-300 rounded-md p-2 border transition-colors"
-              >
-                {{ if .User.GetOrigenCode }}
-                <option value="{{ .User.GetOrigenCode }}" x-text="userOrigenName + ' (' + userOrigenCode + ')'"></option>
-                {{ else }}
-                <option value="" disabled>Configure su perfil...</option>
-                {{ end }} {{ if ne .User.GetOrigenCode "LPB" }}
-                <option value="LPB" x-text="lpbName + ' (LPB)'"></option>
-                {{ end }}
-              </select>
-            </div>
-          </div>
-
-          <div class="sm:col-span-3">
-            <label class="block text-sm font-medium text-gray-700">Lugar de Destino</label>
-            <div class="mt-1 relative">
-              <!-- Input Visual (readonly) que muestra el Nombre -->
-              <input
-                type="text"
-                readonly
-                class="shadow-sm block w-full sm:text-sm border-gray-300 bg-gray-100 text-gray-600 rounded-md p-2 border cursor-not-allowed font-medium"
-                :value="origen === 'LPB' ? (userOrigenName + ' (' + userOrigenCode + ')') : (lpbName + ' (LPB)')"
-              />
-
-              <!-- Input Hidden (para enviar el código en el POST) -->
-              <input type="hidden" name="destino" :value="origen === 'LPB' ? userOrigenCode : 'LPB'" />
-
-              <div class="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
-                <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                  ></path>
-                </svg>
-              </div>
-            </div>
-            <p class="text-xs text-gray-500 mt-1">El destino se asigna automáticamente según su origen.</p>
-          </div>
-
-          <!-- 3. BLOQUE FECHAS -->
-          <div class="sm:col-span-3">
-            <label for="fecha_salida" class="block text-sm font-medium text-gray-700">Fecha y Hora Salida (Aprox)</label>
-            <div class="mt-1">
-              <input
-                type="datetime-local"
-                name="fecha_salida"
-                id="fecha_salida"
-                required
-                class="shadow-sm focus:ring-senado-secondary focus:border-senado-secondary block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
-              />
-            </div>
-          </div>
-
-          <div class="sm:col-span-3" x-show="tipo === 'IDA_VUELTA'" x-transition>
-            <label for="fecha_retorno" class="block text-sm font-medium text-gray-700">Fecha y Hora Retorno (Aprox)</label>
-            <div class="mt-1">
-              <input
-                type="datetime-local"
-                name="fecha_retorno"
-                id="fecha_retorno"
-                class="shadow-sm focus:ring-senado-secondary focus:border-senado-secondary block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
-              />
-            </div>
-          </div>
-        </div>
-
-        <!-- Motivo -->
-        <div class="sm:col-span-6">
-          <label for="motivo" class="block text-sm font-medium text-gray-700">Motivo del Viaje / Justificación</label>
-          <div class="mt-1">
-            <textarea
-              id="motivo"
-              name="motivo"
-              rows="3"
-              class="shadow-sm focus:ring-senado-secondary focus:border-senado-secondary block w-full sm:text-sm border border-gray-300 rounded-md p-2"
-            ></textarea>
-          </div>
-          <p class="mt-2 text-sm text-gray-500">Breve descripción de la razón del viaje.</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="px-4 py-3 bg-gray-50 text-right sm:px-6 flex justify-end">
-      <button
-        type="submit"
-        class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-senado-primary hover:bg-senado-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-senado-primary"
-      >
-        Guardar Solicitud
+      <button x-show="showForm" @click="showForm = false" class="text-xs font-bold text-senado-primary hover:underline flex items-center">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+        </svg>
+        Cambiar Bolsa de Pasajes
       </button>
     </div>
-  </form>
+
+    <div class="p-6">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {{ range .Vouchers }}
+        <div
+          class="relative border rounded-xl p-5 transition-all duration-200 flex flex-col items-center text-center space-y-3
+            {{ if eq .Estado `DISPONIBLE` }}
+              bg-white border-gray-200 cursor-pointer hover:border-senado-secondary hover:shadow-md
+            {{ else }}
+              bg-gray-50 border-gray-100 opacity-75
+            {{ end }}"
+          :class="{ 
+              'border-senado-secondary ring-2 ring-senado-secondary/10 bg-senado-50/10 shadow-sm': voucherSelected === '{{ .ID }}' 
+          }"
+          @click="
+            {{ if eq .Estado `DISPONIBLE` }}
+              selectVoucher('{{ .ID }}', '{{ if .FechaDesde }}{{ .FechaDesde.Format `2006-01-02` }}{{ end }}', '{{ if .FechaHasta }}{{ .FechaHasta.Format `2006-01-02` }}{{ end }}', 'IDA');
+            {{ end }}
+          ">
+          <div class="absolute top-2 right-2" x-show="voucherSelected === '{{ .ID }}'">
+            <svg class="h-5 w-5 text-senado-secondary" fill="currentColor" viewBox="0 0 20 20">
+              <path
+                fill-rule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                clip-rule="evenodd" />
+            </svg>
+          </div>
+
+          <span class="px-2 py-0.5 rounded bg-gray-100 text-[10px] font-bold uppercase tracking-tight text-gray-500">{{ .Semana }}</span>
+
+          <div class="py-1">
+            <div class="flex items-baseline justify-center space-x-1">
+              <span class="text-2xl font-bold text-gray-900">{{ if .FechaDesde }}{{ .FechaDesde.Format "02" }}{{ end }}</span>
+              <span class="text-xs font-medium text-gray-400 uppercase">al</span>
+              <span class="text-2xl font-bold text-gray-900">{{ if .FechaHasta }}{{ .FechaHasta.Format "02" }}{{ end }}</span>
+            </div>
+            <p class="text-[10px] text-gray-400 font-medium mt-0.5 lowercase tracking-wide">{{ if .FechaHasta }}{{ .FechaHasta.Format "Enero 2006" }}{{ end }}</p>
+          </div>
+
+          <div class="w-full h-px bg-gray-100"></div>
+
+          <!-- Status badge -->
+          <span
+            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase {{ if eq .Estado `DISPONIBLE` }} bg-green-100 text-green-700 {{ else }} bg-senado-primary/10 text-senado-primary {{ end }}">
+            {{ .Estado }}
+          </span>
+
+          <!-- Quick Actions -->
+          <div class="w-full pt-3 flex flex-wrap justify-center gap-1.5 border-t border-gray-50">
+            <!-- Ida -->
+            <button
+              type="button"
+              @click.stop="selectVoucher('{{ .ID }}', '{{ if .FechaDesde }}{{ .FechaDesde.Format `2006-01-02` }}{{ end }}', '{{ if .FechaHasta }}{{ .FechaHasta.Format `2006-01-02` }}{{ end }}', 'IDA')"
+              class="group/btn relative px-2.5 py-1 rounded text-[9px] font-bold uppercase border transition-all
+              {{ if .Solicitud }}
+                {{ if gt (len .Solicitud.Pasajes) 0 }} bg-green-50 text-green-700 border-green-100 
+                {{ else }} bg-amber-50 text-amber-700 border-amber-100 {{ end }}
+              {{ else }}
+                bg-white text-gray-500 border-gray-200 hover:border-senado-secondary hover:text-senado-secondary
+              {{ end }}">
+              Ida
+            </button>
+
+            <!-- Vuelta -->
+            {{ if or (not .Solicitud) (and .Solicitud .Solicitud.FechaRetorno) }}
+            <button
+              type="button"
+              @click.stop="selectVoucher('{{ .ID }}', '{{ if .FechaDesde }}{{ .FechaDesde.Format `2006-01-02` }}{{ end }}', '{{ if .FechaHasta }}{{ .FechaHasta.Format `2006-01-02` }}{{ end }}', 'VUELTA')"
+              class="group/btn relative px-2.5 py-1 rounded text-[9px] font-bold uppercase border transition-all
+              {{ if .Solicitud }}
+                {{ if gt (len .Solicitud.Pasajes) 1 }} bg-green-50 text-green-700 border-green-100 
+                {{ else }} bg-amber-50 text-amber-700 border-amber-100 {{ end }}
+              {{ else }}
+                bg-white text-gray-500 border-gray-200 hover:border-senado-secondary hover:text-senado-secondary
+              {{ end }}">
+              Vuelta
+            </button>
+            {{ end }}
+
+            <!-- Descargo -->
+            <button
+              type="button"
+              @click.stop="selectVoucher('{{ .ID }}', '{{ if .FechaDesde }}{{ .FechaDesde.Format `2006-01-02` }}{{ end }}', '{{ if .FechaHasta }}{{ .FechaHasta.Format `2006-01-02` }}{{ end }}', 'DESCARGO')"
+              class="group/btn relative px-2.5 py-1 rounded text-[9px] font-bold uppercase border transition-all
+              {{ if .Solicitud }}
+                {{ if not .Solicitud.Descargo }} bg-red-50 text-red-700 border-red-100 
+                {{ else if eq .Solicitud.Descargo.Estado `APROBADO` }} bg-green-50 text-green-700 border-green-100
+                {{ else }} bg-senado-primary/5 text-senado-primary border-senado-primary/10 {{ end }}
+              {{ else }}
+                bg-white text-gray-500 border-gray-200 hover:border-senado-secondary hover:text-senado-secondary
+              {{ end }}">
+              Descargo
+            </button>
+          </div>
+          {{ if .Solicitud }}
+          <a href="/solicitudes/{{ .SolicitudID }}" class="text-[9px] font-bold uppercase text-senado-secondary hover:underline transition-colors mt-1">Ver Detalle</a>
+          {{ end }}
+        </div>
+        {{ end }}
+      </div>
+    </div>
+  </div>
+
+  <!-- COMPONENTES DE FORMULARIO -->
+  <div id="main-form-container" class="transition-all duration-500">
+    {{ template "solicitud/components/form_pasaje.html" . }} {{ template "solicitud/components/form_descargo.html" . }}
+  </div>
 </div>
+
+<style>
+  /* Custom scrollbar matched to app style */
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #e2e8f0;
+    border-radius: 10px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #cbd5e1;
+  }
+</style>
 
 {{ template "layout_end" . }} {{ end }}

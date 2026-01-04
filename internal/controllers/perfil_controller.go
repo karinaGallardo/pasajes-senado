@@ -1,9 +1,8 @@
 package controllers
 
 import (
-	"net/http"
-	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/services"
+	"sistema-pasajes/internal/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -19,14 +18,10 @@ func NewPerfilController() *PerfilController {
 }
 
 func (ctrl *PerfilController) Show(c *gin.Context) {
-	userContext, _ := c.Get("User")
-	user := userContext.(*models.Usuario)
-
 	destinos, _ := ctrl.ciudadService.GetAll()
 
-	c.HTML(http.StatusOK, "auth/profile.html", gin.H{
+	utils.Render(c, "auth/profile.html", gin.H{
 		"Title":    "Mi Perfil",
-		"User":     user,
 		"Destinos": destinos,
 		"Success":  c.Query("success"),
 	})

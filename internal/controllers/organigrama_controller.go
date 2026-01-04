@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/services"
+	"sistema-pasajes/internal/utils"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -21,9 +22,8 @@ func NewOrganigramaController() *OrganigramaController {
 
 func (ctrl *OrganigramaController) IndexCargos(c *gin.Context) {
 	cargos, _ := ctrl.service.GetAllCargos()
-	c.HTML(http.StatusOK, "admin/cargos.html", gin.H{
+	utils.Render(c, "admin/cargos.html", gin.H{
 		"Cargos": cargos,
-		"User":   c.MustGet("User"),
 	})
 }
 
@@ -51,9 +51,8 @@ func (ctrl *OrganigramaController) DeleteCargo(c *gin.Context) {
 
 func (ctrl *OrganigramaController) IndexOficinas(c *gin.Context) {
 	oficinas, _ := ctrl.service.GetAllOficinas()
-	c.HTML(http.StatusOK, "admin/oficinas.html", gin.H{
+	utils.Render(c, "admin/oficinas.html", gin.H{
 		"Oficinas": oficinas,
-		"User":     c.MustGet("User"),
 	})
 }
 

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/services"
+	"sistema-pasajes/internal/utils"
 	"strconv"
 	"time"
 
@@ -47,10 +48,9 @@ func (ctrl *CupoController) Index(c *gin.Context) {
 		nombreMes = meses[mes]
 	}
 
-	users, _ := ctrl.userService.GetAll()
+	users, _ := ctrl.userService.GetByRoleType("SENADOR")
 
-	c.HTML(http.StatusOK, "admin/cupos.html", gin.H{
-		"User":      c.MustGet("User"),
+	utils.Render(c, "admin/cupos.html", gin.H{
 		"Cupos":     cupos,
 		"Users":     users,
 		"Gestion":   gestion,

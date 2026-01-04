@@ -3,6 +3,7 @@ package controllers
 import (
 	"net/http"
 	"sistema-pasajes/internal/services"
+	"sistema-pasajes/internal/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -20,8 +21,7 @@ func NewConfiguracionController() *ConfiguracionController {
 func (ctrl *ConfiguracionController) Index(c *gin.Context) {
 	configs, _ := ctrl.service.GetAll()
 
-	c.HTML(http.StatusOK, "admin/configuracion.html", gin.H{
-		"User":    c.MustGet("User"),
+	utils.Render(c, "admin/configuracion.html", gin.H{
 		"Configs": configs,
 		"Title":   "Configuración del Sistema",
 	})

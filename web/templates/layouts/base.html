@@ -63,8 +63,7 @@
             '-translate-x-full': !sidebarOpen,
             'w-64': !sidebarCollapsed,
             'w-20': sidebarCollapsed 
-        }"
-      >
+        }">
         <!-- Logo Area -->
         <div class="flex items-center h-16 px-6 border-b border-gray-100 overflow-hidden whitespace-nowrap">
           <img src="/static/img/logo_senado.webp" alt="Logo Senado" class="h-8 w-auto mr-2 min-w-[32px]" />
@@ -80,20 +79,17 @@
               href="/dashboard"
               :title="sidebarCollapsed ? 'Dashboard' : ''"
               class="group flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap
-            {{ if eq .Title `Dashboard` }} bg-senado-primary/10 text-senado-primary {{ else }} text-gray-600 hover:bg-gray-50 hover:text-gray-900 {{ end }}"
-            >
+            {{ if eq .Title `Dashboard` }} bg-senado-primary/10 text-senado-primary {{ else }} text-gray-600 hover:bg-gray-50 hover:text-gray-900 {{ end }}">
               <svg
                 class="mr-3 h-5 w-5 min-w-[20px] {{ if eq .Title `Dashboard` }} text-senado-primary {{ else }} text-gray-400 group-hover:text-gray-500 {{ end }}"
                 fill="none"
                 viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
+                stroke="currentColor">
                 <path
                   stroke-linecap="round"
                   stroke-linejoin="round"
                   stroke-width="2"
-                  d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"
-                />
+                  d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
               </svg>
               <span x-show="!sidebarCollapsed" class="transition-opacity duration-300">Dashboard</span>
             </a>
@@ -106,14 +102,12 @@
               href="/solicitudes"
               :title="sidebarCollapsed ? 'Solicitudes' : ''"
               class="group flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap
-             {{ if eq .Title `Solicitudes` }} bg-senado-primary/10 text-senado-primary {{ else }} text-gray-600 hover:bg-gray-50 hover:text-gray-900 {{ end }}"
-            >
+             {{ if eq .Title `Solicitudes` }} bg-senado-primary/10 text-senado-primary {{ else }} text-gray-600 hover:bg-gray-50 hover:text-gray-900 {{ end }}">
               <svg
                 class="mr-3 h-5 w-5 min-w-[20px] {{ if eq .Title `Solicitudes` }} text-senado-primary {{ else }} text-gray-400 group-hover:text-gray-500 {{ end }}"
                 fill="none"
                 viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
+                stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
               </svg>
               <span x-show="!sidebarCollapsed" class="transition-opacity duration-300">Solicitudes</span>
@@ -123,20 +117,17 @@
               href="/descargos"
               :title="sidebarCollapsed ? 'Descargos' : ''"
               class="group flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap
-             {{ if eq .Title `Descargos` }} bg-senado-primary/10 text-senado-primary {{ else }} text-gray-600 hover:bg-gray-50 hover:text-gray-900 {{ end }}"
-            >
+             {{ if eq .Title `Descargos` }} bg-senado-primary/10 text-senado-primary {{ else }} text-gray-600 hover:bg-gray-50 hover:text-gray-900 {{ end }}">
               <svg
                 class="mr-3 h-5 w-5 min-w-[20px] {{ if eq .Title `Descargos` }} text-senado-primary {{ else }} text-gray-400 group-hover:text-gray-500 {{ end }}"
                 fill="none"
                 viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
+                stroke="currentColor">
                 <path
                   stroke-linecap="round"
                   stroke-linejoin="round"
                   stroke-width="2"
-                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                />
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
               </svg>
               <span x-show="!sidebarCollapsed" class="transition-opacity duration-300">Descargos</span>
             </a>
@@ -145,20 +136,17 @@
               href="/compensaciones"
               :title="sidebarCollapsed ? 'Compensaciones' : ''"
               class="group flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap
-             {{ if eq .Title `Compensaciones` }} bg-senado-primary/10 text-senado-primary {{ else }} text-gray-600 hover:bg-gray-50 hover:text-gray-900 {{ end }}"
-            >
+             {{ if eq .Title `Compensaciones` }} bg-senado-primary/10 text-senado-primary {{ else }} text-gray-600 hover:bg-gray-50 hover:text-gray-900 {{ end }}">
               <svg
                 class="mr-3 h-5 w-5 min-w-[20px] {{ if eq .Title `Compensaciones` }} text-senado-primary {{ else }} text-gray-400 group-hover:text-gray-500 {{ end }}"
                 fill="none"
                 viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
+                stroke="currentColor">
                 <path
                   stroke-linecap="round"
                   stroke-linejoin="round"
                   stroke-width="2"
-                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
+                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <span x-show="!sidebarCollapsed" class="transition-opacity duration-300">Compensaciones</span>
             </a>
@@ -173,20 +161,17 @@
               href="/usuarios"
               :title="sidebarCollapsed ? 'Usuarios' : ''"
               class="group flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap
-             {{ if eq .Title `Gestión de Usuarios` }} bg-senado-primary/10 text-senado-primary {{ else }} text-gray-600 hover:bg-gray-50 hover:text-gray-900 {{ end }}"
-            >
+             {{ if eq .Title `Gestión de Usuarios` }} bg-senado-primary/10 text-senado-primary {{ else }} text-gray-600 hover:bg-gray-50 hover:text-gray-900 {{ end }}">
               <svg
                 class="mr-3 h-5 w-5 min-w-[20px] {{ if eq .Title `Gestión de Usuarios` }} text-senado-primary {{ else }} text-gray-400 group-hover:text-gray-500 {{ end }}"
                 fill="none"
                 viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
+                stroke="currentColor">
                 <path
                   stroke-linecap="round"
                   stroke-linejoin="round"
                   stroke-width="2"
-                  d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"
-                />
+                  d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
               </svg>
               <span x-show="!sidebarCollapsed" class="transition-opacity duration-300">Usuarios</span>
             </a>
@@ -196,20 +181,17 @@
               href="/admin/proveedores"
               :title="sidebarCollapsed ? 'Proveedores' : ''"
               class="group flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap
-             {{ if eq .Title `Gestión de Proveedores` }} bg-senado-primary/10 text-senado-primary {{ else }} text-gray-600 hover:bg-gray-50 hover:text-gray-900 {{ end }}"
-            >
+             {{ if eq .Title `Gestión de Proveedores` }} bg-senado-primary/10 text-senado-primary {{ else }} text-gray-600 hover:bg-gray-50 hover:text-gray-900 {{ end }}">
               <svg
                 class="mr-3 h-5 w-5 min-w-[20px] {{ if eq .Title `Gestión de Proveedores` }} text-senado-primary {{ else }} text-gray-400 group-hover:text-gray-500 {{ end }}"
                 fill="none"
                 viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
+                stroke="currentColor">
                 <path
                   stroke-linecap="round"
                   stroke-linejoin="round"
                   stroke-width="2"
-                  d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
+                  d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <span x-show="!sidebarCollapsed" class="transition-opacity duration-300">Proveedores</span>
             </a>
@@ -218,20 +200,17 @@
               href="/admin/rutas"
               :title="sidebarCollapsed ? 'Rutas' : ''"
               class="group flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap
-             {{ if eq .Title `Gestión de Rutas y Tarifas` }} bg-senado-primary/10 text-senado-primary {{ else }} text-gray-600 hover:bg-gray-50 hover:text-gray-900 {{ end }}"
-            >
+             {{ if eq .Title `Gestión de Rutas y Tarifas` }} bg-senado-primary/10 text-senado-primary {{ else }} text-gray-600 hover:bg-gray-50 hover:text-gray-900 {{ end }}">
               <svg
                 class="mr-3 h-5 w-5 min-w-[20px] {{ if eq .Title `Gestión de Rutas y Tarifas` }} text-senado-primary {{ else }} text-gray-400 group-hover:text-gray-500 {{ end }}"
                 fill="none"
                 viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
+                stroke="currentColor">
                 <path
                   stroke-linecap="round"
                   stroke-linejoin="round"
                   stroke-width="2"
-                  d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"
-                />
+                  d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
               </svg>
               <span x-show="!sidebarCollapsed" class="transition-opacity duration-300">Rutas / Tarifas</span>
             </a>
@@ -240,20 +219,17 @@
               href="/admin/configuracion"
               :title="sidebarCollapsed ? 'Configuración' : ''"
               class="group flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap
-             {{ if eq .Title `Configuración del Sistema` }} bg-senado-primary/10 text-senado-primary {{ else }} text-gray-600 hover:bg-gray-50 hover:text-gray-900 {{ end }}"
-            >
+             {{ if eq .Title `Configuración del Sistema` }} bg-senado-primary/10 text-senado-primary {{ else }} text-gray-600 hover:bg-gray-50 hover:text-gray-900 {{ end }}">
               <svg
                 class="mr-3 h-5 w-5 min-w-[20px] {{ if eq .Title `Configuración del Sistema` }} text-senado-primary {{ else }} text-gray-400 group-hover:text-gray-500 {{ end }}"
                 fill="none"
                 viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
+                stroke="currentColor">
                 <path
                   stroke-linecap="round"
                   stroke-linejoin="round"
                   stroke-width="2"
-                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                />
+                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
               </svg>
               <span x-show="!sidebarCollapsed" class="transition-opacity duration-300">Configuración</span>
@@ -263,20 +239,17 @@
               href="/admin/compensaciones/categorias"
               :title="sidebarCollapsed ? 'Montos Compensación' : ''"
               class="group flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap
-             {{ if eq .Title `Categorías de Compensación` }} bg-senado-primary/10 text-senado-primary {{ else }} text-gray-600 hover:bg-gray-50 hover:text-gray-900 {{ end }}"
-            >
+             {{ if eq .Title `Categorías de Compensación` }} bg-senado-primary/10 text-senado-primary {{ else }} text-gray-600 hover:bg-gray-50 hover:text-gray-900 {{ end }}">
               <svg
                 class="mr-3 h-5 w-5 min-w-[20px] {{ if eq .Title `Categorías de Compensación` }} text-senado-primary {{ else }} text-gray-400 group-hover:text-gray-500 {{ end }}"
                 fill="none"
                 viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
+                stroke="currentColor">
                 <path
                   stroke-linecap="round"
                   stroke-linejoin="round"
                   stroke-width="2"
-                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
+                  d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
               <span x-show="!sidebarCollapsed" class="transition-opacity duration-300">Montos Comp.</span>
             </a>
@@ -285,21 +258,18 @@
               href="/admin/cargos"
               :title="sidebarCollapsed ? 'Cargos' : ''"
               class="group flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap
-             {{ if eq .Title `Gestión de Cargos` }} bg-senado-primary/10 text-senado-primary {{ else }} text-gray-600 hover:bg-gray-50 hover:text-gray-900 {{ end }}"
-            >
+             {{ if eq .Title `Gestión de Cargos` }} bg-senado-primary/10 text-senado-primary {{ else }} text-gray-600 hover:bg-gray-50 hover:text-gray-900 {{ end }}">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 class="mr-3 h-5 w-5 min-w-[20px] {{ if eq .Title `Gestión de Cargos` }} text-senado-primary {{ else }} text-gray-400 group-hover:text-gray-500 {{ end }}"
                 fill="none"
                 viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
+                stroke="currentColor">
                 <path
                   stroke-linecap="round"
                   stroke-linejoin="round"
                   stroke-width="2"
-                  d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                />
+                  d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
               </svg>
               <span x-show="!sidebarCollapsed" class="transition-opacity duration-300">Cat. Cargos</span>
             </a>
@@ -308,21 +278,18 @@
               href="/admin/oficinas"
               :title="sidebarCollapsed ? 'Oficinas' : ''"
               class="group flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap
-             {{ if eq .Title `Gestión de Oficinas` }} bg-senado-primary/10 text-senado-primary {{ else }} text-gray-600 hover:bg-gray-50 hover:text-gray-900 {{ end }}"
-            >
+             {{ if eq .Title `Gestión de Oficinas` }} bg-senado-primary/10 text-senado-primary {{ else }} text-gray-600 hover:bg-gray-50 hover:text-gray-900 {{ end }}">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
                 class="mr-3 h-5 w-5 min-w-[20px] {{ if eq .Title `Gestión de Oficinas` }} text-senado-primary {{ else }} text-gray-400 group-hover:text-gray-500 {{ end }}"
                 fill="none"
                 viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
+                stroke="currentColor">
                 <path
                   stroke-linecap="round"
                   stroke-linejoin="round"
                   stroke-width="2"
-                  d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"
-                />
+                  d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
               </svg>
               <span x-show="!sidebarCollapsed" class="transition-opacity duration-300">Cat. Oficinas</span>
             </a>
@@ -331,20 +298,17 @@
               href="/admin/cupos"
               :title="sidebarCollapsed ? 'Cupos' : ''"
               class="group flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap
-             {{ if eq .Title `Gestión de Cupos` }} bg-senado-primary/10 text-senado-primary {{ else }} text-gray-600 hover:bg-gray-50 hover:text-gray-900 {{ end }}"
-            >
+             {{ if eq .Title `Gestión de Cupos` }} bg-senado-primary/10 text-senado-primary {{ else }} text-gray-600 hover:bg-gray-50 hover:text-gray-900 {{ end }}">
               <svg
                 class="mr-3 h-5 w-5 min-w-[20px] {{ if eq .Title `Gestión de Cupos` }} text-senado-primary {{ else }} text-gray-400 group-hover:text-gray-500 {{ end }}"
                 fill="none"
                 viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
+                stroke="currentColor">
                 <path
                   stroke-linecap="round"
                   stroke-linejoin="round"
                   stroke-width="2"
-                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                />
+                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
               </svg>
               <span x-show="!sidebarCollapsed" class="transition-opacity duration-300">Cupos Pasajes</span>
             </a>
@@ -356,15 +320,13 @@
         <div class="p-4 border-t border-gray-200">
           <button
             @click="sidebarCollapsed = !sidebarCollapsed"
-            class="flex items-center justify-center w-full px-4 py-2 text-sm font-medium text-gray-600 hover:text-senado-primary transition-colors focus:outline-none"
-          >
+            class="flex items-center justify-center w-full px-4 py-2 text-sm font-medium text-gray-600 hover:text-senado-primary transition-colors focus:outline-none">
             <svg
               class="mr-3 h-5 w-5 min-w-[20px] transform transition-transform duration-300"
               :class="{ 'rotate-180': sidebarCollapsed, 'mr-0': sidebarCollapsed }"
               fill="none"
               viewBox="0 0 24 24"
-              stroke="currentColor"
-            >
+              stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
             </svg>
             <span class="text-xs transition-opacity duration-300 whitespace-nowrap" x-show="!sidebarCollapsed">Colapsar</span>
@@ -394,8 +356,7 @@
               <input
                 type="text"
                 class="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg leading-5 bg-gray-50 placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:border-senado-primary focus:ring-1 focus:ring-senado-primary sm:text-sm transition duration-150 ease-in-out"
-                placeholder="Buscar trámites, personas..."
-              />
+                placeholder="Buscar trámites, personas..." />
             </div>
           </div>
 
@@ -409,8 +370,7 @@
                   stroke-linecap="round"
                   stroke-linejoin="round"
                   stroke-width="2"
-                  d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-                />
+                  d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
               </svg>
             </button>
 
@@ -429,8 +389,7 @@
                 x-show="open"
                 @click.away="open = false"
                 class="origin-top-right absolute right-6 top-16 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-40"
-                style="display: none"
-              >
+                style="display: none">
                 <div class="py-1">
                   <a href="/perfil" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Mi Perfil</a>
                   <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Configuración</a>
@@ -479,8 +438,7 @@
       "
       x-show="open"
       class="fixed z-[100] inset-0 overflow-y-auto"
-      x-cloak
-    >
+      x-cloak>
       <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
         <div
           x-show="open"
@@ -491,8 +449,7 @@
           x-transition:leave-start="opacity-100"
           x-transition:leave-end="opacity-0"
           class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
-          @click="if(!submitting) open = false"
-        ></div>
+          @click="if(!submitting) open = false"></div>
 
         <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
@@ -504,8 +461,7 @@
           x-transition:leave="ease-in duration-200"
           x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
           x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-          class="inline-block align-bottom bg-white rounded-xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-gray-100"
-        >
+          class="inline-block align-bottom bg-white rounded-xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-gray-100">
           <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
             <div class="sm:flex sm:items-start">
               <div :class="isDanger ? 'bg-red-100' : 'bg-senado-100'" class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full sm:mx-0 sm:h-10 sm:w-10">
@@ -515,8 +471,7 @@
                       stroke-linecap="round"
                       stroke-linejoin="round"
                       stroke-width="2"
-                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
-                    ></path>
+                      d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
                   </svg>
                 </template>
                 <template x-if="!isDanger">
@@ -539,16 +494,14 @@
               @click="handleConfirm()"
               :disabled="submitting"
               :class="isDanger ? 'bg-red-600 hover:bg-red-700' : 'bg-senado-primary hover:bg-senado-800'"
-              class="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2 text-base font-bold text-white focus:outline-none sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed items-center gap-2"
-            >
+              class="w-full inline-flex justify-center rounded-lg border border-transparent shadow-sm px-4 py-2 text-base font-bold text-white focus:outline-none sm:text-sm disabled:opacity-50 disabled:cursor-not-allowed items-center gap-2">
               <template x-if="submitting">
                 <svg class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                   <path
                     class="opacity-75"
                     fill="currentColor"
-                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                  ></path>
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
               </template>
               <span x-text="submitting ? 'Procesando...' : confirmText"></span>
@@ -558,8 +511,7 @@
               @click="open = false"
               :disabled="submitting"
               class="mt-3 sm:mt-0 w-full inline-flex justify-center rounded-lg border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:text-sm disabled:opacity-50"
-              x-text="cancelText"
-            ></button>
+              x-text="cancelText"></button>
           </div>
         </div>
       </div>

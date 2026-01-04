@@ -14,8 +14,9 @@ type AsignacionVoucher struct {
 	CupoID string `gorm:"size:36;index"`
 	Cupo   *Cupo  `gorm:"foreignKey:CupoID"`
 
-	Estado      string  `gorm:"size:50;default:'DISPONIBLE'"`
-	SolicitudID *string `gorm:"size:36;index;default:null"`
+	Estado      string     `gorm:"size:50;default:'DISPONIBLE'"`
+	SolicitudID *string    `gorm:"size:36;index;default:null"`
+	Solicitud   *Solicitud `gorm:"foreignKey:SolicitudID"`
 
 	EsTransferido  bool     `gorm:"default:false"`
 	BeneficiarioID *string  `gorm:"size:36;index;default:null"`

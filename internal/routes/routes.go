@@ -33,6 +33,7 @@ func SetupRoutes(r *gin.Engine) {
 
 		protected.GET("/solicitudes", solicitudCtrl.Index)
 		protected.GET("/solicitudes/nueva", solicitudCtrl.Create)
+		protected.GET("/solicitudes/derecho/nueva/:id", solicitudCtrl.CreateDerecho)
 		protected.POST("/solicitudes", solicitudCtrl.Store)
 		protected.GET("/solicitudes/:id", solicitudCtrl.Show)
 		protected.GET("/solicitudes/:id/print", solicitudCtrl.PrintPV01)

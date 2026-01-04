@@ -6,7 +6,7 @@ import (
 
 type Cupo struct {
 	BaseModel
-	SenadorID    string  `gorm:"size:36;index"`
+	SenadorID    string  `gorm:"size:36;not null;index"`
 	Senador      Usuario `gorm:"foreignKey:SenadorID"`
 	Gestion      int     `gorm:"not null;index"`
 	Mes          int     `gorm:"not null;index"`

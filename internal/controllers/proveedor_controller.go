@@ -3,6 +3,7 @@ package controllers
 import (
 	"net/http"
 	"sistema-pasajes/internal/services"
+	"sistema-pasajes/internal/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -23,10 +24,9 @@ func (ctrl *ProveedorController) Index(c *gin.Context) {
 	aerolineas, _ := ctrl.aerolineaService.GetAll()
 	agencias, _ := ctrl.agenciaService.GetAll()
 
-	c.HTML(http.StatusOK, "admin/proveedores.html", gin.H{
+	utils.Render(c, "admin/proveedores.html", gin.H{
 		"Aerolineas": aerolineas,
 		"Agencias":   agencias,
-		"User":       c.MustGet("User"),
 		"Title":      "Gestión de Proveedores",
 	})
 }

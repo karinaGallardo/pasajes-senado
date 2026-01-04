@@ -1,0 +1,38 @@
+{{ define "solicitud/components/form_descargo.html" }}
+<form
+  action="/descargos"
+  method="POST"
+  enctype="multipart/form-data"
+  x-show="showForm && activeTab === 'DESCARGO'"
+  x-transition:enter="transition ease-out duration-300"
+  x-transition:enter-start="opacity-0 translate-y-4"
+  x-transition:enter-end="opacity-100 translate-y-0"
+  class="bg-white shadow-sm rounded-lg overflow-hidden border border-gray-200">
+  <div class="bg-gray-50 border-b border-gray-200 p-6 flex items-center justify-between">
+    <div class="flex items-center space-x-3">
+      <div class="h-10 w-10 rounded-lg bg-senado-secondary/10 flex items-center justify-center text-senado-secondary">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        </svg>
+      </div>
+      <div>
+        <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Paso 2: Descargo</p>
+        <h3 class="text-lg font-bold text-gray-800">Presentación de Descargo de Viaje</h3>
+      </div>
+    </div>
+  </div>
+
+  <div class="p-10">
+    <div class="bg-amber-50 border border-amber-100 rounded-lg p-6 flex flex-col items-center justify-center text-center space-y-3">
+      <div class="w-10 h-10 bg-amber-100 rounded-full flex items-center justify-center text-xl">🚧</div>
+      <h3 class="text-base font-bold text-amber-900">Módulo en Desarrollo</h3>
+      <p class="text-sm text-amber-700 max-w-sm">La funcionalidad para cargar descargos electrónicos estará disponible en la siguiente actualización.</p>
+      <button @click="showForm = false" type="button" class="mt-2 text-xs font-bold text-amber-900 hover:underline">Cerrar formulario</button>
+    </div>
+  </div>
+</form>
+{{ end }}

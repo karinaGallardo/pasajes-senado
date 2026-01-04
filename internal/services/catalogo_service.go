@@ -3,7 +3,6 @@ package services
 import (
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
-
 )
 
 type CatalogoService struct {
@@ -52,4 +51,15 @@ func (s *CatalogoService) GetTiposSolicitud() ([]models.TipoSolicitud, error) {
 
 func (s *CatalogoService) GetAmbitosViaje() ([]models.AmbitoViaje, error) {
 	return s.ambitoRepo.FindAll()
+}
+func (s *CatalogoService) GetConceptoByCodigo(codigo string) (*models.ConceptoViaje, error) {
+	return s.conceptoRepo.FindByCodigo(codigo)
+}
+
+func (s *CatalogoService) GetTipoSolicitudByCodigo(codigo string) (*models.TipoSolicitud, error) {
+	return s.tipoSolicitudRepo.FindByCodigo(codigo)
+}
+
+func (s *CatalogoService) GetAmbitoByCodigo(codigo string) (*models.AmbitoViaje, error) {
+	return s.ambitoRepo.FindByCodigo(codigo)
 }

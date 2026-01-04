@@ -2,8 +2,10 @@ package middleware
 
 import (
 	"net/http"
+	"sistema-pasajes/internal/appcontext"
 	"sistema-pasajes/internal/configs"
 	"sistema-pasajes/internal/models"
+	"slices"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
@@ -21,7 +23,10 @@ func AuthRequired() gin.HandlerFunc {
 		}
 
 		var user models.Usuario
-		if err := configs.DB.Preload("Rol").First(&user, "id = ?", userID).Error; err != nil {
+		if err := configs.DB.Preload("Rol").
+			Preload("Origen").
+			Preload("Departamento").
+			First(&user, "id = ?", userID).Error; err != nil {
 			session.Clear()
 			session.Save()
 			c.Redirect(http.StatusFound, "/auth/login")
@@ -29,31 +34,27 @@ func AuthRequired() gin.HandlerFunc {
 			return
 		}
 
-		c.Set("UserID", userID)
-		c.Set("User", &user)
+		appcontext.SetUser(c, &user)
 		c.Next()
 	}
 }
 
 func RequireRole(allowedRoles ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		userVal, exists := c.Get("User")
-		if !exists {
+		user := appcontext.CurrentUser(c)
+		if user == nil {
 			c.AbortWithStatus(http.StatusUnauthorized)
 			return
 		}
 
-		user, ok := userVal.(*models.Usuario)
-		if !ok || user.Rol == nil {
+		if user.Rol == nil {
 			c.AbortWithStatus(http.StatusForbidden)
 			return
 		}
 
-		for _, role := range allowedRoles {
-			if user.Rol.Codigo == role {
-				c.Next()
-				return
-			}
+		if slices.Contains(allowedRoles, user.Rol.Codigo) {
+			c.Next()
+			return
 		}
 
 		c.AbortWithStatus(http.StatusForbidden)
