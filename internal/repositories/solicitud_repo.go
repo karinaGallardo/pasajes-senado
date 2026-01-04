@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"sistema-pasajes/internal/configs"
+
 	"gorm.io/gorm"
 )
 
@@ -22,13 +23,13 @@ func (r *SolicitudRepository) Create(solicitud *models.Solicitud) error {
 
 func (r *SolicitudRepository) FindAll() ([]models.Solicitud, error) {
 	var solicitudes []models.Solicitud
-	err := r.db.Preload("Usuario").Preload("Origen").Preload("Destino").Preload("TipoSolicitud.ConceptoViaje").Order("created_at desc").Find(&solicitudes).Error
+	err := r.db.Preload("Usuario").Preload("Origen").Preload("Destino").Preload("TipoSolicitud.ConceptoViaje").Preload("EstadoSolicitud").Order("created_at desc").Find(&solicitudes).Error
 	return solicitudes, err
 }
 
 func (r *SolicitudRepository) FindByID(id string) (*models.Solicitud, error) {
 	var solicitud models.Solicitud
-	err := r.db.Preload("Usuario").Preload("Origen").Preload("Destino").Preload("Pasajes").Preload("Viaticos").Preload("TipoSolicitud.ConceptoViaje").First(&solicitud, "id = ?", id).Error
+	err := r.db.Preload("Usuario").Preload("Origen").Preload("Destino").Preload("Pasajes").Preload("Viaticos").Preload("TipoSolicitud.ConceptoViaje").Preload("EstadoSolicitud").First(&solicitud, "id = ?", id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -53,8 +54,8 @@ func (r *SolicitudRepository) CountApprovedByConcepto(usuarioID string, year int
 	err := r.db.Model(&models.Solicitud{}).
 		Joins("JOIN tipo_solicituds ts ON solicitudes.tipo_solicitud_id = ts.id").
 		Joins("JOIN concepto_viajes cv ON ts.concepto_viaje_id = cv.id").
-		Where("solicitudes.usuario_id = ? AND solicitudes.estado = 'APROBADO'", usuarioID).
-		Where("solicitudes.fecha_salida >= ? AND solicitudes.fecha_salida < ?", startDate, endDate).
+		Where("solicitudes.usuario_id = ? AND solicitudes.estado_solicitud_codigo = 'APROBADO'", usuarioID).
+		Where("COALESCE(solicitudes.fecha_ida, solicitudes.fecha_vuelta) >= ? AND COALESCE(solicitudes.fecha_ida, solicitudes.fecha_vuelta) < ?", startDate, endDate).
 		Where("cv.codigo = ?", conceptoCodigo).
 		Count(&count).Error
 

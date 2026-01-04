@@ -70,8 +70,7 @@
               stroke-linecap="round"
               stroke-linejoin="round"
               stroke-width="2"
-              d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-            ></path>
+              d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
           </svg>
         </div>
       </div>
@@ -121,8 +120,7 @@
           <a
             href="/solicitudes/nueva?user_id={{ .ID }}"
             title="Nueva Solicitud"
-            class="inline-flex items-center p-2 border border-transparent rounded-full shadow-sm text-white bg-senado-secondary hover:bg-senado-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-senado-500"
-          >
+            class="inline-flex items-center p-2 border border-transparent rounded-full shadow-sm text-white bg-senado-secondary hover:bg-senado-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-senado-500">
             <svg class="h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
             </svg>
@@ -166,16 +164,15 @@
               <span class="text-gray-400 mx-1">&rarr;</span>
               {{ if .Destino }}{{ .Destino.Nombre }}{{ else }}?{{ end }}
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ .FechaSalida.Format "02/01/2006" }}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ if .FechaIda }}{{ .FechaIda.Format "02/01/2006" }}{{ else }} - {{ end }}</td>
             <td class="px-6 py-4 whitespace-nowrap">
               <span
                 class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                    {{ if eq .Estado `SOLICITADO` }} bg-yellow-100 text-yellow-800 {{ end }}
-                    {{ if eq .Estado `APROBADO` }} bg-green-100 text-green-800 {{ end }}
-                    {{ if eq .Estado `FINALIZADO` }} bg-gray-100 text-gray-800 {{ end }}
-                    "
-              >
-                {{ .Estado }}
+                    {{ if eq .EstadoSolicitudCodigo `SOLICITADO` }} bg-yellow-100 text-yellow-800 {{ end }}
+                    {{ if eq .EstadoSolicitudCodigo `APROBADO` }} bg-green-100 text-green-800 {{ end }}
+                    {{ if eq .EstadoSolicitudCodigo `FINALIZADO` }} bg-gray-100 text-gray-800 {{ end }}
+                    ">
+                {{ if .EstadoSolicitud }}{{ .EstadoSolicitud.Nombre }}{{ else }}{{ .EstadoSolicitudCodigo }}{{ end }}
               </span>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">

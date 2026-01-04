@@ -42,7 +42,8 @@ func (s *SolicitudService) Create(solicitud *models.Solicitud, usuario *models.U
 		}
 	}
 
-	solicitud.Estado = "SOLICITADO"
+	estadoSolicitado := "SOLICITADO"
+	solicitud.EstadoSolicitudCodigo = &estadoSolicitado
 
 	var codigo string
 	for range 10 {
@@ -79,8 +80,17 @@ func (s *SolicitudService) Approve(id string) error {
 	}
 
 	if solicitud.TipoSolicitud != nil && solicitud.TipoSolicitud.ConceptoViaje != nil && solicitud.TipoSolicitud.ConceptoViaje.Codigo == "DERECHO" {
-		year := solicitud.FechaSalida.Year()
-		month := int(solicitud.FechaSalida.Month())
+		var year int
+		var month int
+		if solicitud.FechaIda != nil {
+			year = solicitud.FechaIda.Year()
+			month = int(solicitud.FechaIda.Month())
+		} else if solicitud.FechaVuelta != nil {
+			year = solicitud.FechaVuelta.Year()
+			month = int(solicitud.FechaVuelta.Month())
+		} else {
+			return errors.New("solicitud aprobada sin fechas definidas")
+		}
 
 		if err := s.cupoService.ProcesarConsumoPasaje(solicitud.UsuarioID, year, month); err != nil {
 			log.Printf("Advertencia: No se pudo actualizar cupo para usuario %s: %v", solicitud.UsuarioID, err)
@@ -88,7 +98,8 @@ func (s *SolicitudService) Approve(id string) error {
 		}
 	}
 
-	solicitud.Estado = "APROBADO"
+	estadoAprobado := "APROBADO"
+	solicitud.EstadoSolicitudCodigo = &estadoAprobado
 	return s.repo.Update(solicitud)
 }
 
@@ -97,7 +108,8 @@ func (s *SolicitudService) Reject(id string) error {
 	if err != nil {
 		return err
 	}
-	solicitud.Estado = "RECHAZADO"
+	estadoRechazado := "RECHAZADO"
+	solicitud.EstadoSolicitudCodigo = &estadoRechazado
 	return s.repo.Update(solicitud)
 }
 

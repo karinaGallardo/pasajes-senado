@@ -20,11 +20,11 @@
       </div>
       <div>
         <span class="text-sm text-gray-500 block">Fecha Salida</span>
-        <span class="font-medium">{{ .Solicitud.FechaSalida.Format "02/01/2006 15:04" }}</span>
+        <span class="font-medium">{{ if .Solicitud.FechaIda }}{{ .Solicitud.FechaIda.Format "02/01/2006 15:04" }}{{ else }} - {{ end }}</span>
       </div>
       <div>
         <span class="text-sm text-gray-500 block">Fecha Retorno(Est.)</span>
-        <span class="font-medium">{{ if .Solicitud.FechaRetorno.IsZero }} (Solo Ida) {{ else }} {{ .Solicitud.FechaRetorno.Format "02/01/2006" }} {{ end }}</span>
+        <span class="font-medium">{{ if .Solicitud.FechaVuelta }} {{ .Solicitud.FechaVuelta.Format "02/01/2006" }} {{ else }} (Solo Ida) {{ end }}</span>
       </div>
     </div>
   </div>
@@ -41,9 +41,8 @@
             type="date"
             name="fecha_desde"
             required
-            value='{{ .Solicitud.FechaSalida.Format "2006-01-02" }}'
-            class="w-full border-gray-300 rounded-md shadow-sm focus:border-senado-500 focus:ring-senado-500"
-          />
+            value='{{ if .Solicitud.FechaIda }}{{ .Solicitud.FechaIda.Format "2006-01-02" }}{{ end }}'
+            class="w-full border-gray-300 rounded-md shadow-sm focus:border-senado-500 focus:ring-senado-500" />
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Fecha Hasta</label>
@@ -51,9 +50,8 @@
             type="date"
             name="fecha_hasta"
             required
-            value='{{ if not .Solicitud.FechaRetorno.IsZero }}{{ .Solicitud.FechaRetorno.Format "2006-01-02" }}{{ end }}'
-            class="w-full border-gray-300 rounded-md shadow-sm focus:border-senado-500 focus:ring-senado-500"
-          />
+            value='{{ if .Solicitud.FechaVuelta }}{{ .Solicitud.FechaVuelta.Format "2006-01-02" }}{{ end }}'
+            class="w-full border-gray-300 rounded-md shadow-sm focus:border-senado-500 focus:ring-senado-500" />
         </div>
 
         <!-- Dias y Monto -->
@@ -66,8 +64,7 @@
             id="dias"
             required
             value="{{ .DefaultDias }}"
-            class="w-full border-gray-300 rounded-md shadow-sm focus:border-senado-500 focus:ring-senado-500"
-          />
+            class="w-full border-gray-300 rounded-md shadow-sm focus:border-senado-500 focus:ring-senado-500" />
         </div>
         <div>
           <label class="block text-sm font-medium text-gray-700 mb-1">Escala Diaria</label>
@@ -94,8 +91,7 @@
             name="lugar"
             required
             value="{{ .Solicitud.Destino.Nombre }}"
-            class="w-full border-gray-300 rounded-md shadow-sm focus:border-senado-500 focus:ring-senado-500"
-          />
+            class="w-full border-gray-300 rounded-md shadow-sm focus:border-senado-500 focus:ring-senado-500" />
         </div>
 
         <!-- Opciones Extra -->
@@ -134,8 +130,7 @@
             stroke-linecap="round"
             stroke-linejoin="round"
             stroke-width="2"
-            d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"
-          />
+            d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
         </svg>
         Registrar Asignación
       </button>

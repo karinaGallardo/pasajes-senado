@@ -170,7 +170,8 @@ func (ctrl *DescargoController) Approve(c *gin.Context) {
 	if descargo.SolicitudID != "" {
 		solicitud, err := ctrl.solicitudService.FindByID(descargo.SolicitudID)
 		if err == nil {
-			solicitud.Estado = "FINALIZADO"
+			estadoFinalizado := "FINALIZADO"
+			solicitud.EstadoSolicitudCodigo = &estadoFinalizado
 			solicitud.UpdatedBy = &userContext.ID
 			ctrl.solicitudService.Update(solicitud)
 		}

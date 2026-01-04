@@ -20,19 +20,23 @@ type Solicitud struct {
 	OrigenCode string `gorm:"size:4;not null"`
 	Origen     Ciudad `gorm:"foreignKey:OrigenCode"`
 
-	DestinoCode  string    `gorm:"size:4;not null"`
-	Destino      Ciudad    `gorm:"foreignKey:DestinoCode"`
-	FechaSalida  time.Time `gorm:"not null"`
-	FechaRetorno time.Time `gorm:"not null"`
-	Motivo       string    `gorm:"type:text"`
+	DestinoCode string `gorm:"size:4;not null"`
+	Destino     Ciudad `gorm:"foreignKey:DestinoCode"`
+
+	FechaIda    *time.Time `gorm:"default:null"`
+	FechaVuelta *time.Time `gorm:"default:null"`
+
+	Motivo string `gorm:"type:text"`
 
 	AerolineaSugerida string `gorm:"size:100"`
 
-	Estado string `gorm:"size:50;default:'SOLICITADO';index"`
+	EstadoSolicitudCodigo *string          `gorm:"size:20;index;default:'SOLICITADO'"`
+	EstadoSolicitud       *EstadoSolicitud `gorm:"foreignKey:EstadoSolicitudCodigo;references:Codigo"`
 
 	Pasajes []Pasaje `gorm:"foreignKey:SolicitudID"`
 
 	Viaticos []Viatico `gorm:"foreignKey:SolicitudID"`
+
 	Descargo *Descargo `gorm:"foreignKey:SolicitudID"`
 }
 

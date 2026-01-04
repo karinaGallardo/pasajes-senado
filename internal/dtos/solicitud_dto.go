@@ -11,8 +11,8 @@ type CreateSolicitudRequest struct {
 
 	OrigenCode        string `form:"origen" binding:"required"`
 	DestinoCode       string `form:"destino" binding:"required"`
-	FechaSalida       string `form:"fecha_salida" binding:"required"`
-	FechaRetorno      string `form:"fecha_retorno"`
+	FechaIda          string `form:"fecha_salida"`
+	FechaVuelta       string `form:"fecha_retorno"`
 	Motivo            string `form:"motivo" binding:"required"`
 	AerolineaSugerida string `form:"aerolinea"`
 }
@@ -23,8 +23,8 @@ type UpdateSolicitudRequest struct {
 	TipoItinerarioID  string `form:"tipo_itinerario_id" binding:"required"`
 	OrigenCod         string `form:"origen_cod" binding:"required"`
 	DestinoCod        string `form:"destino_cod" binding:"required"`
-	FechaSalida       string `form:"fecha_salida" binding:"required"`
-	FechaRetorno      string `form:"fecha_retorno"`
+	FechaIda          string `form:"fecha_salida"`
+	FechaVuelta       string `form:"fecha_retorno"`
 	Motivo            string `form:"motivo" binding:"required"`
 	AerolineaSugerida string `form:"aerolinea_sugerida"`
 }

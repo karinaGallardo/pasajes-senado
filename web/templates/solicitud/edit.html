@@ -9,8 +9,7 @@
     <div class="mt-4 flex md:mt-0 md:ml-4">
       <a
         href="/solicitudes/{{ .Solicitud.ID }}"
-        class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none"
-      >
+        class="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
         Cancelar
       </a>
     </div>
@@ -25,8 +24,7 @@
             type="text"
             readonly
             value="{{ .Solicitud.TipoSolicitud.ConceptoViaje.Nombre }}"
-            class="mt-1 block w-full bg-gray-100 border-gray-300 rounded-md shadow-sm sm:text-sm p-2 text-gray-500 cursor-not-allowed"
-          />
+            class="mt-1 block w-full bg-gray-100 border-gray-300 rounded-md shadow-sm sm:text-sm p-2 text-gray-500 cursor-not-allowed" />
         </div>
 
         <!-- Tipo Solicitud -->
@@ -37,8 +35,7 @@
               id="tipo_solicitud_id"
               name="tipo_solicitud_id"
               required
-              class="shadow-sm focus:ring-senado-secondary focus:border-senado-secondary block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
-            >
+              class="shadow-sm focus:ring-senado-secondary focus:border-senado-secondary block w-full sm:text-sm border-gray-300 rounded-md p-2 border">
               {{ range .TiposSolicitud }}
               <option value="{{ .ID }}" {{ if eq .ID $.Solicitud.TipoSolicitudID }}selected{{ end }}>{{ .Nombre }}</option>
               {{ end }}
@@ -54,8 +51,7 @@
               id="ambito_viaje_id"
               name="ambito_viaje_id"
               required
-              class="shadow-sm focus:ring-senado-secondary focus:border-senado-secondary block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
-            >
+              class="shadow-sm focus:ring-senado-secondary focus:border-senado-secondary block w-full sm:text-sm border-gray-300 rounded-md p-2 border">
               {{ range .AmbitosViaje }}
               <option value="{{ .ID }}" {{ if eq .ID $.Solicitud.AmbitoViajeID }}selected{{ end }}>{{ .Nombre }}</option>
               {{ end }}
@@ -85,8 +81,7 @@
                 } else {
                   isLocked = false;
                 }
-             "
-        >
+             ">
           <input type="hidden" name="tipo_itinerario_id" :value="tipo === 'IDA_VUELTA' ? '{{ (index .TiposItinerario 0).ID }}' : '{{ (index .TiposItinerario 1).ID }}'" />
           {{ $idIdaVuelta := "" }} {{ $idSoloIda := "" }} {{ range .TiposItinerario }} {{ if eq .Codigo "IDA_VUELTA" }} {{ $idIdaVuelta = .ID }} {{ end }} {{ if eq .Codigo
           "SOLO_IDA" }} {{ $idSoloIda = .ID }} {{ end }} {{ end }}
@@ -116,8 +111,7 @@
                   type="text"
                   name="aerolinea_sugerida"
                   value="{{ .Solicitud.AerolineaSugerida }}"
-                  class="shadow-sm focus:ring-senado-secondary block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
-                />
+                  class="shadow-sm focus:ring-senado-secondary block w-full sm:text-sm border-gray-300 rounded-md p-2 border" />
               </div>
             </div>
           </div>
@@ -130,8 +124,7 @@
                 name="origen_cod"
                 x-model="origen"
                 :class="{ 'bg-gray-100 pointer-events-none text-gray-500': isLocked }"
-                class="shadow-sm focus:ring-senado-secondary focus:border-senado-secondary block w-full sm:text-sm border-gray-300 rounded-md p-2 border transition-colors"
-              >
+                class="shadow-sm focus:ring-senado-secondary focus:border-senado-secondary block w-full sm:text-sm border-gray-300 rounded-md p-2 border transition-colors">
                 {{ if .User.GetOrigenCode }}
                 <option value="{{ .User.GetOrigenCode }}">{{ if .User.Origen }}{{ .User.Origen.Nombre }}{{ else }}Mi Origen{{ end }} ({{ .User.GetOrigenCode }})</option>
                 {{ end }} {{ if ne .User.GetOrigenCode "LPB" }}
@@ -149,8 +142,7 @@
                 type="text"
                 readonly
                 class="shadow-sm block w-full sm:text-sm border-gray-300 bg-gray-100 text-gray-600 rounded-md p-2 border cursor-not-allowed font-medium"
-                :value="origen === 'LPB' ? (userOrigenName + ' (' + userOrigenCode + ')') : (lpbName + ' (LPB)')"
-              />
+                :value="origen === 'LPB' ? (userOrigenName + ' (' + userOrigenCode + ')') : (lpbName + ' (LPB)')" />
               <!-- Input Hidden Real -->
               <input type="hidden" name="destino_cod" :value="origen === 'LPB' ? userOrigenCode : 'LPB'" />
 
@@ -160,8 +152,7 @@
                     stroke-linecap="round"
                     stroke-linejoin="round"
                     stroke-width="2"
-                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-                  ></path>
+                    d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
                 </svg>
               </div>
             </div>
@@ -175,9 +166,8 @@
               type="datetime-local"
               name="fecha_salida"
               required
-              value="{{ .Solicitud.FechaSalida.Format `2006-01-02T15:04` }}"
-              class="mt-1 shadow-sm focus:ring-senado-secondary block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
-            />
+              value="{{ if .Solicitud.FechaIda }}{{ .Solicitud.FechaIda.Format `2006-01-02T15:04` }}{{ end }}"
+              class="mt-1 shadow-sm focus:ring-senado-secondary block w-full sm:text-sm border-gray-300 rounded-md p-2 border" />
           </div>
 
           <div class="sm:col-span-3" x-show="tipo === 'IDA_VUELTA'" x-transition>
@@ -185,9 +175,8 @@
             <input
               type="datetime-local"
               name="fecha_retorno"
-              value="{{ if .Solicitud.FechaRetorno }}{{ if not .Solicitud.FechaRetorno.IsZero }}{{ .Solicitud.FechaRetorno.Format `2006-01-02T15:04` }}{{ end }}{{ end }}"
-              class="mt-1 shadow-sm focus:ring-senado-secondary block w-full sm:text-sm border-gray-300 rounded-md p-2 border"
-            />
+              value="{{ if .Solicitud.FechaVuelta }}{{ .Solicitud.FechaVuelta.Format `2006-01-02T15:04` }}{{ end }}"
+              class="mt-1 shadow-sm focus:ring-senado-secondary block w-full sm:text-sm border-gray-300 rounded-md p-2 border" />
           </div>
         </div>
 
@@ -206,8 +195,7 @@
     <div class="px-4 py-3 bg-gray-50 text-right sm:px-6 flex justify-end">
       <button
         type="submit"
-        class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-senado-primary hover:bg-senado-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-senado-primary"
-      >
+        class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-senado-primary hover:bg-senado-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-senado-primary">
         Guardar Cambios
       </button>
     </div>

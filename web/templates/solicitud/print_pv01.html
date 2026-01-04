@@ -42,8 +42,7 @@
               stroke-linecap="round"
               stroke-linejoin="round"
               stroke-width="2"
-              d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2-4h6a2 2 0 012 2v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6a2 2 0 012-2zm9-2V3a2 2 0 00-2-2H8a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2z"
-            ></path>
+              d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2-4h6a2 2 0 012 2v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6a2 2 0 012-2zm9-2V3a2 2 0 00-2-2H8a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2z"></path>
           </svg>
           Imprimir Ahora
         </button>
@@ -126,12 +125,14 @@
           </div>
           <div>
             <span class="block text-xs font-bold uppercase">Fecha de Salida:</span>
-            <span class="block text-base border-b border-dotted border-black w-full">{{ .Solicitud.FechaSalida.Format "02/01/2006 15:04" }}</span>
+            <span class="block text-base border-b border-dotted border-black w-full">
+              {{ if .Solicitud.FechaIda }}{{ .Solicitud.FechaIda.Format "02/01/2006 15:04" }}{{ else }} - {{ end }}
+            </span>
           </div>
           <div>
             <span class="block text-xs font-bold uppercase">Fecha de Retorno:</span>
             <span class="block text-base border-b border-dotted border-black w-full">
-              {{ if not .Solicitud.FechaRetorno.IsZero }}{{ .Solicitud.FechaRetorno.Format "02/01/2006 15:04" }}{{ else }} - {{ end }}
+              {{ if .Solicitud.FechaVuelta }}{{ .Solicitud.FechaVuelta.Format "02/01/2006 15:04" }}{{ else }} - {{ end }}
             </span>
           </div>
           <div class="col-span-2">

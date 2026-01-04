@@ -230,11 +230,16 @@ func (ctrl *SolicitudController) Store(c *gin.Context) {
 	}
 
 	layout := "2006-01-02T15:04"
-	fechaSalida, _ := time.Parse(layout, req.FechaSalida)
+	var fechaIda *time.Time
+	if t, err := time.Parse(layout, req.FechaIda); err == nil {
+		fechaIda = &t
+	}
 
-	var fechaRetorno time.Time
-	if req.FechaRetorno != "" {
-		fechaRetorno, _ = time.Parse(layout, req.FechaRetorno)
+	var fechaVuelta *time.Time
+	if req.FechaVuelta != "" {
+		if t, err := time.Parse(layout, req.FechaVuelta); err == nil {
+			fechaVuelta = &t
+		}
 	}
 
 	usuario := appcontext.CurrentUser(c)
@@ -267,11 +272,10 @@ func (ctrl *SolicitudController) Store(c *gin.Context) {
 		TipoItinerarioID:  itinID,
 		OrigenCode:        req.OrigenCode,
 		DestinoCode:       req.DestinoCode,
-		FechaSalida:       fechaSalida,
-		FechaRetorno:      fechaRetorno,
+		FechaIda:          fechaIda,
+		FechaVuelta:       fechaVuelta,
 		Motivo:            req.Motivo,
 		AerolineaSugerida: req.AerolineaSugerida,
-		Estado:            "SOLICITADO",
 	}
 
 	if err := ctrl.service.Create(&nuevaSolicitud, usuario); err != nil {
@@ -296,7 +300,10 @@ func (ctrl *SolicitudController) Show(c *gin.Context) {
 		return
 	}
 
-	st := solicitud.Estado
+	st := "SOLICITADO"
+	if solicitud.EstadoSolicitudCodigo != nil {
+		st = *solicitud.EstadoSolicitudCodigo
+	}
 	step1 := true
 	step2 := st == "APROBADO" || st == "FINALIZADO"
 	step3 := st == "FINALIZADO"
@@ -373,7 +380,7 @@ func (ctrl *SolicitudController) Edit(c *gin.Context) {
 		return
 	}
 
-	if solicitud.Estado != "SOLICITADO" {
+	if solicitud.EstadoSolicitudCodigo != nil && *solicitud.EstadoSolicitudCodigo != "SOLICITADO" {
 		c.String(http.StatusForbidden, "No se puede editar una solicitud que no está en estado SOLICITADO")
 		return
 	}
@@ -414,20 +421,22 @@ func (ctrl *SolicitudController) Update(c *gin.Context) {
 	}
 
 	layout := "2006-01-02T15:04"
-	fechaSalida, err := time.Parse(layout, req.FechaSalida)
-	if err != nil {
+	var fechaIda *time.Time
+	if t, err := time.Parse(layout, req.FechaIda); err == nil {
+		fechaIda = &t
+	} else {
 		c.String(http.StatusBadRequest, "Formato fecha salida inválido")
 		return
 	}
 
-	var fechaRetorno time.Time
-	if req.FechaRetorno != "" {
-		fr, err := time.Parse(layout, req.FechaRetorno)
-		if err != nil {
+	var fechaVuelta *time.Time
+	if req.FechaVuelta != "" {
+		if t, err := time.Parse(layout, req.FechaVuelta); err == nil {
+			fechaVuelta = &t
+		} else {
 			c.String(http.StatusBadRequest, "Formato fecha retorno inválido")
 			return
 		}
-		fechaRetorno = fr
 	}
 
 	solicitud, err := ctrl.service.FindByID(id)
@@ -436,7 +445,7 @@ func (ctrl *SolicitudController) Update(c *gin.Context) {
 		return
 	}
 
-	if solicitud.Estado != "SOLICITADO" {
+	if solicitud.EstadoSolicitudCodigo != nil && *solicitud.EstadoSolicitudCodigo != "SOLICITADO" {
 		c.String(http.StatusForbidden, "No editable")
 		return
 	}
@@ -446,8 +455,8 @@ func (ctrl *SolicitudController) Update(c *gin.Context) {
 	solicitud.TipoItinerarioID = req.TipoItinerarioID
 	solicitud.OrigenCode = req.OrigenCod
 	solicitud.DestinoCode = req.DestinoCod
-	solicitud.FechaSalida = fechaSalida
-	solicitud.FechaRetorno = fechaRetorno
+	solicitud.FechaIda = fechaIda
+	solicitud.FechaVuelta = fechaVuelta
 	solicitud.Motivo = req.Motivo
 	solicitud.AerolineaSugerida = req.AerolineaSugerida
 

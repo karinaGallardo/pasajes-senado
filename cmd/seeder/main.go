@@ -15,7 +15,23 @@ func main() {
 	seedProveedores()
 	seedRolesAndPermissions()
 	seedCatalogosViaje()
+	seedEstadosSolicitud()
+	seedEstadosVoucher()
 	seedViaticosAndConfig()
+}
+
+func seedEstadosVoucher() {
+	fmt.Println("Sincronizando Estados de Voucher...")
+	estados := []models.EstadoVoucher{
+		{Codigo: "DISPONIBLE", Nombre: "Disponible", Color: "green", Descripcion: "Voucher habilitado para uso"},
+		{Codigo: "USADO", Nombre: "Usado", Color: "gray", Descripcion: "Voucher ya utilizado en un viaje"},
+		{Codigo: "VENCIDO", Nombre: "Vencido", Color: "red", Descripcion: "Voucher expirado (fuera de fecha)"},
+		{Codigo: "RESERVADO", Nombre: "Reservado", Color: "yellow", Descripcion: "Voucher en proceso de asignación"},
+	}
+
+	for _, e := range estados {
+		configs.DB.Where("codigo = ?", e.Codigo).FirstOrCreate(&e)
+	}
 }
 
 func seedViaticosAndConfig() {
@@ -228,5 +244,20 @@ func seedDepartamentos() {
 
 	for _, d := range departamentos {
 		configs.DB.Where("codigo = ?", d.Codigo).FirstOrCreate(&d)
+	}
+}
+
+func seedEstadosSolicitud() {
+	fmt.Println("Sincronizando Estados de Solicitud...")
+	estados := []models.EstadoSolicitud{
+		{Codigo: "SOLICITADO", Nombre: "Solicitado", Color: "blue", Descripcion: "Solicitud creada, pendiente de aprobación"},
+		{Codigo: "APROBADO", Nombre: "Aprobado", Color: "green", Descripcion: "Solicitud aprobada, pasajes en emisión"},
+		{Codigo: "EMITIDO", Nombre: "Pasaje Emitido", Color: "teal", Descripcion: "Pasajes emitidos y enviados al beneficiario"},
+		{Codigo: "RECHAZADO", Nombre: "Rechazado", Color: "red", Descripcion: "Solicitud rechazada por autoridad"},
+		{Codigo: "FINALIZADO", Nombre: "Finalizado", Color: "gray", Descripcion: "Viaje completado y cerrado"},
+	}
+
+	for _, e := range estados {
+		configs.DB.Where("codigo = ?", e.Codigo).FirstOrCreate(&e)
 	}
 }

@@ -39,7 +39,11 @@ func (ctrl *DashboardController) Index(c *gin.Context) {
 
 	var pendientes, aprobados, finalizados int
 	for _, s := range solicitudes {
-		switch s.Estado {
+		st := "SOLICITADO"
+		if s.EstadoSolicitudCodigo != nil {
+			st = *s.EstadoSolicitudCodigo
+		}
+		switch st {
 		case "SOLICITADO":
 			pendientes++
 		case "APROBADO":

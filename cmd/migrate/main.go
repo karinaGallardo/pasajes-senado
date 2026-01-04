@@ -40,8 +40,10 @@ func main() {
 		&models.TipoSolicitud{},
 		&models.AmbitoViaje{},
 		&models.TipoItinerario{},
+		&models.EstadoSolicitud{},
 
 		// Gestión de Cupos
+		&models.EstadoVoucher{},
 		&models.Cupo{},
 		&models.AsignacionVoucher{},
 

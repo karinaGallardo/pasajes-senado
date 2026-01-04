@@ -9,8 +9,7 @@
     </div>
     <a
       href="/solicitudes/nueva"
-      class="bg-senado-primary hover:bg-senado-800 text-white font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out flex items-center shadow"
-    >
+      class="bg-senado-primary hover:bg-senado-800 text-white font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out flex items-center shadow">
       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
         <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
       </svg>
@@ -62,12 +61,14 @@
             <span class="text-gray-400 mx-1">&rarr;</span>
             {{ .Destino.Nombre }}
           </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ .FechaSalida.Format "02/01/2006 15:04" }}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ if .FechaIda }}{{ .FechaIda.Format "02/01/2006 15:04" }}{{ else }} - {{ end }}</td>
           <td class="px-6 py-4 whitespace-nowrap">
-            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">{{ .Estado }}</span>
+            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+              {{ if .EstadoSolicitud }}{{ .EstadoSolicitud.Nombre }}{{ else }}SOLICITADO{{ end }}
+            </span>
           </td>
           <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-            {{ if eq .Estado "SOLICITADO" }}
+            {{ if and .EstadoSolicitud (eq .EstadoSolicitud.Codigo "SOLICITADO") }}
             <a href="/solicitudes/{{ .ID }}/editar" class="text-indigo-600 hover:text-indigo-900 font-medium mr-3">Editar</a>
             {{ end }}
             <a href="/solicitudes/{{ .ID }}" class="text-senado-secondary hover:text-senado-primary font-bold">Ver Detalles</a>

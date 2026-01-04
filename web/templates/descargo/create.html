@@ -21,7 +21,7 @@
           <h4 class="text-sm font-bold text-senado-primary mb-2">Resumen del Viaje</h4>
           <p class="text-sm text-senado-primary"><strong>Motivo:</strong> {{ .Solicitud.Motivo }}</p>
           <p class="text-sm text-senado-primary">
-            <strong>Fechas:</strong> {{ .Solicitud.FechaSalida.Format "02/01/2006" }} - {{ .Solicitud.FechaRetorno.Format "02/01/2006" }}
+            <strong>Fechas:</strong> {{ if .Solicitud.FechaIda }}{{ .Solicitud.FechaIda.Format "02/01/2006" }}{{ else }} - {{ end }} - {{ if .Solicitud.FechaVuelta }}{{ .Solicitud.FechaVuelta.Format "02/01/2006" }}{{ else }} - {{ end }}
           </p>
         </div>
 

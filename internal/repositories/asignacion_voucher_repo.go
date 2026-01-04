@@ -34,7 +34,7 @@ func (r *AsignacionVoucherRepository) FindByHolderAndPeriodo(userID string, gest
 
 func (r *AsignacionVoucherRepository) FindAvailableByHolderAndPeriodo(userID string, gestion, mes int) (*models.AsignacionVoucher, error) {
 	var voucher models.AsignacionVoucher
-	err := r.db.Where("(beneficiario_id = ? OR (beneficiario_id IS NULL AND senador_id = ?)) AND gestion = ? AND mes = ? AND estado = 'DISPONIBLE'", userID, userID, gestion, mes).First(&voucher).Error
+	err := r.db.Where("(beneficiario_id = ? OR (beneficiario_id IS NULL AND senador_id = ?)) AND gestion = ? AND mes = ? AND estado_voucher_codigo = 'DISPONIBLE'", userID, userID, gestion, mes).First(&voucher).Error
 	return &voucher, err
 }
 

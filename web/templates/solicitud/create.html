@@ -38,11 +38,11 @@
         this.tipo = 'SOLO_IDA';
         
         if (tab === 'VUELTA') {
-            this.origen = 'LPB';
+          this.origen = 'LPB';
         } else {
-            if (this.userOrigenCode) {
-                 this.origen = this.userOrigenCode;
-            }
+          if (this.userOrigenCode) {
+            this.origen = this.userOrigenCode;
+          }
         }
         
         this.initSelection(min, max);
@@ -143,7 +143,7 @@
         {{ range .Vouchers }}
         <div
           class="relative border rounded-xl p-5 transition-all duration-200 flex flex-col items-center text-center space-y-3
-            {{ if eq .Estado `DISPONIBLE` }}
+            {{ if eq .EstadoVoucherCodigo `DISPONIBLE` }}
               bg-white border-gray-200 cursor-pointer hover:border-senado-secondary hover:shadow-md
             {{ else }}
               bg-gray-50 border-gray-100 opacity-75
@@ -152,7 +152,7 @@
               'border-senado-secondary ring-2 ring-senado-secondary/10 bg-senado-50/10 shadow-sm': voucherSelected === '{{ .ID }}' 
           }"
           @click="
-            {{ if eq .Estado `DISPONIBLE` }}
+            {{ if eq .EstadoVoucherCodigo `DISPONIBLE` }}
               selectVoucher('{{ .ID }}', '{{ if .FechaDesde }}{{ .FechaDesde.Format `2006-01-02` }}{{ end }}', '{{ if .FechaHasta }}{{ .FechaHasta.Format `2006-01-02` }}{{ end }}', 'IDA');
             {{ end }}
           ">
@@ -180,8 +180,8 @@
 
           <!-- Status badge -->
           <span
-            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase {{ if eq .Estado `DISPONIBLE` }} bg-green-100 text-green-700 {{ else }} bg-senado-primary/10 text-senado-primary {{ end }}">
-            {{ .Estado }}
+            class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase {{ if eq .EstadoVoucherCodigo `DISPONIBLE` }} bg-green-100 text-green-700 {{ else }} bg-senado-primary/10 text-senado-primary {{ end }}">
+            {{ .EstadoVoucherCodigo }}
           </span>
 
           <!-- Quick Actions -->
@@ -201,7 +201,7 @@
             </button>
 
             <!-- Vuelta -->
-            {{ if or (not .Solicitud) (and .Solicitud .Solicitud.FechaRetorno) }}
+            {{ if or (not .Solicitud) (and .Solicitud .Solicitud.FechaVuelta) }}
             <button
               type="button"
               @click.stop="selectVoucher('{{ .ID }}', '{{ if .FechaDesde }}{{ .FechaDesde.Format `2006-01-02` }}{{ end }}', '{{ if .FechaHasta }}{{ .FechaHasta.Format `2006-01-02` }}{{ end }}', 'VUELTA')"

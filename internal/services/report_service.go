@@ -154,7 +154,11 @@ func (s *ReportService) GeneratePV01(solicitud *models.Solicitud, personaView *m
 	mesYNum := ""
 	if strings.Contains(strings.ToUpper(concepto), "DERECHO") {
 		mesES := map[string]string{"January": "ENERO", "February": "FEBRERO", "March": "MARZO", "April": "ABRIL", "May": "MAYO", "June": "JUNIO", "July": "JULIO", "August": "AGOSTO", "September": "SEPTIEMBRE", "October": "OCTUBRE", "November": "NOVIEMBRE", "December": "DICIEMBRE"}
-		mesYNum = mesES[solicitud.FechaSalida.Month().String()]
+		if solicitud.FechaIda != nil {
+			mesYNum = mesES[solicitud.FechaIda.Month().String()]
+		} else if solicitud.FechaVuelta != nil {
+			mesYNum = mesES[solicitud.FechaVuelta.Month().String()]
+		}
 	}
 	drawLabelBox("MES Y N° DE PASAJE :", mesYNum, 40, 50, false)
 

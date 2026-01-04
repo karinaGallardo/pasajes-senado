@@ -48,7 +48,7 @@ func (s *CupoService) CalcularCupo(usuarioID string, fecha time.Time) (*CupoInfo
 
 	for i := range vouchers {
 		v := &vouchers[i]
-		if v.Estado != "DISPONIBLE" {
+		if v.EstadoVoucherCodigo != "DISPONIBLE" {
 			usados++
 		}
 
@@ -66,7 +66,7 @@ func (s *CupoService) CalcularCupo(usuarioID string, fecha time.Time) (*CupoInfo
 	}
 
 	if specificVoucher != nil {
-		if specificVoucher.Estado == "DISPONIBLE" {
+		if specificVoucher.EstadoVoucherCodigo == "DISPONIBLE" {
 			info.EsDisponible = true
 			info.Mensaje = fmt.Sprintf("VÁLIDO: Corresponde a la %s (Vigente del %s al %s)",
 				specificVoucher.Semana,
@@ -193,14 +193,14 @@ func (s *CupoService) generateVouchersForSenador(user *models.Usuario, gestion i
 			}
 
 			v := models.AsignacionVoucher{
-				SenadorID:  user.ID,
-				Gestion:    gestion,
-				Mes:        mes,
-				Semana:     label,
-				Estado:     "DISPONIBLE",
-				CupoID:     cupo.ID,
-				FechaDesde: startDate,
-				FechaHasta: endDate,
+				SenadorID:           user.ID,
+				Gestion:             gestion,
+				Mes:                 mes,
+				Semana:              label,
+				EstadoVoucherCodigo: "DISPONIBLE",
+				CupoID:              cupo.ID,
+				FechaDesde:          startDate,
+				FechaHasta:          endDate,
 			}
 			voucherRepo.Create(&v)
 		}
@@ -217,7 +217,7 @@ func (s *CupoService) TransferirVoucher(voucherID string, destinoID string, moti
 		return errors.New("voucher no encontrado")
 	}
 
-	if voucher.Estado != "DISPONIBLE" {
+	if voucher.EstadoVoucherCodigo != "DISPONIBLE" {
 		return errors.New("el voucher no está disponible para transferencia (ya usado o transferido)")
 	}
 
@@ -260,7 +260,7 @@ func (s *CupoService) IncrementarUso(usuarioID string, gestion, mes int) error {
 		}
 	}
 
-	voucher.Estado = "USADO"
+	voucher.EstadoVoucherCodigo = "USADO"
 	if err := voucherRepo.Update(voucher); err != nil {
 		return err
 	}
@@ -276,8 +276,8 @@ func (s *CupoService) RevertirUso(usuarioID string, gestion, mes int) error {
 	}
 
 	for _, v := range vouchers {
-		if v.Estado == "USADO" {
-			v.Estado = "DISPONIBLE"
+		if v.EstadoVoucherCodigo == "USADO" {
+			v.EstadoVoucherCodigo = "DISPONIBLE"
 			if err := voucherRepo.Update(&v); err != nil {
 				return err
 			}
@@ -319,7 +319,7 @@ func (s *CupoService) SyncCupoUsado(senadorID string, gestion, mes int) error {
 
 	usados := 0
 	for _, v := range vouchers {
-		if v.Estado == "USADO" {
+		if v.EstadoVoucherCodigo == "USADO" {
 			usados++
 		}
 	}
