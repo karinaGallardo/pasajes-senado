@@ -1,0 +1,159 @@
+{{ define "cupo/derecho.html" }} {{ template "layout_start" . }}
+
+<div class="max-w-5xl mx-auto space-y-6">
+  <!-- HEADER -->
+  <div class="flex justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+    <div>
+      <h2 class="text-xl font-bold text-gray-800 tracking-tight">Gestión de Pasajes - {{ .TargetUser.GetNombreCompleto }}</h2>
+      <p class="text-sm text-gray-500">Administración de cupos y solicitudes</p>
+    </div>
+    <div class="flex items-center space-x-3">
+      <!-- Action buttons if needed -->
+    </div>
+  </div>
+
+  {{ if .AlertaOrigen }}
+  <div class="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-md">
+    <div class="flex">
+      <div class="flex-shrink-0">
+        <svg class="h-5 w-5 text-amber-400" viewBox="0 0 20 20" fill="currentColor">
+          <path
+            fill-rule="evenodd"
+            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
+            clip-rule="evenodd" />
+        </svg>
+      </div>
+      <div class="ml-3">
+        <p class="text-sm text-amber-700 font-medium">
+          {{ .AlertaOrigen }}
+          <a href="/perfil" class="font-bold underline hover:text-amber-800 ml-1">Configurar ahora</a>
+        </p>
+      </div>
+    </div>
+  </div>
+  {{ end }}
+
+  <!-- LISTA DE MESES -->
+  <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+    <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+      <div>
+        <h3 class="text-xs font-bold text-senado-secondary uppercase tracking-wider mb-1">Cupos Anuales</h3>
+        <p class="text-sm font-medium text-gray-600">Gestión {{ .Gestion }}</p>
+      </div>
+    </div>
+
+    <div class="p-6 space-y-12">
+      {{ $targetUserID := .TargetUser.ID }} {{ range .Months }}
+      <div class="space-y-4">
+        <div class="flex items-center space-x-4">
+          <h3 class="text-lg font-bold text-gray-800 uppercase tracking-wide">{{ .MonthName }}</h3>
+          <div class="h-px bg-gray-200 flex-1"></div>
+        </div>
+
+        <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 rounded-lg">
+          <table class="min-w-full divide-y divide-gray-300">
+            <thead class="bg-gray-50">
+              <tr>
+                <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider sm:pl-6">Semana</th>
+                <th scope="col" class="px-3 py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Vigencia</th>
+                <th scope="col" class="px-3 py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Estado</th>
+                <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Acciones</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200 bg-white">
+              {{ range .Vouchers }}
+              <tr class="transition-colors hover:bg-gray-50">
+                <!-- Semana -->
+                <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">{{ .Semana }}</td>
+
+                <!-- Vigencia -->
+                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                  <div class="flex flex-col">
+                    <span class="font-bold text-gray-900">
+                      {{ if .FechaDesde }}{{ .FechaDesde.Format "02" }}{{ end }} al {{ if .FechaHasta }}{{ .FechaHasta.Format "02" }}{{ end }}
+                    </span>
+                    <span class="text-xs text-gray-400 lowercase">{{ if .FechaHasta }}{{ .FechaHasta.Format "Enero 2006" }}{{ end }}</span>
+                  </div>
+                </td>
+
+                <!-- Estado -->
+                <td class="whitespace-nowrap px-3 py-4 text-sm">
+                  <span
+                    class="inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase {{ if eq .EstadoVoucherCodigo `DISPONIBLE` }} bg-green-100 text-green-700 {{ else }} bg-senado-primary/10 text-senado-primary {{ end }}">
+                    {{ .EstadoVoucherCodigo }}
+                  </span>
+                </td>
+
+                <!-- Acciones -->
+                <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6" onclick="event.stopPropagation()">
+                  <div class="flex justify-end gap-2">
+                    <!-- Ida -->
+                    {{ $solIda := .GetSolicitudIda }} {{ if not $solIda }}
+                    <a
+                      href="/solicitudes/derecho/crear/{{ .ID }}/SOLO_IDA"
+                      class="text-gray-500 hover:text-senado-secondary hover:border-senado-secondary font-bold text-[10px] uppercase border border-gray-200 bg-white rounded px-2 py-1 transition-colors">
+                      Crear Ida
+                    </a>
+                    {{ else }} {{ $st := $solIda.GetEstado }} {{ if eq $st "SOLICITADO" }}
+                    <a
+                      href="/solicitudes/derecho/{{ $solIda.ID }}/editar"
+                      class="text-amber-700 hover:bg-amber-100 font-bold text-[10px] uppercase border border-amber-100 bg-amber-50 rounded px-2 py-1 transition-colors">
+                      Editar Ida
+                    </a>
+                    {{ else }}
+                    <a
+                      href="/solicitudes/derecho/{{ $solIda.ID }}/detalle"
+                      class="text-blue-700 hover:bg-blue-100 font-bold text-[10px] uppercase border border-blue-100 bg-blue-50 rounded px-2 py-1 transition-colors">
+                      Ver Ida
+                    </a>
+                    {{ end }} {{ end }}
+
+                    <!-- Vuelta -->
+                    {{ $solVuelta := .GetSolicitudVuelta }} {{ if not $solVuelta }}
+                    <a
+                      href="/solicitudes/derecho/crear/{{ .ID }}/SOLO_VUELTA"
+                      class="text-gray-500 hover:text-senado-secondary hover:border-senado-secondary font-bold text-[10px] uppercase border border-gray-200 bg-white rounded px-2 py-1 transition-colors">
+                      Crear Vuelta
+                    </a>
+                    {{ else }} {{ $stV := $solVuelta.GetEstado }} {{ if eq $stV "SOLICITADO" }}
+                    <a
+                      href="/solicitudes/derecho/{{ $solVuelta.ID }}/editar"
+                      class="text-amber-700 hover:bg-amber-100 font-bold text-[10px] uppercase border border-amber-100 bg-amber-50 rounded px-2 py-1 transition-colors">
+                      Editar Vuelta
+                    </a>
+                    {{ else }}
+                    <a
+                      href="/solicitudes/derecho/{{ $solVuelta.ID }}/detalle"
+                      class="text-blue-700 hover:bg-blue-100 font-bold text-[10px] uppercase border border-blue-100 bg-blue-50 rounded px-2 py-1 transition-colors">
+                      Ver Vuelta
+                    </a>
+                    {{ end }} {{ end }}
+
+                    <!-- Descargo -->
+                    {{ $descargo := .GetDescargo }} {{ $anyTravel := or $solIda $solVuelta }}
+                    <a
+                      href="/solicitudes/derecho/formulario?voucher_id={{ .ID }}&itinerario_code=DESCARGO&user_id={{ $targetUserID }}"
+                      class="font-bold text-[10px] uppercase border rounded px-2 py-1 transition-colors
+                                {{ if $anyTravel }}
+                                    {{ if not $descargo }} text-red-700 bg-red-50 border-red-100 hover:bg-red-100
+                                    {{ else if eq $descargo.Estado `APROBADO` }} text-green-700 bg-green-50 border-green-100
+                                    {{ else }} text-senado-primary bg-senado-primary/5 border-senado-primary/10 {{ end }}
+                                {{ else }}
+                                    text-gray-300 bg-gray-50 border-gray-100 cursor-not-allowed pointer-events-none
+                                {{ end }}">
+                      Descargo
+                    </a>
+                  </div>
+                </td>
+              </tr>
+              {{ end }}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {{ end }}
+    </div>
+  </div>
+</div>
+
+{{ template "layout_end" . }} {{ end }}

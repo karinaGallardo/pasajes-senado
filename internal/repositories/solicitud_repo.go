@@ -1,10 +1,8 @@
 package repositories
 
 import (
-	"sistema-pasajes/internal/models"
-	"time"
-
 	"sistema-pasajes/internal/configs"
+	"sistema-pasajes/internal/models"
 
 	"gorm.io/gorm"
 )
@@ -29,7 +27,7 @@ func (r *SolicitudRepository) FindAll() ([]models.Solicitud, error) {
 
 func (r *SolicitudRepository) FindByID(id string) (*models.Solicitud, error) {
 	var solicitud models.Solicitud
-	err := r.db.Preload("Usuario").Preload("Origen").Preload("Destino").Preload("Pasajes").Preload("Viaticos").Preload("TipoSolicitud.ConceptoViaje").Preload("EstadoSolicitud").First(&solicitud, "id = ?", id).Error
+	err := r.db.Preload("Usuario").Preload("Origen").Preload("Destino").Preload("Pasajes").Preload("Viaticos").Preload("TipoSolicitud.ConceptoViaje").Preload("EstadoSolicitud").Preload("TipoItinerario").First(&solicitud, "id = ?", id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -40,24 +38,12 @@ func (r *SolicitudRepository) Update(solicitud *models.Solicitud) error {
 	return r.db.Save(solicitud).Error
 }
 
+func (r *SolicitudRepository) Delete(id string) error {
+	return r.db.Delete(&models.Solicitud{}, "id = ?", id).Error
+}
+
 func (r *SolicitudRepository) ExistsByCodigo(codigo string) (bool, error) {
 	var count int64
 	err := r.db.Model(&models.Solicitud{}).Where("codigo = ?", codigo).Count(&count).Error
 	return count > 0, err
-}
-
-func (r *SolicitudRepository) CountApprovedByConcepto(usuarioID string, year int, month int, conceptoCodigo string) (int64, error) {
-	var count int64
-	startDate := time.Date(year, time.Month(month), 1, 0, 0, 0, 0, time.UTC)
-	endDate := startDate.AddDate(0, 1, 0)
-
-	err := r.db.Model(&models.Solicitud{}).
-		Joins("JOIN tipo_solicituds ts ON solicitudes.tipo_solicitud_id = ts.id").
-		Joins("JOIN concepto_viajes cv ON ts.concepto_viaje_id = cv.id").
-		Where("solicitudes.usuario_id = ? AND solicitudes.estado_solicitud_codigo = 'APROBADO'", usuarioID).
-		Where("COALESCE(solicitudes.fecha_ida, solicitudes.fecha_vuelta) >= ? AND COALESCE(solicitudes.fecha_ida, solicitudes.fecha_vuelta) < ?", startDate, endDate).
-		Where("cv.codigo = ?", conceptoCodigo).
-		Count(&count).Error
-
-	return count, err
 }

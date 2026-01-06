@@ -14,14 +14,32 @@
     isLocked: true,
     voucherSelected: '',
     
-    activeTab: 'IDA', // IDA, VUELTA, DESCARGO
+    activeTab: 'IDA',
+    isSubmitting: false,
     
     minDate: '',
     maxDate: '',
     weekDays: [],
-    
+
     selectedDaySalida: '',
     selectedTimeSalida: '08:00',
+    
+    isEdit: false,
+    editId: '',
+    motivo: '',
+    aerolinea: '',
+    tipoItinerarioId: '',
+    itinerarioIda: '{{ .ItinerarioIdaID }}',
+    itinerarioVuelta: '{{ .ItinerarioVueltaID }}',
+
+    resetForm() {
+        this.isEdit = false;
+        this.editId = '';
+        this.motivo = '';
+        this.aerolinea = '';
+        this.tipoItinerarioId = this.itinerarioIda;
+        this.showForm = false;
+    },
 
     initSelection(min, max) {
         this.minDate = min;
@@ -32,6 +50,7 @@
     },
 
     selectVoucher(voucherId, min, max, tab) {
+        this.resetForm();
         this.voucherSelected = voucherId;
         this.activeTab = tab;
         this.showForm = true;
@@ -39,7 +58,9 @@
         
         if (tab === 'VUELTA') {
           this.origen = 'LPB';
+          this.tipoItinerarioId = this.itinerarioVuelta;
         } else {
+          this.tipoItinerarioId = this.itinerarioIda;
           if (this.userOrigenCode) {
             this.origen = this.userOrigenCode;
           }
@@ -48,33 +69,85 @@
         this.initSelection(min, max);
         
         setTimeout(() => {
-             const formElement = document.getElementById('main-form-container');
-             if (formElement) formElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          const formElement = document.getElementById('main-form-container');
+          if (formElement) formElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }, 100);
     },
 
-    generateWeek(startStr) {
-        const days = [];
-        const start = new Date(startStr + 'T12:00:00');
-        const names = ['Dom', 'Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab'];
-        const fullNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-        
-        for (let i = 0; i < 7; i++) {
-            const d = new Date(start);
-            d.setDate(start.getDate() + i);
-            const yyyy = d.getFullYear();
-            const mm = String(d.getMonth() + 1).padStart(2, '0');
-            const dd = String(d.getDate()).padStart(2, '0');
-            const dateStr = `${yyyy}-${mm}-${dd}`;
-            
-            days.push({
-                date: dateStr,
-                name: names[d.getDay()],
-                fullName: fullNames[d.getDay()],
-                dayNum: dd
-            });
+    loadEdit(voucherId, min, max, tab, solId, origen, fSalidaStr, motivoStr, aerolineaStr, itinId) {
+        this.resetForm();
+        this.isEdit = true;
+        this.editId = solId;
+        this.voucherSelected = voucherId;
+        this.activeTab = tab;
+        this.showForm = true;
+        this.tipo = 'SOLO_IDA';
+
+        this.origen = origen;
+        this.motivo = motivoStr;
+        this.aerolinea = aerolineaStr;
+        this.tipoItinerarioId = itinId;
+
+        this.initSelection(min, max);
+
+        if (fSalidaStr) {
+             const parts = fSalidaStr.split('T');
+             this.selectedDaySalida = parts[0];
+             if (parts.length > 1) {
+                this.selectedTimeSalida = parts[1].substring(0, 5);
+             }
         }
-        this.weekDays = days;
+
+        setTimeout(() => {
+          const formElement = document.getElementById('main-form-container');
+          if (formElement) formElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+    },
+
+    init() {
+        this.checkAutoOpen();
+    },
+
+    checkAutoOpen() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const vID = urlParams.get('auto_voucher');
+        const tab = urlParams.get('auto_tab');
+        
+        if (vID && tab) {
+            this.$nextTick(() => {
+                const btn = document.getElementById(`btn-${tab}-${vID}`);
+                if (btn) {
+                    btn.click();
+                }
+            });
+            
+            const newUrl = window.location.protocol + '//' + window.location.host + window.location.pathname;
+            window.history.replaceState({path:newUrl}, '', newUrl);
+        }
+    },
+
+    generateWeek(startStr) {
+      const days = [];
+      const start = new Date(startStr + 'T12:00:00');
+      const names = ['Dom', 'Lun', 'Mar', 'Mie', 'Jue', 'Vie', 'Sab'];
+      const fullNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+
+      for (let i = 0; i < 7; i++) {
+        const d = new Date(start);
+        d.setDate(start.getDate() + i);
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, '0');
+        const dd = String(d.getDate()).padStart(2, '0');
+        const dateStr = `${yyyy}-${mm}-${dd}`;
+        
+        days.push({
+            date: dateStr,
+            name: names[d.getDay()],
+            fullName: fullNames[d.getDay()],
+            dayNum: dd
+        });
+      }
+      this.weekDays = days;
     }
 }"
   x-effect="
@@ -186,54 +259,106 @@
 
           <!-- Quick Actions -->
           <div class="w-full pt-3 flex flex-wrap justify-center gap-1.5 border-t border-gray-50">
-            <!-- Ida -->
+            <!-- Ida: Show Create IF NO Solicitud Ida -->
+            {{ $solIda := .GetSolicitudIda }} {{ if not $solIda }}
             <button
               type="button"
+              id="btn-IDA-{{ .ID }}"
               @click.stop="selectVoucher('{{ .ID }}', '{{ if .FechaDesde }}{{ .FechaDesde.Format `2006-01-02` }}{{ end }}', '{{ if .FechaHasta }}{{ .FechaHasta.Format `2006-01-02` }}{{ end }}', 'IDA')"
-              class="group/btn relative px-2.5 py-1 rounded text-[9px] font-bold uppercase border transition-all
-              {{ if .Solicitud }}
-                {{ if gt (len .Solicitud.Pasajes) 0 }} bg-green-50 text-green-700 border-green-100 
-                {{ else }} bg-amber-50 text-amber-700 border-amber-100 {{ end }}
-              {{ else }}
-                bg-white text-gray-500 border-gray-200 hover:border-senado-secondary hover:text-senado-secondary
-              {{ end }}">
-              Ida
+              class="group/btn relative px-2.5 py-1 rounded text-[9px] font-bold uppercase border transition-all bg-white text-gray-500 border-gray-200 hover:border-senado-secondary hover:text-senado-secondary">
+              Crear Ida
             </button>
-
-            <!-- Vuelta -->
-            {{ if or (not .Solicitud) (and .Solicitud .Solicitud.FechaVuelta) }}
+            {{ else }}
+            <!-- Show Status/Link IF Solicitud Ida Exists -->
+            {{ $st := $solIda.GetEstado }} {{ if eq $st "SOLICITADO" }}
             <button
               type="button"
-              @click.stop="selectVoucher('{{ .ID }}', '{{ if .FechaDesde }}{{ .FechaDesde.Format `2006-01-02` }}{{ end }}', '{{ if .FechaHasta }}{{ .FechaHasta.Format `2006-01-02` }}{{ end }}', 'VUELTA')"
-              class="group/btn relative px-2.5 py-1 rounded text-[9px] font-bold uppercase border transition-all
-              {{ if .Solicitud }}
-                {{ if gt (len .Solicitud.Pasajes) 1 }} bg-green-50 text-green-700 border-green-100 
-                {{ else }} bg-amber-50 text-amber-700 border-amber-100 {{ end }}
-              {{ else }}
-                bg-white text-gray-500 border-gray-200 hover:border-senado-secondary hover:text-senado-secondary
-              {{ end }}">
-              Vuelta
+              id="btn-IDA-{{ .ID }}"
+              data-motivo="{{ $solIda.Motivo }}"
+              @click.stop="loadEdit(
+                  '{{ .ID }}', 
+                  '{{ if .FechaDesde }}{{ .FechaDesde.Format `2006-01-02` }}{{ end }}', 
+                  '{{ if .FechaHasta }}{{ .FechaHasta.Format `2006-01-02` }}{{ end }}', 
+                  'IDA',
+                  '{{ $solIda.ID }}',
+                  '{{ $solIda.OrigenCode }}',
+                  '{{ if $solIda.FechaIda }}{{ $solIda.FechaIda.Format `2006-01-02T15:04` }}{{ end }}',
+                  $el.dataset.motivo,
+                  '{{ $solIda.AerolineaSugerida }}',
+                  '{{ $solIda.TipoItinerarioID }}'
+                )"
+              class="group/btn relative px-2.5 py-1 rounded text-[9px] font-bold uppercase border transition-all bg-amber-50 text-amber-700 border-amber-100 hover:bg-amber-100">
+              Editar Ida
             </button>
-            {{ end }}
+            {{ else }}
+            <a
+              href="/solicitudes/{{ $solIda.ID }}"
+              class="group/btn relative px-2.5 py-1 rounded text-[9px] font-bold uppercase border transition-all
+              {{ if eq $st `APROBADO` }} bg-blue-50 text-blue-700 border-blue-100 hover:bg-blue-100
+              {{ else if eq $st `FINALIZADO` }} bg-green-50 text-green-700 border-green-100 hover:bg-green-100
+              {{ else }} bg-gray-50 text-gray-700 border-gray-100 {{ end }}">
+              Ver Ida
+            </a>
+            {{ end }} {{ end }}
 
-            <!-- Descargo -->
+            <!-- Vuelta: Show Create IF NO Solicitud Vuelta -->
+            {{ $solVuelta := .GetSolicitudVuelta }} {{ if not $solVuelta }}
+            <button
+              type="button"
+              id="btn-VUELTA-{{ .ID }}"
+              @click.stop="selectVoucher('{{ .ID }}', '{{ if .FechaDesde }}{{ .FechaDesde.Format `2006-01-02` }}{{ end }}', '{{ if .FechaHasta }}{{ .FechaHasta.Format `2006-01-02` }}{{ end }}', 'VUELTA')"
+              class="group/btn relative px-2.5 py-1 rounded text-[9px] font-bold uppercase border transition-all bg-white text-gray-500 border-gray-200 hover:border-senado-secondary hover:text-senado-secondary">
+              Crear Vuelta
+            </button>
+            {{ else }}
+            <!-- Show Status/Link IF Solicitud Vuelta Exists -->
+            {{ $stV := $solVuelta.GetEstado }} {{ if eq $stV "SOLICITADO" }}
+            <button
+              type="button"
+              id="btn-VUELTA-{{ .ID }}"
+              data-motivo="{{ $solVuelta.Motivo }}"
+              @click.stop="loadEdit(
+                  '{{ .ID }}', 
+                  '{{ if .FechaDesde }}{{ .FechaDesde.Format `2006-01-02` }}{{ end }}', 
+                  '{{ if .FechaHasta }}{{ .FechaHasta.Format `2006-01-02` }}{{ end }}', 
+                  'VUELTA',
+                  '{{ $solVuelta.ID }}',
+                  '{{ $solVuelta.OrigenCode }}',
+                  '{{ if $solVuelta.FechaVuelta }}{{ $solVuelta.FechaVuelta.Format `2006-01-02T15:04` }}{{ else if $solVuelta.FechaIda }}{{ $solVuelta.FechaIda.Format `2006-01-02T15:04` }}{{ end }}',
+                  $el.dataset.motivo,
+                  '{{ $solVuelta.AerolineaSugerida }}',
+                  '{{ $solVuelta.TipoItinerarioID }}'
+                )"
+              class="group/btn relative px-2.5 py-1 rounded text-[9px] font-bold uppercase border transition-all bg-amber-50 text-amber-700 border-amber-100 hover:bg-amber-100">
+              Editar Vuelta
+            </button>
+            {{ else }}
+            <a
+              href="/solicitudes/{{ $solVuelta.ID }}"
+              class="group/btn relative px-2.5 py-1 rounded text-[9px] font-bold uppercase border transition-all
+              {{ if eq $stV `APROBADO` }} bg-blue-50 text-blue-700 border-blue-100 hover:bg-blue-100
+              {{ else if eq $stV `FINALIZADO` }} bg-green-50 text-green-700 border-green-100 hover:bg-green-100
+              {{ else }} bg-gray-50 text-gray-700 border-gray-100 {{ end }}">
+              Ver Vuelta
+            </a>
+            {{ end }} {{ end }}
+
+            <!-- Descargo logic -->
+            {{ $descargo := .GetDescargo }} {{ $anyTravel := or $solIda $solVuelta }}
             <button
               type="button"
               @click.stop="selectVoucher('{{ .ID }}', '{{ if .FechaDesde }}{{ .FechaDesde.Format `2006-01-02` }}{{ end }}', '{{ if .FechaHasta }}{{ .FechaHasta.Format `2006-01-02` }}{{ end }}', 'DESCARGO')"
               class="group/btn relative px-2.5 py-1 rounded text-[9px] font-bold uppercase border transition-all
-              {{ if .Solicitud }}
-                {{ if not .Solicitud.Descargo }} bg-red-50 text-red-700 border-red-100 
-                {{ else if eq .Solicitud.Descargo.Estado `APROBADO` }} bg-green-50 text-green-700 border-green-100
+              {{ if $anyTravel }}
+                {{ if not $descargo }} bg-red-50 text-red-700 border-red-100 
+                {{ else if eq $descargo.Estado `APROBADO` }} bg-green-50 text-green-700 border-green-100
                 {{ else }} bg-senado-primary/5 text-senado-primary border-senado-primary/10 {{ end }}
               {{ else }}
-                bg-white text-gray-500 border-gray-200 hover:border-senado-secondary hover:text-senado-secondary
+                bg-gray-50 text-gray-300 border-gray-100 cursor-not-allowed
               {{ end }}">
               Descargo
             </button>
           </div>
-          {{ if .Solicitud }}
-          <a href="/solicitudes/{{ .SolicitudID }}" class="text-[9px] font-bold uppercase text-senado-secondary hover:underline transition-colors mt-1">Ver Detalle</a>
-          {{ end }}
         </div>
         {{ end }}
       </div>
@@ -245,23 +370,5 @@
     {{ template "solicitud/components/form_pasaje.html" . }} {{ template "solicitud/components/form_descargo.html" . }}
   </div>
 </div>
-
-<style>
-  /* Custom scrollbar matched to app style */
-  .custom-scrollbar::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-  .custom-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: #e2e8f0;
-    border-radius: 10px;
-  }
-  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: #cbd5e1;
-  }
-</style>
 
 {{ template "layout_end" . }} {{ end }}

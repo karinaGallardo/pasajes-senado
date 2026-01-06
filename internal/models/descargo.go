@@ -11,7 +11,7 @@ type Descargo struct {
 	Codigo     string `gorm:"size:20;uniqueIndex"`
 	NumeroCite string `gorm:"size:50;index"`
 
-	FechaPresentacion  time.Time `gorm:"not null"`
+	FechaPresentacion  time.Time `gorm:"not null;type:timestamp"`
 	InformeActividades string    `gorm:"type:text"`
 
 	MontoDevolucion float64 `gorm:"type:decimal(10,2);default:0"`

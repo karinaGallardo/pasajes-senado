@@ -8,18 +8,18 @@ import (
 )
 
 type CatalogoController struct {
-	service *services.CatalogoService
+	tipoSolicitudService *services.TipoSolicitudService
 }
 
 func NewCatalogoController() *CatalogoController {
 	return &CatalogoController{
-		service: services.NewCatalogoService(),
+		tipoSolicitudService: services.NewTipoSolicitudService(),
 	}
 }
 
 func (ctrl *CatalogoController) GetTipos(c *gin.Context) {
 	conceptoID := c.Query("concepto_id")
-	tipos, _ := ctrl.service.GetTiposByConcepto(conceptoID)
+	tipos, _ := ctrl.tipoSolicitudService.GetByConcepto(conceptoID)
 
 	c.HTML(http.StatusOK, "catalogos/options_tipos.html", gin.H{
 		"Tipos": tipos,
@@ -28,7 +28,7 @@ func (ctrl *CatalogoController) GetTipos(c *gin.Context) {
 
 func (ctrl *CatalogoController) GetAmbitos(c *gin.Context) {
 	tipoID := c.Query("tipo_solicitud_id")
-	ambitos, _ := ctrl.service.GetAmbitosByTipo(tipoID)
+	ambitos, _ := ctrl.tipoSolicitudService.GetAmbitosByTipo(tipoID)
 
 	c.HTML(http.StatusOK, "catalogos/options_ambitos.html", gin.H{
 		"Ambitos": ambitos,

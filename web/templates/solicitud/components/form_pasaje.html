@@ -1,58 +1,33 @@
 {{ define "solicitud/components/form_pasaje.html" }}
 <form
-  action="/solicitudes"
   method="POST"
-  x-show="showForm && (activeTab === 'IDA' || activeTab === 'VUELTA')"
+  :action="isEdit ? ('/solicitudes/derecho/' + editId + '/actualizar') : '/solicitudes/derecho'"
+  class="bg-white rounded-lg shadow-sm border border-gray-200 mt-0 p-2 space-y-2"
+  @submit="isSubmitting = true"
   x-transition:enter="transition ease-out duration-300"
   x-transition:enter-start="opacity-0 translate-y-4"
-  x-transition:enter-end="opacity-100 translate-y-0"
-  class="bg-white shadow-sm rounded-lg overflow-hidden border border-gray-200">
-  <div class="bg-gray-50 border-b border-gray-200 p-6 flex items-center justify-between">
-    <div class="flex items-center space-x-3">
-      <div class="h-10 w-10 rounded-lg bg-senado-primary/10 flex items-center justify-center text-senado-primary">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-        </svg>
-      </div>
-      <div>
-        <p class="text-[10px] font-bold uppercase tracking-wider text-gray-400">Paso 2: Detalles de la Solicitud</p>
-        <h3 class="text-lg font-bold text-gray-800">
-          Emitir Pasaje de
-          <span x-text="activeTab === 'IDA' ? 'Ida' : 'Vuelta'"></span>
-        </h3>
-      </div>
-    </div>
-    {{ if ne .TargetUser.ID .User.ID }}
-    <div class="flex items-center bg-senado-primary/5 px-3 py-1.5 rounded-lg border border-senado-primary/10">
-      <div class="h-6 w-6 rounded-full bg-senado-primary flex items-center justify-center text-white text-[10px] font-bold mr-2">
-        {{ printf "%.1s" .TargetUser.GetNombreCompleto }}
-      </div>
-      <span class="text-xs font-semibold text-senado-primary">{{ .TargetUser.GetNombreCompleto }}</span>
-      <input type="hidden" name="target_user_id" value="{{ .TargetUser.ID }}" />
-    </div>
-    {{ end }}
-  </div>
-
-  <div class="p-8 space-y-8">
+  x-transition:enter-end="opacity-100 translate-y-0">
+  <div class="p-2 pt-0 space-y-2">
     <!-- VALORES POR DEFECTO (HIDDEN) -->
-    <input type="hidden" name="concepto_id" value="{{ .DefaultConceptoID }}" />
-    <input type="hidden" name="tipo_solicitud_id" value="{{ .DefaultTipoSolicitudID }}" />
-    <input type="hidden" name="ambito_viaje_id" value="{{ .DefaultAmbitoID }}" />
-    <input type="hidden" name="tipo_itinerario" value="SOLO_IDA" />
+    <input type="hidden" name="tipo_solicitud_id" value="{{ .TipoSolicitud.ID }}" />
+    <input type="hidden" name="ambito_viaje_id" value="{{ .Ambito.ID }}" />
+    <input type="hidden" name="tipo_itinerario" value="{{ .Itinerario.Codigo }}" />
+    <input type="hidden" name="voucher_id" value="{{ .Voucher.ID }}" />
+    <input type="hidden" name="target_user_id" value="{{ .TargetUser.ID }}" />
 
     <!-- SECCIÓN A: RESUMEN DE DERECHO -->
     <section class="bg-senado-50/50 p-4 rounded-xl border border-senado-100/50 flex flex-wrap gap-6 items-center">
       <div class="flex items-center space-x-2">
         <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Concepto:</span>
-        <span class="px-2 py-0.5 bg-white border border-gray-200 rounded text-xs font-bold text-gray-600">Pasaje por Derecho</span>
+        <span class="px-2 py-0.5 bg-white border border-gray-200 rounded text-xs font-bold text-gray-600">{{ .Concepto.Nombre }}</span>
       </div>
       <div class="flex items-center space-x-2">
         <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Tipo:</span>
-        <span class="px-2 py-0.5 bg-white border border-gray-200 rounded text-xs font-bold text-gray-600">Cupo Mensual</span>
+        <span class="px-2 py-0.5 bg-white border border-gray-200 rounded text-xs font-bold text-gray-600">{{ .TipoSolicitud.Nombre }}</span>
       </div>
       <div class="flex items-center space-x-2">
         <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Ambito:</span>
-        <span class="px-2 py-0.5 bg-white border border-gray-200 rounded text-xs font-bold text-gray-600">Nacional</span>
+        <span class="px-2 py-0.5 bg-white border border-gray-200 rounded text-xs font-bold text-gray-600">{{ .Ambito.Nombre }}</span>
       </div>
     </section>
 
@@ -65,16 +40,16 @@
 
       <div class="space-y-6">
         <div class="grid grid-cols-4 sm:grid-cols-7 gap-2">
-          <template x-for="day in weekDays">
-            <button
-              type="button"
-              @click="selectedDaySalida = day.date"
-              :class="selectedDaySalida === day.date ? 'bg-senado-primary text-white border-senado-primary' : 'bg-white text-gray-600 hover:bg-gray-50 border-gray-200'"
-              class="flex flex-col items-center py-2 px-1 rounded-lg border transition-all">
-              <span class="text-[9px] font-bold uppercase opacity-60" x-text="day.name"></span>
-              <span class="text-base font-bold" x-text="day.dayNum"></span>
-            </button>
-          </template>
+          {{ range .WeekDays }}
+          <button
+            type="button"
+            @click="selectedDaySalida = '{{ .date }}'"
+            :class="selectedDaySalida === '{{ .date }}' ? 'bg-senado-primary text-white border-senado-primary' : 'bg-white text-gray-600 hover:bg-gray-50 border-gray-200'"
+            class="flex flex-col items-center py-2 px-1 rounded-lg border transition-all">
+            <span class="text-[9px] font-bold uppercase opacity-60">{{ .name }}</span>
+            <span class="text-base font-bold">{{ .dayNum }}</span>
+          </button>
+          {{ end }}
         </div>
 
         <div class="flex items-center space-x-4 max-w-xs">
@@ -85,34 +60,33 @@
               mode: 'hours',
               currentH: '08',
               currentM: '00',
-              init() {
-                  this.$watch('selectedTimeSalida', value => {
-                      const [h, m] = value.split(':');
-                      this.currentH = h;
-                      this.currentM = m;
-                  });
-                  const [h, m] = selectedTimeSalida.split(':');
-                  this.currentH = h;
-                  this.currentM = m;
-              },
               setHour(h) {
-                  this.currentH = h.toString().padStart(2, '0');
-                  this.mode = 'minutes';
-                  this.sync();
+                this.currentH = h.toString().padStart(2, '0');
+                this.mode = 'minutes';
+                this.sync();
               },
               setMinute(m) {
-                  this.currentM = m.toString().padStart(2, '0');
-                  this.open = false;
-                  this.sync();
+                this.currentM = m.toString().padStart(2, '0');
+                this.open = false;
+                this.sync();
               },
               sync() {
-                  selectedTimeSalida = `${this.currentH}:${this.currentM}`;
+                selectedTimeSalida = `${this.currentH}:${this.currentM}`;
               }
-          }"
+            }"
+            x-effect="
+              if (selectedTimeSalida) {
+                const parts = selectedTimeSalida.split(':');
+                if (parts.length === 2) {
+                  currentH = parts[0];
+                  currentM = parts[1];
+                }
+              }
+            "
             @click.away="open = false">
             <label class="text-xs font-bold text-gray-500 uppercase tracking-tight block">
               Hora de
-              <span x-text="activeTab === 'IDA' ? 'Salida' : 'Retorno'"></span>
+              <span>{{ if eq .Itinerario.Codigo "SOLO_IDA" }}Salida{{ else }}Retorno{{ end }}</span>
             </label>
 
             <div class="relative">
@@ -239,12 +213,10 @@
         <div class="md:col-span-2 flex items-center justify-center space-x-12 py-8 bg-gray-50 rounded-2xl border border-dashed border-gray-300">
           <!-- Origen -->
           <div class="text-center">
-            <span class="block text-xl font-black text-gray-900 tracking-tight" x-text="origen === 'LPB' ? lpbName : userOrigenName"></span>
-            <span
-              class="block text-[9px] font-bold text-gray-400 uppercase mt-1 tracking-widest"
-              x-text="origen === 'LPB' ? 'Sede de Funciones' : 'Origen de ' + targetShortName"></span>
+            <span class="block text-xl font-black text-gray-900 tracking-tight">{{ .OrigenName }}</span>
+            <span class="block text-[9px] font-bold text-gray-400 uppercase mt-1 tracking-widest">{{ .OrigenLabel }}</span>
             <div class="mt-2">
-              <span class="px-2 py-0.5 bg-senado-primary text-white text-[10px] font-black rounded" x-text="origen === 'LPB' ? 'LPB' : userOrigenCode"></span>
+              <span class="px-2 py-0.5 bg-senado-primary text-white text-[10px] font-black rounded">{{ .OrigenCode }}</span>
             </div>
           </div>
 
@@ -266,38 +238,56 @@
 
           <!-- Destino -->
           <div class="text-center">
-            <span class="block text-xl font-black text-gray-900 tracking-tight" x-text="origen === 'LPB' ? userOrigenName : lpbName"></span>
-            <span
-              class="block text-[9px] font-bold text-gray-400 uppercase mt-1 tracking-widest"
-              x-text="origen === 'LPB' ? 'Origen de ' + targetShortName : 'Sede de Funciones'"></span>
+            <span class="block text-xl font-black text-gray-900 tracking-tight">{{ .DestinoName }}</span>
+            <span class="block text-[9px] font-bold text-gray-400 uppercase mt-1 tracking-widest">{{ .DestinoLabel }}</span>
             <div class="mt-2">
-              <span class="px-2 py-0.5 bg-senado-secondary text-white text-[10px] font-black rounded" x-text="origen === 'LPB' ? userOrigenCode : 'LPB'"></span>
+              <span class="px-2 py-0.5 bg-senado-secondary text-white text-[10px] font-black rounded">{{ .DestinoCode }}</span>
             </div>
           </div>
         </div>
 
         <!-- Hidden values for submission -->
-        <input type="hidden" name="origen" :value="origen" />
-        <input type="hidden" name="destino" :value="origen === 'LPB' ? userOrigenCode : 'LPB'" />
+        <input type="hidden" name="origen" value="{{ .OrigenCode }}" />
+        <input type="hidden" name="destino" value="{{ .DestinoCode }}" />
+
+        <!-- Hidden fields required for update (always present) -->
+        <input type="hidden" name="origen_cod" value="{{ .OrigenCode }}" />
+        <input type="hidden" name="destino_cod" value="{{ .DestinoCode }}" />
+        <input type="hidden" name="tipo_itinerario_id" value="{{ .Itinerario.ID }}" />
 
         <div class="md:col-span-2 space-y-1.5">
           <label class="block text-xs font-bold text-gray-500 uppercase tracking-tight">Línea Aérea</label>
-          <select name="aerolinea" class="w-full px-4 py-2.5 border border-gray-300 rounded-md text-sm font-medium">
-            <option value="">-- Cualquiera --</option>
-            {{ range .Aerolineas }}
-            <option value="{{ . }}">{{ . }}</option>
-            {{ end }}
-          </select>
+          <div class="relative group">
+            <select
+              name="aerolinea"
+              x-model="aerolinea"
+              class="w-full pl-4 pr-10 py-2.5 bg-white border border-gray-200 rounded-md text-sm font-bold text-gray-700 appearance-none focus:outline-none focus:ring-2 focus:ring-senado-primary/20 focus:border-senado-primary transition-all shadow-sm">
+              <option value="">Cualquier línea aérea</option>
+              {{ range .Aerolineas }}
+              <option value="{{ . }}">{{ . }}</option>
+              {{ end }}
+            </select>
+            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400 group-hover:text-senado-primary transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                <path
+                  fill-rule="evenodd"
+                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                  clip-rule="evenodd" />
+              </svg>
+            </div>
+          </div>
+          <!-- Aliasing for Update DTO which expects aerolinea_sugerida -->
+          <input type="hidden" name="aerolinea_sugerida" :value="aerolinea" />
         </div>
 
         <div class="md:col-span-2 space-y-1.5">
           <label class="block text-xs font-bold text-gray-500 uppercase tracking-tight">Motivo del Viaje</label>
           <textarea
             name="motivo"
+            x-model="motivo"
             rows="3"
-            required
             placeholder="Ej: Cumplimiento de funciones legislativas..."
-            class="w-full px-4 py-3 bg-white border border-gray-300 rounded-md shadow-sm focus:ring-senado-primary focus:border-senado-primary text-sm font-medium"></textarea>
+            class="w-full px-4 py-3 bg-white border border-gray-200 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-senado-primary/20 focus:border-senado-primary text-sm font-bold text-gray-700 transition-all placeholder:text-gray-400 placeholder:font-medium"></textarea>
         </div>
       </div>
     </section>
@@ -312,8 +302,17 @@
     </div>
     <button
       type="submit"
-      class="inline-flex justify-center py-2 px-8 border border-transparent shadow-sm text-sm font-bold rounded-md text-white bg-senado-primary hover:bg-senado-800 transition-colors">
-      Confirmar Solicitud
+      :disabled="isSubmitting"
+      :class="isSubmitting ? 'opacity-50 cursor-not-allowed' : 'hover:bg-senado-800'"
+      class="inline-flex justify-center py-2 px-8 border border-transparent shadow-sm text-sm font-bold rounded-md text-white bg-senado-primary transition-colors">
+      <div x-show="isSubmitting" class="flex items-center space-x-2">
+        <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        <span>Guardando...</span>
+      </div>
+      <span x-show="!isSubmitting" x-text="isEdit ? 'Guardar Cambios' : 'Confirmar Solicitud'"></span>
     </button>
   </div>
 </form>

@@ -172,7 +172,6 @@ func (ctrl *DescargoController) Approve(c *gin.Context) {
 		if err == nil {
 			estadoFinalizado := "FINALIZADO"
 			solicitud.EstadoSolicitudCodigo = &estadoFinalizado
-			solicitud.UpdatedBy = &userContext.ID
 			ctrl.solicitudService.Update(solicitud)
 		}
 	}

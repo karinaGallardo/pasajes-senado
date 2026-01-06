@@ -47,3 +47,24 @@ func (r *TipoSolicitudRepository) FindByCodigo(codigo string) (*models.TipoSolic
 	err := r.db.Preload("ConceptoViaje").Where("codigo = ?", codigo).First(&tipo).Error
 	return &tipo, err
 }
+
+func (r *TipoSolicitudRepository) FindByCodigoAndAmbito(tipoCodigo, ambitoCodigo string) (*models.TipoSolicitud, *models.AmbitoViaje, error) {
+	var tipo models.TipoSolicitud
+	err := r.db.Preload("ConceptoViaje").
+		Preload("Ambitos", "codigo = ?", ambitoCodigo).
+		Joins("JOIN tipo_solicitud_ambitos tsa ON tsa.tipo_solicitud_id = tipo_solicitudes.id").
+		Joins("JOIN ambito_viajes av ON av.id = tsa.ambito_viaje_id").
+		Where("tipo_solicitudes.codigo = ? AND av.codigo = ?", tipoCodigo, ambitoCodigo).
+		First(&tipo).Error
+
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var ambito *models.AmbitoViaje
+	if len(tipo.Ambitos) > 0 {
+		ambito = &tipo.Ambitos[0]
+	}
+
+	return &tipo, ambito, nil
+}

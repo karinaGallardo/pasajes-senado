@@ -12,7 +12,7 @@ type Viatico struct {
 
 	Codigo string `gorm:"size:20;uniqueIndex"`
 
-	FechaAsignacion time.Time `gorm:"not null"`
+	FechaAsignacion time.Time `gorm:"not null;type:timestamp"`
 
 	Lugar string `gorm:"size:200"`
 	Glosa string `gorm:"type:text"`

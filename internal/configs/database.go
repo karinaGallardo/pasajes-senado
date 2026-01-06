@@ -38,6 +38,7 @@ func ConnectDB() {
 	}
 
 	DB = database
+	RegisterAuditCallbacks(DB)
 	log.Println("Conexión a PostgreSQL Exitosa")
 
 	mongoURI := fmt.Sprintf("mongodb://%s:%s@%s:27017",

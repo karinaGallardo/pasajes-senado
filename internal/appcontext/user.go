@@ -22,7 +22,10 @@ func FromContext(ctx context.Context) *models.Usuario {
 
 func SetUser(c *gin.Context, user *models.Usuario) {
 	c.Set("auth_user", user)
-	c.Request = c.Request.WithContext(WithUser(c.Request.Context(), user))
+	ctx := WithUser(c.Request.Context(), user)
+	ctx = context.WithValue(ctx, "userID", user.ID)
+
+	c.Request = c.Request.WithContext(ctx)
 }
 
 func CurrentUser(c *gin.Context) *models.Usuario {
@@ -32,4 +35,14 @@ func CurrentUser(c *gin.Context) *models.Usuario {
 		}
 	}
 	return FromContext(c.Request.Context())
+}
+
+func UserID(ctx context.Context) *string {
+	if id, ok := ctx.Value("userID").(string); ok {
+		return &id
+	}
+	if u := FromContext(ctx); u != nil {
+		return &u.ID
+	}
+	return nil
 }

@@ -187,6 +187,10 @@ func (s *UsuarioService) GetByID(id string) (*models.Usuario, error) {
 	return s.repo.FindByID(id)
 }
 
+func (s *UsuarioService) GetByIDs(ids []string) ([]models.Usuario, error) {
+	return s.repo.FindByIDs(ids)
+}
+
 func (s *UsuarioService) UpdateRol(id string, rolCodigo string) error {
 	return s.repo.UpdateRol(id, rolCodigo)
 }

@@ -1,0 +1,246 @@
+{{ define "layouts/components/sidebar_navigation.html" }}
+<div class="flex-1 overflow-y-auto py-6 overflow-x-hidden">
+  <nav class="space-y-1 px-4">
+    <p class="px-2 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 transition-opacity duration-300 whitespace-nowrap" x-show="!sidebarCollapsed">Main</p>
+
+    <a
+      href="/dashboard"
+      :title="sidebarCollapsed ? 'Dashboard' : ''"
+      class="group flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap
+    {{ if eq .Title `Dashboard` }} bg-senado-primary/10 text-senado-primary {{ else }} text-gray-600 hover:bg-gray-50 hover:text-gray-900 {{ end }}">
+      <svg
+        class="mr-3 h-5 w-5 min-w-[20px] {{ if eq .Title `Dashboard` }} text-senado-primary {{ else }} text-gray-400 group-hover:text-gray-500 {{ end }}"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor">
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+      </svg>
+      <span x-show="!sidebarCollapsed" class="transition-opacity duration-300">Dashboard</span>
+    </a>
+
+    <div class="mt-8 mb-2 px-2 text-xs font-semibold text-gray-400 uppercase tracking-wider transition-opacity duration-300 whitespace-nowrap" x-show="!sidebarCollapsed">
+      Gestión
+    </div>
+
+    <a
+      href="/solicitudes"
+      :title="sidebarCollapsed ? 'Solicitudes' : ''"
+      class="group flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap
+     {{ if eq .Title `Solicitudes` }} bg-senado-primary/10 text-senado-primary {{ else }} text-gray-600 hover:bg-gray-50 hover:text-gray-900 {{ end }}">
+      <svg
+        class="mr-3 h-5 w-5 min-w-[20px] {{ if eq .Title `Solicitudes` }} text-senado-primary {{ else }} text-gray-400 group-hover:text-gray-500 {{ end }}"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+      </svg>
+      <span x-show="!sidebarCollapsed" class="transition-opacity duration-300">Solicitudes</span>
+    </a>
+
+    <a
+      href="/descargos"
+      :title="sidebarCollapsed ? 'Descargos' : ''"
+      class="group flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap
+     {{ if eq .Title `Descargos` }} bg-senado-primary/10 text-senado-primary {{ else }} text-gray-600 hover:bg-gray-50 hover:text-gray-900 {{ end }}">
+      <svg
+        class="mr-3 h-5 w-5 min-w-[20px] {{ if eq .Title `Descargos` }} text-senado-primary {{ else }} text-gray-400 group-hover:text-gray-500 {{ end }}"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor">
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+      </svg>
+      <span x-show="!sidebarCollapsed" class="transition-opacity duration-300">Descargos</span>
+    </a>
+
+    <a
+      href="/compensaciones"
+      :title="sidebarCollapsed ? 'Compensaciones' : ''"
+      class="group flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap
+     {{ if eq .Title `Compensaciones` }} bg-senado-primary/10 text-senado-primary {{ else }} text-gray-600 hover:bg-gray-50 hover:text-gray-900 {{ end }}">
+      <svg
+        class="mr-3 h-5 w-5 min-w-[20px] {{ if eq .Title `Compensaciones` }} text-senado-primary {{ else }} text-gray-400 group-hover:text-gray-500 {{ end }}"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor">
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      <span x-show="!sidebarCollapsed" class="transition-opacity duration-300">Compensaciones</span>
+    </a>
+
+    {{ if or (eq .User.Rol.Codigo "ADMIN") (eq .User.Rol.Codigo "TECNICO") }}
+    <div class="mt-8 mb-2 px-2 text-xs font-semibold text-gray-400 uppercase tracking-wider transition-opacity duration-300 whitespace-nowrap" x-show="!sidebarCollapsed">
+      Administración
+    </div>
+
+    {{ if eq .User.Rol.Codigo "ADMIN" }}
+    <a
+      href="/usuarios"
+      :title="sidebarCollapsed ? 'Usuarios' : ''"
+      class="group flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap
+     {{ if eq .Title `Gestión de Usuarios` }} bg-senado-primary/10 text-senado-primary {{ else }} text-gray-600 hover:bg-gray-50 hover:text-gray-900 {{ end }}">
+      <svg
+        class="mr-3 h-5 w-5 min-w-[20px] {{ if eq .Title `Gestión de Usuarios` }} text-senado-primary {{ else }} text-gray-400 group-hover:text-gray-500 {{ end }}"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor">
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+      </svg>
+      <span x-show="!sidebarCollapsed" class="transition-opacity duration-300">Usuarios</span>
+    </a>
+    {{ end }}
+
+    <a
+      href="/admin/proveedores"
+      :title="sidebarCollapsed ? 'Proveedores' : ''"
+      class="group flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap
+     {{ if eq .Title `Gestión de Proveedores` }} bg-senado-primary/10 text-senado-primary {{ else }} text-gray-600 hover:bg-gray-50 hover:text-gray-900 {{ end }}">
+      <svg
+        class="mr-3 h-5 w-5 min-w-[20px] {{ if eq .Title `Gestión de Proveedores` }} text-senado-primary {{ else }} text-gray-400 group-hover:text-gray-500 {{ end }}"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor">
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      <span x-show="!sidebarCollapsed" class="transition-opacity duration-300">Proveedores</span>
+    </a>
+
+    <a
+      href="/admin/rutas"
+      :title="sidebarCollapsed ? 'Rutas' : ''"
+      class="group flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap
+     {{ if eq .Title `Gestión de Rutas y Tarifas` }} bg-senado-primary/10 text-senado-primary {{ else }} text-gray-600 hover:bg-gray-50 hover:text-gray-900 {{ end }}">
+      <svg
+        class="mr-3 h-5 w-5 min-w-[20px] {{ if eq .Title `Gestión de Rutas y Tarifas` }} text-senado-primary {{ else }} text-gray-400 group-hover:text-gray-500 {{ end }}"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor">
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+      </svg>
+      <span x-show="!sidebarCollapsed" class="transition-opacity duration-300">Rutas / Tarifas</span>
+    </a>
+
+    <a
+      href="/admin/configuracion"
+      :title="sidebarCollapsed ? 'Configuración' : ''"
+      class="group flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap
+     {{ if eq .Title `Configuración del Sistema` }} bg-senado-primary/10 text-senado-primary {{ else }} text-gray-600 hover:bg-gray-50 hover:text-gray-900 {{ end }}">
+      <svg
+        class="mr-3 h-5 w-5 min-w-[20px] {{ if eq .Title `Configuración del Sistema` }} text-senado-primary {{ else }} text-gray-400 group-hover:text-gray-500 {{ end }}"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor">
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+      </svg>
+      <span x-show="!sidebarCollapsed" class="transition-opacity duration-300">Configuración</span>
+    </a>
+
+    <a
+      href="/admin/compensaciones/categorias"
+      :title="sidebarCollapsed ? 'Montos Compensación' : ''"
+      class="group flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap
+     {{ if eq .Title `Categorías de Compensación` }} bg-senado-primary/10 text-senado-primary {{ else }} text-gray-600 hover:bg-gray-50 hover:text-gray-900 {{ end }}">
+      <svg
+        class="mr-3 h-5 w-5 min-w-[20px] {{ if eq .Title `Categorías de Compensación` }} text-senado-primary {{ else }} text-gray-400 group-hover:text-gray-500 {{ end }}"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor">
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      </svg>
+      <span x-show="!sidebarCollapsed" class="transition-opacity duration-300">Montos Comp.</span>
+    </a>
+
+    <a
+      href="/admin/cargos"
+      :title="sidebarCollapsed ? 'Cargos' : ''"
+      class="group flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap
+     {{ if eq .Title `Gestión de Cargos` }} bg-senado-primary/10 text-senado-primary {{ else }} text-gray-600 hover:bg-gray-50 hover:text-gray-900 {{ end }}">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="mr-3 h-5 w-5 min-w-[20px] {{ if eq .Title `Gestión de Cargos` }} text-senado-primary {{ else }} text-gray-400 group-hover:text-gray-500 {{ end }}"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor">
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+      </svg>
+      <span x-show="!sidebarCollapsed" class="transition-opacity duration-300">Cat. Cargos</span>
+    </a>
+
+    <a
+      href="/admin/oficinas"
+      :title="sidebarCollapsed ? 'Oficinas' : ''"
+      class="group flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap
+     {{ if eq .Title `Gestión de Oficinas` }} bg-senado-primary/10 text-senado-primary {{ else }} text-gray-600 hover:bg-gray-50 hover:text-gray-900 {{ end }}">
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        class="mr-3 h-5 w-5 min-w-[20px] {{ if eq .Title `Gestión de Oficinas` }} text-senado-primary {{ else }} text-gray-400 group-hover:text-gray-500 {{ end }}"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor">
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+      </svg>
+      <span x-show="!sidebarCollapsed" class="transition-opacity duration-300">Cat. Oficinas</span>
+    </a>
+
+    <a
+      href="/admin/cupos"
+      :title="sidebarCollapsed ? 'Cupos' : ''"
+      class="group flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap
+     {{ if eq .Title `Gestión de Cupos` }} bg-senado-primary/10 text-senado-primary {{ else }} text-gray-600 hover:bg-gray-50 hover:text-gray-900 {{ end }}">
+      <svg
+        class="mr-3 h-5 w-5 min-w-[20px] {{ if eq .Title `Gestión de Cupos` }} text-senado-primary {{ else }} text-gray-400 group-hover:text-gray-500 {{ end }}"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor">
+        <path
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+      </svg>
+      <span x-show="!sidebarCollapsed" class="transition-opacity duration-300">Cupos Pasajes</span>
+    </a>
+    {{ end }}
+  </nav>
+</div>
+{{ end }}

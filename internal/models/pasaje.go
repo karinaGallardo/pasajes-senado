@@ -15,7 +15,7 @@ type Pasaje struct {
 	NumeroVuelo string `gorm:"size:50"`
 	Ruta        string `gorm:"size:255"`
 
-	FechaVuelo time.Time
+	FechaVuelo time.Time `gorm:"type:timestamp"`
 
 	CodigoReserva string  `gorm:"size:50"`
 	NumeroBoleto  string  `gorm:"size:100;index"`

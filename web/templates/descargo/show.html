@@ -4,7 +4,7 @@
   <!-- Header -->
   <div class="flex items-center justify-between">
     <div>
-      <h2 class="text-3xl font-bold text-gray-900">Descargo #{{ .Descargo.ID }}</h2>
+      <h2 class="text-3xl font-bold text-gray-900">Descargo #{{ .Descargo.Code }}</h2>
       <p class="text-sm text-gray-500">
         Presentado el {{ .Descargo.FechaPresentacion.Format "02 Jan 2006" }} por
         <span class="font-medium text-gray-700">{{ .Descargo.Solicitud.Usuario.Username }}</span>

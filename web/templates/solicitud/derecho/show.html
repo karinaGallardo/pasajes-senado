@@ -1,4 +1,4 @@
-{{ define "solicitud/show.html" }} {{ template "layout_start" . }}
+{{ define "solicitud/derecho/show.html" }} {{ template "layout_start" . }}
 <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
 <script>
   mermaid.initialize({ startOnLoad: false });
@@ -35,13 +35,13 @@
     <div class="flex space-x-3">
       {{ if eq .Solicitud.EstadoSolicitud.Codigo "SOLICITADO" }}
       <a
-        href="/solicitudes/{{ .Solicitud.ID }}/editar"
+        href="/solicitudes/derecho/{{ .Solicitud.ID }}/editar"
         class="inline-flex items-center px-4 py-2 border border-blue-600 shadow-sm text-sm font-medium rounded-md text-blue-600 bg-white hover:bg-blue-50 focus:outline-none">
         Editar
       </a>
       {{ end }}
       <a
-        href="/solicitudes/{{ .Solicitud.ID }}/print"
+        href="/solicitudes/derecho/{{ .Solicitud.ID }}/print"
         target="_blank"
         class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
         Imprimir
@@ -130,11 +130,11 @@
             <dd class="mt-1 text-sm text-gray-900">{{ .Solicitud.Destino.Nombre }}</dd>
           </div>
           <div class="sm:col-span-1">
-            <dt class="text-sm font-medium text-gray-500">Fecha Salida</dt>
+            <dt class="text-sm font-medium text-gray-500">Fecha de Ida</dt>
             <dd class="mt-1 text-sm text-gray-900">{{ if .Solicitud.FechaIda }}{{ dtl .Solicitud.FechaIda }}{{ else }} - {{ end }}</dd>
           </div>
           <div class="sm:col-span-1">
-            <dt class="text-sm font-medium text-gray-500">Fecha Retorno</dt>
+            <dt class="text-sm font-medium text-gray-500">Fecha de Vuelta</dt>
             <dd class="mt-1 text-sm text-gray-900">
               {{ if .Solicitud.FechaVuelta }} {{ dtl .Solicitud.FechaVuelta }} {{ else }}
               <span class="text-gray-400 italic">Sólo ida</span>
@@ -172,7 +172,7 @@
             <!-- Workflow Actions -->
             {{ if eq .Solicitud.EstadoSolicitud.Codigo "SOLICITADO" }} {{ if and .User.Rol (or (eq .User.Rol.Codigo "ADMIN") (eq .User.Rol.Codigo "TECNICO")) }}
             <div class="flex space-x-2">
-              <form action="/solicitudes/{{ .Solicitud.ID }}/aprobar" method="POST" class="inline" x-data="{ loading: false }" @submit="loading = true">
+              <form action="/solicitudes/derecho/{{ .Solicitud.ID }}/aprobar" method="POST" class="inline" x-data="{ loading: false }" @submit="loading = true">
                 <button
                   type="submit"
                   :disabled="loading"
@@ -181,7 +181,7 @@
                   <span x-show="loading">Procesando...</span>
                 </button>
               </form>
-              <form action="/solicitudes/{{ .Solicitud.ID }}/rechazar" method="POST" class="inline" x-data="{ loading: false }" @submit="loading = true">
+              <form action="/solicitudes/derecho/{{ .Solicitud.ID }}/rechazar" method="POST" class="inline" x-data="{ loading: false }" @submit="loading = true">
                 <button
                   type="submit"
                   :disabled="loading"

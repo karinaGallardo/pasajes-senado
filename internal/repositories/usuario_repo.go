@@ -109,6 +109,12 @@ func (r *UsuarioRepository) FindByID(id string) (*models.Usuario, error) {
 	return &usuario, err
 }
 
+func (r *UsuarioRepository) FindByIDs(ids []string) ([]models.Usuario, error) {
+	var usuarios []models.Usuario
+	err := r.db.Where("id IN ?", ids).Find(&usuarios).Error
+	return usuarios, err
+}
+
 func (r *UsuarioRepository) UpdateRol(id string, rolCodigo string) error {
 	return r.db.Model(&models.Usuario{}).Where("id = ?", id).Update("rol_codigo", rolCodigo).Error
 }

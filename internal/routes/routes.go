@@ -10,10 +10,12 @@ import (
 func SetupRoutes(r *gin.Engine) {
 	authCtrl := controllers.NewAuthController()
 	solicitudCtrl := controllers.NewSolicitudController()
+	solicitudDerechoCtrl := controllers.NewSolicitudDerechoController()
 	pasajeCtrl := controllers.NewPasajeController()
 	dashboardCtrl := controllers.NewDashboardController()
 	perfilCtrl := controllers.NewPerfilController()
 	usuarioCtrl := controllers.NewUsuarioController()
+	cupoCtrl := controllers.NewCupoController()
 
 	r.GET("/auth/login", authCtrl.ShowLogin)
 	r.POST("/auth/login", authCtrl.Login)
@@ -31,17 +33,28 @@ func SetupRoutes(r *gin.Engine) {
 
 		protected.GET("/perfil", perfilCtrl.Show)
 
+		protected.GET("/cupos/derecho/:id", cupoCtrl.Derecho)
+
 		protected.GET("/solicitudes", solicitudCtrl.Index)
 		protected.GET("/solicitudes/nueva", solicitudCtrl.Create)
-		protected.GET("/solicitudes/derecho/nueva/:id", solicitudCtrl.CreateDerecho)
-		protected.POST("/solicitudes", solicitudCtrl.Store)
 		protected.GET("/solicitudes/:id", solicitudCtrl.Show)
-		protected.GET("/solicitudes/:id/print", solicitudCtrl.PrintPV01)
+		protected.POST("/solicitudes", solicitudCtrl.Store) // Generic Store
 		protected.GET("/solicitudes/check-cupo", solicitudCtrl.CheckCupo)
 		protected.POST("/solicitudes/:id/aprobar", solicitudCtrl.Approve)
 		protected.POST("/solicitudes/:id/rechazar", solicitudCtrl.Reject)
 		protected.GET("/solicitudes/:id/editar", solicitudCtrl.Edit)
 		protected.POST("/solicitudes/:id/actualizar", solicitudCtrl.Update)
+
+		// Solicitudes Derecho (Voucher)
+		protected.GET("/solicitudes/derecho/crear/:voucher_id/:itinerario_code", solicitudDerechoCtrl.Create)
+		protected.POST("/solicitudes/derecho", solicitudDerechoCtrl.Store)
+		protected.GET("/solicitudes/derecho/:id/detalle", solicitudDerechoCtrl.Show)
+		protected.GET("/solicitudes/derecho/:id/editar", solicitudDerechoCtrl.Edit)
+		protected.POST("/solicitudes/derecho/:id/actualizar", solicitudDerechoCtrl.Update)
+		protected.POST("/solicitudes/derecho/:id/aprobar", solicitudDerechoCtrl.Approve)
+		protected.POST("/solicitudes/derecho/:id/rechazar", solicitudDerechoCtrl.Reject)
+		protected.GET("/solicitudes/derecho/:id/print", solicitudDerechoCtrl.Print)
+		protected.DELETE("/solicitudes/derecho/:id", solicitudDerechoCtrl.Destroy)
 
 		protected.POST("/solicitudes/:id/pasajes", pasajeCtrl.Store)
 
@@ -79,7 +92,6 @@ func SetupRoutes(r *gin.Engine) {
 		sysAdmin := protected.Group("/")
 		sysAdmin.Use(middleware.RequireRole("ADMIN", "TECNICO"))
 		{
-			cupoCtrl := controllers.NewCupoController()
 			sysAdmin.GET("/admin/cupos", cupoCtrl.Index)
 			sysAdmin.POST("/admin/cupos/generar", cupoCtrl.Generar)
 			sysAdmin.GET("/admin/cupos/:id/vouchers", cupoCtrl.GetVouchersByCupo)

@@ -2,7 +2,6 @@ package services
 
 import (
 	"errors"
-	"log"
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
 	"sistema-pasajes/internal/utils"
@@ -25,20 +24,34 @@ func NewSolicitudService() *SolicitudService {
 	}
 }
 
-func (s *SolicitudService) Create(solicitud *models.Solicitud, usuario *models.Usuario) error {
+func (s *SolicitudService) Create(solicitud *models.Solicitud, usuario *models.Usuario, voucherID string) error {
 	tipoSolicitud, err := s.tipoSolicitudRepo.FindByID(solicitud.TipoSolicitudID)
 	if err != nil {
 		return errors.New("tipo de solicitud inválido o no encontrado")
 	}
+
 	if tipoSolicitud.ConceptoViaje != nil && tipoSolicitud.ConceptoViaje.Codigo == "DERECHO" {
 		beneficiary, err := s.usuarioRepo.FindByID(solicitud.UsuarioID)
 		if err != nil {
 			return errors.New("usuario beneficiario no encontrado")
 		}
 
-		esSenador := strings.HasPrefix(beneficiary.Tipo, "SENADOR")
+		esSenador := strings.Contains(beneficiary.Tipo, "SENADOR")
 		if !esSenador {
 			return errors.New("solo los Senadores pueden recibir pasajes por derecho")
+		}
+
+		canCreate := false
+		if usuario.ID == beneficiary.ID {
+			canCreate = true
+		} else if usuario.RolCodigo != nil && (*usuario.RolCodigo == "ADMIN" || *usuario.RolCodigo == "TECNICO") {
+			canCreate = true
+		} else if beneficiary.EncargadoID != nil && *beneficiary.EncargadoID == usuario.ID {
+			canCreate = true
+		}
+
+		if !canCreate {
+			return errors.New("no tiene autorización para emitir solicitudes de pasajes para este Senador")
 		}
 	}
 
@@ -62,7 +75,15 @@ func (s *SolicitudService) Create(solicitud *models.Solicitud, usuario *models.U
 	}
 	solicitud.Codigo = codigo
 
-	return s.repo.Create(solicitud)
+	if voucherID != "" {
+		solicitud.VoucherID = &voucherID
+	}
+
+	if err := s.repo.Create(solicitud); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *SolicitudService) FindAll() ([]models.Solicitud, error) {
@@ -79,25 +100,6 @@ func (s *SolicitudService) Approve(id string) error {
 		return err
 	}
 
-	if solicitud.TipoSolicitud != nil && solicitud.TipoSolicitud.ConceptoViaje != nil && solicitud.TipoSolicitud.ConceptoViaje.Codigo == "DERECHO" {
-		var year int
-		var month int
-		if solicitud.FechaIda != nil {
-			year = solicitud.FechaIda.Year()
-			month = int(solicitud.FechaIda.Month())
-		} else if solicitud.FechaVuelta != nil {
-			year = solicitud.FechaVuelta.Year()
-			month = int(solicitud.FechaVuelta.Month())
-		} else {
-			return errors.New("solicitud aprobada sin fechas definidas")
-		}
-
-		if err := s.cupoService.ProcesarConsumoPasaje(solicitud.UsuarioID, year, month); err != nil {
-			log.Printf("Advertencia: No se pudo actualizar cupo para usuario %s: %v", solicitud.UsuarioID, err)
-			return err
-		}
-	}
-
 	estadoAprobado := "APROBADO"
 	solicitud.EstadoSolicitudCodigo = &estadoAprobado
 	return s.repo.Update(solicitud)
@@ -108,6 +110,7 @@ func (s *SolicitudService) Reject(id string) error {
 	if err != nil {
 		return err
 	}
+
 	estadoRechazado := "RECHAZADO"
 	solicitud.EstadoSolicitudCodigo = &estadoRechazado
 	return s.repo.Update(solicitud)
@@ -115,4 +118,8 @@ func (s *SolicitudService) Reject(id string) error {
 
 func (s *SolicitudService) Update(solicitud *models.Solicitud) error {
 	return s.repo.Update(solicitud)
+}
+
+func (s *SolicitudService) Delete(id string) error {
+	return s.repo.Delete(id)
 }

@@ -65,6 +65,13 @@ func (u *Usuario) GetOrigenCode() string {
 	return *u.OrigenCode
 }
 
+func (u *Usuario) GetOrigenNombre() string {
+	if u.Origen == nil {
+		return ""
+	}
+	return u.Origen.Nombre
+}
+
 func (u *Usuario) GetSuplente() *Usuario {
 	if len(u.Suplentes) > 0 {
 		return &u.Suplentes[0]

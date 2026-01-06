@@ -8,6 +8,9 @@ type Solicitud struct {
 	UsuarioID string  `gorm:"size:24;not null"`
 	Usuario   Usuario `gorm:"constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
 
+	VoucherID         *string            `gorm:"size:36;index;default:null"`
+	AsignacionVoucher *AsignacionVoucher `gorm:"foreignKey:VoucherID"`
+
 	TipoSolicitudID string         `gorm:"size:36;not null;index"`
 	TipoSolicitud   *TipoSolicitud `gorm:"foreignKey:TipoSolicitudID"`
 
@@ -23,8 +26,8 @@ type Solicitud struct {
 	DestinoCode string `gorm:"size:4;not null"`
 	Destino     Ciudad `gorm:"foreignKey:DestinoCode"`
 
-	FechaIda    *time.Time `gorm:"default:null"`
-	FechaVuelta *time.Time `gorm:"default:null"`
+	FechaIda    *time.Time `gorm:"default:null;type:timestamp"`
+	FechaVuelta *time.Time `gorm:"default:null;type:timestamp"`
 
 	Motivo string `gorm:"type:text"`
 
@@ -42,4 +45,18 @@ type Solicitud struct {
 
 func (Solicitud) TableName() string {
 	return "solicitudes"
+}
+
+func (s Solicitud) GetEstado() string {
+	if s.EstadoSolicitudCodigo == nil {
+		return "SOLICITADO"
+	}
+	return *s.EstadoSolicitudCodigo
+}
+
+func (s Solicitud) GetEstadoCodigo() string {
+	if s.EstadoSolicitudCodigo == nil {
+		return ""
+	}
+	return *s.EstadoSolicitudCodigo
 }

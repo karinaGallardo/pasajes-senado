@@ -3,6 +3,7 @@ package controllers
 import (
 	"fmt"
 	"net/http"
+	"sistema-pasajes/internal/appcontext"
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/services"
 	"sistema-pasajes/internal/utils"
@@ -40,9 +41,8 @@ func (ctrl *CupoController) Index(c *gin.Context) {
 	}
 
 	cupos, _ := ctrl.service.GetAllByPeriodo(gestion, mes)
-	// vouchers, _ := ctrl.service.GetAllVouchersByPeriodo(gestion, mes) // Deprecated for main view
 
-	meses := []string{"", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"}
+	meses := utils.GetMonthNames()
 	nombreMes := ""
 	if mes >= 1 && mes <= 12 {
 		nombreMes = meses[mes]
@@ -143,5 +143,62 @@ func (ctrl *CupoController) GetVouchersByCupo(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"vouchers": vouchers,
 		"suplente": suplente,
+	})
+}
+
+type MonthGroup struct {
+	MonthNum  int
+	MonthName string
+	Vouchers  []models.AsignacionVoucher
+}
+
+func (ctrl *CupoController) Derecho(c *gin.Context) {
+	id := c.Param("id")
+	targetUser, err := ctrl.userService.GetByID(id)
+	if err != nil {
+		c.String(http.StatusNotFound, "Usuario no encontrado")
+		return
+	}
+
+	appContextUser := appcontext.CurrentUser(c)
+	if appContextUser == nil {
+		c.Redirect(http.StatusFound, "/auth/login")
+		return
+	}
+
+	now := time.Now()
+	gestion := now.Year()
+
+	vouchers, _ := ctrl.service.GetVouchersByUsuarioAndGestion(id, gestion)
+
+	mesesNames := utils.GetMonthNames()
+
+	grouped := make([]*MonthGroup, 13)
+	for i := 1; i <= 12; i++ {
+		grouped[i] = &MonthGroup{
+			MonthNum:  i,
+			MonthName: mesesNames[i],
+			Vouchers:  []models.AsignacionVoucher{},
+		}
+	}
+
+	for _, v := range vouchers {
+		if v.Mes >= 1 && v.Mes <= 12 {
+			grouped[v.Mes].Vouchers = append(grouped[v.Mes].Vouchers, v)
+		}
+	}
+
+	var displayMonths []*MonthGroup
+	for i := 1; i <= 12; i++ {
+		if len(grouped[i].Vouchers) > 0 {
+			displayMonths = append(displayMonths, grouped[i])
+		}
+	}
+
+	utils.Render(c, "cupo/derecho.html", gin.H{
+		"TargetUser": targetUser,
+		"User":       appContextUser,
+		"Months":     displayMonths,
+		"Gestion":    gestion,
 	})
 }

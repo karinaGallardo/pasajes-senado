@@ -3,6 +3,7 @@ package services
 import (
 	"fmt"
 	"sistema-pasajes/internal/models"
+	"sistema-pasajes/internal/utils"
 	"strings"
 	"time"
 
@@ -153,11 +154,10 @@ func (s *ReportService) GeneratePV01(solicitud *models.Solicitud, personaView *m
 
 	mesYNum := ""
 	if strings.Contains(strings.ToUpper(concepto), "DERECHO") {
-		mesES := map[string]string{"January": "ENERO", "February": "FEBRERO", "March": "MARZO", "April": "ABRIL", "May": "MAYO", "June": "JUNIO", "July": "JULIO", "August": "AGOSTO", "September": "SEPTIEMBRE", "October": "OCTUBRE", "November": "NOVIEMBRE", "December": "DICIEMBRE"}
 		if solicitud.FechaIda != nil {
-			mesYNum = mesES[solicitud.FechaIda.Month().String()]
+			mesYNum = utils.TranslateMonth(solicitud.FechaIda.Month())
 		} else if solicitud.FechaVuelta != nil {
-			mesYNum = mesES[solicitud.FechaVuelta.Month().String()]
+			mesYNum = utils.TranslateMonth(solicitud.FechaVuelta.Month())
 		}
 	}
 	drawLabelBox("MES Y N° DE PASAJE :", mesYNum, 40, 50, false)

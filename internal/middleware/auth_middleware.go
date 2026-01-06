@@ -35,6 +35,9 @@ func AuthRequired() gin.HandlerFunc {
 		}
 
 		appcontext.SetUser(c, &user)
+		appcontext.SetAuthID(user.ID)
+		defer appcontext.ClearAuthID()
+
 		c.Next()
 	}
 }

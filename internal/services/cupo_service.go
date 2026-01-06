@@ -342,3 +342,13 @@ func (s *CupoService) GetVouchersByUsuario(usuarioID string, gestion, mes int) (
 	repo := repositories.NewAsignacionVoucherRepository()
 	return repo.FindByHolderAndPeriodo(usuarioID, gestion, mes)
 }
+
+func (s *CupoService) GetVouchersByUsuarioAndGestion(usuarioID string, gestion int) ([]models.AsignacionVoucher, error) {
+	repo := repositories.NewAsignacionVoucherRepository()
+	return repo.FindByHolderAndGestion(usuarioID, gestion)
+}
+
+func (s *CupoService) GetVoucherByID(id string) (*models.AsignacionVoucher, error) {
+	repo := repositories.NewAsignacionVoucherRepository()
+	return repo.FindByID(id)
+}

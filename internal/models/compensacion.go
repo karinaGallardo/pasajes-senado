@@ -8,8 +8,8 @@ type Compensacion struct {
 	Correlativo string `gorm:"size:50"`
 	Nombre      string `gorm:"size:255;not null"`
 
-	FechaInicio time.Time `gorm:"not null"`
-	FechaFin    time.Time `gorm:"not null"`
+	FechaInicio time.Time `gorm:"not null;type:timestamp"`
+	FechaFin    time.Time `gorm:"not null;type:timestamp"`
 
 	MesCompensacion string `gorm:"size:20"`
 

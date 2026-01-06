@@ -12,9 +12,9 @@ type EstadoSolicitud struct {
 	Descripcion string `gorm:"size:255"`
 	Color       string `gorm:"size:20;default:'gray'"`
 
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	DeletedAt gorm.DeletedAt `gorm:"index"`
+	CreatedAt time.Time      `gorm:"type:timestamp"`
+	UpdatedAt time.Time      `gorm:"type:timestamp"`
+	DeletedAt gorm.DeletedAt `gorm:"index;type:timestamp"`
 }
 
 func (EstadoSolicitud) TableName() string {

@@ -6,15 +6,16 @@ type CreateSolicitudRequest struct {
 	AmbitoViajeID   string `form:"ambito_viaje_id" binding:"required"`
 	TargetUserID    string `form:"target_user_id"`
 
-	// Deprecated: use TipoItinerarioID
-	TipoItinerarioCode string `form:"tipo_itinerario"`
+	TipoItinerarioID string `form:"tipo_itinerario_id"`
 
 	OrigenCode        string `form:"origen" binding:"required"`
 	DestinoCode       string `form:"destino" binding:"required"`
 	FechaIda          string `form:"fecha_salida"`
 	FechaVuelta       string `form:"fecha_retorno"`
-	Motivo            string `form:"motivo" binding:"required"`
+	Motivo            string `form:"motivo"`
 	AerolineaSugerida string `form:"aerolinea"`
+	VoucherID         string `form:"voucher_id"`
+	ActiveTab         string `form:"active_tab"`
 }
 
 type UpdateSolicitudRequest struct {
@@ -25,6 +26,7 @@ type UpdateSolicitudRequest struct {
 	DestinoCod        string `form:"destino_cod" binding:"required"`
 	FechaIda          string `form:"fecha_salida"`
 	FechaVuelta       string `form:"fecha_retorno"`
-	Motivo            string `form:"motivo" binding:"required"`
+	Motivo            string `form:"motivo"`
 	AerolineaSugerida string `form:"aerolinea_sugerida"`
+	ActiveTab         string `form:"active_tab"`
 }

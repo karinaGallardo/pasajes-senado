@@ -6,8 +6,8 @@ type DetalleViatico struct {
 	BaseModel
 	ViaticoID string `gorm:"size:36;not null;index"`
 
-	FechaDesde time.Time `gorm:"not null"`
-	FechaHasta time.Time `gorm:"not null"`
+	FechaDesde time.Time `gorm:"not null;type:timestamp"`
+	FechaHasta time.Time `gorm:"not null;type:timestamp"`
 
 	Dias float64 `gorm:"type:decimal(5,2);not null"`
 

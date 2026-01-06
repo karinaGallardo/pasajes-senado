@@ -22,13 +22,19 @@ func (r *AsignacionVoucherRepository) Create(voucher *models.AsignacionVoucher) 
 
 func (r *AsignacionVoucherRepository) FindByTitularAndPeriodo(titularID string, gestion, mes int) ([]models.AsignacionVoucher, error) {
 	var list []models.AsignacionVoucher
-	err := r.db.Preload("Solicitud.Pasajes").Preload("Solicitud.Descargo").Where("senador_id = ? AND gestion = ? AND mes = ?", titularID, gestion, mes).Find(&list).Error
+	err := r.db.Preload("Solicitudes.Pasajes").Preload("Solicitudes.Descargo").Preload("Solicitudes.TipoItinerario").Where("senador_id = ? AND gestion = ? AND mes = ?", titularID, gestion, mes).Find(&list).Error
 	return list, err
 }
 
 func (r *AsignacionVoucherRepository) FindByHolderAndPeriodo(userID string, gestion, mes int) ([]models.AsignacionVoucher, error) {
 	var list []models.AsignacionVoucher
-	err := r.db.Preload("Solicitud.Pasajes").Preload("Solicitud.Descargo").Where("(beneficiario_id = ? OR (beneficiario_id IS NULL AND senador_id = ?)) AND gestion = ? AND mes = ?", userID, userID, gestion, mes).Find(&list).Error
+	err := r.db.Preload("Solicitudes.Pasajes").Preload("Solicitudes.Descargo").Preload("Solicitudes.TipoItinerario").Where("(beneficiario_id = ? OR (beneficiario_id IS NULL AND senador_id = ?)) AND gestion = ? AND mes = ?", userID, userID, gestion, mes).Find(&list).Error
+	return list, err
+}
+
+func (r *AsignacionVoucherRepository) FindByHolderAndGestion(userID string, gestion int) ([]models.AsignacionVoucher, error) {
+	var list []models.AsignacionVoucher
+	err := r.db.Preload("Solicitudes.Pasajes").Preload("Solicitudes.Descargo").Preload("Solicitudes.TipoItinerario").Where("(beneficiario_id = ? OR (beneficiario_id IS NULL AND senador_id = ?)) AND gestion = ?", userID, userID, gestion).Order("mes asc, semana asc").Find(&list).Error
 	return list, err
 }
 
