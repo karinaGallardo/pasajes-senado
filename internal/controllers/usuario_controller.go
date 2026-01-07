@@ -11,16 +11,16 @@ import (
 )
 
 type UsuarioController struct {
-	userService   *services.UsuarioService
-	rolService    *services.RolService
-	ciudadService *services.CiudadService
+	userService    *services.UsuarioService
+	rolService     *services.RolService
+	destinoService *services.DestinoService
 }
 
 func NewUsuarioController() *UsuarioController {
 	return &UsuarioController{
-		userService:   services.NewUsuarioService(),
-		rolService:    services.NewRolService(),
-		ciudadService: services.NewCiudadService(),
+		userService:    services.NewUsuarioService(),
+		rolService:     services.NewRolService(),
+		destinoService: services.NewDestinoService(),
 	}
 }
 
@@ -89,11 +89,16 @@ func (ctrl *UsuarioController) Edit(c *gin.Context) {
 		return
 	}
 	roles, _ := ctrl.rolService.GetAll()
-	destinos, _ := ctrl.ciudadService.GetAll()
+	destinos, _ := ctrl.destinoService.GetAll()
 
 	funcionarios, _ := ctrl.userService.GetByRoleType("FUNCIONARIO")
 
-	utils.Render(c, "usuarios/edit_modal", gin.H{
+	viewName := "usuarios/edit"
+	if c.GetHeader("HX-Request") == "true" {
+		viewName = "usuarios/edit_modal"
+	}
+
+	utils.Render(c, viewName, gin.H{
 		"Usuario":      usuario,
 		"Roles":        roles,
 		"Destinos":     destinos,
@@ -116,9 +121,9 @@ func (ctrl *UsuarioController) Update(c *gin.Context) {
 
 	origen := c.PostForm("origen")
 	if origen != "" {
-		usuario.OrigenCode = &origen
+		usuario.OrigenIATA = &origen
 	} else {
-		usuario.OrigenCode = nil
+		usuario.OrigenIATA = nil
 	}
 
 	encargadoID := c.PostForm("encargado_id")
@@ -133,8 +138,13 @@ func (ctrl *UsuarioController) Update(c *gin.Context) {
 		return
 	}
 
-	c.Header("HX-Trigger", "reloadTable")
-	c.Status(http.StatusOK)
+	if c.GetHeader("HX-Request") == "true" {
+		c.Header("HX-Trigger", "reloadTable")
+		c.Status(http.StatusOK)
+		return
+	}
+
+	c.Redirect(http.StatusFound, "/usuarios")
 }
 
 func (ctrl *UsuarioController) UpdateOrigin(c *gin.Context) {
@@ -167,7 +177,7 @@ func (ctrl *UsuarioController) UpdateOrigin(c *gin.Context) {
 		return
 	}
 
-	targetUser.OrigenCode = &origenCode
+	targetUser.OrigenIATA = &origenCode
 	if err := ctrl.userService.Update(targetUser); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al guardar: " + err.Error()})
 		return

@@ -1,9 +1,9 @@
 package dtos
 
 type CreateRutaRequest struct {
-	Tramo  string `form:"tramo" binding:"required"`
-	Sigla  string `form:"sigla" binding:"required"`
-	Ambito string `form:"ambito" binding:"required"`
+	OrigenIATA  string   `form:"origen_iata" binding:"required"`
+	EscalasIATA []string `form:"escalas_iata[]"`
+	DestinoIATA string   `form:"destino_iata" binding:"required"`
 }
 
 type AddContractRequest struct {

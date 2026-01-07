@@ -15,7 +15,7 @@ import (
 
 type SolicitudDerechoController struct {
 	solicitudService      *services.SolicitudService
-	ciudadService         *services.CiudadService
+	destinoService        *services.DestinoService
 	conceptoService       *services.ConceptoService
 	tipoSolicitudService  *services.TipoSolicitudService
 	ambitoService         *services.AmbitoService
@@ -24,13 +24,15 @@ type SolicitudDerechoController struct {
 	peopleService         *services.PeopleService
 	reportService         *services.ReportService
 	aerolineaService      *services.AerolineaService
+	agenciaService        *services.AgenciaService
 	tipoItinerarioService *services.TipoItinerarioService
+	rutaService           *services.RutaService
 }
 
 func NewSolicitudDerechoController() *SolicitudDerechoController {
 	return &SolicitudDerechoController{
 		solicitudService:      services.NewSolicitudService(),
-		ciudadService:         services.NewCiudadService(),
+		destinoService:        services.NewDestinoService(),
 		conceptoService:       services.NewConceptoService(),
 		tipoSolicitudService:  services.NewTipoSolicitudService(),
 		ambitoService:         services.NewAmbitoService(),
@@ -39,13 +41,13 @@ func NewSolicitudDerechoController() *SolicitudDerechoController {
 		peopleService:         services.NewPeopleService(),
 		reportService:         services.NewReportService(),
 		aerolineaService:      services.NewAerolineaService(),
+		agenciaService:        services.NewAgenciaService(),
 		tipoItinerarioService: services.NewTipoItinerarioService(),
+		rutaService:           services.NewRutaService(),
 	}
 }
 
 func (ctrl *SolicitudDerechoController) Create(c *gin.Context) {
-	destinos, _ := ctrl.ciudadService.GetAll()
-	conceptos, _ := ctrl.conceptoService.GetAll()
 
 	currentUser := appcontext.CurrentUser(c)
 
@@ -85,15 +87,11 @@ func (ctrl *SolicitudDerechoController) Create(c *gin.Context) {
 	}
 
 	var alertaOrigen string
-	if targetUser.GetOrigenCode() == "" {
+	if targetUser.GetOrigenIATA() == "" {
 		alertaOrigen = "Este usuario no tiene configurado su LUGAR DE ORIGEN en el perfil. El sistema no podrá calcular rutas automáticamente."
 	}
 
-	aereos, _ := ctrl.aerolineaService.GetAllActive()
-	var aerolineas []string
-	for _, a := range aereos {
-		aerolineas = append(aerolineas, a.Nombre)
-	}
+	aerolineas, _ := ctrl.aerolineaService.GetAllActive()
 
 	tipoSolicitud, ambitoNac, _ := ctrl.tipoSolicitudService.GetByCodigoAndAmbito("USO_CUPO", "NACIONAL")
 
@@ -119,40 +117,29 @@ func (ctrl *SolicitudDerechoController) Create(c *gin.Context) {
 		}
 	}
 
-	userOrigenCode := targetUser.GetOrigenCode()
-	userOrigenName := "Ciudad No Configurada"
-	if targetUser.Origen != nil {
-		userOrigenName = targetUser.Origen.Nombre
+	origenIATA := targetUser.GetOrigenIATA()
+
+	var origen, destino *models.Destino
+
+	userLoc, err := ctrl.destinoService.GetByIATA(origenIATA)
+	if err != nil || userLoc == nil {
+		c.Redirect(http.StatusFound, fmt.Sprintf("/usuarios/%s/editar", targetUser.ID))
+		return
 	}
-	lpbCode := "LPB"
-	lpbName := "La Paz - El Alto"
 
-	var origenCode, origenName, origenLabel string
-	var destinoCode, destinoName, destinoLabel string
+	lpbLoc, _ := ctrl.destinoService.GetByIATA("LPB")
 
-	if itinerario.Codigo == "SOLO_VUELTA" {
-		origenCode = lpbCode
-		origenName = lpbName
-		origenLabel = "Sede de Funciones"
-
-		destinoCode = userOrigenCode
-		destinoName = userOrigenName
-		destinoLabel = "Origen de " + targetUser.Firstname
+	if itinerario.Codigo == "SOLO_IDA" {
+		origen = userLoc
+		destino = lpbLoc
 	} else {
-		origenCode = userOrigenCode
-		origenName = userOrigenName
-		origenLabel = "Origen de " + targetUser.Firstname
-
-		destinoCode = lpbCode
-		destinoName = lpbName
-		destinoLabel = "Sede de Funciones"
+		origen = lpbLoc
+		destino = userLoc
 	}
 
 	utils.Render(c, "solicitud/derecho/create.html", gin.H{
 		"Title":        "Pasaje por Derecho - " + targetUser.GetNombreCompleto(),
 		"TargetUser":   targetUser,
-		"Destinos":     destinos,
-		"Conceptos":    conceptos,
 		"Aerolineas":   aerolineas,
 		"AlertaOrigen": alertaOrigen,
 		"Voucher":      voucher,
@@ -162,13 +149,9 @@ func (ctrl *SolicitudDerechoController) Create(c *gin.Context) {
 		"TipoSolicitud": tipoSolicitud,
 		"Ambito":        ambitoNac,
 
-		"Itinerario":   itinerario,
-		"OrigenCode":   origenCode,
-		"OrigenName":   origenName,
-		"OrigenLabel":  origenLabel,
-		"DestinoCode":  destinoCode,
-		"DestinoName":  destinoName,
-		"DestinoLabel": destinoLabel,
+		"Itinerario": itinerario,
+		"Origen":     origen,
+		"Destino":    destino,
 	})
 }
 
@@ -219,8 +202,8 @@ func (ctrl *SolicitudDerechoController) Store(c *gin.Context) {
 		TipoSolicitudID:   req.TipoSolicitudID,
 		AmbitoViajeID:     req.AmbitoViajeID,
 		TipoItinerarioID:  itinID,
-		OrigenCode:        req.OrigenCode,
-		DestinoCode:       req.DestinoCode,
+		OrigenIATA:        req.OrigenIATA,
+		DestinoIATA:       req.DestinoIATA,
 		FechaIda:          fechaIda,
 		FechaVuelta:       fechaVuelta,
 		Motivo:            req.Motivo,
@@ -284,10 +267,38 @@ func (ctrl *SolicitudDerechoController) Edit(c *gin.Context) {
 		ActiveTab = solicitud.TipoItinerario.Codigo
 	}
 
-	aereos, _ := ctrl.aerolineaService.GetAllActive()
-	var aerolineas []string
-	for _, a := range aereos {
-		aerolineas = append(aerolineas, a.Nombre)
+	aerolineas, _ := ctrl.aerolineaService.GetAllActive()
+
+	origenIATA := solicitud.Usuario.GetOrigenIATA()
+	userLoc, err := ctrl.destinoService.GetByIATA(origenIATA)
+	if err != nil || userLoc == nil {
+		c.String(http.StatusInternalServerError, "Usuario sin origen configurado")
+		return
+	}
+	lpbLoc, _ := ctrl.destinoService.GetByIATA("LPB")
+
+	var origen, destino *models.Destino
+	if ActiveTab == "SOLO_IDA" {
+		origen = userLoc
+		destino = lpbLoc
+	} else {
+		origen = lpbLoc
+		destino = userLoc
+	}
+
+	weekDays := []gin.H{}
+	if voucher.FechaDesde != nil {
+		start := *voucher.FechaDesde
+		names := []string{"Dom", "Lun", "Mar", "Mie", "Jue", "Vie", "Sab"}
+		for i := 0; i < 7; i++ {
+			d := start.AddDate(0, 0, i)
+			esName := names[d.Weekday()]
+			weekDays = append(weekDays, gin.H{
+				"date":   d.Format("2006-01-02"),
+				"name":   esName,
+				"dayNum": d.Format("02"),
+			})
+		}
 	}
 
 	utils.Render(c, "solicitud/derecho/edit.html", gin.H{
@@ -302,6 +313,13 @@ func (ctrl *SolicitudDerechoController) Edit(c *gin.Context) {
 		"ActiveTab":          ActiveTab,
 		"Solicitud":          solicitud,
 		"IsEdit":             true,
+		"WeekDays":           weekDays,
+		"Origen":             origen,
+		"Destino":            destino,
+		"Concepto":           solicitud.TipoSolicitud.ConceptoViaje,
+		"TipoSolicitud":      solicitud.TipoSolicitud,
+		"Ambito":             solicitud.AmbitoViaje,
+		"Itinerario":         solicitud.TipoItinerario,
 	})
 }
 
@@ -349,8 +367,8 @@ func (ctrl *SolicitudDerechoController) Update(c *gin.Context) {
 	if req.TipoItinerarioID != "" {
 		solicitud.TipoItinerarioID = req.TipoItinerarioID
 	}
-	solicitud.OrigenCode = req.OrigenCod
-	solicitud.DestinoCode = req.DestinoCod
+	solicitud.OrigenIATA = req.OrigenIATA
+	solicitud.DestinoIATA = req.DestinoIATA
 	solicitud.FechaIda = fechaIda
 	solicitud.FechaVuelta = fechaVuelta
 	solicitud.Motivo = req.Motivo
@@ -394,22 +412,41 @@ func (ctrl *SolicitudDerechoController) Show(c *gin.Context) {
 		mermaidGraph += "class E active;"
 	}
 
-	aerolineas := []string{"BoA - Boliviana de Aviación", "EcoJet"}
+	aerolineas, _ := ctrl.aerolineaService.GetAllActive()
 
-	var creator *models.Usuario
+	userIDsMap := make(map[string]bool)
 	if solicitud.CreatedBy != nil {
-		creator, _ = ctrl.userService.GetByID(*solicitud.CreatedBy)
+		userIDsMap[*solicitud.CreatedBy] = true
 	}
+	if solicitud.UpdatedBy != nil {
+		userIDsMap[*solicitud.UpdatedBy] = true
+	}
+
+	var ids []string
+	for id := range userIDsMap {
+		ids = append(ids, id)
+	}
+
+	usuarios, _ := ctrl.userService.GetByIDs(ids)
+	usuariosMap := make(map[string]*models.Usuario)
+	for i := range usuarios {
+		usuariosMap[usuarios[i].ID] = &usuarios[i]
+	}
+
+	rutas, _ := ctrl.rutaService.GetAll()
+	agencias, _ := ctrl.agenciaService.GetAllActive()
 
 	utils.Render(c, "solicitud/derecho/show.html", gin.H{
 		"Title":        "Detalle Solicitud (Derecho) #" + id,
 		"Solicitud":    solicitud,
-		"Creator":      creator,
+		"Usuarios":     usuariosMap,
 		"Step1":        step1,
 		"Step2":        step2,
 		"Step3":        step3,
 		"MermaidGraph": mermaidGraph,
 		"Aerolineas":   aerolineas,
+		"Rutas":        rutas,
+		"Agencias":     agencias,
 		"User":         appcontext.CurrentUser(c),
 	})
 }
@@ -417,7 +454,8 @@ func (ctrl *SolicitudDerechoController) Show(c *gin.Context) {
 func (ctrl *SolicitudDerechoController) Approve(c *gin.Context) {
 	id := c.Param("id")
 	if err := ctrl.solicitudService.Approve(id); err != nil {
-		// log.Printf("Error approving solicitud: %v\n", err)
+		c.String(http.StatusInternalServerError, "Error al aprobar la solicitud: "+err.Error())
+		return
 	}
 	c.Redirect(http.StatusFound, "/solicitudes/derecho/"+id+"/detalle")
 }
@@ -425,7 +463,8 @@ func (ctrl *SolicitudDerechoController) Approve(c *gin.Context) {
 func (ctrl *SolicitudDerechoController) Reject(c *gin.Context) {
 	id := c.Param("id")
 	if err := ctrl.solicitudService.Reject(id); err != nil {
-		// log.Printf("Error rejecting solicitud: %v\n", err)
+		c.String(http.StatusInternalServerError, "Error al rechazar la solicitud: "+err.Error())
+		return
 	}
 	c.Redirect(http.StatusFound, "/solicitudes/derecho/"+id+"/detalle")
 }

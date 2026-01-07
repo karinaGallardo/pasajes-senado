@@ -20,11 +20,11 @@ type Solicitud struct {
 	TipoItinerarioID string          `gorm:"size:36;not null;index"`
 	TipoItinerario   *TipoItinerario `gorm:"foreignKey:TipoItinerarioID"`
 
-	OrigenCode string `gorm:"size:4;not null"`
-	Origen     Ciudad `gorm:"foreignKey:OrigenCode"`
+	OrigenIATA string   `gorm:"size:5;not null"`
+	Origen     *Destino `gorm:"foreignKey:OrigenIATA;references:IATA"`
 
-	DestinoCode string `gorm:"size:4;not null"`
-	Destino     Ciudad `gorm:"foreignKey:DestinoCode"`
+	DestinoIATA string   `gorm:"size:5;not null"`
+	Destino     *Destino `gorm:"foreignKey:DestinoIATA;references:IATA"`
 
 	FechaIda    *time.Time `gorm:"default:null;type:timestamp"`
 	FechaVuelta *time.Time `gorm:"default:null;type:timestamp"`

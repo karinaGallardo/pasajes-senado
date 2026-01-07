@@ -1,8 +1,10 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
+	"os"
 	"sistema-pasajes/internal/configs"
 	"sistema-pasajes/internal/models"
 )
@@ -10,23 +12,157 @@ import (
 func main() {
 	configs.ConnectDB()
 
-	seedCiudades()
 	seedDepartamentos()
 	seedProveedores()
 	seedRolesAndPermissions()
 	seedCatalogosViaje()
+	seedDestinos()
 	seedEstadosSolicitud()
 	seedEstadosVoucher()
+	seedEstadosPasaje()
 	seedViaticosAndConfig()
 }
 
-func seedEstadosVoucher() {
-	fmt.Println("Sincronizando Estados de Voucher...")
-	estados := []models.EstadoVoucher{
-		{Codigo: "DISPONIBLE", Nombre: "Disponible", Color: "green", Descripcion: "Voucher habilitado para uso"},
-		{Codigo: "USADO", Nombre: "Usado", Color: "gray", Descripcion: "Voucher ya utilizado en un viaje"},
-		{Codigo: "VENCIDO", Nombre: "Vencido", Color: "red", Descripcion: "Voucher expirado (fuera de fecha)"},
-		{Codigo: "RESERVADO", Nombre: "Reservado", Color: "yellow", Descripcion: "Voucher en proceso de asignación"},
+func assignPermsToRole(rol *models.Rol, perms []*models.Permiso) {
+	if rol == nil {
+		return
+	}
+	configs.DB.Model(rol).Association("Permisos").Replace(perms)
+}
+
+type BoaData struct {
+	Data []BoaDestino `json:"Data"`
+}
+
+type BoaDestino struct {
+	AirportId    int
+	CodigoIata   string
+	Name         string
+	CountryName  string
+	CityName     string
+	TypeAirport  string
+	IsOperated   bool
+	Business     bool
+	Status       string
+	TimeZone     interface{}
+	DiffHourMins int
+}
+
+func seedDestinos() {
+	fmt.Println("Sincronizando Destinos Defaults...")
+
+	lpCode := "LP"
+	scCode := "SC"
+	cbCode := "CB"
+	chCode := "CH"
+	tjCode := "TJ"
+	beCode := "BE"
+	paCode := "PA"
+	orCode := "OR"
+	ptCode := "PT"
+
+	defaults := []models.Destino{
+		{IATA: "LPB", Ciudad: "La Paz", Aeropuerto: "El Alto", AmbitoCodigo: "NACIONAL", DepartamentoCodigo: &lpCode, Pais: "BOLIVIA"},
+		{IATA: "VVI", Ciudad: "Santa Cruz", Aeropuerto: "Viru Viru", AmbitoCodigo: "NACIONAL", DepartamentoCodigo: &scCode, Pais: "BOLIVIA"},
+		{IATA: "SRZ", Ciudad: "Santa Cruz", Aeropuerto: "El Trompillo", AmbitoCodigo: "NACIONAL", DepartamentoCodigo: &scCode, Pais: "BOLIVIA"},
+		{IATA: "CBB", Ciudad: "Cochabamba", Aeropuerto: "Jorge Wilstermann", AmbitoCodigo: "NACIONAL", DepartamentoCodigo: &cbCode, Pais: "BOLIVIA"},
+		{IATA: "SRE", Ciudad: "Sucre", Aeropuerto: "Alcantarí", AmbitoCodigo: "NACIONAL", DepartamentoCodigo: &chCode, Pais: "BOLIVIA"},
+		{IATA: "TJA", Ciudad: "Tarija", Aeropuerto: "Cap. Oriel Lea Plaza", AmbitoCodigo: "NACIONAL", DepartamentoCodigo: &tjCode, Pais: "BOLIVIA"},
+		{IATA: "TDD", Ciudad: "Trinidad", Aeropuerto: "Tte. Jorge Henrich", AmbitoCodigo: "NACIONAL", DepartamentoCodigo: &beCode, Pais: "BOLIVIA"},
+		{IATA: "CIJ", Ciudad: "Cobija", Aeropuerto: "Cap. Aníbal Arab", AmbitoCodigo: "NACIONAL", DepartamentoCodigo: &paCode, Pais: "BOLIVIA"},
+		{IATA: "ORU", Ciudad: "Oruro", Aeropuerto: "Juan Mendoza", AmbitoCodigo: "NACIONAL", DepartamentoCodigo: &orCode, Pais: "BOLIVIA"},
+		{IATA: "POI", Ciudad: "Potosí", Aeropuerto: "Cap. Nicolás Rojas", AmbitoCodigo: "NACIONAL", DepartamentoCodigo: &ptCode, Pais: "BOLIVIA"},
+		{IATA: "UYU", Ciudad: "Uyuni", Aeropuerto: "Joya Andina", AmbitoCodigo: "NACIONAL", DepartamentoCodigo: &ptCode, Pais: "BOLIVIA"},
+
+		{IATA: "RBQ", Ciudad: "Rurrenabaque", Aeropuerto: "Rurrenabaque", AmbitoCodigo: "NACIONAL", DepartamentoCodigo: &beCode, Pais: "BOLIVIA"},
+		{IATA: "RIB", Ciudad: "Riberalta", Aeropuerto: "Cap. Selin Zeitun López", AmbitoCodigo: "NACIONAL", DepartamentoCodigo: &beCode, Pais: "BOLIVIA"},
+		{IATA: "GYA", Ciudad: "Guayaramerín", Aeropuerto: "Cap. Emilio Beltrán", AmbitoCodigo: "NACIONAL", DepartamentoCodigo: &beCode, Pais: "BOLIVIA"},
+		{IATA: "BYC", Ciudad: "Yacuiba", Aeropuerto: "Yacuiba", AmbitoCodigo: "NACIONAL", DepartamentoCodigo: &tjCode, Pais: "BOLIVIA"},
+		{IATA: "CCA", Ciudad: "Chimoré", Aeropuerto: "Chimoré", AmbitoCodigo: "NACIONAL", DepartamentoCodigo: &cbCode, Pais: "BOLIVIA"},
+
+		{IATA: "MIA", Ciudad: "Miami", Aeropuerto: "Miami International", AmbitoCodigo: "INTERNACIONAL", Pais: "ESTADOS UNIDOS"},
+		{IATA: "WAS", Ciudad: "Washington D.C.", Aeropuerto: "Washington Dulles/Reagan", AmbitoCodigo: "INTERNACIONAL", Pais: "ESTADOS UNIDOS"},
+		{IATA: "EZE", Ciudad: "Buenos Aires", Aeropuerto: "Ezeiza", AmbitoCodigo: "INTERNACIONAL", Pais: "ARGENTINA"},
+		{IATA: "AEP", Ciudad: "Buenos Aires", Aeropuerto: "Aeroparque", AmbitoCodigo: "INTERNACIONAL", Pais: "ARGENTINA"},
+		{IATA: "MAD", Ciudad: "Madrid", Aeropuerto: "Barajas", AmbitoCodigo: "INTERNACIONAL", Pais: "ESPAÑA"},
+		{IATA: "GRU", Ciudad: "Sao Paulo", Aeropuerto: "Guarulhos", AmbitoCodigo: "INTERNACIONAL", Pais: "BRASIL"},
+		{IATA: "BOG", Ciudad: "Bogotá", Aeropuerto: "El Dorado", AmbitoCodigo: "INTERNACIONAL", Pais: "COLOMBIA"},
+		{IATA: "LIM", Ciudad: "Lima", Aeropuerto: "Jorge Chávez", AmbitoCodigo: "INTERNACIONAL", Pais: "PERU"},
+		{IATA: "PTY", Ciudad: "Panamá", Aeropuerto: "Tocumen", AmbitoCodigo: "INTERNACIONAL", Pais: "PANAMA"},
+		{IATA: "MEX", Ciudad: "Ciudad de México", Aeropuerto: "Benito Juárez", AmbitoCodigo: "INTERNACIONAL", Pais: "MEXICO"},
+		{IATA: "SCL", Ciudad: "Santiago", Aeropuerto: "Arturo Merino Benítez", AmbitoCodigo: "INTERNACIONAL", Pais: "CHILE"},
+	}
+
+	for _, d := range defaults {
+		var existing models.Destino
+		if err := configs.DB.Where("iata = ?", d.IATA).First(&existing).Error; err != nil {
+			configs.DB.Create(&d)
+		} else {
+			configs.DB.Model(&existing).Updates(d)
+		}
+	}
+
+	fileContent, err := os.ReadFile("cmd/seeder/data/destinos_boa.json")
+	if err == nil {
+		fmt.Println("Cargando destinos adicionales desde JSON...")
+		var boaData BoaData
+		if errLen := json.Unmarshal(fileContent, &boaData); errLen == nil {
+			for _, item := range boaData.Data {
+				var existing models.Destino
+				if err := configs.DB.Where("iata = ?", item.CodigoIata).First(&existing).Error; err == nil {
+					continue
+				}
+
+				ambito := "INTERNACIONAL"
+				if item.TypeAirport == "N" {
+					ambito = "NACIONAL"
+				}
+
+				newDest := models.Destino{
+					IATA:         item.CodigoIata,
+					Ciudad:       item.CityName,
+					Aeropuerto:   item.Name,
+					Pais:         item.CountryName,
+					AmbitoCodigo: ambito,
+					Estado:       true,
+				}
+				configs.DB.Create(&newDest)
+			}
+		} else {
+			fmt.Printf("Error parseando JSON de destinos: %v\n", errLen)
+		}
+	} else {
+		fmt.Println("No se encontró cmd/seeder/data/destinos_boa.json, saltando carga masiva.")
+	}
+}
+
+func seedDepartamentos() {
+	fmt.Println("Sincronizando Departamentos...")
+	departamentos := []models.Departamento{
+		{Nombre: "LA PAZ", Codigo: "LP"},
+		{Nombre: "SANTA CRUZ", Codigo: "SC"},
+		{Nombre: "COCHABAMBA", Codigo: "CB"},
+		{Nombre: "CHUQUISACA", Codigo: "CH"},
+		{Nombre: "TARIJA", Codigo: "TJ"},
+		{Nombre: "BENI", Codigo: "BE"},
+		{Nombre: "PANDO", Codigo: "PA"},
+		{Nombre: "ORURO", Codigo: "OR"},
+		{Nombre: "POTOSI", Codigo: "PT"},
+	}
+
+	for _, d := range departamentos {
+		configs.DB.Where("codigo = ?", d.Codigo).FirstOrCreate(&d)
+	}
+}
+
+func seedEstadosSolicitud() {
+	fmt.Println("Sincronizando Estados de Solicitud...")
+	estados := []models.EstadoSolicitud{
+		{Codigo: "SOLICITADO", Nombre: "Solicitado", Color: "blue", Descripcion: "Solicitud creada, pendiente de aprobación"},
+		{Codigo: "APROBADO", Nombre: "Aprobado", Color: "green", Descripcion: "Solicitud aprobada, pasajes en emisión"},
+		{Codigo: "EMITIDO", Nombre: "Pasaje Emitido", Color: "teal", Descripcion: "Pasajes emitidos y enviados al beneficiario"},
+		{Codigo: "RECHAZADO", Nombre: "Rechazado", Color: "red", Descripcion: "Solicitud rechazada por autoridad"},
+		{Codigo: "FINALIZADO", Nombre: "Finalizado", Color: "gray", Descripcion: "Viaje completado y cerrado"},
 	}
 
 	for _, e := range estados {
@@ -38,10 +174,21 @@ func seedViaticosAndConfig() {
 	fmt.Println("Sincronizando Categorías de Viáticos y Configuración...")
 
 	categorias := []models.CategoriaViatico{
-		{Nombre: "PRIMERA CATEGORIA", Codigo: 1, Monto: 359.00, Moneda: "Bs", Ubicacion: "INTERIOR"},
-		{Nombre: "SEGUNDA CATEGORIA", Codigo: 2, Monto: 279.00, Moneda: "Bs", Ubicacion: "INTERIOR"},
-		{Nombre: "TERCERA CATEGORIA", Codigo: 3, Monto: 212.00, Moneda: "Bs", Ubicacion: "INTERIOR"},
-		{Nombre: "VIAJE AL EXTERIOR (ESCALA BASICA)", Codigo: 4, Monto: 300.00, Moneda: "USD", Ubicacion: "EXTERIOR"},
+		{Nombre: "CATEGORIA 1", Codigo: 1, Monto: 360.00, Moneda: "USD", Ubicacion: "NORTE AMERICA, EUROPA, ASIA, AFRICA U OCEANIA"},
+		{Nombre: "CATEGORIA 2", Codigo: 2, Monto: 300.00, Moneda: "USD", Ubicacion: "NORTE AMERICA, EUROPA, ASIA, AFRICA U OCEANIA"},
+		{Nombre: "CATEGORIA 3", Codigo: 3, Monto: 276.00, Moneda: "USD", Ubicacion: "NORTE AMERICA, EUROPA, ASIA, AFRICA U OCEANIA"},
+		{Nombre: "CATEGORIA 1", Codigo: 1, Monto: 300.00, Moneda: "USD", Ubicacion: "CENTRO AMERICA, SUD AMERICA O EL CARIBE"},
+		{Nombre: "CATEGORIA 2", Codigo: 2, Monto: 240.00, Moneda: "USD", Ubicacion: "CENTRO AMERICA, SUD AMERICA O EL CARIBE"},
+		{Nombre: "CATEGORIA 3", Codigo: 3, Monto: 207.00, Moneda: "USD", Ubicacion: "CENTRO AMERICA, SUD AMERICA O EL CARIBE"},
+		{Nombre: "CATEGORIA 1", Codigo: 1, Monto: 553.00, Moneda: "Bs", Ubicacion: "INTERDEPARTAMENTAL"},
+		{Nombre: "CATEGORIA 2", Codigo: 2, Monto: 465.00, Moneda: "Bs", Ubicacion: "INTERDEPARTAMENTAL"},
+		{Nombre: "CATEGORIA 3", Codigo: 3, Monto: 371.00, Moneda: "Bs", Ubicacion: "INTERDEPARTAMENTAL"},
+		{Nombre: "CATEGORIA 1", Codigo: 1, Monto: 332.00, Moneda: "Bs", Ubicacion: "INTRADEPARTAMENTAL"},
+		{Nombre: "CATEGORIA 2", Codigo: 2, Monto: 277.00, Moneda: "Bs", Ubicacion: "INTRADEPARTAMENTAL"},
+		{Nombre: "CATEGORIA 3", Codigo: 3, Monto: 222.00, Moneda: "Bs", Ubicacion: "INTRADEPARTAMENTAL"},
+		{Nombre: "CATEGORIA 1", Codigo: 1, Monto: 583.00, Moneda: "Bs", Ubicacion: "FRANJA DE FRONTERA"},
+		{Nombre: "CATEGORIA 2", Codigo: 2, Monto: 491.00, Moneda: "Bs", Ubicacion: "FRANJA DE FRONTERA"},
+		{Nombre: "CATEGORIA 3", Codigo: 3, Monto: 391.00, Moneda: "Bs", Ubicacion: "FRANJA DE FRONTERA"},
 	}
 
 	for _, c := range categorias {
@@ -76,9 +223,11 @@ func seedProveedores() {
 	}
 
 	agencias := []models.Agencia{
-		{Nombre: "Agencia de Viajes Cuarta Dimensión", Estado: true},
-		{Nombre: "Tropical Tours", Estado: true},
-		{Nombre: "Mundo Viajes", Estado: true},
+		{Nombre: "SAN JOSE", Estado: true},
+		{Nombre: "BOA", Estado: true},
+		{Nombre: "AVEL TOURS", Estado: true},
+		{Nombre: "VANGUARD TRAVEL", Estado: true},
+		{Nombre: "PARANAIR", Estado: true},
 	}
 	for _, a := range agencias {
 		configs.DB.Where("nombre = ?", a.Nombre).FirstOrCreate(&a)
@@ -201,60 +350,29 @@ func seedRolesAndPermissions() {
 	fmt.Println("Roles y Permisos sincronizados correctamente.")
 }
 
-func assignPermsToRole(rol *models.Rol, perms []*models.Permiso) {
-	if rol == nil {
-		return
-	}
-	configs.DB.Model(rol).Association("Permisos").Replace(perms)
-}
-
-func seedCiudades() {
-	fmt.Println("Sincronizando Ciudades...")
-	defaults := []models.Ciudad{
-		{Nombre: "La Paz - El Alto", Code: "LPB"},
-		{Nombre: "Santa Cruz - Viru Viu", Code: "VVI"},
-		{Nombre: "Cochabamba - J. Wilstermann", Code: "CBB"},
-		{Nombre: "Sucre - Alcantarí", Code: "SRE"},
-		{Nombre: "Tarija - Cap. Oriel Lea Plaza", Code: "TJA"},
-		{Nombre: "Trinidad - Tte. Jorge Henrich", Code: "TDD"},
-		{Nombre: "Cobija - Cap. Aníbal Arab", Code: "CIJ"},
-		{Nombre: "Oruro - Juan Mendoza", Code: "ORU"},
-		{Nombre: "Potosí - Cap. Nicolás Rojas", Code: "POI"},
-		{Nombre: "Uyuni - Joya Andina", Code: "UYU"},
+func seedEstadosVoucher() {
+	fmt.Println("Sincronizando Estados de Voucher...")
+	estados := []models.EstadoVoucher{
+		{Codigo: "DISPONIBLE", Nombre: "Disponible", Color: "green", Descripcion: "Voucher habilitado para uso"},
+		{Codigo: "USADO", Nombre: "Usado", Color: "gray", Descripcion: "Voucher ya utilizado en un viaje"},
+		{Codigo: "VENCIDO", Nombre: "Vencido", Color: "red", Descripcion: "Voucher expirado (fuera de fecha)"},
+		{Codigo: "RESERVADO", Nombre: "Reservado", Color: "yellow", Descripcion: "Voucher en proceso de asignación"},
 	}
 
-	for _, d := range defaults {
-		configs.DB.Where("code = ?", d.Code).FirstOrCreate(&d)
+	for _, e := range estados {
+		configs.DB.Where("codigo = ?", e.Codigo).FirstOrCreate(&e)
 	}
 }
 
-func seedDepartamentos() {
-	fmt.Println("Sincronizando Departamentos...")
-	departamentos := []models.Departamento{
-		{Nombre: "LA PAZ", Codigo: "LP"},
-		{Nombre: "SANTA CRUZ", Codigo: "SC"},
-		{Nombre: "COCHABAMBA", Codigo: "CB"},
-		{Nombre: "CHUQUISACA", Codigo: "CH"},
-		{Nombre: "TARIJA", Codigo: "TJ"},
-		{Nombre: "BENI", Codigo: "BE"},
-		{Nombre: "PANDO", Codigo: "PA"},
-		{Nombre: "ORURO", Codigo: "OR"},
-		{Nombre: "POTOSI", Codigo: "PT"},
-	}
-
-	for _, d := range departamentos {
-		configs.DB.Where("codigo = ?", d.Codigo).FirstOrCreate(&d)
-	}
-}
-
-func seedEstadosSolicitud() {
-	fmt.Println("Sincronizando Estados de Solicitud...")
-	estados := []models.EstadoSolicitud{
-		{Codigo: "SOLICITADO", Nombre: "Solicitado", Color: "blue", Descripcion: "Solicitud creada, pendiente de aprobación"},
-		{Codigo: "APROBADO", Nombre: "Aprobado", Color: "green", Descripcion: "Solicitud aprobada, pasajes en emisión"},
-		{Codigo: "EMITIDO", Nombre: "Pasaje Emitido", Color: "teal", Descripcion: "Pasajes emitidos y enviados al beneficiario"},
-		{Codigo: "RECHAZADO", Nombre: "Rechazado", Color: "red", Descripcion: "Solicitud rechazada por autoridad"},
-		{Codigo: "FINALIZADO", Nombre: "Finalizado", Color: "gray", Descripcion: "Viaje completado y cerrado"},
+func seedEstadosPasaje() {
+	fmt.Println("Sincronizando Estados de Pasaje...")
+	estados := []models.EstadoPasaje{
+		{Codigo: "EMITIDO", Nombre: "Emitido", Color: "green", Descripcion: "Pasaje emitido correctamente"},
+		{Codigo: "REPROGRAMADO", Nombre: "Reprogramado", Color: "yellow", Descripcion: "Pasaje reprogramado con costo adicional"},
+		{Codigo: "DEVUELTO", Nombre: "Devuelto", Color: "red", Descripcion: "Pasaje devuelto o cancelado"},
+		{Codigo: "USADO", Nombre: "Usado", Color: "blue", Descripcion: "Pasaje utilizado por el viajero"},
+		{Codigo: "ANULADO", Nombre: "Anulado", Color: "gray", Descripcion: "Pasaje anulado por error u otros motivos"},
+		{Codigo: "NO SHOW", Nombre: "No Show", Color: "orange", Descripcion: "El pasajero no se presentó"},
 	}
 
 	for _, e := range estados {

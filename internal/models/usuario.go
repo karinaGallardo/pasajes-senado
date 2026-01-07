@@ -24,8 +24,8 @@ type Usuario struct {
 
 	Tipo string `gorm:"size:50;index;default:'FUNCIONARIO'"`
 
-	OrigenCode *string `gorm:"size:4;default:null"`
-	Origen     *Ciudad `gorm:"foreignKey:OrigenCode"`
+	OrigenIATA *string  `gorm:"size:5;default:null"`
+	Origen     *Destino `gorm:"foreignKey:OrigenIATA;references:IATA"`
 
 	DepartamentoCode *string       `gorm:"size:5;default:null"`
 	Departamento     *Departamento `gorm:"foreignKey:DepartamentoCode"`
@@ -58,18 +58,18 @@ func (u *Usuario) GetNombreCompleto() string {
 	return strings.Join(clean, " ")
 }
 
-func (u *Usuario) GetOrigenCode() string {
-	if u.OrigenCode == nil {
+func (u *Usuario) GetOrigenIATA() string {
+	if u.OrigenIATA == nil {
 		return ""
 	}
-	return *u.OrigenCode
+	return *u.OrigenIATA
 }
 
 func (u *Usuario) GetOrigenNombre() string {
 	if u.Origen == nil {
 		return ""
 	}
-	return u.Origen.Nombre
+	return u.Origen.Ciudad
 }
 
 func (u *Usuario) GetSuplente() *Usuario {

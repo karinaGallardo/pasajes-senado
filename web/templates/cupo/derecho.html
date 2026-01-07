@@ -79,7 +79,10 @@
                 <!-- Estado -->
                 <td class="whitespace-nowrap px-3 py-4 text-sm">
                   <span
-                    class="inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase {{ if eq .EstadoVoucherCodigo `DISPONIBLE` }} bg-green-100 text-green-700 {{ else }} bg-senado-primary/10 text-senado-primary {{ end }}">
+                    class="inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase 
+                    {{ if eq .EstadoVoucherCodigo `DISPONIBLE` }} bg-green-100 text-green-700 
+                    {{ else if eq .EstadoVoucherCodigo `RESERVADO` }} bg-amber-100 text-amber-700 
+                    {{ else }} bg-blue-100 text-blue-700 {{ end }}">
                     {{ .EstadoVoucherCodigo }}
                   </span>
                 </td>

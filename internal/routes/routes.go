@@ -57,6 +57,10 @@ func SetupRoutes(r *gin.Engine) {
 		protected.DELETE("/solicitudes/derecho/:id", solicitudDerechoCtrl.Destroy)
 
 		protected.POST("/solicitudes/:id/pasajes", pasajeCtrl.Store)
+		protected.POST("/pasajes/update-status", pasajeCtrl.UpdateStatus)
+		protected.POST("/pasajes/reprogramar", pasajeCtrl.Reprogramar)
+		protected.POST("/pasajes/devolver", pasajeCtrl.Devolver)
+		protected.POST("/pasajes/update", pasajeCtrl.Update)
 
 		viaticoCtrl := controllers.NewViaticoController()
 		protected.GET("/solicitudes/:id/viaticos/nuevo", viaticoCtrl.Create)

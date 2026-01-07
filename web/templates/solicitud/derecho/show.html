@@ -1,36 +1,28 @@
 {{ define "solicitud/derecho/show.html" }} {{ template "layout_start" . }}
-<script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
-<script>
-  mermaid.initialize({ startOnLoad: false });
-  document.addEventListener("DOMContentLoaded", async function () {
-    const loader = document.getElementById("mermaid-loader");
-    const mermaidEl = document.querySelector(".mermaid");
-
-    if (mermaidEl) {
-      try {
-        await mermaid.run({
-          nodes: [mermaidEl],
-        });
-      } catch (e) {
-        console.error("Mermaid render error:", e);
-      }
-
-      if (loader) loader.style.display = "none";
-      mermaidEl.classList.remove("opacity-0");
-      mermaidEl.classList.add("opacity-100");
-    }
-  });
-</script>
 
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
   <!-- Header -->
   <div class="mb-6 flex items-center justify-between">
     <div>
-      <h2 class="text-3xl font-bold text-gray-900">Solicitud #{{ .Solicitud.Codigo }}</h2>
-      <p class="text-sm text-gray-500">
-        Creado el {{ dtl .Solicitud.CreatedAt }} por
-        <span class="font-medium text-gray-700">{{ if .Creator }} {{ .Creator.GetNombreCompleto }} {{ else }} {{ .Solicitud.Usuario.GetNombreCompleto }} {{ end }}</span>
-      </p>
+      <h2 class="text-3xl font-bold text-gray-900">SOL-{{ .Solicitud.Codigo }}</h2>
+      <div class="flex flex-col space-y-0.5 mt-1">
+        <p class="text-xs text-gray-400">
+          <span class="font-bold uppercase tracking-tighter mr-1">Creado:</span>
+          {{ dtl .Solicitud.CreatedAt }} por
+          <span class="font-semibold text-gray-600 tracking-tight">
+            {{ $c := index .Usuarios (deref .Solicitud.CreatedBy) }} {{ if $c }} {{ $c.GetNombreCompleto }} {{ else }} {{ .Solicitud.Usuario.GetNombreCompleto }} {{ end }}
+          </span>
+        </p>
+        {{ if .Solicitud.UpdatedBy }}
+        <p class="text-xs text-gray-400">
+          <span class="font-bold uppercase tracking-tighter mr-1">Actualizado:</span>
+          {{ dtl .Solicitud.UpdatedAt }} por
+          <span class="font-semibold text-gray-600 tracking-tight">
+            {{ $u := index .Usuarios (deref .Solicitud.UpdatedBy) }} {{ if $u }} {{ $u.GetNombreCompleto }} {{ else }} Sistema {{ end }}
+          </span>
+        </p>
+        {{ end }}
+      </div>
     </div>
     <div class="flex space-x-3">
       {{ if eq .Solicitud.EstadoSolicitud.Codigo "SOLICITADO" }}
@@ -123,23 +115,21 @@
         <dl class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-6">
           <div class="sm:col-span-1">
             <dt class="text-sm font-medium text-gray-500">Origen</dt>
-            <dd class="mt-1 text-sm text-gray-900">{{ .Solicitud.Origen.Nombre }}</dd>
+            <dd class="mt-1 text-sm text-gray-900">{{ .Solicitud.Origen.Ciudad }} ({{ .Solicitud.Origen.IATA }})</dd>
           </div>
           <div class="sm:col-span-1">
             <dt class="text-sm font-medium text-gray-500">Destino</dt>
-            <dd class="mt-1 text-sm text-gray-900">{{ .Solicitud.Destino.Nombre }}</dd>
+            <dd class="mt-1 text-sm text-gray-900">{{ .Solicitud.Destino.Ciudad }} ({{ .Solicitud.Destino.IATA }})</dd>
           </div>
           <div class="sm:col-span-1">
             <dt class="text-sm font-medium text-gray-500">Fecha de Ida</dt>
             <dd class="mt-1 text-sm text-gray-900">{{ if .Solicitud.FechaIda }}{{ dtl .Solicitud.FechaIda }}{{ else }} - {{ end }}</dd>
           </div>
           <div class="sm:col-span-1">
+            {{ if .Solicitud.FechaVuelta }}
             <dt class="text-sm font-medium text-gray-500">Fecha de Vuelta</dt>
-            <dd class="mt-1 text-sm text-gray-900">
-              {{ if .Solicitud.FechaVuelta }} {{ dtl .Solicitud.FechaVuelta }} {{ else }}
-              <span class="text-gray-400 italic">Sólo ida</span>
-              {{ end }}
-            </dd>
+            <dd class="mt-1 text-sm text-gray-900">{{ dtl .Solicitud.FechaVuelta }}</dd>
+            {{ end }}
           </div>
           <div class="sm:col-span-1">
             <dt class="text-sm font-medium text-gray-500">Aerolínea Sugerida</dt>
@@ -211,13 +201,13 @@
       </div>
 
       <!-- Pasajes Asignados -->
-      <div class="bg-white shadow sm:rounded-lg overflow-hidden border border-gray-200" x-data="{ openModal: false }">
+      <div class="bg-white shadow sm:rounded-lg overflow-hidden border border-gray-200" x-data="{ showCreateModal: false }">
         <div class="px-4 py-5 sm:px-6 flex justify-between items-center">
           <h3 class="text-lg leading-6 font-medium text-gray-900">Pasajes Asignados</h3>
 
           {{ if and .User.Rol (or (eq .User.Rol.Codigo "ADMIN") (eq .User.Rol.Codigo "TECNICO")) }}
           <button
-            @click="openModal = true"
+            @click="showCreateModal = true"
             class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-senado-secondary hover:bg-senado-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-senado-secondary">
             + Asignar Pasaje
           </button>
@@ -229,35 +219,185 @@
           {{ if .Solicitud.Pasajes }}
           <ul role="list" class="divide-y divide-gray-200">
             {{ range .Solicitud.Pasajes }}
-            <li class="px-4 py-4 sm:px-6">
-              <div class="flex items-center justify-between">
-                <div class="text-sm font-medium text-senado-primary truncate">{{ .Aerolinea }} - Vuelo {{ .NumeroVuelo }}</div>
-                <div class="ml-2 flex-shrink-0 flex">
-                  <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">{{ .Estado }}</span>
+            <li class="p-4 sm:px-6 hover:bg-gray-50 transition-colors" x-data="{ openMenu: false }">
+              <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start space-y-4 sm:space-y-0">
+                <!-- Left Section: Flight Info -->
+                <div class="flex-1">
+                  <div class="flex items-center mb-2">
+                    <span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-blue-100 text-blue-800 font-bold text-xs mr-3">
+                      {{ if .AerolineaID }}{{ if .Aerolinea }}{{ .Aerolinea.Nombre | printf "%.2s" }}{{ else }}AE{{ end }}{{ else }}V{{ end }}
+                    </span>
+                    <div>
+                      <h4 class="text-sm font-bold text-gray-900">{{ if .Aerolinea }}{{ .Aerolinea.Nombre }}{{ else }}Aerolínea N/A{{ end }}</h4>
+                      <p class="text-xs text-gray-500">Vuelo {{ .NumeroVuelo }}</p>
+                    </div>
+                    <span class="mx-3 text-gray-300">|</span>
+                    <div class="flex items-center">
+                      {{ if .EstadoPasaje }}
+                      <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-{{.EstadoPasaje.Color}}-100 text-{{.EstadoPasaje.Color}}-800">
+                        {{ .EstadoPasaje.Nombre }}
+                      </span>
+                      {{ else }}
+                      <span
+                        class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                        {{ if eq .Estado `EMITIDO` }}bg-green-100 text-green-800
+                        {{ else if eq .Estado `REPROGRAMADO` }}bg-yellow-100 text-yellow-800
+                        {{ else if eq .Estado `DEVUELTO` }}bg-red-100 text-red-800
+                        {{ else }}bg-gray-100 text-gray-800{{ end }}">
+                        {{ .Estado }}
+                      </span>
+                      {{ end }}
+                    </div>
+                  </div>
+
+                  <div class="grid grid-cols-2 gap-x-4 gap-y-2 text-sm text-gray-600 mt-2">
+                    <div>
+                      <span class="block text-xs text-gray-400 uppercase tracking-wider">Fecha Vuelo</span>
+                      <span class="font-medium text-gray-900">{{ dtl .FechaVuelo }}</span>
+                    </div>
+                    <div>
+                      <span class="block text-xs text-gray-400 uppercase tracking-wider">Ruta</span>
+                      <span class="font-medium text-gray-900">{{ .Ruta }}</span>
+                    </div>
+                    <div>
+                      <span class="block text-xs text-gray-400 uppercase tracking-wider">Nº Boleto</span>
+                      <span class="font-mono text-gray-900">{{ .NumeroBoleto }}</span>
+                    </div>
+                    <div>
+                      <span class="block text-xs text-gray-400 uppercase tracking-wider">Reserva (PNR)</span>
+                      <span class="font-mono text-gray-900">{{ .CodigoReserva }}</span>
+                    </div>
+                  </div>
+
+                  {{ if .Glosa }}
+                  <div class="mt-3 bg-yellow-50 p-2 rounded border border-yellow-100 text-xs text-yellow-800">
+                    <strong>Nota:</strong>
+                    {{ .Glosa }}
+                  </div>
+                  {{ end }}
                 </div>
-              </div>
-              <div class="mt-2 sm:flex sm:justify-between">
-                <div class="sm:flex">
-                  <p class="flex items-center text-sm text-gray-500 mr-6">
-                    <!-- Heroicon name: solid/calendar -->
-                    <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                      <path
-                        fill-rule="evenodd"
-                        d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z"
-                        clip-rule="evenodd" />
+
+                <!-- Right Section: Agency & Financials & Actions -->
+                <div class="sm:text-right flex flex-col items-start sm:items-end space-y-1 relative">
+                  <!-- Actions Dropdown -->
+                  <div class="absolute top-0 right-0 sm:static sm:mb-2 text-left">
+                    {{ if and .EstadoPasajeCodigo (eq (deref .EstadoPasajeCodigo) "EMITIDO") }}
+                    <button
+                      @click="openMenu = !openMenu"
+                      type="button"
+                      class="inline-flex justify-center w-full rounded-md border border-gray-300 shadow-sm px-2 py-1 bg-white text-xs font-medium text-gray-700 hover:bg-gray-50 focus:outline-none"
+                      aria-haspopup="true"
+                      aria-expanded="true">
+                      Acciones
+                      <svg class="-mr-1 ml-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                        <path
+                          fill-rule="evenodd"
+                          d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
+                          clip-rule="evenodd" />
+                      </svg>
+                    </button>
+                    <div
+                      x-show="openMenu"
+                      @click.away="openMenu = false"
+                      x-transition:enter="transition ease-out duration-100"
+                      x-transition:enter-start="transform opacity-0 scale-95"
+                      x-transition:enter-end="transform opacity-100 scale-100"
+                      x-transition:leave="transition ease-in duration-75"
+                      x-transition:leave-start="transform opacity-100 scale-100"
+                      x-transition:leave-end="transform opacity-0 scale-95"
+                      class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50"
+                      style="display: none">
+                      <div class="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
+                        <button
+                          type="button"
+                          @click="openMenu=false; $dispatch('pasaje-action', { 
+                              action: 'edit', 
+                              id: '{{.ID}}',
+                              data: {
+                                ruta: '{{.Ruta}}',
+                                agencia_id: '{{if .AgenciaID}}{{deref .AgenciaID}}{{end}}',
+                                aerolinea: '{{if .Aerolinea}}{{.Aerolinea.Nombre}}{{else}}{{if .AerolineaID}}{{deref .AerolineaID}}{{end}}{{end}}',
+                                numero_vuelo: '{{.NumeroVuelo}}',
+                                fecha_vuelo: '{{.FechaVuelo.Format `2006-01-02T15:04`}}',
+                                numero_boleto: '{{.NumeroBoleto}}',
+                                numero_factura: '{{.NumeroFactura}}',
+                                costo: '{{.Costo}}',
+                                codigo_reserva: '{{.CodigoReserva}}',
+                                glosa: '{{.Glosa}}'
+                              }
+                           })"
+                          class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          role="menuitem">
+                          Editar
+                        </button>
+                        <button
+                          type="button"
+                          @click="openMenu=false; $dispatch('pasaje-action', { action: 'usado', id: '{{.ID}}' })"
+                          class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          role="menuitem">
+                          Marcar como Usado
+                        </button>
+                        <button
+                          type="button"
+                          @click="openMenu=false; $dispatch('pasaje-action', { action: 'reprogramar', id: '{{.ID}}' })"
+                          class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          role="menuitem">
+                          Reprogramar
+                        </button>
+                        <div class="border-t border-gray-100"></div>
+                        <button
+                          type="button"
+                          @click="openMenu=false; $dispatch('pasaje-action', { action: 'devolver', id: '{{.ID}}' })"
+                          class="block w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-gray-100"
+                          role="menuitem">
+                          Devolver
+                        </button>
+                        <button
+                          type="button"
+                          @click="openMenu=false; $dispatch('pasaje-action', { action: 'anular', id: '{{.ID}}' })"
+                          class="block w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-gray-100"
+                          role="menuitem">
+                          Anular
+                        </button>
+                      </div>
+                    </div>
+                    {{ end }}
+                  </div>
+
+                  <div class="text-sm text-gray-900 pt-8 sm:pt-0">
+                    <span class="text-xs text-gray-500 block">Agencia Emisora</span>
+                    {{ if .Agencia }}
+                    <span class="font-semibold">{{ .Agencia.Nombre }}</span>
+                    {{ else }}
+                    <span class="italic text-gray-400">Sin agencia</span>
+                    {{ end }}
+                  </div>
+
+                  <div class="text-sm text-gray-900 mt-2">
+                    <span class="text-xs text-gray-500 block">Factura / Recibo</span>
+                    {{ if .NumeroFactura }}
+                    <span class="font-mono">{{ .NumeroFactura }}</span>
+                    {{ else }}
+                    <span class="italic text-gray-400">-</span>
+                    {{ end }}
+                  </div>
+
+                  <div class="mt-3">
+                    <span class="block text-xs text-gray-400 uppercase tracking-wider">Costo Total</span>
+                    <span class="text-lg font-bold text-gray-900">Bs {{ printf "%.2f" .Costo }}</span>
+                  </div>
+
+                  {{ if .Archivo }}
+                  <a
+                    href="/{{ .Archivo }}"
+                    target="_blank"
+                    class="mt-2 inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
+                    <svg class="mr-1.5 h-4 w-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd" />
                     </svg>
-                    {{ dtl .FechaVuelo }}
-                  </p>
-                  <p class="flex items-center text-sm text-gray-500">
-                    <!-- Heroicon name: solid/ticket -->
-                    <svg class="flex-shrink-0 mr-1.5 h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                      <path d="M2 6a2 2 0 012-2h12a2 2 0 012 2v2a2 2 0 100 4v2a2 2 0 01-2 2H4a2 2 0 01-2-2v-2a2 2 0 100-4V6z" />
-                    </svg>
-                    Boleto: {{ .NumeroBoleto }} (Reserva: {{ .CodigoReserva }})
-                  </p>
-                </div>
-                <div class="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
-                  <p class="font-medium text-gray-900">Bs {{ printf "%.2f" .Costo }}</p>
+                    Ver Boleto PDF
+                  </a>
+                  {{ end }}
                 </div>
               </div>
             </li>
@@ -312,96 +452,7 @@
           <p class="text-sm text-gray-500 italic">No se han asignado viáticos aún.</p>
           {{ end }}
         </div>
-
-        <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4" x-show="openModal" x-cloak>
-          <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4" id="modal-title">Asignar Nuevo Pasaje</h3>
-
-          <form action="/solicitudes/{{ .Solicitud.ID }}/pasajes" method="POST" x-data="{ loading: false }" @submit="loading = true">
-            <div class="grid grid-cols-6 gap-6">
-              <div class="col-span-6">
-                <label class="block text-sm font-medium text-gray-700">Ruta (Origen - Destino)</label>
-                <input
-                  type="text"
-                  name="ruta"
-                  required
-                  class="mt-1 focus:ring-senado-secondary focus:border-senado-secondary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md border p-2"
-                  value="{{ .Solicitud.Origen.Nombre }} - {{ .Solicitud.Destino.Nombre }}" />
-              </div>
-
-              <div class="col-span-3">
-                <label class="block text-sm font-medium text-gray-700">Aerolínea</label>
-                <select
-                  name="aerolinea"
-                  required
-                  class="mt-1 focus:ring-senado-secondary focus:border-senado-secondary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md border p-2">
-                  {{ range .Aerolineas }}
-                  <option value="{{ . }}">{{ . }}</option>
-                  {{ end }}
-                </select>
-              </div>
-              <div class="col-span-3">
-                <label class="block text-sm font-medium text-gray-700">Nº Vuelo</label>
-                <input
-                  type="text"
-                  name="numero_vuelo"
-                  class="mt-1 focus:ring-senado-secondary focus:border-senado-secondary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md border p-2"
-                  placeholder="OB-123" />
-              </div>
-
-              <div class="col-span-6">
-                <label class="block text-sm font-medium text-gray-700">Fecha y Hora Vuelo</label>
-                <input
-                  type="datetime-local"
-                  name="fecha_vuelo"
-                  required
-                  class="mt-1 focus:ring-senado-secondary focus:border-senado-secondary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md border p-2" />
-              </div>
-
-              <div class="col-span-3">
-                <label class="block text-sm font-medium text-gray-700">Nº Boleto</label>
-                <input
-                  type="text"
-                  name="numero_boleto"
-                  required
-                  class="mt-1 focus:ring-senado-secondary focus:border-senado-secondary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md border p-2" />
-              </div>
-
-              <div class="col-span-3">
-                <label class="block text-sm font-medium text-gray-700">Costo (Bs)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  name="costo"
-                  required
-                  class="mt-1 focus:ring-senado-secondary focus:border-senado-secondary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md border p-2" />
-              </div>
-
-              <div class="col-span-6">
-                <label class="block text-sm font-medium text-gray-700">Código Reserva (PNR)</label>
-                <input
-                  type="text"
-                  name="codigo_reserva"
-                  class="mt-1 focus:ring-senado-secondary focus:border-senado-secondary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md border p-2" />
-              </div>
-            </div>
-
-            <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-              <button
-                type="submit"
-                :disabled="loading"
-                class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-senado-primary text-base font-medium text-white hover:bg-senado-800 focus:outline-none disabled:opacity-50 sm:ml-3 sm:w-auto sm:text-sm">
-                <span x-show="!loading">Guardar Pasaje</span>
-                <span x-show="loading">Guardando...</span>
-              </button>
-              <button
-                type="button"
-                @click="openModal = false"
-                class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
-                Cancelar
-              </button>
-            </div>
-          </form>
-        </div>
+        {{ template "solicitud/components/modal_crear_pasaje.html" . }}
       </div>
     </div>
 
@@ -412,11 +463,81 @@
           <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-senado-primary"></div>
           <span class="text-sm text-gray-400 font-medium">Renderizando diagrama...</span>
         </div>
-        <div class="mermaid opacity-0 transition-opacity duration-500 ease-in-out">{{ .MermaidGraph }}</div>
+        <div class="mermaid opacity-0 transition-opacity duration-500 ease-in-out">{{ .MermaidGraph | safe }}</div>
         <p class="text-xs text-gray-500 mt-4 italic">El diagrama se actualiza automáticamente según el estado de la solicitud.</p>
       </div>
     </div>
   </div>
+
+  <!-- Pasaje Action Modals -->
+  {{ template "solicitud/components/modal_reprogramar_pasaje.html" . }} {{ template "solicitud/components/modal_devolver_pasaje.html" . }} {{ template
+  "solicitud/components/modal_editar_pasaje.html" . }}
 </div>
 
-{{ template "layout_end" . }} {{ end }}
+{{ template "layout_end" . }} {{ end }} {{ define "footer_scripts" }}
+<script>
+  mermaid.initialize({ startOnLoad: false });
+  document.addEventListener("DOMContentLoaded", async function () {
+    const loader = document.getElementById("mermaid-loader");
+    const mermaidEl = document.querySelector(".mermaid");
+
+    if (mermaidEl) {
+      try {
+        await mermaid.run({
+          nodes: [mermaidEl],
+        });
+      } catch (e) {
+        console.error("Mermaid render error:", e);
+      }
+
+      if (loader) loader.style.display = "none";
+      mermaidEl.classList.remove("opacity-0");
+      mermaidEl.classList.add("opacity-100");
+    }
+  });
+
+  document.addEventListener("alpine:init", () => {});
+
+  document.addEventListener("pasaje-action", function (e) {
+    const { action, id, data } = e.detail;
+
+    if (action === "reprogramar") {
+      window.dispatchEvent(new CustomEvent("open-reprogramar-pasaje", { detail: id }));
+    } else if (action === "devolver") {
+      window.dispatchEvent(new CustomEvent("open-devolver-pasaje", { detail: id }));
+    } else if (action === "edit") {
+      window.dispatchEvent(new CustomEvent("open-editar-pasaje", { detail: { id, ...data } }));
+    } else if (action === "usado") {
+      if (confirm("¿Marcar este pasaje como USADO?")) {
+        updatePasajeStatus(id, "USADO");
+      }
+    } else if (action === "anular") {
+      if (confirm("¿Está seguro de ANULAR este pasaje? Esta acción no se puede deshacer.")) {
+        updatePasajeStatus(id, "ANULADO");
+      }
+    }
+  });
+
+  function updatePasajeStatus(id, status) {
+    const formData = new FormData();
+    formData.append("id", id);
+    formData.append("status", status);
+
+    fetch("/pasajes/update-status", {
+      method: "POST",
+      body: formData,
+    })
+      .then((response) => {
+        if (response.ok) {
+          window.location.reload();
+        } else {
+          alert("Error al actualizar el estado del pasaje");
+        }
+      })
+      .catch((error) => {
+        console.error("Error:", error);
+        alert("Error de conexión");
+      });
+  }
+</script>
+{{ end }}

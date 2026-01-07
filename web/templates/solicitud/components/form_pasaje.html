@@ -213,10 +213,10 @@
         <div class="md:col-span-2 flex items-center justify-center space-x-12 py-8 bg-gray-50 rounded-2xl border border-dashed border-gray-300">
           <!-- Origen -->
           <div class="text-center">
-            <span class="block text-xl font-black text-gray-900 tracking-tight">{{ .OrigenName }}</span>
-            <span class="block text-[9px] font-bold text-gray-400 uppercase mt-1 tracking-widest">{{ .OrigenLabel }}</span>
+            <span class="block text-xl font-black text-gray-900 tracking-tight">{{ .Origen.Ciudad }}</span>
+            <span class="block text-[9px] font-bold text-gray-400 uppercase mt-1 tracking-widest">{{ .Origen.Aeropuerto }}</span>
             <div class="mt-2">
-              <span class="px-2 py-0.5 bg-senado-primary text-white text-[10px] font-black rounded">{{ .OrigenCode }}</span>
+              <span class="px-2 py-0.5 bg-senado-primary text-white text-[10px] font-black rounded">{{ .Origen.IATA }}</span>
             </div>
           </div>
 
@@ -233,26 +233,26 @@
               <div class="w-20 h-px border-t-2 border-dashed border-senado-primary/30"></div>
               <div class="w-1.5 h-1.5 rounded-full bg-senado-primary/40"></div>
             </div>
-            <span class="text-[9px] font-bold text-senado-primary/50 uppercase mt-3 tracking-widest">Vuelo Directo</span>
+            <span class="text-[9px] font-bold text-senado-primary/50 uppercase mt-3 tracking-widest">Vuelo</span>
           </div>
 
           <!-- Destino -->
           <div class="text-center">
-            <span class="block text-xl font-black text-gray-900 tracking-tight">{{ .DestinoName }}</span>
-            <span class="block text-[9px] font-bold text-gray-400 uppercase mt-1 tracking-widest">{{ .DestinoLabel }}</span>
+            <span class="block text-xl font-black text-gray-900 tracking-tight">{{ .Destino.Ciudad }}</span>
+            <span class="block text-[9px] font-bold text-gray-400 uppercase mt-1 tracking-widest">{{ .Destino.Aeropuerto }}</span>
             <div class="mt-2">
-              <span class="px-2 py-0.5 bg-senado-secondary text-white text-[10px] font-black rounded">{{ .DestinoCode }}</span>
+              <span class="px-2 py-0.5 bg-senado-secondary text-white text-[10px] font-black rounded">{{ .Destino.IATA }}</span>
             </div>
           </div>
         </div>
 
         <!-- Hidden values for submission -->
-        <input type="hidden" name="origen" value="{{ .OrigenCode }}" />
-        <input type="hidden" name="destino" value="{{ .DestinoCode }}" />
+        <input type="hidden" name="origen" value="{{ .Origen.IATA }}" />
+        <input type="hidden" name="destino" value="{{ .Destino.IATA }}" />
 
         <!-- Hidden fields required for update (always present) -->
-        <input type="hidden" name="origen_cod" value="{{ .OrigenCode }}" />
-        <input type="hidden" name="destino_cod" value="{{ .DestinoCode }}" />
+        <input type="hidden" name="origen_cod" value="{{ .Origen.IATA }}" />
+        <input type="hidden" name="destino_cod" value="{{ .Destino.IATA }}" />
         <input type="hidden" name="tipo_itinerario_id" value="{{ .Itinerario.ID }}" />
 
         <div class="md:col-span-2 space-y-1.5">
@@ -264,7 +264,7 @@
               class="w-full pl-4 pr-10 py-2.5 bg-white border border-gray-200 rounded-md text-sm font-bold text-gray-700 appearance-none focus:outline-none focus:ring-2 focus:ring-senado-primary/20 focus:border-senado-primary transition-all shadow-sm">
               <option value="">Cualquier línea aérea</option>
               {{ range .Aerolineas }}
-              <option value="{{ . }}">{{ . }}</option>
+              <option value="{{ .ID }}">{{ .Nombre }}</option>
               {{ end }}
             </select>
             <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400 group-hover:text-senado-primary transition-colors">

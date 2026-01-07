@@ -27,10 +27,24 @@
   <div class="mb-6 flex items-center justify-between">
     <div>
       <h2 class="text-3xl font-bold text-gray-900">Solicitud #{{ .Solicitud.Codigo }}</h2>
-      <p class="text-sm text-gray-500">
-        Creado el {{ dtl .Solicitud.CreatedAt }} por
-        <span class="font-medium text-gray-700">{{ if .Creator }} {{ .Creator.GetNombreCompleto }} {{ else }} {{ .Solicitud.Usuario.GetNombreCompleto }} {{ end }}</span>
-      </p>
+      <div class="flex flex-col space-y-0.5 mt-1">
+        <p class="text-xs text-gray-400">
+          <span class="font-bold uppercase tracking-tighter mr-1">Creado:</span>
+          {{ dtl .Solicitud.CreatedAt }} por
+          <span class="font-semibold text-gray-600 tracking-tight">
+            {{ $c := index .Usuarios (deref .Solicitud.CreatedBy) }} {{ if $c }} {{ $c.GetNombreCompleto }} {{ else }} {{ .Solicitud.Usuario.GetNombreCompleto }} {{ end }}
+          </span>
+        </p>
+        {{ if .Solicitud.UpdatedBy }}
+        <p class="text-xs text-gray-400">
+          <span class="font-bold uppercase tracking-tighter mr-1">Actualizado:</span>
+          {{ dtl .Solicitud.UpdatedAt }} por
+          <span class="font-semibold text-gray-600 tracking-tight">
+            {{ $u := index .Usuarios (deref .Solicitud.UpdatedBy) }} {{ if $u }} {{ $u.GetNombreCompleto }} {{ else }} Sistema {{ end }}
+          </span>
+        </p>
+        {{ end }}
+      </div>
     </div>
     <div class="flex space-x-3">
       {{ if eq .Solicitud.EstadoSolicitud.Codigo "SOLICITADO" }}
@@ -123,11 +137,11 @@
         <dl class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-6">
           <div class="sm:col-span-1">
             <dt class="text-sm font-medium text-gray-500">Origen</dt>
-            <dd class="mt-1 text-sm text-gray-900">{{ .Solicitud.Origen.Nombre }}</dd>
+            <dd class="mt-1 text-sm text-gray-900">{{ .Solicitud.Origen.Ciudad }}</dd>
           </div>
           <div class="sm:col-span-1">
             <dt class="text-sm font-medium text-gray-500">Destino</dt>
-            <dd class="mt-1 text-sm text-gray-900">{{ .Solicitud.Destino.Nombre }}</dd>
+            <dd class="mt-1 text-sm text-gray-900">{{ .Solicitud.Destino.Ciudad }}</dd>
           </div>
           <div class="sm:col-span-1">
             <dt class="text-sm font-medium text-gray-500">Fecha Salida</dt>
@@ -325,17 +339,17 @@
                   name="ruta"
                   required
                   class="mt-1 focus:ring-senado-secondary focus:border-senado-secondary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md border p-2"
-                  value="{{ .Solicitud.Origen.Nombre }} - {{ .Solicitud.Destino.Nombre }}" />
+                  value="{{ .Solicitud.Origen.Ciudad }} - {{ .Solicitud.Destino.Ciudad }}" />
               </div>
 
               <div class="col-span-3">
                 <label class="block text-sm font-medium text-gray-700">Aerolínea</label>
                 <select
-                  name="aerolinea"
+                  name="aerolinea_id"
                   required
                   class="mt-1 focus:ring-senado-secondary focus:border-senado-secondary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md border p-2">
                   {{ range .Aerolineas }}
-                  <option value="{{ . }}">{{ . }}</option>
+                  <option value="{{ .ID }}">{{ .Nombre }}</option>
                   {{ end }}
                 </select>
               </div>
@@ -412,7 +426,7 @@
           <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-senado-primary"></div>
           <span class="text-sm text-gray-400 font-medium">Renderizando diagrama...</span>
         </div>
-        <div class="mermaid opacity-0 transition-opacity duration-500 ease-in-out">{{ .MermaidGraph }}</div>
+        <div class="mermaid opacity-0 transition-opacity duration-500 ease-in-out">{{ .MermaidGraph | safe }}</div>
         <p class="text-xs text-gray-500 mt-4 italic">El diagrama se actualiza automáticamente según el estado de la solicitud.</p>
       </div>
     </div>

@@ -8,17 +8,17 @@ import (
 )
 
 type PerfilController struct {
-	ciudadService *services.CiudadService
+	destinoService *services.DestinoService
 }
 
 func NewPerfilController() *PerfilController {
 	return &PerfilController{
-		ciudadService: services.NewCiudadService(),
+		destinoService: services.NewDestinoService(),
 	}
 }
 
 func (ctrl *PerfilController) Show(c *gin.Context) {
-	destinos, _ := ctrl.ciudadService.GetAll()
+	destinos, _ := ctrl.destinoService.GetAll()
 
 	utils.Render(c, "auth/profile.html", gin.H{
 		"Title":    "Mi Perfil",

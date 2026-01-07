@@ -11,7 +11,6 @@ import (
 type UsuarioService struct {
 	repo       *repositories.UsuarioRepository
 	peopleRepo *repositories.PeopleViewRepository
-	ciudadRepo *repositories.CiudadRepository
 	deptoRepo  *repositories.DepartamentoRepository
 }
 
@@ -19,7 +18,6 @@ func NewUsuarioService() *UsuarioService {
 	return &UsuarioService{
 		repo:       repositories.NewUsuarioRepository(),
 		peopleRepo: repositories.NewPeopleViewRepository(),
-		ciudadRepo: repositories.NewCiudadRepository(),
 		deptoRepo:  repositories.NewDepartamentoRepository(),
 	}
 }
@@ -145,7 +143,8 @@ func (s *UsuarioService) SyncSenators() (int, error) {
 			continue
 		}
 
-		if tipo == "SENADOR_SUPLENTE" {
+		switch tipo {
+		case "SENADOR_SUPLENTE":
 			titularCI := utils.CleanString(mSen.SenadorData.Titular)
 			if titularCI != "" {
 				titular, err := s.repo.FindByCI(titularCI)
@@ -155,7 +154,7 @@ func (s *UsuarioService) SyncSenators() (int, error) {
 					s.repo.Save(user)
 				}
 			}
-		} else if tipo == "SENADOR_TITULAR" {
+		case "SENADOR_TITULAR":
 			suplenteCI := utils.CleanString(mSen.SenadorData.Suplente)
 			if suplenteCI != "" {
 				suplente, err := s.repo.FindByCI(suplenteCI)

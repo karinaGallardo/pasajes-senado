@@ -4,6 +4,7 @@ import (
 	"sistema-pasajes/internal/models"
 
 	"sistema-pasajes/internal/configs"
+
 	"gorm.io/gorm"
 )
 
@@ -27,4 +28,18 @@ func (r *PasajeRepository) FindBySolicitudID(solicitudID string) ([]models.Pasaj
 
 func (r *PasajeRepository) Delete(id uint) error {
 	return r.db.Delete(&models.Pasaje{}, id).Error
+}
+
+func (r *PasajeRepository) FindByID(id string) (*models.Pasaje, error) {
+	var pasaje models.Pasaje
+	err := r.db.Preload("EstadoPasaje").First(&pasaje, "id = ?", id).Error
+	return &pasaje, err
+}
+
+func (r *PasajeRepository) Update(pasaje *models.Pasaje) error {
+	return r.db.Save(pasaje).Error
+}
+
+func (r *PasajeRepository) WithTx(tx *gorm.DB) *PasajeRepository {
+	return &PasajeRepository{db: tx}
 }

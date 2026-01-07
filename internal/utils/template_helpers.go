@@ -3,20 +3,27 @@ package utils
 import (
 	"fmt"
 	"html/template"
+	"strings"
 	"time"
 )
 
 func TemplateFuncs() template.FuncMap {
 	return template.FuncMap{
-		"add": Add,
-		"sum": Sum,
-		"sub": Sub,
-		"mul": Mul,
-		"inc": Inc,
-		"dt":  FormatDate,
-		"df":  FormatDateRange,
-		"dtl": FormatDateTimeES,
+		"add":   Add,
+		"sum":   Sum,
+		"sub":   Sub,
+		"mul":   Mul,
+		"inc":   Inc,
+		"dt":    FormatDate,
+		"df":    FormatDateRange,
+		"dtl":   FormatDateTimeES,
+		"deref": DerefString,
+		"safe":  UnsafeHTML,
 	}
+}
+
+func UnsafeHTML(s string) template.HTML {
+	return template.HTML(s)
 }
 
 func Add(a, b float64) float64 { return a + b }
@@ -53,28 +60,18 @@ func FormatDateTimeES(val interface{}) string {
 		"Sep": "Sep", "Oct": "Oct", "Nov": "Nov", "Dec": "Dic",
 	}
 	for en, es := range meses {
-		if contains(str, en) {
-			return replace(str, en, es)
+		if strings.Contains(str, en) {
+			return strings.ReplaceAll(str, en, es)
 		}
 	}
 	return str
 }
 
-func contains(s, substr string) bool {
-	return (len(s) >= len(substr)) && (s[0:len(substr)] == substr || contains(s[1:], substr))
-}
-
-func replace(s, old, new string) string {
-	res := ""
-	for i := 0; i < len(s); i++ {
-		if i+len(old) <= len(s) && s[i:i+len(old)] == old {
-			res += new
-			i += len(old) - 1
-		} else {
-			res += string(s[i])
-		}
+func DerefString(s *string) string {
+	if s == nil {
+		return ""
 	}
-	return res
+	return *s
 }
 
 func FormatDateRange(ini, fin *time.Time) string {

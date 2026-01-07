@@ -18,7 +18,7 @@ func NewRutaRepository() *RutaRepository {
 
 func (r *RutaRepository) FindAll() ([]models.Ruta, error) {
 	var rutas []models.Ruta
-	err := r.db.Find(&rutas).Error
+	err := r.db.Preload("Origen").Preload("Destino").Find(&rutas).Error
 	return rutas, err
 }
 

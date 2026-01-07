@@ -172,7 +172,7 @@ func (ctrl *ViaticoController) Print(c *gin.Context) {
 		drawLabelBox("SOLICITUD :", sol.Codigo, 40, 60, true)
 		drawLabelBox("FECHA VIAJE :", sol.FechaIda.Format("02/01/2006"), 30, 60, false)
 		drawLabelBox("MOTIVO :", sol.Motivo, 40, 150, false)
-		drawLabelBox("LUGAR :", fmt.Sprintf("%s - %s", sol.Origen.Nombre, sol.Destino.Nombre), 40, 150, false)
+		drawLabelBox("LUGAR :", fmt.Sprintf("%s - %s", sol.Origen.Ciudad, sol.Destino.Ciudad), 40, 150, false)
 	}
 
 	pdf.Ln(5)

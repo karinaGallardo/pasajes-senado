@@ -168,12 +168,7 @@ func (ctrl *DescargoController) Approve(c *gin.Context) {
 	ctrl.descargoService.Update(descargo)
 
 	if descargo.SolicitudID != "" {
-		solicitud, err := ctrl.solicitudService.FindByID(descargo.SolicitudID)
-		if err == nil {
-			estadoFinalizado := "FINALIZADO"
-			solicitud.EstadoSolicitudCodigo = &estadoFinalizado
-			ctrl.solicitudService.Update(solicitud)
-		}
+		ctrl.solicitudService.Finalize(descargo.SolicitudID)
 	}
 
 	c.Redirect(http.StatusFound, "/descargos/"+id)

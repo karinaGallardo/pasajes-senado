@@ -14,22 +14,26 @@ import (
 type RutaController struct {
 	rutaService      *services.RutaService
 	aerolineaService *services.AerolineaService
+	destinoService   *services.DestinoService
 }
 
 func NewRutaController() *RutaController {
 	return &RutaController{
 		rutaService:      services.NewRutaService(),
 		aerolineaService: services.NewAerolineaService(),
+		destinoService:   services.NewDestinoService(),
 	}
 }
 
 func (ctrl *RutaController) Index(c *gin.Context) {
 	rutas, _ := ctrl.rutaService.GetAll()
 	aerolineas, _ := ctrl.aerolineaService.GetAll()
+	destinos, _ := ctrl.destinoService.GetAll()
 
 	utils.Render(c, "admin/rutas.html", gin.H{
 		"Rutas":      rutas,
 		"Aerolineas": aerolineas,
+		"Destinos":   destinos,
 		"Title":      "Gestión de Rutas y Tarifas",
 	})
 }
@@ -41,7 +45,7 @@ func (ctrl *RutaController) Store(c *gin.Context) {
 		return
 	}
 
-	_, err := ctrl.rutaService.Create(req.Tramo, req.Sigla, req.Ambito)
+	_, err := ctrl.rutaService.Create(req.OrigenIATA, req.EscalasIATA, req.DestinoIATA)
 	if err != nil {
 		log.Printf("Error creando ruta: %v", err)
 	}

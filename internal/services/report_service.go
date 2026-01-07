@@ -86,7 +86,7 @@ func (s *ReportService) GeneratePV01(solicitud *models.Solicitud, personaView *m
 
 	origenUser := ""
 	if solicitud.Usuario.Origen != nil {
-		origenUser = solicitud.Usuario.Origen.Nombre
+		origenUser = solicitud.Usuario.Origen.Ciudad
 	}
 
 	tipoUsuario := solicitud.Usuario.Tipo
@@ -165,11 +165,11 @@ func (s *ReportService) GeneratePV01(solicitud *models.Solicitud, personaView *m
 	pdf.Ln(5)
 
 	tipoItinerario := "IDA"
-	routeText := fmt.Sprintf("%s - %s", solicitud.Origen.Nombre, solicitud.Destino.Nombre)
+	routeText := fmt.Sprintf("%s - %s", solicitud.Origen.Ciudad, solicitud.Destino.Ciudad)
 	if solicitud.TipoItinerario != nil {
 		if strings.Contains(strings.ToUpper(solicitud.TipoItinerario.Nombre), "VUELTA") {
 			tipoItinerario = "IDA Y VUELTA"
-			routeText += fmt.Sprintf(" - %s", solicitud.Origen.Nombre)
+			routeText += fmt.Sprintf(" - %s", solicitud.Origen.Ciudad)
 		}
 	}
 

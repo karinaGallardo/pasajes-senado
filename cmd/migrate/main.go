@@ -23,11 +23,13 @@ func main() {
 		&models.Oficina{},
 
 		// Catálogos Geográficos y de Transporte
-		&models.Ciudad{},
+		&models.Destino{},
+		// &models.Ciudad{},
 		&models.Departamento{},
 		&models.Aerolinea{},
 		&models.Agencia{},
 		&models.Ruta{},
+		&models.RutaEscala{},
 		&models.RutaContrato{},
 
 		// Configuración del Sistema
@@ -41,6 +43,7 @@ func main() {
 		&models.AmbitoViaje{},
 		&models.TipoItinerario{},
 		&models.EstadoSolicitud{},
+		&models.EstadoPasaje{},
 
 		// Gestión de Cupos
 		&models.EstadoVoucher{},

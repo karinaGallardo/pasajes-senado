@@ -27,7 +27,7 @@ func (r *SolicitudRepository) FindAll() ([]models.Solicitud, error) {
 
 func (r *SolicitudRepository) FindByID(id string) (*models.Solicitud, error) {
 	var solicitud models.Solicitud
-	err := r.db.Preload("Usuario").Preload("Origen").Preload("Destino").Preload("Pasajes").Preload("Viaticos").Preload("TipoSolicitud.ConceptoViaje").Preload("EstadoSolicitud").Preload("TipoItinerario").First(&solicitud, "id = ?", id).Error
+	err := r.db.Preload("Usuario").Preload("Origen").Preload("Destino").Preload("Pasajes.Aerolinea").Preload("Pasajes.Agencia").Preload("Pasajes.EstadoPasaje").Preload("Pasajes").Preload("Viaticos").Preload("TipoSolicitud.ConceptoViaje").Preload("EstadoSolicitud").Preload("TipoItinerario").Preload("AmbitoViaje").First(&solicitud, "id = ?", id).Error
 	if err != nil {
 		return nil, err
 	}
@@ -36,6 +36,10 @@ func (r *SolicitudRepository) FindByID(id string) (*models.Solicitud, error) {
 
 func (r *SolicitudRepository) Update(solicitud *models.Solicitud) error {
 	return r.db.Save(solicitud).Error
+}
+
+func (r *SolicitudRepository) UpdateStatus(id string, status string) error {
+	return r.db.Model(&models.Solicitud{}).Where("id = ?", id).Update("estado_solicitud_codigo", status).Error
 }
 
 func (r *SolicitudRepository) Delete(id string) error {

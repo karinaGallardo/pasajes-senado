@@ -1,9 +1,9 @@
 package repositories
 
 import (
+	"sistema-pasajes/internal/configs"
 	"sistema-pasajes/internal/models"
 
-	"sistema-pasajes/internal/configs"
 	"gorm.io/gorm"
 )
 
@@ -15,35 +15,28 @@ func NewDestinoRepository() *DestinoRepository {
 	return &DestinoRepository{db: configs.DB}
 }
 
-func (r *DestinoRepository) FindAll() ([]models.Ciudad, error) {
-	var destinos []models.Ciudad
-	err := r.db.Order("ciudad asc").Find(&destinos).Error
-	return destinos, err
+func (r *DestinoRepository) FindAll() ([]models.Destino, error) {
+	var list []models.Destino
+	err := r.db.Preload("Ambito").Preload("Departamento").Order("ciudad asc").Find(&list).Error
+	return list, err
 }
 
-func (r *DestinoRepository) Create(destino *models.Ciudad) error {
-	return r.db.Create(destino).Error
+func (r *DestinoRepository) FindByAmbito(ambitoCodigo string) ([]models.Destino, error) {
+	var list []models.Destino
+	err := r.db.Preload("Ambito").Preload("Departamento").Where("ambito_codigo = ?", ambitoCodigo).Order("ciudad asc").Find(&list).Error
+	return list, err
 }
 
-func (r *DestinoRepository) SeedDefaults() error {
-	var count int64
-	r.db.Model(&models.Ciudad{}).Count(&count)
-	if count > 0 {
-		return nil
-	}
+func (r *DestinoRepository) FindByIATA(iata string) (*models.Destino, error) {
+	var d models.Destino
+	err := r.db.Preload("Ambito").Preload("Departamento").Where("iata = ?", iata).First(&d).Error
+	return &d, err
+}
 
-	defaults := []models.Ciudad{
-		{Nombre: "La Paz", Code: "LPZ"},
-		{Nombre: "Santa Cruz", Code: "SCZ"},
-		{Nombre: "Cochabamba", Code: "CBBA"},
-		{Nombre: "Sucre", Code: "SUC"},
-		{Nombre: "Tarija", Code: "TJA"},
-		{Nombre: "Trinidad", Code: "TDD"},
-		{Nombre: "Cobija", Code: "CJA"},
-		{Nombre: "Oruro", Code: "ORU"},
-		{Nombre: "Potosí", Code: "POT"},
-		{Nombre: "Uyuni", Code: "UYU"},
-	}
+func (r *DestinoRepository) Create(d *models.Destino) error {
+	return r.db.Create(d).Error
+}
 
-	return r.db.Create(&defaults).Error
+func (r *DestinoRepository) Save(d *models.Destino) error {
+	return r.db.Save(d).Error
 }

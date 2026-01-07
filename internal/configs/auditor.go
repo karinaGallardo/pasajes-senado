@@ -1,6 +1,7 @@
 package configs
 
 import (
+	"reflect"
 	"sistema-pasajes/internal/appcontext"
 
 	"gorm.io/gorm"
@@ -31,8 +32,27 @@ func setAuditField(tx *gorm.DB, fieldName string) {
 	if userID == nil {
 		return
 	}
+
 	field := tx.Statement.Schema.LookUpField(fieldName)
-	if field != nil {
+	if field == nil {
+		return
+	}
+
+	switch tx.Statement.ReflectValue.Kind() {
+	case reflect.Slice, reflect.Array:
+		for i := 0; i < tx.Statement.ReflectValue.Len(); i++ {
+			elem := tx.Statement.ReflectValue.Index(i)
+			if elem.Kind() == reflect.Ptr {
+				elem = elem.Elem()
+			}
+			if elem.Kind() == reflect.Struct {
+				f := elem.FieldByName(fieldName)
+				if f.IsValid() && f.CanSet() {
+					f.Set(reflect.ValueOf(userID))
+				}
+			}
+		}
+	case reflect.Struct:
 		field.Set(tx.Statement.Context, tx.Statement.ReflectValue, *userID)
 	}
 }

@@ -12,7 +12,6 @@ type SolicitudService struct {
 	repo              *repositories.SolicitudRepository
 	tipoSolicitudRepo *repositories.TipoSolicitudRepository
 	usuarioRepo       *repositories.UsuarioRepository
-	cupoService       *CupoService
 }
 
 func NewSolicitudService() *SolicitudService {
@@ -20,7 +19,6 @@ func NewSolicitudService() *SolicitudService {
 		repo:              repositories.NewSolicitudRepository(),
 		tipoSolicitudRepo: repositories.NewTipoSolicitudRepository(),
 		usuarioRepo:       repositories.NewUsuarioRepository(),
-		cupoService:       NewCupoService(),
 	}
 }
 
@@ -101,19 +99,49 @@ func (s *SolicitudService) Approve(id string) error {
 	}
 
 	estadoAprobado := "APROBADO"
-	solicitud.EstadoSolicitudCodigo = &estadoAprobado
-	return s.repo.Update(solicitud)
+	if err := s.repo.UpdateStatus(id, estadoAprobado); err != nil {
+		return err
+	}
+
+	if solicitud.VoucherID != nil {
+		voucherRepo := repositories.NewAsignacionVoucherRepository()
+		voucher, err := voucherRepo.FindByID(*solicitud.VoucherID)
+		if err == nil && voucher != nil {
+			estadoReservado := "RESERVADO"
+			voucher.EstadoVoucherCodigo = estadoReservado
+			voucherRepo.Update(voucher)
+		}
+	}
+
+	return nil
 }
 
-func (s *SolicitudService) Reject(id string) error {
+func (s *SolicitudService) Finalize(id string) error {
 	solicitud, err := s.repo.FindByID(id)
 	if err != nil {
 		return err
 	}
 
-	estadoRechazado := "RECHAZADO"
-	solicitud.EstadoSolicitudCodigo = &estadoRechazado
-	return s.repo.Update(solicitud)
+	estadoFinalizado := "FINALIZADO"
+	if err := s.repo.UpdateStatus(id, estadoFinalizado); err != nil {
+		return err
+	}
+
+	if solicitud.VoucherID != nil {
+		voucherRepo := repositories.NewAsignacionVoucherRepository()
+		voucher, err := voucherRepo.FindByID(*solicitud.VoucherID)
+		if err == nil && voucher != nil {
+			estadoUsado := "USADO"
+			voucher.EstadoVoucherCodigo = estadoUsado
+			voucherRepo.Update(voucher)
+		}
+	}
+
+	return nil
+}
+
+func (s *SolicitudService) Reject(id string) error {
+	return s.repo.UpdateStatus(id, "RECHAZADO")
 }
 
 func (s *SolicitudService) Update(solicitud *models.Solicitud) error {

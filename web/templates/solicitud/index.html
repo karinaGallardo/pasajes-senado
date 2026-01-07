@@ -50,12 +50,12 @@
               <span class="truncate max-w-[150px]">{{ .Usuario.GetNombreCompleto }}</span>
             </div>
           </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-xs">
-            {{ $creator := index $.Usuarios .CreatedBy }} {{ if $creator }} {{ $creator.GetNombreCompleto }} {{ else }}
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-xs text-center">
+            {{ $creator := index $.Usuarios (deref .CreatedBy) }} {{ if $creator }} {{ $creator.GetNombreCompleto }} {{ else }}
             <span class="italic text-gray-300">Sistema</span>
             {{ end }}
           </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
             {{ if and .TipoSolicitud .TipoSolicitud.ConceptoViaje (eq .TipoSolicitud.ConceptoViaje.Codigo "COMISION") }}
             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">Comisión</span>
             {{ else }}
@@ -63,21 +63,26 @@
             {{ end }}
           </td>
           <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-medium">
-            {{ .Origen.Nombre }}
+            {{ .Origen.Ciudad }}
             <span class="text-gray-400 mx-1">&rarr;</span>
-            {{ .Destino.Nombre }}
+            {{ .Destino.Ciudad }}
           </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{{ dtl .FechaIda }}</td>
-          <td class="px-6 py-4 whitespace-nowrap">
-            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">{{ dtl .FechaIda }}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-center">
+            <span
+              class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ if eq .EstadoSolicitud.Codigo `SOLICITADO` }}bg-yellow-100 text-yellow-800{{ else if eq .EstadoSolicitud.Codigo `APROBADO` }}bg-green-100 text-green-800{{ else }}bg-gray-100 text-gray-800{{ end }}">
               {{ if .EstadoSolicitud }}{{ .EstadoSolicitud.Nombre }}{{ else }}SOLICITADO{{ end }}
             </span>
           </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-center">
             {{ if and .EstadoSolicitud (eq .EstadoSolicitud.Codigo "SOLICITADO") }}
-            <a href="/solicitudes/{{ .ID }}/editar" class="text-indigo-600 hover:text-indigo-900 font-medium mr-3">Editar</a>
+            <a href="/solicitudes/derecho/{{ .ID }}/editar" class="text-indigo-600 hover:text-indigo-900 font-medium mr-3">Editar</a>
             {{ end }}
-            <a href="/solicitudes/{{ .ID }}" class="text-senado-secondary hover:text-senado-primary font-bold">Ver Detalles</a>
+            <a
+              href="/solicitudes/derecho/{{ .ID }}/detalle"
+              class="text-white bg-senado-secondary hover:bg-senado-primary px-3 py-1 rounded shadow-sm text-xs font-bold transition-colors">
+              Procesar
+            </a>
           </td>
         </tr>
         {{ else }}

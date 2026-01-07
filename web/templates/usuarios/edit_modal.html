@@ -32,7 +32,7 @@
               class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-senado-primary focus:border-senado-primary sm:text-sm">
               <option value="">-- No asignado --</option>
               {{ range .Destinos }}
-              <option value="{{ .Code }}" {{ if eq .Code $.Usuario.GetOrigenCode }}selected{{ end }}>{{ .Nombre }} ({{ .Code }})</option>
+              <option value="{{ .IATA }}" {{ if eq .IATA $.Usuario.GetOrigenIATA }}selected{{ end }}>{{ .GetNombreDisplay }}</option>
               {{ end }}
             </select>
           </div>
@@ -50,10 +50,11 @@
                 {{ end }}
               ],
               get filteredFuncs() {
-                if (this.search === '') return this.funcionarios;
+                if (!this.search) return this.funcionarios;
+                const q = this.search.toLowerCase();
                 return this.funcionarios.filter(f =>
-                  f.name.toLowerCase().includes(this.search.toLowerCase()) ||
-                  f.ci.toLowerCase().includes(this.search.toLowerCase())
+                  (f.name && f.name.toLowerCase().includes(q)) ||
+                  (f.ci && f.ci.toLowerCase().includes(q))
                 );
               },
               select(f) {
@@ -101,7 +102,7 @@
                 x-transition:enter="transition ease-out duration-100"
                 x-transition:enter-start="opacity-0 scale-95"
                 x-transition:enter-end="opacity-100 scale-100"
-                class="absolute z-20 w-full bottom-full mb-1 bg-white shadow-2xl max-h-60 rounded-xl py-1 text-base ring-1 ring-black ring-opacity-5 overflow-hidden focus:outline-none sm:text-sm border border-gray-100">
+                class="absolute z-50 w-full bottom-full mb-1 bg-white shadow-2xl max-h-60 rounded-xl py-1 text-base ring-1 ring-black ring-opacity-5 overflow-hidden focus:outline-none sm:text-sm border border-gray-100">
                 <!-- Search input -->
                 <div class="sticky top-0 z-10 bg-white px-2 py-2 border-b border-gray-100">
                   <div class="relative">

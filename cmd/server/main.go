@@ -27,6 +27,7 @@ func main() {
 	r.Use(sessions.Sessions("pasajes_session", store))
 
 	r.Static("/static", "./web/static")
+	r.Static("/uploads", "./uploads")
 
 	var files []string
 	err := filepath.Walk("web/templates", func(path string, info os.FileInfo, err error) error {

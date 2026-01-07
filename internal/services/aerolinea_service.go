@@ -3,7 +3,6 @@ package services
 import (
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
-
 )
 
 type AerolineaService struct {
@@ -18,6 +17,18 @@ func NewAerolineaService() *AerolineaService {
 
 func (s *AerolineaService) GetAllActive() ([]models.Aerolinea, error) {
 	return s.repo.FindAllActive()
+}
+
+func (s *AerolineaService) GetActiveNames() ([]string, error) {
+	aereos, err := s.GetAllActive()
+	if err != nil {
+		return nil, err
+	}
+	var names []string
+	for _, a := range aereos {
+		names = append(names, a.Nombre)
+	}
+	return names, nil
 }
 
 func (s *AerolineaService) GetAll() ([]models.Aerolinea, error) {

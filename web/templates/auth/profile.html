@@ -71,7 +71,7 @@
             >
 
             <div class="mt-1 text-base text-gray-900 font-medium">
-              {{ $origen := .User.GetOrigenCode }} {{ if ne $origen "" }} {{
+              {{ $origen := .User.GetOrigenIATA }} {{ if ne $origen "" }} {{
               $origen }} {{ else }}
               <span class="text-red-600 font-bold flex items-center">
                 <svg

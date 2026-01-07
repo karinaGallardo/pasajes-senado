@@ -8,4 +8,7 @@ type CreatePasajeRequest struct {
 	Ruta          string `form:"ruta" binding:"required"`
 	CodigoReserva string `form:"codigo_reserva" binding:"required"`
 	NumeroBoleto  string `form:"numero_boleto" binding:"required"`
+	AgenciaID     string `form:"agencia_id" binding:"required"`
+	NumeroFactura string `form:"numero_factura"`
+	Glosa         string `form:"glosa"`
 }
