@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
 )
@@ -15,6 +16,6 @@ func NewPeopleService() *PeopleService {
 	}
 }
 
-func (s *PeopleService) FindSenatorDataByCI(ci string) (*models.MongoPersonaView, error) {
-	return s.repo.FindSenatorDataByCI(ci)
+func (s *PeopleService) FindSenatorDataByCI(ctx context.Context, ci string) (*models.MongoPersonaView, error) {
+	return s.repo.WithContext(ctx).FindSenatorDataByCI(ci)
 }

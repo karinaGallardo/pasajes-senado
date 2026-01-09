@@ -10,8 +10,7 @@
             <path
               fill-rule="evenodd"
               d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-              clip-rule="evenodd"
-            />
+              clip-rule="evenodd" />
           </svg>
         </div>
         <div class="ml-3">
@@ -23,8 +22,7 @@
           <path
             fill-rule="evenodd"
             d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-            clip-rule="evenodd"
-          />
+            clip-rule="evenodd" />
         </svg>
       </button>
     </div>
@@ -39,19 +37,18 @@
     <div class="flex space-x-3">
       <!-- Sync Button -->
       <form id="sync-form" :action="'/usuarios/sync?rol=' + activeTab" method="POST" @submit="if(!syncConfirm) { $event.preventDefault(); syncConfirm = true }">
+        <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
         <button
           type="submit"
           :disabled="syncing"
-          class="inline-flex items-center px-4 py-2 border border-transparent text-sm leading-5 font-bold rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-95"
-        >
+          class="inline-flex items-center px-4 py-2 border border-transparent text-sm leading-5 font-bold rounded-lg text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-95">
           <!-- Static Icon -->
           <svg x-show="!syncing" class="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path
               stroke-linecap="round"
               stroke-linejoin="round"
               stroke-width="2"
-              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-            />
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
           </svg>
 
           <!-- Loading Spinner -->
@@ -77,8 +74,7 @@
       x-transition:enter-end="opacity-100"
       x-transition:leave="ease-in duration-200"
       x-transition:leave-start="opacity-100"
-      x-transition:leave-end="opacity-0"
-    >
+      x-transition:leave-end="opacity-0">
       <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
         <div class="fixed inset-0 bg-gray-900 bg-opacity-60 backdrop-blur-sm transition-opacity" @click="if(!syncing) syncConfirm = false"></div>
 
@@ -91,8 +87,7 @@
           x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
           x-transition:leave="ease-in duration-200"
           x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
-          x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-        >
+          x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
           <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
             <div class="sm:flex sm:items-start">
               <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-indigo-100 sm:mx-0 sm:h-10 sm:w-10">
@@ -101,15 +96,13 @@
                     stroke-linecap="round"
                     stroke-linejoin="round"
                     stroke-width="2"
-                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                  />
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
               </div>
               <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left">
                 <h3
                   class="text-lg leading-6 font-bold text-gray-900"
-                  x-text="syncing ? 'Sincronizando Datos...' : 'Confirmar Sincronización de ' + (activeTab === 'SENADOR' ? 'Senadores' : 'Funcionarios')"
-                ></h3>
+                  x-text="syncing ? 'Sincronizando Datos...' : 'Confirmar Sincronización de ' + (activeTab === 'SENADOR' ? 'Senadores' : 'Funcionarios')"></h3>
                 <div class="mt-2">
                   <p class="text-sm text-gray-500" x-show="!syncing">
                     Se actualizarán los datos desde el servidor de RRHH. Este proceso podría tardar unos segundos dependiendo de la cantidad de registros. ¿Desea continuar?
@@ -124,15 +117,13 @@
               type="button"
               :disabled="syncing"
               class="w-full inline-flex justify-center items-center rounded-lg border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-bold text-white hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
-              @click="syncing = true; document.getElementById('sync-form').submit()"
-            >
+              @click="syncing = true; document.getElementById('sync-form').submit()">
               <svg x-show="syncing" class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                 <path
                   class="opacity-75"
                   fill="currentColor"
-                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                ></path>
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
               </svg>
               <span x-text="syncing ? 'Procesando...' : 'Iniciar Sincronización'"></span>
             </button>
@@ -140,8 +131,7 @@
               type="button"
               x-show="!syncing"
               class="w-full inline-flex justify-center rounded-lg border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:w-auto sm:text-sm"
-              @click="syncConfirm = false"
-            >
+              @click="syncConfirm = false">
               Cancelar
             </button>
           </div>
@@ -162,8 +152,7 @@
           @click="activeTab = 'SENADOR'"
           hx-get="/usuarios/table?rol=SENADOR"
           hx-target="#usuarios-table"
-          hx-indicator="#table-loader"
-        >
+          hx-indicator="#table-loader">
           Senadores
         </button>
 
@@ -174,8 +163,7 @@
           @click="activeTab = 'FUNCIONARIO'; $nextTick(() => { document.querySelector('input[name=q]').value = '' })"
           hx-get="/usuarios/table?rol=FUNCIONARIO"
           hx-target="#usuarios-table"
-          hx-indicator="#table-loader"
-        >
+          hx-indicator="#table-loader">
           Funcionarios
         </button>
       </nav>
@@ -202,8 +190,7 @@
             hx-target="#usuarios-table"
             hx-include="[name='rol']"
             hx-indicator="#table-loader"
-            @keydown.enter="$event.preventDefault()"
-          />
+            @keydown.enter="$event.preventDefault()" />
           <!-- We need a hidden input to keep the active role in HTMX request -->
           <input type="hidden" name="rol" :value="activeTab" />
         </div>
@@ -254,8 +241,7 @@
 
       <div
         id="modal-container"
-        class="inline-block align-bottom bg-white rounded-lg text-left shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full overflow-visible"
-      >
+        class="inline-block align-bottom bg-white rounded-lg text-left shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full overflow-visible">
         <!-- HTMX will inject the edit form here -->
       </div>
     </div>

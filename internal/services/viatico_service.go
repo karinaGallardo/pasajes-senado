@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
 	"strconv"
@@ -10,7 +11,7 @@ import (
 )
 
 type ViaticoService struct {
-	repo          repositories.ViaticoRepository
+	repo          *repositories.ViaticoRepository
 	solicitudRepo *repositories.SolicitudRepository
 	catRepo       *repositories.CategoriaViaticoRepository
 	configService *ConfiguracionService
@@ -34,7 +35,7 @@ type DetalleViaticoInput struct {
 	Porcentaje int
 }
 
-func (s *ViaticoService) RegistrarViatico(solicitudID string, detalles []DetalleViaticoInput, tieneGastosRep bool, usuarioID string) (*models.Viatico, error) {
+func (s *ViaticoService) RegistrarViatico(ctx context.Context, solicitudID string, detalles []DetalleViaticoInput, tieneGastosRep bool, usuarioID string) (*models.Viatico, error) {
 	var total float64
 	var viaticoDetalles []models.DetalleViatico
 
@@ -55,10 +56,10 @@ func (s *ViaticoService) RegistrarViatico(solicitudID string, detalles []Detalle
 		})
 	}
 
-	rcIvaStr := s.configService.GetValue("IMPUESTO_RC_IVA")
+	rcivaPorcentajeStr := s.configService.GetValue(ctx, "IMPUESTO_RC_IVA")
 	rcIvaRate := 0.13
-	if rcIvaStr != "" {
-		if val, err := strconv.ParseFloat(rcIvaStr, 64); err == nil {
+	if rcivaPorcentajeStr != "" {
+		if val, err := strconv.ParseFloat(rcivaPorcentajeStr, 64); err == nil {
 			rcIvaRate = val
 			if rcIvaRate > 1 {
 				rcIvaRate = rcIvaRate / 100.0
@@ -93,23 +94,23 @@ func (s *ViaticoService) RegistrarViatico(solicitudID string, detalles []Detalle
 		Glosa:                "Asignación automática de viáticos",
 	}
 
-	if err := s.repo.Create(viatico); err != nil {
+	if err := s.repo.WithContext(ctx).Create(viatico); err != nil {
 		return nil, err
 	}
 
 	return viatico, nil
 }
 
-func (s *ViaticoService) FindBySolicitud(solicitudID string) ([]models.Viatico, error) {
-	return s.repo.FindBySolicitudID(solicitudID)
+func (s *ViaticoService) FindBySolicitud(ctx context.Context, solicitudID string) ([]models.Viatico, error) {
+	return s.repo.WithContext(ctx).FindBySolicitudID(solicitudID)
 }
 
-func (s *ViaticoService) FindByID(id string) (*models.Viatico, error) {
-	return s.repo.FindByID(id)
+func (s *ViaticoService) FindByID(ctx context.Context, id string) (*models.Viatico, error) {
+	return s.repo.WithContext(ctx).FindByID(id)
 }
 
-func (s *ViaticoService) GetCategorias() ([]models.CategoriaViatico, error) {
-	return s.catRepo.FindAll()
+func (s *ViaticoService) GetCategorias(ctx context.Context) ([]models.CategoriaViatico, error) {
+	return s.catRepo.WithContext(ctx).FindAll()
 }
 
 func generateViaticoCode() string {

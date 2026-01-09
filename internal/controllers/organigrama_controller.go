@@ -21,7 +21,7 @@ func NewOrganigramaController() *OrganigramaController {
 }
 
 func (ctrl *OrganigramaController) IndexCargos(c *gin.Context) {
-	cargos, _ := ctrl.service.GetAllCargos()
+	cargos, _ := ctrl.service.GetAllCargos(c.Request.Context())
 	utils.Render(c, "admin/cargos.html", gin.H{
 		"Cargos": cargos,
 	})
@@ -38,19 +38,19 @@ func (ctrl *OrganigramaController) StoreCargo(c *gin.Context) {
 		Categoria:   categoria,
 	}
 
-	if err := ctrl.service.CreateCargo(&cargo); err != nil {
+	if err := ctrl.service.CreateCargo(c.Request.Context(), &cargo); err != nil {
 	}
 	c.Redirect(http.StatusFound, "/admin/cargos")
 }
 
 func (ctrl *OrganigramaController) DeleteCargo(c *gin.Context) {
 	id := c.Param("id")
-	ctrl.service.DeleteCargo(id)
+	ctrl.service.DeleteCargo(c.Request.Context(), id)
 	c.Redirect(http.StatusFound, "/admin/cargos")
 }
 
 func (ctrl *OrganigramaController) IndexOficinas(c *gin.Context) {
-	oficinas, _ := ctrl.service.GetAllOficinas()
+	oficinas, _ := ctrl.service.GetAllOficinas(c.Request.Context())
 	utils.Render(c, "admin/oficinas.html", gin.H{
 		"Oficinas": oficinas,
 	})
@@ -69,13 +69,13 @@ func (ctrl *OrganigramaController) StoreOficina(c *gin.Context) {
 		Presupuesto: presupuesto,
 	}
 
-	if err := ctrl.service.CreateOficina(&oficina); err != nil {
+	if err := ctrl.service.CreateOficina(c.Request.Context(), &oficina); err != nil {
 	}
 	c.Redirect(http.StatusFound, "/admin/oficinas")
 }
 
 func (ctrl *OrganigramaController) DeleteOficina(c *gin.Context) {
 	id := c.Param("id")
-	ctrl.service.DeleteOficina(id)
+	ctrl.service.DeleteOficina(c.Request.Context(), id)
 	c.Redirect(http.StatusFound, "/admin/oficinas")
 }

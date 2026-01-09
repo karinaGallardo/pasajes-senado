@@ -12,6 +12,7 @@
   </div>
 
   <form action="/descargos" method="POST" class="bg-white shadow rounded-lg overflow-hidden border border-gray-200">
+    <input type="hidden" name="_csrf" value="{{ .csrf_token }}">
     <input type="hidden" name="solicitud_id" value="{{ .Solicitud.ID }}">
 
     <div class="p-6 space-y-6">

@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"context"
 	"sistema-pasajes/internal/models"
 
 	"sistema-pasajes/internal/configs"
@@ -14,6 +15,10 @@ type RolRepository struct {
 
 func NewRolRepository() *RolRepository {
 	return &RolRepository{db: configs.DB}
+}
+
+func (r *RolRepository) WithContext(ctx context.Context) *RolRepository {
+	return &RolRepository{db: r.db.WithContext(ctx)}
 }
 
 func (r *RolRepository) FindAll() ([]models.Rol, error) {

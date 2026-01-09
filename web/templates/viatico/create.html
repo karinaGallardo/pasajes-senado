@@ -30,6 +30,7 @@
   </div>
 
   <form action="/solicitudes/{{ .Solicitud.ID }}/viaticos" method="POST" class="bg-white rounded-lg shadow overflow-hidden">
+    <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
     <div class="p-6">
       <h3 class="text-lg font-semibold mb-4 text-senado-700">Cálculo de Viático</h3>
 

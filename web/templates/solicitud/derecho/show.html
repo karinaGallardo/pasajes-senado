@@ -160,9 +160,11 @@
 
           <div class="flex space-x-2">
             <!-- Workflow Actions -->
-            {{ if eq .Solicitud.EstadoSolicitud.Codigo "SOLICITADO" }} {{ if and .User.Rol (or (eq .User.Rol.Codigo "ADMIN") (eq .User.Rol.Codigo "TECNICO")) }}
+            {{ if eq .Solicitud.EstadoSolicitud.Codigo "SOLICITADO" }} {{ if and .CurrentUser.Rol (or (eq .CurrentUser.Rol.Codigo "ADMIN") (eq .CurrentUser.Rol.Codigo "TECNICO"))
+            }}
             <div class="flex space-x-2">
               <form action="/solicitudes/derecho/{{ .Solicitud.ID }}/aprobar" method="POST" class="inline" x-data="{ loading: false }" @submit="loading = true">
+                <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
                 <button
                   type="submit"
                   :disabled="loading"
@@ -172,6 +174,7 @@
                 </button>
               </form>
               <form action="/solicitudes/derecho/{{ .Solicitud.ID }}/rechazar" method="POST" class="inline" x-data="{ loading: false }" @submit="loading = true">
+                <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
                 <button
                   type="submit"
                   :disabled="loading"
@@ -205,7 +208,7 @@
         <div class="px-4 py-5 sm:px-6 flex justify-between items-center">
           <h3 class="text-lg leading-6 font-medium text-gray-900">Pasajes Asignados</h3>
 
-          {{ if and .User.Rol (or (eq .User.Rol.Codigo "ADMIN") (eq .User.Rol.Codigo "TECNICO")) }}
+          {{ if and .CurrentUser.Rol (or (eq .CurrentUser.Rol.Codigo "ADMIN") (eq .CurrentUser.Rol.Codigo "TECNICO")) }}
           <button
             @click="showCreateModal = true"
             class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-senado-secondary hover:bg-senado-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-senado-secondary">
@@ -308,6 +311,7 @@
                       class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50"
                       style="display: none">
                       <div class="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
+                        {{ if or (eq $.CurrentUser.Rol.Codigo "ADMIN") (eq $.CurrentUser.Rol.Codigo "TECNICO") }}
                         <button
                           type="button"
                           @click="openMenu=false; $dispatch('pasaje-action', { 
@@ -316,7 +320,7 @@
                               data: {
                                 ruta: '{{.Ruta}}',
                                 agencia_id: '{{if .AgenciaID}}{{deref .AgenciaID}}{{end}}',
-                                aerolinea: '{{if .Aerolinea}}{{.Aerolinea.Nombre}}{{else}}{{if .AerolineaID}}{{deref .AerolineaID}}{{end}}{{end}}',
+                                aerolinea_id: '{{if .AerolineaID}}{{deref .AerolineaID}}{{end}}',
                                 numero_vuelo: '{{.NumeroVuelo}}',
                                 fecha_vuelo: '{{.FechaVuelo.Format `2006-01-02T15:04`}}',
                                 numero_boleto: '{{.NumeroBoleto}}',
@@ -330,6 +334,7 @@
                           role="menuitem">
                           Editar
                         </button>
+                        {{ end }} {{ if $.CurrentUser.CanMarkUsado $.Solicitud }}
                         <button
                           type="button"
                           @click="openMenu=false; $dispatch('pasaje-action', { action: 'usado', id: '{{.ID}}' })"
@@ -337,6 +342,7 @@
                           role="menuitem">
                           Marcar como Usado
                         </button>
+                        {{ end }} {{ if or (eq $.CurrentUser.Rol.Codigo "ADMIN") (eq $.CurrentUser.Rol.Codigo "TECNICO") }}
                         <button
                           type="button"
                           @click="openMenu=false; $dispatch('pasaje-action', { action: 'reprogramar', id: '{{.ID}}' })"
@@ -344,6 +350,7 @@
                           role="menuitem">
                           Reprogramar
                         </button>
+                        {{ end }} {{ if or (eq $.CurrentUser.Rol.Codigo "ADMIN") (eq $.CurrentUser.Rol.Codigo "TECNICO") }}
                         <div class="border-t border-gray-100"></div>
                         <button
                           type="button"
@@ -359,6 +366,7 @@
                           role="menuitem">
                           Anular
                         </button>
+                        {{ end }}
                       </div>
                     </div>
                     {{ end }}

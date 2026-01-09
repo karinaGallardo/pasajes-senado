@@ -5,7 +5,7 @@
       id: '',
       ruta: '',
       agencia_id: '',
-      aerolinea: '',
+      aerolinea_id: '',
       numero_vuelo: '',
       fecha_vuelo: '',
       numero_boleto: '',
@@ -22,7 +22,7 @@
       id = $event.detail.id;
       ruta = $event.detail.ruta;
       agencia_id = $event.detail.agencia_id || '';
-      aerolinea = $event.detail.aerolinea;
+      aerolinea_id = $event.detail.aerolinea_id || '';
       numero_vuelo = $event.detail.numero_vuelo;
       fecha_vuelo = $event.detail.fecha_vuelo;
       numero_boleto = $event.detail.numero_boleto;
@@ -66,6 +66,7 @@
         <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4" id="modal-title-edit">Editar Pasaje</h3>
 
         <form action="/pasajes/update" method="POST" enctype="multipart/form-data" @submit="loading = true">
+    <input type="hidden" name="_csrf" value="{{ .csrf_token }}">
           <input type="hidden" name="id" x-model="id" />
 
           <div class="grid grid-cols-6 gap-6">
@@ -150,7 +151,7 @@
               <label class="block text-sm font-medium text-gray-700">Aerolínea</label>
               <select
                 name="aerolinea_id"
-                x-model="aerolinea"
+                x-model="aerolinea_id"
                 required
                 class="mt-1 focus:ring-senado-secondary focus:border-senado-secondary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md border p-2">
                 <option value="">-- Seleccionar --</option>

@@ -1,9 +1,11 @@
 package repositories
 
 import (
+	"context"
 	"sistema-pasajes/internal/models"
 
 	"sistema-pasajes/internal/configs"
+
 	"gorm.io/gorm"
 )
 
@@ -13,6 +15,10 @@ type CompensacionRepository struct {
 
 func NewCompensacionRepository() *CompensacionRepository {
 	return &CompensacionRepository{db: configs.DB}
+}
+
+func (r *CompensacionRepository) WithContext(ctx context.Context) *CompensacionRepository {
+	return &CompensacionRepository{db: r.db.WithContext(ctx)}
 }
 
 func (r *CompensacionRepository) Create(comp *models.Compensacion) error {

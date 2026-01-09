@@ -1,9 +1,9 @@
 package services
 
 import (
+	"context"
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
-
 )
 
 type DescargoService struct {
@@ -16,22 +16,22 @@ func NewDescargoService() *DescargoService {
 	}
 }
 
-func (s *DescargoService) Create(descargo *models.Descargo) error {
-	return s.repo.Create(descargo)
+func (s *DescargoService) Create(ctx context.Context, descargo *models.Descargo) error {
+	return s.repo.WithContext(ctx).Create(descargo)
 }
 
-func (s *DescargoService) FindBySolicitudID(solicitudID string) (*models.Descargo, error) {
-	return s.repo.FindBySolicitudID(solicitudID)
+func (s *DescargoService) FindBySolicitudID(ctx context.Context, solicitudID string) (*models.Descargo, error) {
+	return s.repo.WithContext(ctx).FindBySolicitudID(solicitudID)
 }
 
-func (s *DescargoService) FindByID(id string) (*models.Descargo, error) {
-	return s.repo.FindByID(id)
+func (s *DescargoService) FindByID(ctx context.Context, id string) (*models.Descargo, error) {
+	return s.repo.WithContext(ctx).FindByID(id)
 }
 
-func (s *DescargoService) FindAll() ([]models.Descargo, error) {
-	return s.repo.FindAll()
+func (s *DescargoService) FindAll(ctx context.Context) ([]models.Descargo, error) {
+	return s.repo.WithContext(ctx).FindAll()
 }
 
-func (s *DescargoService) Update(descargo *models.Descargo) error {
-	return s.repo.Update(descargo)
+func (s *DescargoService) Update(ctx context.Context, descargo *models.Descargo) error {
+	return s.repo.WithContext(ctx).Update(descargo)
 }

@@ -82,6 +82,7 @@
         </div>
 
         <form action="/pasajes/reprogramar" method="POST" enctype="multipart/form-data" @submit="loading = true">
+    <input type="hidden" name="_csrf" value="{{ .csrf_token }}">
           <input type="hidden" name="pasaje_anterior_id" x-model="id" />
 
           <div class="grid grid-cols-6 gap-6">

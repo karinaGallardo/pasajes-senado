@@ -1,9 +1,9 @@
 package repositories
 
 import (
-	"sistema-pasajes/internal/models"
-
+	"context"
 	"sistema-pasajes/internal/configs"
+	"sistema-pasajes/internal/models"
 
 	"gorm.io/gorm"
 )
@@ -14,6 +14,10 @@ type GeneroRepository struct {
 
 func NewGeneroRepository() *GeneroRepository {
 	return &GeneroRepository{db: configs.DB}
+}
+
+func (r *GeneroRepository) WithContext(ctx context.Context) *GeneroRepository {
+	return &GeneroRepository{db: r.db.WithContext(ctx)}
 }
 
 func (r *GeneroRepository) FirstOrCreate(codigo, nombre string) (*models.Genero, error) {

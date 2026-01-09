@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"context"
 	"sistema-pasajes/internal/configs"
 	"sistema-pasajes/internal/models"
 
@@ -13,6 +14,18 @@ type SolicitudRepository struct {
 
 func NewSolicitudRepository() *SolicitudRepository {
 	return &SolicitudRepository{db: configs.DB}
+}
+
+func (r *SolicitudRepository) WithTx(tx *gorm.DB) *SolicitudRepository {
+	return &SolicitudRepository{db: tx}
+}
+
+func (r *SolicitudRepository) WithContext(ctx context.Context) *SolicitudRepository {
+	return &SolicitudRepository{db: r.db.WithContext(ctx)}
+}
+
+func (r *SolicitudRepository) GetDB() *gorm.DB {
+	return r.db
 }
 
 func (r *SolicitudRepository) Create(solicitud *models.Solicitud) error {

@@ -21,8 +21,8 @@ func NewProveedorController() *ProveedorController {
 }
 
 func (ctrl *ProveedorController) Index(c *gin.Context) {
-	aerolineas, _ := ctrl.aerolineaService.GetAll()
-	agencias, _ := ctrl.agenciaService.GetAll()
+	aerolineas, _ := ctrl.aerolineaService.GetAll(c.Request.Context())
+	agencias, _ := ctrl.agenciaService.GetAll(c.Request.Context())
 
 	utils.Render(c, "admin/proveedores.html", gin.H{
 		"Aerolineas": aerolineas,
@@ -34,14 +34,14 @@ func (ctrl *ProveedorController) Index(c *gin.Context) {
 func (ctrl *ProveedorController) CreateAerolinea(c *gin.Context) {
 	nombre := c.PostForm("nombre")
 	if nombre != "" {
-		ctrl.aerolineaService.Create(nombre)
+		ctrl.aerolineaService.Create(c.Request.Context(), nombre)
 	}
 	c.Redirect(http.StatusFound, "/admin/proveedores")
 }
 
 func (ctrl *ProveedorController) ToggleAerolinea(c *gin.Context) {
 	id := c.Param("id")
-	ctrl.aerolineaService.Toggle(id)
+	ctrl.aerolineaService.Toggle(c.Request.Context(), id)
 	c.Redirect(http.StatusFound, "/admin/proveedores")
 }
 
@@ -49,13 +49,13 @@ func (ctrl *ProveedorController) CreateAgencia(c *gin.Context) {
 	nombre := c.PostForm("nombre")
 	telefono := c.PostForm("telefono")
 	if nombre != "" {
-		ctrl.agenciaService.Create(nombre, telefono)
+		ctrl.agenciaService.Create(c.Request.Context(), nombre, telefono)
 	}
 	c.Redirect(http.StatusFound, "/admin/proveedores")
 }
 
 func (ctrl *ProveedorController) ToggleAgencia(c *gin.Context) {
 	id := c.Param("id")
-	ctrl.agenciaService.Toggle(id)
+	ctrl.agenciaService.Toggle(c.Request.Context(), id)
 	c.Redirect(http.StatusFound, "/admin/proveedores")
 }

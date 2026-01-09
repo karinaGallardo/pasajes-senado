@@ -1,17 +1,21 @@
 package services
 
 import (
+	"context"
 	"errors"
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
 	"sistema-pasajes/internal/utils"
 	"strings"
+
+	"gorm.io/gorm"
 )
 
 type SolicitudService struct {
 	repo              *repositories.SolicitudRepository
 	tipoSolicitudRepo *repositories.TipoSolicitudRepository
 	usuarioRepo       *repositories.UsuarioRepository
+	voucherRepo       *repositories.AsignacionVoucherRepository
 }
 
 func NewSolicitudService() *SolicitudService {
@@ -19,17 +23,18 @@ func NewSolicitudService() *SolicitudService {
 		repo:              repositories.NewSolicitudRepository(),
 		tipoSolicitudRepo: repositories.NewTipoSolicitudRepository(),
 		usuarioRepo:       repositories.NewUsuarioRepository(),
+		voucherRepo:       repositories.NewAsignacionVoucherRepository(),
 	}
 }
 
-func (s *SolicitudService) Create(solicitud *models.Solicitud, usuario *models.Usuario, voucherID string) error {
-	tipoSolicitud, err := s.tipoSolicitudRepo.FindByID(solicitud.TipoSolicitudID)
+func (s *SolicitudService) Create(ctx context.Context, solicitud *models.Solicitud, usuario *models.Usuario, voucherID string) error {
+	tipoSolicitud, err := s.tipoSolicitudRepo.WithContext(ctx).FindByID(solicitud.TipoSolicitudID)
 	if err != nil {
 		return errors.New("tipo de solicitud inválido o no encontrado")
 	}
 
 	if tipoSolicitud.ConceptoViaje != nil && tipoSolicitud.ConceptoViaje.Codigo == "DERECHO" {
-		beneficiary, err := s.usuarioRepo.FindByID(solicitud.UsuarioID)
+		beneficiary, err := s.usuarioRepo.WithContext(ctx).FindByID(solicitud.UsuarioID)
 		if err != nil {
 			return errors.New("usuario beneficiario no encontrado")
 		}
@@ -62,7 +67,7 @@ func (s *SolicitudService) Create(solicitud *models.Solicitud, usuario *models.U
 		if err != nil {
 			return errors.New("error generando código solicitud")
 		}
-		exists, _ := s.repo.ExistsByCodigo(generated)
+		exists, _ := s.repo.WithContext(ctx).ExistsByCodigo(generated)
 		if !exists {
 			codigo = generated
 			break
@@ -77,77 +82,89 @@ func (s *SolicitudService) Create(solicitud *models.Solicitud, usuario *models.U
 		solicitud.VoucherID = &voucherID
 	}
 
-	if err := s.repo.Create(solicitud); err != nil {
+	if err := s.repo.WithContext(ctx).Create(solicitud); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (s *SolicitudService) FindAll() ([]models.Solicitud, error) {
-	return s.repo.FindAll()
+func (s *SolicitudService) FindAll(ctx context.Context) ([]models.Solicitud, error) {
+	return s.repo.WithContext(ctx).FindAll()
 }
 
-func (s *SolicitudService) FindByID(id string) (*models.Solicitud, error) {
-	return s.repo.FindByID(id)
+func (s *SolicitudService) FindByID(ctx context.Context, id string) (*models.Solicitud, error) {
+	return s.repo.WithContext(ctx).FindByID(id)
 }
 
-func (s *SolicitudService) Approve(id string) error {
-	solicitud, err := s.repo.FindByID(id)
-	if err != nil {
-		return err
-	}
+func (s *SolicitudService) Approve(ctx context.Context, id string) error {
+	return s.repo.WithContext(ctx).GetDB().Transaction(func(tx *gorm.DB) error {
+		repoTx := s.repo.WithTx(tx)
+		voucherRepoTx := s.voucherRepo.WithTx(tx)
 
-	estadoAprobado := "APROBADO"
-	if err := s.repo.UpdateStatus(id, estadoAprobado); err != nil {
-		return err
-	}
-
-	if solicitud.VoucherID != nil {
-		voucherRepo := repositories.NewAsignacionVoucherRepository()
-		voucher, err := voucherRepo.FindByID(*solicitud.VoucherID)
-		if err == nil && voucher != nil {
-			estadoReservado := "RESERVADO"
-			voucher.EstadoVoucherCodigo = estadoReservado
-			voucherRepo.Update(voucher)
+		solicitud, err := repoTx.FindByID(id)
+		if err != nil {
+			return err
 		}
-	}
 
-	return nil
-}
-
-func (s *SolicitudService) Finalize(id string) error {
-	solicitud, err := s.repo.FindByID(id)
-	if err != nil {
-		return err
-	}
-
-	estadoFinalizado := "FINALIZADO"
-	if err := s.repo.UpdateStatus(id, estadoFinalizado); err != nil {
-		return err
-	}
-
-	if solicitud.VoucherID != nil {
-		voucherRepo := repositories.NewAsignacionVoucherRepository()
-		voucher, err := voucherRepo.FindByID(*solicitud.VoucherID)
-		if err == nil && voucher != nil {
-			estadoUsado := "USADO"
-			voucher.EstadoVoucherCodigo = estadoUsado
-			voucherRepo.Update(voucher)
+		estadoAprobado := "APROBADO"
+		if err := repoTx.UpdateStatus(id, estadoAprobado); err != nil {
+			return err
 		}
-	}
 
-	return nil
+		if solicitud.VoucherID != nil {
+			voucher, err := voucherRepoTx.FindByID(*solicitud.VoucherID)
+			if err == nil && voucher != nil {
+				estadoReservado := "RESERVADO"
+				voucher.EstadoVoucherCodigo = estadoReservado
+				if err := voucherRepoTx.Update(voucher); err != nil {
+					return err
+				}
+			}
+		}
+
+		return nil
+	})
 }
 
-func (s *SolicitudService) Reject(id string) error {
-	return s.repo.UpdateStatus(id, "RECHAZADO")
+func (s *SolicitudService) Finalize(ctx context.Context, id string) error {
+	return s.repo.WithContext(ctx).GetDB().Transaction(func(tx *gorm.DB) error {
+		repoTx := s.repo.WithTx(tx)
+		voucherRepoTx := s.voucherRepo.WithTx(tx)
+
+		solicitud, err := repoTx.FindByID(id)
+		if err != nil {
+			return err
+		}
+
+		estadoFinalizado := "FINALIZADO"
+		if err := repoTx.UpdateStatus(id, estadoFinalizado); err != nil {
+			return err
+		}
+
+		if solicitud.VoucherID != nil {
+			voucher, err := voucherRepoTx.FindByID(*solicitud.VoucherID)
+			if err == nil && voucher != nil {
+				estadoUsado := "USADO"
+				voucher.EstadoVoucherCodigo = estadoUsado
+				if err := voucherRepoTx.Update(voucher); err != nil {
+					return err
+				}
+			}
+		}
+
+		return nil
+	})
 }
 
-func (s *SolicitudService) Update(solicitud *models.Solicitud) error {
-	return s.repo.Update(solicitud)
+func (s *SolicitudService) Reject(ctx context.Context, id string) error {
+	return s.repo.WithContext(ctx).UpdateStatus(id, "RECHAZADO")
 }
 
-func (s *SolicitudService) Delete(id string) error {
-	return s.repo.Delete(id)
+func (s *SolicitudService) Update(ctx context.Context, solicitud *models.Solicitud) error {
+	return s.repo.WithContext(ctx).Update(solicitud)
+}
+
+func (s *SolicitudService) Delete(ctx context.Context, id string) error {
+	return s.repo.WithContext(ctx).Delete(id)
 }

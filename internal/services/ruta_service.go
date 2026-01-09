@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
 )
@@ -17,12 +18,12 @@ func NewRutaService() *RutaService {
 	}
 }
 
-func (s *RutaService) Create(origenIATA string, escalasIATA []string, destinoIATA string) (*models.Ruta, error) {
-	origen, err := s.destinoRepo.FindByIATA(origenIATA)
+func (s *RutaService) Create(ctx context.Context, origenIATA string, escalasIATA []string, destinoIATA string) (*models.Ruta, error) {
+	origen, err := s.destinoRepo.WithContext(ctx).FindByIATA(origenIATA)
 	if err != nil {
 		return nil, err
 	}
-	destino, err := s.destinoRepo.FindByIATA(destinoIATA)
+	destino, err := s.destinoRepo.WithContext(ctx).FindByIATA(destinoIATA)
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +33,7 @@ func (s *RutaService) Create(origenIATA string, escalasIATA []string, destinoIAT
 		if code == "" {
 			continue
 		}
-		e, err := s.destinoRepo.FindByIATA(code)
+		e, err := s.destinoRepo.WithContext(ctx).FindByIATA(code)
 		if err != nil {
 			return nil, err
 		}
@@ -86,23 +87,23 @@ func (s *RutaService) Create(origenIATA string, escalasIATA []string, destinoIAT
 		})
 	}
 
-	err = s.rutaRepo.Create(newRuta)
+	err = s.rutaRepo.WithContext(ctx).Create(newRuta)
 	return newRuta, err
 }
 
-func (s *RutaService) GetAll() ([]models.Ruta, error) {
-	return s.rutaRepo.FindAll()
+func (s *RutaService) GetAll(ctx context.Context) ([]models.Ruta, error) {
+	return s.rutaRepo.WithContext(ctx).FindAll()
 }
 
-func (s *RutaService) AssignContract(rutaID, aerolineaID string, monto float64) error {
+func (s *RutaService) AssignContract(ctx context.Context, rutaID, aerolineaID string, monto float64) error {
 	contrato := models.RutaContrato{
 		RutaID:           rutaID,
 		AerolineaID:      aerolineaID,
 		MontoReferencial: monto,
 	}
-	return s.rutaRepo.AssignContract(&contrato)
+	return s.rutaRepo.WithContext(ctx).AssignContract(&contrato)
 }
 
-func (s *RutaService) GetContractsByRuta(rutaID string) ([]models.RutaContrato, error) {
-	return s.rutaRepo.GetContractsByRuta(rutaID)
+func (s *RutaService) GetContractsByRuta(ctx context.Context, rutaID string) ([]models.RutaContrato, error) {
+	return s.rutaRepo.WithContext(ctx).GetContractsByRuta(rutaID)
 }

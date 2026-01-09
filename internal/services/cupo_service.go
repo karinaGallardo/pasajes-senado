@@ -1,17 +1,21 @@
 package services
 
 import (
+	"context"
 	"errors"
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
 	"time"
 
 	"fmt"
+
+	"gorm.io/gorm"
 )
 
 type CupoService struct {
-	repo     *repositories.CupoRepository
-	userRepo *repositories.UsuarioRepository
+	repo        *repositories.CupoRepository
+	userRepo    *repositories.UsuarioRepository
+	voucherRepo *repositories.AsignacionVoucherRepository
 }
 
 type CupoInfo struct {
@@ -24,19 +28,19 @@ type CupoInfo struct {
 
 func NewCupoService() *CupoService {
 	return &CupoService{
-		repo:     repositories.NewCupoRepository(),
-		userRepo: repositories.NewUsuarioRepository(),
+		repo:        repositories.NewCupoRepository(),
+		userRepo:    repositories.NewUsuarioRepository(),
+		voucherRepo: repositories.NewAsignacionVoucherRepository(),
 	}
 }
 
-func (s *CupoService) CalcularCupo(usuarioID string, fecha time.Time) (*CupoInfo, error) {
+func (s *CupoService) CalcularCupo(ctx context.Context, usuarioID string, fecha time.Time) (*CupoInfo, error) {
 	year := fecha.Year()
 	month := int(fecha.Month())
 
-	_ = s.EnsureUserVouchers(usuarioID, year, month)
+	_ = s.EnsureUserVouchers(ctx, usuarioID, year, month)
 
-	voucherRepo := repositories.NewAsignacionVoucherRepository()
-	vouchers, err := voucherRepo.FindByHolderAndPeriodo(usuarioID, year, month)
+	vouchers, err := s.voucherRepo.WithContext(ctx).FindByHolderAndPeriodo(usuarioID, year, month)
 
 	if err != nil || len(vouchers) == 0 {
 		return &CupoInfo{EsDisponible: false, Mensaje: "No tiene pasajes habilitados para este periodo."}, nil
@@ -109,40 +113,46 @@ func (s *CupoService) GetWeeksInMonth(year int, month time.Month) []WeekRange {
 	return weeks
 }
 
-func (s *CupoService) EnsureUserVouchers(usuarioID string, gestion int, mes int) error {
-	user, err := s.userRepo.FindByID(usuarioID)
+func (s *CupoService) EnsureUserVouchers(ctx context.Context, usuarioID string, gestion int, mes int) error {
+	user, err := s.userRepo.WithContext(ctx).FindByID(usuarioID)
 	if err != nil {
 		return err
 	}
 	if user.Tipo == "SENADOR_TITULAR" {
-		return s.generateVouchersForSenador(user, gestion, mes)
+		return s.generateVouchersForSenador(ctx, user, gestion, mes)
 	}
 	if user.Tipo == "SENADOR_SUPLENTE" && user.TitularID != nil {
-		titular, err := s.userRepo.FindByID(*user.TitularID)
+		titular, err := s.userRepo.WithContext(ctx).FindByID(*user.TitularID)
 		if err == nil {
-			return s.generateVouchersForSenador(titular, gestion, mes)
+			return s.generateVouchersForSenador(ctx, titular, gestion, mes)
 		}
 	}
 
 	return nil
 }
 
-func (s *CupoService) GenerateVouchersForMonth(gestion int, mes int) error {
-	senadores, err := s.userRepo.FindAll()
+func (s *CupoService) GenerateVouchersForMonth(ctx context.Context, gestion int, mes int) error {
+	senadores, err := s.userRepo.WithContext(ctx).FindAll()
 	if err != nil {
 		return err
 	}
 
 	for _, user := range senadores {
 		if user.Tipo == "SENADOR_TITULAR" {
-			_ = s.generateVouchersForSenador(&user, gestion, mes)
+			_ = s.generateVouchersForSenador(ctx, &user, gestion, mes)
 		}
 	}
 
-	return s.SyncUsoForPeriod(gestion, mes)
+	return s.SyncUsoForPeriod(ctx, gestion, mes)
 }
 
-func (s *CupoService) generateVouchersForSenador(user *models.Usuario, gestion int, mes int) error {
+func (s *CupoService) generateVouchersForSenador(ctx context.Context, user *models.Usuario, gestion int, mes int) error {
+	return s.repo.WithContext(ctx).GetDB().Transaction(func(tx *gorm.DB) error {
+		return s.generateVouchersTx(s.repo.WithTx(tx), s.voucherRepo.WithTx(tx), user, gestion, mes)
+	})
+}
+
+func (s *CupoService) generateVouchersTx(cupoRepoTx *repositories.CupoRepository, voucherRepoTx *repositories.AsignacionVoucherRepository, user *models.Usuario, gestion, mes int) error {
 	weeksInfo := s.GetWeeksInMonth(gestion, time.Month(mes))
 	semanas := len(weeksInfo)
 	if semanas == 0 {
@@ -150,9 +160,8 @@ func (s *CupoService) generateVouchersForSenador(user *models.Usuario, gestion i
 	}
 
 	targetTotal := semanas
-	voucherRepo := repositories.NewAsignacionVoucherRepository()
 
-	cupo, err := s.repo.FindByTitularAndPeriodo(user.ID, gestion, mes)
+	cupo, err := cupoRepoTx.FindByTitularAndPeriodo(user.ID, gestion, mes)
 	if err != nil {
 		newCupo := models.Cupo{
 			SenadorID:    user.ID,
@@ -161,7 +170,7 @@ func (s *CupoService) generateVouchersForSenador(user *models.Usuario, gestion i
 			TotalSemanas: semanas,
 			CupoTotal:    targetTotal,
 		}
-		if err := s.repo.Create(&newCupo); err != nil {
+		if err := cupoRepoTx.Create(&newCupo); err != nil {
 			return err
 		}
 		cupo = &newCupo
@@ -169,14 +178,15 @@ func (s *CupoService) generateVouchersForSenador(user *models.Usuario, gestion i
 		if cupo.TotalSemanas != semanas || cupo.CupoTotal != targetTotal {
 			cupo.TotalSemanas = semanas
 			cupo.CupoTotal = targetTotal
-			s.repo.Update(cupo)
+			cupoRepoTx.Update(cupo)
 		}
 	}
 
-	existingVouchers, _ := voucherRepo.FindByCupoID(cupo.ID)
+	existingVouchers, _ := voucherRepoTx.FindByCupoID(cupo.ID)
 	count := len(existingVouchers)
 
 	if count < targetTotal {
+		var newVouchers []models.AsignacionVoucher
 		for i := count; i < targetTotal; i++ {
 			weekNum := i + 1
 			label := fmt.Sprintf("SEMANA %d", weekNum)
@@ -202,17 +212,21 @@ func (s *CupoService) generateVouchersForSenador(user *models.Usuario, gestion i
 				FechaDesde:          startDate,
 				FechaHasta:          endDate,
 			}
-			voucherRepo.Create(&v)
+			newVouchers = append(newVouchers, v)
+		}
+
+		if len(newVouchers) > 0 {
+			if err := voucherRepoTx.GetDB().CreateInBatches(newVouchers, 100).Error; err != nil {
+				return err
+			}
 		}
 	}
 
-	return s.SyncCupoUsado(user.ID, gestion, mes)
+	return s.syncCupoUsadoTx(cupoRepoTx, voucherRepoTx, user.ID, gestion, mes)
 }
 
-func (s *CupoService) TransferirVoucher(voucherID string, destinoID string, motivo string) error {
-	repo := repositories.NewAsignacionVoucherRepository()
-
-	voucher, err := repo.FindByID(voucherID)
+func (s *CupoService) TransferirVoucher(ctx context.Context, voucherID string, destinoID string, motivo string) error {
+	voucher, err := s.voucherRepo.WithContext(ctx).FindByID(voucherID)
 	if err != nil {
 		return errors.New("voucher no encontrado")
 	}
@@ -228,90 +242,96 @@ func (s *CupoService) TransferirVoucher(voucherID string, destinoID string, moti
 	voucher.FechaTransfer = &now
 	voucher.MotivoTransfer = motivo
 
-	return repo.Update(voucher)
+	return s.voucherRepo.WithContext(ctx).Update(voucher)
 }
 
-func (s *CupoService) ProcesarConsumoPasaje(usuarioID string, gestion, mes int) error {
-	return s.IncrementarUso(usuarioID, gestion, mes)
+func (s *CupoService) ProcesarConsumoPasaje(ctx context.Context, usuarioID string, gestion, mes int) error {
+	return s.IncrementarUso(ctx, usuarioID, gestion, mes)
 }
 
-func (s *CupoService) GetAllByPeriodo(gestion, mes int) ([]models.Cupo, error) {
-	return s.repo.FindByPeriodo(gestion, mes)
+func (s *CupoService) GetAllByPeriodo(ctx context.Context, gestion, mes int) ([]models.Cupo, error) {
+	return s.repo.WithContext(ctx).FindByPeriodo(gestion, mes)
 }
 
-func (s *CupoService) GetAllVouchersByPeriodo(gestion, mes int) ([]models.AsignacionVoucher, error) {
+func (s *CupoService) GetAllVouchersByPeriodo(ctx context.Context, gestion, mes int) ([]models.AsignacionVoucher, error) {
 	repo := repositories.NewAsignacionVoucherRepository()
-	return repo.FindByPeriodo(gestion, mes)
+	return repo.WithContext(ctx).FindByPeriodo(gestion, mes)
 }
 
-func (s *CupoService) GetCupo(usuarioID string, gestion, mes int) (*models.Cupo, error) {
-	return s.repo.FindByTitularAndPeriodo(usuarioID, gestion, mes)
+func (s *CupoService) GetCupo(ctx context.Context, usuarioID string, gestion, mes int) (*models.Cupo, error) {
+	return s.repo.WithContext(ctx).FindByTitularAndPeriodo(usuarioID, gestion, mes)
 }
 
-func (s *CupoService) IncrementarUso(usuarioID string, gestion, mes int) error {
-	voucherRepo := repositories.NewAsignacionVoucherRepository()
+func (s *CupoService) IncrementarUso(ctx context.Context, usuarioID string, gestion, mes int) error {
+	return s.repo.WithContext(ctx).GetDB().Transaction(func(tx *gorm.DB) error {
+		cupoRepoTx := s.repo.WithTx(tx)
+		voucherRepoTx := s.voucherRepo.WithTx(tx)
 
-	voucher, err := voucherRepo.FindAvailableByHolderAndPeriodo(usuarioID, gestion, mes)
-	if err != nil {
-		_ = s.GenerateVouchersForMonth(gestion, mes)
-		voucher, err = voucherRepo.FindAvailableByHolderAndPeriodo(usuarioID, gestion, mes)
+		voucher, err := voucherRepoTx.FindAvailableByHolderAndPeriodo(usuarioID, gestion, mes)
 		if err != nil {
 			return errors.New("no hay pasajes disponibles para asignar (cupo agotado)")
 		}
-	}
 
-	voucher.EstadoVoucherCodigo = "USADO"
-	if err := voucherRepo.Update(voucher); err != nil {
-		return err
-	}
-
-	return s.SyncCupoUsado(voucher.SenadorID, gestion, mes)
-}
-
-func (s *CupoService) RevertirUso(usuarioID string, gestion, mes int) error {
-	voucherRepo := repositories.NewAsignacionVoucherRepository()
-	vouchers, err := voucherRepo.FindByHolderAndPeriodo(usuarioID, gestion, mes)
-	if err != nil {
-		return err
-	}
-
-	for _, v := range vouchers {
-		if v.EstadoVoucherCodigo == "USADO" {
-			v.EstadoVoucherCodigo = "DISPONIBLE"
-			if err := voucherRepo.Update(&v); err != nil {
-				return err
-			}
-			return s.SyncCupoUsado(v.SenadorID, gestion, mes)
+		voucher.EstadoVoucherCodigo = "USADO"
+		if err := voucherRepoTx.Update(voucher); err != nil {
+			return err
 		}
-	}
-	return errors.New("no se encontró uso de pasaje para revertir")
+
+		return s.syncCupoUsadoTx(cupoRepoTx, voucherRepoTx, voucher.SenadorID, gestion, mes)
+	})
 }
 
-func (s *CupoService) ResetVouchersForMonth(gestion, mes int) error {
-	return s.GenerateVouchersForMonth(gestion, mes)
+func (s *CupoService) RevertirUso(ctx context.Context, usuarioID string, gestion, mes int) error {
+	return s.repo.WithContext(ctx).GetDB().Transaction(func(tx *gorm.DB) error {
+		cupoRepoTx := s.repo.WithTx(tx)
+		voucherRepoTx := s.voucherRepo.WithTx(tx)
+
+		vouchers, err := voucherRepoTx.FindByHolderAndPeriodo(usuarioID, gestion, mes)
+		if err != nil {
+			return err
+		}
+
+		for _, v := range vouchers {
+			if v.EstadoVoucherCodigo == "USADO" {
+				v.EstadoVoucherCodigo = "DISPONIBLE"
+				if err := voucherRepoTx.Update(&v); err != nil {
+					return err
+				}
+				return s.syncCupoUsadoTx(cupoRepoTx, voucherRepoTx, v.SenadorID, gestion, mes)
+			}
+		}
+		return errors.New("no se encontró uso de pasaje para revertir")
+	})
 }
 
-func (s *CupoService) SyncUsoForPeriod(gestion, mes int) error {
-	cupos, err := s.repo.FindByPeriodo(gestion, mes)
+func (s *CupoService) ResetVouchersForMonth(ctx context.Context, gestion, mes int) error {
+	return s.GenerateVouchersForMonth(ctx, gestion, mes)
+}
+
+func (s *CupoService) SyncUsoForPeriod(ctx context.Context, gestion, mes int) error {
+	cupos, err := s.repo.WithContext(ctx).FindByPeriodo(gestion, mes)
 	if err != nil {
 		return err
 	}
 
 	for _, c := range cupos {
-		if err := s.SyncCupoUsado(c.SenadorID, gestion, mes); err != nil {
+		if err := s.SyncCupoUsado(ctx, c.SenadorID, gestion, mes); err != nil {
 			fmt.Printf("Error sincronizando uso para %s: %v\n", c.SenadorID, err)
 		}
 	}
 	return nil
 }
 
-func (s *CupoService) SyncCupoUsado(senadorID string, gestion, mes int) error {
-	cupo, err := s.repo.FindByTitularAndPeriodo(senadorID, gestion, mes)
+func (s *CupoService) SyncCupoUsado(ctx context.Context, senadorID string, gestion, mes int) error {
+	return s.syncCupoUsadoTx(s.repo.WithContext(ctx), s.voucherRepo.WithContext(ctx), senadorID, gestion, mes)
+}
+
+func (s *CupoService) syncCupoUsadoTx(cupoRepo *repositories.CupoRepository, voucherRepo *repositories.AsignacionVoucherRepository, senadorID string, gestion, mes int) error {
+	cupo, err := cupoRepo.FindByTitularAndPeriodo(senadorID, gestion, mes)
 	if err != nil {
 		return err
 	}
 
-	voucherRepo := repositories.NewAsignacionVoucherRepository()
 	vouchers, err := voucherRepo.FindByCupoID(cupo.ID)
 	if err != nil {
 		return err
@@ -326,29 +346,25 @@ func (s *CupoService) SyncCupoUsado(senadorID string, gestion, mes int) error {
 
 	if cupo.CupoUsado != usados {
 		cupo.CupoUsado = usados
-		return s.repo.Update(cupo)
+		return cupoRepo.Update(cupo)
 	}
 
 	return nil
 }
 
-func (s *CupoService) GetVouchersByCupoID(cupoID string) ([]models.AsignacionVoucher, error) {
-	repo := repositories.NewAsignacionVoucherRepository()
-	return repo.FindByCupoID(cupoID)
+func (s *CupoService) GetVouchersByCupoID(ctx context.Context, cupoID string) ([]models.AsignacionVoucher, error) {
+	return s.voucherRepo.WithContext(ctx).FindByCupoID(cupoID)
 }
 
-func (s *CupoService) GetVouchersByUsuario(usuarioID string, gestion, mes int) ([]models.AsignacionVoucher, error) {
-	_ = s.EnsureUserVouchers(usuarioID, gestion, mes)
-	repo := repositories.NewAsignacionVoucherRepository()
-	return repo.FindByHolderAndPeriodo(usuarioID, gestion, mes)
+func (s *CupoService) GetVouchersByUsuario(ctx context.Context, usuarioID string, gestion, mes int) ([]models.AsignacionVoucher, error) {
+	_ = s.EnsureUserVouchers(ctx, usuarioID, gestion, mes)
+	return s.voucherRepo.WithContext(ctx).FindByHolderAndPeriodo(usuarioID, gestion, mes)
 }
 
-func (s *CupoService) GetVouchersByUsuarioAndGestion(usuarioID string, gestion int) ([]models.AsignacionVoucher, error) {
-	repo := repositories.NewAsignacionVoucherRepository()
-	return repo.FindByHolderAndGestion(usuarioID, gestion)
+func (s *CupoService) GetVouchersByUsuarioAndGestion(ctx context.Context, usuarioID string, gestion int) ([]models.AsignacionVoucher, error) {
+	return s.voucherRepo.WithContext(ctx).FindByHolderAndGestion(usuarioID, gestion)
 }
 
-func (s *CupoService) GetVoucherByID(id string) (*models.AsignacionVoucher, error) {
-	repo := repositories.NewAsignacionVoucherRepository()
-	return repo.FindByID(id)
+func (s *CupoService) GetVoucherByID(ctx context.Context, id string) (*models.AsignacionVoucher, error) {
+	return s.voucherRepo.WithContext(ctx).FindByID(id)
 }

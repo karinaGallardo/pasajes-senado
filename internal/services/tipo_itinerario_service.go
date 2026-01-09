@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
 )
@@ -15,10 +16,10 @@ func NewTipoItinerarioService() *TipoItinerarioService {
 	}
 }
 
-func (s *TipoItinerarioService) GetByCodigo(codigo string) (*models.TipoItinerario, error) {
-	return s.repo.FindByCodigo(codigo)
+func (s *TipoItinerarioService) GetByCodigo(ctx context.Context, codigo string) (*models.TipoItinerario, error) {
+	return s.repo.WithContext(ctx).FindByCodigo(codigo)
 }
 
-func (s *TipoItinerarioService) GetAll() ([]models.TipoItinerario, error) {
-	return s.repo.FindAll()
+func (s *TipoItinerarioService) GetAll(ctx context.Context) ([]models.TipoItinerario, error) {
+	return s.repo.WithContext(ctx).FindAll()
 }

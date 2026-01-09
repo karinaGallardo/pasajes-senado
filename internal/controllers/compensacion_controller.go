@@ -26,7 +26,7 @@ func NewCompensacionController() *CompensacionController {
 }
 
 func (ctrl *CompensacionController) Index(c *gin.Context) {
-	list, _ := ctrl.compService.GetAll()
+	list, _ := ctrl.compService.GetAll(c.Request.Context())
 	utils.Render(c, "compensacion/index.html", gin.H{
 		"Title": "Gestión de Compensaciones",
 		"Lista": list,
@@ -34,8 +34,8 @@ func (ctrl *CompensacionController) Index(c *gin.Context) {
 }
 
 func (ctrl *CompensacionController) Create(c *gin.Context) {
-	users, _ := ctrl.userService.GetAll()
-	cats, _ := ctrl.compService.GetAllCategorias()
+	users, _ := ctrl.userService.GetAll(c.Request.Context())
+	cats, _ := ctrl.compService.GetAllCategorias(c.Request.Context())
 
 	utils.Render(c, "compensacion/create.html", gin.H{
 		"Title":      "Nueva Compensación",
@@ -69,7 +69,7 @@ func (ctrl *CompensacionController) Store(c *gin.Context) {
 		Informe:         c.PostForm("informe"),
 	}
 
-	if err := ctrl.compService.Create(&comp); err != nil {
+	if err := ctrl.compService.Create(c.Request.Context(), &comp); err != nil {
 		c.String(http.StatusInternalServerError, err.Error())
 		return
 	}

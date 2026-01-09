@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"context"
 	"sistema-pasajes/internal/models"
 
 	"sistema-pasajes/internal/configs"
@@ -14,6 +15,10 @@ type ConceptoViajeRepository struct {
 
 func NewConceptoViajeRepository() *ConceptoViajeRepository {
 	return &ConceptoViajeRepository{db: configs.DB}
+}
+
+func (r *ConceptoViajeRepository) WithContext(ctx context.Context) *ConceptoViajeRepository {
+	return &ConceptoViajeRepository{db: r.db.WithContext(ctx)}
 }
 
 func (r *ConceptoViajeRepository) FindConceptos() ([]models.ConceptoViaje, error) {

@@ -12,6 +12,7 @@
   </div>
 
   <form action="/usuarios/{{ .Usuario.ID }}" method="POST" class="p-6">
+    <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
     <div class="mb-6">
       <label for="rol_codigo" class="block text-sm font-medium text-gray-700">Rol Asignado</label>
       <select

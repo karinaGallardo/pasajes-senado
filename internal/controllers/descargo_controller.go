@@ -29,7 +29,7 @@ func NewDescargoController() *DescargoController {
 }
 
 func (ctrl *DescargoController) Index(c *gin.Context) {
-	descargos, _ := ctrl.descargoService.FindAll()
+	descargos, _ := ctrl.descargoService.FindAll(c.Request.Context())
 	utils.Render(c, "descargo/index.html", gin.H{
 		"Title":     "Bandeja de Descargos (FV-05)",
 		"Descargos": descargos,
@@ -43,13 +43,13 @@ func (ctrl *DescargoController) Create(c *gin.Context) {
 		return
 	}
 
-	solicitud, err := ctrl.solicitudService.FindByID(solicitudID)
+	solicitud, err := ctrl.solicitudService.FindByID(c.Request.Context(), solicitudID)
 	if err != nil {
 		c.Redirect(http.StatusFound, "/solicitudes")
 		return
 	}
 
-	existe, _ := ctrl.descargoService.FindBySolicitudID(solicitudID)
+	existe, _ := ctrl.descargoService.FindBySolicitudID(c.Request.Context(), solicitudID)
 	if existe != nil && existe.ID != "" {
 		c.Redirect(http.StatusFound, "/descargos/"+existe.ID)
 		return
@@ -122,7 +122,7 @@ func (ctrl *DescargoController) Store(c *gin.Context) {
 	}
 	nuevoDescargo.Documentos = docs
 
-	if err := ctrl.descargoService.Create(&nuevoDescargo); err != nil {
+	if err := ctrl.descargoService.Create(c.Request.Context(), &nuevoDescargo); err != nil {
 		log.Printf("Error creando descargo: %v", err)
 		c.Redirect(http.StatusFound, "/solicitudes")
 		return
@@ -134,7 +134,7 @@ func (ctrl *DescargoController) Store(c *gin.Context) {
 func (ctrl *DescargoController) Show(c *gin.Context) {
 	id := c.Param("id")
 
-	descargo, err := ctrl.descargoService.FindByID(id)
+	descargo, err := ctrl.descargoService.FindByID(c.Request.Context(), id)
 	if err != nil {
 		log.Printf("Error buscando descargo %s: %v", id, err)
 		c.Redirect(http.StatusFound, "/descargos")
@@ -150,7 +150,7 @@ func (ctrl *DescargoController) Show(c *gin.Context) {
 func (ctrl *DescargoController) Approve(c *gin.Context) {
 	id := c.Param("id")
 
-	descargo, err := ctrl.descargoService.FindByID(id)
+	descargo, err := ctrl.descargoService.FindByID(c.Request.Context(), id)
 	if err != nil {
 		log.Printf("Error aprobando descargo: %v", err)
 		c.Redirect(http.StatusFound, "/descargos/"+id)
@@ -165,10 +165,10 @@ func (ctrl *DescargoController) Approve(c *gin.Context) {
 	}
 	descargo.UpdatedBy = &userContext.ID
 
-	ctrl.descargoService.Update(descargo)
+	ctrl.descargoService.Update(c.Request.Context(), descargo)
 
 	if descargo.SolicitudID != "" {
-		ctrl.solicitudService.Finalize(descargo.SolicitudID)
+		ctrl.solicitudService.Finalize(c.Request.Context(), descargo.SolicitudID)
 	}
 
 	c.Redirect(http.StatusFound, "/descargos/"+id)

@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"context"
 	"sistema-pasajes/internal/models"
 
 	"sistema-pasajes/internal/configs"
@@ -14,6 +15,18 @@ type AsignacionVoucherRepository struct {
 
 func NewAsignacionVoucherRepository() *AsignacionVoucherRepository {
 	return &AsignacionVoucherRepository{db: configs.DB}
+}
+
+func (r *AsignacionVoucherRepository) WithTx(tx *gorm.DB) *AsignacionVoucherRepository {
+	return &AsignacionVoucherRepository{db: tx}
+}
+
+func (r *AsignacionVoucherRepository) WithContext(ctx context.Context) *AsignacionVoucherRepository {
+	return &AsignacionVoucherRepository{db: r.db.WithContext(ctx)}
+}
+
+func (r *AsignacionVoucherRepository) GetDB() *gorm.DB {
+	return r.db
 }
 
 func (r *AsignacionVoucherRepository) Create(voucher *models.AsignacionVoucher) error {

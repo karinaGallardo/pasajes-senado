@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"context"
 	"sistema-pasajes/internal/models"
 
 	"sistema-pasajes/internal/configs"
@@ -14,6 +15,10 @@ type TipoSolicitudRepository struct {
 
 func NewTipoSolicitudRepository() *TipoSolicitudRepository {
 	return &TipoSolicitudRepository{db: configs.DB}
+}
+
+func (r *TipoSolicitudRepository) WithContext(ctx context.Context) *TipoSolicitudRepository {
+	return &TipoSolicitudRepository{db: r.db.WithContext(ctx)}
 }
 
 func (r *TipoSolicitudRepository) FindByID(id string) (*models.TipoSolicitud, error) {

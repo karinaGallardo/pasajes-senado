@@ -54,19 +54,19 @@ func (ctrl *SolicitudDerechoController) Create(c *gin.Context) {
 	voucherID := c.Param("voucher_id")
 	itinerarioCode := c.Param("itinerario_code")
 
-	voucher, err := ctrl.cupoService.GetVoucherByID(voucherID)
+	voucher, err := ctrl.cupoService.GetVoucherByID(c.Request.Context(), voucherID)
 	if err != nil {
 		c.String(http.StatusNotFound, "Voucher no encontrada")
 		return
 	}
 
-	itinerario, err := ctrl.tipoItinerarioService.GetByCodigo(itinerarioCode)
+	itinerario, err := ctrl.tipoItinerarioService.GetByCodigo(c.Request.Context(), itinerarioCode)
 	if err != nil {
 		c.String(http.StatusBadRequest, "Itinerario inválido")
 		return
 	}
 
-	targetUser, err := ctrl.userService.GetByID(voucher.SenadorID)
+	targetUser, err := ctrl.userService.GetByID(c.Request.Context(), voucher.SenadorID)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Usuario titular del voucher no encontrado")
 		return
@@ -91,9 +91,9 @@ func (ctrl *SolicitudDerechoController) Create(c *gin.Context) {
 		alertaOrigen = "Este usuario no tiene configurado su LUGAR DE ORIGEN en el perfil. El sistema no podrá calcular rutas automáticamente."
 	}
 
-	aerolineas, _ := ctrl.aerolineaService.GetAllActive()
+	aerolineas, _ := ctrl.aerolineaService.GetAllActive(c.Request.Context())
 
-	tipoSolicitud, ambitoNac, _ := ctrl.tipoSolicitudService.GetByCodigoAndAmbito("USO_CUPO", "NACIONAL")
+	tipoSolicitud, ambitoNac, _ := ctrl.tipoSolicitudService.GetByCodigoAndAmbito(c.Request.Context(), "USO_CUPO", "NACIONAL")
 
 	var weekDays []map[string]string
 	dayNames := map[string]string{
@@ -121,13 +121,13 @@ func (ctrl *SolicitudDerechoController) Create(c *gin.Context) {
 
 	var origen, destino *models.Destino
 
-	userLoc, err := ctrl.destinoService.GetByIATA(origenIATA)
+	userLoc, err := ctrl.destinoService.GetByIATA(c.Request.Context(), origenIATA)
 	if err != nil || userLoc == nil {
 		c.Redirect(http.StatusFound, fmt.Sprintf("/usuarios/%s/editar", targetUser.ID))
 		return
 	}
 
-	lpbLoc, _ := ctrl.destinoService.GetByIATA("LPB")
+	lpbLoc, _ := ctrl.destinoService.GetByIATA(c.Request.Context(), "LPB")
 
 	if itinerario.Codigo == "SOLO_IDA" {
 		origen = userLoc
@@ -191,7 +191,7 @@ func (ctrl *SolicitudDerechoController) Store(c *gin.Context) {
 
 	itinID := req.TipoItinerarioID
 	if itinID == "" {
-		itin, _ := ctrl.tipoItinerarioService.GetByCodigo("IDA_VUELTA")
+		itin, _ := ctrl.tipoItinerarioService.GetByCodigo(c.Request.Context(), "IDA_VUELTA")
 		if itin != nil {
 			itinID = itin.ID
 		}
@@ -210,17 +210,18 @@ func (ctrl *SolicitudDerechoController) Store(c *gin.Context) {
 		AerolineaSugerida: req.AerolineaSugerida,
 	}
 
-	if err := ctrl.solicitudService.Create(&nuevaSolicitud, usuario, req.VoucherID); err != nil {
+	if err := ctrl.solicitudService.Create(c.Request.Context(), &nuevaSolicitud, usuario, req.VoucherID); err != nil {
 		c.String(http.StatusInternalServerError, "Error creando solicitud: "+err.Error())
 		return
 	}
 
+	utils.SetSuccessMessage(c, "Solicitud creada correctamente")
 	c.Redirect(http.StatusFound, fmt.Sprintf("/solicitudes/derecho/%s/detalle", nuevaSolicitud.ID))
 }
 
 func (ctrl *SolicitudDerechoController) Edit(c *gin.Context) {
 	id := c.Param("id")
-	solicitud, err := ctrl.solicitudService.FindByID(id)
+	solicitud, err := ctrl.solicitudService.FindByID(c.Request.Context(), id)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Error: "+err.Error())
 		return
@@ -243,13 +244,13 @@ func (ctrl *SolicitudDerechoController) Edit(c *gin.Context) {
 		return
 	}
 
-	voucher, err := ctrl.cupoService.GetVoucherByID(*solicitud.VoucherID)
+	voucher, err := ctrl.cupoService.GetVoucherByID(c.Request.Context(), *solicitud.VoucherID)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Voucher asociado no encontrado")
 		return
 	}
 
-	TiposItinerario, _ := ctrl.tipoItinerarioService.GetAll()
+	TiposItinerario, _ := ctrl.tipoItinerarioService.GetAll(c.Request.Context())
 	var ItinerarioIdaID string
 	var ItinerarioVueltaID string
 	var ActiveTab string
@@ -267,15 +268,15 @@ func (ctrl *SolicitudDerechoController) Edit(c *gin.Context) {
 		ActiveTab = solicitud.TipoItinerario.Codigo
 	}
 
-	aerolineas, _ := ctrl.aerolineaService.GetAllActive()
+	aerolineas, _ := ctrl.aerolineaService.GetAllActive(c.Request.Context())
 
 	origenIATA := solicitud.Usuario.GetOrigenIATA()
-	userLoc, err := ctrl.destinoService.GetByIATA(origenIATA)
+	userLoc, err := ctrl.destinoService.GetByIATA(c.Request.Context(), origenIATA)
 	if err != nil || userLoc == nil {
 		c.String(http.StatusInternalServerError, "Usuario sin origen configurado")
 		return
 	}
-	lpbLoc, _ := ctrl.destinoService.GetByIATA("LPB")
+	lpbLoc, _ := ctrl.destinoService.GetByIATA(c.Request.Context(), "LPB")
 
 	var origen, destino *models.Destino
 	if ActiveTab == "SOLO_IDA" {
@@ -351,7 +352,7 @@ func (ctrl *SolicitudDerechoController) Update(c *gin.Context) {
 		}
 	}
 
-	solicitud, err := ctrl.solicitudService.FindByID(id)
+	solicitud, err := ctrl.solicitudService.FindByID(c.Request.Context(), id)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Error: "+err.Error())
 		return
@@ -373,17 +374,18 @@ func (ctrl *SolicitudDerechoController) Update(c *gin.Context) {
 	solicitud.FechaVuelta = fechaVuelta
 	solicitud.Motivo = req.Motivo
 	solicitud.AerolineaSugerida = req.AerolineaSugerida
-	if err := ctrl.solicitudService.Update(solicitud); err != nil {
+	if err := ctrl.solicitudService.Update(c.Request.Context(), solicitud); err != nil {
 		c.String(http.StatusInternalServerError, "Error actualizando: "+err.Error())
 		return
 	}
 
+	utils.SetSuccessMessage(c, "Solicitud actualizada correctamente")
 	c.Redirect(http.StatusFound, fmt.Sprintf("/solicitudes/derecho/%s/detalle", solicitud.ID))
 }
 
 func (ctrl *SolicitudDerechoController) Show(c *gin.Context) {
 	id := c.Param("id")
-	solicitud, err := ctrl.solicitudService.FindByID(id)
+	solicitud, err := ctrl.solicitudService.FindByID(c.Request.Context(), id)
 
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Error retrieving solicitud: "+err.Error())
@@ -412,7 +414,7 @@ func (ctrl *SolicitudDerechoController) Show(c *gin.Context) {
 		mermaidGraph += "class E active;"
 	}
 
-	aerolineas, _ := ctrl.aerolineaService.GetAllActive()
+	aerolineas, _ := ctrl.aerolineaService.GetAllActive(c.Request.Context())
 
 	userIDsMap := make(map[string]bool)
 	if solicitud.CreatedBy != nil {
@@ -427,14 +429,14 @@ func (ctrl *SolicitudDerechoController) Show(c *gin.Context) {
 		ids = append(ids, id)
 	}
 
-	usuarios, _ := ctrl.userService.GetByIDs(ids)
+	usuarios, _ := ctrl.userService.GetByIDs(c.Request.Context(), ids)
 	usuariosMap := make(map[string]*models.Usuario)
 	for i := range usuarios {
 		usuariosMap[usuarios[i].ID] = &usuarios[i]
 	}
 
-	rutas, _ := ctrl.rutaService.GetAll()
-	agencias, _ := ctrl.agenciaService.GetAllActive()
+	rutas, _ := ctrl.rutaService.GetAll(c.Request.Context())
+	agencias, _ := ctrl.agenciaService.GetAllActive(c.Request.Context())
 
 	utils.Render(c, "solicitud/derecho/show.html", gin.H{
 		"Title":        "Detalle Solicitud (Derecho) #" + id,
@@ -447,43 +449,44 @@ func (ctrl *SolicitudDerechoController) Show(c *gin.Context) {
 		"Aerolineas":   aerolineas,
 		"Rutas":        rutas,
 		"Agencias":     agencias,
-		"User":         appcontext.CurrentUser(c),
 	})
 }
 
 func (ctrl *SolicitudDerechoController) Approve(c *gin.Context) {
 	id := c.Param("id")
-	if err := ctrl.solicitudService.Approve(id); err != nil {
+	if err := ctrl.solicitudService.Approve(c.Request.Context(), id); err != nil {
 		c.String(http.StatusInternalServerError, "Error al aprobar la solicitud: "+err.Error())
 		return
 	}
+	utils.SetSuccessMessage(c, "Solicitud APROBADA correctamente")
 	c.Redirect(http.StatusFound, "/solicitudes/derecho/"+id+"/detalle")
 }
 
 func (ctrl *SolicitudDerechoController) Reject(c *gin.Context) {
 	id := c.Param("id")
-	if err := ctrl.solicitudService.Reject(id); err != nil {
+	if err := ctrl.solicitudService.Reject(c.Request.Context(), id); err != nil {
 		c.String(http.StatusInternalServerError, "Error al rechazar la solicitud: "+err.Error())
 		return
 	}
+	utils.SetSuccessMessage(c, "Solicitud RECHAZADA")
 	c.Redirect(http.StatusFound, "/solicitudes/derecho/"+id+"/detalle")
 }
 
 func (ctrl *SolicitudDerechoController) Print(c *gin.Context) {
 	id := c.Param("id")
-	solicitud, err := ctrl.solicitudService.FindByID(id)
+	solicitud, err := ctrl.solicitudService.FindByID(c.Request.Context(), id)
 
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Error retrieving solicitud: "+err.Error())
 		return
 	}
 
-	personaView, errMongo := ctrl.peopleService.FindSenatorDataByCI(solicitud.Usuario.CI)
+	personaView, errMongo := ctrl.peopleService.FindSenatorDataByCI(c.Request.Context(), solicitud.Usuario.CI)
 	if errMongo != nil {
 		personaView = nil
 	}
 
-	pdf := ctrl.reportService.GeneratePV01(solicitud, personaView)
+	pdf := ctrl.reportService.GeneratePV01(c.Request.Context(), solicitud, personaView)
 
 	c.Header("Content-Type", "application/pdf")
 	c.Header("Content-Disposition", fmt.Sprintf("inline; filename=FORM-PV01-%s.pdf", solicitud.ID))
@@ -492,16 +495,17 @@ func (ctrl *SolicitudDerechoController) Print(c *gin.Context) {
 
 func (ctrl *SolicitudDerechoController) Destroy(c *gin.Context) {
 	id := c.Param("id")
-	solicitud, err := ctrl.solicitudService.FindByID(id)
+	solicitud, err := ctrl.solicitudService.FindByID(c.Request.Context(), id)
 	if err != nil {
 		c.String(http.StatusNotFound, "Solicitud no encontrada")
 		return
 	}
 
-	if err := ctrl.solicitudService.Delete(id); err != nil {
+	if err := ctrl.solicitudService.Delete(c.Request.Context(), id); err != nil {
 		c.String(http.StatusInternalServerError, "Error eliminando: "+err.Error())
 		return
 	}
 
+	utils.SetSuccessMessage(c, "Solicitud eliminada")
 	c.Redirect(http.StatusFound, fmt.Sprintf("/cupos/derecho/%s", solicitud.UsuarioID))
 }

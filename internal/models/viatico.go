@@ -5,10 +5,10 @@ import "time"
 type Viatico struct {
 	BaseModel
 	UsuarioID string  `gorm:"size:36;not null"`
-	Usuario   Usuario `gorm:"constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
+	Usuario   Usuario `gorm:"constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;<-:false"`
 
 	SolicitudID string     `gorm:"size:36;not null;uniqueIndex"`
-	Solicitud   *Solicitud `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+	Solicitud   *Solicitud `gorm:"constraint:OnUpdate:CASCADE,OnDelete:CASCADE;<-:false"`
 
 	Codigo string `gorm:"size:20;uniqueIndex"`
 

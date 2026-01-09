@@ -12,6 +12,7 @@ import (
 	"sistema-pasajes/internal/dtos"
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/services"
+	"sistema-pasajes/internal/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -36,7 +37,8 @@ func (ctrl *PasajeController) Store(c *gin.Context) {
 	var req dtos.CreatePasajeRequest
 	if err := c.ShouldBind(&req); err != nil {
 		log.Printf("Error binding request: %v", err)
-		c.Redirect(http.StatusFound, fmt.Sprintf("/solicitudes/derecho/%s/detalle?error=DatosInvalidos", solicitudID))
+		utils.SetErrorMessage(c, "Datos inválidos en el formulario")
+		c.Redirect(http.StatusFound, fmt.Sprintf("/solicitudes/derecho/%s/detalle", solicitudID))
 		return
 	}
 
@@ -56,7 +58,8 @@ func (ctrl *PasajeController) Store(c *gin.Context) {
 			filePath = dst
 		} else {
 			log.Printf("Error saving file: %v", err)
-			c.Redirect(http.StatusFound, fmt.Sprintf("/solicitudes/derecho/%s/detalle?error=ErrorGuardarArchivo", solicitudID))
+			utils.SetErrorMessage(c, "Error al guardar el archivo adjunto")
+			c.Redirect(http.StatusFound, fmt.Sprintf("/solicitudes/derecho/%s/detalle", solicitudID))
 			return
 		}
 	}
@@ -85,19 +88,21 @@ func (ctrl *PasajeController) Store(c *gin.Context) {
 		Archivo: filePath,
 	}
 
-	if err := ctrl.pasajeService.Create(&nuevoPasaje); err != nil {
+	if err := ctrl.pasajeService.Create(c.Request.Context(), &nuevoPasaje); err != nil {
 		log.Printf("Error creando pasaje: %v", err)
-		c.Redirect(http.StatusFound, fmt.Sprintf("/solicitudes/derecho/%s/detalle?error=ErrorCrearPasaje", solicitudID))
+		utils.SetErrorMessage(c, "Error al crear el pasaje: "+err.Error())
+		c.Redirect(http.StatusFound, fmt.Sprintf("/solicitudes/derecho/%s/detalle", solicitudID))
 		return
 	}
 
-	c.Redirect(http.StatusFound, fmt.Sprintf("/solicitudes/derecho/%s/detalle?success=PasajeCreado", solicitudID))
+	utils.SetSuccessMessage(c, "Pasaje registrado correctamente")
+	c.Redirect(http.StatusFound, fmt.Sprintf("/solicitudes/derecho/%s/detalle", solicitudID))
 }
 func (ctrl *PasajeController) UpdateStatus(c *gin.Context) {
 	id := c.PostForm("id")
 	status := c.PostForm("status")
 
-	pasaje, err := ctrl.pasajeService.FindByID(id)
+	pasaje, err := ctrl.pasajeService.FindByID(c.Request.Context(), id)
 	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "Pasaje no encontrado"})
 		return
@@ -105,7 +110,7 @@ func (ctrl *PasajeController) UpdateStatus(c *gin.Context) {
 
 	pasaje.EstadoPasajeCodigo = &status
 
-	if err := ctrl.pasajeService.Update(pasaje); err != nil {
+	if err := ctrl.pasajeService.Update(c.Request.Context(), pasaje); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al actualizar estado"})
 		return
 	}
@@ -118,7 +123,7 @@ func (ctrl *PasajeController) Devolver(c *gin.Context) {
 	glosa := c.PostForm("glosa")
 	penalidadStr := c.PostForm("costo_penalidad")
 
-	pasaje, err := ctrl.pasajeService.FindByID(id)
+	pasaje, err := ctrl.pasajeService.FindByID(c.Request.Context(), id)
 	if err != nil {
 		c.Redirect(http.StatusFound, "/solicitudes")
 		return
@@ -137,11 +142,12 @@ func (ctrl *PasajeController) Devolver(c *gin.Context) {
 	}
 	pasaje.CostoPenalidad = costoPenalidad
 
-	if err := ctrl.pasajeService.Update(pasaje); err != nil {
+	if err := ctrl.pasajeService.Update(c.Request.Context(), pasaje); err != nil {
 		log.Printf("Error devolviendo pasaje: %v", err)
 	}
 
-	c.Redirect(http.StatusFound, fmt.Sprintf("/solicitudes/derecho/%s/detalle?success=PasajeDevuelto", pasaje.SolicitudID))
+	utils.SetSuccessMessage(c, "Pasaje marcado como DEVUELTO correctamente")
+	c.Redirect(http.StatusFound, fmt.Sprintf("/solicitudes/derecho/%s/detalle", pasaje.SolicitudID))
 }
 
 func (ctrl *PasajeController) Reprogramar(c *gin.Context) {
@@ -193,18 +199,19 @@ func (ctrl *PasajeController) Reprogramar(c *gin.Context) {
 		CodigoReserva:  req.CodigoReserva,
 	}
 
-	if err := ctrl.pasajeService.Reprogramar(req.PasajeAnteriorID, &newPasaje); err != nil {
+	if err := ctrl.pasajeService.Reprogramar(c.Request.Context(), req.PasajeAnteriorID, &newPasaje); err != nil {
 		log.Printf("Error reprogramando pasaje: %v", err)
 		c.Redirect(http.StatusFound, "/solicitudes")
 		return
 	}
 
-	c.Redirect(http.StatusFound, fmt.Sprintf("/solicitudes/derecho/%s/detalle?success=PasajeReprogramado", newPasaje.SolicitudID))
+	utils.SetSuccessMessage(c, "Pasaje reprogramado exitosamente")
+	c.Redirect(http.StatusFound, fmt.Sprintf("/solicitudes/derecho/%s/detalle", newPasaje.SolicitudID))
 }
 
 func (ctrl *PasajeController) Update(c *gin.Context) {
 	id := c.PostForm("id")
-	pasaje, err := ctrl.pasajeService.FindByID(id)
+	pasaje, err := ctrl.pasajeService.FindByID(c.Request.Context(), id)
 	if err != nil {
 		c.Redirect(http.StatusFound, "/solicitudes")
 		return
@@ -243,6 +250,8 @@ func (ctrl *PasajeController) Update(c *gin.Context) {
 		}
 	}
 
-	ctrl.pasajeService.Update(pasaje)
-	c.Redirect(http.StatusFound, fmt.Sprintf("/solicitudes/derecho/%s/detalle?success=PasajeActualizado", pasaje.SolicitudID))
+	ctrl.pasajeService.Update(c.Request.Context(), pasaje)
+
+	utils.SetSuccessMessage(c, "Datos del pasaje actualizados")
+	c.Redirect(http.StatusFound, fmt.Sprintf("/solicitudes/derecho/%s/detalle", pasaje.SolicitudID))
 }

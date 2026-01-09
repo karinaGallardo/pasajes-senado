@@ -25,7 +25,9 @@ func AuthRequired() gin.HandlerFunc {
 		var user models.Usuario
 		if err := configs.DB.Preload("Rol").
 			Preload("Origen").
+			Preload("Origen.Departamento").
 			Preload("Departamento").
+			Preload("Encargado").
 			First(&user, "id = ?", userID).Error; err != nil {
 			session.Clear()
 			session.Save()
@@ -35,8 +37,6 @@ func AuthRequired() gin.HandlerFunc {
 		}
 
 		appcontext.SetUser(c, &user)
-		appcontext.SetAuthID(user.ID)
-		defer appcontext.ClearAuthID()
 
 		c.Next()
 	}

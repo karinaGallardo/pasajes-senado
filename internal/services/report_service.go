@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"fmt"
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/utils"
@@ -17,7 +18,7 @@ func NewReportService() *ReportService {
 	return &ReportService{}
 }
 
-func (s *ReportService) GeneratePV01(solicitud *models.Solicitud, personaView *models.MongoPersonaView) *gofpdf.Fpdf {
+func (s *ReportService) GeneratePV01(ctx context.Context, solicitud *models.Solicitud, personaView *models.MongoPersonaView) *gofpdf.Fpdf {
 	pdf := gofpdf.New("P", "mm", "A4", "")
 	tr := pdf.UnicodeTranslatorFromDescriptor("")
 	pdf.AddPage()

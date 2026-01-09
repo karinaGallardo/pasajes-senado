@@ -89,9 +89,10 @@ func SetupRoutes(r *gin.Engine) {
 			adminOnly.GET("/usuarios", usuarioCtrl.Index)
 			adminOnly.GET("/usuarios/table", usuarioCtrl.Table)
 			adminOnly.POST("/usuarios/sync", usuarioCtrl.Sync)
-			adminOnly.GET("/usuarios/:id/editar", usuarioCtrl.Edit)
-			adminOnly.POST("/usuarios/:id", usuarioCtrl.Update)
 		}
+		protected.GET("/usuarios/:id/modal-editar", usuarioCtrl.GetEditModal)
+		protected.GET("/usuarios/:id/editar", usuarioCtrl.Edit)
+		protected.POST("/usuarios/:id/actualizar", usuarioCtrl.Update)
 
 		sysAdmin := protected.Group("/")
 		sysAdmin.Use(middleware.RequireRole("ADMIN", "TECNICO"))

@@ -1,9 +1,9 @@
 package services
 
 import (
+	"context"
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
-
 )
 
 type ConfiguracionService struct {
@@ -16,21 +16,21 @@ func NewConfiguracionService() *ConfiguracionService {
 	}
 }
 
-func (s *ConfiguracionService) GetAll() ([]models.Configuracion, error) {
-	return s.repo.FindAll()
+func (s *ConfiguracionService) GetAll(ctx context.Context) ([]models.Configuracion, error) {
+	return s.repo.WithContext(ctx).FindAll()
 }
 
-func (s *ConfiguracionService) Update(clave, valor string) error {
-	conf, err := s.repo.FindByClave(clave)
+func (s *ConfiguracionService) Update(ctx context.Context, clave, valor string) error {
+	conf, err := s.repo.WithContext(ctx).FindByClave(clave)
 	if err != nil {
 		return err
 	}
 	conf.Valor = valor
-	return s.repo.Save(conf)
+	return s.repo.WithContext(ctx).Save(conf)
 }
 
-func (s *ConfiguracionService) GetValue(clave string) string {
-	conf, err := s.repo.FindByClave(clave)
+func (s *ConfiguracionService) GetValue(ctx context.Context, clave string) string {
+	conf, err := s.repo.WithContext(ctx).FindByClave(clave)
 	if err != nil {
 		return ""
 	}

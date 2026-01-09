@@ -28,7 +28,7 @@ func (ac *AuthController) Login(c *gin.Context) {
 	username := c.PostForm("username")
 	password := c.PostForm("password")
 
-	user, err := ac.authService.AuthenticateAndSync(username, password)
+	user, err := ac.authService.AuthenticateAndSync(c.Request.Context(), username, password)
 	if err != nil {
 		c.HTML(http.StatusUnauthorized, "auth/login.html", gin.H{
 			"error": err.Error(),

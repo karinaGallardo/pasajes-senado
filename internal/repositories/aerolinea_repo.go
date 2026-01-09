@@ -1,9 +1,11 @@
 package repositories
 
 import (
+	"context"
 	"sistema-pasajes/internal/models"
 
 	"sistema-pasajes/internal/configs"
+
 	"gorm.io/gorm"
 )
 
@@ -13,6 +15,10 @@ type AerolineaRepository struct {
 
 func NewAerolineaRepository() *AerolineaRepository {
 	return &AerolineaRepository{db: configs.DB}
+}
+
+func (r *AerolineaRepository) WithContext(ctx context.Context) *AerolineaRepository {
+	return &AerolineaRepository{db: r.db.WithContext(ctx)}
 }
 
 func (r *AerolineaRepository) FindAllActive() ([]models.Aerolinea, error) {

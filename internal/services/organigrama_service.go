@@ -1,9 +1,9 @@
 package services
 
 import (
+	"context"
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
-
 )
 
 type OrganigramaService struct {
@@ -18,26 +18,26 @@ func NewOrganigramaService() *OrganigramaService {
 	}
 }
 
-func (s *OrganigramaService) GetAllCargos() ([]models.Cargo, error) {
-	return s.cargoRepo.FindAll()
+func (s *OrganigramaService) GetAllCargos(ctx context.Context) ([]models.Cargo, error) {
+	return s.cargoRepo.WithContext(ctx).FindAll()
 }
 
-func (s *OrganigramaService) CreateCargo(cargo *models.Cargo) error {
-	return s.cargoRepo.Create(cargo)
+func (s *OrganigramaService) CreateCargo(ctx context.Context, cargo *models.Cargo) error {
+	return s.cargoRepo.WithContext(ctx).Create(cargo)
 }
 
-func (s *OrganigramaService) DeleteCargo(id string) error {
-	return s.cargoRepo.Delete(id)
+func (s *OrganigramaService) DeleteCargo(ctx context.Context, id string) error {
+	return s.cargoRepo.WithContext(ctx).Delete(id)
 }
 
-func (s *OrganigramaService) GetAllOficinas() ([]models.Oficina, error) {
-	return s.oficinaRepo.FindAll()
+func (s *OrganigramaService) GetAllOficinas(ctx context.Context) ([]models.Oficina, error) {
+	return s.oficinaRepo.WithContext(ctx).FindAll()
 }
 
-func (s *OrganigramaService) CreateOficina(oficina *models.Oficina) error {
-	return s.oficinaRepo.Create(oficina)
+func (s *OrganigramaService) CreateOficina(ctx context.Context, oficina *models.Oficina) error {
+	return s.oficinaRepo.WithContext(ctx).Create(oficina)
 }
 
-func (s *OrganigramaService) DeleteOficina(id string) error {
-	return s.oficinaRepo.Delete(id)
+func (s *OrganigramaService) DeleteOficina(ctx context.Context, id string) error {
+	return s.oficinaRepo.WithContext(ctx).Delete(id)
 }

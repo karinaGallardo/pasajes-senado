@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"context"
 	"sistema-pasajes/internal/models"
 
 	"sistema-pasajes/internal/configs"
@@ -25,47 +26,70 @@ func NewUsuarioRepository() *UsuarioRepository {
 	return &UsuarioRepository{db: configs.DB}
 }
 
+func (r *UsuarioRepository) WithTx(tx *gorm.DB) *UsuarioRepository {
+	return &UsuarioRepository{db: tx}
+}
+
+func (r *UsuarioRepository) WithContext(ctx context.Context) *UsuarioRepository {
+	return &UsuarioRepository{db: r.db.WithContext(ctx)}
+}
+
+func (r *UsuarioRepository) GetDB() *gorm.DB {
+	return r.db
+}
+
 func (r *UsuarioRepository) FindAll() ([]models.Usuario, error) {
 	var usuarios []models.Usuario
 	err := r.db.Preload("Rol").Preload("Genero").Order("created_at desc").Find(&usuarios).Error
 	return usuarios, err
 }
 
+func FilterByRoleType(roleType string) func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		switch roleType {
+		case "SENADOR":
+			return db.Where("tipo = ?", "SENADOR_TITULAR")
+		case "FUNCIONARIO":
+			return db.Where("tipo IN ?", []string{"FUNCIONARIO", "FUNCIONARIO_PERMANENTE", "FUNCIONARIO_EVENTUAL"})
+		default:
+			return db
+		}
+	}
+}
+
+func SearchUsuario(term string) func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		if term == "" {
+			return db
+		}
+		likeTerm := "%" + term + "%"
+		return db.Where("(username LIKE ? OR ci LIKE ? OR firstname LIKE ? OR lastname LIKE ? OR email LIKE ?)",
+			likeTerm, likeTerm, likeTerm, likeTerm, likeTerm)
+	}
+}
+
 func (r *UsuarioRepository) FindPaginated(roleType string, page, limit int, searchTerm string) (*PaginatedUsers, error) {
 	var usuarios []models.Usuario
 	var total int64
 
-	query := r.db.Model(&models.Usuario{}).Preload("Rol").Preload("Genero").Preload("Origen").Preload("Departamento").Preload("Cargo")
+	baseQuery := r.db.Model(&models.Usuario{}).
+		Preload("Rol").
+		Preload("Genero").
+		Preload("Origen").
+		Preload("Departamento").
+		Preload("Cargo").
+		Scopes(FilterByRoleType(roleType), SearchUsuario(searchTerm))
+	baseQuery.Count(&total)
 
-	switch roleType {
-	case "SENADOR":
-		query = query.Where("tipo = ?", "SENADOR_TITULAR")
-	case "FUNCIONARIO":
-		query = query.Where("tipo IN ?", []string{"FUNCIONARIO", "FUNCIONARIO_PERMANENTE", "FUNCIONARIO_EVENTUAL"})
-	}
-
-	if searchTerm != "" {
-		likeTerm := "%" + searchTerm + "%"
-		query = query.Where("(username LIKE ? OR ci LIKE ? OR firstname LIKE ? OR lastname LIKE ? OR email LIKE ?)",
-			likeTerm, likeTerm, likeTerm, likeTerm, likeTerm)
-	}
-
-	query.Count(&total)
-
-	if page < 1 {
-		page = 1
-	}
-	if limit < 1 {
-		limit = 10
-	}
-	offset := (page - 1) * limit
-
-	err := query.Order("lastname ASC, firstname ASC").
-		Offset(offset).
-		Limit(limit).
+	err := baseQuery.
+		Scopes(Paginate(page, limit)).
+		Order("lastname ASC, firstname ASC").
 		Find(&usuarios).Error
 
-	totalPages := int((total + int64(limit) - 1) / int64(limit))
+	totalPages := 0
+	if limit > 0 {
+		totalPages = int((total + int64(limit) - 1) / int64(limit))
+	}
 
 	return &PaginatedUsers{
 		Usuarios:   usuarios,

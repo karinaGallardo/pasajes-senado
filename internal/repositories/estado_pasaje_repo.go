@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"context"
 	"sistema-pasajes/internal/configs"
 	"sistema-pasajes/internal/models"
 
@@ -15,6 +16,10 @@ func NewEstadoPasajeRepository() *EstadoPasajeRepository {
 	return &EstadoPasajeRepository{db: configs.DB}
 }
 
+func (r *EstadoPasajeRepository) WithContext(ctx context.Context) *EstadoPasajeRepository {
+	return &EstadoPasajeRepository{db: r.db.WithContext(ctx)}
+}
+
 func (r *EstadoPasajeRepository) FindByCodigo(codigo string) (*models.EstadoPasaje, error) {
 	var estado models.EstadoPasaje
 	err := r.db.First(&estado, "codigo = ?", codigo).Error
@@ -25,4 +30,8 @@ func (r *EstadoPasajeRepository) FindAll() ([]models.EstadoPasaje, error) {
 	var estados []models.EstadoPasaje
 	err := r.db.Find(&estados).Error
 	return estados, err
+}
+
+func (r *EstadoPasajeRepository) WithTx(tx *gorm.DB) *EstadoPasajeRepository {
+	return &EstadoPasajeRepository{db: tx}
 }

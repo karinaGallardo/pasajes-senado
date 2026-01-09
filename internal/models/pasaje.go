@@ -7,10 +7,10 @@ type Pasaje struct {
 	SolicitudID string `gorm:"not null;size:36"`
 
 	AerolineaID *string    `gorm:"size:36"`
-	Aerolinea   *Aerolinea `gorm:"foreignKey:AerolineaID"`
+	Aerolinea   *Aerolinea `gorm:"foreignKey:AerolineaID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;<-:false"`
 
 	AgenciaID *string  `gorm:"size:36"`
-	Agencia   *Agencia `gorm:"foreignKey:AgenciaID"`
+	Agencia   *Agencia `gorm:"foreignKey:AgenciaID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;<-:false"`
 
 	NumeroVuelo string `gorm:"size:50"`
 	Ruta        string `gorm:"size:255"`
@@ -22,12 +22,12 @@ type Pasaje struct {
 	Costo         float64 `gorm:"type:decimal(10,2)"`
 
 	EstadoPasajeCodigo *string       `gorm:"size:50;default:'EMITIDO'"`
-	EstadoPasaje       *EstadoPasaje `gorm:"foreignKey:EstadoPasajeCodigo"`
+	EstadoPasaje       *EstadoPasaje `gorm:"foreignKey:EstadoPasajeCodigo;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;<-:false"`
 
 	Archivo string `gorm:"size:255;default:''"`
 
 	PasajeAnteriorID *string `gorm:"size:36"`
-	PasajeAnterior   *Pasaje `gorm:"foreignKey:PasajeAnteriorID"`
+	PasajeAnterior   *Pasaje `gorm:"foreignKey:PasajeAnteriorID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;<-:false"`
 	Glosa            string  `gorm:"type:text"`
 
 	NumeroFactura  string  `gorm:"size:50;index"`

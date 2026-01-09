@@ -1,9 +1,11 @@
 package repositories
 
 import (
+	"context"
 	"sistema-pasajes/internal/models"
 
 	"sistema-pasajes/internal/configs"
+
 	"gorm.io/gorm"
 )
 
@@ -13,6 +15,10 @@ type OficinaRepository struct {
 
 func NewOficinaRepository() *OficinaRepository {
 	return &OficinaRepository{db: configs.DB}
+}
+
+func (r *OficinaRepository) WithContext(ctx context.Context) *OficinaRepository {
+	return &OficinaRepository{db: r.db.WithContext(ctx)}
 }
 
 func (r *OficinaRepository) FindAll() ([]models.Oficina, error) {

@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
 )
@@ -15,10 +16,10 @@ func NewEstadoPasajeService() *EstadoPasajeService {
 	}
 }
 
-func (s *EstadoPasajeService) GetByCodigo(codigo string) (*models.EstadoPasaje, error) {
-	return s.repo.FindByCodigo(codigo)
+func (s *EstadoPasajeService) GetByCodigo(ctx context.Context, codigo string) (*models.EstadoPasaje, error) {
+	return s.repo.WithContext(ctx).FindByCodigo(codigo)
 }
 
-func (s *EstadoPasajeService) GetAll() ([]models.EstadoPasaje, error) {
-	return s.repo.FindAll()
+func (s *EstadoPasajeService) GetAll(ctx context.Context) ([]models.EstadoPasaje, error) {
+	return s.repo.WithContext(ctx).FindAll()
 }

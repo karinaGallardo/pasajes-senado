@@ -9,22 +9,22 @@ type Solicitud struct {
 	Usuario   Usuario `gorm:"constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
 
 	VoucherID         *string            `gorm:"size:36;index;default:null"`
-	AsignacionVoucher *AsignacionVoucher `gorm:"foreignKey:VoucherID"`
+	AsignacionVoucher *AsignacionVoucher `gorm:"foreignKey:VoucherID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;<-:false"`
 
 	TipoSolicitudID string         `gorm:"size:36;not null;index"`
-	TipoSolicitud   *TipoSolicitud `gorm:"foreignKey:TipoSolicitudID"`
+	TipoSolicitud   *TipoSolicitud `gorm:"foreignKey:TipoSolicitudID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;<-:false"`
 
 	AmbitoViajeID string       `gorm:"size:36;not null;index"`
-	AmbitoViaje   *AmbitoViaje `gorm:"foreignKey:AmbitoViajeID"`
+	AmbitoViaje   *AmbitoViaje `gorm:"foreignKey:AmbitoViajeID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;<-:false"`
 
 	TipoItinerarioID string          `gorm:"size:36;not null;index"`
-	TipoItinerario   *TipoItinerario `gorm:"foreignKey:TipoItinerarioID"`
+	TipoItinerario   *TipoItinerario `gorm:"foreignKey:TipoItinerarioID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;<-:false"`
 
 	OrigenIATA string   `gorm:"size:5;not null"`
-	Origen     *Destino `gorm:"foreignKey:OrigenIATA;references:IATA"`
+	Origen     *Destino `gorm:"foreignKey:OrigenIATA;references:IATA;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;<-:false"`
 
 	DestinoIATA string   `gorm:"size:5;not null"`
-	Destino     *Destino `gorm:"foreignKey:DestinoIATA;references:IATA"`
+	Destino     *Destino `gorm:"foreignKey:DestinoIATA;references:IATA;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;<-:false"`
 
 	FechaIda    *time.Time `gorm:"default:null;type:timestamp"`
 	FechaVuelta *time.Time `gorm:"default:null;type:timestamp"`
@@ -34,7 +34,7 @@ type Solicitud struct {
 	AerolineaSugerida string `gorm:"size:100"`
 
 	EstadoSolicitudCodigo *string          `gorm:"size:20;index;default:'SOLICITADO'"`
-	EstadoSolicitud       *EstadoSolicitud `gorm:"foreignKey:EstadoSolicitudCodigo;references:Codigo"`
+	EstadoSolicitud       *EstadoSolicitud `gorm:"foreignKey:EstadoSolicitudCodigo;references:Codigo;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;<-:false"`
 
 	Pasajes []Pasaje `gorm:"foreignKey:SolicitudID"`
 

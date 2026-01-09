@@ -43,8 +43,9 @@
         <div class="flex space-x-2 items-center">
           <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-yellow-100 text-yellow-800 mr-4">Pendiente de Aprobación</span>
 
-          {{ if and .User.Rol (or (eq .User.Rol.Codigo "ADMIN") (eq .User.Rol.Codigo "TECNICO")) }}
+          {{ if and .CurrentUser.Rol (or (eq .CurrentUser.Rol.Codigo "ADMIN") (eq .CurrentUser.Rol.Codigo "TECNICO")) }}
           <form action="/descargos/{{ .Descargo.ID }}/aprobar" method="POST" x-data="{ loading: false }" @submit="loading = true">
+            <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
             <button
               type="submit"
               :disabled="loading"

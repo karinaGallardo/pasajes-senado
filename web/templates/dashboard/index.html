@@ -4,11 +4,11 @@
   <!-- Welcome Section -->
   <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-senado-primary flex justify-between items-center">
     <div>
-      <h2 class="text-2xl font-brand font-bold text-senado-900">Bienvenido, {{ .User.GetNombreCompleto }}</h2>
+      <h2 class="text-2xl font-brand font-bold text-senado-900">Bienvenido, {{ .CurrentUser.GetNombreCompleto }}</h2>
       <p class="text-senado-neutral mt-1">Panel de control del Sistema de Pasajes y Viáticos</p>
     </div>
     <div>
-      <span class="px-4 py-2 rounded-full bg-senado-50 text-senado-800 text-sm font-bold shadow-sm">{{ .User.Rol }}</span>
+      <span class="px-4 py-2 rounded-full bg-senado-50 text-senado-800 text-sm font-bold shadow-sm">{{ .CurrentUser.Rol }}</span>
     </div>
   </div>
 

@@ -1,9 +1,11 @@
 package repositories
 
 import (
+	"context"
 	"sistema-pasajes/internal/models"
 
 	"sistema-pasajes/internal/configs"
+
 	"gorm.io/gorm"
 )
 
@@ -13,6 +15,10 @@ type CategoriaCompensacionRepository struct {
 
 func NewCategoriaCompensacionRepository() *CategoriaCompensacionRepository {
 	return &CategoriaCompensacionRepository{db: configs.DB}
+}
+
+func (r *CategoriaCompensacionRepository) WithContext(ctx context.Context) *CategoriaCompensacionRepository {
+	return &CategoriaCompensacionRepository{db: r.db.WithContext(ctx)}
 }
 
 func (r *CategoriaCompensacionRepository) FindAll() ([]models.CategoriaCompensacion, error) {

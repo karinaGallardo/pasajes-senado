@@ -28,7 +28,11 @@ func setAuditField(tx *gorm.DB, fieldName string) {
 		return
 	}
 
-	userID := appcontext.AuthID()
+	if tx.Statement.Context == nil {
+		return
+	}
+
+	userID := appcontext.GetUserIDFromContext(tx.Statement.Context)
 	if userID == nil {
 		return
 	}

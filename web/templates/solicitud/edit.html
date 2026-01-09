@@ -16,6 +16,7 @@
   </div>
 
   <form action="/solicitudes/{{ .Solicitud.ID }}/actualizar" method="POST" class="bg-white shadow rounded-lg overflow-hidden border border-gray-200">
+    <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
     <div class="p-6 space-y-6">
       <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
         <div class="sm:col-span-2">
@@ -66,8 +67,8 @@
           x-data="{ 
                 tipo: '{{ if .Solicitud.TipoItinerario }}{{ if .Solicitud.TipoItinerario.EsIdaVuelta }}IDA_VUELTA{{ else }}SOLO_IDA{{ end }}{{ else }}IDA_VUELTA{{ end }}',
                 origen: '{{ .Solicitud.OrigenCode }}',
-                userOrigenCode: '{{ .User.GetOrigenIATA }}',
-                userOrigenName: '{{ if .User.Origen }}{{ .User.Origen.Nombre }}{{ else }}Mi Origen{{ end }}',
+                userOrigenCode: '{{ .CurrentUser.GetOrigenIATA }}',
+                userOrigenName: '{{ if .CurrentUser.Origen }}{{ .CurrentUser.Origen.Nombre }}{{ else }}Mi Origen{{ end }}',
                 lpbCode: 'LPB',
                 lpbName: 'La Paz - El Alto',
                 isLocked: true
@@ -125,9 +126,11 @@
                 x-model="origen"
                 :class="{ 'bg-gray-100 pointer-events-none text-gray-500': isLocked }"
                 class="shadow-sm focus:ring-senado-secondary focus:border-senado-secondary block w-full sm:text-sm border-gray-300 rounded-md p-2 border transition-colors">
-                {{ if .User.GetOrigenIATA }}
-                <option value="{{ .User.GetOrigenIATA }}">{{ if .User.Origen }}{{ .User.Origen.Nombre }}{{ else }}Mi Origen{{ end }} ({{ .User.GetOrigenIATA }})</option>
-                {{ end }} {{ if ne .User.GetOrigenIATA "LPB" }}
+                {{ if .CurrentUser.GetOrigenIATA }}
+                <option value="{{ .CurrentUser.GetOrigenIATA }}">
+                  {{ if .CurrentUser.Origen }}{{ .CurrentUser.Origen.Nombre }}{{ else }}Mi Origen{{ end }} ({{ .CurrentUser.GetOrigenIATA }})
+                </option>
+                {{ end }} {{ if ne .CurrentUser.GetOrigenIATA "LPB" }}
                 <option value="LPB">La Paz - El Alto (LPB)</option>
                 {{ end }}
               </select>

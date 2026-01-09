@@ -19,7 +19,7 @@ func NewConfiguracionController() *ConfiguracionController {
 }
 
 func (ctrl *ConfiguracionController) Index(c *gin.Context) {
-	configs, _ := ctrl.service.GetAll()
+	configs, _ := ctrl.service.GetAll(c.Request.Context())
 
 	utils.Render(c, "admin/configuracion.html", gin.H{
 		"Configs": configs,
@@ -32,7 +32,7 @@ func (ctrl *ConfiguracionController) Update(c *gin.Context) {
 	valor := c.PostForm("valor")
 
 	if clave != "" && valor != "" {
-		ctrl.service.Update(clave, valor)
+		ctrl.service.Update(c.Request.Context(), clave, valor)
 	}
 	c.Redirect(http.StatusFound, "/admin/configuracion")
 }

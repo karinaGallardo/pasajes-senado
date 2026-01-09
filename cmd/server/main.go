@@ -10,10 +10,13 @@ import (
 	"sistema-pasajes/internal/routes"
 	"sistema-pasajes/internal/utils"
 
+	"github.com/gin-contrib/secure"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
+	csrf "github.com/utrack/gin-csrf"
+	"github.com/webstradev/gin-pagination/v2/pkg/pagination"
 )
 
 func main() {
@@ -23,8 +26,46 @@ func main() {
 
 	r.SetFuncMap(utils.TemplateFuncs())
 
+	isDev := viper.GetString("ENV") != "production"
+	r.Use(secure.New(secure.Config{
+		IsDevelopment:         isDev,
+		AllowedHosts:          []string{},
+		SSLRedirect:           !isDev,
+		STSSeconds:            315360000,
+		STSIncludeSubdomains:  true,
+		FrameDeny:             true,
+		ContentTypeNosniff:    true,
+		BrowserXssFilter:      true,
+		ContentSecurityPolicy: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdn.tailwindcss.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:;",
+		IENoOpen:              true,
+		ReferrerPolicy:        "strict-origin-when-cross-origin",
+		SSLProxyHeaders:       map[string]string{"X-Forwarded-Proto": "https"},
+	}))
+
 	store := cookie.NewStore([]byte(viper.GetString("SESSION_SECRET")))
 	r.Use(sessions.Sessions("pasajes_session", store))
+
+	r.Use(pagination.New(
+		pagination.WithPageText("page"),
+		pagination.WithSizeText("limit"),
+		pagination.WithDefaultPage(1),
+		pagination.WithDefaultPageSize(15),
+		pagination.WithMinPageSize(5),
+		pagination.WithMaxPageSize(100),
+	))
+
+	r.Use(csrf.Middleware(csrf.Options{
+		Secret: viper.GetString("SESSION_SECRET"),
+		ErrorFunc: func(c *gin.Context) {
+			if c.GetHeader("HX-Request") == "true" {
+				c.String(400, "CSRF token mismatch - Recargue la página")
+				c.Abort()
+				return
+			}
+			c.String(400, "CSRF token mismatch. Por favor, recargue la página e intente de nuevo.")
+			c.Abort()
+		},
+	}))
 
 	r.Static("/static", "./web/static")
 	r.Static("/uploads", "./uploads")

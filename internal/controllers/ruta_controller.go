@@ -26,9 +26,9 @@ func NewRutaController() *RutaController {
 }
 
 func (ctrl *RutaController) Index(c *gin.Context) {
-	rutas, _ := ctrl.rutaService.GetAll()
-	aerolineas, _ := ctrl.aerolineaService.GetAll()
-	destinos, _ := ctrl.destinoService.GetAll()
+	rutas, _ := ctrl.rutaService.GetAll(c.Request.Context())
+	aerolineas, _ := ctrl.aerolineaService.GetAll(c.Request.Context())
+	destinos, _ := ctrl.destinoService.GetAll(c.Request.Context())
 
 	utils.Render(c, "admin/rutas.html", gin.H{
 		"Rutas":      rutas,
@@ -45,7 +45,7 @@ func (ctrl *RutaController) Store(c *gin.Context) {
 		return
 	}
 
-	_, err := ctrl.rutaService.Create(req.OrigenIATA, req.EscalasIATA, req.DestinoIATA)
+	_, err := ctrl.rutaService.Create(c.Request.Context(), req.OrigenIATA, req.EscalasIATA, req.DestinoIATA)
 	if err != nil {
 		log.Printf("Error creando ruta: %v", err)
 	}
@@ -65,7 +65,7 @@ func (ctrl *RutaController) AddContract(c *gin.Context) {
 		return
 	}
 
-	err = ctrl.rutaService.AssignContract(req.RutaID, req.AerolineaID, monto)
+	err = ctrl.rutaService.AssignContract(c.Request.Context(), req.RutaID, req.AerolineaID, monto)
 	if err != nil {
 		log.Printf("Error adding contract: %v", err)
 	}

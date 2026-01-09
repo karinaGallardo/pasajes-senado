@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"context"
 	"sistema-pasajes/internal/models"
 
 	"sistema-pasajes/internal/configs"
@@ -14,6 +15,10 @@ type RutaRepository struct {
 
 func NewRutaRepository() *RutaRepository {
 	return &RutaRepository{db: configs.DB}
+}
+
+func (r *RutaRepository) WithContext(ctx context.Context) *RutaRepository {
+	return &RutaRepository{db: r.db.WithContext(ctx)}
 }
 
 func (r *RutaRepository) FindAll() ([]models.Ruta, error) {

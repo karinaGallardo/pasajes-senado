@@ -1,9 +1,9 @@
 package services
 
 import (
+	"context"
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
-
 )
 
 type CompensacionService struct {
@@ -18,34 +18,34 @@ func NewCompensacionService() *CompensacionService {
 	}
 }
 
-func (s *CompensacionService) GetAll() ([]models.Compensacion, error) {
-	return s.compRepo.FindAll()
+func (s *CompensacionService) GetAll(ctx context.Context) ([]models.Compensacion, error) {
+	return s.compRepo.WithContext(ctx).FindAll()
 }
 
-func (s *CompensacionService) Create(comp *models.Compensacion) error {
-	return s.compRepo.Create(comp)
+func (s *CompensacionService) Create(ctx context.Context, comp *models.Compensacion) error {
+	return s.compRepo.WithContext(ctx).Create(comp)
 }
 
-func (s *CompensacionService) FindByID(id string) (*models.Compensacion, error) {
-	return s.compRepo.FindByID(id)
+func (s *CompensacionService) FindByID(ctx context.Context, id string) (*models.Compensacion, error) {
+	return s.compRepo.WithContext(ctx).FindByID(id)
 }
 
-func (s *CompensacionService) Update(comp *models.Compensacion) error {
-	return s.compRepo.Update(comp)
+func (s *CompensacionService) Update(ctx context.Context, comp *models.Compensacion) error {
+	return s.compRepo.WithContext(ctx).Update(comp)
 }
 
-func (s *CompensacionService) GetAllCategorias() ([]models.CategoriaCompensacion, error) {
-	return s.catRepo.FindAll()
+func (s *CompensacionService) GetAllCategorias(ctx context.Context) ([]models.CategoriaCompensacion, error) {
+	return s.catRepo.WithContext(ctx).FindAll()
 }
 
-func (s *CompensacionService) SaveCategoria(cat *models.CategoriaCompensacion) error {
-	return s.catRepo.Save(cat)
+func (s *CompensacionService) SaveCategoria(ctx context.Context, cat *models.CategoriaCompensacion) error {
+	return s.catRepo.WithContext(ctx).Save(cat)
 }
 
-func (s *CompensacionService) FindCategoriaByDepartamentoAndTipo(dep, tipo string) (*models.CategoriaCompensacion, error) {
-	return s.catRepo.FindByDepartamentoAndTipo(dep, tipo)
+func (s *CompensacionService) FindCategoriaByDepartamentoAndTipo(ctx context.Context, dep, tipo string) (*models.CategoriaCompensacion, error) {
+	return s.catRepo.WithContext(ctx).FindByDepartamentoAndTipo(dep, tipo)
 }
 
-func (s *CompensacionService) DeleteCategoria(id string) error {
-	return s.catRepo.Delete(id)
+func (s *CompensacionService) DeleteCategoria(ctx context.Context, id string) error {
+	return s.catRepo.WithContext(ctx).Delete(id)
 }

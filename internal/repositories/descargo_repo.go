@@ -1,9 +1,11 @@
 package repositories
 
 import (
+	"context"
 	"sistema-pasajes/internal/models"
 
 	"sistema-pasajes/internal/configs"
+
 	"gorm.io/gorm"
 )
 
@@ -13,6 +15,10 @@ type DescargoRepository struct {
 
 func NewDescargoRepository() *DescargoRepository {
 	return &DescargoRepository{db: configs.DB}
+}
+
+func (r *DescargoRepository) WithContext(ctx context.Context) *DescargoRepository {
+	return &DescargoRepository{db: r.db.WithContext(ctx)}
 }
 
 func (r *DescargoRepository) Create(descargo *models.Descargo) error {

@@ -25,6 +25,7 @@
           <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4" id="modal-title">Asignar Nuevo Pasaje</h3>
 
           <form action="/solicitudes/{{ .Solicitud.ID }}/pasajes" method="POST" enctype="multipart/form-data" x-data="{ loading: false, fileName: '' }" @submit="loading = true">
+    <input type="hidden" name="_csrf" value="{{ .csrf_token }}">
             <div class="grid grid-cols-6 gap-6">
               <div class="col-span-6 text-center bg-blue-50 p-2 rounded-md border border-blue-100">
                 <span class="block text-xs font-bold text-blue-600 uppercase tracking-widest">Asignando Pasaje a:</span>

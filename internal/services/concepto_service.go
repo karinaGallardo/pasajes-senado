@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
 )
@@ -15,10 +16,10 @@ func NewConceptoService() *ConceptoService {
 	}
 }
 
-func (s *ConceptoService) GetAll() ([]models.ConceptoViaje, error) {
-	return s.repo.FindConceptos()
+func (s *ConceptoService) GetAll(ctx context.Context) ([]models.ConceptoViaje, error) {
+	return s.repo.WithContext(ctx).FindConceptos()
 }
 
-func (s *ConceptoService) GetByCodigo(codigo string) (*models.ConceptoViaje, error) {
-	return s.repo.FindByCodigo(codigo)
+func (s *ConceptoService) GetByCodigo(ctx context.Context, codigo string) (*models.ConceptoViaje, error) {
+	return s.repo.WithContext(ctx).FindByCodigo(codigo)
 }

@@ -24,14 +24,14 @@ func NewDashboardController() *DashboardController {
 }
 
 func (ctrl *DashboardController) Index(c *gin.Context) {
-	solicitudes, _ := ctrl.solicitudService.FindAll()
-	descargos, _ := ctrl.descargoService.FindAll()
+	solicitudes, _ := ctrl.solicitudService.FindAll(c.Request.Context())
+	descargos, _ := ctrl.descargoService.FindAll(c.Request.Context())
 
 	user := appcontext.CurrentUser(c)
 	var senadoresCalculados []models.Usuario
 
 	if user != nil {
-		assigned, err := ctrl.usuarioService.GetSenatorsByEncargado(user.ID)
+		assigned, err := ctrl.usuarioService.GetSenatorsByEncargado(c.Request.Context(), user.ID)
 		if err == nil && len(assigned) > 0 {
 			senadoresCalculados = assigned
 		}

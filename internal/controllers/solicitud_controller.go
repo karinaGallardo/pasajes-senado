@@ -44,7 +44,7 @@ func NewSolicitudController() *SolicitudController {
 }
 
 func (ctrl *SolicitudController) Index(c *gin.Context) {
-	solicitudes, _ := ctrl.service.FindAll()
+	solicitudes, _ := ctrl.service.FindAll(c.Request.Context())
 
 	userIDsMap := make(map[string]bool)
 	for _, s := range solicitudes {
@@ -61,7 +61,7 @@ func (ctrl *SolicitudController) Index(c *gin.Context) {
 		ids = append(ids, id)
 	}
 
-	usuarios, _ := ctrl.userService.GetByIDs(ids)
+	usuarios, _ := ctrl.userService.GetByIDs(c.Request.Context(), ids)
 	usuariosMap := make(map[string]*models.Usuario)
 	for i := range usuarios {
 		usuariosMap[usuarios[i].ID] = &usuarios[i]
@@ -75,15 +75,15 @@ func (ctrl *SolicitudController) Index(c *gin.Context) {
 }
 
 func (ctrl *SolicitudController) Create(c *gin.Context) {
-	destinos, _ := ctrl.destinoService.GetAll()
-	conceptos, _ := ctrl.conceptoService.GetAll()
+	destinos, _ := ctrl.destinoService.GetAll(c.Request.Context())
+	conceptos, _ := ctrl.conceptoService.GetAll(c.Request.Context())
 
 	currentUser := appcontext.CurrentUser(c)
 	targetUserID := c.Query("user_id")
 	var targetUser *models.Usuario
 
 	if targetUserID != "" {
-		u, err := ctrl.userService.GetByID(targetUserID)
+		u, err := ctrl.userService.GetByID(c.Request.Context(), targetUserID)
 		if err == nil {
 			targetUser = u
 		} else {
@@ -98,10 +98,10 @@ func (ctrl *SolicitudController) Create(c *gin.Context) {
 		alertaOrigen = "Este usuario no tiene configurado su LUGAR DE ORIGEN en el perfil. El sistema no podrá calcular rutas automáticamente."
 	}
 
-	aerolineas, _ := ctrl.aerolineaService.GetAllActive()
+	aerolineas, _ := ctrl.aerolineaService.GetAllActive(c.Request.Context())
 
 	now := time.Now()
-	vouchers, _ := ctrl.cupoService.GetVouchersByUsuario(targetUser.ID, now.Year(), int(now.Month()))
+	vouchers, _ := ctrl.cupoService.GetVouchersByUsuario(c.Request.Context(), targetUser.ID, now.Year(), int(now.Month()))
 
 	utils.Render(c, "solicitud/create.html", gin.H{
 		"Title":        "Nueva Solicitud de Pasaje",
@@ -112,14 +112,14 @@ func (ctrl *SolicitudController) Create(c *gin.Context) {
 		"AlertaOrigen": alertaOrigen,
 		"Vouchers":     vouchers,
 		"ItinerarioIdaID": func() string {
-			itin, _ := ctrl.tipoItinerarioService.GetByCodigo("SOLO_IDA")
+			itin, _ := ctrl.tipoItinerarioService.GetByCodigo(c.Request.Context(), "SOLO_IDA")
 			if itin != nil {
 				return itin.ID
 			}
 			return ""
 		}(),
 		"ItinerarioVueltaID": func() string {
-			itin, _ := ctrl.tipoItinerarioService.GetByCodigo("SOLO_VUELTA")
+			itin, _ := ctrl.tipoItinerarioService.GetByCodigo(c.Request.Context(), "SOLO_VUELTA")
 			if itin != nil {
 				return itin.ID
 			}
@@ -149,7 +149,7 @@ func (ctrl *SolicitudController) CheckCupo(c *gin.Context) {
 		return
 	}
 
-	tipo, err := ctrl.tipoSolicitudService.GetByID(tipoID)
+	tipo, err := ctrl.tipoSolicitudService.GetByID(c.Request.Context(), tipoID)
 	if err != nil || tipo.ConceptoViaje == nil || tipo.ConceptoViaje.Codigo != "DERECHO" {
 		c.String(http.StatusOK, "")
 		return
@@ -164,7 +164,7 @@ func (ctrl *SolicitudController) CheckCupo(c *gin.Context) {
 		}
 	}
 
-	info, err := ctrl.cupoService.CalcularCupo(targetUserID, fecha)
+	info, err := ctrl.cupoService.CalcularCupo(c.Request.Context(), targetUserID, fecha)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Error calculando cupo")
 		return
@@ -198,7 +198,7 @@ func (ctrl *SolicitudController) CheckCupo(c *gin.Context) {
 func (ctrl *SolicitudController) Store(c *gin.Context) {
 	var req dtos.CreateSolicitudRequest
 	if err := c.ShouldBind(&req); err != nil {
-		destinos, _ := ctrl.destinoService.GetAll()
+		destinos, _ := ctrl.destinoService.GetAll(c.Request.Context())
 		utils.Render(c, "solicitud/create.html", gin.H{
 			"Error":    "Datos inválidos: " + err.Error(),
 			"Destinos": destinos,
@@ -234,7 +234,7 @@ func (ctrl *SolicitudController) Store(c *gin.Context) {
 
 	itinID := req.TipoItinerarioID
 	if itinID == "" {
-		itin, _ := ctrl.tipoItinerarioService.GetByCodigo("IDA_VUELTA")
+		itin, _ := ctrl.tipoItinerarioService.GetByCodigo(c.Request.Context(), "IDA_VUELTA")
 		if itin != nil {
 			itinID = itin.ID
 		}
@@ -253,8 +253,8 @@ func (ctrl *SolicitudController) Store(c *gin.Context) {
 		AerolineaSugerida: req.AerolineaSugerida,
 	}
 
-	if err := ctrl.service.Create(&nuevaSolicitud, usuario, req.VoucherID); err != nil {
-		destinos, _ := ctrl.destinoService.GetAll()
+	if err := ctrl.service.Create(c.Request.Context(), &nuevaSolicitud, usuario, req.VoucherID); err != nil {
+		destinos, _ := ctrl.destinoService.GetAll(c.Request.Context())
 
 		utils.Render(c, "solicitud/create.html", gin.H{
 			"Error":    "Error: " + err.Error(),
@@ -278,7 +278,7 @@ func (ctrl *SolicitudController) Store(c *gin.Context) {
 
 func (ctrl *SolicitudController) Show(c *gin.Context) {
 	id := c.Param("id")
-	solicitud, err := ctrl.service.FindByID(id)
+	solicitud, err := ctrl.service.FindByID(c.Request.Context(), id)
 
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Error retrieving solicitud: "+err.Error())
@@ -307,7 +307,7 @@ func (ctrl *SolicitudController) Show(c *gin.Context) {
 		mermaidGraph += "class E active;"
 	}
 
-	aerolineas, _ := ctrl.aerolineaService.GetAllActive()
+	aerolineas, _ := ctrl.aerolineaService.GetAllActive(c.Request.Context())
 
 	userIDsMap := make(map[string]bool)
 	if solicitud.CreatedBy != nil {
@@ -322,7 +322,7 @@ func (ctrl *SolicitudController) Show(c *gin.Context) {
 		ids = append(ids, id)
 	}
 
-	usuarios, _ := ctrl.userService.GetByIDs(ids)
+	usuarios, _ := ctrl.userService.GetByIDs(c.Request.Context(), ids)
 	usuariosMap := make(map[string]*models.Usuario)
 	for i := range usuarios {
 		usuariosMap[usuarios[i].ID] = &usuarios[i]
@@ -343,19 +343,19 @@ func (ctrl *SolicitudController) Show(c *gin.Context) {
 
 func (ctrl *SolicitudController) PrintPV01(c *gin.Context) {
 	id := c.Param("id")
-	solicitud, err := ctrl.service.FindByID(id)
+	solicitud, err := ctrl.service.FindByID(c.Request.Context(), id)
 
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Error retrieving solicitud: "+err.Error())
 		return
 	}
 
-	personaView, errMongo := ctrl.peopleService.FindSenatorDataByCI(solicitud.Usuario.CI)
+	personaView, errMongo := ctrl.peopleService.FindSenatorDataByCI(c.Request.Context(), solicitud.Usuario.CI)
 	if errMongo != nil {
 		personaView = nil
 	}
 
-	pdf := ctrl.reportService.GeneratePV01(solicitud, personaView)
+	pdf := ctrl.reportService.GeneratePV01(c.Request.Context(), solicitud, personaView)
 
 	c.Header("Content-Type", "application/pdf")
 	c.Header("Content-Disposition", fmt.Sprintf("inline; filename=FORM-PV01-%s.pdf", solicitud.ID))
@@ -364,7 +364,7 @@ func (ctrl *SolicitudController) PrintPV01(c *gin.Context) {
 
 func (ctrl *SolicitudController) Approve(c *gin.Context) {
 	id := c.Param("id")
-	if err := ctrl.service.Approve(id); err != nil {
+	if err := ctrl.service.Approve(c.Request.Context(), id); err != nil {
 		c.String(http.StatusInternalServerError, "Error al aprobar la solicitud: "+err.Error())
 		return
 	}
@@ -373,7 +373,7 @@ func (ctrl *SolicitudController) Approve(c *gin.Context) {
 
 func (ctrl *SolicitudController) Reject(c *gin.Context) {
 	id := c.Param("id")
-	if err := ctrl.service.Reject(id); err != nil {
+	if err := ctrl.service.Reject(c.Request.Context(), id); err != nil {
 		c.String(http.StatusInternalServerError, "Error al rechazar la solicitud: "+err.Error())
 		return
 	}
@@ -382,7 +382,7 @@ func (ctrl *SolicitudController) Reject(c *gin.Context) {
 
 func (ctrl *SolicitudController) Edit(c *gin.Context) {
 	id := c.Param("id")
-	solicitud, err := ctrl.service.FindByID(id)
+	solicitud, err := ctrl.service.FindByID(c.Request.Context(), id)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Error: "+err.Error())
 		return
@@ -409,10 +409,10 @@ func (ctrl *SolicitudController) Edit(c *gin.Context) {
 		return
 	}
 
-	tipos, _ := ctrl.tipoSolicitudService.GetAll()
-	ambitos, _ := ctrl.ambitoService.GetAll()
-	destinos, _ := ctrl.destinoService.GetAll()
-	tiposItinerario, _ := ctrl.tipoItinerarioService.GetAll()
+	tipos, _ := ctrl.tipoSolicitudService.GetAll(c.Request.Context())
+	ambitos, _ := ctrl.ambitoService.GetAll(c.Request.Context())
+	destinos, _ := ctrl.destinoService.GetAll(c.Request.Context())
+	tiposItinerario, _ := ctrl.tipoItinerarioService.GetAll(c.Request.Context())
 
 	utils.Render(c, "solicitud/edit.html", gin.H{
 		"Title":           "Editar Solicitud",
@@ -452,7 +452,7 @@ func (ctrl *SolicitudController) Update(c *gin.Context) {
 		}
 	}
 
-	solicitud, err := ctrl.service.FindByID(id)
+	solicitud, err := ctrl.service.FindByID(c.Request.Context(), id)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Error: "+err.Error())
 		return
@@ -474,7 +474,7 @@ func (ctrl *SolicitudController) Update(c *gin.Context) {
 	solicitud.FechaVuelta = fechaVuelta
 	solicitud.Motivo = req.Motivo
 	solicitud.AerolineaSugerida = req.AerolineaSugerida
-	if err := ctrl.service.Update(solicitud); err != nil {
+	if err := ctrl.service.Update(c.Request.Context(), solicitud); err != nil {
 		c.String(http.StatusInternalServerError, "Error actualizando: "+err.Error())
 		return
 	}

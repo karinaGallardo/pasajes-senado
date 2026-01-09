@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"context"
 	"sistema-pasajes/internal/models"
 
 	"sistema-pasajes/internal/configs"
@@ -14,6 +15,18 @@ type CupoRepository struct {
 
 func NewCupoRepository() *CupoRepository {
 	return &CupoRepository{db: configs.DB}
+}
+
+func (r *CupoRepository) WithTx(tx *gorm.DB) *CupoRepository {
+	return &CupoRepository{db: tx}
+}
+
+func (r *CupoRepository) WithContext(ctx context.Context) *CupoRepository {
+	return &CupoRepository{db: r.db.WithContext(ctx)}
+}
+
+func (r *CupoRepository) GetDB() *gorm.DB {
+	return r.db
 }
 
 func (r *CupoRepository) Create(cupo *models.Cupo) error {

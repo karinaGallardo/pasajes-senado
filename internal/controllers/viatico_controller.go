@@ -28,7 +28,7 @@ func NewViaticoController() *ViaticoController {
 
 func (ctrl *ViaticoController) Create(c *gin.Context) {
 	id := c.Param("id")
-	solicitud, err := ctrl.solService.FindByID(id)
+	solicitud, err := ctrl.solService.FindByID(c.Request.Context(), id)
 	if err != nil {
 		c.String(http.StatusNotFound, "Solicitud no encontrada")
 		return
@@ -45,7 +45,7 @@ func (ctrl *ViaticoController) Create(c *gin.Context) {
 		dias = 1
 	}
 
-	categorias, _ := ctrl.viaticoService.GetCategorias()
+	categorias, _ := ctrl.viaticoService.GetCategorias(c.Request.Context())
 
 	utils.Render(c, "viatico/create.html", gin.H{
 		"Title":       "Asignación de Viáticos",
@@ -90,7 +90,7 @@ func (ctrl *ViaticoController) Store(c *gin.Context) {
 		Porcentaje: porcentaje,
 	}
 
-	_, err := ctrl.viaticoService.RegistrarViatico(solicitudID, []services.DetalleViaticoInput{detalle}, gastosRep, currentUser.ID)
+	_, err := ctrl.viaticoService.RegistrarViatico(c.Request.Context(), solicitudID, []services.DetalleViaticoInput{detalle}, gastosRep, currentUser.ID)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Error asignando viático: "+err.Error())
 		return
@@ -101,7 +101,7 @@ func (ctrl *ViaticoController) Store(c *gin.Context) {
 
 func (ctrl *ViaticoController) Print(c *gin.Context) {
 	id := c.Param("id")
-	viatico, err := ctrl.viaticoService.FindByID(id)
+	viatico, err := ctrl.viaticoService.FindByID(c.Request.Context(), id)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Error retrieving viatico: "+err.Error())
 		return

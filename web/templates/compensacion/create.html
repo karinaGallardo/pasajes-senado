@@ -6,14 +6,14 @@
   </div>
 
   <form action="/compensaciones" method="POST" class="space-y-6 bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
+    <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
     <div class="grid grid-cols-6 gap-6">
       <div class="col-span-6">
         <label class="block text-sm font-medium text-gray-700">Funcionario</label>
         <select
           name="funcionario_id"
           required
-          class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-senado-secondary focus:border-senado-secondary sm:text-sm"
-        >
+          class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-senado-secondary focus:border-senado-secondary sm:text-sm">
           {{ range .Usuarios }}
           <option value="{{ .ID }}">{{ .GetNombreCompleto }} (CI: {{ .CI }})</option>
           {{ end }}
@@ -26,16 +26,14 @@
           type="text"
           name="nombre_tramite"
           required
-          class="mt-1 focus:ring-senado-secondary focus:border-senado-secondary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2"
-        />
+          class="mt-1 focus:ring-senado-secondary focus:border-senado-secondary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2" />
       </div>
 
       <div class="col-span-6 sm:col-span-3">
         <label class="block text-sm font-medium text-gray-700">Mes Compensación</label>
         <select
           name="mes"
-          class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-senado-secondary focus:border-senado-secondary sm:text-sm"
-        >
+          class="mt-1 block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-senado-secondary focus:border-senado-secondary sm:text-sm">
           <option value="ENERO">Enero</option>
           <option value="FEBRERO">Febrero</option>
           <option value="MARZO">Marzo</option>
@@ -57,8 +55,7 @@
           type="date"
           name="fecha_inicio"
           required
-          class="mt-1 focus:ring-senado-secondary focus:border-senado-secondary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2"
-        />
+          class="mt-1 focus:ring-senado-secondary focus:border-senado-secondary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2" />
       </div>
 
       <div class="col-span-6 sm:col-span-3">
@@ -67,8 +64,7 @@
           type="date"
           name="fecha_fin"
           required
-          class="mt-1 focus:ring-senado-secondary focus:border-senado-secondary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2"
-        />
+          class="mt-1 focus:ring-senado-secondary focus:border-senado-secondary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2" />
       </div>
 
       <div class="col-span-6 bg-gray-50 p-4 rounded-md border border-gray-200">
@@ -76,8 +72,7 @@
         <select
           id="preset_category"
           onchange="applyPreset()"
-          class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-senado-secondary focus:border-senado-secondary sm:text-sm"
-        >
+          class="block w-full py-2 px-3 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-senado-secondary focus:border-senado-secondary sm:text-sm">
           <option value="">-- Seleccionar --</option>
           {{ range .Categorias }}
           <option value="{{ .Monto }}">{{ .Departamento }} - {{ .TipoSenador }} (Bs {{ .Monto }})</option>
@@ -94,8 +89,7 @@
           name="total"
           id="field_total"
           required
-          class="mt-1 focus:ring-senado-secondary focus:border-senado-secondary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2"
-        />
+          class="mt-1 focus:ring-senado-secondary focus:border-senado-secondary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2" />
       </div>
 
       <div class="col-span-6 sm:col-span-3">
@@ -105,8 +99,7 @@
           step="0.01"
           name="retencion"
           value="0"
-          class="mt-1 focus:ring-senado-secondary focus:border-senado-secondary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2"
-        />
+          class="mt-1 focus:ring-senado-secondary focus:border-senado-secondary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2" />
       </div>
 
       <div class="col-span-6">
@@ -114,8 +107,7 @@
         <textarea
           name="glosa"
           rows="3"
-          class="mt-1 shadow-sm focus:ring-senado-secondary focus:border-senado-secondary block w-full sm:text-sm border border-gray-300 rounded-md p-2"
-        ></textarea>
+          class="mt-1 shadow-sm focus:ring-senado-secondary focus:border-senado-secondary block w-full sm:text-sm border border-gray-300 rounded-md p-2"></textarea>
       </div>
 
       <div class="col-span-6">
@@ -124,8 +116,7 @@
           type="text"
           name="informe"
           class="mt-1 focus:ring-senado-secondary focus:border-senado-secondary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md p-2"
-          placeholder="Ej: INF-2025-001"
-        />
+          placeholder="Ej: INF-2025-001" />
       </div>
     </div>
 
@@ -133,14 +124,12 @@
       <button
         type="button"
         class="bg-white py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none mr-3"
-        onclick="window.history.back()"
-      >
+        onclick="window.history.back()">
         Cancelar
       </button>
       <button
         type="submit"
-        class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-senado-primary hover:bg-senado-800 focus:outline-none"
-      >
+        class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-senado-primary hover:bg-senado-800 focus:outline-none">
         Guardar
       </button>
     </div>

@@ -1,6 +1,7 @@
 package repositories
 
 import (
+	"context"
 	"sistema-pasajes/internal/models"
 
 	"sistema-pasajes/internal/configs"
@@ -42,4 +43,12 @@ func (r *PasajeRepository) Update(pasaje *models.Pasaje) error {
 
 func (r *PasajeRepository) WithTx(tx *gorm.DB) *PasajeRepository {
 	return &PasajeRepository{db: tx}
+}
+
+func (r *PasajeRepository) WithContext(ctx context.Context) *PasajeRepository {
+	return &PasajeRepository{db: r.db.WithContext(ctx)}
+}
+
+func (r *PasajeRepository) GetDB() *gorm.DB {
+	return r.db
 }

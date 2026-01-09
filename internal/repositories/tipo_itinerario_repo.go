@@ -1,9 +1,11 @@
 package repositories
 
 import (
+	"context"
 	"sistema-pasajes/internal/models"
 
 	"sistema-pasajes/internal/configs"
+
 	"gorm.io/gorm"
 )
 
@@ -13,6 +15,10 @@ type TipoItinerarioRepository struct {
 
 func NewTipoItinerarioRepository() *TipoItinerarioRepository {
 	return &TipoItinerarioRepository{db: configs.DB}
+}
+
+func (r *TipoItinerarioRepository) WithContext(ctx context.Context) *TipoItinerarioRepository {
+	return &TipoItinerarioRepository{db: r.db.WithContext(ctx)}
 }
 
 func (r *TipoItinerarioRepository) FindByCodigo(codigo string) (*models.TipoItinerario, error) {

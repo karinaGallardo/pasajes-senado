@@ -1,9 +1,11 @@
 package repositories
 
 import (
+	"context"
 	"sistema-pasajes/internal/models"
 
 	"sistema-pasajes/internal/configs"
+
 	"gorm.io/gorm"
 )
 
@@ -13,6 +15,10 @@ type AgenciaRepository struct {
 
 func NewAgenciaRepository() *AgenciaRepository {
 	return &AgenciaRepository{db: configs.DB}
+}
+
+func (r *AgenciaRepository) WithContext(ctx context.Context) *AgenciaRepository {
+	return &AgenciaRepository{db: r.db.WithContext(ctx)}
 }
 
 func (r *AgenciaRepository) FindAllActive() ([]models.Agencia, error) {

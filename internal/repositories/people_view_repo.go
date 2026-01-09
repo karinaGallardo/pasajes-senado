@@ -12,11 +12,22 @@ import (
 )
 
 type PeopleViewRepository struct {
-	db *mongo.Database
+	db  *mongo.Database
+	ctx context.Context
 }
 
 func NewPeopleViewRepository() *PeopleViewRepository {
-	return &PeopleViewRepository{db: configs.MongoRRHH}
+	return &PeopleViewRepository{
+		db:  configs.MongoRRHH,
+		ctx: context.Background(),
+	}
+}
+
+func (r *PeopleViewRepository) WithContext(ctx context.Context) *PeopleViewRepository {
+	return &PeopleViewRepository{
+		db:  r.db,
+		ctx: ctx,
+	}
 }
 
 func (r *PeopleViewRepository) FindSenatorDataByCI(ci string) (*models.MongoPersonaView, error) {
@@ -25,7 +36,15 @@ func (r *PeopleViewRepository) FindSenatorDataByCI(ci string) (*models.MongoPers
 	}
 
 	collection := r.db.Collection("view_people_pasajes")
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	var ctx context.Context
+	var cancel context.CancelFunc
+
+	if r.ctx != nil && r.ctx != context.Background() {
+		ctx = r.ctx
+		cancel = func() {}
+	} else {
+		ctx, cancel = context.WithTimeout(context.Background(), 5*time.Second)
+	}
 	defer cancel()
 
 	var result models.MongoPersonaView
@@ -45,7 +64,15 @@ func (r *PeopleViewRepository) FindAllActiveSenators() ([]models.MongoPersonaVie
 	}
 
 	collection := r.db.Collection("view_people_pasajes")
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	var ctx context.Context
+	var cancel context.CancelFunc
+
+	if r.ctx != nil && r.ctx != context.Background() {
+		ctx = r.ctx
+		cancel = func() {}
+	} else {
+		ctx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
+	}
 	defer cancel()
 
 	filter := bson.M{
@@ -72,7 +99,15 @@ func (r *PeopleViewRepository) FindAllActiveStaff() ([]models.MongoPersonaView, 
 	}
 
 	collection := r.db.Collection("view_people_pasajes")
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	var ctx context.Context
+	var cancel context.CancelFunc
+
+	if r.ctx != nil && r.ctx != context.Background() {
+		ctx = r.ctx
+		cancel = func() {}
+	} else {
+		ctx, cancel = context.WithTimeout(context.Background(), 10*time.Second)
+	}
 	defer cancel()
 
 	filter := bson.M{

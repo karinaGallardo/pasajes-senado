@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
 )
@@ -15,12 +16,12 @@ func NewAerolineaService() *AerolineaService {
 	}
 }
 
-func (s *AerolineaService) GetAllActive() ([]models.Aerolinea, error) {
-	return s.repo.FindAllActive()
+func (s *AerolineaService) GetAllActive(ctx context.Context) ([]models.Aerolinea, error) {
+	return s.repo.WithContext(ctx).FindAllActive()
 }
 
-func (s *AerolineaService) GetActiveNames() ([]string, error) {
-	aereos, err := s.GetAllActive()
+func (s *AerolineaService) GetActiveNames(ctx context.Context) ([]string, error) {
+	aereos, err := s.GetAllActive(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -31,21 +32,21 @@ func (s *AerolineaService) GetActiveNames() ([]string, error) {
 	return names, nil
 }
 
-func (s *AerolineaService) GetAll() ([]models.Aerolinea, error) {
-	return s.repo.FindAll()
+func (s *AerolineaService) GetAll(ctx context.Context) ([]models.Aerolinea, error) {
+	return s.repo.WithContext(ctx).FindAll()
 }
 
-func (s *AerolineaService) Create(nombre string) (*models.Aerolinea, error) {
+func (s *AerolineaService) Create(ctx context.Context, nombre string) (*models.Aerolinea, error) {
 	aereo := &models.Aerolinea{Nombre: nombre, Estado: true}
-	err := s.repo.Create(aereo)
+	err := s.repo.WithContext(ctx).Create(aereo)
 	return aereo, err
 }
 
-func (s *AerolineaService) Toggle(id string) error {
-	a, err := s.repo.FindByID(id)
+func (s *AerolineaService) Toggle(ctx context.Context, id string) error {
+	a, err := s.repo.WithContext(ctx).FindByID(id)
 	if err != nil {
 		return err
 	}
 	a.Estado = !a.Estado
-	return s.repo.Save(a)
+	return s.repo.WithContext(ctx).Save(a)
 }

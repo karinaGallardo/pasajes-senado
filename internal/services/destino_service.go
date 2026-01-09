@@ -1,6 +1,7 @@
 package services
 
 import (
+	"context"
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
 )
@@ -15,14 +16,14 @@ func NewDestinoService() *DestinoService {
 	}
 }
 
-func (s *DestinoService) GetAll() ([]models.Destino, error) {
-	return s.repo.FindAll()
+func (s *DestinoService) GetAll(ctx context.Context) ([]models.Destino, error) {
+	return s.repo.WithContext(ctx).FindAll()
 }
 
-func (s *DestinoService) GetByAmbito(ambito string) ([]models.Destino, error) {
-	return s.repo.FindByAmbito(ambito)
+func (s *DestinoService) GetByAmbito(ctx context.Context, ambito string) ([]models.Destino, error) {
+	return s.repo.WithContext(ctx).FindByAmbito(ambito)
 }
 
-func (s *DestinoService) GetByIATA(iata string) (*models.Destino, error) {
-	return s.repo.FindByIATA(iata)
+func (s *DestinoService) GetByIATA(ctx context.Context, iata string) (*models.Destino, error) {
+	return s.repo.WithContext(ctx).FindByIATA(iata)
 }

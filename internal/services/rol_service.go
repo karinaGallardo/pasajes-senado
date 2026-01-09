@@ -1,9 +1,9 @@
 package services
 
 import (
+	"context"
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
-
 )
 
 type RolService struct {
@@ -16,6 +16,6 @@ func NewRolService() *RolService {
 	}
 }
 
-func (s *RolService) GetAll() ([]models.Rol, error) {
-	return s.repo.FindAll()
+func (s *RolService) GetAll(ctx context.Context) ([]models.Rol, error) {
+	return s.repo.WithContext(ctx).FindAll()
 }
