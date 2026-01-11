@@ -49,12 +49,18 @@ func main() {
 	if sessionSecret == "" {
 		sessionSecret = "secret-de-emergencia-cambiame"
 	}
+
+	sessionSecure := viper.GetBool("SESSION_SECURE")
+	if !viper.IsSet("SESSION_SECURE") {
+		sessionSecure = false
+	}
+
 	store := cookie.NewStore([]byte(sessionSecret))
 	store.Options(sessions.Options{
 		Path:     "/",
 		MaxAge:   86400 * 7, // 7 días
 		HttpOnly: true,
-		Secure:   !isDev,
+		Secure:   sessionSecure,
 		SameSite: http.SameSiteLaxMode,
 	})
 	r.Use(sessions.Sessions("pasajes_session", store))
