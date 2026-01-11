@@ -23,14 +23,13 @@ import (
 func main() {
 	configs.ConnectDB()
 
-	r := gin.Default()
-
-	r.SetFuncMap(utils.TemplateFuncs())
-
 	isDev := viper.GetString("ENV") != "production"
 	if !isDev {
 		gin.SetMode(gin.ReleaseMode)
 	}
+
+	r := gin.Default()
+	r.SetFuncMap(utils.TemplateFuncs())
 
 	r.Use(secure.New(secure.Config{
 		IsDevelopment:         isDev,

@@ -21,9 +21,10 @@ var MongoRRHH *mongo.Database
 
 func ConnectDB() {
 	viper.SetConfigFile(".env")
-	err := viper.ReadInConfig()
-	if err != nil {
-		log.Fatalf("Error cargando archivo .env: %v", err)
+	viper.AutomaticEnv()
+
+	if err := viper.ReadInConfig(); err != nil {
+		log.Printf("Aviso: No se pudo cargar el archivo .env (%v). Se usarán las variables de entorno del sistema.", err)
 	}
 
 	dsn := fmt.Sprintf("host=%s user=%s password=%s dbname=%s port=%s sslmode=disable TimeZone=America/La_Paz",
@@ -65,14 +66,20 @@ func ConnectDB() {
 	RegisterAuditCallbacks(DB)
 	log.Println("Conexión a PostgreSQL Exitosa")
 
-	mongoURI := fmt.Sprintf("mongodb://%s:%s@%s:27017",
+	mongoPort := viper.GetString("MONGO_PORT")
+	if mongoPort == "" {
+		mongoPort = "27017"
+	}
+
+	mongoURI := fmt.Sprintf("mongodb://%s:%s@%s:%s",
 		viper.GetString("MONGO_USER"),
 		viper.GetString("MONGO_PASSWORD"),
 		viper.GetString("MONGO_HOST"),
+		mongoPort,
 	)
 
 	if viper.GetString("MONGO_USER") == "" {
-		mongoURI = fmt.Sprintf("mongodb://%s:27017", viper.GetString("MONGO_HOST"))
+		mongoURI = fmt.Sprintf("mongodb://%s:%s", viper.GetString("MONGO_HOST"), mongoPort)
 	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
