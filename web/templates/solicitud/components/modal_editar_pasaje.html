@@ -1,37 +1,22 @@
-{{ define "solicitud/components/modal_editar_pasaje.html" }}
+{{ define "solicitud/components/modal_editar_pasaje" }}
 <div
-  x-data="{ 
-      open: false, 
-      id: '',
-      ruta: '',
-      agencia_id: '',
-      aerolinea_id: '',
-      numero_vuelo: '',
-      fecha_vuelo: '',
-      numero_boleto: '',
-      numero_factura: '',
-      costo: '',
-      codigo_reserva: '',
-      glosa: '',
+  x-data="{
+      open: true,
+      id: '{{ .Pasaje.ID }}',
+      ruta: '{{ .Pasaje.Ruta }}',
+      agencia_id: '{{ if .Pasaje.AgenciaID }}{{ .Pasaje.AgenciaID }}{{ end }}',
+      aerolinea_id: '{{ if .Pasaje.AerolineaID }}{{ .Pasaje.AerolineaID }}{{ end }}',
+      numero_vuelo: '{{ .Pasaje.NumeroVuelo }}',
+      fecha_vuelo: '{{ .Pasaje.FechaVuelo.Format `2006-01-02T15:04` }}',
+      numero_boleto: '{{ .Pasaje.NumeroBoleto }}',
+      numero_factura: '{{ .Pasaje.NumeroFactura }}',
+      costo: '{{ .Pasaje.Costo }}',
+      codigo_reserva: '{{ .Pasaje.CodigoReserva }}',
+      glosa: '{{ .Pasaje.Glosa }}',
       fileName: '',
       loading: false
   }"
   x-show="open"
-  @open-editar-pasaje.window="
-      open = true; 
-      id = $event.detail.id;
-      ruta = $event.detail.ruta;
-      agencia_id = $event.detail.agencia_id || '';
-      aerolinea_id = $event.detail.aerolinea_id || '';
-      numero_vuelo = $event.detail.numero_vuelo;
-      fecha_vuelo = $event.detail.fecha_vuelo;
-      numero_boleto = $event.detail.numero_boleto;
-      numero_factura = $event.detail.numero_factura;
-      costo = $event.detail.costo;
-      codigo_reserva = $event.detail.codigo_reserva;
-      glosa = $event.detail.glosa;
-      fileName = '';
-  "
   @keydown.escape.window="open = false"
   class="fixed inset-0 z-50 overflow-y-auto"
   aria-labelledby="modal-title-edit"
@@ -66,7 +51,7 @@
         <h3 class="text-lg leading-6 font-medium text-gray-900 mb-4" id="modal-title-edit">Editar Pasaje</h3>
 
         <form action="/pasajes/update" method="POST" enctype="multipart/form-data" @submit="loading = true">
-    <input type="hidden" name="_csrf" value="{{ .csrf_token }}">
+          <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
           <input type="hidden" name="id" x-model="id" />
 
           <div class="grid grid-cols-6 gap-6">
@@ -77,7 +62,7 @@
                     openDropdown: false,
                     items: [
                         {{ range .Rutas }}
-                        { name: '{{ .Tramo }}' }, 
+                        { name: '{{ .Tramo }}' },
                         {{ end }}
                     ],
                     get filteredItems() {
@@ -250,7 +235,6 @@
                   </svg>
                   <div class="flex text-sm text-gray-600 justify-center">
                     <span class="font-bold text-senado-secondary group-hover:underline">Cargar Nuevo Ticket</span>
-                    <p class="pl-1">o arrastrar aquí</p>
                   </div>
                   <p class="text-xs text-gray-500">Solo archivos PDF</p>
                 </div>
@@ -266,7 +250,47 @@
                     </svg>
                   </div>
                   <p class="text-sm font-bold text-gray-900 truncate px-4" x-text="fileName"></p>
-                  <p class="text-xs text-green-600 font-medium">✓ Listo para subir</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- New Field for Boarding Pass -->
+            <div class="col-span-6 pt-2" x-data="{ paseName: '' }">
+              <label class="block text-sm font-medium text-gray-700 mb-2">Pase a Bordo (PDF/Imagen) - Opcional</label>
+              <div
+                class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md bg-white hover:bg-gray-50 transition-colors cursor-pointer relative group">
+                <input
+                  type="file"
+                  name="archivo_pase_abordo"
+                  accept=".pdf,image/*"
+                  class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                  @change="paseName = $event.target.files[0]?.name" />
+
+                <div class="space-y-1 text-center" x-show="!paseName">
+                  <svg class="mx-auto h-12 w-12 text-gray-400 group-hover:text-gray-500 transition-colors" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                    <path
+                      d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
+                      stroke-width="2"
+                      stroke-linecap="round"
+                      stroke-linejoin="round" />
+                  </svg>
+                  <div class="flex text-sm text-gray-600 justify-center">
+                    <span class="font-bold text-green-600 group-hover:underline">Cargar Pase a Bordo</span>
+                  </div>
+                  <p class="text-xs text-gray-500">PDF o Imágenes</p>
+                </div>
+
+                <div class="space-y-1 text-center" x-show="paseName" x-cloak>
+                  <div class="mx-auto h-12 w-12 bg-green-100 rounded-full flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                    </svg>
+                  </div>
+                  <p class="text-sm font-bold text-gray-900 truncate px-4" x-text="paseName"></p>
                 </div>
               </div>
             </div>

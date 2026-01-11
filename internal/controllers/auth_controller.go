@@ -3,6 +3,7 @@ package controllers
 import (
 	"net/http"
 	"sistema-pasajes/internal/services"
+	"sistema-pasajes/internal/utils"
 
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
@@ -19,7 +20,7 @@ func NewAuthController() *AuthController {
 }
 
 func (ac *AuthController) ShowLogin(c *gin.Context) {
-	c.HTML(http.StatusOK, "auth/login.html", gin.H{
+	utils.Render(c, "auth/login", gin.H{
 		"title": "Iniciar Sesión",
 	})
 }
@@ -30,7 +31,7 @@ func (ac *AuthController) Login(c *gin.Context) {
 
 	user, err := ac.authService.AuthenticateAndSync(c.Request.Context(), username, password)
 	if err != nil {
-		c.HTML(http.StatusUnauthorized, "auth/login.html", gin.H{
+		utils.Render(c, "auth/login", gin.H{
 			"error": err.Error(),
 		})
 		return

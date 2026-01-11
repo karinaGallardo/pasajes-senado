@@ -26,12 +26,12 @@ type Pasaje struct {
 
 	Archivo string `gorm:"size:255;default:''"`
 
-	PasajeAnteriorID *string `gorm:"size:36"`
-	PasajeAnterior   *Pasaje `gorm:"foreignKey:PasajeAnteriorID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;<-:false"`
-	Glosa            string  `gorm:"type:text"`
-
-	NumeroFactura  string  `gorm:"size:50;index"`
-	CostoPenalidad float64 `gorm:"type:decimal(10,2);default:0"`
+	ArchivoPaseAbordo string  `gorm:"size:255;default:''"`
+	PasajeAnteriorID  *string `gorm:"size:36"`
+	PasajeAnterior    *Pasaje `gorm:"foreignKey:PasajeAnteriorID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;<-:false"`
+	Glosa             string  `gorm:"type:text"`
+	NumeroFactura     string  `gorm:"size:50;index"`
+	CostoPenalidad    float64 `gorm:"type:decimal(10,2);default:0"`
 }
 
 func (Pasaje) TableName() string {

@@ -122,3 +122,8 @@ body {
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background: #cbd5e1;
 }
+
+/* Alpine.js cloak */
+[x-cloak] {
+  display: none !important;
+}

@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -27,10 +28,13 @@ func main() {
 	r.SetFuncMap(utils.TemplateFuncs())
 
 	isDev := viper.GetString("ENV") != "production"
+	if !isDev {
+		gin.SetMode(gin.ReleaseMode)
+	}
+
 	r.Use(secure.New(secure.Config{
 		IsDevelopment:         isDev,
-		AllowedHosts:          []string{},
-		SSLRedirect:           !isDev,
+		SSLRedirect:           false,
 		STSSeconds:            315360000,
 		STSIncludeSubdomains:  true,
 		FrameDeny:             true,
@@ -42,7 +46,18 @@ func main() {
 		SSLProxyHeaders:       map[string]string{"X-Forwarded-Proto": "https"},
 	}))
 
-	store := cookie.NewStore([]byte(viper.GetString("SESSION_SECRET")))
+	sessionSecret := viper.GetString("SESSION_SECRET")
+	if sessionSecret == "" {
+		sessionSecret = "secret-de-emergencia-cambiame"
+	}
+	store := cookie.NewStore([]byte(sessionSecret))
+	store.Options(sessions.Options{
+		Path:     "/",
+		MaxAge:   86400 * 7, // 7 días
+		HttpOnly: true,
+		Secure:   !isDev,
+		SameSite: http.SameSiteLaxMode,
+	})
 	r.Use(sessions.Sessions("pasajes_session", store))
 
 	r.Use(pagination.New(
@@ -55,7 +70,7 @@ func main() {
 	))
 
 	r.Use(csrf.Middleware(csrf.Options{
-		Secret: viper.GetString("SESSION_SECRET"),
+		Secret: sessionSecret,
 		ErrorFunc: func(c *gin.Context) {
 			if c.GetHeader("HX-Request") == "true" {
 				c.String(400, "CSRF token mismatch - Recargue la página")

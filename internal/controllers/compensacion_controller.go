@@ -27,7 +27,7 @@ func NewCompensacionController() *CompensacionController {
 
 func (ctrl *CompensacionController) Index(c *gin.Context) {
 	list, _ := ctrl.compService.GetAll(c.Request.Context())
-	utils.Render(c, "compensacion/index.html", gin.H{
+	utils.Render(c, "compensacion/index", gin.H{
 		"Title": "Gestión de Compensaciones",
 		"Lista": list,
 	})
@@ -37,7 +37,7 @@ func (ctrl *CompensacionController) Create(c *gin.Context) {
 	users, _ := ctrl.userService.GetAll(c.Request.Context())
 	cats, _ := ctrl.compService.GetAllCategorias(c.Request.Context())
 
-	utils.Render(c, "compensacion/create.html", gin.H{
+	utils.Render(c, "compensacion/create", gin.H{
 		"Title":      "Nueva Compensación",
 		"Usuarios":   users,
 		"Categorias": cats,

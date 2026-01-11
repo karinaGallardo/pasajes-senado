@@ -24,7 +24,7 @@ func (ctrl *ProveedorController) Index(c *gin.Context) {
 	aerolineas, _ := ctrl.aerolineaService.GetAll(c.Request.Context())
 	agencias, _ := ctrl.agenciaService.GetAll(c.Request.Context())
 
-	utils.Render(c, "admin/proveedores.html", gin.H{
+	utils.Render(c, "admin/proveedores", gin.H{
 		"Aerolineas": aerolineas,
 		"Agencias":   agencias,
 		"Title":      "Gestión de Proveedores",

@@ -20,7 +20,7 @@ func NewPerfilController() *PerfilController {
 func (ctrl *PerfilController) Show(c *gin.Context) {
 	destinos, _ := ctrl.destinoService.GetAll(c.Request.Context())
 
-	utils.Render(c, "auth/profile.html", gin.H{
+	utils.Render(c, "auth/profile", gin.H{
 		"Title":    "Mi Perfil",
 		"Destinos": destinos,
 		"Success":  c.Query("success"),

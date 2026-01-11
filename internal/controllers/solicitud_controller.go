@@ -67,7 +67,7 @@ func (ctrl *SolicitudController) Index(c *gin.Context) {
 		usuariosMap[usuarios[i].ID] = &usuarios[i]
 	}
 
-	utils.Render(c, "solicitud/index.html", gin.H{
+	utils.Render(c, "solicitud/index", gin.H{
 		"Title":       "Bandeja de Solicitudes",
 		"Solicitudes": solicitudes,
 		"Usuarios":    usuariosMap,
@@ -103,7 +103,7 @@ func (ctrl *SolicitudController) Create(c *gin.Context) {
 	now := time.Now()
 	vouchers, _ := ctrl.cupoService.GetVouchersByUsuario(c.Request.Context(), targetUser.ID, now.Year(), int(now.Month()))
 
-	utils.Render(c, "solicitud/create.html", gin.H{
+	utils.Render(c, "solicitud/create", gin.H{
 		"Title":        "Nueva Solicitud de Pasaje",
 		"TargetUser":   targetUser,
 		"Destinos":     destinos,
@@ -199,7 +199,7 @@ func (ctrl *SolicitudController) Store(c *gin.Context) {
 	var req dtos.CreateSolicitudRequest
 	if err := c.ShouldBind(&req); err != nil {
 		destinos, _ := ctrl.destinoService.GetAll(c.Request.Context())
-		utils.Render(c, "solicitud/create.html", gin.H{
+		utils.Render(c, "solicitud/create", gin.H{
 			"Error":    "Datos inválidos: " + err.Error(),
 			"Destinos": destinos,
 		})
@@ -256,7 +256,7 @@ func (ctrl *SolicitudController) Store(c *gin.Context) {
 	if err := ctrl.service.Create(c.Request.Context(), &nuevaSolicitud, usuario, req.VoucherID); err != nil {
 		destinos, _ := ctrl.destinoService.GetAll(c.Request.Context())
 
-		utils.Render(c, "solicitud/create.html", gin.H{
+		utils.Render(c, "solicitud/create", gin.H{
 			"Error":    "Error: " + err.Error(),
 			"Destinos": destinos,
 		})
@@ -328,7 +328,7 @@ func (ctrl *SolicitudController) Show(c *gin.Context) {
 		usuariosMap[usuarios[i].ID] = &usuarios[i]
 	}
 
-	utils.Render(c, "solicitud/show.html", gin.H{
+	utils.Render(c, "solicitud/show", gin.H{
 		"Title":        "Detalle Solicitud #" + id,
 		"Solicitud":    solicitud,
 		"Usuarios":     usuariosMap,
@@ -347,6 +347,13 @@ func (ctrl *SolicitudController) PrintPV01(c *gin.Context) {
 
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Error retrieving solicitud: "+err.Error())
+		return
+	}
+
+	if c.GetHeader("HX-Request") == "true" {
+		utils.Render(c, "solicitud/derecho/modal_print", gin.H{
+			"Solicitud": solicitud,
+		})
 		return
 	}
 
@@ -414,7 +421,7 @@ func (ctrl *SolicitudController) Edit(c *gin.Context) {
 	destinos, _ := ctrl.destinoService.GetAll(c.Request.Context())
 	tiposItinerario, _ := ctrl.tipoItinerarioService.GetAll(c.Request.Context())
 
-	utils.Render(c, "solicitud/edit.html", gin.H{
+	utils.Render(c, "solicitud/edit", gin.H{
 		"Title":           "Editar Solicitud",
 		"Solicitud":       solicitud,
 		"TiposSolicitud":  tipos,

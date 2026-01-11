@@ -53,7 +53,7 @@ func (ctrl *DashboardController) Index(c *gin.Context) {
 		}
 	}
 
-	utils.Render(c, "dashboard/index.html", gin.H{
+	utils.Render(c, "dashboard/index", gin.H{
 		"Title":               "Panel de Control",
 		"Pendientes":          pendientes,
 		"Aprobados":           aprobados,

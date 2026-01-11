@@ -1,4 +1,4 @@
-{{ define "solicitud/create.html" }} {{ template "layout_start" . }}
+{{ define "solicitud/create" }} {{ template "layout_start" . }}
 
 <div
   class="max-w-5xl mx-auto space-y-6"
@@ -372,7 +372,7 @@
 
   <!-- COMPONENTES DE FORMULARIO -->
   <div id="main-form-container" class="transition-all duration-500">
-    {{ template "solicitud/components/form_pasaje.html" . }} {{ template "solicitud/components/form_descargo.html" . }}
+    {{ template "solicitud/components/form_pasaje" . }} {{ template "solicitud/components/form_descargo" . }}
   </div>
 </div>
 

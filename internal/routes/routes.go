@@ -44,6 +44,7 @@ func SetupRoutes(r *gin.Engine) {
 		protected.POST("/solicitudes/:id/rechazar", solicitudCtrl.Reject)
 		protected.GET("/solicitudes/:id/editar", solicitudCtrl.Edit)
 		protected.POST("/solicitudes/:id/actualizar", solicitudCtrl.Update)
+		protected.GET("/solicitudes/:id/print", solicitudCtrl.PrintPV01)
 
 		// Solicitudes Derecho (Voucher)
 		protected.GET("/solicitudes/derecho/crear/:voucher_id/:itinerario_code", solicitudDerechoCtrl.Create)
@@ -57,10 +58,16 @@ func SetupRoutes(r *gin.Engine) {
 		protected.DELETE("/solicitudes/derecho/:id", solicitudDerechoCtrl.Destroy)
 
 		protected.POST("/solicitudes/:id/pasajes", pasajeCtrl.Store)
+		protected.GET("/solicitudes/:id/pasajes/nuevo", pasajeCtrl.GetCreateModal)
 		protected.POST("/pasajes/update-status", pasajeCtrl.UpdateStatus)
+		protected.GET("/pasajes/:id/preview", pasajeCtrl.Preview)
 		protected.POST("/pasajes/reprogramar", pasajeCtrl.Reprogramar)
 		protected.POST("/pasajes/devolver", pasajeCtrl.Devolver)
 		protected.POST("/pasajes/update", pasajeCtrl.Update)
+		protected.GET("/pasajes/:id/editar", pasajeCtrl.GetEditModal)
+		protected.GET("/pasajes/:id/reprogramar", pasajeCtrl.GetReprogramarModal)
+		protected.GET("/pasajes/:id/devolver", pasajeCtrl.GetDevolverModal)
+		protected.GET("/pasajes/:id/modal-usado", pasajeCtrl.GetUsadoModal)
 
 		viaticoCtrl := controllers.NewViaticoController()
 		protected.GET("/solicitudes/:id/viaticos/nuevo", viaticoCtrl.Create)

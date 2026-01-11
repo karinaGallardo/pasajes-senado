@@ -30,7 +30,7 @@ func (ctrl *RutaController) Index(c *gin.Context) {
 	aerolineas, _ := ctrl.aerolineaService.GetAll(c.Request.Context())
 	destinos, _ := ctrl.destinoService.GetAll(c.Request.Context())
 
-	utils.Render(c, "admin/rutas.html", gin.H{
+	utils.Render(c, "admin/rutas", gin.H{
 		"Rutas":      rutas,
 		"Aerolineas": aerolineas,
 		"Destinos":   destinos,

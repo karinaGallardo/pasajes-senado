@@ -22,7 +22,7 @@ func NewOrganigramaController() *OrganigramaController {
 
 func (ctrl *OrganigramaController) IndexCargos(c *gin.Context) {
 	cargos, _ := ctrl.service.GetAllCargos(c.Request.Context())
-	utils.Render(c, "admin/cargos.html", gin.H{
+	utils.Render(c, "admin/cargos", gin.H{
 		"Cargos": cargos,
 	})
 }
@@ -51,7 +51,7 @@ func (ctrl *OrganigramaController) DeleteCargo(c *gin.Context) {
 
 func (ctrl *OrganigramaController) IndexOficinas(c *gin.Context) {
 	oficinas, _ := ctrl.service.GetAllOficinas(c.Request.Context())
-	utils.Render(c, "admin/oficinas.html", gin.H{
+	utils.Render(c, "admin/oficinas", gin.H{
 		"Oficinas": oficinas,
 	})
 }

@@ -1,4 +1,4 @@
-{{ define "solicitud/derecho/edit.html" }} {{ template "layout_start" . }}
+{{ define "solicitud/derecho/edit" }} {{ template "layout_start" . }}
 
 <div
   class="mt-2 max-w-5xl mx-auto space-y-4"
@@ -81,7 +81,7 @@
   {{ end }}
 
   <!-- COMPONENTES DE FORMULARIO -->
-  <div id="main-form-container" class="transition-all duration-500">{{ template "solicitud/components/form_pasaje.html" . }}</div>
+  <div id="main-form-container" class="transition-all duration-500">{{ template "solicitud/components/form_pasaje" . }}</div>
 </div>
 
 {{ template "layout_end" . }} {{ end }}

@@ -44,8 +44,7 @@
           <button
             class="text-[10px] text-senado-primary hover:text-senado-900 font-bold bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100 transition-colors"
             hx-get="/usuarios/{{ $user.ID }}/editar"
-            hx-target="#modal-container"
-            @click="modalOpen = true">
+            hx-target="#modal-container">
             Editar Titular
           </button>
         </div>
@@ -83,8 +82,7 @@
           <button
             class="text-[10px] text-senado-primary hover:text-senado-900 font-bold bg-gray-50 px-1.5 py-0.5 rounded border border-gray-100 transition-colors"
             hx-get="/usuarios/{{ $suplente.ID }}/editar"
-            hx-target="#modal-container"
-            @click="modalOpen = true">
+            hx-target="#modal-container">
             Editar Suplente
           </button>
         </div>

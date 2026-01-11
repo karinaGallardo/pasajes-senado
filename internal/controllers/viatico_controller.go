@@ -47,7 +47,7 @@ func (ctrl *ViaticoController) Create(c *gin.Context) {
 
 	categorias, _ := ctrl.viaticoService.GetCategorias(c.Request.Context())
 
-	utils.Render(c, "viatico/create.html", gin.H{
+	utils.Render(c, "viatico/create", gin.H{
 		"Title":       "Asignación de Viáticos",
 		"Solicitud":   solicitud,
 		"DefaultDias": fmt.Sprintf("%.1f", dias),
@@ -104,6 +104,13 @@ func (ctrl *ViaticoController) Print(c *gin.Context) {
 	viatico, err := ctrl.viaticoService.FindByID(c.Request.Context(), id)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Error retrieving viatico: "+err.Error())
+		return
+	}
+
+	if c.GetHeader("HX-Request") == "true" {
+		utils.Render(c, "viatico/modal_print", gin.H{
+			"Viatico": viatico,
+		})
 		return
 	}
 

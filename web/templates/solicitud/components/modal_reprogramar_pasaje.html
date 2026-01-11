@@ -1,15 +1,15 @@
-{{ define "solicitud/components/modal_reprogramar_pasaje.html" }}
+{{ define "solicitud/components/modal_reprogramar_pasaje" }}
 <div
-  x-data="{ 
-      open: false, 
-      id: '',
-      ruta: '',
-      agencia_id: '',
-      aerolinea: '',
-      numero_vuelo: '',
-      fecha_vuelo: '',
+  x-data="{
+      open: true,
+      id: '{{ .Pasaje.ID }}',
+      ruta: '{{ .Pasaje.Ruta }}',
+      agencia_id: '{{ if .Pasaje.AgenciaID }}{{ .Pasaje.AgenciaID }}{{ end }}',
+      aerolinea: '{{ if .Pasaje.AerolineaID }}{{ .Pasaje.AerolineaID }}{{ end }}',
+      numero_vuelo: '{{ .Pasaje.NumeroVuelo }}',
+      fecha_vuelo: '{{ .Pasaje.FechaVuelo.Format `2006-01-02T15:04` }}',
       numero_boleto: '',
-      costo: '',
+      costo: '{{ .Pasaje.Costo }}',
       costo_penalidad: 0,
       glosa: '',
       numero_factura: '',
@@ -18,22 +18,6 @@
       loading: false
   }"
   x-show="open"
-  @open-reprogramar-pasaje.window="
-      open = true; 
-      id = $event.detail;
-      ruta = '';
-      agencia_id = '';
-      aerolinea = '';
-      numero_vuelo = '';
-      fecha_vuelo = '';
-      numero_boleto = '';
-      costo = '';
-      costo_penalidad = 0;
-      glosa = '';
-      numero_factura = '';
-      codigo_reserva = '';
-      fileName = '';
-  "
   @keydown.escape.window="open = false"
   class="fixed inset-0 z-50 overflow-y-auto"
   aria-labelledby="modal-title-reprog"
@@ -82,7 +66,7 @@
         </div>
 
         <form action="/pasajes/reprogramar" method="POST" enctype="multipart/form-data" @submit="loading = true">
-    <input type="hidden" name="_csrf" value="{{ .csrf_token }}">
+          <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
           <input type="hidden" name="pasaje_anterior_id" x-model="id" />
 
           <div class="grid grid-cols-6 gap-6">

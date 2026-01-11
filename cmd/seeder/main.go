@@ -373,6 +373,8 @@ func seedEstadosPasaje() {
 		{Codigo: "USADO", Nombre: "Usado", Color: "blue", Descripcion: "Pasaje utilizado por el viajero"},
 		{Codigo: "ANULADO", Nombre: "Anulado", Color: "gray", Descripcion: "Pasaje anulado por error u otros motivos"},
 		{Codigo: "NO SHOW", Nombre: "No Show", Color: "orange", Descripcion: "El pasajero no se presentó"},
+		{Codigo: "VALIDANDO_USO", Nombre: "Uso por Validar", Color: "yellow", Descripcion: "Pase a bordo subido, pendiente de validación"},
+		{Codigo: "USO_RECHAZADO", Nombre: "Uso Rechazado", Color: "red", Descripcion: "Pase a bordo rechazado, debe subirse nuevamente"},
 	}
 
 	for _, e := range estados {

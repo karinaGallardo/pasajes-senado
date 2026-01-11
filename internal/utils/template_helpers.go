@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"strings"
@@ -19,6 +20,7 @@ func TemplateFuncs() template.FuncMap {
 		"dtl":   FormatDateTimeES,
 		"deref": DerefString,
 		"safe":  UnsafeHTML,
+		"json":  ToJSON,
 	}
 }
 
@@ -79,4 +81,9 @@ func FormatDateRange(ini, fin *time.Time) string {
 		return "-"
 	}
 	return fmt.Sprintf("%s - %s", ini.Format("02/01"), fin.Format("02/01"))
+}
+
+func ToJSON(v any) string {
+	b, _ := json.Marshal(v)
+	return string(b)
 }

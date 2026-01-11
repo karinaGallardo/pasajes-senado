@@ -1,4 +1,4 @@
-{{ define "solicitud/derecho/show.html" }} {{ template "layout_start" . }}
+{{ define "solicitud/derecho/show" }} {{ template "layout_start" . }}
 
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
   <!-- Header -->
@@ -32,12 +32,12 @@
         Editar
       </a>
       {{ end }}
-      <a
-        href="/solicitudes/derecho/{{ .Solicitud.ID }}/print"
-        target="_blank"
+      <button
+        hx-get="/solicitudes/derecho/{{ .Solicitud.ID }}/print"
+        hx-target="#modal-container"
         class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
         Imprimir
-      </a>
+      </button>
       <a
         href="/solicitudes"
         class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
@@ -204,13 +204,14 @@
       </div>
 
       <!-- Pasajes Asignados -->
-      <div class="bg-white shadow sm:rounded-lg overflow-hidden border border-gray-200" x-data="{ showCreateModal: false }">
+      <div class="bg-white shadow sm:rounded-lg overflow-hidden border border-gray-200">
         <div class="px-4 py-5 sm:px-6 flex justify-between items-center">
           <h3 class="text-lg leading-6 font-medium text-gray-900">Pasajes Asignados</h3>
 
           {{ if and .CurrentUser.Rol (or (eq .CurrentUser.Rol.Codigo "ADMIN") (eq .CurrentUser.Rol.Codigo "TECNICO")) }}
           <button
-            @click="showCreateModal = true"
+            hx-get="/solicitudes/{{ .Solicitud.ID }}/pasajes/nuevo"
+            hx-target="#modal-container"
             class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-senado-secondary hover:bg-senado-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-senado-secondary">
             + Asignar Pasaje
           </button>
@@ -284,7 +285,9 @@
                 <div class="sm:text-right flex flex-col items-start sm:items-end space-y-1 relative">
                   <!-- Actions Dropdown -->
                   <div class="absolute top-0 right-0 sm:static sm:mb-2 text-left">
-                    {{ if and .EstadoPasajeCodigo (eq (deref .EstadoPasajeCodigo) "EMITIDO") }}
+                    {{ if and .EstadoPasajeCodigo (or (eq (deref .EstadoPasajeCodigo) "EMITIDO") (eq (deref .EstadoPasajeCodigo) "USO_RECHAZADO") (eq (deref .EstadoPasajeCodigo)
+                    "VALIDANDO_USO")) }}
+
                     <button
                       @click="openMenu = !openMenu"
                       type="button"
@@ -311,50 +314,69 @@
                       class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50"
                       style="display: none">
                       <div class="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
-                        {{ if or (eq $.CurrentUser.Rol.Codigo "ADMIN") (eq $.CurrentUser.Rol.Codigo "TECNICO") }}
+                        {{ if and (or (eq $.CurrentUser.Rol.Codigo "ADMIN") (eq $.CurrentUser.Rol.Codigo "TECNICO")) (ne (deref .EstadoPasajeCodigo) "VALIDANDO_USO") }}
                         <button
                           type="button"
-                          @click="openMenu=false; $dispatch('pasaje-action', { 
-                              action: 'edit', 
-                              id: '{{.ID}}',
-                              data: {
-                                ruta: '{{.Ruta}}',
-                                agencia_id: '{{if .AgenciaID}}{{deref .AgenciaID}}{{end}}',
-                                aerolinea_id: '{{if .AerolineaID}}{{deref .AerolineaID}}{{end}}',
-                                numero_vuelo: '{{.NumeroVuelo}}',
-                                fecha_vuelo: '{{.FechaVuelo.Format `2006-01-02T15:04`}}',
-                                numero_boleto: '{{.NumeroBoleto}}',
-                                numero_factura: '{{.NumeroFactura}}',
-                                costo: '{{.Costo}}',
-                                codigo_reserva: '{{.CodigoReserva}}',
-                                glosa: '{{.Glosa}}'
-                              }
-                           })"
+                          hx-get="/pasajes/{{ .ID }}/editar"
+                          hx-target="#modal-container"
+                          @click="openMenu=false"
                           class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                           role="menuitem">
                           Editar
                         </button>
-                        {{ end }} {{ if $.CurrentUser.CanMarkUsado $.Solicitud }}
+                        {{ end }} {{ if and ($.CurrentUser.CanMarkUsado $.Solicitud) (or (eq (deref .EstadoPasajeCodigo) "EMITIDO") (eq (deref .EstadoPasajeCodigo)
+                        "USO_RECHAZADO")) }}
                         <button
                           type="button"
-                          @click="openMenu=false; $dispatch('pasaje-action', { action: 'usado', id: '{{.ID}}' })"
+                          hx-get="/pasajes/{{ .ID }}/modal-usado"
+                          hx-target="#modal-container"
+                          @click="openMenu=false"
                           class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                           role="menuitem">
-                          Marcar como Usado
+                          {{ if eq (deref .EstadoPasajeCodigo) "USO_RECHAZADO" }}Subir de nuevo{{ else }}Marcar como Usado{{ end }}
                         </button>
-                        {{ end }} {{ if or (eq $.CurrentUser.Rol.Codigo "ADMIN") (eq $.CurrentUser.Rol.Codigo "TECNICO") }}
+                        {{ end }} {{ if and (or (eq $.CurrentUser.Rol.Codigo "ADMIN") (eq $.CurrentUser.Rol.Codigo "TECNICO")) (eq (deref .EstadoPasajeCodigo) "VALIDANDO_USO") }}
                         <button
                           type="button"
-                          @click="openMenu=false; $dispatch('pasaje-action', { action: 'reprogramar', id: '{{.ID}}' })"
+                          @click="openMenu=false; $dispatch('pasaje-action', { action: 'validar_uso_ok', id: '{{.ID}}' })"
+                          class="block w-full text-left px-4 py-2 text-sm text-green-700 font-bold hover:bg-green-50"
+                          role="menuitem">
+                          Aprobar Uso
+                        </button>
+                        <button
+                          type="button"
+                          @click="openMenu=false; $dispatch('pasaje-action', { action: 'validar_uso_no', id: '{{.ID}}' })"
+                          class="block w-full text-left px-4 py-2 text-sm text-red-700 font-bold hover:bg-red-50"
+                          role="menuitem">
+                          Rechazar Uso
+                        </button>
+                        <div class="border-t border-gray-100"></div>
+                        <button
+                          type="button"
+                          hx-get="/pasajes/{{ .ID }}/modal-usado"
+                          hx-target="#modal-container"
+                          @click="openMenu=false"
+                          class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                          role="menuitem">
+                          Cambiar Pase a Bordo
+                        </button>
+                        {{ end }} {{ if and (or (eq $.CurrentUser.Rol.Codigo "ADMIN") (eq $.CurrentUser.Rol.Codigo "TECNICO")) (ne (deref .EstadoPasajeCodigo) "VALIDANDO_USO") }}
+                        <button
+                          type="button"
+                          hx-get="/pasajes/{{ .ID }}/reprogramar"
+                          hx-target="#modal-container"
+                          @click="openMenu=false"
                           class="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                           role="menuitem">
                           Reprogramar
                         </button>
-                        {{ end }} {{ if or (eq $.CurrentUser.Rol.Codigo "ADMIN") (eq $.CurrentUser.Rol.Codigo "TECNICO") }}
+                        {{ end }} {{ if and (or (eq $.CurrentUser.Rol.Codigo "ADMIN") (eq $.CurrentUser.Rol.Codigo "TECNICO")) (ne (deref .EstadoPasajeCodigo) "VALIDANDO_USO") }}
                         <div class="border-t border-gray-100"></div>
                         <button
                           type="button"
-                          @click="openMenu=false; $dispatch('pasaje-action', { action: 'devolver', id: '{{.ID}}' })"
+                          hx-get="/pasajes/{{ .ID }}/devolver"
+                          hx-target="#modal-container"
+                          @click="openMenu=false"
                           class="block w-full text-left px-4 py-2 text-sm text-red-700 hover:bg-gray-100"
                           role="menuitem">
                           Devolver
@@ -396,15 +418,25 @@
                   </div>
 
                   {{ if .Archivo }}
-                  <a
-                    href="/{{ .Archivo }}"
-                    target="_blank"
+                  <button
+                    hx-get="/pasajes/{{ .ID }}/preview?tipo=boleto"
+                    hx-target="#modal-container"
                     class="mt-2 inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
                     <svg class="mr-1.5 h-4 w-4 text-red-500" fill="currentColor" viewBox="0 0 20 20">
                       <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd" />
                     </svg>
                     Ver Boleto PDF
-                  </a>
+                  </button>
+                  {{ end }} {{ if .ArchivoPaseAbordo }}
+                  <button
+                    hx-get="/pasajes/{{ .ID }}/preview?tipo=pase"
+                    hx-target="#modal-container"
+                    class="mt-2 inline-flex items-center px-3 py-1.5 border border-green-300 shadow-sm text-xs font-medium rounded text-green-700 bg-white hover:bg-green-50 focus:outline-none">
+                    <svg class="mr-1.5 h-4 w-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" clip-rule="evenodd" />
+                    </svg>
+                    Ver Pase a Bordo
+                  </button>
                   {{ end }}
                 </div>
               </div>
@@ -438,9 +470,9 @@
                       {{ if .TieneGastosRep }} Bs {{ printf "%.2f" (add .MontoLiquido .MontoLiquidoGastos) }} {{ else }} Bs {{ printf "%.2f" .MontoLiquido }} {{ end }}
                     </span>
                   </div>
-                  <a
-                    href="/viaticos/{{ .ID }}/print"
-                    target="_blank"
+                  <button
+                    hx-get="/viaticos/{{ .ID }}/print"
+                    hx-target="#modal-container"
                     class="inline-flex items-center px-3 py-2 border border-blue-200 shadow-sm text-sm font-medium rounded-md text-blue-700 bg-blue-50 hover:bg-blue-100">
                     <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path
@@ -450,7 +482,7 @@
                         d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                     </svg>
                     Imprimir Formulario
-                  </a>
+                  </button>
                 </div>
               </div>
             </li>
@@ -460,7 +492,6 @@
           <p class="text-sm text-gray-500 italic">No se han asignado viáticos aún.</p>
           {{ end }}
         </div>
-        {{ template "solicitud/components/modal_crear_pasaje.html" . }}
       </div>
     </div>
 
@@ -477,75 +508,79 @@
     </div>
   </div>
 
-  <!-- Pasaje Action Modals -->
-  {{ template "solicitud/components/modal_reprogramar_pasaje.html" . }} {{ template "solicitud/components/modal_devolver_pasaje.html" . }} {{ template
-  "solicitud/components/modal_editar_pasaje.html" . }}
+  <div id="modal-container"></div>
 </div>
 
 {{ template "layout_end" . }} {{ end }} {{ define "footer_scripts" }}
 <script>
-  mermaid.initialize({ startOnLoad: false });
-  document.addEventListener("DOMContentLoaded", async function () {
-    const loader = document.getElementById("mermaid-loader");
-    const mermaidEl = document.querySelector(".mermaid");
+  (function () {
+    mermaid.initialize({ startOnLoad: false });
+    document.addEventListener("DOMContentLoaded", async function () {
+      const loader = document.getElementById("mermaid-loader");
+      const mermaidEl = document.querySelector(".mermaid");
 
-    if (mermaidEl) {
-      try {
-        await mermaid.run({
-          nodes: [mermaidEl],
-        });
-      } catch (e) {
-        console.error("Mermaid render error:", e);
-      }
-
-      if (loader) loader.style.display = "none";
-      mermaidEl.classList.remove("opacity-0");
-      mermaidEl.classList.add("opacity-100");
-    }
-  });
-
-  document.addEventListener("alpine:init", () => {});
-
-  document.addEventListener("pasaje-action", function (e) {
-    const { action, id, data } = e.detail;
-
-    if (action === "reprogramar") {
-      window.dispatchEvent(new CustomEvent("open-reprogramar-pasaje", { detail: id }));
-    } else if (action === "devolver") {
-      window.dispatchEvent(new CustomEvent("open-devolver-pasaje", { detail: id }));
-    } else if (action === "edit") {
-      window.dispatchEvent(new CustomEvent("open-editar-pasaje", { detail: { id, ...data } }));
-    } else if (action === "usado") {
-      if (confirm("¿Marcar este pasaje como USADO?")) {
-        updatePasajeStatus(id, "USADO");
-      }
-    } else if (action === "anular") {
-      if (confirm("¿Está seguro de ANULAR este pasaje? Esta acción no se puede deshacer.")) {
-        updatePasajeStatus(id, "ANULADO");
-      }
-    }
-  });
-
-  function updatePasajeStatus(id, status) {
-    const formData = new FormData();
-    formData.append("id", id);
-    formData.append("status", status);
-
-    fetch("/pasajes/update-status", {
-      method: "POST",
-      body: formData,
-    })
-      .then((response) => {
-        if (response.ok) {
-          window.location.reload();
-        } else {
-          alert("Error al actualizar el estado del pasaje");
+      if (mermaidEl) {
+        try {
+          await mermaid.run({
+            nodes: [mermaidEl],
+          });
+        } catch (e) {
+          console.error("Mermaid render error:", e);
         }
+
+        if (loader) loader.style.display = "none";
+        mermaidEl.classList.remove("opacity-0");
+        mermaidEl.classList.add("opacity-100");
+      }
+    });
+
+    document.addEventListener("pasaje-action", function (e) {
+      const { action, id } = e.detail;
+
+      if (action === "anular") {
+        if (confirm("¿Está seguro de ANULAR este pasaje? Esta acción no se puede deshacer.")) {
+          updatePasajeStatus(id, "ANULADO");
+        }
+      } else if (action === "validar_uso_ok") {
+        if (confirm("¿Confirmar que el pasaje ha sido USADO correctamente?")) {
+          updatePasajeStatus(id, "USADO");
+        }
+      } else if (action === "validar_uso_no") {
+        if (confirm("¿Rechazar el uso del pasaje? El beneficiario deberá subir el documento nuevamente.")) {
+          updatePasajeStatus(id, "USO_RECHAZADO");
+        }
+      }
+    });
+
+    function updatePasajeStatus(id, status) {
+      const formData = new FormData();
+      formData.append("id", id);
+      formData.append("status", status);
+
+      const csrfToken = document.querySelector('input[name="_csrf"]')?.value;
+      if (csrfToken) {
+        formData.append("_csrf", csrfToken);
+      }
+
+      fetch("/pasajes/update-status", {
+        method: "POST",
+        body: formData,
+        headers: {
+          "X-Requested-With": "XMLHttpRequest",
+        },
       })
-      .catch((error) => {
-        console.error("Error:", error);
-        alert("Error de conexión");
-      });
-  }
+        .then((response) => {
+          if (response.ok) {
+            window.location.reload();
+          } else {
+            alert("Error al actualizar el estado del pasaje");
+          }
+        })
+        .catch((error) => {
+          console.error("Error:", error);
+          alert("Error de conexión");
+        });
+    }
+  })();
 </script>
 {{ end }}

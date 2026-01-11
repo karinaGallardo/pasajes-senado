@@ -137,7 +137,7 @@ func (ctrl *SolicitudDerechoController) Create(c *gin.Context) {
 		destino = userLoc
 	}
 
-	utils.Render(c, "solicitud/derecho/create.html", gin.H{
+	utils.Render(c, "solicitud/derecho/create", gin.H{
 		"Title":        "Pasaje por Derecho - " + targetUser.GetNombreCompleto(),
 		"TargetUser":   targetUser,
 		"Aerolineas":   aerolineas,
@@ -302,7 +302,7 @@ func (ctrl *SolicitudDerechoController) Edit(c *gin.Context) {
 		}
 	}
 
-	utils.Render(c, "solicitud/derecho/edit.html", gin.H{
+	utils.Render(c, "solicitud/derecho/edit", gin.H{
 		"Aerolineas":         aerolineas,
 		"TargetUser":         &solicitud.Usuario,
 		"User":               currentUser,
@@ -438,7 +438,7 @@ func (ctrl *SolicitudDerechoController) Show(c *gin.Context) {
 	rutas, _ := ctrl.rutaService.GetAll(c.Request.Context())
 	agencias, _ := ctrl.agenciaService.GetAllActive(c.Request.Context())
 
-	utils.Render(c, "solicitud/derecho/show.html", gin.H{
+	utils.Render(c, "solicitud/derecho/show", gin.H{
 		"Title":        "Detalle Solicitud (Derecho) #" + id,
 		"Solicitud":    solicitud,
 		"Usuarios":     usuariosMap,
@@ -478,6 +478,13 @@ func (ctrl *SolicitudDerechoController) Print(c *gin.Context) {
 
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Error retrieving solicitud: "+err.Error())
+		return
+	}
+
+	if c.GetHeader("HX-Request") == "true" {
+		utils.Render(c, "solicitud/derecho/modal_print", gin.H{
+			"Solicitud": solicitud,
+		})
 		return
 	}
 

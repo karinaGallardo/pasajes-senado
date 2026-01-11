@@ -49,7 +49,9 @@
         },
       };
     </script>
+    {{ block "header_scripts" . }}{{ end }}
     <link rel="stylesheet" href="/static/css/styles.css" />
+    {{ block "header_styles" . }}{{ end }}
   </head>
 
   <body class="bg-gray-50 font-sans antialiased text-gray-900" x-data="{ sidebarOpen: false, sidebarCollapsed: false }">
@@ -71,7 +73,7 @@
         </div>
 
         <!-- Navigation -->
-        {{ template "layouts/components/sidebar_navigation.html" . }}
+        {{ template "layouts/components/sidebar_navigation" . }}
 
         <!-- Bottom Actions -->
         <div class="p-4 border-t border-gray-200">
@@ -228,12 +230,12 @@
               </div>
             </div>
           </div>
-          {{ end }}{{ end }} {{ define "layout_end" }}
+          {{ end }} {{ end }} {{ define "layout_end" }}
         </main>
       </div>
     </div>
     <!-- Global Confirmation Modal -->
-    <!-- {{ template "components/confirm_modal.html" . }} -->
+    <!-- {{ template "components/confirm_modal" . }} -->
     {{ block "footer_scripts" . }}{{ end }}
   </body>
 </html>

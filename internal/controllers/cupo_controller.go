@@ -50,7 +50,7 @@ func (ctrl *CupoController) Index(c *gin.Context) {
 
 	users, _ := ctrl.userService.GetByRoleType(c.Request.Context(), "SENADOR")
 
-	utils.Render(c, "admin/cupos.html", gin.H{
+	utils.Render(c, "admin/cupos", gin.H{
 		"Cupos":     cupos,
 		"Users":     users,
 		"Gestion":   gestion,
@@ -195,7 +195,7 @@ func (ctrl *CupoController) Derecho(c *gin.Context) {
 		}
 	}
 
-	utils.Render(c, "cupo/derecho.html", gin.H{
+	utils.Render(c, "cupo/derecho", gin.H{
 		"TargetUser": targetUser,
 		"User":       appContextUser,
 		"Months":     displayMonths,

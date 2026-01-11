@@ -1,6 +1,6 @@
-{{ define "viatico/create.html" }} {{ template "base/header.html" . }}
+{{ define "viatico/create" }} {{ template "layout_start" . }}
 
-<div class="max-w-4xl mx-auto mt-8">
+<div class="max-w-4xl mx-auto mt-8 px-4 pb-12">
   <div class="mb-6 flex justify-between items-center">
     <h1 class="text-2xl font-bold text-senado-800">Asignar Viáticos</h1>
     <a href="/solicitudes/{{ .Solicitud.ID }}" class="text-gray-600 hover:text-gray-800">&larr; Volver a Solicitud</a>
@@ -140,36 +140,39 @@
 </div>
 
 <script>
-  const diasInput = document.getElementById("dias");
-  const montoSelect = document.getElementById("monto_dia");
-  const percentSelect = document.getElementById("porcentaje");
-  const gastosCheck = document.getElementById("gastos_rep");
+  (function () {
+    const diasInput = document.getElementById("dias");
+    const montoSelect = document.getElementById("monto_dia");
+    const percentSelect = document.getElementById("porcentaje");
+    const gastosCheck = document.getElementById("gastos_rep");
 
-  function calculate() {
-    const dias = parseFloat(diasInput.value) || 0;
-    const monto = parseFloat(montoSelect.value) || 0;
-    const percent = parseInt(percentSelect.value) || 0;
+    function calculate() {
+      const dias = parseFloat(diasInput.value) || 0;
+      const monto = parseFloat(montoSelect.value) || 0;
+      const percent = parseInt(percentSelect.value) || 0;
 
-    let total = monto * (percent / 100.0) * dias;
+      let total = monto * (percent / 100.0) * dias;
 
-    if (gastosCheck.checked) {
-      total += total * 0.25;
+      if (gastosCheck.checked) {
+        total += total * 0.25;
+      }
+
+      const rcIva = total * 0.13;
+      const liquido = total - rcIva;
+
+      document.getElementById("preview_total").innerText = total.toFixed(2);
+      document.getElementById("preview_rciva").innerText = rcIva.toFixed(2);
+      document.getElementById("preview_liquido").innerText = liquido.toFixed(2);
     }
 
-    const rcIva = total * 0.13;
-    const liquido = total - rcIva;
-
-    document.getElementById("preview_total").innerText = total.toFixed(2);
-    document.getElementById("preview_rciva").innerText = rcIva.toFixed(2);
-    document.getElementById("preview_liquido").innerText = liquido.toFixed(2);
-  }
-
-  [diasInput, montoSelect, percentSelect, gastosCheck].forEach((el) => {
-    el.addEventListener("change", calculate);
-    el.addEventListener("input", calculate);
-  });
-
-  calculate();
+    if (diasInput) {
+      [diasInput, montoSelect, percentSelect, gastosCheck].forEach((el) => {
+        el.addEventListener("change", calculate);
+        el.addEventListener("input", calculate);
+      });
+      calculate();
+    }
+  })();
 </script>
 
-{{ template "base/footer.html" . }} {{ end }}
+{{ template "layout_end" . }} {{ end }}

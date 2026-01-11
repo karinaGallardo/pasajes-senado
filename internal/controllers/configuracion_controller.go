@@ -21,7 +21,7 @@ func NewConfiguracionController() *ConfiguracionController {
 func (ctrl *ConfiguracionController) Index(c *gin.Context) {
 	configs, _ := ctrl.service.GetAll(c.Request.Context())
 
-	utils.Render(c, "admin/configuracion.html", gin.H{
+	utils.Render(c, "admin/configuracion", gin.H{
 		"Configs": configs,
 		"Title":   "Configuración del Sistema",
 	})

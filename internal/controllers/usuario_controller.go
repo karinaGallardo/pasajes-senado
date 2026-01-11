@@ -51,7 +51,7 @@ func (ctrl *UsuarioController) Index(c *gin.Context) {
 		// log.Printf("Error: %v", err)
 	}
 
-	utils.Render(c, "usuarios/index.html", gin.H{
+	utils.Render(c, "usuarios/index", gin.H{
 		"Title":      "Gestión de Usuarios",
 		"Result":     result,
 		"Rol":        roleType,
@@ -126,7 +126,7 @@ func (ctrl *UsuarioController) GetEditModal(c *gin.Context) {
 
 	funcionarios, _ := ctrl.userService.GetByRoleType(c.Request.Context(), "FUNCIONARIO")
 
-	utils.Render(c, "usuarios/edit_modal.html", gin.H{
+	utils.Render(c, "usuarios/edit_modal", gin.H{
 		"Usuario":      usuario,
 		"Roles":        roles,
 		"Destinos":     destinos,

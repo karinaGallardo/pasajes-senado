@@ -22,7 +22,7 @@ func NewCategoriaCompensacionController() *CategoriaCompensacionController {
 
 func (ctrl *CategoriaCompensacionController) Index(c *gin.Context) {
 	cats, _ := ctrl.service.GetAllCategorias(c.Request.Context())
-	utils.Render(c, "admin/categorias_compensacion.html", gin.H{
+	utils.Render(c, "admin/categorias_compensacion", gin.H{
 		"Categorias": cats,
 	})
 }

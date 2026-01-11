@@ -11,7 +11,7 @@
     </p>
   </div>
 
-  <form action="/usuarios/{{ .Usuario.ID }}" method="POST" class="p-6">
+  <form action="/usuarios/{{ .Usuario.ID }}/actualizar" method="POST" class="p-6">
     <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
     <div class="mb-6">
       <label for="rol_codigo" class="block text-sm font-medium text-gray-700">Rol Asignado</label>
@@ -26,11 +26,7 @@
     </div>
 
     <script>
-      const destinosData = [
-          {{ range .Destinos }}
-          { value: "{{ .IATA }}", label: "{{ .GetNombreDisplay }}" },
-          {{ end }}
-      ];
+      const destinosData = {{ json .Destinos }}.map(d => ({ value: d.IATA, label: d.Nombre + ' (' + d.IATA + ')' }));
 
       document.addEventListener('alpine:init', () => {
           Alpine.data('searchableSelect', (name, placeholder = 'Seleccione una opción', initialValue = '') => ({
@@ -139,11 +135,7 @@
           search: '',
           selectedId: '{{ if .Usuario.EncargadoID }}{{ .Usuario.EncargadoID }}{{ end }}',
           selectedName: '{{ if .Usuario.Encargado }}{{ .Usuario.Encargado.GetNombreCompleto }}{{ else }}-- No asignado --{{ end }}',
-          funcionarios: [
-            {{ range .Funcionarios }}
-            { id: '{{ .ID }}', name: '{{ .GetNombreCompleto }}', ci: '{{ .CI }}' },
-            {{ end }}
-          ],
+          funcionarios: {{ json .Funcionarios }}.map(f => ({ id: f.ID, name: f.Nombre + ' ' + f.ApellidoPaterno + ' ' + f.ApellidoMaterno, ci: f.CI })),
           get filteredFuncs() {
             if (!this.search) return this.funcionarios;
             const q = this.search.toLowerCase();

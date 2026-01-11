@@ -30,7 +30,7 @@ func NewDescargoController() *DescargoController {
 
 func (ctrl *DescargoController) Index(c *gin.Context) {
 	descargos, _ := ctrl.descargoService.FindAll(c.Request.Context())
-	utils.Render(c, "descargo/index.html", gin.H{
+	utils.Render(c, "descargo/index", gin.H{
 		"Title":     "Bandeja de Descargos (FV-05)",
 		"Descargos": descargos,
 	})
@@ -55,7 +55,7 @@ func (ctrl *DescargoController) Create(c *gin.Context) {
 		return
 	}
 
-	utils.Render(c, "descargo/create.html", gin.H{
+	utils.Render(c, "descargo/create", gin.H{
 		"Title":     "Nuevo Descargo",
 		"Solicitud": solicitud,
 	})
@@ -141,7 +141,7 @@ func (ctrl *DescargoController) Show(c *gin.Context) {
 		return
 	}
 
-	utils.Render(c, "descargo/show.html", gin.H{
+	utils.Render(c, "descargo/show", gin.H{
 		"Title":    "Detalle de Descargo",
 		"Descargo": descargo,
 	})

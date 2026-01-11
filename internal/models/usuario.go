@@ -148,6 +148,13 @@ func (u *Usuario) CanCreateSolicitudFor(targetUser *Usuario) bool {
 	return false
 }
 
+func (u *Usuario) GetSuplente() *Usuario {
+	if len(u.Suplentes) > 0 {
+		return &u.Suplentes[0]
+	}
+	return nil
+}
+
 func (Usuario) TableName() string {
 	return "usuarios"
 }

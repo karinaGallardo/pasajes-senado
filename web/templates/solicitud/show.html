@@ -1,4 +1,4 @@
-{{ define "solicitud/show.html" }} {{ template "layout_start" . }}
+{{ define "solicitud/show" }} {{ template "layout_start" . }}
 <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
 <script>
   mermaid.initialize({ startOnLoad: false });
@@ -54,12 +54,12 @@
         Editar
       </a>
       {{ end }}
-      <a
-        href="/solicitudes/{{ .Solicitud.ID }}/print"
-        target="_blank"
+      <button
+        hx-get="/solicitudes/{{ .Solicitud.ID }}/print"
+        hx-target="#modal-container"
         class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
         Imprimir
-      </a>
+      </button>
       <a
         href="/solicitudes"
         class="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none">
