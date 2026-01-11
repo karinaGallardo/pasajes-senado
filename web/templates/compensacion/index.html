@@ -1,16 +1,15 @@
 {{ define "compensacion/index" }} {{ template "layout_start" . }}
 
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+<div class="py-6">
   <div class="sm:flex sm:items-center">
     <div class="sm:flex-auto">
-      <h1 class="text-xl font-semibold text-gray-900">Compensaciones</h1>
-      <p class="mt-2 text-sm text-gray-700">Lista de trámites de compensación registrados.</p>
+      <h1 class="text-xl font-semibold text-neutral-900">Compensaciones</h1>
+      <p class="mt-2 text-sm text-neutral-700">Lista de trámites de compensación registrados.</p>
     </div>
     <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
       <a
         href="/compensaciones/nueva"
-        class="inline-flex items-center justify-center rounded-md border border-transparent bg-senado-primary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-senado-800 focus:outline-none focus:ring-2 focus:ring-senado-secondary focus:ring-offset-2 sm:w-auto"
-      >
+        class="inline-flex items-center justify-center rounded-md border border-transparent bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-secondary focus:ring-offset-2 sm:w-auto">
         Nueva Compensación
       </a>
     </div>
@@ -21,28 +20,28 @@
       <div class="inline-block min-w-full py-2 align-middle md:px-6 lg:px-8">
         <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 md:rounded-lg">
           <table class="min-w-full divide-y divide-gray-300">
-            <thead class="bg-gray-50">
+            <thead class="bg-neutral-50">
               <tr>
-                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Código</th>
-                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Funcionario</th>
-                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Periodo</th>
-                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Total (Bs)</th>
-                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-gray-900">Estado</th>
+                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-neutral-900">Código</th>
+                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-neutral-900">Funcionario</th>
+                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-neutral-900">Periodo</th>
+                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-neutral-900">Total (Bs)</th>
+                <th scope="col" class="px-3 py-3.5 text-left text-sm font-semibold text-neutral-900">Estado</th>
                 <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6"><span class="sr-only">Acciones</span></th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200 bg-white">
               {{ range .Lista }}
               <tr>
-                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ .Codigo }}</td>
-                <td class="whitespace-nowrap px-3 py-4 text-sm font-medium text-gray-900">{{ .Funcionario.GetNombreCompleto }}</td>
-                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ .MesCompensacion }} ({{ .FechaInicio.Format "02/01" }} - {{ .FechaFin.Format "02/01" }})</td>
-                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">{{ printf "%.2f" .Total }}</td>
-                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
-                  <span class="inline-flex rounded-full bg-yellow-100 px-2 text-xs font-semibold leading-5 text-yellow-800">{{ .Estado }}</span>
+                <td class="whitespace-nowrap px-3 py-4 text-sm text-neutral-500">{{ .Codigo }}</td>
+                <td class="whitespace-nowrap px-3 py-4 text-sm font-medium text-neutral-900">{{ .Funcionario.GetNombreCompleto }}</td>
+                <td class="whitespace-nowrap px-3 py-4 text-sm text-neutral-500">{{ .MesCompensacion }} ({{ .FechaInicio.Format "02/01" }} - {{ .FechaFin.Format "02/01" }})</td>
+                <td class="whitespace-nowrap px-3 py-4 text-sm text-neutral-500">{{ printf "%.2f" .Total }}</td>
+                <td class="whitespace-nowrap px-3 py-4 text-sm text-neutral-500">
+                  <span class="inline-flex rounded-full bg-warning-100 px-2 text-xs font-semibold leading-5 text-warning-800">{{ .Estado }}</span>
                 </td>
                 <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
-                  <a href="#" class="text-senado-primary hover:text-senado-900">
+                  <a href="#" class="text-primary hover:text-primary-900">
                     Ver
                     <span class="sr-only">, {{ .Codigo }}</span>
                   </a>
@@ -56,5 +55,4 @@
     </div>
   </div>
 </div>
-
 {{ template "layout_end" . }} {{ end }}

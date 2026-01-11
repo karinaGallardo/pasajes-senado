@@ -1,110 +1,63 @@
-@import url("https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700;800&display=swap");
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@400;600;700;800&display=swap");
 
 :root {
-  --base-teal-dark: #03738c;
-  /* Color 1 */
-  --base-teal-light: #0396a6;
-  /* Color 2 */
-  --base-orange: #f29a2e;
-  /* Color 3 */
-  --base-salmon: #f2884b;
-  /* Color 4 */
-  --base-red-orange: #f2490c;
-  /* Color 5 */
-
-  --base-gray: #575756;
-  /* Text Base Preserved */
-  --base-offwhite: #f5f5f5;
-  /* Bg Base Preserved */
-  --base-white: #ffffff;
-
   /* =========================================
-     1. (Texto y Fondos)
+     1. PALETA CORE (Tus colores originales)
      ========================================= */
-  --neutral-50: #fbfbfb;
-  --neutral-100: #f5f5f5;
-  --neutral-200: #e6e6e6;
-  --neutral-300: #d1d1d0;
-  --neutral-400: #a3a3a2;
-  --neutral-500: #787877;
-  --neutral-600: #575756;
-  --neutral-700: #464645;
-  --neutral-800: #353534;
-  --neutral-900: #232322;
+  --brand-primary: #03738c;
+  --brand-secondary: #0396a6;
+  --brand-gold: #f29a2e;
+  --brand-salmon: #f2884b;
+  --brand-accent: #f2490c;
+  --brand-neutral: #575756;
 
   /* =========================================
-     2. Marca Principal
+     2. ESCALA PRIMARIA (Sincronizado con Tailwind)
      ========================================= */
   --primary-50: #eef9fb;
   --primary-100: #d6eff4;
-  --primary-200: #b2e0e9;
-  --primary-300: #80c9d8;
-  --primary-400: #4baac3;
-  --primary-500: #03738c;
-  /* Main Brand */
-  --primary-600: #065d74;
-  --primary-700: #094d61;
-  --primary-800: #0c4051;
-  --primary-900: #0e3644;
+  --primary-500: var(--brand-primary);
+  --primary-600: #025a6e;
+  --primary-700: #024a5a;
+  --primary-800: #024655;
+  --primary-900: #01323d;
 
   /* =========================================
-     3. Complementario
+     3. ALIASES SEMÁNTICOS
      ========================================= */
-  --secondary-50: #effdfd;
-  --secondary-100: #cff6f9;
-  --secondary-200: #9feaf0;
-  --secondary-300: #6bdbe7;
-  --secondary-400: #34c4d8;
-  --secondary-500: #0396a6;
-  /* Secondary Brand */
-  --secondary-600: #05788a;
-  --secondary-700: #086171;
-  --secondary-800: #0b4e5b;
-  --secondary-900: #0d414d;
+  --secondary: var(--brand-secondary);
+  --gold: var(--brand-gold);
+  --salmon: var(--brand-salmon);
+  --accent: var(--brand-accent);
+  --neutral: var(--brand-neutral);
 
-  /* =========================================
-     4. Delineados
-     ========================================= */
-  --accent-50: #fefce8;
-  --accent-100: #fef5cc;
-  --accent-200: #f29a2e;
-  /* Gold/Orange */
-  --accent-300: #f2884b;
-  /* Salmon */
-  --accent-400: #fdac7e;
-  --accent-500: #f2490c;
-  /* Red Orange - Action/Danger */
-  --accent-600: #d63d08;
-  --accent-700: #b03008;
-  --accent-800: #8d280a;
-  --accent-900: #73230d;
-
-  /* =========================================
-     5. Aliases
-     ========================================= */
-  --bg-app: var(--neutral-100);
-  --bg-card: var(--base-white);
+  /* Fondos y Texto */
+  --bg-app: #f9f9f9; /* neutral-50 */
   --bg-sidebar: var(--primary-900);
-  /* Dark Teal Sidebar */
+  --text-main: #232322; /* neutral-800 */
+  --text-muted: var(--brand-neutral);
 
-  --text-main: var(--neutral-900);
-  --text-muted: var(--neutral-500);
-  --text-inverse: var(--base-white);
+  /* Fuentes */
+  --font-sans: "Inter", sans-serif;
+  --font-brand: "Montserrat", sans-serif;
 
-  --brand-color: var(--primary-500);
-  --brand-hover: var(--primary-600);
+  /* Sombras (Sincronizado con Tailwind) */
+  --shadow-soft: 0 4px 20px -2px rgba(0, 0, 0, 0.05), 0 2px 12px -2px rgba(0, 0, 0, 0.03);
+  --shadow-premium: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 
-  /* VARIABLES DE CONFIGURACIÓN */
-  --font: "Montserrat", sans-serif;
   --radius-md: 8px;
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --radius-lg: 12px;
 }
 
 body {
-  font-family: var(--font);
+  font-family: var(--font-sans);
   background-color: var(--bg-app);
   color: var(--text-main);
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, .font-brand {
+  font-family: var(--font-brand);
 }
 
 /* Custom scrollbar matched to app style */
@@ -116,14 +69,26 @@ body {
   background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #e2e8f0;
+  background: #d1d1d1; /* neutral-300 */
   border-radius: 10px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #cbd5e1;
+  background: #a3a3a3; /* neutral-400 */
 }
 
 /* Alpine.js cloak */
 [x-cloak] {
   display: none !important;
+}
+
+/* HTMX Indicator Logic */
+.htmx-indicator {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 200ms ease-in-out;
+}
+.htmx-request .htmx-indicator,
+.htmx-request.htmx-indicator {
+  opacity: 1;
+  pointer-events: auto;
 }

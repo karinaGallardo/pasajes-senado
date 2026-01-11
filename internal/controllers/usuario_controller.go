@@ -83,7 +83,7 @@ func (ctrl *UsuarioController) Table(c *gin.Context) {
 		// log.Printf("Error: %v", err)
 	}
 
-	utils.Render(c, "usuarios/table", gin.H{
+	utils.Render(c, "usuarios/components/table", gin.H{
 		"Result": result,
 		"Rol":    roleType,
 	})
@@ -103,7 +103,7 @@ func (ctrl *UsuarioController) Edit(c *gin.Context) {
 
 	viewName := "usuarios/edit"
 	if c.GetHeader("HX-Request") == "true" {
-		viewName = "usuarios/edit_modal"
+		viewName = "usuarios/components/edit_modal"
 	}
 
 	utils.Render(c, viewName, gin.H{
@@ -126,7 +126,7 @@ func (ctrl *UsuarioController) GetEditModal(c *gin.Context) {
 
 	funcionarios, _ := ctrl.userService.GetByRoleType(c.Request.Context(), "FUNCIONARIO")
 
-	utils.Render(c, "usuarios/edit_modal", gin.H{
+	utils.Render(c, "usuarios/components/edit_modal", gin.H{
 		"Usuario":      usuario,
 		"Roles":        roles,
 		"Destinos":     destinos,
@@ -268,5 +268,12 @@ func (ctrl *UsuarioController) Sync(c *gin.Context) {
 		return
 	}
 
-	c.Redirect(http.StatusFound, "/usuarios?rol="+roleType+"&msg=Sincronizados "+strconv.Itoa(count)+" registros")
+	utils.SetSuccessMessage(c, "Sincronizados "+strconv.Itoa(count)+" registros")
+	c.Redirect(http.StatusFound, "/usuarios?rol="+roleType)
+}
+func (ctrl *UsuarioController) GetSyncModal(c *gin.Context) {
+	roleType := c.DefaultQuery("rol", "SENADOR")
+	utils.Render(c, "usuarios/components/modal_sync_confirm", gin.H{
+		"Rol": roleType,
+	})
 }

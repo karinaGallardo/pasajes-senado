@@ -3,7 +3,7 @@
 <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
   <div class="md:flex md:items-center md:justify-between mb-6">
     <div class="flex-1 min-w-0">
-      <h2 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">Mi Perfil</h2>
+      <h2 class="text-2xl font-bold leading-7 text-neutral-900 sm:text-3xl sm:truncate">Mi Perfil</h2>
     </div>
     <div class="mt-4 flex md:mt-0 md:ml-4">
       <button
@@ -11,7 +11,7 @@
         hx-target="#modal-container"
         hx-swap="innerHTML"
         type="button"
-        class="ml-3 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-senado-primary hover:bg-senado-800 focus:outline-none disabled:opacity-50">
+        class="ml-3 inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-800 focus:outline-none disabled:opacity-50">
         <span class="inline-flex items-center button-text">
           <svg class="-ml-1 mr-2 h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
             <path d="M13.586 3.586a2 2 0 112.828 2.828l-.793.793-2.828-2.828.793-.793zM11.379 5.793L3 14.172V17h2.828l8.38-8.379-2.83-2.828z" />
@@ -41,44 +41,44 @@
     <div class="p-6 space-y-8">
       <!-- Información Básica -->
       <div>
-        <h3 class="text-lg leading-6 font-medium text-gray-900">Información de Usuario</h3>
-        <p class="mt-1 text-sm text-gray-500">Datos registrados en el sistema de RRHH.</p>
+        <h3 class="text-lg leading-6 font-medium text-neutral-900">Información de Usuario</h3>
+        <p class="mt-1 text-sm text-neutral-500">Datos registrados en el sistema de RRHH.</p>
 
         <div class="mt-4 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
           <div class="sm:col-span-3">
-            <label class="block text-sm font-medium text-gray-500">Nombre Completo</label>
-            <div class="mt-1 text-sm text-gray-900 font-bold border-b border-gray-100 pb-1">{{ .CurrentUser.GetNombreCompleto }}</div>
+            <label class="block text-sm font-medium text-neutral-500">Nombre Completo</label>
+            <div class="mt-1 text-sm text-neutral-900 font-bold border-b border-neutral-100 pb-1">{{ .CurrentUser.GetNombreCompleto }}</div>
           </div>
           <div class="sm:col-span-3">
-            <label class="block text-sm font-medium text-gray-500">Cargo / Rol</label>
-            <div class="mt-1 text-sm text-gray-900 font-bold border-b border-gray-100 pb-1">{{ if .CurrentUser.Rol }}{{ .CurrentUser.Rol.Nombre }}{{ else }} - {{ end }}</div>
+            <label class="block text-sm font-medium text-neutral-500">Cargo / Rol</label>
+            <div class="mt-1 text-sm text-neutral-900 font-bold border-b border-neutral-100 pb-1">{{ if .CurrentUser.Rol }}{{ .CurrentUser.Rol.Nombre }}{{ else }} - {{ end }}</div>
           </div>
           <div class="sm:col-span-3">
-            <label class="block text-sm font-medium text-gray-500">C.I.</label>
-            <div class="mt-1 text-sm text-gray-900 border-b border-gray-100 pb-1">{{ .CurrentUser.CI }}</div>
+            <label class="block text-sm font-medium text-neutral-500">C.I.</label>
+            <div class="mt-1 text-sm text-neutral-900 border-b border-neutral-100 pb-1">{{ .CurrentUser.CI }}</div>
           </div>
         </div>
       </div>
 
-      <div class="border-t border-gray-200 pt-8">
-        <h3 class="text-lg leading-6 font-medium text-gray-900">Configuración de Viajes</h3>
-        <p class="mt-1 text-sm text-gray-500">Configuración utilizada para sus solicitudes.</p>
+      <div class="border-t border-neutral-200 pt-8">
+        <h3 class="text-lg leading-6 font-medium text-neutral-900">Configuración de Viajes</h3>
+        <p class="mt-1 text-sm text-neutral-500">Configuración utilizada para sus solicitudes.</p>
 
-        <div class="mt-4 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6 bg-gray-50 p-4 rounded-md border border-gray-200">
+        <div class="mt-4 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6 bg-neutral-50 p-4 rounded-md border border-neutral-200">
           <div class="sm:col-span-4">
-            <label class="block text-sm font-bold text-gray-700">Lugar de Origen Habitual</label>
+            <label class="block text-sm font-bold text-neutral-700">Lugar de Origen Habitual</label>
 
-            <div class="mt-1 text-base text-gray-900 font-medium">
+            <div class="mt-1 text-base text-neutral-900 font-medium">
               {{ if .CurrentUser.Origen }}
               <div class="flex items-center">
-                <span class="font-bold text-gray-900 mr-2">
+                <span class="font-bold text-neutral-900 mr-2">
                   {{ .CurrentUser.Origen.Ciudad }}{{ if .CurrentUser.Origen.Departamento }}, {{ .CurrentUser.Origen.Departamento.Nombre }}{{ end }}
                 </span>
-                <span class="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded-full border border-gray-200">{{ .CurrentUser.Origen.IATA }}</span>
+                <span class="text-xs text-neutral-500 bg-neutral-100 px-2 py-0.5 rounded-full border border-neutral-200">{{ .CurrentUser.Origen.IATA }}</span>
               </div>
-              <p class="text-xs text-gray-500 mt-0.5">{{ .CurrentUser.Origen.Aeropuerto }}</p>
+              <p class="text-xs text-neutral-500 mt-0.5">{{ .CurrentUser.Origen.Aeropuerto }}</p>
               {{ else }}
-              <span class="text-red-600 font-bold flex items-center">
+              <span class="text-danger-600 font-bold flex items-center">
                 <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path
                     stroke-linecap="round"
@@ -92,39 +92,39 @@
             </div>
           </div>
           {{ if .CurrentUser.IsSenador }}
-          <div class="sm:col-span-6 border-t border-gray-200 mt-2 pt-4">
-            <label class="block text-sm font-bold text-gray-700">Encargado de Trámites</label>
+          <div class="sm:col-span-6 border-t border-neutral-200 mt-2 pt-4">
+            <label class="block text-sm font-bold text-neutral-700">Encargado de Trámites</label>
             <div class="mt-1 flex items-center">
               {{ if .CurrentUser.Encargado }}
               <div class="flex items-center">
-                <div class="h-8 w-8 rounded-full bg-senado-primary flex items-center justify-center text-white text-xs font-bold mr-3">
+                <div class="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-white text-xs font-bold mr-3">
                   {{ printf "%.1s" .CurrentUser.Encargado.Firstname }}{{ printf "%.1s" .CurrentUser.Encargado.Lastname }}
                 </div>
                 <div>
-                  <p class="text-sm font-medium text-gray-900">{{ .CurrentUser.Encargado.GetNombreCompleto }}</p>
-                  <p class="text-xs text-gray-500">C.I.: {{ .CurrentUser.Encargado.CI }}</p>
+                  <p class="text-sm font-medium text-neutral-900">{{ .CurrentUser.Encargado.GetNombreCompleto }}</p>
+                  <p class="text-xs text-neutral-500">C.I.: {{ .CurrentUser.Encargado.CI }}</p>
                 </div>
               </div>
               {{ else }}
-              <span class="text-gray-500 italic text-sm">-- No asignado --</span>
+              <span class="text-neutral-500 italic text-sm">-- No asignado --</span>
               {{ end }}
             </div>
-            <p class="mt-1 text-xs text-gray-500">Esta persona está autorizada para gestionar sus solicitudes de pasajes y viáticos.</p>
+            <p class="mt-1 text-xs text-neutral-500">Esta persona está autorizada para gestionar sus solicitudes de pasajes y viáticos.</p>
           </div>
           {{ end }}
         </div>
       </div>
 
-      <div class="border-t border-gray-200 pt-8">
-        <h3 class="text-lg leading-6 font-medium text-gray-900">Contacto</h3>
+      <div class="border-t border-neutral-200 pt-8">
+        <h3 class="text-lg leading-6 font-medium text-neutral-900">Contacto</h3>
         <div class="mt-4 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
           <div class="sm:col-span-3">
-            <label class="block text-sm font-medium text-gray-700">Correo Electrónico</label>
-            <div class="mt-1 p-2 bg-gray-50 rounded border border-gray-200 text-gray-700">{{ if .CurrentUser.Email }}{{ .CurrentUser.Email }}{{ else }}-{{ end }}</div>
+            <label class="block text-sm font-medium text-neutral-700">Correo Electrónico</label>
+            <div class="mt-1 p-2 bg-neutral-50 rounded border border-neutral-200 text-neutral-700">{{ if .CurrentUser.Email }}{{ .CurrentUser.Email }}{{ else }}-{{ end }}</div>
           </div>
           <div class="sm:col-span-3">
-            <label class="block text-sm font-medium text-gray-700">Teléfono / Celular</label>
-            <div class="mt-1 p-2 bg-gray-50 rounded border border-gray-200 text-gray-700">{{ if .CurrentUser.Phone }}{{ .CurrentUser.Phone }}{{ else }}-{{ end }}</div>
+            <label class="block text-sm font-medium text-neutral-700">Teléfono / Celular</label>
+            <div class="mt-1 p-2 bg-neutral-50 rounded border border-neutral-200 text-neutral-700">{{ if .CurrentUser.Phone }}{{ .CurrentUser.Phone }}{{ else }}-{{ end }}</div>
           </div>
         </div>
       </div>
@@ -132,5 +132,4 @@
   </div>
 </div>
 
-<div id="modal-container"></div>
 {{ template "layout_end" . }} {{ end }}

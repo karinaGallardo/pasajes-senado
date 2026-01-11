@@ -140,9 +140,46 @@ func (ctrl *CupoController) GetVouchersByCupo(c *gin.Context) {
 		}
 	}
 
+	if c.GetHeader("HX-Request") == "true" {
+		cupo, _ := ctrl.service.GetByID(c.Request.Context(), cupoID)
+		utils.Render(c, "admin/components/modal_vouchers_cupo", gin.H{
+			"Vouchers": vouchers,
+			"Suplente": suplente,
+			"Cupo":     cupo,
+		})
+		return
+	}
+
 	c.JSON(http.StatusOK, gin.H{
 		"vouchers": vouchers,
 		"suplente": suplente,
+	})
+}
+
+func (ctrl *CupoController) GetTransferModal(c *gin.Context) {
+	voucherID := c.Param("id")
+	voucher, err := ctrl.service.GetVoucherByID(c.Request.Context(), voucherID)
+	if err != nil {
+		c.String(http.StatusNotFound, "Voucher no encontrado")
+		return
+	}
+
+	senador, _ := ctrl.userService.GetByID(c.Request.Context(), voucher.SenadorID)
+	suplente, _ := ctrl.userService.GetSuplenteByTitularID(c.Request.Context(), voucher.SenadorID)
+
+	var candidates []models.Usuario
+	if senador.Tipo == "SENADOR_TITULAR" && suplente != nil {
+		candidates = append(candidates, *suplente)
+	} else {
+		candidates, _ = ctrl.userService.GetByRoleType(c.Request.Context(), "SENADOR")
+	}
+
+	utils.Render(c, "admin/components/modal_transferir_voucher", gin.H{
+		"Voucher":    voucher,
+		"Senador":    senador,
+		"Candidates": candidates,
+		"Gestion":    c.Query("gestion"),
+		"Mes":        c.Query("mes"),
 	})
 }
 

@@ -159,6 +159,12 @@ func (r *UsuarioRepository) FindByUsername(username string) (*models.Usuario, er
 	return &user, err
 }
 
+func (r *UsuarioRepository) FindByCIUnscoped(ci string) (*models.Usuario, error) {
+	var usuario models.Usuario
+	err := r.db.Unscoped().Preload("Rol").Where("ci = ?", ci).First(&usuario).Error
+	return &usuario, err
+}
+
 func (r *UsuarioRepository) Save(usuario *models.Usuario) error {
 	return r.db.Save(usuario).Error
 }

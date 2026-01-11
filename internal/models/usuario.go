@@ -2,12 +2,14 @@ package models
 
 import (
 	"strings"
+
+	"gorm.io/gorm"
 )
 
 type Usuario struct {
 	BaseModel
 
-	CI       string `gorm:"size:20;uniqueIndex"`
+	CI       string `gorm:"size:20;uniqueIndex" json:"ci"`
 	Username string `gorm:"uniqueIndex;size:100;not null"`
 	Email    string `gorm:"size:255"`
 
@@ -45,6 +47,13 @@ type Usuario struct {
 	TitularID *string   `gorm:"size:36;index"`
 	Titular   *Usuario  `gorm:"foreignKey:TitularID;<-:false"`
 	Suplentes []Usuario `gorm:"foreignKey:TitularID"`
+
+	FullName string `gorm:"-" json:"full_name"`
+}
+
+func (u *Usuario) AfterFind(tx *gorm.DB) (err error) {
+	u.FullName = u.GetNombreCompleto()
+	return
 }
 
 func (u *Usuario) GetNombreCompleto() string {

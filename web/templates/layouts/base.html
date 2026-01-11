@@ -9,40 +9,250 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 
-    <script
-      src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js"
-      integrity="sha384-/TgkGk7p307TH7EXJDuUlgG3Ce1UVolAOFopFekQkkXihi5u/6OCvVKyz1W+idaz"
-      crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js"></script>
+    <script>
+      document.addEventListener("htmx:configRequest", (event) => {
+        event.detail.headers["X-CSRF-Token"] = "{{ .csrf_token }}";
+      });
+    </script>
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.15.3/dist/cdn.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>
+      document.addEventListener("alpine:init", () => {
+        Alpine.data("searchableSelect", (config) => ({
+          open: false,
+          search: "",
+          disabled: config.disabled || false,
+          value: config.initialValue || "",
+          label: config.initialLabel || config.placeholder || "Seleccione una opción",
+          placeholder: config.placeholder || "Seleccione una opción",
+          items: config.items || [],
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+          get filteredItems() {
+            if (this.search === "") return this.items;
+            const q = this.search.toLowerCase();
+            return this.items.filter((i) => (i.label && i.label.toLowerCase().includes(q)) || (i.value && i.value.toLowerCase().includes(q)));
+          },
+
+          select(item) {
+            this.value = item ? item.value : "";
+            this.label = item ? item.label : this.placeholder;
+            this.open = false;
+            this.search = "";
+          },
+        }));
+      });
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+      document.addEventListener("htmx:confirm", function (e) {
+        if (!e.detail.question) return;
+
+        e.preventDefault();
+
+        Swal.fire({
+          title: "¿Estás seguro?",
+          text: e.detail.question,
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonColor: "#03738C",
+          cancelButtonColor: "#ef4444",
+          confirmButtonText: "Sí, proceder",
+          cancelButtonText: "Cancelar",
+          reverseButtons: true,
+          customClass: {
+            popup: "rounded-xl font-sans",
+            title: "text-lg font-bold text-neutral-900",
+            htmlContainer: "text-sm text-neutral-600",
+            confirmButton: "rounded-lg px-4 py-2 text-sm font-medium shadow-sm transition-all duration-200",
+            cancelButton: "rounded-lg px-4 py-2 text-sm font-medium shadow-sm transition-all duration-200",
+          },
+        }).then(function (result) {
+          if (result.isConfirmed) {
+            e.detail.issueRequest(true);
+          }
+        });
+      });
+    </script>
+
+    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio"></script>
     <script>
       tailwind.config = {
         theme: {
-          extend: {
-            fontFamily: {
-              sans: ["Inter", "sans-serif"],
-              brand: ["Montserrat", "sans-serif"],
+          colors: {
+            transparent: "transparent",
+            current: "currentColor",
+            black: "#000000",
+            white: "#ffffff",
+            primary: {
+              50: "#e6f1f3",
+              100: "#cfe4e8",
+              200: "#9fc9d1",
+              300: "#6faeba",
+              400: "#3f94a3",
+              DEFAULT: "#03738C",
+              500: "#03738C",
+              600: "#025c70",
+              700: "#024554",
+              800: "#012e38",
+              900: "#01171c",
             },
-            colors: {
-              senado: {
-                50: "#eef9fb",
-                100: "#d6eff4",
-
-                primary: "#03738C",
-                secondary: "#0396A6",
-                gold: "#F29A2E",
-                salmon: "#F2884B",
-                accent: "#F2490C",
-
-                500: "#03738C",
-                600: "#025a6e",
-                800: "#024655",
-                900: "#01323d",
-
-                neutral: "#575756",
+            secondary: {
+              50: "#e6f5f6",
+              100: "#ceebed",
+              200: "#9dd7db",
+              300: "#6cc3ca",
+              400: "#3bafb8",
+              DEFAULT: "#0396A6",
+              500: "#0396A6",
+              600: "#027885",
+              700: "#025a64",
+              800: "#013c42",
+              900: "#011e21",
+            },
+            gold: {
+              50: "#fef5ea",
+              100: "#fdebd5",
+              200: "#fbd7ab",
+              300: "#f9c381",
+              400: "#f7af57",
+              DEFAULT: "#F29A2E",
+              500: "#F29A2E",
+              600: "#c27b25",
+              700: "#915c1c",
+              800: "#613e13",
+              900: "#301f09",
+            },
+            salmon: {
+              50: "#fef3ed",
+              100: "#fde7dc",
+              200: "#fbcfb9",
+              300: "#f9b796",
+              400: "#f79f73",
+              DEFAULT: "#F2884B",
+              500: "#F2884B",
+              600: "#c26d3c",
+              700: "#91522d",
+              800: "#61361e",
+              900: "#301b0f",
+            },
+            accent: {
+              50: "#feeeec",
+              100: "#fddbd9",
+              200: "#fbb7b3",
+              300: "#f9938d",
+              400: "#f76f67",
+              DEFAULT: "#F2490C",
+              500: "#F2490C",
+              600: "#c23a0a",
+              700: "#912c07",
+              800: "#611d05",
+              900: "#300f02",
+            },
+            neutral: {
+              50: "#f9f9f9",
+              100: "#f3f3f3",
+              200: "#e7e7e7",
+              300: "#d1d1d1",
+              400: "#a3a3a3",
+              DEFAULT: "#575756",
+              500: "#575756",
+              600: "#464645",
+              700: "#343434",
+              800: "#232322",
+              900: "#111111",
+            },
+            // Semantics for states
+            success: {
+              50: "#ecfdf5",
+              100: "#d1fae5",
+              200: "#a7f3d0",
+              300: "#6ee7b7",
+              400: "#34d399",
+              DEFAULT: "#10b981",
+              500: "#10b981",
+              600: "#059669",
+              700: "#047857",
+              800: "#065f46",
+              900: "#064e3b",
+            },
+            warning: {
+              50: "#fffbeb",
+              100: "#fef3c7",
+              200: "#fde68a",
+              300: "#fcd34d",
+              400: "#fbbf24",
+              DEFAULT: "#f59e0b",
+              500: "#f59e0b",
+              600: "#d97706",
+              700: "#b45309",
+              800: "#92400e",
+              900: "#78350f",
+            },
+            danger: {
+              50: "#fef2f2",
+              100: "#fee2e2",
+              200: "#fecaca",
+              300: "#fca5a5",
+              400: "#f87171",
+              DEFAULT: "#ef4444",
+              500: "#ef4444",
+              600: "#dc2626",
+              700: "#b91c1c",
+              800: "#991b1b",
+              900: "#7f1d1d",
+            },
+          },
+          fontFamily: {
+            sans: ["Inter", "ui-sans-serif", "system-ui"],
+            brand: ["Montserrat", "sans-serif"],
+          },
+          borderRadius: {
+            none: "0",
+            sm: "4px",
+            md: "8px",
+            lg: "12px",
+            xl: "16px",
+            "2xl": "24px",
+            full: "9999px",
+          },
+          borderColor: (theme) => ({
+            ...theme("colors"),
+            DEFAULT: theme("colors.neutral.200", "#e7e7e7"),
+          }),
+          ringColor: (theme) => ({
+            ...theme("colors"),
+            DEFAULT: theme("colors.primary.DEFAULT", "#03738C"),
+          }),
+          transitionTimingFunction: {
+            DEFAULT: "cubic-bezier(0.4, 0, 0.2, 1)",
+            premium: "cubic-bezier(0.34, 1.56, 0.64, 1)",
+          },
+          transitionDuration: {
+            DEFAULT: "200ms",
+            fast: "150ms",
+            slow: "400ms",
+          },
+          boxShadow: {
+            sm: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
+            DEFAULT: "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)",
+            md: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
+            soft: "0 4px 20px -2px rgba(0, 0, 0, 0.05), 0 2px 12px -2px rgba(0, 0, 0, 0.03)",
+            premium: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+          },
+          extend: {
+            animation: {
+              "fade-in-down": "fadeInDown 0.3s ease-out",
+              "fade-in": "fadeIn 0.2s ease-in",
+            },
+            keyframes: {
+              fadeInDown: {
+                "0%": { opacity: "0", transform: "translateY(-10px)" },
+                "100%": { opacity: "1", transform: "translateY(0)" },
+              },
+              fadeIn: {
+                "0%": { opacity: "0" },
+                "100%": { opacity: "1" },
               },
             },
           },
@@ -54,32 +264,32 @@
     {{ block "header_styles" . }}{{ end }}
   </head>
 
-  <body class="bg-gray-50 font-sans antialiased text-gray-900" x-data="{ sidebarOpen: false, sidebarCollapsed: false }">
+  <body class="bg-neutral-50 font-sans antialiased text-neutral-900" x-data="{ sidebarOpen: false, sidebarCollapsed: false }">
     <div class="flex h-screen overflow-hidden">
       <!-- SIDEBAR -->
       {{ if .CurrentUser }}
       <aside
-        class="flex flex-col bg-white border-r border-gray-200 transition-all duration-300 transform lg:translate-x-0 lg:static fixed z-30 h-full"
-        :class="{ 
-            'translate-x-0': sidebarOpen, 
+        class="flex flex-col bg-white border-r border-neutral-200 transition-all duration-300 transform lg:translate-x-0 lg:static fixed z-30 h-full"
+        :class="{
+            'translate-x-0': sidebarOpen,
             '-translate-x-full': !sidebarOpen,
             'w-64': !sidebarCollapsed,
-            'w-20': sidebarCollapsed 
+            'w-20': sidebarCollapsed
         }">
         <!-- Logo Area -->
-        <div class="flex items-center h-16 px-6 border-b border-gray-100 overflow-hidden whitespace-nowrap">
+        <div class="flex items-center h-16 px-6 border-b border-neutral-100 overflow-hidden whitespace-nowrap">
           <img src="/static/img/logo_senado.webp" alt="Logo Senado" class="h-8 w-auto mr-2 min-w-[32px]" />
-          <span class="text-xl font-brand font-bold text-gray-800 tracking-tight transition-opacity duration-300" x-show="!sidebarCollapsed" x-transition>Pasajes</span>
+          <span class="text-xl font-brand font-bold text-neutral-800 tracking-tight transition-opacity duration-300" x-show="!sidebarCollapsed" x-transition>Pasajes</span>
         </div>
 
         <!-- Navigation -->
         {{ template "layouts/components/sidebar_navigation" . }}
 
         <!-- Bottom Actions -->
-        <div class="p-4 border-t border-gray-200">
+        <div class="p-4 border-t border-neutral-200">
           <button
             @click="sidebarCollapsed = !sidebarCollapsed"
-            class="flex items-center justify-center w-full px-4 py-2 text-sm font-medium text-gray-600 hover:text-senado-primary transition-colors focus:outline-none">
+            class="flex items-center justify-center w-full px-4 py-2 text-sm font-medium text-neutral-600 hover:text-primary transition-colors focus:outline-none">
             <svg
               class="mr-3 h-5 w-5 min-w-[20px] transform transition-transform duration-300"
               :class="{ 'rotate-180': sidebarCollapsed, 'mr-0': sidebarCollapsed }"
@@ -98,49 +308,37 @@
       <div class="flex-1 flex flex-col overflow-hidden relative">
         <!-- HEADER -->
         {{ if .CurrentUser }}
-        <header class="h-20 bg-white border-b border-gray-200 flex items-center justify-between px-6 lg:px-8">
+        <header class="h-20 bg-white border-b border-neutral-200 flex items-center justify-between px-6 lg:px-8 flex-shrink-0">
           <!-- Search Bar -->
           <div class="flex-1 max-w-lg flex items-center">
-            <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden mr-4 text-gray-500 hover:text-gray-700">
+            <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden mr-4 text-neutral-500 hover:text-neutral-700">
               <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16" />
               </svg>
             </button>
             <div class="relative w-full">
               <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg class="h-5 w-5 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                 </svg>
               </span>
               <input
                 type="text"
-                class="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg leading-5 bg-gray-50 placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:border-senado-primary focus:ring-1 focus:ring-senado-primary sm:text-sm transition duration-150 ease-in-out"
+                class="block w-full pl-10 pr-3 py-2 border border-neutral-200 rounded-lg leading-5 bg-neutral-50 placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:border-primary focus:ring-1 focus:ring-primary sm:text-sm transition duration-150 ease-in-out"
                 placeholder="Buscar trámites, personas..." />
             </div>
           </div>
 
           <!-- Right Header Actions -->
           <div class="ml-4 flex items-center space-x-4">
-            <!-- Notifications (Mock) -->
-            <button class="p-2 text-gray-400 hover:text-gray-500 relative">
-              <span class="absolute top-2 right-2 h-2 w-2 rounded-full bg-red-500 ring-2 ring-white"></span>
-              <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-              </svg>
-            </button>
-
             <!-- User Profile -->
-            <div class="flex items-center pl-4 border-l border-gray-200" x-data="{ open: false }">
+            <div class="flex items-center pl-4 border-l border-neutral-200" x-data="{ open: false }">
               <div class="flex items-center cursor-pointer" @click="open = !open">
                 <div class="text-right mr-3 hidden md:block">
-                  <div class="text-sm font-medium text-gray-900">{{ .CurrentUser.GetNombreCompleto }}</div>
-                  <div class="text-xs text-gray-500">{{ .CurrentUser.Rol.Codigo }}</div>
+                  <div class="text-sm font-medium text-neutral-900">{{ .CurrentUser.GetNombreCompleto }}</div>
+                  <div class="text-xs text-neutral-500">{{ .CurrentUser.Rol.Codigo }}</div>
                 </div>
-                <div class="h-10 w-10 rounded-full bg-senado-primary flex items-center justify-center text-white font-bold shadow-sm">
+                <div class="h-10 w-10 rounded-full bg-primary flex items-center justify-center text-white font-bold shadow-sm">
                   {{ printf "%.1s" .CurrentUser.GetNombreCompleto }}
                 </div>
               </div>
@@ -150,92 +348,28 @@
                 class="origin-top-right absolute right-6 top-16 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-40"
                 style="display: none">
                 <div class="py-1">
-                  <a href="/perfil" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Mi Perfil</a>
-                  <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Configuración</a>
-                  <div class="border-t border-gray-100"></div>
-                  <a href="/auth/logout" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100">Cerrar Sesión</a>
+                  <a href="/perfil" class="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-100">Mi Perfil</a>
+                  <a href="/auth/logout" class="block px-4 py-2 text-sm text-danger-600 hover:bg-neutral-100">Cerrar Sesión</a>
                 </div>
               </div>
             </div>
           </div>
         </header>
+
+        <!-- Flash Messages (Sticky between header and content) -->
+        <div class="flex-shrink-0">{{ template "layouts/components/flash_messages" . }}</div>
         {{ end }}
 
-        <main class="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50">
-          {{ if .SuccessMessage }}
-          <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
-            <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 5000)" class="rounded-md bg-green-50 p-4 shadow-sm border border-green-200">
-              <div class="flex">
-                <div class="flex-shrink-0">
-                  <svg class="h-5 w-5 text-green-400" viewBox="0 0 20 20" fill="currentColor">
-                    <path
-                      fill-rule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                      clip-rule="evenodd" />
-                  </svg>
-                </div>
-                <div class="ml-3">
-                  <p class="text-sm font-medium text-green-800">{{ .SuccessMessage }}</p>
-                </div>
-                <div class="ml-auto pl-3">
-                  <div class="-mx-1.5 -my-1.5">
-                    <button
-                      @click="show = false"
-                      type="button"
-                      class="inline-flex bg-green-50 rounded-md p-1.5 text-green-500 hover:bg-green-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-green-50 focus:ring-green-600">
-                      <span class="sr-only">Cerrar</span>
-                      <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path
-                          fill-rule="evenodd"
-                          d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                          clip-rule="evenodd" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          {{ end }} {{ if .ErrorMessage }}
-          <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
-            <div x-data="{ show: true }" x-show="show" class="rounded-md bg-red-50 p-4 shadow-sm border border-red-200">
-              <div class="flex">
-                <div class="flex-shrink-0">
-                  <svg class="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
-                    <path
-                      fill-rule="evenodd"
-                      d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                      clip-rule="evenodd" />
-                  </svg>
-                </div>
-                <div class="ml-3">
-                  <p class="text-sm font-medium text-red-800">{{ .ErrorMessage }}</p>
-                </div>
-                <div class="ml-auto pl-3">
-                  <div class="-mx-1.5 -my-1.5">
-                    <button
-                      @click="show = false"
-                      type="button"
-                      class="inline-flex bg-red-50 rounded-md p-1.5 text-red-500 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-red-50 focus:ring-red-600">
-                      <span class="sr-only">Cerrar</span>
-                      <svg class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path
-                          fill-rule="evenodd"
-                          d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                          clip-rule="evenodd" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          {{ end }} {{ end }} {{ define "layout_end" }}
+        <!-- SCROLLABLE CONTENT AREA -->
+        <main class="flex-1 overflow-x-hidden overflow-y-auto bg-neutral-50">
+          <div class="max-w-7xl mx-auto px-2 sm:px-6 lg:px-8 pt-0 pb-8">{{ end }} {{ define "layout_end" }}</div>
         </main>
       </div>
     </div>
-    <!-- Global Confirmation Modal -->
-    <!-- {{ template "components/confirm_modal" . }} -->
+
+    <!-- Global Modal Container for HTMX -->
+    <div id="modal-container"></div>
+
     {{ block "footer_scripts" . }}{{ end }}
   </body>
 </html>

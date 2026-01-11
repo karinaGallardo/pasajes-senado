@@ -95,6 +95,10 @@ func (s *RutaService) GetAll(ctx context.Context) ([]models.Ruta, error) {
 	return s.rutaRepo.WithContext(ctx).FindAll()
 }
 
+func (s *RutaService) GetByID(ctx context.Context, id string) (*models.Ruta, error) {
+	return s.rutaRepo.WithContext(ctx).FindByID(id)
+}
+
 func (s *RutaService) AssignContract(ctx context.Context, rutaID, aerolineaID string, monto float64) error {
 	contrato := models.RutaContrato{
 		RutaID:           rutaID,

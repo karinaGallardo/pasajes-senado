@@ -253,6 +253,10 @@ func (s *CupoService) GetAllByPeriodo(ctx context.Context, gestion, mes int) ([]
 	return s.repo.WithContext(ctx).FindByPeriodo(gestion, mes)
 }
 
+func (s *CupoService) GetByID(ctx context.Context, id string) (*models.Cupo, error) {
+	return s.repo.WithContext(ctx).FindByID(id)
+}
+
 func (s *CupoService) GetAllVouchersByPeriodo(ctx context.Context, gestion, mes int) ([]models.AsignacionVoucher, error) {
 	repo := repositories.NewAsignacionVoucherRepository()
 	return repo.WithContext(ctx).FindByPeriodo(gestion, mes)

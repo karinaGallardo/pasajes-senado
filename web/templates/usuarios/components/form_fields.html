@@ -1,0 +1,149 @@
+{{ define "usuarios/components/form_fields" }}
+<div class="mb-4">
+  <label for="rol_codigo" class="block text-sm font-medium text-neutral-700">Rol Asignado</label>
+  {{ if .Usuario.IsSenador }}
+  <div class="mt-1 block w-full py-2.5 px-3 border border-neutral-100 bg-neutral-50 rounded-md shadow-sm text-neutral-500 sm:text-sm flex items-center justify-between group">
+    <span class="font-medium">{{ if .Usuario.Rol }}{{ .Usuario.Rol.Nombre }}{{ else }}Senador{{ end }}</span>
+    <span class="text-[9px] bg-neutral-200 px-2 py-0.5 rounded-full text-neutral-400 uppercase font-bold tracking-tighter">Rol Protegido</span>
+  </div>
+  <input type="hidden" name="rol_codigo" value="{{ if .Usuario.RolCodigo }}{{ deref .Usuario.RolCodigo }}{{ end }}" />
+  {{ else }}
+  <select
+    id="rol_codigo"
+    name="rol_codigo"
+    class="mt-1 block w-full py-2 px-3 border border-neutral-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
+    {{ $currentRol := "" }}{{ if .Usuario.RolCodigo }}{{ $currentRol = deref .Usuario.RolCodigo }}{{ end }} {{ range .Roles }}
+    <option value="{{ .Codigo }}" {{ if eq .Codigo $currentRol }}selected{{ end }}>{{ .Nombre }}</option>
+    {{ end }}
+  </select>
+  {{ end }}
+</div>
+
+{{ if .Usuario.IsSenador }}
+<div
+  class="mb-4"
+  x-data="searchableSelect({
+    items: {{ json .Destinos }}.map(d => ({
+      value: d.iata,
+      label: d.ciudad + (d.aeropuerto ? ' - ' + d.aeropuerto : '') + ' (' + d.iata + ')',
+      extra: d.iata
+    })),
+    initialValue: '{{ if .Usuario.OrigenIATA }}{{ deref .Usuario.OrigenIATA }}{{ end }}',
+    initialLabel: '{{ if .Usuario.Origen }}{{ .Usuario.Origen.GetNombreDisplay }}{{ end }}'
+  })">
+  <label class="block text-sm font-medium text-neutral-700">Lugar de Origen</label>
+  <div class="relative mt-1">
+    <input type="hidden" name="origen" :value="value" />
+
+    <div class="relative">
+      <div
+        @click="open = true; $nextTick(() => $refs.searchInput.focus())"
+        x-show="!open"
+        class="w-full rounded-md border border-neutral-300 bg-white py-2 px-3 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary sm:text-sm cursor-pointer flex items-center justify-between min-h-[38px]">
+        <span x-text="label"></span>
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-neutral-400" viewBox="0 0 20 20" fill="currentColor">
+          <path
+            fill-rule="evenodd"
+            d="M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
+            clip-rule="evenodd" />
+        </svg>
+      </div>
+
+      <input
+        x-ref="searchInput"
+        type="text"
+        x-model="search"
+        x-show="open"
+        @click.away="open = false"
+        @keydown.escape="open = false"
+        @keydown.enter.prevent="if (filteredItems.length > 0) select(filteredItems[0])"
+        placeholder="Buscar destino..."
+        class="w-full rounded-md border border-primary bg-white py-2 px-3 shadow-sm focus:outline-none focus:ring-1 focus:ring-primary sm:text-sm" />
+
+      <ul
+        x-show="open"
+        class="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm border border-neutral-100"
+        x-cloak>
+        <li @click="select(null)" class="cursor-pointer select-none relative py-2 pl-3 pr-9 border-b border-neutral-50 hover:bg-neutral-50 text-neutral-400 italic text-xs">
+          -- No asignado --
+        </li>
+        <template x-for="(item, index) in filteredItems" :key="index">
+          <li
+            @click="select(item)"
+            class="cursor-pointer select-none relative py-2 pl-3 pr-9 border-b border-neutral-50 last:border-0 hover:bg-primary hover:text-white transition-colors group">
+            <span class="font-medium block truncate" x-text="item.label"></span>
+          </li>
+        </template>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div
+  class="mb-4"
+  x-data="searchableSelect({
+    items: {{ json .Funcionarios }}.map(f => ({
+      value: f.id,
+      label: f.full_name,
+      extra: f.ci
+    })),
+    initialValue: '{{ if .Usuario.EncargadoID }}{{ .Usuario.EncargadoID }}{{ end }}',
+    initialLabel: '{{ if .Usuario.Encargado }}{{ .Usuario.Encargado.GetNombreCompleto }}{{ end }}',
+    disabled: {{ if eq .Usuario.Tipo `SENADOR_SUPLENTE` }}true{{ else }}false{{ end }}
+  })">
+  <label class="block text-sm font-medium text-neutral-700">Encargado de Trámites</label>
+  <p class="text-[11px] text-neutral-500 mb-2 leading-tight">
+    {{ if eq .Usuario.Tipo "SENADOR_SUPLENTE" }} Este campo está vinculado al Senador Titular. El encargado asignado al titular gestionará también los pasajes del suplente. {{ else
+    }} Busque por nombre o CI al funcionario que gestionará los pasajes. {{ end }}
+  </p>
+
+  <div class="relative mt-1">
+    <input type="hidden" name="encargado_id" :value="value" />
+
+    <div class="relative">
+      <div
+        @click="if (!disabled) { open = true; $nextTick(() => $refs.searchInput.focus()) }"
+        x-show="!open"
+        class="w-full rounded-md border border-neutral-300 bg-white py-2.5 pl-3 pr-10 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary sm:text-sm cursor-pointer flex items-center justify-between min-h-[38px]"
+        :class="{ 'bg-neutral-100 cursor-not-allowed text-neutral-500': disabled }">
+        <span x-text="label"></span>
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-neutral-400" viewBox="0 0 20 20" fill="currentColor">
+          <path
+            fill-rule="evenodd"
+            d="M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
+            clip-rule="evenodd" />
+        </svg>
+      </div>
+
+      <input
+        x-ref="searchInput"
+        type="text"
+        x-model="search"
+        x-show="open"
+        @click.away="open = false"
+        @keydown.escape="open = false"
+        placeholder="Buscar funcionario..."
+        class="w-full rounded-md border border-primary bg-white py-2.5 pl-3 pr-10 shadow-sm focus:outline-none focus:ring-1 focus:ring-primary sm:text-sm" />
+
+      <ul
+        x-show="open"
+        class="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm border border-neutral-100"
+        x-cloak>
+        <li @click="select(null)" class="cursor-pointer select-none relative py-2.5 pl-3 pr-9 border-b border-neutral-50 hover:bg-neutral-50 text-neutral-400 italic text-xs">
+          -- Sin encargado asignado --
+        </li>
+        <template x-for="(item, index) in filteredItems" :key="index">
+          <li
+            @click="select(item)"
+            class="cursor-pointer select-none relative py-2.5 pl-3 pr-9 border-b border-neutral-50 last:border-0 hover:bg-primary hover:text-white transition-colors group">
+            <div class="flex flex-col">
+              <span class="font-bold block truncate text-neutral-800 group-hover:text-white" x-text="item.label"></span>
+              <span class="text-[10px] text-neutral-400 group-hover:text-primary-100 font-medium" x-text="'CI: ' + item.extra"></span>
+            </div>
+          </li>
+        </template>
+      </ul>
+    </div>
+  </div>
+</div>
+{{ end }} {{ end }}

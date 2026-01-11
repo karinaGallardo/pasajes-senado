@@ -33,7 +33,7 @@
       x-transition:leave="ease-in duration-200"
       x-transition:leave-start="opacity-100"
       x-transition:leave-end="opacity-0"
-      class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+      class="fixed inset-0 bg-neutral-500 bg-opacity-75 transition-opacity"
       aria-hidden="true"
       @click="open = false"></div>
 
@@ -50,8 +50,8 @@
       class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl sm:w-full">
       <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
         <div class="flex items-center mb-4">
-          <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 sm:mx-0 sm:h-10 sm:w-10 mr-4">
-            <svg class="h-6 w-6 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-warning-100 sm:mx-0 sm:h-10 sm:w-10 mr-4">
+            <svg class="h-6 w-6 text-warning-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path
                 stroke-linecap="round"
                 stroke-linejoin="round"
@@ -60,8 +60,8 @@
             </svg>
           </div>
           <div>
-            <h3 class="text-lg leading-6 font-medium text-gray-900" id="modal-title-reprog">Reprogramar Pasaje</h3>
-            <p class="text-sm text-gray-500">Ingrese los nuevos datos. El pasaje anterior será marcado como reprogramado.</p>
+            <h3 class="text-lg leading-6 font-medium text-neutral-900" id="modal-title-reprog">Reprogramar Pasaje</h3>
+            <p class="text-sm text-neutral-500">Ingrese los nuevos datos. El pasaje anterior será marcado como reprogramado.</p>
           </div>
         </div>
 
@@ -72,30 +72,26 @@
           <div class="grid grid-cols-6 gap-6">
             <div
               class="col-span-6"
-              x-data="{
-                    search: '',
-                    openDropdown: false,
+              x-data="searchableSelect({
                     items: [
                         {{ range .Rutas }}
-                        { name: '{{ .Tramo }}' }, 
+                        { id: '{{ .Tramo }}', name: '{{ .Tramo }}' }, 
                         {{ end }}
                     ],
-                    get filteredItems() {
-                        if (this.search === '') return this.items;
-                        return this.items.filter(i => i.name.toLowerCase().includes(this.search.toLowerCase()));
-                    }
-                }">
-              <label class="block text-sm font-medium text-gray-700">Nueva Ruta (Origen - Destino)</label>
+                    initialId: '{{ .Pasaje.Ruta }}',
+                    initialName: '{{ .Pasaje.Ruta }}'
+                })">
+              <label class="block text-sm font-medium text-neutral-700">Nueva Ruta (Origen - Destino)</label>
               <div class="relative mt-1">
-                <input type="hidden" name="ruta" x-model="ruta" />
+                <input type="hidden" name="ruta" :value="selectedId" />
 
                 <div class="relative">
                   <div
-                    @click="openDropdown = true; $nextTick(() => $refs.searchInput.focus())"
-                    x-show="!openDropdown"
-                    class="w-full rounded-md border border-gray-300 bg-white py-2 pl-3 pr-10 shadow-sm focus:border-senado-secondary focus:outline-none focus:ring-1 focus:ring-senado-secondary sm:text-sm cursor-pointer flex items-center justify-between min-h-[38px]">
-                    <span x-text="ruta || 'Eje: LPB - SRZ'"></span>
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                    @click="open = true; $nextTick(() => $refs.searchInput.focus())"
+                    x-show="!open"
+                    class="w-full rounded-md border border-neutral-300 bg-white py-2 pl-3 pr-10 shadow-sm focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary sm:text-sm cursor-pointer flex items-center justify-between min-h-[38px]">
+                    <span x-text="selectedName || 'Eje: LPB - SRZ'"></span>
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-neutral-400" viewBox="0 0 20 20" fill="currentColor">
                       <path
                         fill-rule="evenodd"
                         d="M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
@@ -107,39 +103,35 @@
                     x-ref="searchInput"
                     type="text"
                     x-model="search"
-                    x-show="openDropdown"
-                    @click.away="openDropdown = false"
-                    @keydown.escape="openDropdown = false"
+                    x-show="open"
+                    @click.away="open = false"
+                    @keydown.escape="open = false"
+                    @keydown.enter.prevent="if (filteredItems.length > 0) select(filteredItems[0])"
                     placeholder="Buscar ruta..."
-                    class="w-full rounded-md border border-senado-secondary bg-white py-2 pl-3 pr-10 shadow-sm focus:outline-none focus:ring-1 focus:ring-senado-secondary sm:text-sm" />
+                    class="w-full rounded-md border border-secondary bg-white py-2 pl-3 pr-10 shadow-sm focus:outline-none focus:ring-1 focus:ring-secondary sm:text-sm" />
 
                   <ul
-                    x-show="openDropdown"
+                    x-show="open"
                     class="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
-                    x-transition:leave="transition ease-in duration-100"
-                    x-transition:leave-start="opacity-100"
-                    x-transition:leave-end="opacity-0"
                     x-cloak>
-                    <template x-for="item in filteredItems" :key="item.name">
-                      <li
-                        class="relative cursor-default select-none py-2 pl-3 pr-9 text-gray-900 hover:bg-senado-primary hover:text-white"
-                        @click="ruta = item.name; openDropdown = false; search = ''">
+                    <template x-for="item in filteredItems" :key="item.id">
+                      <li class="relative cursor-default select-none py-2 pl-3 pr-9 text-neutral-900 hover:bg-primary hover:text-white" @click="select(item)">
                         <span class="block truncate" x-text="item.name"></span>
                       </li>
                     </template>
-                    <li x-show="filteredItems.length === 0" class="relative cursor-default select-none py-2 pl-3 pr-9 text-gray-500">Sin resultados.</li>
+                    <li x-show="filteredItems.length === 0" class="relative cursor-default select-none py-2 pl-3 pr-9 text-neutral-500">Sin resultados.</li>
                   </ul>
                 </div>
               </div>
             </div>
 
             <div class="col-span-3">
-              <label class="block text-sm font-medium text-gray-700">Agencia Emisora</label>
+              <label class="block text-sm font-medium text-neutral-700">Agencia Emisora</label>
               <select
                 name="agencia_id"
                 x-model="agencia_id"
                 required
-                class="mt-1 focus:ring-senado-secondary focus:border-senado-secondary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md border p-2">
+                class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md border p-2">
                 <option value="">-- Seleccionar --</option>
                 {{ range .Agencias }}
                 <option value="{{ .ID }}">{{ .Nombre }}</option>
@@ -148,12 +140,12 @@
             </div>
 
             <div class="col-span-3">
-              <label class="block text-sm font-medium text-gray-700">Aerolínea</label>
+              <label class="block text-sm font-medium text-neutral-700">Aerolínea</label>
               <select
                 name="aerolinea_id"
                 x-model="aerolinea"
                 required
-                class="mt-1 focus:ring-senado-secondary focus:border-senado-secondary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md border p-2">
+                class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md border p-2">
                 <option value="">-- Seleccionar --</option>
                 {{ range .Aerolineas }}
                 <option value="{{ .ID }}">{{ .Nombre }}</option>
@@ -162,92 +154,92 @@
             </div>
 
             <div class="col-span-2">
-              <label class="block text-sm font-medium text-gray-700">Nº Vuelo</label>
+              <label class="block text-sm font-medium text-neutral-700">Nº Vuelo</label>
               <input
                 type="text"
                 name="numero_vuelo"
                 x-model="numero_vuelo"
                 required
                 placeholder="Ej: OB-123"
-                class="mt-1 focus:ring-senado-secondary focus:border-senado-secondary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md border p-2" />
+                class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md border p-2" />
             </div>
 
             <div class="col-span-2">
-              <label class="block text-sm font-medium text-gray-700">Cod. Reserva</label>
+              <label class="block text-sm font-medium text-neutral-700">Cod. Reserva</label>
               <input
                 type="text"
                 name="codigo_reserva"
                 x-model="codigo_reserva"
                 placeholder="Ej: ABCDEF"
-                class="mt-1 focus:ring-senado-secondary focus:border-senado-secondary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md border p-2" />
+                class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md border p-2" />
             </div>
 
             <div class="col-span-2">
-              <label class="block text-sm font-medium text-gray-700">Nº Factura</label>
+              <label class="block text-sm font-medium text-neutral-700">Nº Factura</label>
               <input
                 type="text"
                 name="numero_factura"
                 x-model="numero_factura"
                 placeholder="Ej: 1234"
-                class="mt-1 focus:ring-senado-secondary focus:border-senado-secondary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md border p-2" />
+                class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md border p-2" />
             </div>
 
             <div class="col-span-3">
-              <label class="block text-sm font-medium text-gray-700">Fecha y Hora Vuelo</label>
+              <label class="block text-sm font-medium text-neutral-700">Fecha y Hora Vuelo</label>
               <input
                 type="datetime-local"
                 name="fecha_vuelo"
                 x-model="fecha_vuelo"
                 required
-                class="mt-1 focus:ring-senado-secondary focus:border-senado-secondary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md border p-2" />
+                class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md border p-2" />
             </div>
 
             <div class="col-span-3">
-              <label class="block text-sm font-medium text-gray-700">Nº Boleto</label>
+              <label class="block text-sm font-medium text-neutral-700">Nº Boleto</label>
               <input
                 type="text"
                 name="numero_boleto"
                 x-model="numero_boleto"
                 required
                 placeholder="Ej: 930..."
-                class="mt-1 focus:ring-senado-secondary focus:border-senado-secondary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md border p-2" />
+                class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md border p-2" />
             </div>
 
             <div class="col-span-3">
-              <label class="block text-sm font-medium text-gray-700">Costo del Pasaje (Bs)</label>
+              <label class="block text-sm font-medium text-neutral-700">Costo del Pasaje (Bs)</label>
               <input
                 type="number"
                 step="0.01"
                 name="costo"
                 x-model="costo"
                 required
-                class="mt-1 focus:ring-senado-secondary focus:border-senado-secondary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md border p-2" />
+                class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md border p-2" />
             </div>
 
             <div class="col-span-3">
-              <label class="block text-sm font-medium text-red-700">Costo Penalidad (Bs)</label>
+              <label class="block text-sm font-medium text-danger-700">Costo Penalidad (Bs)</label>
               <input
                 type="number"
                 step="0.01"
                 name="costo_penalidad"
                 x-model="costo_penalidad"
-                class="mt-1 focus:ring-red-500 focus:border-red-500 block w-full shadow-sm sm:text-sm border-gray-300 rounded-md border p-2" />
+                class="mt-1 focus:ring-danger-500 focus:border-danger-500 block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md border p-2" />
             </div>
 
             <div class="col-span-6">
-              <label class="block text-sm font-medium text-gray-700">Motivo / Glosa</label>
+              <label class="block text-sm font-medium text-neutral-700">Motivo / Glosa</label>
               <textarea
                 name="glosa"
                 x-model="glosa"
                 rows="2"
                 placeholder="Razón de la reprogramación..."
-                class="mt-1 focus:ring-senado-secondary focus:border-senado-secondary block w-full shadow-sm sm:text-sm border-gray-300 rounded-md border p-2"></textarea>
+                class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md border p-2"></textarea>
             </div>
 
-            <div class="col-span-6 border-t border-gray-100 pt-4">
-              <label class="block text-sm font-medium text-gray-700 mb-2">Nuevo Billete (PDF)</label>
+            <div class="col-span-6 border-t border-neutral-100 pt-4">
+              <label class="block text-sm font-medium text-neutral-700 mb-2">Nuevo Billete (PDF)</label>
               <div
-                class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md bg-white hover:bg-gray-50 transition-colors cursor-pointer relative group">
+                class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-neutral-300 border-dashed rounded-md bg-white hover:bg-neutral-50 transition-colors cursor-pointer relative group">
                 <input
                   type="file"
                   name="archivo"
@@ -257,23 +249,23 @@
                   required />
 
                 <div class="space-y-1 text-center" x-show="!fileName">
-                  <svg class="mx-auto h-12 w-12 text-gray-400 group-hover:text-gray-500 transition-colors" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                  <svg class="mx-auto h-12 w-12 text-neutral-400 group-hover:text-neutral-500 transition-colors" stroke="currentColor" fill="none" viewBox="0 0 48 48">
                     <path
                       d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
                       stroke-width="2"
                       stroke-linecap="round"
                       stroke-linejoin="round" />
                   </svg>
-                  <div class="flex text-sm text-gray-600 justify-center">
-                    <span class="font-bold text-senado-secondary group-hover:underline">Cargar Nuevo Ticket</span>
+                  <div class="flex text-sm text-neutral-600 justify-center">
+                    <span class="font-bold text-secondary group-hover:underline">Cargar Nuevo Ticket</span>
                     <p class="pl-1">o arrastrar aquí</p>
                   </div>
-                  <p class="text-xs text-gray-500">Solo archivos PDF</p>
+                  <p class="text-xs text-neutral-500">Solo archivos PDF</p>
                 </div>
 
                 <div class="space-y-1 text-center" x-show="fileName" x-cloak>
-                  <div class="mx-auto h-12 w-12 bg-red-100 rounded-full flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <div class="mx-auto h-12 w-12 bg-danger-100 rounded-full flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-danger-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path
                         stroke-linecap="round"
                         stroke-linejoin="round"
@@ -281,18 +273,18 @@
                         d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                     </svg>
                   </div>
-                  <p class="text-sm font-bold text-gray-900 truncate px-4" x-text="fileName"></p>
-                  <p class="text-xs text-green-600 font-medium">✓ Listo para subir</p>
+                  <p class="text-sm font-bold text-neutral-900 truncate px-4" x-text="fileName"></p>
+                  <p class="text-xs text-success-600 font-medium">✓ Listo para subir</p>
                 </div>
               </div>
             </div>
           </div>
 
-          <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse mt-4 -mx-6 -mb-4">
+          <div class="bg-neutral-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse mt-4 -mx-6 -mb-4">
             <button
               type="submit"
               :disabled="loading"
-              class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-yellow-600 text-base font-medium text-white hover:bg-yellow-700 focus:outline-none disabled:opacity-50 sm:ml-3 sm:w-auto sm:text-sm">
+              class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-warning-600 text-base font-medium text-white hover:bg-warning-700 focus:outline-none disabled:opacity-50 sm:ml-3 sm:w-auto sm:text-sm">
               <span x-show="!loading">Confirmar Reprogramación</span>
               <span x-show="loading" class="flex items-center">
                 <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
@@ -308,7 +300,7 @@
             <button
               type="button"
               @click="open = false"
-              class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+              class="mt-3 w-full inline-flex justify-center rounded-md border border-neutral-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-neutral-700 hover:bg-neutral-50 focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
               Cancelar
             </button>
           </div>

@@ -5,7 +5,7 @@
     <div
       x-show="modalOpen"
       x-cloak
-      class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+      class="fixed inset-0 bg-neutral-500 bg-opacity-75 transition-opacity"
       aria-hidden="true"
       @click="modalOpen = false"
       x-transition:enter="ease-out duration-300"
@@ -30,12 +30,12 @@
       class="inline-block align-bottom bg-white rounded-lg text-left overflow-visible shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
       <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
         <div class="flex justify-between items-center mb-4 pb-2 border-b">
-          <h3 class="text-xl font-bold text-gray-900" id="modal-title">Vista Previa de Viáticos</h3>
+          <h3 class="text-xl font-bold text-neutral-900" id="modal-title">Vista Previa de Viáticos</h3>
           <div class="flex space-x-2">
             <a
               href="/viaticos/{{ .Viatico.ID }}/print"
               target="_blank"
-              class="inline-flex items-center px-4 py-2 bg-senado-primary text-white rounded-md hover:bg-senado-800 transition-colors">
+              class="inline-flex items-center px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-800 transition-colors">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path
                   stroke-linecap="round"
@@ -45,11 +45,11 @@
               </svg>
               Descargar PDF
             </a>
-            <button @click="modalOpen = false" class="bg-white px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors">Cerrar</button>
+            <button @click="modalOpen = false" class="bg-white px-4 py-2 border border-neutral-300 rounded-md text-neutral-700 hover:bg-neutral-50 transition-colors">Cerrar</button>
           </div>
         </div>
 
-        <div class="bg-gray-100 p-0 rounded-lg overflow-hidden h-[80vh]">
+        <div class="bg-neutral-100 p-0 rounded-lg overflow-hidden h-[80vh]">
           <iframe src="/viaticos/{{ .Viatico.ID }}/print" class="w-full h-full border-0" title="Vista Previa PDF"></iframe>
         </div>
       </div>

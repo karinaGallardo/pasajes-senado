@@ -57,3 +57,9 @@ func (r *CupoRepository) FindByTitular(titularID string, gestion int) ([]models.
 	err := r.db.Where("senador_id = ? AND gestion = ?", titularID, gestion).Order("mes asc").Find(&cupos).Error
 	return cupos, err
 }
+
+func (r *CupoRepository) FindByID(id string) (*models.Cupo, error) {
+	var cupo models.Cupo
+	err := r.db.First(&cupo, "id = ?", id).Error
+	return &cupo, err
+}

@@ -1,11 +1,10 @@
 {{ define "admin/rutas" }} {{ template "layout_start" . }}
 
 <script>
-  const destinosData = [
-      {{ range .Destinos }}
-      { value: "{{ .IATA }}", label: "{{ .GetNombreDisplay }}" },
-      {{ end }}
-  ];
+  const destinosData = {{ json .Destinos }}.map(d => ({
+    value: d.iata,
+    label: d.ciudad + (d.aeropuerto ? ' - ' + d.aeropuerto : '') + ' (' + d.iata + ')'
+  }));
 
   document.addEventListener('alpine:init', () => {
     Alpine.data('searchableSelect', (name, placeholder = 'Seleccione una opción', initialValue = '') => ({
@@ -54,9 +53,9 @@
   });
 </script>
 
-<div class="max-w-6xl mx-auto mt-8">
-  <h1 class="text-2xl font-bold text-senado-800 mb-6 flex items-center">
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mr-2 text-senado-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+<div class="mt-8">
+  <h1 class="text-2xl font-bold text-primary-800 mb-6 flex items-center">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mr-2 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path
         stroke-linecap="round"
         stroke-linejoin="round"
@@ -68,23 +67,23 @@
 
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
     <!-- New Ruta Form -->
-    <div class="bg-white rounded-lg shadow-lg p-6 h-fit z-20 overflow-visible">
-      <h2 class="text-lg font-bold text-senado-700 mb-4 border-b pb-2">Nueva Ruta</h2>
+    <div class="py-6 h-fit z-20 overflow-visible">
+      <h2 class="text-lg font-bold text-primary-700 mb-4 border-b pb-2">Nueva Ruta</h2>
       <form action="/admin/rutas" method="POST" class="space-y-6">
         <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
         <!-- Origen -->
         <div class="relative" x-data="searchableSelect('origen_iata', 'Seleccione Origen')">
-          <label class="block text-sm font-medium text-gray-700 mb-1">Lugar de Origen</label>
+          <label class="block text-sm font-medium text-neutral-700 mb-1">Lugar de Origen</label>
           <input type="hidden" :name="name" :value="value" required />
 
           <button
             x-ref="button"
             @click="toggle()"
             type="button"
-            class="relative w-full bg-white border border-gray-300 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-senado-500 focus:border-senado-500 sm:text-sm">
-            <span class="block truncate" :class="{'text-gray-500': !value, 'text-gray-900': value}" x-text="selectedLabel"></span>
+            class="relative w-full bg-white border border-neutral-300 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
+            <span class="block truncate" :class="{'text-neutral-500': !value, 'text-neutral-900': value}" x-text="selectedLabel"></span>
             <span class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-              <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <svg class="h-5 w-5 text-neutral-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                 <path
                   fill-rule="evenodd"
                   d="M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
@@ -103,14 +102,14 @@
                 x-ref="searchInput"
                 x-model="search"
                 type="text"
-                class="w-full border-gray-300 rounded-md text-sm focus:ring-senado-500 focus:border-senado-500"
+                class="w-full border-neutral-300 rounded-md text-sm focus:ring-primary-500 focus:border-primary-500"
                 placeholder="Buscar ciudad o aeropuerto..." />
             </div>
             <ul class="pt-1">
               <template x-for="option in filteredOptions" :key="option.value">
-                <li @click="select(option.value)" class="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-senado-50 text-gray-900">
+                <li @click="select(option.value)" class="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-primary-50 text-neutral-900">
                   <span class="block truncate" x-text="option.label" :class="{'font-semibold': value === option.value, 'font-normal': value !== option.value}"></span>
-                  <span x-show="value === option.value" class="absolute inset-y-0 right-0 flex items-center pr-4 text-senado-600">
+                  <span x-show="value === option.value" class="absolute inset-y-0 right-0 flex items-center pr-4 text-primary-600">
                     <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                       <path
                         fill-rule="evenodd"
@@ -120,7 +119,7 @@
                   </span>
                 </li>
               </template>
-              <li x-show="filteredOptions.length === 0" class="cursor-default select-none relative py-2 pl-3 pr-9 text-gray-500 italic">No se encontraron resultados</li>
+              <li x-show="filteredOptions.length === 0" class="cursor-default select-none relative py-2 pl-3 pr-9 text-neutral-500 italic">No se encontraron resultados</li>
             </ul>
           </div>
         </div>
@@ -130,17 +129,17 @@
           <template x-for="(scale, index) in scales" :key="index">
             <div class="relative mb-4 flex items-start gap-2">
               <div class="flex-1" x-data="searchableSelect('escalas_iata[]', 'Seleccione Escala')">
-                <label class="block text-sm font-medium text-gray-700 mb-1" x-text="'Escala ' + (index + 1)"></label>
+                <label class="block text-sm font-medium text-neutral-700 mb-1" x-text="'Escala ' + (index + 1)"></label>
                 <input type="hidden" :name="name" :value="value" />
 
                 <button
                   x-ref="button"
                   @click="toggle()"
                   type="button"
-                  class="relative w-full bg-white border border-gray-300 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-senado-500 focus:border-senado-500 sm:text-sm">
-                  <span class="block truncate" :class="{'text-gray-500': !value, 'text-gray-900': value}" x-text="selectedLabel"></span>
+                  class="relative w-full bg-white border border-neutral-300 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
+                  <span class="block truncate" :class="{'text-neutral-500': !value, 'text-neutral-900': value}" x-text="selectedLabel"></span>
                   <span class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                    <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                    <svg class="h-5 w-5 text-neutral-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                       <path
                         fill-rule="evenodd"
                         d="M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
@@ -159,20 +158,20 @@
                       x-ref="searchInput"
                       x-model="search"
                       type="text"
-                      class="w-full border-gray-300 rounded-md text-sm focus:ring-senado-500 focus:border-senado-500"
+                      class="w-full border-neutral-300 rounded-md text-sm focus:ring-primary-500 focus:border-primary-500"
                       placeholder="Buscar..." />
                   </div>
                   <ul class="pt-1">
                     <template x-for="option in filteredOptions" :key="option.value">
-                      <li @click="select(option.value)" class="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-senado-50 text-gray-900">
+                      <li @click="select(option.value)" class="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-primary-50 text-neutral-900">
                         <span class="block truncate" x-text="option.label" :class="{'font-semibold': value === option.value, 'font-normal': value !== option.value}"></span>
                       </li>
                     </template>
-                    <li x-show="filteredOptions.length === 0" class="cursor-default select-none relative py-2 pl-3 pr-9 text-gray-500 italic">No se encontraron resultados</li>
+                    <li x-show="filteredOptions.length === 0" class="cursor-default select-none relative py-2 pl-3 pr-9 text-neutral-500 italic">No se encontraron resultados</li>
                   </ul>
                 </div>
               </div>
-              <button type="button" @click="scales.splice(index, 1)" class="mt-8 text-red-600 hover:text-red-800 flex-shrink-0">
+              <button type="button" @click="scales.splice(index, 1)" class="mt-8 text-danger-600 hover:text-danger-800 flex-shrink-0">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                   <path
                     fill-rule="evenodd"
@@ -183,7 +182,7 @@
             </div>
           </template>
 
-          <button type="button" @click="scales.push({})" class="text-sm text-senado-600 hover:text-senado-800 font-medium flex items-center mb-1">
+          <button type="button" @click="scales.push({})" class="text-sm text-primary-600 hover:text-primary-800 font-medium flex items-center mb-1">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
             </svg>
@@ -193,17 +192,17 @@
 
         <!-- Destino -->
         <div class="relative" x-data="searchableSelect('destino_iata', 'Seleccione Destino')">
-          <label class="block text-sm font-medium text-gray-700 mb-1">Lugar de Destino</label>
+          <label class="block text-sm font-medium text-neutral-700 mb-1">Lugar de Destino</label>
           <input type="hidden" :name="name" :value="value" required />
 
           <button
             x-ref="button"
             @click="toggle()"
             type="button"
-            class="relative w-full bg-white border border-gray-300 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-senado-500 focus:border-senado-500 sm:text-sm">
-            <span class="block truncate" :class="{'text-gray-500': !value, 'text-gray-900': value}" x-text="selectedLabel"></span>
+            class="relative w-full bg-white border border-neutral-300 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
+            <span class="block truncate" :class="{'text-neutral-500': !value, 'text-neutral-900': value}" x-text="selectedLabel"></span>
             <span class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-              <svg class="h-5 w-5 text-gray-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <svg class="h-5 w-5 text-neutral-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                 <path
                   fill-rule="evenodd"
                   d="M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
@@ -222,14 +221,14 @@
                 x-ref="searchInput"
                 x-model="search"
                 type="text"
-                class="w-full border-gray-300 rounded-md text-sm focus:ring-senado-500 focus:border-senado-500"
+                class="w-full border-neutral-300 rounded-md text-sm focus:ring-primary-500 focus:border-primary-500"
                 placeholder="Buscar ciudad o aeropuerto..." />
             </div>
             <ul class="pt-1">
               <template x-for="option in filteredOptions" :key="option.value">
-                <li @click="select(option.value)" class="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-senado-50 text-gray-900">
+                <li @click="select(option.value)" class="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-primary-50 text-neutral-900">
                   <span class="block truncate" x-text="option.label" :class="{'font-semibold': value === option.value, 'font-normal': value !== option.value}"></span>
-                  <span x-show="value === option.value" class="absolute inset-y-0 right-0 flex items-center pr-4 text-senado-600">
+                  <span x-show="value === option.value" class="absolute inset-y-0 right-0 flex items-center pr-4 text-primary-600">
                     <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
                       <path
                         fill-rule="evenodd"
@@ -239,48 +238,50 @@
                   </span>
                 </li>
               </template>
-              <li x-show="filteredOptions.length === 0" class="cursor-default select-none relative py-2 pl-3 pr-9 text-gray-500 italic">No se encontraron resultados</li>
+              <li x-show="filteredOptions.length === 0" class="cursor-default select-none relative py-2 pl-3 pr-9 text-neutral-500 italic">No se encontraron resultados</li>
             </ul>
           </div>
         </div>
 
-        <button type="submit" class="w-full bg-senado-600 text-white px-4 py-2 rounded-md hover:bg-senado-700 font-medium">Registrar Ruta</button>
+        <button type="submit" class="w-full bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700 font-medium">Registrar Ruta</button>
       </form>
     </div>
 
     <!-- Rutas List -->
     <div class="lg:col-span-2 bg-white rounded-lg shadow-lg overflow-hidden">
-      <div class="bg-senado-50 px-6 py-4 border-b border-gray-200">
-        <h2 class="text-lg font-bold text-senado-800">Catálogo de Rutas</h2>
+      <div class="bg-primary-50 px-6 py-4 border-b border-neutral-200">
+        <h2 class="text-lg font-bold text-primary-800">Catálogo de Rutas</h2>
       </div>
       <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
-          <thead class="bg-gray-50">
+          <thead class="bg-neutral-50">
             <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tramo / Sigla</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ámbito</th>
-              <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Tramo / Sigla</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Ámbito</th>
+              <th class="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">Acciones</th>
             </tr>
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
             {{ range .Rutas }}
             <tr>
               <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm font-medium text-gray-900">{{ .Tramo }}</div>
-                <div class="text-xs text-gray-500">{{ .Sigla }}</div>
+                <div class="text-sm font-medium text-neutral-900">{{ .Tramo }}</div>
+                <div class="text-xs text-neutral-500">{{ .Sigla }}</div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
                 <span
-                  class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ if eq .NacInter `NACIONAL` }}bg-green-100 text-green-800{{ else }}bg-blue-100 text-blue-800{{ end }}">
+                  class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ if eq .NacInter `NACIONAL` }}bg-success-100 text-success-800{{ else }}bg-secondary/20 text-primary{{ end }}">
                   {{ .NacInter }}
                 </span>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                <button @click="openContractModal('{{ .ID }}', '{{ .Tramo }}')" class="text-senado-600 hover:text-senado-900">Agregar Tarifa</button>
+                <button hx-get="/admin/rutas/modal-contrato?ruta_id={{ .ID }}" hx-target="#modal-container" class="text-primary-600 hover:text-primary-800">Agregar Tarifa</button>
               </td>
             </tr>
             {{ else }}
-            <tr><td colspan="3" class="px-6 py-4 text-center text-gray-500">No hay rutas registradas.</td></tr>
+            <tr>
+              <td colspan="3" class="px-6 py-4 text-center text-neutral-500">No hay rutas registradas.</td>
+            </tr>
             {{ end }}
           </tbody>
         </table>
@@ -288,68 +289,5 @@
     </div>
   </div>
 </div>
-
-<!-- Modal Contract -->
-<div
-  x-data="{ open: false, rutaId: '', tramoName: '' }"
-  @open-contract-modal.window="open = true; rutaId = $event.detail.id; tramoName = $event.detail.name"
-  x-show="open"
-  class="fixed z-10 inset-0 overflow-y-auto"
-  style="display: none">
-  <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-    <div x-show="open" class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
-    <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-    <div
-      x-show="open"
-      class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
-      <form action="/admin/rutas/contrato" method="POST">
-        <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
-        <input type="hidden" name="ruta_id" :value="rutaId" />
-        <div class="mb-4">
-          <h3 class="text-lg leading-6 font-medium text-gray-900">Asignar Tarifa Referencial</h3>
-          <p class="text-sm text-gray-500">
-            Ruta:
-            <span x-text="tramoName"></span>
-          </p>
-        </div>
-
-        <div class="space-y-4">
-          <div>
-            <label class="block text-sm font-medium text-gray-700">Aerolínea</label>
-            <select name="aerolinea_id" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-senado-500 focus:ring-senado-500">
-              {{ range .Aerolineas }}
-              <option value="{{ .ID }}">{{ .Nombre }}</option>
-              {{ end }}
-            </select>
-          </div>
-          <div>
-            <label class="block text-sm font-medium text-gray-700">Monto Referencial (Bs)</label>
-            <input type="number" step="0.01" name="monto" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-senado-500 focus:ring-senado-500" required />
-          </div>
-        </div>
-
-        <div class="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
-          <button
-            type="submit"
-            class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-senado-600 text-base font-medium text-white hover:bg-senado-700 sm:col-start-2 sm:text-sm">
-            Guardar
-          </button>
-          <button
-            type="button"
-            @click="open = false"
-            class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 sm:mt-0 sm:col-start-1 sm:text-sm">
-            Cancelar
-          </button>
-        </div>
-      </form>
-    </div>
-  </div>
-</div>
-
-<script>
-  function openContractModal(id, name) {
-    window.dispatchEvent(new CustomEvent("open-contract-modal", { detail: { id: id, name: name } }));
-  }
-</script>
 
 {{ template "layout_end" . }} {{ end }}

@@ -1,0 +1,104 @@
+{{ define "admin/components/modal_vouchers_cupo" }}
+<div x-data="{ open: true }" x-show="open" class="fixed z-50 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+  <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+    <div
+      x-show="open"
+      x-transition:enter="ease-out duration-300"
+      x-transition:enter-start="opacity-0"
+      x-transition:enter-end="opacity-100"
+      x-transition:leave="ease-in duration-200"
+      x-transition:leave-start="opacity-100"
+      x-transition:leave-end="opacity-0"
+      class="fixed inset-0 bg-neutral-500 bg-opacity-75 transition-opacity"
+      @click="open = false"></div>
+
+    <div class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
+      <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+        <div class="sm:flex sm:items-start">
+          <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
+            <h3 class="text-lg leading-6 font-medium text-neutral-900" id="modal-title">
+              Detalle de Vouchers -
+              <span class="font-bold text-primary">{{ if .Cupo.Senador }}{{ .Cupo.Senador.GetNombreCompleto }}{{ else }}Senador{{ end }}</span>
+            </h3>
+
+            {{ if .Suplente }}
+            <div class="text-sm text-primary-600 mb-2 font-semibold">
+              Suplente Habilitado:
+              <span>{{ .Suplente.GetNombreCompleto }}</span>
+            </div>
+            {{ end }}
+
+            <div class="mt-4 border-t border-neutral-100 pt-4">
+              <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                  <thead class="bg-neutral-50">
+                    <tr>
+                      <th class="px-4 py-2 text-left text-xs font-medium text-neutral-500 uppercase">Semana</th>
+                      <th class="px-4 py-2 text-center text-xs font-medium text-neutral-500 uppercase">Estado</th>
+                      <th class="px-4 py-2 text-left text-xs font-medium text-neutral-500 uppercase">Detalle Transferencia</th>
+                      <th class="px-4 py-2 text-right text-xs font-medium text-neutral-500 uppercase">Acciones</th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-gray-200">
+                    {{ range .Vouchers }}
+                    <tr class="hover:bg-neutral-50 transition-colors">
+                      <td class="px-4 py-3 whitespace-nowrap">
+                        <div class="text-sm font-bold text-neutral-700">{{ .Semana }}</div>
+                        {{ if and .FechaDesde .FechaHasta }}
+                        <div class="text-[10px] text-neutral-400 font-medium">Validez: {{ .FechaDesde.Format "02/01" }} - {{ .FechaHasta.Format "02/01" }}</div>
+                        {{ end }}
+                      </td>
+                      <td class="px-4 py-3 whitespace-nowrap text-center">
+                        <span
+                          class="px-2 py-1 text-xs font-bold rounded-md 
+                          {{ if eq .EstadoVoucherCodigo `DISPONIBLE` }}bg-success-100 text-success-800
+                          {{ else if eq .EstadoVoucherCodigo `USADO` }}bg-neutral-100 text-neutral-800
+                          {{ else }}bg-warning-100 text-warning-800{{ end }}">
+                          {{ .EstadoVoucherCodigo }}
+                        </span>
+                      </td>
+                      <td class="px-4 py-3 whitespace-nowrap text-sm text-neutral-500">
+                        {{ if .EsTransferido }}
+                        <div>
+                          <span class="text-xs text-orange-600 font-bold block">TRANSFERIDO</span>
+                          {{ if .Beneficiario }}
+                          <div class="text-[11px] font-medium text-neutral-700 mt-0.5">A: {{ .Beneficiario.GetNombreCompleto }}</div>
+                          {{ end }} {{ if .MotivoTransfer }}
+                          <span class="text-[10px] italic text-neutral-400">("{{ .MotivoTransfer }}")</span>
+                          {{ end }}
+                        </div>
+                        {{ else }}
+                        <span class="text-neutral-400">-</span>
+                        {{ end }}
+                      </td>
+                      <td class="px-4 py-3 whitespace-nowrap text-right text-sm">
+                        {{ if eq .EstadoVoucherCodigo "DISPONIBLE" }}
+                        <button
+                          hx-get="/admin/cupos/vouchers/{{ .ID }}/modal-transferir?gestion={{ .Gestion }}&mes={{ .Mes }}"
+                          hx-target="#modal-container"
+                          class="text-primary-600 hover:text-primary-900 font-medium font-bold px-2 py-1 rounded hover:bg-primary-50 transition-colors">
+                          Transferir
+                        </button>
+                        {{ end }}
+                      </td>
+                    </tr>
+                    {{ end }}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="bg-neutral-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+        <button
+          type="button"
+          @click="open = false"
+          class="mt-3 w-full inline-flex justify-center rounded-md border border-neutral-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-neutral-700 hover:bg-neutral-50 focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+          Cerrar
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{{ end }}

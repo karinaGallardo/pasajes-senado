@@ -2,10 +2,10 @@
 
 <div class="max-w-5xl mx-auto space-y-6">
   <!-- HEADER -->
-  <div class="flex justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+  <div class="flex justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-neutral-200">
     <div>
-      <h2 class="text-xl font-bold text-gray-800 tracking-tight">Gestión de Pasajes - {{ .TargetUser.GetNombreCompleto }}</h2>
-      <p class="text-sm text-gray-500">Administración de cupos y solicitudes</p>
+      <h2 class="text-xl font-bold text-neutral-800 tracking-tight">Gestión de Pasajes - {{ .TargetUser.GetNombreCompleto }}</h2>
+      <p class="text-sm text-neutral-500">Administración de cupos y solicitudes</p>
     </div>
     <div class="flex items-center space-x-3">
       <!-- Action buttons if needed -->
@@ -34,11 +34,11 @@
   {{ end }}
 
   <!-- LISTA DE MESES -->
-  <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-    <div class="p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+  <div class="bg-white rounded-lg shadow-sm border border-neutral-200 overflow-hidden">
+    <div class="p-6 border-b border-neutral-100 flex justify-between items-center bg-neutral-50/50">
       <div>
-        <h3 class="text-xs font-bold text-senado-secondary uppercase tracking-wider mb-1">Cupos Anuales</h3>
-        <p class="text-sm font-medium text-gray-600">Gestión {{ .Gestion }}</p>
+        <h3 class="text-xs font-bold text-secondary uppercase tracking-wider mb-1">Cupos Anuales</h3>
+        <p class="text-sm font-medium text-neutral-600">Gestión {{ .Gestion }}</p>
       </div>
     </div>
 
@@ -46,33 +46,33 @@
       {{ $targetUserID := .TargetUser.ID }} {{ range .Months }}
       <div class="space-y-4">
         <div class="flex items-center space-x-4">
-          <h3 class="text-lg font-bold text-gray-800 uppercase tracking-wide">{{ .MonthName }}</h3>
-          <div class="h-px bg-gray-200 flex-1"></div>
+          <h3 class="text-lg font-bold text-neutral-800 uppercase tracking-wide">{{ .MonthName }}</h3>
+          <div class="h-px bg-neutral-200 flex-1"></div>
         </div>
 
         <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 rounded-lg">
           <table class="min-w-full divide-y divide-gray-300">
-            <thead class="bg-gray-50">
+            <thead class="bg-neutral-50">
               <tr>
-                <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-xs font-bold text-gray-500 uppercase tracking-wider sm:pl-6">Semana</th>
-                <th scope="col" class="px-3 py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Vigencia</th>
-                <th scope="col" class="px-3 py-3.5 text-left text-xs font-bold text-gray-500 uppercase tracking-wider">Estado</th>
-                <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6 text-right text-xs font-bold text-gray-500 uppercase tracking-wider">Acciones</th>
+                <th scope="col" class="py-3.5 pl-4 pr-3 text-left text-xs font-bold text-neutral-500 uppercase tracking-wider sm:pl-6">Semana</th>
+                <th scope="col" class="px-3 py-3.5 text-left text-xs font-bold text-neutral-500 uppercase tracking-wider">Vigencia</th>
+                <th scope="col" class="px-3 py-3.5 text-left text-xs font-bold text-neutral-500 uppercase tracking-wider">Estado</th>
+                <th scope="col" class="relative py-3.5 pl-3 pr-4 sm:pr-6 text-right text-xs font-bold text-neutral-500 uppercase tracking-wider">Acciones</th>
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200 bg-white">
               {{ range .Vouchers }}
-              <tr class="transition-colors hover:bg-gray-50">
+              <tr class="transition-colors hover:bg-neutral-50">
                 <!-- Semana -->
-                <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-gray-900 sm:pl-6">{{ .Semana }}</td>
+                <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-neutral-900 sm:pl-6">{{ .Semana }}</td>
 
                 <!-- Vigencia -->
-                <td class="whitespace-nowrap px-3 py-4 text-sm text-gray-500">
+                <td class="whitespace-nowrap px-3 py-4 text-sm text-neutral-500">
                   <div class="flex flex-col">
-                    <span class="font-bold text-gray-900">
+                    <span class="font-bold text-neutral-900">
                       {{ if .FechaDesde }}{{ .FechaDesde.Format "02" }}{{ end }} al {{ if .FechaHasta }}{{ .FechaHasta.Format "02" }}{{ end }}
                     </span>
-                    <span class="text-xs text-gray-400 lowercase">{{ if .FechaHasta }}{{ .FechaHasta.Format "Enero 2006" }}{{ end }}</span>
+                    <span class="text-xs text-neutral-400 lowercase">{{ if .FechaHasta }}{{ .FechaHasta.Format "Enero 2006" }}{{ end }}</span>
                   </div>
                 </td>
 
@@ -80,9 +80,9 @@
                 <td class="whitespace-nowrap px-3 py-4 text-sm">
                   <span
                     class="inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase 
-                    {{ if eq .EstadoVoucherCodigo `DISPONIBLE` }} bg-green-100 text-green-700 
+                    {{ if eq .EstadoVoucherCodigo `DISPONIBLE` }} bg-success-100 text-success-700 
                     {{ else if eq .EstadoVoucherCodigo `RESERVADO` }} bg-amber-100 text-amber-700 
-                    {{ else }} bg-blue-100 text-blue-700 {{ end }}">
+                    {{ else }} bg-primary-100 text-primary-700 {{ end }}">
                     {{ .EstadoVoucherCodigo }}
                   </span>
                 </td>
@@ -94,7 +94,7 @@
                     {{ $solIda := .GetSolicitudIda }} {{ if not $solIda }}
                     <a
                       href="/solicitudes/derecho/crear/{{ .ID }}/SOLO_IDA"
-                      class="text-gray-500 hover:text-senado-secondary hover:border-senado-secondary font-bold text-[10px] uppercase border border-gray-200 bg-white rounded px-2 py-1 transition-colors">
+                      class="text-neutral-500 hover:text-secondary hover:border-secondary font-bold text-[10px] uppercase border border-neutral-200 bg-white rounded px-2 py-1 transition-colors">
                       Crear Ida
                     </a>
                     {{ else }} {{ $st := $solIda.GetEstado }} {{ if eq $st "SOLICITADO" }}
@@ -106,7 +106,7 @@
                     {{ else }}
                     <a
                       href="/solicitudes/derecho/{{ $solIda.ID }}/detalle"
-                      class="text-blue-700 hover:bg-blue-100 font-bold text-[10px] uppercase border border-blue-100 bg-blue-50 rounded px-2 py-1 transition-colors">
+                      class="text-primary-700 hover:bg-primary-100 font-bold text-[10px] uppercase border border-primary-100 bg-primary-50 rounded px-2 py-1 transition-colors">
                       Ver Ida
                     </a>
                     {{ end }} {{ end }}
@@ -115,7 +115,7 @@
                     {{ $solVuelta := .GetSolicitudVuelta }} {{ if not $solVuelta }}
                     <a
                       href="/solicitudes/derecho/crear/{{ .ID }}/SOLO_VUELTA"
-                      class="text-gray-500 hover:text-senado-secondary hover:border-senado-secondary font-bold text-[10px] uppercase border border-gray-200 bg-white rounded px-2 py-1 transition-colors">
+                      class="text-neutral-500 hover:text-secondary hover:border-secondary font-bold text-[10px] uppercase border border-neutral-200 bg-white rounded px-2 py-1 transition-colors">
                       Crear Vuelta
                     </a>
                     {{ else }} {{ $stV := $solVuelta.GetEstado }} {{ if eq $stV "SOLICITADO" }}
@@ -127,7 +127,7 @@
                     {{ else }}
                     <a
                       href="/solicitudes/derecho/{{ $solVuelta.ID }}/detalle"
-                      class="text-blue-700 hover:bg-blue-100 font-bold text-[10px] uppercase border border-blue-100 bg-blue-50 rounded px-2 py-1 transition-colors">
+                      class="text-primary-700 hover:bg-primary-100 font-bold text-[10px] uppercase border border-primary-100 bg-primary-50 rounded px-2 py-1 transition-colors">
                       Ver Vuelta
                     </a>
                     {{ end }} {{ end }}
@@ -138,11 +138,11 @@
                       href="/solicitudes/derecho/formulario?voucher_id={{ .ID }}&itinerario_code=DESCARGO&user_id={{ $targetUserID }}"
                       class="font-bold text-[10px] uppercase border rounded px-2 py-1 transition-colors
                                 {{ if $anyTravel }}
-                                    {{ if not $descargo }} text-red-700 bg-red-50 border-red-100 hover:bg-red-100
-                                    {{ else if eq $descargo.Estado `APROBADO` }} text-green-700 bg-green-50 border-green-100
-                                    {{ else }} text-senado-primary bg-senado-primary/5 border-senado-primary/10 {{ end }}
+                                    {{ if not $descargo }} text-danger-700 bg-danger-50 border-danger-100 hover:bg-danger-100
+                                    {{ else if eq $descargo.Estado `APROBADO` }} text-success-700 bg-success-50 border-success-100
+                                    {{ else }} text-primary bg-primary/5 border-primary/10 {{ end }}
                                 {{ else }}
-                                    text-gray-300 bg-gray-50 border-gray-100 cursor-not-allowed pointer-events-none
+                                    text-neutral-300 bg-neutral-50 border-neutral-100 cursor-not-allowed pointer-events-none
                                 {{ end }}">
                       Descargo
                     </a>

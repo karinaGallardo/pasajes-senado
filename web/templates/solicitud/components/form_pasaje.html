@@ -2,7 +2,7 @@
 <form
   method="POST"
   :action="isEdit ? ('/solicitudes/derecho/' + editId + '/actualizar') : '/solicitudes/derecho'"
-  class="bg-white rounded-lg shadow-sm border border-gray-200 mt-0 p-2 space-y-2"
+  class="bg-white rounded-lg shadow-sm border border-neutral-200 mt-0 p-2 space-y-2"
   @submit="isSubmitting = true"
   x-transition:enter="transition ease-out duration-300"
   x-transition:enter-start="opacity-0 translate-y-4"
@@ -16,26 +16,26 @@
     <input type="hidden" name="target_user_id" value="{{ .TargetUser.ID }}" />
 
     <!-- SECCIÓN A: RESUMEN DE DERECHO -->
-    <section class="bg-senado-50/50 p-4 rounded-xl border border-senado-100/50 flex flex-wrap gap-6 items-center">
+    <section class="bg-primary-50/50 p-4 rounded-xl border border-primary-100/50 flex flex-wrap gap-6 items-center">
       <div class="flex items-center space-x-2">
-        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Concepto:</span>
-        <span class="px-2 py-0.5 bg-white border border-gray-200 rounded text-xs font-bold text-gray-600">{{ .Concepto.Nombre }}</span>
+        <span class="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Concepto:</span>
+        <span class="px-2 py-0.5 bg-white border border-neutral-200 rounded text-xs font-bold text-neutral-600">{{ .Concepto.Nombre }}</span>
       </div>
       <div class="flex items-center space-x-2">
-        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Tipo:</span>
-        <span class="px-2 py-0.5 bg-white border border-gray-200 rounded text-xs font-bold text-gray-600">{{ .TipoSolicitud.Nombre }}</span>
+        <span class="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Tipo:</span>
+        <span class="px-2 py-0.5 bg-white border border-neutral-200 rounded text-xs font-bold text-neutral-600">{{ .TipoSolicitud.Nombre }}</span>
       </div>
       <div class="flex items-center space-x-2">
-        <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Ambito:</span>
-        <span class="px-2 py-0.5 bg-white border border-gray-200 rounded text-xs font-bold text-gray-600">{{ .Ambito.Nombre }}</span>
+        <span class="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Ambito:</span>
+        <span class="px-2 py-0.5 bg-white border border-neutral-200 rounded text-xs font-bold text-neutral-600">{{ .Ambito.Nombre }}</span>
       </div>
     </section>
 
     <!-- SECCIÓN B: CALENDARIO -->
     <section>
       <div class="flex items-center mb-6">
-        <span class="text-xs font-bold text-senado-secondary uppercase tracking-widest">¿Cuándo desea viajar?</span>
-        <div class="flex-1 h-px bg-gray-100 ml-4"></div>
+        <span class="text-xs font-bold text-secondary uppercase tracking-widest">¿Cuándo desea viajar?</span>
+        <div class="flex-1 h-px bg-neutral-100 ml-4"></div>
       </div>
 
       <div class="space-y-6">
@@ -44,7 +44,7 @@
           <button
             type="button"
             @click="selectedDaySalida = '{{ .date }}'"
-            :class="selectedDaySalida === '{{ .date }}' ? 'bg-senado-primary text-white border-senado-primary' : 'bg-white text-gray-600 hover:bg-gray-50 border-gray-200'"
+            :class="selectedDaySalida === '{{ .date }}' ? 'bg-primary text-white border-primary' : 'bg-white text-neutral-600 hover:bg-neutral-50 border-neutral-200'"
             class="flex flex-col items-center py-2 px-1 rounded-lg border transition-all">
             <span class="text-[9px] font-bold uppercase opacity-60">{{ .name }}</span>
             <span class="text-base font-bold">{{ .dayNum }}</span>
@@ -84,7 +84,7 @@
               }
             "
             @click.away="open = false">
-            <label class="text-xs font-bold text-gray-500 uppercase tracking-tight block">
+            <label class="text-xs font-bold text-neutral-500 uppercase tracking-tight block">
               Hora de
               <span>{{ if eq .Itinerario.Codigo "SOLO_IDA" }}Salida{{ else }}Retorno{{ end }}</span>
             </label>
@@ -93,9 +93,9 @@
               <button
                 type="button"
                 @click="open = !open"
-                class="w-full flex items-center justify-between px-4 py-2 bg-white border border-gray-300 rounded-md shadow-sm focus:ring-2 focus:ring-senado-primary transition-all">
-                <span class="text-sm font-bold text-gray-700" x-text="selectedTimeSalida"></span>
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                class="w-full flex items-center justify-between px-4 py-2 bg-white border border-neutral-300 rounded-md shadow-sm focus:ring-2 focus:ring-primary transition-all">
+                <span class="text-sm font-bold text-neutral-700" x-text="selectedTimeSalida"></span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </button>
@@ -105,36 +105,36 @@
                 x-transition:enter="transition ease-out duration-200"
                 x-transition:enter-start="opacity-0 scale-95"
                 x-transition:enter-end="opacity-100 scale-100"
-                class="absolute z-[100] mt-2 p-4 bg-white border border-gray-200 rounded-2xl shadow-2xl w-64 -left-1 sm:left-0"
+                class="absolute z-[100] mt-2 p-4 bg-white border border-neutral-200 rounded-2xl shadow-2xl w-64 -left-1 sm:left-0"
                 x-cloak>
-                <div class="flex items-center justify-center space-x-4 mb-4 bg-gray-50 py-3 rounded-xl border border-gray-100">
+                <div class="flex items-center justify-center space-x-4 mb-4 bg-neutral-50 py-3 rounded-xl border border-neutral-100">
                   <button
                     type="button"
                     @click="mode = 'hours'"
-                    :class="mode === 'hours' ? 'text-senado-primary' : 'text-gray-400'"
+                    :class="mode === 'hours' ? 'text-primary' : 'text-neutral-400'"
                     class="text-2xl font-black transition-colors focus:outline-none">
                     <span x-text="currentH"></span>
                   </button>
-                  <span class="text-2xl font-black text-gray-300">:</span>
+                  <span class="text-2xl font-black text-neutral-300">:</span>
                   <button
                     type="button"
                     @click="mode = 'minutes'"
-                    :class="mode === 'minutes' ? 'text-senado-primary' : 'text-gray-400'"
+                    :class="mode === 'minutes' ? 'text-primary' : 'text-neutral-400'"
                     class="text-2xl font-black transition-colors focus:outline-none">
                     <span x-text="currentM"></span>
                   </button>
                 </div>
 
-                <div class="relative w-48 h-48 mx-auto bg-gray-50 rounded-full flex items-center justify-center border border-gray-100 ring-4 ring-white shadow-inner">
+                <div class="relative w-48 h-48 mx-auto bg-neutral-50 rounded-full flex items-center justify-center border border-neutral-100 ring-4 ring-white shadow-inner">
                   <div
-                    class="absolute w-0.5 bg-senado-primary origin-bottom transition-all duration-300 pointer-events-none"
+                    class="absolute w-0.5 bg-primary origin-bottom transition-all duration-300 pointer-events-none"
                     :style="`
                           height: ${mode === 'hours' && (parseInt(currentH) >= 13 || parseInt(currentH) === 0) ? '40px' : '72px'};
                           bottom: 50%;
                           left: 50%;
                           transform: rotate(${mode === 'hours' ? (parseInt(currentH) % 12 || 12) * 30 : parseInt(currentM) * 6}deg);
                       `">
-                    <div class="absolute -top-1.5 -left-1.5 w-3.5 h-3.5 bg-senado-primary border-2 border-white rounded-full shadow-sm"></div>
+                    <div class="absolute -top-1.5 -left-1.5 w-3.5 h-3.5 bg-primary border-2 border-white rounded-full shadow-sm"></div>
                   </div>
 
                   <template x-if="mode === 'hours'">
@@ -144,7 +144,7 @@
                           type="button"
                           @click="setHour(n)"
                           class="absolute w-8 h-8 flex items-center justify-center text-xs font-bold rounded-full transition-colors z-10 focus:outline-none"
-                          :class="parseInt(currentH) === n ? 'text-white' : 'text-gray-600 hover:bg-senado-primary/10'"
+                          :class="parseInt(currentH) === n ? 'text-white' : 'text-neutral-600 hover:bg-primary/10'"
                           :style="`left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(${(n * 30) - 90}deg) translate(72px) rotate(${-((n * 30) - 90)}deg)`">
                           <span x-text="n"></span>
                         </button>
@@ -154,7 +154,7 @@
                           type="button"
                           @click="setHour(n)"
                           class="absolute w-6 h-6 flex items-center justify-center text-[9px] font-bold rounded-full transition-colors z-10 focus:outline-none"
-                          :class="parseInt(currentH) === n ? 'text-white' : 'text-gray-400 hover:bg-senado-secondary/10'"
+                          :class="parseInt(currentH) === n ? 'text-white' : 'text-neutral-400 hover:bg-secondary/10'"
                           :style="`left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(${((n % 12 || 12) * 30) - 90}deg) translate(40px) rotate(${-(((n % 12 || 12) * 30) - 90)}deg)`">
                           <span x-text="n.toString().padStart(2, '0')"></span>
                         </button>
@@ -169,27 +169,27 @@
                           type="button"
                           @click="setMinute(m)"
                           class="absolute w-8 h-8 flex items-center justify-center text-xs font-bold rounded-full transition-colors z-10 focus:outline-none"
-                          :class="parseInt(currentM) === m ? 'text-white' : 'text-gray-600 hover:bg-senado-primary/10'"
+                          :class="parseInt(currentM) === m ? 'text-white' : 'text-neutral-600 hover:bg-primary/10'"
                           :style="`left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(${(m * 6) - 90}deg) translate(72px) rotate(${-((m * 6) - 90)}deg)`">
                           <span x-text="m.toString().padStart(2, '0')"></span>
                         </button>
                       </template>
                     </div>
                   </template>
-                  <div class="absolute w-2 h-2 bg-senado-primary rounded-full ring-4 ring-white shadow-sm"></div>
+                  <div class="absolute w-2 h-2 bg-primary rounded-full ring-4 ring-white shadow-sm"></div>
                 </div>
 
                 <div class="mt-4 grid grid-cols-2 gap-2">
                   <button
                     type="button"
                     @click="setHour(8); setMinute(0)"
-                    class="text-[10px] font-bold py-1.5 bg-gray-50 text-gray-600 rounded-lg border border-gray-100 hover:bg-gray-100 transition-colors focus:outline-none">
+                    class="text-[10px] font-bold py-1.5 bg-neutral-50 text-neutral-600 rounded-lg border border-neutral-100 hover:bg-neutral-100 transition-colors focus:outline-none">
                     Mañana (08:00)
                   </button>
                   <button
                     type="button"
                     @click="setHour(20); setMinute(0)"
-                    class="text-[10px] font-bold py-1.5 bg-gray-50 text-gray-600 rounded-lg border border-gray-100 hover:bg-gray-100 transition-colors focus:outline-none">
+                    class="text-[10px] font-bold py-1.5 bg-neutral-50 text-neutral-600 rounded-lg border border-neutral-100 hover:bg-neutral-100 transition-colors focus:outline-none">
                     Noche (20:00)
                   </button>
                 </div>
@@ -204,44 +204,44 @@
     <!-- SECCIÓN C: DESTINO Y JUSTIFICACIÓN -->
     <section>
       <div class="flex items-center mb-6">
-        <span class="text-xs font-bold text-senado-secondary uppercase tracking-widest">Información del Trayecto</span>
-        <div class="flex-1 h-px bg-gray-100 ml-4"></div>
+        <span class="text-xs font-bold text-secondary uppercase tracking-widest">Información del Trayecto</span>
+        <div class="flex-1 h-px bg-neutral-100 ml-4"></div>
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <!-- Route visualization -->
-        <div class="md:col-span-2 flex items-center justify-center space-x-12 py-8 bg-gray-50 rounded-2xl border border-dashed border-gray-300">
+        <div class="md:col-span-2 flex items-center justify-center space-x-12 py-8 bg-neutral-50 rounded-2xl border border-dashed border-neutral-300">
           <!-- Origen -->
           <div class="text-center">
-            <span class="block text-xl font-black text-gray-900 tracking-tight">{{ .Origen.Ciudad }}</span>
-            <span class="block text-[9px] font-bold text-gray-400 uppercase mt-1 tracking-widest">{{ .Origen.Aeropuerto }}</span>
+            <span class="block text-xl font-black text-neutral-900 tracking-tight">{{ .Origen.Ciudad }}</span>
+            <span class="block text-[9px] font-bold text-neutral-400 uppercase mt-1 tracking-widest">{{ .Origen.Aeropuerto }}</span>
             <div class="mt-2">
-              <span class="px-2 py-0.5 bg-senado-primary text-white text-[10px] font-black rounded">{{ .Origen.IATA }}</span>
+              <span class="px-2 py-0.5 bg-primary text-white text-[10px] font-black rounded">{{ .Origen.IATA }}</span>
             </div>
           </div>
 
           <!-- Icono Vuelo -->
           <div class="flex flex-col items-center">
             <div class="flex items-center space-x-2">
-              <div class="w-1.5 h-1.5 rounded-full bg-senado-primary/40"></div>
-              <div class="w-20 h-px border-t-2 border-dashed border-senado-primary/30"></div>
-              <div class="bg-white p-2 rounded-full shadow-sm border border-gray-100 text-senado-primary transform rotate-90">
+              <div class="w-1.5 h-1.5 rounded-full bg-primary/40"></div>
+              <div class="w-20 h-px border-t-2 border-dashed border-primary/30"></div>
+              <div class="bg-white p-2 rounded-full shadow-sm border border-neutral-100 text-primary transform rotate-90">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
                 </svg>
               </div>
-              <div class="w-20 h-px border-t-2 border-dashed border-senado-primary/30"></div>
-              <div class="w-1.5 h-1.5 rounded-full bg-senado-primary/40"></div>
+              <div class="w-20 h-px border-t-2 border-dashed border-primary/30"></div>
+              <div class="w-1.5 h-1.5 rounded-full bg-primary/40"></div>
             </div>
-            <span class="text-[9px] font-bold text-senado-primary/50 uppercase mt-3 tracking-widest">Vuelo</span>
+            <span class="text-[9px] font-bold text-primary/50 uppercase mt-3 tracking-widest">Vuelo</span>
           </div>
 
           <!-- Destino -->
           <div class="text-center">
-            <span class="block text-xl font-black text-gray-900 tracking-tight">{{ .Destino.Ciudad }}</span>
-            <span class="block text-[9px] font-bold text-gray-400 uppercase mt-1 tracking-widest">{{ .Destino.Aeropuerto }}</span>
+            <span class="block text-xl font-black text-neutral-900 tracking-tight">{{ .Destino.Ciudad }}</span>
+            <span class="block text-[9px] font-bold text-neutral-400 uppercase mt-1 tracking-widest">{{ .Destino.Aeropuerto }}</span>
             <div class="mt-2">
-              <span class="px-2 py-0.5 bg-senado-secondary text-white text-[10px] font-black rounded">{{ .Destino.IATA }}</span>
+              <span class="px-2 py-0.5 bg-secondary text-white text-[10px] font-black rounded">{{ .Destino.IATA }}</span>
             </div>
           </div>
         </div>
@@ -256,18 +256,18 @@
         <input type="hidden" name="tipo_itinerario_id" value="{{ .Itinerario.ID }}" />
 
         <div class="md:col-span-2 space-y-1.5">
-          <label class="block text-xs font-bold text-gray-500 uppercase tracking-tight">Línea Aérea</label>
+          <label class="block text-xs font-bold text-neutral-500 uppercase tracking-tight">Línea Aérea</label>
           <div class="relative group">
             <select
               name="aerolinea"
               x-model="aerolinea"
-              class="w-full pl-4 pr-10 py-2.5 bg-white border border-gray-200 rounded-md text-sm font-bold text-gray-700 appearance-none focus:outline-none focus:ring-2 focus:ring-senado-primary/20 focus:border-senado-primary transition-all shadow-sm">
+              class="w-full pl-4 pr-10 py-2.5 bg-white border border-neutral-200 rounded-md text-sm font-bold text-neutral-700 appearance-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-sm">
               <option value="">Cualquier línea aérea</option>
               {{ range .Aerolineas }}
               <option value="{{ .ID }}">{{ .Nombre }}</option>
               {{ end }}
             </select>
-            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-gray-400 group-hover:text-senado-primary transition-colors">
+            <div class="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none text-neutral-400 group-hover:text-primary transition-colors">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                 <path
                   fill-rule="evenodd"
@@ -281,21 +281,21 @@
         </div>
 
         <div class="md:col-span-2 space-y-1.5">
-          <label class="block text-xs font-bold text-gray-500 uppercase tracking-tight">Motivo del Viaje</label>
+          <label class="block text-xs font-bold text-neutral-500 uppercase tracking-tight">Motivo del Viaje</label>
           <textarea
             name="motivo"
             x-model="motivo"
             rows="3"
             placeholder="Ej: Cumplimiento de funciones legislativas..."
-            class="w-full px-4 py-3 bg-white border border-gray-200 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-senado-primary/20 focus:border-senado-primary text-sm font-bold text-gray-700 transition-all placeholder:text-gray-400 placeholder:font-medium"></textarea>
+            class="w-full px-4 py-3 bg-white border border-neutral-200 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-bold text-neutral-700 transition-all placeholder:text-neutral-400 placeholder:font-medium"></textarea>
         </div>
       </div>
     </section>
   </div>
 
-  <div class="px-8 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
-    <div class="flex items-center text-xs text-gray-400 font-medium">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+  <div class="px-8 py-4 bg-neutral-50 border-t border-neutral-200 flex items-center justify-between">
+    <div class="flex items-center text-xs text-neutral-400 font-medium">
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1 text-neutral-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
       Al enviar, el sistema notificará al área administrativa.
@@ -303,8 +303,8 @@
     <button
       type="submit"
       :disabled="isSubmitting"
-      :class="isSubmitting ? 'opacity-50 cursor-not-allowed' : 'hover:bg-senado-800'"
-      class="inline-flex justify-center py-2 px-8 border border-transparent shadow-sm text-sm font-bold rounded-md text-white bg-senado-primary transition-colors">
+      :class="isSubmitting ? 'opacity-50 cursor-not-allowed' : 'hover:bg-primary-800'"
+      class="inline-flex justify-center py-2 px-8 border border-transparent shadow-sm text-sm font-bold rounded-md text-white bg-primary transition-colors">
       <div x-show="isSubmitting" class="flex items-center space-x-2">
         <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
           <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>

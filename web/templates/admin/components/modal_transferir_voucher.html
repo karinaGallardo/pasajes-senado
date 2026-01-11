@@ -1,0 +1,112 @@
+{{ define "admin/components/modal_transferir_voucher" }}
+<div x-data="{ open: true }" x-show="open" class="fixed z-[60] inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+  <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+    <div
+      x-show="open"
+      x-transition:enter="ease-out duration-300"
+      x-transition:enter-start="opacity-0"
+      x-transition:enter-end="opacity-100"
+      x-transition:leave="ease-in duration-200"
+      x-transition:leave-start="opacity-100"
+      x-transition:leave-end="opacity-0"
+      class="fixed inset-0 bg-neutral-500 bg-opacity-75 transition-opacity"
+      @click="open = false"></div>
+
+    <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+    <div
+      class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6"
+      @click.away="open = false">
+      <form action="/admin/cupos/transferir" method="POST" x-data="{ submitting: false }" @submit="submitting = true">
+        <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
+        <input type="hidden" name="voucher_id" value="{{ .Voucher.ID }}" />
+        <input type="hidden" name="gestion" value="{{ .Gestion }}" />
+        <input type="hidden" name="mes" value="{{ .Mes }}" />
+
+        <h3 class="text-lg leading-6 font-medium text-neutral-900 mb-4">Transferir Pasaje</h3>
+        <p class="text-sm text-neutral-500 mb-4">
+          De:
+          <strong class="text-neutral-900">{{ .Senador.GetNombreCompleto }}</strong>
+          <br />
+          Semana:
+          <strong class="text-primary">{{ .Voucher.Semana }}</strong>
+        </p>
+
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-neutral-700 mb-1">Destinatario</label>
+
+          {{ if eq (len .Candidates) 1 }} {{ $dest := index .Candidates 0 }}
+          <div class="p-3 bg-primary-50 border border-primary-200 rounded-md">
+            <div class="flex items-center justify-between">
+              <div>
+                <div class="text-xs text-primary-500 font-bold uppercase tracking-wider mb-0.5">Transferencia Permitida a:</div>
+                <div class="text-sm font-black text-primary-900">{{ $dest.GetNombreCompleto }}</div>
+                <div class="text-[10px] text-primary-400 font-bold uppercase">{{ $dest.Tipo }}</div>
+              </div>
+              <div class="bg-primary-600 p-1.5 rounded-lg">
+                <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
+                </svg>
+              </div>
+            </div>
+            <input type="hidden" name="destino_id" value="{{ $dest.ID }}" />
+          </div>
+          {{ else if gt (len .Candidates) 1 }}
+          <select
+            name="destino_id"
+            required
+            class="mt-1 block w-full pl-3 pr-10 py-2 text-base border-neutral-300 focus:outline-none focus:ring-primary-500 focus:border-primary-500 sm:text-sm rounded-md shadow-sm border">
+            <option value="">-- Seleccionar Destinatario --</option>
+            {{ range .Candidates }}
+            <option value="{{ .ID }}">{{ .GetNombreCompleto }} ({{ .Tipo }})</option>
+            {{ end }}
+          </select>
+          {{ else }}
+          <div class="p-3 bg-danger-50 border border-danger-200 rounded-md flex items-center gap-2">
+            <svg class="h-5 w-5 text-danger-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+            </svg>
+            <span class="text-xs text-danger-600 font-bold">Sin destinatarios válidos encontrados.</span>
+          </div>
+          {{ end }}
+        </div>
+
+        <div class="mb-4">
+          <label class="block text-sm font-medium text-neutral-700">Motivo</label>
+          <input
+            type="text"
+            name="motivo"
+            required
+            class="mt-1 shadow-sm focus:ring-primary-500 focus:border-primary-500 block w-full sm:text-sm border-neutral-300 rounded-md p-2 border"
+            placeholder="Ej: Suplencia por semana regional" />
+        </div>
+
+        <div class="mt-5 sm:mt-6 sm:grid sm:grid-cols-2 sm:gap-3 sm:grid-flow-row-dense">
+          <button
+            type="submit"
+            :disabled="submitting || {{ if eq (len .Candidates) 0 }}true{{ else }}false{{ end }}"
+            class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-base font-medium text-white hover:bg-primary-700 sm:col-start-2 sm:text-sm disabled:opacity-50 flex items-center justify-center gap-2">
+            <svg x-show="submitting" class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path
+                class="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <span x-text="submitting ? 'Procesando...' : 'Confirmar'"></span>
+          </button>
+          <button
+            type="button"
+            @click="open = false"
+            class="mt-3 w-full inline-flex justify-center rounded-md border border-neutral-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-neutral-700 hover:bg-neutral-50 sm:mt-0 sm:col-start-1 sm:text-sm">
+            Cancelar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{{ end }}

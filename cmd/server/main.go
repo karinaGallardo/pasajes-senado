@@ -29,6 +29,10 @@ func main() {
 	}
 
 	r := gin.Default()
+
+	r.ForwardedByClientIP = true
+	r.SetTrustedProxies([]string{"127.0.0.1", "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "192.168.20.0/16"})
+
 	r.SetFuncMap(utils.TemplateFuncs())
 
 	r.Use(secure.New(secure.Config{
@@ -39,7 +43,7 @@ func main() {
 		FrameDeny:             true,
 		ContentTypeNosniff:    true,
 		BrowserXssFilter:      true,
-		ContentSecurityPolicy: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdn.tailwindcss.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:;",
+		ContentSecurityPolicy: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdn.tailwindcss.com https://cdnjs.cloudflare.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data:;",
 		IENoOpen:              true,
 		ReferrerPolicy:        "strict-origin-when-cross-origin",
 		SSLProxyHeaders:       map[string]string{"X-Forwarded-Proto": "https"},
@@ -77,6 +81,9 @@ func main() {
 	r.Use(csrf.Middleware(csrf.Options{
 		Secret: sessionSecret,
 		ErrorFunc: func(c *gin.Context) {
+			log.Printf("[CSRF ERROR] Method: %s, Path: %s, RemoteAddr: %s, HX-Request: %v",
+				c.Request.Method, c.Request.URL.Path, c.ClientIP(), c.GetHeader("HX-Request"))
+
 			if c.GetHeader("HX-Request") == "true" {
 				c.String(400, "CSRF token mismatch - Recargue la página")
 				c.Abort()

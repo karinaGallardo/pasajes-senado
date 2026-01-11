@@ -1,8 +1,8 @@
 {{ define "admin/configuracion" }} {{ template "layout_start" . }}
 
 <div class="max-w-4xl mx-auto mt-8">
-  <h1 class="text-2xl font-bold text-senado-800 mb-6 flex items-center">
-    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mr-2 text-senado-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+  <h1 class="text-2xl font-bold text-primary-800 mb-6 flex items-center">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mr-2 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
       <path
         stroke-linecap="round"
         stroke-linejoin="round"
@@ -14,19 +14,19 @@
   </h1>
 
   <div class="bg-white rounded-lg shadow-lg overflow-hidden">
-    <div class="bg-senado-50 px-6 py-4 border-b border-gray-200">
-      <h2 class="text-lg font-bold text-senado-800">Variables del Sistema</h2>
-      <p class="text-sm text-gray-500">Estos valores afectan a todos los cálculos del sistema. Modifique con precaución.</p>
+    <div class="bg-primary-50 px-6 py-4 border-b border-neutral-200">
+      <h2 class="text-lg font-bold text-primary-800">Variables del Sistema</h2>
+      <p class="text-sm text-neutral-500">Estos valores afectan a todos los cálculos del sistema. Modifique con precaución.</p>
     </div>
 
     <ul class="divide-y divide-gray-200">
       {{ range .Configs }}
-      <li class="px-6 py-4 flex items-center justify-between hover:bg-gray-50 group">
+      <li class="px-6 py-4 flex items-center justify-between hover:bg-neutral-50 group">
         <div class="flex-1 pr-4">
-          <div class="font-medium text-gray-900">{{ .Clave }}</div>
-          <div class="text-xs text-gray-500">
+          <div class="font-medium text-neutral-900">{{ .Clave }}</div>
+          <div class="text-xs text-neutral-500">
             Valor actual:
-            <span class="font-mono bg-gray-100 px-1 rounded">{{ .Valor }}</span>
+            <span class="font-mono bg-neutral-100 px-1 rounded">{{ .Valor }}</span>
           </div>
         </div>
 
@@ -35,14 +35,14 @@
           <input type="hidden" name="clave" value="{{ .Clave }}" />
 
           <div x-show="!editing" class="flex items-center">
-            <span class="text-gray-700 font-mono mr-4">{{ .Valor }}</span>
-            <button type="button" @click="editing = true" class="text-senado-600 hover:text-senado-800 text-sm font-medium">Editar</button>
+            <span class="text-neutral-700 font-mono mr-4">{{ .Valor }}</span>
+            <button type="button" @click="editing = true" class="text-primary-600 hover:text-primary-800 text-sm font-medium">Editar</button>
           </div>
 
           <div x-show="editing" class="flex items-center space-x-2" style="display: none">
-            <input type="text" name="valor" value="{{ .Valor }}" class="w-32 rounded-md border-gray-300 shadow-sm focus:border-senado-500 focus:ring-senado-500 text-sm" />
-            <button type="submit" class="bg-senado-600 text-white px-3 py-1.5 rounded text-xs hover:bg-senado-700">Guardar</button>
-            <button type="button" @click="editing = false" class="text-gray-500 hover:text-gray-700 text-xs">Cancelar</button>
+            <input type="text" name="valor" value="{{ .Valor }}" class="w-32 rounded-md border-neutral-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 text-sm" />
+            <button type="submit" class="bg-primary-600 text-white px-3 py-1.5 rounded text-xs hover:bg-primary-700">Guardar</button>
+            <button type="button" @click="editing = false" class="text-neutral-500 hover:text-neutral-700 text-xs">Cancelar</button>
           </div>
         </form>
       </li>

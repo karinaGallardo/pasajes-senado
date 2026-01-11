@@ -26,17 +26,17 @@
       .border-sl {
         border: 1px solid #000;
       }
-      .bg-gray-custom {
+      .bg-neutral-custom {
         background-color: #f3f4f6;
       }
     </style>
   </head>
-  <body class="bg-gray-100 p-8 print:p-0 print:bg-white text-sm">
+  <body class="bg-neutral-100 p-8 print:p-0 print:bg-white text-sm">
     <!-- Action Bar -->
     <div class="no-print max-w-4xl mx-auto mb-6 flex justify-between items-center bg-white p-4 shadow rounded">
       <h1 class="text-lg font-bold">Vista Previa de Impresión</h1>
       <div>
-        <button onclick="window.print()" class="bg-blue-600 text-white px-4 py-2 rounded shadow hover:bg-blue-700 font-bold flex items-center">
+        <button onclick="window.print()" class="bg-primary-600 text-white px-4 py-2 rounded shadow hover:bg-primary-700 font-bold flex items-center">
           <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path
               stroke-linecap="round"
@@ -55,14 +55,14 @@
       <div class="flex items-center justify-between mb-4 border-b-2 border-black pb-2">
         <div class="w-1/4">
           <!-- Placeholder Logo -->
-          <div class="border-2 border-gray-400 h-20 w-20 flex items-center justify-center text-xs text-gray-400">LOGO SENADO</div>
+          <div class="border-2 border-neutral-400 h-20 w-20 flex items-center justify-center text-xs text-neutral-400">LOGO SENADO</div>
         </div>
         <div class="w-2/4 text-center">
           <h1 class="font-bold text-xl uppercase">Cámara de Senadores</h1>
           <h2 class="font-bold text-lg uppercase">Estado Plurinacional de Bolivia</h2>
         </div>
         <div class="w-1/4 text-right">
-          <div class="border border-black p-2 inline-block text-center bg-gray-100">
+          <div class="border border-black p-2 inline-block text-center bg-neutral-100">
             <p class="font-bold text-lg">FORM-PV-01</p>
             <p class="text-xs">Solicitud de Pasajes</p>
           </div>
@@ -75,12 +75,12 @@
           N° Solicitud:
           <span class="font-mono text-lg font-bold">{{ .Solicitud.ID }}</span>
         </p>
-        <p class="text-xs text-gray-500">Fecha de Solicitud: {{ .Solicitud.CreatedAt.Format "02/01/2006 15:04" }}</p>
+        <p class="text-xs text-neutral-500">Fecha de Solicitud: {{ .Solicitud.CreatedAt.Format "02/01/2006 15:04" }}</p>
       </div>
 
       <!-- Section 1: Datos del Solicitante -->
       <div class="mb-6 border-sl">
-        <div class="bg-gray-200 p-1 border-b border-black font-bold uppercase text-center">1. Datos del Solicitante (Senador/Funcionario)</div>
+        <div class="bg-neutral-200 p-1 border-b border-black font-bold uppercase text-center">1. Datos del Solicitante (Senador/Funcionario)</div>
         <div class="p-4 grid grid-cols-2 gap-4">
           <div>
             <span class="block text-xs font-bold uppercase">Nombre Completo:</span>
@@ -105,7 +105,7 @@
 
       <!-- Section 2: Datos del Viaje -->
       <div class="mb-6 border-sl">
-        <div class="bg-gray-200 p-1 border-b border-black font-bold uppercase text-center">2. Detalle del Viaje</div>
+        <div class="bg-neutral-200 p-1 border-b border-black font-bold uppercase text-center">2. Detalle del Viaje</div>
         <div class="p-4 grid grid-cols-2 gap-4">
           <div>
             <span class="block text-xs font-bold uppercase">Tipo de Solicitud:</span>
@@ -146,7 +146,7 @@
 
       <!-- Section 3: Justificación -->
       <div class="mb-6 border-sl">
-        <div class="bg-gray-200 p-1 border-b border-black font-bold uppercase text-center">3. Justificación / Motivo del Viaje</div>
+        <div class="bg-neutral-200 p-1 border-b border-black font-bold uppercase text-center">3. Justificación / Motivo del Viaje</div>
         <div class="p-4 min-h-[100px]">
           <p>{{ .Solicitud.Motivo }}</p>
         </div>
@@ -157,25 +157,25 @@
         <div>
           <div class="border-t border-black pt-2 mx-4">
             <p class="font-bold uppercase text-xs">{{ .Solicitud.Usuario.GetNombreCompleto }}</p>
-            <p class="text-xs text-gray-500">SOLICITANTE</p>
+            <p class="text-xs text-neutral-500">SOLICITANTE</p>
           </div>
         </div>
         <div>
           <div class="border-t border-black pt-2 mx-4">
             <p class="font-bold uppercase text-xs">Jefe Inmediato / Autoridad</p>
-            <p class="text-xs text-gray-500">AUTORIZACIÓN</p>
+            <p class="text-xs text-neutral-500">AUTORIZACIÓN</p>
           </div>
         </div>
         <div>
           <div class="border-t border-black pt-2 mx-4">
             <p class="font-bold uppercase text-xs">Administración</p>
-            <p class="text-xs text-gray-500">VERIFICACIÓN CUPO/PPTO</p>
+            <p class="text-xs text-neutral-500">VERIFICACIÓN CUPO/PPTO</p>
           </div>
         </div>
       </div>
 
       <!-- Footer -->
-      <div class="mt-10 border-t-2 border-gray-300 pt-2 text-center text-xs text-gray-400">
+      <div class="mt-10 border-t-2 border-neutral-300 pt-2 text-center text-xs text-neutral-400">
         <p>Sistema de Gestión de Pasajes - Cámara de Senadores - Impreso el {{ .Solicitud.CreatedAt.Format "02/01/2006" }}</p>
         <p>Formulario Generado Electrónicamente (ID: {{ .Solicitud.ID }})</p>
       </div>

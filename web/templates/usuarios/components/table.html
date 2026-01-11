@@ -1,0 +1,5 @@
+{{ define "usuarios/components/table" }}
+<div class="overflow-x-auto bg-white rounded-lg shadow min-h-[400px]">
+  {{ if eq .Rol "SENADOR" }} {{ template "usuarios/components/table_senadores" .Result }} {{ else }} {{ template "usuarios/components/table_funcionarios" .Result }} {{ end }}
+</div>
+{{ end }}

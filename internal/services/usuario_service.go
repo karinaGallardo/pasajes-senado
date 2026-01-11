@@ -11,16 +11,18 @@ import (
 )
 
 type UsuarioService struct {
-	repo       *repositories.UsuarioRepository
-	peopleRepo *repositories.PeopleViewRepository
-	deptoRepo  *repositories.DepartamentoRepository
+	repo          *repositories.UsuarioRepository
+	peopleRepo    *repositories.PeopleViewRepository
+	deptoRepo     *repositories.DepartamentoRepository
+	mongoUserRepo *repositories.MongoUserRepository
 }
 
 func NewUsuarioService() *UsuarioService {
 	return &UsuarioService{
-		repo:       repositories.NewUsuarioRepository(),
-		peopleRepo: repositories.NewPeopleViewRepository(),
-		deptoRepo:  repositories.NewDepartamentoRepository(),
+		repo:          repositories.NewUsuarioRepository(),
+		peopleRepo:    repositories.NewPeopleViewRepository(),
+		deptoRepo:     repositories.NewDepartamentoRepository(),
+		mongoUserRepo: repositories.NewMongoUserRepository(),
 	}
 }
 
@@ -30,27 +32,47 @@ func (s *UsuarioService) SyncStaff(ctx context.Context) (int, error) {
 		return 0, err
 	}
 
-	count := 0
-	for _, mStaff := range mongoStaff {
-		ci := utils.CleanString(mStaff.CI)
-		if ci == "" {
+	mongoMap := make(map[string]models.MongoPersonaView)
+	for _, m := range mongoStaff {
+		cleanCI := utils.CleanString(m.CI)
+		if cleanCI != "" {
+			mongoMap[cleanCI] = m
+		}
+	}
+
+	pgUsers, _ := s.repo.WithContext(ctx).FindByRoleType("FUNCIONARIO")
+	for _, user := range pgUsers {
+		if user.IsSenador() {
 			continue
 		}
+		if _, exists := mongoMap[user.CI]; !exists {
+			s.repo.GetDB().Delete(&user)
+		}
+	}
 
-		user, err := s.repo.WithContext(ctx).FindByCI(ci)
+	count := 0
+	for ci, mStaff := range mongoMap {
+		user, err := s.repo.WithContext(ctx).FindByCIUnscoped(ci)
 		exists := err == nil
 
-		if exists && (user.Tipo == "SENADOR_TITULAR" || user.Tipo == "SENADOR_SUPLENTE") {
-			continue
-		}
-
-		if !exists {
+		if exists {
+			if user.IsSenador() {
+				continue
+			}
+			s.repo.GetDB().Model(user).Unscoped().Update("deleted_at", nil)
+		} else {
 			user = &models.Usuario{}
 			user.CI = ci
-			user.Username = ci
 			if oid, ok := mStaff.ID.(primitive.ObjectID); ok {
 				user.ID = oid.Hex()
 			}
+		}
+
+		mongoUser, _ := s.mongoUserRepo.WithContext(ctx).FindByCI(ci)
+		if mongoUser != nil && mongoUser.Username != "" {
+			user.Username = mongoUser.Username
+		} else {
+			user.Username = ci
 		}
 
 		user.Firstname = utils.CleanName(utils.GetString(mStaff.Firstname))
@@ -88,23 +110,43 @@ func (s *UsuarioService) SyncSenators(ctx context.Context) (int, error) {
 		return 0, err
 	}
 
-	count := 0
-	for _, mSen := range mongoSenators {
-		ci := utils.CleanString(mSen.CI)
-		if ci == "" {
-			continue
+	mongoMap := make(map[string]models.MongoPersonaView)
+	for _, m := range mongoSenators {
+		cleanCI := utils.CleanString(m.CI)
+		if cleanCI != "" {
+			mongoMap[cleanCI] = m
 		}
+	}
 
-		user, err := s.repo.WithContext(ctx).FindByCI(ci)
+	var pgSenators []models.Usuario
+	s.repo.GetDB().Where("tipo IN ?", []string{"SENADOR_TITULAR", "SENADOR_SUPLENTE"}).Find(&pgSenators)
+
+	for _, user := range pgSenators {
+		if _, exists := mongoMap[user.CI]; !exists {
+			s.repo.GetDB().Delete(&user)
+		}
+	}
+
+	count := 0
+	for ci, mSen := range mongoMap {
+		user, err := s.repo.WithContext(ctx).FindByCIUnscoped(ci)
 		exists := err == nil
 
-		if !exists {
+		if exists {
+			s.repo.GetDB().Model(user).Unscoped().Update("deleted_at", nil)
+		} else {
 			user = &models.Usuario{}
 			user.CI = ci
-			user.Username = ci
 			if oid, ok := mSen.ID.(primitive.ObjectID); ok {
 				user.ID = oid.Hex()
 			}
+		}
+
+		mongoUser, _ := s.mongoUserRepo.WithContext(ctx).FindByCI(ci)
+		if mongoUser != nil && mongoUser.Username != "" {
+			user.Username = mongoUser.Username
+		} else {
+			user.Username = ci
 		}
 
 		user.Firstname = utils.CleanName(utils.GetString(mSen.Firstname))

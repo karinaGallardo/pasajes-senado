@@ -1,5 +1,0 @@
-{{ define "usuarios/table" }}
-<div class="overflow-x-auto bg-white rounded-lg shadow min-h-[400px]">
-  {{ if eq .Rol "SENADOR" }} {{ template "usuarios/table_senadores" .Result }} {{ else }} {{ template "usuarios/table_funcionarios" .Result }} {{ end }}
-</div>
-{{ end }}

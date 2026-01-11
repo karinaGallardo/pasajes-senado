@@ -13,16 +13,16 @@
     aerolinea: ''
 }">
   <!-- HEADER -->
-  <div class="bg-gray-50 border border-gray-200 p-3 flex items-center justify-between rounded-lg shadow-sm">
+  <div class="bg-neutral-50 border border-neutral-200 p-3 flex items-center justify-between rounded-lg shadow-sm">
     <div class="flex items-center space-x-3">
-      <div class="h-10 w-10 rounded-lg bg-senado-primary/10 flex items-center justify-center text-senado-primary">
+      <div class="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
         </svg>
       </div>
       <div>
-        <h3 class="text-lg font-bold text-gray-800">Emitir Pasaje: {{ .Itinerario.Nombre }}</h3>
-        <p class="text-xs text-gray-500 font-medium">
+        <h3 class="text-lg font-bold text-neutral-800">Emitir Pasaje: {{ .Itinerario.Nombre }}</h3>
+        <p class="text-xs text-neutral-500 font-medium">
           Semana {{ .Voucher.Semana }} ({{ if .Voucher.FechaDesde }}{{ .Voucher.FechaDesde.Format "02/01" }}{{ end }} - {{ if .Voucher.FechaHasta }}{{ .Voucher.FechaHasta.Format
           "02/01" }}{{ end }})
         </p>
@@ -31,14 +31,14 @@
 
     <!-- INFO SENADOR (MIGRATE TO CENTER) -->
     <div class="hidden md:flex flex-col items-center">
-      <span class="text-sm font-black text-senado-primary uppercase tracking-tighter">{{ .TargetUser.GetNombreCompleto }}</span>
-      <span class="text-[10px] font-bold px-2 py-0.5 bg-senado-50 text-senado-primary border border-senado-100 rounded-full">
+      <span class="text-sm font-black text-primary uppercase tracking-tighter">{{ .TargetUser.GetNombreCompleto }}</span>
+      <span class="text-[10px] font-bold px-2 py-0.5 bg-primary-50 text-primary border border-primary-100 rounded-full">
         {{ if eq .TargetUser.Tipo "SENADOR_TITULAR" }}Titular{{ else }}Suplente{{ end }}
       </span>
     </div>
 
     <div class="flex items-center space-x-3">
-      <a href="/cupos/derecho/{{ .TargetUser.ID }}" class="text-sm font-medium text-gray-500 hover:text-gray-800 transition-colors flex items-center">
+      <a href="/cupos/derecho/{{ .TargetUser.ID }}" class="text-sm font-medium text-neutral-500 hover:text-neutral-800 transition-colors flex items-center">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
         </svg>

@@ -2,14 +2,14 @@
 
 <div class="space-y-6">
   <!-- Header Actions -->
-  <div class="flex justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-gray-200">
+  <div class="flex justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-neutral-200">
     <div>
-      <h2 class="text-xl font-bold text-gray-800">Solicitudes de Pasajes</h2>
-      <p class="text-sm text-gray-500">Gestione las solicitudes de viaje (FV-01)</p>
+      <h2 class="text-xl font-bold text-neutral-800">Solicitudes de Pasajes</h2>
+      <p class="text-sm text-neutral-500">Gestione las solicitudes de viaje (FV-01)</p>
     </div>
     <a
       href="/solicitudes/nueva"
-      class="bg-senado-primary hover:bg-senado-800 text-white font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out flex items-center shadow">
+      class="bg-primary hover:bg-primary-800 text-white font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out flex items-center shadow">
       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
         <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
       </svg>
@@ -18,78 +18,78 @@
   </div>
 
   <!-- Table -->
-  <div class="bg-white rounded-lg shadow overflow-hidden border border-gray-200">
+  <div class="bg-white rounded-lg shadow overflow-hidden border border-neutral-200">
     <table class="min-w-full divide-y divide-gray-200">
-      <thead class="bg-gray-50">
+      <thead class="bg-neutral-50">
         <tr>
-          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CÓDIGO</th>
-          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Solicitante</th>
-          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Registrado por</th>
-          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
-          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ruta</th>
-          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha Salida</th>
-          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Estado</th>
-          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Acciones</th>
+          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">CÓDIGO</th>
+          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Solicitante</th>
+          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Registrado por</th>
+          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Tipo</th>
+          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Ruta</th>
+          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Fecha Salida</th>
+          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Estado</th>
+          <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Acciones</th>
         </tr>
       </thead>
       <tbody class="bg-white divide-y divide-gray-200">
         {{ range .Solicitudes }}
-        <tr class="hover:bg-gray-50 transition-colors">
-          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+        <tr class="hover:bg-neutral-50 transition-colors">
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">
             {{ if .Codigo }}
-            <span class="font-mono bg-gray-100 px-2 py-1 rounded text-xs">{{ .Codigo }}</span>
+            <span class="font-mono bg-neutral-100 px-2 py-1 rounded text-xs">{{ .Codigo }}</span>
             {{ else }}
-            <span class="text-gray-400">#{{ .ID }}</span>
+            <span class="text-neutral-400">#{{ .ID }}</span>
             {{ end }}
           </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700">
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-700">
             <div class="flex items-center">
-              <div class="h-8 w-8 rounded-full bg-senado-100 flex items-center justify-center text-senado-primary font-bold text-xs mr-2">
+              <div class="h-8 w-8 rounded-full bg-primary-100 flex items-center justify-center text-primary font-bold text-xs mr-2">
                 {{ printf "%.1s" .Usuario.GetNombreCompleto }}
               </div>
               <span class="truncate max-w-[150px]">{{ .Usuario.GetNombreCompleto }}</span>
             </div>
           </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-xs text-center">
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500 text-xs text-center">
             {{ $creator := index $.Usuarios (deref .CreatedBy) }} {{ if $creator }} {{ $creator.GetNombreCompleto }} {{ else }}
-            <span class="italic text-gray-300">Sistema</span>
+            <span class="italic text-neutral-300">Sistema</span>
             {{ end }}
           </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500 text-center">
             {{ if and .TipoSolicitud .TipoSolicitud.ConceptoViaje (eq .TipoSolicitud.ConceptoViaje.Codigo "COMISION") }}
             <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">Comisión</span>
             {{ else }}
-            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-senado-50 text-senado-primary">Derecho</span>
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary-50 text-primary">Derecho</span>
             {{ end }}
           </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-700 font-medium">
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-700 font-medium">
             {{ .Origen.Ciudad }}
-            <span class="text-gray-400 mx-1">&rarr;</span>
+            <span class="text-neutral-400 mx-1">&rarr;</span>
             {{ .Destino.Ciudad }}
           </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-center">{{ dtl .FechaIda }}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500 text-center">{{ dtl .FechaIda }}</td>
           <td class="px-6 py-4 whitespace-nowrap text-center">
             <span
-              class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ if eq .EstadoSolicitud.Codigo `SOLICITADO` }}bg-yellow-100 text-yellow-800{{ else if eq .EstadoSolicitud.Codigo `APROBADO` }}bg-green-100 text-green-800{{ else }}bg-gray-100 text-gray-800{{ end }}">
+              class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ if eq .EstadoSolicitud.Codigo `SOLICITADO` }}bg-warning-100 text-warning-800{{ else if eq .EstadoSolicitud.Codigo `APROBADO` }}bg-success-100 text-success-800{{ else }}bg-neutral-100 text-neutral-800{{ end }}">
               {{ if .EstadoSolicitud }}{{ .EstadoSolicitud.Nombre }}{{ else }}SOLICITADO{{ end }}
             </span>
           </td>
           <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-center">
             {{ if and .EstadoSolicitud (eq .EstadoSolicitud.Codigo "SOLICITADO") }}
-            <a href="/solicitudes/derecho/{{ .ID }}/editar" class="text-indigo-600 hover:text-indigo-900 font-medium mr-3">Editar</a>
+            <a href="/solicitudes/derecho/{{ .ID }}/editar" class="text-primary hover:text-primary-700 font-medium mr-3">Editar</a>
             {{ end }}
             <a
               href="/solicitudes/derecho/{{ .ID }}/detalle"
-              class="text-white bg-senado-secondary hover:bg-senado-primary px-3 py-1 rounded shadow-sm text-xs font-bold transition-colors">
+              class="text-white bg-secondary hover:bg-primary px-3 py-1 rounded shadow-sm text-xs font-bold transition-colors">
               Procesar
             </a>
           </td>
         </tr>
         {{ else }}
         <tr>
-          <td colspan="7" class="px-6 py-10 text-center text-gray-500">
+          <td colspan="7" class="px-6 py-10 text-center text-neutral-500">
             <p class="mb-2">No hay solicitudes registradas.</p>
-            <a href="/solicitudes/nueva" class="text-senado-primary hover:underline">Crear la primera</a>
+            <a href="/solicitudes/nueva" class="text-primary hover:underline">Crear la primera</a>
           </td>
         </tr>
         {{ end }}

@@ -71,3 +71,19 @@ func (ctrl *RutaController) AddContract(c *gin.Context) {
 	}
 	c.Redirect(http.StatusFound, "/admin/rutas")
 }
+
+func (ctrl *RutaController) GetContractModal(c *gin.Context) {
+	rutaID := c.Query("ruta_id")
+	ruta, err := ctrl.rutaService.GetByID(c.Request.Context(), rutaID)
+	if err != nil {
+		c.String(http.StatusNotFound, "Ruta no encontrada")
+		return
+	}
+
+	aerolineas, _ := ctrl.aerolineaService.GetAll(c.Request.Context())
+
+	utils.Render(c, "admin/components/modal_tarifa_ruta", gin.H{
+		"Ruta":       ruta,
+		"Aerolineas": aerolineas,
+	})
+}

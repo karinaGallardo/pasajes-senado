@@ -1,15 +1,15 @@
 {{ define "layouts/components/sidebar_navigation" }}
 <div class="flex-1 overflow-y-auto py-6 overflow-x-hidden">
   <nav class="space-y-1 px-4">
-    <p class="px-2 text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2 transition-opacity duration-300 whitespace-nowrap" x-show="!sidebarCollapsed">Main</p>
+    <p class="px-2 text-xs font-semibold text-neutral-400 uppercase tracking-wider mb-2 transition-opacity duration-300 whitespace-nowrap" x-show="!sidebarCollapsed">Main</p>
 
     <a
       href="/dashboard"
       :title="sidebarCollapsed ? 'Dashboard' : ''"
       class="group flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap
-    {{ if eq .Title `Dashboard` }} bg-senado-primary/10 text-senado-primary {{ else }} text-gray-600 hover:bg-gray-50 hover:text-gray-900 {{ end }}">
+    {{ if eq .Title `Dashboard` }} bg-primary/10 text-primary {{ else }} text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 {{ end }}">
       <svg
-        class="mr-3 h-5 w-5 min-w-[20px] {{ if eq .Title `Dashboard` }} text-senado-primary {{ else }} text-gray-400 group-hover:text-gray-500 {{ end }}"
+        class="mr-3 h-5 w-5 min-w-[20px] {{ if eq .Title `Dashboard` }} text-primary {{ else }} text-neutral-400 group-hover:text-neutral-500 {{ end }}"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor">
@@ -22,7 +22,7 @@
       <span x-show="!sidebarCollapsed" class="transition-opacity duration-300">Dashboard</span>
     </a>
 
-    <div class="mt-8 mb-2 px-2 text-xs font-semibold text-gray-400 uppercase tracking-wider transition-opacity duration-300 whitespace-nowrap" x-show="!sidebarCollapsed">
+    <div class="mt-8 mb-2 px-2 text-xs font-semibold text-neutral-400 uppercase tracking-wider transition-opacity duration-300 whitespace-nowrap" x-show="!sidebarCollapsed">
       Gestión
     </div>
 
@@ -31,9 +31,9 @@
       href="/cupos/derecho/{{.CurrentUser.ID}}"
       :title="sidebarCollapsed ? 'Mis Cupos' : ''"
       class="group flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap
-        {{ if eq .Title `Mis Cupos` }} bg-senado-primary/10 text-senado-primary {{ else }} text-gray-600 hover:bg-gray-50 hover:text-gray-900 {{ end }}">
+        {{ if eq .Title `Mis Cupos` }} bg-primary/10 text-primary {{ else }} text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 {{ end }}">
       <svg
-        class="mr-3 h-5 w-5 min-w-[20px] {{ if eq .Title `Mis Cupos` }} text-senado-primary {{ else }} text-gray-400 group-hover:text-gray-500 {{ end }}"
+        class="mr-3 h-5 w-5 min-w-[20px] {{ if eq .Title `Mis Cupos` }} text-primary {{ else }} text-neutral-400 group-hover:text-neutral-500 {{ end }}"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor">
@@ -47,9 +47,9 @@
       href="/solicitudes"
       :title="sidebarCollapsed ? 'Solicitudes' : ''"
       class="group flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap
-     {{ if eq .Title `Solicitudes` }} bg-senado-primary/10 text-senado-primary {{ else }} text-gray-600 hover:bg-gray-50 hover:text-gray-900 {{ end }}">
+     {{ if eq .Title `Solicitudes` }} bg-primary/10 text-primary {{ else }} text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 {{ end }}">
       <svg
-        class="mr-3 h-5 w-5 min-w-[20px] {{ if eq .Title `Solicitudes` }} text-senado-primary {{ else }} text-gray-400 group-hover:text-gray-500 {{ end }}"
+        class="mr-3 h-5 w-5 min-w-[20px] {{ if eq .Title `Solicitudes` }} text-primary {{ else }} text-neutral-400 group-hover:text-neutral-500 {{ end }}"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor">
@@ -62,9 +62,9 @@
       href="/descargos"
       :title="sidebarCollapsed ? 'Descargos' : ''"
       class="group flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap
-     {{ if eq .Title `Descargos` }} bg-senado-primary/10 text-senado-primary {{ else }} text-gray-600 hover:bg-gray-50 hover:text-gray-900 {{ end }}">
+     {{ if eq .Title `Descargos` }} bg-primary/10 text-primary {{ else }} text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 {{ end }}">
       <svg
-        class="mr-3 h-5 w-5 min-w-[20px] {{ if eq .Title `Descargos` }} text-senado-primary {{ else }} text-gray-400 group-hover:text-gray-500 {{ end }}"
+        class="mr-3 h-5 w-5 min-w-[20px] {{ if eq .Title `Descargos` }} text-primary {{ else }} text-neutral-400 group-hover:text-neutral-500 {{ end }}"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor">
@@ -81,9 +81,9 @@
       href="/compensaciones"
       :title="sidebarCollapsed ? 'Compensaciones' : ''"
       class="group flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap
-     {{ if eq .Title `Compensaciones` }} bg-senado-primary/10 text-senado-primary {{ else }} text-gray-600 hover:bg-gray-50 hover:text-gray-900 {{ end }}">
+     {{ if eq .Title `Compensaciones` }} bg-primary/10 text-primary {{ else }} text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 {{ end }}">
       <svg
-        class="mr-3 h-5 w-5 min-w-[20px] {{ if eq .Title `Compensaciones` }} text-senado-primary {{ else }} text-gray-400 group-hover:text-gray-500 {{ end }}"
+        class="mr-3 h-5 w-5 min-w-[20px] {{ if eq .Title `Compensaciones` }} text-primary {{ else }} text-neutral-400 group-hover:text-neutral-500 {{ end }}"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor">
@@ -97,7 +97,7 @@
     </a>
 
     {{ if .CurrentUser.IsAdminOrTecnico }}
-    <div class="mt-8 mb-2 px-2 text-xs font-semibold text-gray-400 uppercase tracking-wider transition-opacity duration-300 whitespace-nowrap" x-show="!sidebarCollapsed">
+    <div class="mt-8 mb-2 px-2 text-xs font-semibold text-neutral-400 uppercase tracking-wider transition-opacity duration-300 whitespace-nowrap" x-show="!sidebarCollapsed">
       Administración
     </div>
 
@@ -106,9 +106,9 @@
       href="/usuarios"
       :title="sidebarCollapsed ? 'Usuarios' : ''"
       class="group flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap
-     {{ if eq .Title `Gestión de Usuarios` }} bg-senado-primary/10 text-senado-primary {{ else }} text-gray-600 hover:bg-gray-50 hover:text-gray-900 {{ end }}">
+     {{ if eq .Title `Gestión de Usuarios` }} bg-primary/10 text-primary {{ else }} text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 {{ end }}">
       <svg
-        class="mr-3 h-5 w-5 min-w-[20px] {{ if eq .Title `Gestión de Usuarios` }} text-senado-primary {{ else }} text-gray-400 group-hover:text-gray-500 {{ end }}"
+        class="mr-3 h-5 w-5 min-w-[20px] {{ if eq .Title `Gestión de Usuarios` }} text-primary {{ else }} text-neutral-400 group-hover:text-neutral-500 {{ end }}"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor">
@@ -123,12 +123,27 @@
     {{ end }}
 
     <a
-      href="/admin/proveedores"
-      :title="sidebarCollapsed ? 'Proveedores' : ''"
+      href="/admin/aerolineas"
+      :title="sidebarCollapsed ? 'Aerolíneas' : ''"
       class="group flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap
-     {{ if eq .Title `Gestión de Proveedores` }} bg-senado-primary/10 text-senado-primary {{ else }} text-gray-600 hover:bg-gray-50 hover:text-gray-900 {{ end }}">
+     {{ if eq .Title `Gestión de Aerolíneas` }} bg-primary/10 text-primary {{ else }} text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 {{ end }}">
       <svg
-        class="mr-3 h-5 w-5 min-w-[20px] {{ if eq .Title `Gestión de Proveedores` }} text-senado-primary {{ else }} text-gray-400 group-hover:text-gray-500 {{ end }}"
+        class="mr-3 h-5 w-5 min-w-[20px] {{ if eq .Title `Gestión de Aerolíneas` }} text-primary {{ else }} text-neutral-400 group-hover:text-neutral-500 {{ end }}"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+      </svg>
+      <span x-show="!sidebarCollapsed" class="transition-opacity duration-300">Aerolíneas</span>
+    </a>
+
+    <a
+      href="/admin/agencias"
+      :title="sidebarCollapsed ? 'Agencias de Viaje' : ''"
+      class="group flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap
+     {{ if eq .Title `Gestión de Agencias` }} bg-primary/10 text-primary {{ else }} text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 {{ end }}">
+      <svg
+        class="mr-3 h-5 w-5 min-w-[20px] {{ if eq .Title `Gestión de Agencias` }} text-primary {{ else }} text-neutral-400 group-hover:text-neutral-500 {{ end }}"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor">
@@ -138,16 +153,16 @@
           stroke-width="2"
           d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
       </svg>
-      <span x-show="!sidebarCollapsed" class="transition-opacity duration-300">Proveedores</span>
+      <span x-show="!sidebarCollapsed" class="transition-opacity duration-300">Agencias de Viaje</span>
     </a>
 
     <a
       href="/admin/rutas"
       :title="sidebarCollapsed ? 'Rutas' : ''"
       class="group flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap
-     {{ if eq .Title `Gestión de Rutas y Tarifas` }} bg-senado-primary/10 text-senado-primary {{ else }} text-gray-600 hover:bg-gray-50 hover:text-gray-900 {{ end }}">
+     {{ if eq .Title `Gestión de Rutas y Tarifas` }} bg-primary/10 text-primary {{ else }} text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 {{ end }}">
       <svg
-        class="mr-3 h-5 w-5 min-w-[20px] {{ if eq .Title `Gestión de Rutas y Tarifas` }} text-senado-primary {{ else }} text-gray-400 group-hover:text-gray-500 {{ end }}"
+        class="mr-3 h-5 w-5 min-w-[20px] {{ if eq .Title `Gestión de Rutas y Tarifas` }} text-primary {{ else }} text-neutral-400 group-hover:text-neutral-500 {{ end }}"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor">
@@ -164,9 +179,9 @@
       href="/admin/configuracion"
       :title="sidebarCollapsed ? 'Configuración' : ''"
       class="group flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap
-     {{ if eq .Title `Configuración del Sistema` }} bg-senado-primary/10 text-senado-primary {{ else }} text-gray-600 hover:bg-gray-50 hover:text-gray-900 {{ end }}">
+     {{ if eq .Title `Configuración del Sistema` }} bg-primary/10 text-primary {{ else }} text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 {{ end }}">
       <svg
-        class="mr-3 h-5 w-5 min-w-[20px] {{ if eq .Title `Configuración del Sistema` }} text-senado-primary {{ else }} text-gray-400 group-hover:text-gray-500 {{ end }}"
+        class="mr-3 h-5 w-5 min-w-[20px] {{ if eq .Title `Configuración del Sistema` }} text-primary {{ else }} text-neutral-400 group-hover:text-neutral-500 {{ end }}"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor">
@@ -184,9 +199,9 @@
       href="/admin/compensaciones/categorias"
       :title="sidebarCollapsed ? 'Montos Compensación' : ''"
       class="group flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap
-     {{ if eq .Title `Categorías de Compensación` }} bg-senado-primary/10 text-senado-primary {{ else }} text-gray-600 hover:bg-gray-50 hover:text-gray-900 {{ end }}">
+     {{ if eq .Title `Categorías de Compensación` }} bg-primary/10 text-primary {{ else }} text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 {{ end }}">
       <svg
-        class="mr-3 h-5 w-5 min-w-[20px] {{ if eq .Title `Categorías de Compensación` }} text-senado-primary {{ else }} text-gray-400 group-hover:text-gray-500 {{ end }}"
+        class="mr-3 h-5 w-5 min-w-[20px] {{ if eq .Title `Categorías de Compensación` }} text-primary {{ else }} text-neutral-400 group-hover:text-neutral-500 {{ end }}"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor">
@@ -203,10 +218,10 @@
       href="/admin/cargos"
       :title="sidebarCollapsed ? 'Cargos' : ''"
       class="group flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap
-     {{ if eq .Title `Gestión de Cargos` }} bg-senado-primary/10 text-senado-primary {{ else }} text-gray-600 hover:bg-gray-50 hover:text-gray-900 {{ end }}">
+     {{ if eq .Title `Gestión de Cargos` }} bg-primary/10 text-primary {{ else }} text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 {{ end }}">
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        class="mr-3 h-5 w-5 min-w-[20px] {{ if eq .Title `Gestión de Cargos` }} text-senado-primary {{ else }} text-gray-400 group-hover:text-gray-500 {{ end }}"
+        class="mr-3 h-5 w-5 min-w-[20px] {{ if eq .Title `Gestión de Cargos` }} text-primary {{ else }} text-neutral-400 group-hover:text-neutral-500 {{ end }}"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor">
@@ -223,10 +238,10 @@
       href="/admin/oficinas"
       :title="sidebarCollapsed ? 'Oficinas' : ''"
       class="group flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap
-     {{ if eq .Title `Gestión de Oficinas` }} bg-senado-primary/10 text-senado-primary {{ else }} text-gray-600 hover:bg-gray-50 hover:text-gray-900 {{ end }}">
+     {{ if eq .Title `Gestión de Oficinas` }} bg-primary/10 text-primary {{ else }} text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 {{ end }}">
       <svg
         xmlns="http://www.w3.org/2000/svg"
-        class="mr-3 h-5 w-5 min-w-[20px] {{ if eq .Title `Gestión de Oficinas` }} text-senado-primary {{ else }} text-gray-400 group-hover:text-gray-500 {{ end }}"
+        class="mr-3 h-5 w-5 min-w-[20px] {{ if eq .Title `Gestión de Oficinas` }} text-primary {{ else }} text-neutral-400 group-hover:text-neutral-500 {{ end }}"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor">
@@ -243,9 +258,9 @@
       href="/admin/cupos"
       :title="sidebarCollapsed ? 'Cupos' : ''"
       class="group flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap
-     {{ if eq .Title `Gestión de Cupos` }} bg-senado-primary/10 text-senado-primary {{ else }} text-gray-600 hover:bg-gray-50 hover:text-gray-900 {{ end }}">
+     {{ if eq .Title `Gestión de Cupos` }} bg-primary/10 text-primary {{ else }} text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 {{ end }}">
       <svg
-        class="mr-3 h-5 w-5 min-w-[20px] {{ if eq .Title `Gestión de Cupos` }} text-senado-primary {{ else }} text-gray-400 group-hover:text-gray-500 {{ end }}"
+        class="mr-3 h-5 w-5 min-w-[20px] {{ if eq .Title `Gestión de Cupos` }} text-primary {{ else }} text-neutral-400 group-hover:text-neutral-500 {{ end }}"
         fill="none"
         viewBox="0 0 24 24"
         stroke="currentColor">

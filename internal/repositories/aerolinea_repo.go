@@ -46,3 +46,7 @@ func (r *AerolineaRepository) FindByID(id string) (*models.Aerolinea, error) {
 func (r *AerolineaRepository) Save(a *models.Aerolinea) error {
 	return r.db.Save(a).Error
 }
+
+func (r *AerolineaRepository) Delete(id string) error {
+	return r.db.Delete(&models.Aerolinea{}, "id = ?", id).Error
+}

@@ -46,3 +46,7 @@ func (r *AgenciaRepository) FindByID(id string) (*models.Agencia, error) {
 func (r *AgenciaRepository) Save(a *models.Agencia) error {
 	return r.db.Save(a).Error
 }
+
+func (r *AgenciaRepository) Delete(id string) error {
+	return r.db.Delete(&models.Agencia{}, "id = ?", id).Error
+}

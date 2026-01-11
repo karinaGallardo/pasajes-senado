@@ -16,7 +16,7 @@
       x-transition:leave="ease-in duration-200"
       x-transition:leave-start="opacity-100"
       x-transition:leave-end="opacity-0"
-      class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity"
+      class="fixed inset-0 bg-neutral-500 bg-opacity-75 transition-opacity"
       aria-hidden="true"
       @click="open = false"></div>
 
@@ -38,23 +38,23 @@
 
         <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
           <div class="sm:flex sm:items-start">
-            <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-green-100 sm:mx-0 sm:h-10 sm:w-10">
-              <svg class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-success-100 sm:mx-0 sm:h-10 sm:w-10">
+              <svg class="h-6 w-6 text-success-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
               </svg>
             </div>
             <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-              <h3 class="text-lg leading-6 font-medium text-gray-900">Marcar como Usado</h3>
-              <div class="mt-2 text-sm text-gray-500">
+              <h3 class="text-lg leading-6 font-medium text-neutral-900">Marcar como Usado</h3>
+              <div class="mt-2 text-sm text-neutral-500">
                 <p>Para marcar el pasaje como usado, por favor suba el pase a bordo escaneado.</p>
               </div>
 
               <!-- Form Fields -->
               <div class="mt-4 grid grid-cols-1 gap-y-4">
                 <div>
-                  <label for="archivo_pase_abordo" class="block text-sm font-medium text-gray-700 mb-2">Pase a Bordo (PDF o Imagen)</label>
+                  <label for="archivo_pase_abordo" class="block text-sm font-medium text-neutral-700 mb-2">Pase a Bordo (PDF o Imagen)</label>
                   <div
-                    class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md bg-white hover:bg-gray-50 transition-colors cursor-pointer relative group">
+                    class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-neutral-300 border-dashed rounded-md bg-white hover:bg-neutral-50 transition-colors cursor-pointer relative group">
                     <input
                       type="file"
                       name="archivo_pase_abordo"
@@ -65,23 +65,23 @@
                       required />
 
                     <div class="space-y-1 text-center" x-show="!fileName">
-                      <svg class="mx-auto h-12 w-12 text-gray-400 group-hover:text-gray-500 transition-colors" stroke="currentColor" fill="none" viewBox="0 0 48 48">
+                      <svg class="mx-auto h-12 w-12 text-neutral-400 group-hover:text-neutral-500 transition-colors" stroke="currentColor" fill="none" viewBox="0 0 48 48">
                         <path
                           d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
                           stroke-width="2"
                           stroke-linecap="round"
                           stroke-linejoin="round" />
                       </svg>
-                      <div class="flex text-sm text-gray-600 justify-center">
-                        <span class="font-bold text-senado-secondary group-hover:underline">Cargar Pase a Bordo</span>
+                      <div class="flex text-sm text-neutral-600 justify-center">
+                        <span class="font-bold text-secondary group-hover:underline">Cargar Pase a Bordo</span>
                         <p class="pl-1">o arrastrar aquí</p>
                       </div>
-                      <p class="text-xs text-gray-500">PDF o Imágenes</p>
+                      <p class="text-xs text-neutral-500">PDF o Imágenes</p>
                     </div>
 
                     <div class="space-y-1 text-center" x-show="fileName" x-cloak>
-                      <div class="mx-auto h-12 w-12 bg-green-100 rounded-full flex items-center justify-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <div class="mx-auto h-12 w-12 bg-success-100 rounded-full flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-success-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path
                             stroke-linecap="round"
                             stroke-linejoin="round"
@@ -89,8 +89,8 @@
                             d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                         </svg>
                       </div>
-                      <p class="text-sm font-bold text-gray-900 truncate px-4" x-text="fileName"></p>
-                      <p class="text-xs text-green-600 font-medium">✓ Listo para subir</p>
+                      <p class="text-sm font-bold text-neutral-900 truncate px-4" x-text="fileName"></p>
+                      <p class="text-xs text-success-600 font-medium">✓ Listo para subir</p>
                     </div>
                   </div>
                 </div>
@@ -98,16 +98,16 @@
             </div>
           </div>
         </div>
-        <div class="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+        <div class="bg-neutral-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
           <button
             type="submit"
-            class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-green-600 text-base font-medium text-white hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 sm:ml-3 sm:w-auto sm:text-sm">
+            class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-success-600 text-base font-medium text-white hover:bg-success-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-success-500 sm:ml-3 sm:w-auto sm:text-sm">
             Confirmar y Subir
           </button>
           <button
             type="button"
             @click="open = false"
-            class="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
+            class="mt-3 w-full inline-flex justify-center rounded-md border border-neutral-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-neutral-700 hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
             Cancelar
           </button>
         </div>
