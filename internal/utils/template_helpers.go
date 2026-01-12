@@ -8,6 +8,7 @@ import (
 	"time"
 )
 
+// TemplateFuncs exporta el mapa de funciones para uso en plantillas HTML.
 func TemplateFuncs() template.FuncMap {
 	return template.FuncMap{
 		"add":   Add,
@@ -24,16 +25,19 @@ func TemplateFuncs() template.FuncMap {
 	}
 }
 
+// UnsafeHTML retorna el string como template.HTML para omitir el escape automático.
 func UnsafeHTML(s string) template.HTML {
 	return template.HTML(s)
 }
 
+// Helpers de aritmética.
 func Add(a, b float64) float64 { return a + b }
 func Sum(a, b int) int         { return a + b }
 func Sub(a, b int) int         { return a - b }
 func Mul(a, b int) int         { return a * b }
 func Inc(i int) int            { return i + 1 }
 
+// FormatDate formatea un *time.Time a "DD/MM/YYYY". Retorna "-" si es nil.
 func FormatDate(t *time.Time) string {
 	if t == nil {
 		return "-"
@@ -41,6 +45,7 @@ func FormatDate(t *time.Time) string {
 	return t.Format("02/01/2006")
 }
 
+// FormatDateTimeES formatea fechas a formato texto en español.
 func FormatDateTimeES(val interface{}) string {
 	var t time.Time
 	switch v := val.(type) {
@@ -69,6 +74,7 @@ func FormatDateTimeES(val interface{}) string {
 	return str
 }
 
+// DerefString desreferencia un string pointer de forma segura. Retorna "" si es nil.
 func DerefString(s *string) string {
 	if s == nil {
 		return ""
@@ -76,6 +82,7 @@ func DerefString(s *string) string {
 	return *s
 }
 
+// FormatDateRange formatea dos punteros de tiempo como rango "DD/MM - DD/MM".
 func FormatDateRange(ini, fin *time.Time) string {
 	if ini == nil || fin == nil {
 		return "-"
@@ -83,6 +90,7 @@ func FormatDateRange(ini, fin *time.Time) string {
 	return fmt.Sprintf("%s - %s", ini.Format("02/01"), fin.Format("02/01"))
 }
 
+// ToJSON serializa un valor a string JSON.
 func ToJSON(v any) string {
 	b, _ := json.Marshal(v)
 	return string(b)

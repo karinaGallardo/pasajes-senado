@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"net/http"
+	"sistema-pasajes/internal/dtos"
 	"sistema-pasajes/internal/services"
 	"sistema-pasajes/internal/utils"
 
@@ -26,10 +27,15 @@ func (ac *AuthController) ShowLogin(c *gin.Context) {
 }
 
 func (ac *AuthController) Login(c *gin.Context) {
-	username := c.PostForm("username")
-	password := c.PostForm("password")
+	var req dtos.LoginRequest
+	if err := c.ShouldBind(&req); err != nil {
+		utils.Render(c, "auth/login", gin.H{
+			"error": "Credenciales inválidas",
+		})
+		return
+	}
 
-	user, err := ac.authService.AuthenticateAndSync(c.Request.Context(), username, password)
+	user, err := ac.authService.AuthenticateAndSync(c.Request.Context(), req.Username, req.Password)
 	if err != nil {
 		utils.Render(c, "auth/login", gin.H{
 			"error": err.Error(),

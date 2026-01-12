@@ -2,6 +2,8 @@ package controllers
 
 import (
 	"net/http"
+	"sistema-pasajes/internal/dtos"
+	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/services"
 	"sistema-pasajes/internal/utils"
 
@@ -28,11 +30,17 @@ func (ctrl *ConfiguracionController) Index(c *gin.Context) {
 }
 
 func (ctrl *ConfiguracionController) Update(c *gin.Context) {
-	clave := c.PostForm("clave")
-	valor := c.PostForm("valor")
-
-	if clave != "" && valor != "" {
-		ctrl.service.Update(c.Request.Context(), clave, valor)
+	var req dtos.UpdateConfiguracionRequest
+	if err := c.ShouldBind(&req); err != nil {
+		c.Redirect(http.StatusFound, "/admin/configuracion")
+		return
 	}
+
+	conf := models.Configuracion{
+		Clave: req.Clave,
+		Valor: req.Valor,
+	}
+
+	ctrl.service.Update(c.Request.Context(), &conf)
 	c.Redirect(http.StatusFound, "/admin/configuracion")
 }

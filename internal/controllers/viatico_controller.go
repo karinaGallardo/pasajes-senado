@@ -7,8 +7,6 @@ import (
 	"sistema-pasajes/internal/dtos"
 	"sistema-pasajes/internal/services"
 	"sistema-pasajes/internal/utils"
-	"strconv"
-	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/jung-kurt/gofpdf"
@@ -28,7 +26,7 @@ func NewViaticoController() *ViaticoController {
 
 func (ctrl *ViaticoController) Create(c *gin.Context) {
 	id := c.Param("id")
-	solicitud, err := ctrl.solService.FindByID(c.Request.Context(), id)
+	solicitud, err := ctrl.solService.GetByID(c.Request.Context(), id)
 	if err != nil {
 		c.String(http.StatusNotFound, "Solicitud no encontrada")
 		return
@@ -72,26 +70,7 @@ func (ctrl *ViaticoController) Store(c *gin.Context) {
 		return
 	}
 
-	dias, _ := strconv.ParseFloat(req.Dias, 64)
-	montoDia, _ := strconv.ParseFloat(req.MontoDia, 64)
-	porcentaje, _ := strconv.Atoi(req.Porcentaje)
-	gastosRep := req.GastosRep == "on"
-
-	layout := "2006-01-02"
-	fechaDesde, _ := time.Parse(layout, req.FechaDesde)
-	fechaHasta, _ := time.Parse(layout, req.FechaHasta)
-
-	detalle := services.DetalleViaticoInput{
-		FechaDesde: fechaDesde,
-		FechaHasta: fechaHasta,
-		Dias:       dias,
-		Lugar:      req.Lugar,
-		MontoDia:   montoDia,
-		Porcentaje: porcentaje,
-	}
-
-	_, err := ctrl.viaticoService.RegistrarViatico(c.Request.Context(), solicitudID, []services.DetalleViaticoInput{detalle}, gastosRep, currentUser.ID)
-	if err != nil {
+	if _, err := ctrl.viaticoService.RegistrarViatico(c.Request.Context(), solicitudID, req, currentUser.ID); err != nil {
 		c.String(http.StatusInternalServerError, "Error asignando viático: "+err.Error())
 		return
 	}
@@ -101,7 +80,7 @@ func (ctrl *ViaticoController) Store(c *gin.Context) {
 
 func (ctrl *ViaticoController) Print(c *gin.Context) {
 	id := c.Param("id")
-	viatico, err := ctrl.viaticoService.FindByID(c.Request.Context(), id)
+	viatico, err := ctrl.viaticoService.GetByID(c.Request.Context(), id)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Error retrieving viatico: "+err.Error())
 		return

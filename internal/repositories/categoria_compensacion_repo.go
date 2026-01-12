@@ -27,7 +27,11 @@ func (r *CategoriaCompensacionRepository) FindAll() ([]models.CategoriaCompensac
 	return list, err
 }
 
-func (r *CategoriaCompensacionRepository) Save(cat *models.CategoriaCompensacion) error {
+func (r *CategoriaCompensacionRepository) Create(cat *models.CategoriaCompensacion) error {
+	return r.db.Create(cat).Error
+}
+
+func (r *CategoriaCompensacionRepository) Update(cat *models.CategoriaCompensacion) error {
 	return r.db.Save(cat).Error
 }
 

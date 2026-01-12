@@ -3,13 +3,7 @@
 <div class="max-w-4xl mx-auto mt-8">
   <div class="flex justify-between items-center mb-6">
     <h1 class="text-2xl font-bold text-primary-800 flex items-center">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mr-2 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-      </svg>
+      <i class="ph ph-money text-3xl mr-2 text-primary-500"></i>
       Categorías de Compensación
     </h1>
     <a href="/compensaciones" class="text-primary-600 hover:text-primary-800 font-medium">Volver a Trámites</a>
@@ -44,7 +38,12 @@
         </div>
         <div>
           <label class="block text-sm font-medium text-neutral-700">Monto Compensación (Bs)</label>
-          <input type="number" step="0.01" name="monto" class="mt-1 block w-full rounded-md border-neutral-300 shadow-sm focus:border-primary-500 focus:ring-primary-500" required />
+          <input
+            type="number"
+            step="0.01"
+            name="monto"
+            class="mt-1 block w-full rounded-md border-neutral-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+            required />
         </div>
         <button type="submit" class="w-full bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700 font-medium">Guardar</button>
       </form>
@@ -71,20 +70,14 @@
             <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">{{ .TipoSenador }}</td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-right font-bold text-primary-700">{{ .Monto }}</td>
             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-              <form
-                action="/admin/compensaciones/categorias/{{ .ID }}/delete"
-                method="POST"
-                @submit.prevent="window.dispatchEvent(new CustomEvent('open-confirm', { 
-                  detail: { 
-                    title: '¿Eliminar Regla de Compensación?', 
-                    message: '¿Está seguro de que desea eliminar la regla para {{ .Departamento }} - {{ .TipoSenador }}?', 
-                    confirmText: 'Sí, Eliminar',
-                    isDanger: true,
-                    form: $el 
-                  } 
-                }))">
-                <button type="submit" class="text-danger-600 hover:text-danger-900">Eliminar</button>
-              </form>
+              <button
+                hx-post="/admin/compensaciones/categorias/{{ .ID }}/delete"
+                hx-confirm="¿Está seguro de que desea eliminar la regla para {{ .Departamento }} - {{ .TipoSenador }}?"
+                hx-target="body"
+                class="text-danger-600 hover:text-danger-900 transition-colors"
+                title="Eliminar">
+                <i class="ph ph-trash text-xl"></i>
+              </button>
             </td>
           </tr>
           {{ else }}

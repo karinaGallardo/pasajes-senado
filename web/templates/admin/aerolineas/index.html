@@ -11,9 +11,7 @@
         hx-target="#modal-container"
         hx-disabled-elt="this"
         class="inline-flex items-center justify-center rounded-md border border-transparent bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 sm:w-auto transition-colors disabled:opacity-50">
-        <svg xmlns="http://www.w3.org/2000/svg" class="-ml-1 mr-2 h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-          <path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" />
-        </svg>
+        <i class="ph ph-plus-circle text-xl mr-2"></i>
         Nueva Aerolínea
       </button>
     </div>
@@ -53,7 +51,8 @@
                     hx-get="/admin/aerolineas/{{ .ID }}/editar"
                     hx-target="#modal-container"
                     hx-disabled-elt="this"
-                    class="text-primary-600 hover:text-primary-900 font-bold transition-colors disabled:opacity-50">
+                    class="text-primary-600 hover:text-primary-900 font-bold transition-colors disabled:opacity-50 inline-flex items-center">
+                    <i class="ph ph-pencil-simple mr-1 text-lg"></i>
                     Editar
                   </button>
                   <button
@@ -62,12 +61,7 @@
                     hx-target="body"
                     class="ml-4 text-danger-600 hover:text-danger-900 transition-colors"
                     title="Eliminar">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                      <path
-                        fill-rule="evenodd"
-                        d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
-                        clip-rule="evenodd" />
-                    </svg>
+                    <i class="ph ph-trash text-xl"></i>
                   </button>
                 </td>
               </tr>

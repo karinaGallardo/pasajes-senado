@@ -7,7 +7,6 @@ import (
 	"sistema-pasajes/internal/utils"
 
 	"go.mongodb.org/mongo-driver/bson/primitive"
-	"gorm.io/gorm"
 )
 
 type UsuarioService struct {
@@ -46,7 +45,7 @@ func (s *UsuarioService) SyncStaff(ctx context.Context) (int, error) {
 			continue
 		}
 		if _, exists := mongoMap[user.CI]; !exists {
-			s.repo.GetDB().Delete(&user)
+			s.repo.Delete(&user)
 		}
 	}
 
@@ -59,7 +58,7 @@ func (s *UsuarioService) SyncStaff(ctx context.Context) (int, error) {
 			if user.IsSenador() {
 				continue
 			}
-			s.repo.GetDB().Model(user).Unscoped().Update("deleted_at", nil)
+			s.repo.Restore(user)
 		} else {
 			user = &models.Usuario{}
 			user.CI = ci
@@ -119,11 +118,11 @@ func (s *UsuarioService) SyncSenators(ctx context.Context) (int, error) {
 	}
 
 	var pgSenators []models.Usuario
-	s.repo.GetDB().Where("tipo IN ?", []string{"SENADOR_TITULAR", "SENADOR_SUPLENTE"}).Find(&pgSenators)
+	pgSenators, _ = s.repo.FindAllSenators()
 
 	for _, user := range pgSenators {
 		if _, exists := mongoMap[user.CI]; !exists {
-			s.repo.GetDB().Delete(&user)
+			s.repo.Delete(&user)
 		}
 	}
 
@@ -133,7 +132,7 @@ func (s *UsuarioService) SyncSenators(ctx context.Context) (int, error) {
 		exists := err == nil
 
 		if exists {
-			s.repo.GetDB().Model(user).Unscoped().Update("deleted_at", nil)
+			s.repo.Restore(user)
 		} else {
 			user = &models.Usuario{}
 			user.CI = ci
@@ -239,9 +238,7 @@ func (s *UsuarioService) UpdateRol(ctx context.Context, id string, rolCodigo str
 }
 
 func (s *UsuarioService) Update(ctx context.Context, usuario *models.Usuario) error {
-	return s.repo.WithContext(ctx).GetDB().Transaction(func(tx *gorm.DB) error {
-		repoTx := s.repo.WithTx(tx)
-
+	return s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.UsuarioRepository) error {
 		if err := repoTx.Update(usuario); err != nil {
 			return err
 		}

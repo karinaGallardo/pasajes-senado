@@ -7,6 +7,7 @@ import (
 	"os"
 	"sistema-pasajes/internal/configs"
 	"sistema-pasajes/internal/models"
+	"sistema-pasajes/internal/utils"
 )
 
 func main() {
@@ -21,6 +22,7 @@ func main() {
 	seedEstadosVoucher()
 	seedEstadosPasaje()
 	seedViaticosAndConfig()
+	seedGeneros()
 }
 
 func assignPermsToRole(rol *models.Rol, perms []*models.Permiso) {
@@ -44,7 +46,7 @@ type BoaDestino struct {
 	IsOperated   bool
 	Business     bool
 	Status       string
-	TimeZone     interface{}
+	TimeZone     any
 	DiffHourMins int
 }
 
@@ -62,35 +64,35 @@ func seedDestinos() {
 	ptCode := "PT"
 
 	defaults := []models.Destino{
-		{IATA: "LPB", Ciudad: "La Paz", Aeropuerto: "El Alto", AmbitoCodigo: "NACIONAL", DepartamentoCodigo: &lpCode, Pais: "BOLIVIA"},
-		{IATA: "VVI", Ciudad: "Santa Cruz", Aeropuerto: "Viru Viru", AmbitoCodigo: "NACIONAL", DepartamentoCodigo: &scCode, Pais: "BOLIVIA"},
-		{IATA: "SRZ", Ciudad: "Santa Cruz", Aeropuerto: "El Trompillo", AmbitoCodigo: "NACIONAL", DepartamentoCodigo: &scCode, Pais: "BOLIVIA"},
-		{IATA: "CBB", Ciudad: "Cochabamba", Aeropuerto: "Jorge Wilstermann", AmbitoCodigo: "NACIONAL", DepartamentoCodigo: &cbCode, Pais: "BOLIVIA"},
-		{IATA: "SRE", Ciudad: "Sucre", Aeropuerto: "Alcantarí", AmbitoCodigo: "NACIONAL", DepartamentoCodigo: &chCode, Pais: "BOLIVIA"},
-		{IATA: "TJA", Ciudad: "Tarija", Aeropuerto: "Cap. Oriel Lea Plaza", AmbitoCodigo: "NACIONAL", DepartamentoCodigo: &tjCode, Pais: "BOLIVIA"},
-		{IATA: "TDD", Ciudad: "Trinidad", Aeropuerto: "Tte. Jorge Henrich", AmbitoCodigo: "NACIONAL", DepartamentoCodigo: &beCode, Pais: "BOLIVIA"},
-		{IATA: "CIJ", Ciudad: "Cobija", Aeropuerto: "Cap. Aníbal Arab", AmbitoCodigo: "NACIONAL", DepartamentoCodigo: &paCode, Pais: "BOLIVIA"},
-		{IATA: "ORU", Ciudad: "Oruro", Aeropuerto: "Juan Mendoza", AmbitoCodigo: "NACIONAL", DepartamentoCodigo: &orCode, Pais: "BOLIVIA"},
-		{IATA: "POI", Ciudad: "Potosí", Aeropuerto: "Cap. Nicolás Rojas", AmbitoCodigo: "NACIONAL", DepartamentoCodigo: &ptCode, Pais: "BOLIVIA"},
-		{IATA: "UYU", Ciudad: "Uyuni", Aeropuerto: "Joya Andina", AmbitoCodigo: "NACIONAL", DepartamentoCodigo: &ptCode, Pais: "BOLIVIA"},
+		{IATA: "LPB", Ciudad: "La Paz", Aeropuerto: "El Alto", AmbitoCodigo: "NACIONAL", DepartamentoCodigo: &lpCode, Pais: utils.Ptr("BOLIVIA")},
+		{IATA: "VVI", Ciudad: "Santa Cruz", Aeropuerto: "Viru Viru", AmbitoCodigo: "NACIONAL", DepartamentoCodigo: &scCode, Pais: utils.Ptr("BOLIVIA")},
+		{IATA: "SRZ", Ciudad: "Santa Cruz", Aeropuerto: "El Trompillo", AmbitoCodigo: "NACIONAL", DepartamentoCodigo: &scCode, Pais: utils.Ptr("BOLIVIA")},
+		{IATA: "CBB", Ciudad: "Cochabamba", Aeropuerto: "Jorge Wilstermann", AmbitoCodigo: "NACIONAL", DepartamentoCodigo: &cbCode, Pais: utils.Ptr("BOLIVIA")},
+		{IATA: "SRE", Ciudad: "Sucre", Aeropuerto: "Alcantarí", AmbitoCodigo: "NACIONAL", DepartamentoCodigo: &chCode, Pais: utils.Ptr("BOLIVIA")},
+		{IATA: "TJA", Ciudad: "Tarija", Aeropuerto: "Cap. Oriel Lea Plaza", AmbitoCodigo: "NACIONAL", DepartamentoCodigo: &tjCode, Pais: utils.Ptr("BOLIVIA")},
+		{IATA: "TDD", Ciudad: "Trinidad", Aeropuerto: "Tte. Jorge Henrich", AmbitoCodigo: "NACIONAL", DepartamentoCodigo: &beCode, Pais: utils.Ptr("BOLIVIA")},
+		{IATA: "CIJ", Ciudad: "Cobija", Aeropuerto: "Cap. Aníbal Arab", AmbitoCodigo: "NACIONAL", DepartamentoCodigo: &paCode, Pais: utils.Ptr("BOLIVIA")},
+		{IATA: "ORU", Ciudad: "Oruro", Aeropuerto: "Juan Mendoza", AmbitoCodigo: "NACIONAL", DepartamentoCodigo: &orCode, Pais: utils.Ptr("BOLIVIA")},
+		{IATA: "POI", Ciudad: "Potosí", Aeropuerto: "Cap. Nicolás Rojas", AmbitoCodigo: "NACIONAL", DepartamentoCodigo: &ptCode, Pais: utils.Ptr("BOLIVIA")},
+		{IATA: "UYU", Ciudad: "Uyuni", Aeropuerto: "Joya Andina", AmbitoCodigo: "NACIONAL", DepartamentoCodigo: &ptCode, Pais: utils.Ptr("BOLIVIA")},
 
-		{IATA: "RBQ", Ciudad: "Rurrenabaque", Aeropuerto: "Rurrenabaque", AmbitoCodigo: "NACIONAL", DepartamentoCodigo: &beCode, Pais: "BOLIVIA"},
-		{IATA: "RIB", Ciudad: "Riberalta", Aeropuerto: "Cap. Selin Zeitun López", AmbitoCodigo: "NACIONAL", DepartamentoCodigo: &beCode, Pais: "BOLIVIA"},
-		{IATA: "GYA", Ciudad: "Guayaramerín", Aeropuerto: "Cap. Emilio Beltrán", AmbitoCodigo: "NACIONAL", DepartamentoCodigo: &beCode, Pais: "BOLIVIA"},
-		{IATA: "BYC", Ciudad: "Yacuiba", Aeropuerto: "Yacuiba", AmbitoCodigo: "NACIONAL", DepartamentoCodigo: &tjCode, Pais: "BOLIVIA"},
-		{IATA: "CCA", Ciudad: "Chimoré", Aeropuerto: "Chimoré", AmbitoCodigo: "NACIONAL", DepartamentoCodigo: &cbCode, Pais: "BOLIVIA"},
+		{IATA: "RBQ", Ciudad: "Rurrenabaque", Aeropuerto: "Rurrenabaque", AmbitoCodigo: "NACIONAL", DepartamentoCodigo: &beCode, Pais: utils.Ptr("BOLIVIA")},
+		{IATA: "RIB", Ciudad: "Riberalta", Aeropuerto: "Cap. Selin Zeitun López", AmbitoCodigo: "NACIONAL", DepartamentoCodigo: &beCode, Pais: utils.Ptr("BOLIVIA")},
+		{IATA: "GYA", Ciudad: "Guayaramerín", Aeropuerto: "Cap. Emilio Beltrán", AmbitoCodigo: "NACIONAL", DepartamentoCodigo: &beCode, Pais: utils.Ptr("BOLIVIA")},
+		{IATA: "BYC", Ciudad: "Yacuiba", Aeropuerto: "Yacuiba", AmbitoCodigo: "NACIONAL", DepartamentoCodigo: &tjCode, Pais: utils.Ptr("BOLIVIA")},
+		{IATA: "CCA", Ciudad: "Chimoré", Aeropuerto: "Chimoré", AmbitoCodigo: "NACIONAL", DepartamentoCodigo: &cbCode, Pais: utils.Ptr("BOLIVIA")},
 
-		{IATA: "MIA", Ciudad: "Miami", Aeropuerto: "Miami International", AmbitoCodigo: "INTERNACIONAL", Pais: "ESTADOS UNIDOS"},
-		{IATA: "WAS", Ciudad: "Washington D.C.", Aeropuerto: "Washington Dulles/Reagan", AmbitoCodigo: "INTERNACIONAL", Pais: "ESTADOS UNIDOS"},
-		{IATA: "EZE", Ciudad: "Buenos Aires", Aeropuerto: "Ezeiza", AmbitoCodigo: "INTERNACIONAL", Pais: "ARGENTINA"},
-		{IATA: "AEP", Ciudad: "Buenos Aires", Aeropuerto: "Aeroparque", AmbitoCodigo: "INTERNACIONAL", Pais: "ARGENTINA"},
-		{IATA: "MAD", Ciudad: "Madrid", Aeropuerto: "Barajas", AmbitoCodigo: "INTERNACIONAL", Pais: "ESPAÑA"},
-		{IATA: "GRU", Ciudad: "Sao Paulo", Aeropuerto: "Guarulhos", AmbitoCodigo: "INTERNACIONAL", Pais: "BRASIL"},
-		{IATA: "BOG", Ciudad: "Bogotá", Aeropuerto: "El Dorado", AmbitoCodigo: "INTERNACIONAL", Pais: "COLOMBIA"},
-		{IATA: "LIM", Ciudad: "Lima", Aeropuerto: "Jorge Chávez", AmbitoCodigo: "INTERNACIONAL", Pais: "PERU"},
-		{IATA: "PTY", Ciudad: "Panamá", Aeropuerto: "Tocumen", AmbitoCodigo: "INTERNACIONAL", Pais: "PANAMA"},
-		{IATA: "MEX", Ciudad: "Ciudad de México", Aeropuerto: "Benito Juárez", AmbitoCodigo: "INTERNACIONAL", Pais: "MEXICO"},
-		{IATA: "SCL", Ciudad: "Santiago", Aeropuerto: "Arturo Merino Benítez", AmbitoCodigo: "INTERNACIONAL", Pais: "CHILE"},
+		{IATA: "MIA", Ciudad: "Miami", Aeropuerto: "Miami International", AmbitoCodigo: "INTERNACIONAL", Pais: utils.Ptr("ESTADOS UNIDOS")},
+		{IATA: "WAS", Ciudad: "Washington D.C.", Aeropuerto: "Washington Dulles/Reagan", AmbitoCodigo: "INTERNACIONAL", Pais: utils.Ptr("ESTADOS UNIDOS")},
+		{IATA: "EZE", Ciudad: "Buenos Aires", Aeropuerto: "Ezeiza", AmbitoCodigo: "INTERNACIONAL", Pais: utils.Ptr("ARGENTINA")},
+		{IATA: "AEP", Ciudad: "Buenos Aires", Aeropuerto: "Aeroparque", AmbitoCodigo: "INTERNACIONAL", Pais: utils.Ptr("ARGENTINA")},
+		{IATA: "MAD", Ciudad: "Madrid", Aeropuerto: "Barajas", AmbitoCodigo: "INTERNACIONAL", Pais: utils.Ptr("ESPAÑA")},
+		{IATA: "GRU", Ciudad: "Sao Paulo", Aeropuerto: "Guarulhos", AmbitoCodigo: "INTERNACIONAL", Pais: utils.Ptr("BRASIL")},
+		{IATA: "BOG", Ciudad: "Bogotá", Aeropuerto: "El Dorado", AmbitoCodigo: "INTERNACIONAL", Pais: utils.Ptr("COLOMBIA")},
+		{IATA: "LIM", Ciudad: "Lima", Aeropuerto: "Jorge Chávez", AmbitoCodigo: "INTERNACIONAL", Pais: utils.Ptr("PERU")},
+		{IATA: "PTY", Ciudad: "Panamá", Aeropuerto: "Tocumen", AmbitoCodigo: "INTERNACIONAL", Pais: utils.Ptr("PANAMA")},
+		{IATA: "MEX", Ciudad: "Ciudad de México", Aeropuerto: "Benito Juárez", AmbitoCodigo: "INTERNACIONAL", Pais: utils.Ptr("MEXICO")},
+		{IATA: "SCL", Ciudad: "Santiago", Aeropuerto: "Arturo Merino Benítez", AmbitoCodigo: "INTERNACIONAL", Pais: utils.Ptr("CHILE")},
 	}
 
 	for _, d := range defaults {
@@ -122,7 +124,7 @@ func seedDestinos() {
 					IATA:         item.CodigoIata,
 					Ciudad:       item.CityName,
 					Aeropuerto:   item.Name,
-					Pais:         item.CountryName,
+					Pais:         &item.CountryName,
 					AmbitoCodigo: ambito,
 					Estado:       true,
 				}
@@ -282,7 +284,7 @@ func seedCatalogosViaje() {
 func seedRolesAndPermissions() {
 	roles := []models.Rol{
 		{Codigo: "ADMIN", Nombre: "Administrador del Sistema"},
-		{Codigo: "TECNICO", Nombre: "Técnico de Sistema"},
+		{Codigo: "RESPONSABLE", Nombre: "Responsable de Pasajes"},
 		{Codigo: "SENADOR", Nombre: "Honorable Senador"},
 		{Codigo: "FUNCIONARIO", Nombre: "Funcionario Administrativo"},
 	}
@@ -328,7 +330,7 @@ func seedRolesAndPermissions() {
 		permisoMap["descargo:ver"],
 	}
 
-	rolTecnicoPermisos := []*models.Permiso{
+	rolResponsablePermisos := []*models.Permiso{
 		permisoMap["solicitud:crear"],
 		permisoMap["solicitud:ver_propias"],
 		permisoMap["solicitud:ver_todas"],
@@ -344,7 +346,7 @@ func seedRolesAndPermissions() {
 
 	assignPermsToRole(roleMap["FUNCIONARIO"], rolBasicoPermisos)
 	assignPermsToRole(roleMap["SENADOR"], rolBasicoPermisos)
-	assignPermsToRole(roleMap["TECNICO"], rolTecnicoPermisos)
+	assignPermsToRole(roleMap["RESPONSABLE"], rolResponsablePermisos)
 	assignPermsToRole(roleMap["ADMIN"], allPermisos)
 
 	fmt.Println("Roles y Permisos sincronizados correctamente.")
@@ -372,12 +374,24 @@ func seedEstadosPasaje() {
 		{Codigo: "DEVUELTO", Nombre: "Devuelto", Color: "red", Descripcion: "Pasaje devuelto o cancelado"},
 		{Codigo: "USADO", Nombre: "Usado", Color: "blue", Descripcion: "Pasaje utilizado por el viajero"},
 		{Codigo: "ANULADO", Nombre: "Anulado", Color: "gray", Descripcion: "Pasaje anulado por error u otros motivos"},
-		{Codigo: "NO SHOW", Nombre: "No Show", Color: "orange", Descripcion: "El pasajero no se presentó"},
+		{Codigo: "NO_SE_PRESENTO", Nombre: "No se presentó", Color: "orange", Descripcion: "El pasajero no se presentó al vuelo"},
 		{Codigo: "VALIDANDO_USO", Nombre: "Uso por Validar", Color: "yellow", Descripcion: "Pase a bordo subido, pendiente de validación"},
 		{Codigo: "USO_RECHAZADO", Nombre: "Uso Rechazado", Color: "red", Descripcion: "Pase a bordo rechazado, debe subirse nuevamente"},
 	}
 
 	for _, e := range estados {
 		configs.DB.Where("codigo = ?", e.Codigo).FirstOrCreate(&e)
+	}
+}
+
+func seedGeneros() {
+	fmt.Println("Sincronizando Géneros...")
+	generos := []models.Genero{
+		{Codigo: "F", Nombre: "Femenino"},
+		{Codigo: "M", Nombre: "Masculino"},
+	}
+
+	for _, g := range generos {
+		configs.DB.Where("codigo = ?", g.Codigo).FirstOrCreate(&g)
 	}
 }

@@ -24,8 +24,11 @@ func (r *SolicitudRepository) WithContext(ctx context.Context) *SolicitudReposit
 	return &SolicitudRepository{db: r.db.WithContext(ctx)}
 }
 
-func (r *SolicitudRepository) GetDB() *gorm.DB {
-	return r.db
+func (r *SolicitudRepository) RunTransaction(fn func(repo *SolicitudRepository, tx *gorm.DB) error) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		txRepo := r.WithTx(tx)
+		return fn(txRepo, tx)
+	})
 }
 
 func (r *SolicitudRepository) Create(solicitud *models.Solicitud) error {

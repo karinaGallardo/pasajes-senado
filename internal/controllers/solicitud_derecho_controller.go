@@ -75,7 +75,7 @@ func (ctrl *SolicitudDerechoController) Create(c *gin.Context) {
 	canCreate := false
 	if currentUser.ID == targetUser.ID {
 		canCreate = true
-	} else if currentUser.Rol.Codigo == "ADMIN" || currentUser.Rol.Codigo == "TECNICO" {
+	} else if currentUser.IsAdminOrResponsable() {
 		canCreate = true
 	} else if targetUser.EncargadoID != nil && *targetUser.EncargadoID == currentUser.ID {
 		canCreate = true
@@ -95,27 +95,7 @@ func (ctrl *SolicitudDerechoController) Create(c *gin.Context) {
 
 	tipoSolicitud, ambitoNac, _ := ctrl.tipoSolicitudService.GetByCodigoAndAmbito(c.Request.Context(), "USO_CUPO", "NACIONAL")
 
-	var weekDays []map[string]string
-	dayNames := map[string]string{
-		"Monday":    "Lun",
-		"Tuesday":   "Mar",
-		"Wednesday": "Mie",
-		"Thursday":  "Jue",
-		"Friday":    "Vie",
-		"Saturday":  "Sab",
-		"Sunday":    "Dom",
-	}
-
-	if voucher.FechaDesde != nil && voucher.FechaHasta != nil {
-		for d := *voucher.FechaDesde; !d.After(*voucher.FechaHasta); d = d.AddDate(0, 0, 1) {
-			esName := dayNames[d.Weekday().String()]
-			weekDays = append(weekDays, map[string]string{
-				"date":   d.Format("2006-01-02"),
-				"name":   esName,
-				"dayNum": d.Format("02"),
-			})
-		}
-	}
+	weekDays := ctrl.cupoService.GetVoucherWeekDays(voucher)
 
 	origenIATA := targetUser.GetOrigenIATA()
 
@@ -167,61 +147,21 @@ func (ctrl *SolicitudDerechoController) Store(c *gin.Context) {
 		return
 	}
 
-	layout := "2006-01-02T15:04"
-	var fechaIda *time.Time
-	if t, err := time.Parse(layout, req.FechaIda); err == nil {
-		fechaIda = &t
-	}
-
-	var fechaVuelta *time.Time
-	if req.FechaVuelta != "" {
-		if t, err := time.Parse(layout, req.FechaVuelta); err == nil {
-			fechaVuelta = &t
-		}
-	}
-
 	usuario := appcontext.CurrentUser(c)
 
-	var realSolicitanteID string
-	if req.TargetUserID != "" {
-		realSolicitanteID = req.TargetUserID
-	} else {
-		realSolicitanteID = usuario.ID
-	}
-
-	itinID := req.TipoItinerarioID
-	if itinID == "" {
-		itin, _ := ctrl.tipoItinerarioService.GetByCodigo(c.Request.Context(), "IDA_VUELTA")
-		if itin != nil {
-			itinID = itin.ID
-		}
-	}
-
-	nuevaSolicitud := models.Solicitud{
-		UsuarioID:         realSolicitanteID,
-		TipoSolicitudID:   req.TipoSolicitudID,
-		AmbitoViajeID:     req.AmbitoViajeID,
-		TipoItinerarioID:  itinID,
-		OrigenIATA:        req.OrigenIATA,
-		DestinoIATA:       req.DestinoIATA,
-		FechaIda:          fechaIda,
-		FechaVuelta:       fechaVuelta,
-		Motivo:            req.Motivo,
-		AerolineaSugerida: req.AerolineaSugerida,
-	}
-
-	if err := ctrl.solicitudService.Create(c.Request.Context(), &nuevaSolicitud, usuario, req.VoucherID); err != nil {
+	solicitud, err := ctrl.solicitudService.Create(c.Request.Context(), req, usuario)
+	if err != nil {
 		c.String(http.StatusInternalServerError, "Error creando solicitud: "+err.Error())
 		return
 	}
 
 	utils.SetSuccessMessage(c, "Solicitud creada correctamente")
-	c.Redirect(http.StatusFound, fmt.Sprintf("/solicitudes/derecho/%s/detalle", nuevaSolicitud.ID))
+	c.Redirect(http.StatusFound, fmt.Sprintf("/solicitudes/derecho/%s/detalle", solicitud.ID))
 }
 
 func (ctrl *SolicitudDerechoController) Edit(c *gin.Context) {
 	id := c.Param("id")
-	solicitud, err := ctrl.solicitudService.FindByID(c.Request.Context(), id)
+	solicitud, err := ctrl.solicitudService.GetByID(c.Request.Context(), id)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Error: "+err.Error())
 		return
@@ -234,7 +174,7 @@ func (ctrl *SolicitudDerechoController) Edit(c *gin.Context) {
 
 	currentUser := appcontext.CurrentUser(c)
 
-	if solicitud.UsuarioID != currentUser.ID && currentUser.Rol.Codigo != "ADMIN" {
+	if !currentUser.CanEditSolicitud(*solicitud) {
 		c.String(http.StatusForbidden, "No tiene permisos para editar esta solicitud")
 		return
 	}
@@ -352,7 +292,7 @@ func (ctrl *SolicitudDerechoController) Update(c *gin.Context) {
 		}
 	}
 
-	solicitud, err := ctrl.solicitudService.FindByID(c.Request.Context(), id)
+	solicitud, err := ctrl.solicitudService.GetByID(c.Request.Context(), id)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Error: "+err.Error())
 		return
@@ -385,7 +325,7 @@ func (ctrl *SolicitudDerechoController) Update(c *gin.Context) {
 
 func (ctrl *SolicitudDerechoController) Show(c *gin.Context) {
 	id := c.Param("id")
-	solicitud, err := ctrl.solicitudService.FindByID(c.Request.Context(), id)
+	solicitud, err := ctrl.solicitudService.GetByID(c.Request.Context(), id)
 
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Error retrieving solicitud: "+err.Error())
@@ -454,6 +394,11 @@ func (ctrl *SolicitudDerechoController) Show(c *gin.Context) {
 
 func (ctrl *SolicitudDerechoController) Approve(c *gin.Context) {
 	id := c.Param("id")
+	currentUser := appcontext.CurrentUser(c)
+	if currentUser == nil || !currentUser.CanApproveReject() {
+		c.String(http.StatusForbidden, "No tiene permisos para realizar esta acción")
+		return
+	}
 	if err := ctrl.solicitudService.Approve(c.Request.Context(), id); err != nil {
 		c.String(http.StatusInternalServerError, "Error al aprobar la solicitud: "+err.Error())
 		return
@@ -464,6 +409,11 @@ func (ctrl *SolicitudDerechoController) Approve(c *gin.Context) {
 
 func (ctrl *SolicitudDerechoController) Reject(c *gin.Context) {
 	id := c.Param("id")
+	currentUser := appcontext.CurrentUser(c)
+	if currentUser == nil || !currentUser.CanApproveReject() {
+		c.String(http.StatusForbidden, "No tiene permisos para realizar esta acción")
+		return
+	}
 	if err := ctrl.solicitudService.Reject(c.Request.Context(), id); err != nil {
 		c.String(http.StatusInternalServerError, "Error al rechazar la solicitud: "+err.Error())
 		return
@@ -474,7 +424,7 @@ func (ctrl *SolicitudDerechoController) Reject(c *gin.Context) {
 
 func (ctrl *SolicitudDerechoController) Print(c *gin.Context) {
 	id := c.Param("id")
-	solicitud, err := ctrl.solicitudService.FindByID(c.Request.Context(), id)
+	solicitud, err := ctrl.solicitudService.GetByID(c.Request.Context(), id)
 
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Error retrieving solicitud: "+err.Error())
@@ -488,7 +438,7 @@ func (ctrl *SolicitudDerechoController) Print(c *gin.Context) {
 		return
 	}
 
-	personaView, errMongo := ctrl.peopleService.FindSenatorDataByCI(c.Request.Context(), solicitud.Usuario.CI)
+	personaView, errMongo := ctrl.peopleService.GetSenatorDataByCI(c.Request.Context(), solicitud.Usuario.CI)
 	if errMongo != nil {
 		personaView = nil
 	}
@@ -502,7 +452,7 @@ func (ctrl *SolicitudDerechoController) Print(c *gin.Context) {
 
 func (ctrl *SolicitudDerechoController) Destroy(c *gin.Context) {
 	id := c.Param("id")
-	solicitud, err := ctrl.solicitudService.FindByID(c.Request.Context(), id)
+	solicitud, err := ctrl.solicitudService.GetByID(c.Request.Context(), id)
 	if err != nil {
 		c.String(http.StatusNotFound, "Solicitud no encontrada")
 		return

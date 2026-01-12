@@ -25,8 +25,8 @@ func (r *AsignacionVoucherRepository) WithContext(ctx context.Context) *Asignaci
 	return &AsignacionVoucherRepository{db: r.db.WithContext(ctx)}
 }
 
-func (r *AsignacionVoucherRepository) GetDB() *gorm.DB {
-	return r.db
+func (r *AsignacionVoucherRepository) CreateInBatches(vouchers []models.AsignacionVoucher, batchSize int) error {
+	return r.db.CreateInBatches(vouchers, batchSize).Error
 }
 
 func (r *AsignacionVoucherRepository) Create(voucher *models.AsignacionVoucher) error {

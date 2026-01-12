@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"net/http"
+	"sistema-pasajes/internal/dtos"
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/services"
 	"sistema-pasajes/internal/utils"
@@ -28,13 +29,18 @@ func (ctrl *OrganigramaController) IndexCargos(c *gin.Context) {
 }
 
 func (ctrl *OrganigramaController) StoreCargo(c *gin.Context) {
-	codigo, _ := strconv.Atoi(c.PostForm("codigo"))
-	descripcion := c.PostForm("descripcion")
-	categoria, _ := strconv.Atoi(c.PostForm("categoria"))
+	var req dtos.CreateCargoRequest
+	if err := c.ShouldBind(&req); err != nil {
+		c.Redirect(http.StatusFound, "/admin/cargos")
+		return
+	}
+
+	codigo, _ := strconv.Atoi(req.Codigo)
+	categoria, _ := strconv.Atoi(req.Categoria)
 
 	cargo := models.Cargo{
 		Codigo:      codigo,
-		Descripcion: descripcion,
+		Descripcion: req.Descripcion,
 		Categoria:   categoria,
 	}
 
@@ -57,15 +63,19 @@ func (ctrl *OrganigramaController) IndexOficinas(c *gin.Context) {
 }
 
 func (ctrl *OrganigramaController) StoreOficina(c *gin.Context) {
-	codigo, _ := strconv.Atoi(c.PostForm("codigo"))
-	detalle := c.PostForm("detalle")
-	area := c.PostForm("area")
-	presupuesto, _ := strconv.ParseFloat(c.PostForm("presupuesto"), 64)
+	var req dtos.CreateOficinaRequest
+	if err := c.ShouldBind(&req); err != nil {
+		c.Redirect(http.StatusFound, "/admin/oficinas")
+		return
+	}
+
+	codigo, _ := strconv.Atoi(req.Codigo)
+	presupuesto, _ := strconv.ParseFloat(req.Presupuesto, 64)
 
 	oficina := models.Oficina{
 		Codigo:      codigo,
-		Detalle:     detalle,
-		Area:        area,
+		Detalle:     req.Detalle,
+		Area:        req.Area,
 		Presupuesto: presupuesto,
 	}
 

@@ -3,20 +3,15 @@ package services
 import (
 	"context"
 	"errors"
+	"sistema-pasajes/internal/dtos"
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
 	"sistema-pasajes/internal/utils"
 	"strings"
+	"time"
 
 	"gorm.io/gorm"
 )
-
-type SolicitudService struct {
-	repo              *repositories.SolicitudRepository
-	tipoSolicitudRepo *repositories.TipoSolicitudRepository
-	usuarioRepo       *repositories.UsuarioRepository
-	voucherRepo       *repositories.AsignacionVoucherRepository
-}
 
 func NewSolicitudService() *SolicitudService {
 	return &SolicitudService{
@@ -24,48 +19,96 @@ func NewSolicitudService() *SolicitudService {
 		tipoSolicitudRepo: repositories.NewTipoSolicitudRepository(),
 		usuarioRepo:       repositories.NewUsuarioRepository(),
 		voucherRepo:       repositories.NewAsignacionVoucherRepository(),
+		tipoItinRepo:      repositories.NewTipoItinerarioRepository(),
 	}
 }
 
-func (s *SolicitudService) Create(ctx context.Context, solicitud *models.Solicitud, usuario *models.Usuario, voucherID string) error {
+type SolicitudService struct {
+	repo              *repositories.SolicitudRepository
+	tipoSolicitudRepo *repositories.TipoSolicitudRepository
+	usuarioRepo       *repositories.UsuarioRepository
+	voucherRepo       *repositories.AsignacionVoucherRepository
+	tipoItinRepo      *repositories.TipoItinerarioRepository
+}
+
+func (s *SolicitudService) Create(ctx context.Context, req dtos.CreateSolicitudRequest, currentUser *models.Usuario) (*models.Solicitud, error) {
+	layout := "2006-01-02T15:04"
+	var fechaIda *time.Time
+	if t, err := time.Parse(layout, req.FechaIda); err == nil {
+		fechaIda = &t
+	}
+
+	var fechaVuelta *time.Time
+	if req.FechaVuelta != "" {
+		if t, err := time.Parse(layout, req.FechaVuelta); err == nil {
+			fechaVuelta = &t
+		}
+	}
+
+	realSolicitanteID := req.TargetUserID
+	if realSolicitanteID == "" {
+		realSolicitanteID = currentUser.ID
+	}
+
+	itinID := req.TipoItinerarioID
+	if itinID == "" {
+		if itin, _ := s.tipoItinRepo.WithContext(ctx).FindByCodigo("IDA_VUELTA"); itin != nil {
+			itinID = itin.ID
+		}
+	}
+
+	solicitud := &models.Solicitud{
+		BaseModel:         models.BaseModel{CreatedBy: &currentUser.ID},
+		UsuarioID:         realSolicitanteID,
+		TipoSolicitudID:   req.TipoSolicitudID,
+		AmbitoViajeID:     req.AmbitoViajeID,
+		TipoItinerarioID:  itinID,
+		OrigenIATA:        req.OrigenIATA,
+		DestinoIATA:       req.DestinoIATA,
+		FechaIda:          fechaIda,
+		FechaVuelta:       fechaVuelta,
+		Motivo:            req.Motivo,
+		AerolineaSugerida: req.AerolineaSugerida,
+	}
+
+	if req.VoucherID != "" {
+		solicitud.VoucherID = &req.VoucherID
+	}
+
 	tipoSolicitud, err := s.tipoSolicitudRepo.WithContext(ctx).FindByID(solicitud.TipoSolicitudID)
 	if err != nil {
-		return errors.New("tipo de solicitud inválido o no encontrado")
+		return nil, errors.New("tipo de solicitud inválido o no encontrado")
 	}
 
 	if tipoSolicitud.ConceptoViaje != nil && tipoSolicitud.ConceptoViaje.Codigo == "DERECHO" {
 		beneficiary, err := s.usuarioRepo.WithContext(ctx).FindByID(solicitud.UsuarioID)
 		if err != nil {
-			return errors.New("usuario beneficiario no encontrado")
+			return nil, errors.New("usuario beneficiario no encontrado")
 		}
 
-		esSenador := strings.Contains(beneficiary.Tipo, "SENADOR")
-		if !esSenador {
-			return errors.New("solo los Senadores pueden recibir pasajes por derecho")
+		if !strings.Contains(beneficiary.Tipo, "SENADOR") {
+			return nil, errors.New("solo los Senadores pueden recibir pasajes por derecho")
 		}
 
 		canCreate := false
-		if usuario.ID == beneficiary.ID {
-			canCreate = true
-		} else if usuario.RolCodigo != nil && (*usuario.RolCodigo == "ADMIN" || *usuario.RolCodigo == "TECNICO") {
-			canCreate = true
-		} else if beneficiary.EncargadoID != nil && *beneficiary.EncargadoID == usuario.ID {
+		if currentUser.ID == beneficiary.ID ||
+			currentUser.IsAdminOrResponsable() ||
+			(beneficiary.EncargadoID != nil && *beneficiary.EncargadoID == currentUser.ID) {
 			canCreate = true
 		}
 
 		if !canCreate {
-			return errors.New("no tiene autorización para emitir solicitudes de pasajes para este Senador")
+			return nil, errors.New("no tiene autorización para emitir solicitudes de pasajes para este Senador")
 		}
 	}
 
-	estadoSolicitado := "SOLICITADO"
-	solicitud.EstadoSolicitudCodigo = &estadoSolicitado
+	solicitud.EstadoSolicitudCodigo = utils.Ptr("SOLICITADO")
 
 	var codigo string
 	for range 10 {
 		generated, err := utils.GenerateCode(5)
 		if err != nil {
-			return errors.New("error generando código solicitud")
+			return nil, errors.New("error generando código solicitud")
 		}
 		exists, _ := s.repo.WithContext(ctx).ExistsByCodigo(generated)
 		if !exists {
@@ -74,32 +117,27 @@ func (s *SolicitudService) Create(ctx context.Context, solicitud *models.Solicit
 		}
 	}
 	if codigo == "" {
-		return errors.New("no se pudo generar un código único después de varios intentos")
+		return nil, errors.New("no se pudo generar un código único después de varios intentos")
 	}
 	solicitud.Codigo = codigo
 
-	if voucherID != "" {
-		solicitud.VoucherID = &voucherID
-	}
-
 	if err := s.repo.WithContext(ctx).Create(solicitud); err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return solicitud, nil
 }
 
-func (s *SolicitudService) FindAll(ctx context.Context) ([]models.Solicitud, error) {
+func (s *SolicitudService) GetAll(ctx context.Context) ([]models.Solicitud, error) {
 	return s.repo.WithContext(ctx).FindAll()
 }
 
-func (s *SolicitudService) FindByID(ctx context.Context, id string) (*models.Solicitud, error) {
+func (s *SolicitudService) GetByID(ctx context.Context, id string) (*models.Solicitud, error) {
 	return s.repo.WithContext(ctx).FindByID(id)
 }
 
 func (s *SolicitudService) Approve(ctx context.Context, id string) error {
-	return s.repo.WithContext(ctx).GetDB().Transaction(func(tx *gorm.DB) error {
-		repoTx := s.repo.WithTx(tx)
+	return s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
 		voucherRepoTx := s.voucherRepo.WithTx(tx)
 
 		solicitud, err := repoTx.FindByID(id)
@@ -107,16 +145,14 @@ func (s *SolicitudService) Approve(ctx context.Context, id string) error {
 			return err
 		}
 
-		estadoAprobado := "APROBADO"
-		if err := repoTx.UpdateStatus(id, estadoAprobado); err != nil {
+		if err := repoTx.UpdateStatus(id, "APROBADO"); err != nil {
 			return err
 		}
 
 		if solicitud.VoucherID != nil {
 			voucher, err := voucherRepoTx.FindByID(*solicitud.VoucherID)
 			if err == nil && voucher != nil {
-				estadoReservado := "RESERVADO"
-				voucher.EstadoVoucherCodigo = estadoReservado
+				voucher.EstadoVoucherCodigo = "RESERVADO"
 				if err := voucherRepoTx.Update(voucher); err != nil {
 					return err
 				}
@@ -128,8 +164,7 @@ func (s *SolicitudService) Approve(ctx context.Context, id string) error {
 }
 
 func (s *SolicitudService) Finalize(ctx context.Context, id string) error {
-	return s.repo.WithContext(ctx).GetDB().Transaction(func(tx *gorm.DB) error {
-		repoTx := s.repo.WithTx(tx)
+	return s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
 		voucherRepoTx := s.voucherRepo.WithTx(tx)
 
 		solicitud, err := repoTx.FindByID(id)
@@ -137,16 +172,14 @@ func (s *SolicitudService) Finalize(ctx context.Context, id string) error {
 			return err
 		}
 
-		estadoFinalizado := "FINALIZADO"
-		if err := repoTx.UpdateStatus(id, estadoFinalizado); err != nil {
+		if err := repoTx.UpdateStatus(id, "FINALIZADO"); err != nil {
 			return err
 		}
 
 		if solicitud.VoucherID != nil {
 			voucher, err := voucherRepoTx.FindByID(*solicitud.VoucherID)
 			if err == nil && voucher != nil {
-				estadoUsado := "USADO"
-				voucher.EstadoVoucherCodigo = estadoUsado
+				voucher.EstadoVoucherCodigo = "USADO"
 				if err := voucherRepoTx.Update(voucher); err != nil {
 					return err
 				}

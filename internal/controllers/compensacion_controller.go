@@ -3,6 +3,7 @@ package controllers
 import (
 	"fmt"
 	"net/http"
+	"sistema-pasajes/internal/dtos"
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/services"
 	"sistema-pasajes/internal/utils"
@@ -45,11 +46,16 @@ func (ctrl *CompensacionController) Create(c *gin.Context) {
 }
 
 func (ctrl *CompensacionController) Store(c *gin.Context) {
-	funcionarioID := c.PostForm("funcionario_id")
-	fechaInicio, _ := time.Parse("2006-01-02", c.PostForm("fecha_inicio"))
-	fechaFin, _ := time.Parse("2006-01-02", c.PostForm("fecha_fin"))
-	total, _ := strconv.ParseFloat(c.PostForm("total"), 64)
-	retencion, _ := strconv.ParseFloat(c.PostForm("retencion"), 64)
+	var req dtos.CreateCompensacionRequest
+	if err := c.ShouldBind(&req); err != nil {
+		c.String(http.StatusBadRequest, "Datos inválidos: "+err.Error())
+		return
+	}
+
+	fechaInicio, _ := time.Parse("2006-01-02", req.FechaInicio)
+	fechaFin, _ := time.Parse("2006-01-02", req.FechaFin)
+	total, _ := strconv.ParseFloat(req.Total, 64)
+	retencion, _ := strconv.ParseFloat(req.Retencion, 64)
 
 	const alphabet = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"
 	codeSuffix, _ := gonanoid.Generate(alphabet, 6)
@@ -57,16 +63,16 @@ func (ctrl *CompensacionController) Store(c *gin.Context) {
 
 	comp := models.Compensacion{
 		Codigo:          codigo,
-		Nombre:          c.PostForm("nombre_tramite"),
-		FuncionarioID:   funcionarioID,
+		Nombre:          req.NombreTramite,
+		FuncionarioID:   req.FuncionarioID,
 		FechaInicio:     fechaInicio,
 		FechaFin:        fechaFin,
-		MesCompensacion: c.PostForm("mes"),
+		MesCompensacion: req.Mes,
 		Estado:          "BORRADOR",
-		Glosa:           c.PostForm("glosa"),
+		Glosa:           req.Glosa,
 		Total:           total,
 		Retencion:       retencion,
-		Informe:         c.PostForm("informe"),
+		Informe:         req.Informe,
 	}
 
 	if err := ctrl.compService.Create(c.Request.Context(), &comp); err != nil {

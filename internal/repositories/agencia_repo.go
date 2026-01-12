@@ -43,7 +43,7 @@ func (r *AgenciaRepository) FindByID(id string) (*models.Agencia, error) {
 	return &a, err
 }
 
-func (r *AgenciaRepository) Save(a *models.Agencia) error {
+func (r *AgenciaRepository) Update(a *models.Agencia) error {
 	return r.db.Save(a).Error
 }
 

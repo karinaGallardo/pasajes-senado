@@ -3,13 +3,7 @@
 <div class="max-w-4xl mx-auto mt-8">
   <div class="flex justify-between items-center mb-6">
     <h1 class="text-2xl font-bold text-primary-800 flex items-center">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mr-2 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-      </svg>
+      <i class="ph ph-building text-3xl mr-2 text-primary-500"></i>
       Gestión de Oficinas
     </h1>
   </div>
@@ -65,20 +59,14 @@
               <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">{{ .Detalle }}</td>
               <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">{{ .Area }}</td>
               <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                <form
-                  action="/admin/oficinas/{{ .ID }}/delete"
-                  method="POST"
-                  @submit.prevent="window.dispatchEvent(new CustomEvent('open-confirm', { 
-                    detail: { 
-                      title: '¿Eliminar Oficina?', 
-                      message: '¿Está seguro de que desea eliminar la oficina \'{{ .Detalle }}\'? Esta acción no se puede deshacer.', 
-                      confirmText: 'Sí, Eliminar',
-                      isDanger: true,
-                      form: $el 
-                    } 
-                  }))">
-                  <button type="submit" class="text-danger-600 hover:text-danger-900">Eliminar</button>
-                </form>
+                <button
+                  hx-post="/admin/oficinas/{{ .ID }}/delete"
+                  hx-confirm="¿Está seguro de que desea eliminar la oficina '{{ .Detalle }}'?"
+                  hx-target="body"
+                  class="text-danger-600 hover:text-danger-900 transition-colors"
+                  title="Eliminar">
+                  <i class="ph ph-trash text-xl"></i>
+                </button>
               </td>
             </tr>
             {{ end }}

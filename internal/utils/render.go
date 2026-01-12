@@ -9,6 +9,7 @@ import (
 	csrf "github.com/utrack/gin-csrf"
 )
 
+// Render procesa plantillas HTML inyectando tokens CSRF, contexto del usuario, roles y mensajes flash.
 func Render(c *gin.Context, templateName string, data gin.H) {
 	if data == nil {
 		data = gin.H{}
@@ -24,12 +25,12 @@ func Render(c *gin.Context, templateName string, data gin.H) {
 			role = user.Rol.Codigo
 		}
 		data["IsAdmin"] = role == "ADMIN"
-		data["IsTecnico"] = role == "TECNICO"
+		data["IsResponsable"] = role == "RESPONSABLE"
 		data["IsUsuario"] = role == "USUARIO"
 		data["IsSenador"] = role == "SENADOR"
 		data["IsFuncionario"] = role == "FUNCIONARIO"
 
-		data["CanManageSystem"] = role == "ADMIN" || role == "TECNICO"
+		data["CanManageSystem"] = role == "ADMIN" || role == "RESPONSABLE"
 		data["CanManageUsers"] = role == "ADMIN"
 	}
 
@@ -48,12 +49,14 @@ func Render(c *gin.Context, templateName string, data gin.H) {
 	c.HTML(http.StatusOK, templateName, data)
 }
 
+// SetSuccessMessage registra un mensaje flash de éxito en la sesión actual.
 func SetSuccessMessage(c *gin.Context, message string) {
 	session := sessions.Default(c)
 	session.AddFlash(message, "success")
 	session.Save()
 }
 
+// SetErrorMessage registra un mensaje flash de error en la sesión actual.
 func SetErrorMessage(c *gin.Context, message string) {
 	session := sessions.Default(c)
 	session.AddFlash(message, "error")

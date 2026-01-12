@@ -24,8 +24,8 @@ func NewDashboardController() *DashboardController {
 }
 
 func (ctrl *DashboardController) Index(c *gin.Context) {
-	solicitudes, _ := ctrl.solicitudService.FindAll(c.Request.Context())
-	descargos, _ := ctrl.descargoService.FindAll(c.Request.Context())
+	solicitudes, _ := ctrl.solicitudService.GetAll(c.Request.Context())
+	descargos, _ := ctrl.descargoService.GetAll(c.Request.Context())
 
 	user := appcontext.CurrentUser(c)
 	var senadoresCalculados []models.Usuario

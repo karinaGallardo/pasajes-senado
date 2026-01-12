@@ -16,6 +16,6 @@ func NewPeopleService() *PeopleService {
 	}
 }
 
-func (s *PeopleService) FindSenatorDataByCI(ctx context.Context, ci string) (*models.MongoPersonaView, error) {
+func (s *PeopleService) GetSenatorDataByCI(ctx context.Context, ci string) (*models.MongoPersonaView, error) {
 	return s.repo.WithContext(ctx).FindSenatorDataByCI(ci)
 }

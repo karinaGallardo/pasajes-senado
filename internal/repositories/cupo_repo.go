@@ -25,8 +25,11 @@ func (r *CupoRepository) WithContext(ctx context.Context) *CupoRepository {
 	return &CupoRepository{db: r.db.WithContext(ctx)}
 }
 
-func (r *CupoRepository) GetDB() *gorm.DB {
-	return r.db
+func (r *CupoRepository) RunTransaction(fn func(repo *CupoRepository, tx *gorm.DB) error) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		txRepo := r.WithTx(tx)
+		return fn(txRepo, tx)
+	})
 }
 
 func (r *CupoRepository) Create(cupo *models.Cupo) error {

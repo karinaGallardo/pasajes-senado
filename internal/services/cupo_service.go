@@ -5,6 +5,7 @@ import (
 	"errors"
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
+	"sistema-pasajes/internal/utils"
 	"time"
 
 	"fmt"
@@ -93,26 +94,6 @@ func (s *CupoService) CalcularCupo(ctx context.Context, usuarioID string, fecha 
 	return info, nil
 }
 
-type WeekRange struct {
-	Inicio time.Time
-	Fin    time.Time
-}
-
-func (s *CupoService) GetWeeksInMonth(year int, month time.Month) []WeekRange {
-	t := time.Date(year, month, 1, 0, 0, 0, 0, time.Local)
-	lastDay := t.AddDate(0, 1, -1)
-
-	var weeks []WeekRange
-	for d := t; !d.After(lastDay); d = d.AddDate(0, 0, 1) {
-		if d.Weekday() == time.Monday {
-			monday := d
-			sunday := d.AddDate(0, 0, 6)
-			weeks = append(weeks, WeekRange{Inicio: monday, Fin: sunday})
-		}
-	}
-	return weeks
-}
-
 func (s *CupoService) EnsureUserVouchers(ctx context.Context, usuarioID string, gestion int, mes int) error {
 	user, err := s.userRepo.WithContext(ctx).FindByID(usuarioID)
 	if err != nil {
@@ -147,13 +128,13 @@ func (s *CupoService) GenerateVouchersForMonth(ctx context.Context, gestion int,
 }
 
 func (s *CupoService) generateVouchersForSenador(ctx context.Context, user *models.Usuario, gestion int, mes int) error {
-	return s.repo.WithContext(ctx).GetDB().Transaction(func(tx *gorm.DB) error {
-		return s.generateVouchersTx(s.repo.WithTx(tx), s.voucherRepo.WithTx(tx), user, gestion, mes)
+	return s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.CupoRepository, tx *gorm.DB) error {
+		return s.generateVouchersTx(repoTx, s.voucherRepo.WithTx(tx), user, gestion, mes)
 	})
 }
 
 func (s *CupoService) generateVouchersTx(cupoRepoTx *repositories.CupoRepository, voucherRepoTx *repositories.AsignacionVoucherRepository, user *models.Usuario, gestion, mes int) error {
-	weeksInfo := s.GetWeeksInMonth(gestion, time.Month(mes))
+	weeksInfo := utils.GetWeeksInMonth(gestion, time.Month(mes))
 	semanas := len(weeksInfo)
 	if semanas == 0 {
 		return fmt.Errorf("error calculando semanas para %d/%d", mes, gestion)
@@ -196,10 +177,8 @@ func (s *CupoService) generateVouchersTx(cupoRepoTx *repositories.CupoRepository
 
 			var startDate, endDate *time.Time
 			if i < len(weeksInfo) {
-				sDate := weeksInfo[i].Inicio
-				eDate := weeksInfo[i].Fin
-				startDate = &sDate
-				endDate = &eDate
+				startDate = &weeksInfo[i].Inicio
+				endDate = &weeksInfo[i].Fin
 			}
 
 			v := models.AsignacionVoucher{
@@ -216,7 +195,7 @@ func (s *CupoService) generateVouchersTx(cupoRepoTx *repositories.CupoRepository
 		}
 
 		if len(newVouchers) > 0 {
-			if err := voucherRepoTx.GetDB().CreateInBatches(newVouchers, 100).Error; err != nil {
+			if err := voucherRepoTx.CreateInBatches(newVouchers, 100); err != nil {
 				return err
 			}
 		}
@@ -235,11 +214,9 @@ func (s *CupoService) TransferirVoucher(ctx context.Context, voucherID string, d
 		return errors.New("el voucher no está disponible para transferencia (ya usado o transferido)")
 	}
 
-	now := time.Now()
-
 	voucher.EsTransferido = true
 	voucher.BeneficiarioID = &destinoID
-	voucher.FechaTransfer = &now
+	voucher.FechaTransfer = utils.Ptr(time.Now())
 	voucher.MotivoTransfer = motivo
 
 	return s.voucherRepo.WithContext(ctx).Update(voucher)
@@ -267,8 +244,7 @@ func (s *CupoService) GetCupo(ctx context.Context, usuarioID string, gestion, me
 }
 
 func (s *CupoService) IncrementarUso(ctx context.Context, usuarioID string, gestion, mes int) error {
-	return s.repo.WithContext(ctx).GetDB().Transaction(func(tx *gorm.DB) error {
-		cupoRepoTx := s.repo.WithTx(tx)
+	return s.repo.WithContext(ctx).RunTransaction(func(cupoRepoTx *repositories.CupoRepository, tx *gorm.DB) error {
 		voucherRepoTx := s.voucherRepo.WithTx(tx)
 
 		voucher, err := voucherRepoTx.FindAvailableByHolderAndPeriodo(usuarioID, gestion, mes)
@@ -286,8 +262,7 @@ func (s *CupoService) IncrementarUso(ctx context.Context, usuarioID string, gest
 }
 
 func (s *CupoService) RevertirUso(ctx context.Context, usuarioID string, gestion, mes int) error {
-	return s.repo.WithContext(ctx).GetDB().Transaction(func(tx *gorm.DB) error {
-		cupoRepoTx := s.repo.WithTx(tx)
+	return s.repo.WithContext(ctx).RunTransaction(func(cupoRepoTx *repositories.CupoRepository, tx *gorm.DB) error {
 		voucherRepoTx := s.voucherRepo.WithTx(tx)
 
 		vouchers, err := voucherRepoTx.FindByHolderAndPeriodo(usuarioID, gestion, mes)
@@ -371,4 +346,8 @@ func (s *CupoService) GetVouchersByUsuarioAndGestion(ctx context.Context, usuari
 
 func (s *CupoService) GetVoucherByID(ctx context.Context, id string) (*models.AsignacionVoucher, error) {
 	return s.voucherRepo.WithContext(ctx).FindByID(id)
+}
+
+func (s *CupoService) GetVoucherWeekDays(voucher *models.AsignacionVoucher) []map[string]string {
+	return utils.GetWeekDays(voucher.FechaDesde, voucher.FechaHasta)
 }

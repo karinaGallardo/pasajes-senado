@@ -42,6 +42,6 @@ func (r *DestinoRepository) Create(d *models.Destino) error {
 	return r.db.Create(d).Error
 }
 
-func (r *DestinoRepository) Save(d *models.Destino) error {
+func (r *DestinoRepository) Update(d *models.Destino) error {
 	return r.db.Save(d).Error
 }

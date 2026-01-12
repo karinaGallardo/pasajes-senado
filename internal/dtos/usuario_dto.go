@@ -5,3 +5,7 @@ type UpdateUsuarioRequest struct {
 	OrigenIATA  string `form:"origen"`
 	EncargadoID string `form:"encargado_id"`
 }
+
+type UpdateUserOriginRequest struct {
+	OrigenCode string `form:"origen_code" binding:"required"`
+}

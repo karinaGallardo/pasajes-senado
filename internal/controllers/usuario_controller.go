@@ -157,7 +157,7 @@ func (ctrl *UsuarioController) Update(c *gin.Context) {
 
 	isPrivileged := false
 
-	if currentUser.IsAdminOrTecnico() {
+	if currentUser.IsAdminOrResponsable() {
 		isPrivileged = true
 	} else if currentUser.ID == usuario.ID {
 		isPrivileged = true
@@ -211,9 +211,9 @@ func (ctrl *UsuarioController) Update(c *gin.Context) {
 
 func (ctrl *UsuarioController) UpdateOrigin(c *gin.Context) {
 	targetID := c.Param("id")
-	origenCode := c.PostForm("origen_code")
 
-	if origenCode == "" {
+	var req dtos.UpdateUserOriginRequest
+	if err := c.ShouldBind(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Debe seleccionar una ciudad"})
 		return
 	}
@@ -231,7 +231,7 @@ func (ctrl *UsuarioController) UpdateOrigin(c *gin.Context) {
 	}
 
 	isEncargado := targetUser.EncargadoID != nil && *targetUser.EncargadoID == currentUser.ID
-	isAdmin := currentUser.Rol != nil && currentUser.Rol.Codigo == "ADMIN"
+	isAdmin := currentUser.IsAdmin()
 	isSelf := targetUser.ID == currentUser.ID
 
 	if !isEncargado && !isAdmin && !isSelf {
@@ -239,7 +239,7 @@ func (ctrl *UsuarioController) UpdateOrigin(c *gin.Context) {
 		return
 	}
 
-	targetUser.OrigenIATA = &origenCode
+	targetUser.OrigenIATA = &req.OrigenCode
 	if err := ctrl.userService.Update(c.Request.Context(), targetUser); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al guardar: " + err.Error()})
 		return

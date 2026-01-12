@@ -57,13 +57,7 @@
           <div class="flex items-center relative">
             <div
               class="rounded-full transition duration-500 ease-in-out h-10 w-10 py-3 border-2 {{ if .Step1 }}bg-primary border-primary text-white{{ else }}border-neutral-300 text-neutral-500{{ end }} flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
+              <i class="ph ph-file-text text-lg"></i>
             </div>
             <div
               class="hidden sm:block absolute top-0 -ml-10 text-center mt-12 w-32 text-xs font-medium uppercase {{ if eq .Solicitud.EstadoSolicitud.Codigo `SOLICITADO`}}text-primary{{ else }}text-neutral-500{{ end }}">
@@ -77,9 +71,7 @@
           <div class="flex items-center relative">
             <div
               class="rounded-full transition duration-500 ease-in-out h-10 w-10 py-3 border-2 {{ if .Step2 }}bg-primary border-primary text-white{{ else }}border-neutral-300 text-neutral-500{{ end }} flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+              <i class="ph ph-check text-xl font-bold"></i>
             </div>
             <div
               class="hidden sm:block absolute top-0 -ml-10 text-center mt-12 w-32 text-xs font-medium uppercase {{ if eq .Solicitud.EstadoSolicitud.Codigo `APROBADO` }}text-primary{{ else }}text-neutral-500{{ end }}">
@@ -93,13 +85,7 @@
           <div class="flex items-center relative">
             <div
               class="rounded-full transition duration-500 ease-in-out h-10 w-10 py-3 border-2 {{ if .Step3 }}bg-primary border-primary text-white{{ else }}border-neutral-300 text-neutral-500{{ end }} flex items-center justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                  stroke-width="2"
-                  d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
-              </svg>
+              <i class="ph ph-flag-checkered text-xl"></i>
             </div>
             <div
               class="hidden sm:block absolute top-0 -ml-10 text-center mt-12 w-32 text-xs font-medium uppercase {{ if eq .Solicitud.EstadoSolicitud.Codigo `FINALIZADO` }}text-primary{{ else }}text-neutral-500{{ end }}">
@@ -160,28 +146,25 @@
 
           <div class="flex space-x-2">
             <!-- Workflow Actions -->
-            {{ if eq .Solicitud.EstadoSolicitud.Codigo "SOLICITADO" }} {{ if .CurrentUser.IsAdminOrTecnico }}
+            {{ if eq .Solicitud.EstadoSolicitud.Codigo "SOLICITADO" }} {{ if .CurrentUser.IsAdminOrResponsable }}
             <div class="flex space-x-2">
-              <form action="/solicitudes/derecho/{{ .Solicitud.ID }}/aprobar" method="POST" class="inline" x-data="{ loading: false }" @submit="loading = true">
-                <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
-                <button
-                  type="submit"
-                  :disabled="loading"
-                  class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-success-600 hover:bg-success-700 focus:outline-none disabled:opacity-50">
-                  <span x-show="!loading">Aprobar</span>
-                  <span x-show="loading">Procesando...</span>
-                </button>
-              </form>
-              <form action="/solicitudes/derecho/{{ .Solicitud.ID }}/rechazar" method="POST" class="inline" x-data="{ loading: false }" @submit="loading = true">
-                <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
-                <button
-                  type="submit"
-                  :disabled="loading"
-                  class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-danger-600 hover:bg-danger-700 focus:outline-none disabled:opacity-50">
-                  <span x-show="!loading">Rechazar</span>
-                  <span x-show="loading">Procesando...</span>
-                </button>
-              </form>
+              <button
+                hx-post="/solicitudes/derecho/{{ .Solicitud.ID }}/aprobar"
+                hx-confirm="¿Está seguro de que desea APROBAR esta solicitud?"
+                hx-target="body"
+                class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-success-600 hover:bg-success-700 focus:outline-none disabled:opacity-50 transition-colors">
+                <i class="ph ph-check-circle mr-2 text-lg"></i>
+                Aprobar
+              </button>
+
+              <button
+                hx-post="/solicitudes/derecho/{{ .Solicitud.ID }}/rechazar"
+                hx-confirm="¿Está seguro de que desea RECHAZAR esta solicitud?"
+                hx-target="body"
+                class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-danger-600 hover:bg-danger-700 focus:outline-none disabled:opacity-50 transition-colors">
+                <i class="ph ph-x-circle mr-2 text-lg"></i>
+                Rechazar
+              </button>
             </div>
             {{ end }} {{ end }}
 
@@ -207,12 +190,13 @@
         <div class="px-4 py-5 sm:px-6 flex justify-between items-center">
           <h3 class="text-lg leading-6 font-medium text-neutral-900">Pasajes Asignados</h3>
 
-          {{ if .CurrentUser.IsAdminOrTecnico }}
+          {{ if .CurrentUser.IsAdminOrResponsable }}
           <button
             hx-get="/solicitudes/{{ .Solicitud.ID }}/pasajes/nuevo"
             hx-target="#modal-container"
-            class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-white bg-secondary hover:bg-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary">
-            + Asignar Pasaje
+            class="inline-flex items-center px-2 py-1 border border-transparent text-xs leading-4 font-bold rounded-md text-white bg-secondary hover:bg-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary">
+            <i class="ph ph-plus mr-1 text-lg"></i>
+            Asignar Pasaje
           </button>
           {{ end }}
         </div>
@@ -313,7 +297,7 @@
                       class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50"
                       style="display: none">
                       <div class="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
-                        {{ if and $.CurrentUser.IsAdminOrTecnico (ne (deref .EstadoPasajeCodigo) "VALIDANDO_USO") }}
+                        {{ if and $.CurrentUser.IsAdminOrResponsable (ne (deref .EstadoPasajeCodigo) "VALIDANDO_USO") }}
                         <button
                           type="button"
                           hx-get="/pasajes/{{ .ID }}/editar"
@@ -334,7 +318,7 @@
                           role="menuitem">
                           {{ if eq (deref .EstadoPasajeCodigo) "USO_RECHAZADO" }}Subir de nuevo{{ else }}Marcar como Usado{{ end }}
                         </button>
-                        {{ end }} {{ if and $.CurrentUser.IsAdminOrTecnico (eq (deref .EstadoPasajeCodigo) "VALIDANDO_USO") }}
+                        {{ end }} {{ if and $.CurrentUser.IsAdminOrResponsable (eq (deref .EstadoPasajeCodigo) "VALIDANDO_USO") }}
                         <button
                           type="button"
                           @click="openMenu=false; $dispatch('pasaje-action', { action: 'validar_uso_ok', id: '{{.ID}}' })"
@@ -359,7 +343,7 @@
                           role="menuitem">
                           Cambiar Pase a Bordo
                         </button>
-                        {{ end }} {{ if and $.CurrentUser.IsAdminOrTecnico (ne (deref .EstadoPasajeCodigo) "VALIDANDO_USO") }}
+                        {{ end }} {{ if and $.CurrentUser.IsAdminOrResponsable (ne (deref .EstadoPasajeCodigo) "VALIDANDO_USO") }}
                         <button
                           type="button"
                           hx-get="/pasajes/{{ .ID }}/reprogramar"
@@ -369,7 +353,7 @@
                           role="menuitem">
                           Reprogramar
                         </button>
-                        {{ end }} {{ if and (or (eq $.CurrentUser.Rol.Codigo "ADMIN") (eq $.CurrentUser.Rol.Codigo "TECNICO")) (ne (deref .EstadoPasajeCodigo) "VALIDANDO_USO") }}
+                        {{ end }} {{ if and $.CurrentUser.IsAdminOrResponsable (ne (deref .EstadoPasajeCodigo) "VALIDANDO_USO") }}
                         <div class="border-t border-neutral-100"></div>
                         <button
                           type="button"

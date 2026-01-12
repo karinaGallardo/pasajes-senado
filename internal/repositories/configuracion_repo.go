@@ -33,6 +33,6 @@ func (r *ConfiguracionRepository) FindByClave(clave string) (*models.Configuraci
 	return &conf, err
 }
 
-func (r *ConfiguracionRepository) Save(conf *models.Configuracion) error {
+func (r *ConfiguracionRepository) Update(conf *models.Configuracion) error {
 	return r.db.Save(conf).Error
 }

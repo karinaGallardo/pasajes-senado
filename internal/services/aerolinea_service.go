@@ -36,24 +36,16 @@ func (s *AerolineaService) GetAll(ctx context.Context) ([]models.Aerolinea, erro
 	return s.repo.WithContext(ctx).FindAll()
 }
 
-func (s *AerolineaService) FindByID(ctx context.Context, id string) (*models.Aerolinea, error) {
+func (s *AerolineaService) GetByID(ctx context.Context, id string) (*models.Aerolinea, error) {
 	return s.repo.WithContext(ctx).FindByID(id)
 }
 
-func (s *AerolineaService) Create(ctx context.Context, nombre string, estado bool) (*models.Aerolinea, error) {
-	aereo := &models.Aerolinea{Nombre: nombre, Estado: estado}
-	err := s.repo.WithContext(ctx).Create(aereo)
-	return aereo, err
+func (s *AerolineaService) Create(ctx context.Context, aerolinea *models.Aerolinea) error {
+	return s.repo.WithContext(ctx).Create(aerolinea)
 }
 
-func (s *AerolineaService) Update(ctx context.Context, id string, nombre string, estado bool) error {
-	a, err := s.repo.WithContext(ctx).FindByID(id)
-	if err != nil {
-		return err
-	}
-	a.Nombre = nombre
-	a.Estado = estado
-	return s.repo.WithContext(ctx).Save(a)
+func (s *AerolineaService) Update(ctx context.Context, aerolinea *models.Aerolinea) error {
+	return s.repo.WithContext(ctx).Update(aerolinea)
 }
 
 func (s *AerolineaService) Toggle(ctx context.Context, id string) error {
@@ -62,7 +54,7 @@ func (s *AerolineaService) Toggle(ctx context.Context, id string) error {
 		return err
 	}
 	a.Estado = !a.Estado
-	return s.repo.WithContext(ctx).Save(a)
+	return s.repo.WithContext(ctx).Update(a)
 }
 
 func (s *AerolineaService) Delete(ctx context.Context, id string) error {

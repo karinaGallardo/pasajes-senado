@@ -85,24 +85,24 @@ func (u *Usuario) IsAdmin() bool {
 	return u.RolCodigo != nil && *u.RolCodigo == "ADMIN"
 }
 
-func (u *Usuario) IsTecnico() bool {
-	return u.RolCodigo != nil && *u.RolCodigo == "TECNICO"
+func (u *Usuario) IsResponsable() bool {
+	return u.RolCodigo != nil && *u.RolCodigo == "RESPONSABLE"
 }
 
 func (u *Usuario) IsSenador() bool {
 	return u.RolCodigo != nil && *u.RolCodigo == "SENADOR"
 }
 
-func (u *Usuario) IsAdminOrTecnico() bool {
-	return u.IsAdmin() || u.IsTecnico()
+func (u *Usuario) IsAdminOrResponsable() bool {
+	return u.IsAdmin() || u.IsResponsable()
 }
 
 func (u *Usuario) CanManagePasajes(s Solicitud) bool {
-	return u.IsAdminOrTecnico()
+	return u.IsAdminOrResponsable()
 }
 
 func (u *Usuario) CanMarkUsado(s Solicitud) bool {
-	if u.IsAdminOrTecnico() {
+	if u.IsAdminOrResponsable() {
 		return true
 	}
 
@@ -138,11 +138,11 @@ func (u *Usuario) CanEditSolicitud(s Solicitud) bool {
 }
 
 func (u *Usuario) CanApproveReject() bool {
-	return u.IsAdminOrTecnico()
+	return u.IsAdminOrResponsable()
 }
 
 func (u *Usuario) CanCreateSolicitudFor(targetUser *Usuario) bool {
-	if u.IsAdminOrTecnico() {
+	if u.IsAdminOrResponsable() {
 		return true
 	}
 

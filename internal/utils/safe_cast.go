@@ -2,7 +2,8 @@ package utils
 
 import "fmt"
 
-func GetString(val interface{}) string {
+// GetString castea un valor any a string de forma segura. Retorna "" si es nil.
+func GetString(val any) string {
 	if val == nil {
 		return ""
 	}

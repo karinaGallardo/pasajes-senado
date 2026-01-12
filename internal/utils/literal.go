@@ -5,6 +5,7 @@ import (
 	"math"
 )
 
+// NumeroALetras convierte un float64 a formato literal monetario (es).
 func NumeroALetras(numero float64) string {
 	entero := int64(math.Trunc(numero))
 	decimales := int(math.Round((numero - float64(entero)) * 100))
@@ -20,6 +21,7 @@ func NumeroALetras(numero float64) string {
 	return res
 }
 
+// ToText realiza el mapeo de enteros a su representación literal (es).
 func ToText(valor int64) string {
 	if valor == 0 {
 		return "CERO"
@@ -114,6 +116,7 @@ func ToText(valor int64) string {
 	return "NUMERO_MUY_GRANDE"
 }
 
+// DiasALetras convierte un float64 de días a formato literal (es).
 func DiasALetras(dias float64) string {
 	entero := int64(dias)
 	decimal := dias - float64(entero)

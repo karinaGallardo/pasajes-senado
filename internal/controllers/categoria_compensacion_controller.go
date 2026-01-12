@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"net/http"
+	"sistema-pasajes/internal/dtos"
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/services"
 	"sistema-pasajes/internal/utils"
@@ -28,22 +29,28 @@ func (ctrl *CategoriaCompensacionController) Index(c *gin.Context) {
 }
 
 func (ctrl *CategoriaCompensacionController) Store(c *gin.Context) {
-	dep := c.PostForm("departamento")
-	tipo := c.PostForm("tipo_senador")
-	monto, _ := strconv.ParseFloat(c.PostForm("monto"), 64)
+	var req dtos.CreateCategoriaCompensacionRequest
+	if err := c.ShouldBind(&req); err != nil {
+		c.Redirect(http.StatusFound, "/admin/compensaciones/categorias")
+		return
+	}
+
+	dep := req.Departamento
+	tipo := req.TipoSenador
+	monto, _ := strconv.ParseFloat(req.Monto, 64)
 
 	if dep != "" && tipo != "" && monto > 0 {
-		existing, _ := ctrl.service.FindCategoriaByDepartamentoAndTipo(c.Request.Context(), dep, tipo)
+		existing, _ := ctrl.service.GetCategoriaByDepartamentoAndTipo(c.Request.Context(), dep, tipo)
 		if existing.ID != "" {
 			existing.Monto = monto
-			ctrl.service.SaveCategoria(c.Request.Context(), existing)
+			ctrl.service.UpdateCategoria(c.Request.Context(), existing)
 		} else {
 			cat := models.CategoriaCompensacion{
 				Departamento: dep,
 				TipoSenador:  tipo,
 				Monto:        monto,
 			}
-			err := ctrl.service.SaveCategoria(c.Request.Context(), &cat)
+			err := ctrl.service.CreateCategoria(c.Request.Context(), &cat)
 			if err != nil {
 				// log.Printf("Error create cat comp: %v", err)
 			}

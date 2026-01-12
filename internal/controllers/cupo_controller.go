@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"sistema-pasajes/internal/appcontext"
+	"sistema-pasajes/internal/dtos"
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/services"
 	"sistema-pasajes/internal/utils"
@@ -61,12 +62,15 @@ func (ctrl *CupoController) Index(c *gin.Context) {
 }
 
 func (ctrl *CupoController) Generar(c *gin.Context) {
-	now := time.Now()
-	gestionStr := c.PostForm("gestion")
-	mesStr := c.PostForm("mes")
+	var req dtos.GenerarCupoRequest
+	if err := c.ShouldBind(&req); err != nil {
+		c.Redirect(http.StatusFound, "/admin/cupos")
+		return
+	}
 
-	gestion, _ := strconv.Atoi(gestionStr)
-	mes, _ := strconv.Atoi(mesStr)
+	now := time.Now()
+	gestion, _ := strconv.Atoi(req.Gestion)
+	mes, _ := strconv.Atoi(req.Mes)
 
 	if gestion == 0 {
 		gestion = now.Year()
@@ -84,28 +88,30 @@ func (ctrl *CupoController) Generar(c *gin.Context) {
 }
 
 func (ctrl *CupoController) Transferir(c *gin.Context) {
-	voucherID := c.PostForm("voucher_id")
-	destinoID := c.PostForm("destino_id")
-	motivo := c.PostForm("motivo")
+	var req dtos.TransferirVoucherRequest
+	if err := c.ShouldBind(&req); err != nil {
+		c.Redirect(http.StatusFound, "/admin/cupos")
+		return
+	}
 
-	gestion := c.PostForm("gestion")
-	mes := c.PostForm("mes")
-
-	err := ctrl.service.TransferirVoucher(c.Request.Context(), voucherID, destinoID, motivo)
+	err := ctrl.service.TransferirVoucher(c.Request.Context(), req.VoucherID, req.DestinoID, req.Motivo)
 	if err != nil {
 		// log.Printf("Error transfiriendo voucher: %v\n", err)
 	}
 
-	c.Redirect(http.StatusFound, fmt.Sprintf("/admin/cupos?gestion=%s&mes=%s", gestion, mes))
+	c.Redirect(http.StatusFound, fmt.Sprintf("/admin/cupos?gestion=%s&mes=%s", req.Gestion, req.Mes))
 }
 
 func (ctrl *CupoController) Reset(c *gin.Context) {
-	now := time.Now()
-	gestionStr := c.PostForm("gestion")
-	mesStr := c.PostForm("mes")
+	var req dtos.ResetCupoRequest
+	if err := c.ShouldBind(&req); err != nil {
+		c.Redirect(http.StatusFound, "/admin/cupos")
+		return
+	}
 
-	gestion, _ := strconv.Atoi(gestionStr)
-	mes, _ := strconv.Atoi(mesStr)
+	now := time.Now()
+	gestion, _ := strconv.Atoi(req.Gestion)
+	mes, _ := strconv.Atoi(req.Mes)
 
 	if gestion == 0 {
 		gestion = now.Year()

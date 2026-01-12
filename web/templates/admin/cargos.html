@@ -3,13 +3,7 @@
 <div class="max-w-4xl mx-auto mt-8">
   <div class="flex justify-between items-center mb-6">
     <h1 class="text-2xl font-bold text-primary-800 flex items-center">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mr-2 text-primary-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path
-          stroke-linecap="round"
-          stroke-linejoin="round"
-          stroke-width="2"
-          d="M21 13.255A23.931 23.931 0 0112 15c-3.183 0-6.22-.62-9-1.745M16 6V4a2 2 0 00-2-2h-4a2 2 0 00-2 2v2m4 6h.01M5 20h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-      </svg>
+      <i class="ph ph-briefcase text-3xl mr-2 text-primary-500"></i>
       Gestión de Cargos
     </h1>
   </div>
@@ -54,20 +48,14 @@
               <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">{{ .Codigo }}</td>
               <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">{{ .Descripcion }}</td>
               <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                <form
-                  action="/admin/cargos/{{ .ID }}/delete"
-                  method="POST"
-                  @submit.prevent="window.dispatchEvent(new CustomEvent('open-confirm', { 
-                    detail: { 
-                      title: '¿Eliminar Cargo?', 
-                      message: '¿Está seguro de que desea eliminar el cargo \'{{ .Descripcion }}\'? Esta acción no se puede deshacer.', 
-                      confirmText: 'Sí, Eliminar',
-                      isDanger: true,
-                      form: $el 
-                    } 
-                  }))">
-                  <button type="submit" class="text-danger-600 hover:text-danger-900">Eliminar</button>
-                </form>
+                <button
+                  hx-post="/admin/cargos/{{ .ID }}/delete"
+                  hx-confirm="¿Está seguro de que desea eliminar el cargo '{{ .Descripcion }}'?"
+                  hx-target="body"
+                  class="text-danger-600 hover:text-danger-900 transition-colors"
+                  title="Eliminar">
+                  <i class="ph ph-trash text-xl"></i>
+                </button>
               </td>
             </tr>
             {{ end }}

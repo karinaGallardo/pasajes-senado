@@ -43,7 +43,7 @@ func (r *AerolineaRepository) FindByID(id string) (*models.Aerolinea, error) {
 	return &a, err
 }
 
-func (r *AerolineaRepository) Save(a *models.Aerolinea) error {
+func (r *AerolineaRepository) Update(a *models.Aerolinea) error {
 	return r.db.Save(a).Error
 }
 

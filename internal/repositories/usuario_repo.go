@@ -34,10 +34,6 @@ func (r *UsuarioRepository) WithContext(ctx context.Context) *UsuarioRepository 
 	return &UsuarioRepository{db: r.db.WithContext(ctx)}
 }
 
-func (r *UsuarioRepository) GetDB() *gorm.DB {
-	return r.db
-}
-
 func (r *UsuarioRepository) FindAll() ([]models.Usuario, error) {
 	var usuarios []models.Usuario
 	err := r.db.Preload("Rol").Preload("Genero").Order("created_at desc").Find(&usuarios).Error
@@ -183,4 +179,25 @@ func (r *UsuarioRepository) FindSuplenteByTitularID(titularID string) (*models.U
 	var usuario models.Usuario
 	err := r.db.Preload("Rol").Preload("Genero").Where("titular_id = ?", titularID).First(&usuario).Error
 	return &usuario, err
+}
+
+func (r *UsuarioRepository) Delete(usuario *models.Usuario) error {
+	return r.db.Delete(usuario).Error
+}
+
+func (r *UsuarioRepository) Restore(usuario *models.Usuario) error {
+	return r.db.Model(usuario).Unscoped().Update("deleted_at", nil).Error
+}
+
+func (r *UsuarioRepository) FindAllSenators() ([]models.Usuario, error) {
+	var usuarios []models.Usuario
+	err := r.db.Where("tipo IN ?", []string{"SENADOR_TITULAR", "SENADOR_SUPLENTE"}).Find(&usuarios).Error
+	return usuarios, err
+}
+
+func (r *UsuarioRepository) RunTransaction(fn func(repo *UsuarioRepository) error) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		txRepo := r.WithTx(tx)
+		return fn(txRepo)
+	})
 }

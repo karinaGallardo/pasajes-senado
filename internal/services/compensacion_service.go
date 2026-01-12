@@ -26,7 +26,7 @@ func (s *CompensacionService) Create(ctx context.Context, comp *models.Compensac
 	return s.compRepo.WithContext(ctx).Create(comp)
 }
 
-func (s *CompensacionService) FindByID(ctx context.Context, id string) (*models.Compensacion, error) {
+func (s *CompensacionService) GetByID(ctx context.Context, id string) (*models.Compensacion, error) {
 	return s.compRepo.WithContext(ctx).FindByID(id)
 }
 
@@ -38,11 +38,15 @@ func (s *CompensacionService) GetAllCategorias(ctx context.Context) ([]models.Ca
 	return s.catRepo.WithContext(ctx).FindAll()
 }
 
-func (s *CompensacionService) SaveCategoria(ctx context.Context, cat *models.CategoriaCompensacion) error {
-	return s.catRepo.WithContext(ctx).Save(cat)
+func (s *CompensacionService) CreateCategoria(ctx context.Context, cat *models.CategoriaCompensacion) error {
+	return s.catRepo.WithContext(ctx).Create(cat)
 }
 
-func (s *CompensacionService) FindCategoriaByDepartamentoAndTipo(ctx context.Context, dep, tipo string) (*models.CategoriaCompensacion, error) {
+func (s *CompensacionService) UpdateCategoria(ctx context.Context, cat *models.CategoriaCompensacion) error {
+	return s.catRepo.WithContext(ctx).Update(cat)
+}
+
+func (s *CompensacionService) GetCategoriaByDepartamentoAndTipo(ctx context.Context, dep, tipo string) (*models.CategoriaCompensacion, error) {
 	return s.catRepo.WithContext(ctx).FindByDepartamentoAndTipo(dep, tipo)
 }
 

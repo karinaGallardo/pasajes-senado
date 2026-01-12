@@ -103,7 +103,7 @@ func SetupRoutes(r *gin.Engine) {
 		protected.POST("/usuarios/:id/actualizar", usuarioCtrl.Update)
 
 		sysAdmin := protected.Group("/")
-		sysAdmin.Use(middleware.RequireRole("ADMIN", "TECNICO"))
+		sysAdmin.Use(middleware.RequireRole("ADMIN", "RESPONSABLE"))
 		{
 			sysAdmin.GET("/admin/cupos", cupoCtrl.Index)
 			sysAdmin.POST("/admin/cupos/generar", cupoCtrl.Generar)

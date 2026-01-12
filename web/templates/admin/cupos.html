@@ -31,10 +31,7 @@
         class="bg-primary hover:bg-primary-800 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
         :disabled="generating">
         <template x-if="generating">
-          <svg class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-          </svg>
+          <i class="ph ph-spinner animate-spin text-lg"></i>
         </template>
         <span x-text="generating ? 'Generando...' : 'Generar / Actualizar'"></span>
       </button>
@@ -50,19 +47,13 @@
     </form>
 
     <button
-      type="button"
-      @click="window.dispatchEvent(new CustomEvent('open-confirm', { 
-        detail: { 
-          title: '¿Sincronizar y Corregir Mes?', 
-          message: 'Esta acción recalculará las semanas del período, asegurará que todos los senadores tengan su cupo asignado y sincronizará los saldos según el uso real de pasajes. No se eliminará ningún registro.', 
-          confirmText: 'Sí, Sincronizar',
-          isDanger: false,
-          form: document.getElementById('reset-form')
-        } 
-      }))"
-      class="text-secondary hover:text-primary-800 text-xs font-semibold underline disabled:opacity-50"
-      :disabled="resetting">
-      <span x-text="resetting ? 'Sincronizando...' : 'Sincronizar y Recalcular Mes'"></span>
+      hx-post="/admin/cupos/reset"
+      hx-include="#reset-form"
+      hx-target="body"
+      hx-confirm="Esta acción recalculará las semanas del período, asegurará que todos los senadores tengan su cupo asignado y sincronizará los saldos. ¿Sincronizar y Corregir Mes?"
+      class="text-secondary hover:text-primary-800 text-xs font-semibold underline disabled:opacity-50 transition-colors">
+      <i class="ph ph-arrows-clockwise mr-1"></i>
+      Sincronizar y Recalcular Mes
     </button>
   </div>
 
@@ -128,13 +119,7 @@
           <tr>
             <td colspan="6" class="px-6 py-10 text-center text-neutral-500">
               <div class="flex flex-col items-center justify-center">
-                <svg class="w-12 h-12 text-neutral-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path>
-                </svg>
+                <i class="ph ph-clipboard-text text-5xl text-neutral-300 mb-2"></i>
                 <p>No hay registros de cupos para este período.</p>
                 <p class="text-xs mt-1">Utilice el botón "Generar / Actualizar" para calcular los cupos del mes.</p>
               </div>

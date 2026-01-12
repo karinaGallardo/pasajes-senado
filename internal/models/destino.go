@@ -14,7 +14,7 @@ type Destino struct {
 	Ambito             *AmbitoViaje  `gorm:"foreignKey:AmbitoCodigo;references:Codigo"`
 	DepartamentoCodigo *string       `gorm:"size:5;index;uniqueIndex:idx_destino_location"`
 	Departamento       *Departamento `gorm:"foreignKey:DepartamentoCodigo;references:Codigo"`
-	Pais               string        `gorm:"size:100;not null;default:'BOLIVIA';uniqueIndex:idx_destino_location" json:"pais"`
+	Pais               *string       `gorm:"size:100;uniqueIndex:idx_destino_location" json:"pais"`
 	Estado             bool          `gorm:"default:true"`
 
 	CreatedAt time.Time      `gorm:"index;type:timestamp"`

@@ -2,6 +2,8 @@ package controllers
 
 import (
 	"net/http"
+	"sistema-pasajes/internal/dtos"
+	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/services"
 	"sistema-pasajes/internal/utils"
 
@@ -38,18 +40,20 @@ func (ctrl *AgenciaController) New(c *gin.Context) {
 }
 
 func (ctrl *AgenciaController) Store(c *gin.Context) {
-	nombre := c.PostForm("nombre")
-	telefono := c.PostForm("telefono")
-	estado := c.PostForm("estado") == "on"
-
-	if nombre == "" {
-		utils.SetErrorMessage(c, "El nombre es requerido")
+	var req dtos.CreateAgenciaRequest
+	if err := c.ShouldBind(&req); err != nil {
+		utils.SetErrorMessage(c, "Datos inválidos: "+err.Error())
 		c.Redirect(http.StatusFound, "/admin/agencias")
 		return
 	}
 
-	_, err := ctrl.service.Create(c.Request.Context(), nombre, telefono, estado)
-	if err != nil {
+	model := models.Agencia{
+		Nombre:   req.Nombre,
+		Telefono: req.Telefono,
+		Estado:   req.Estado == "on",
+	}
+
+	if err := ctrl.service.Create(c.Request.Context(), &model); err != nil {
 		utils.SetErrorMessage(c, "Error al crear agencia: "+err.Error())
 	} else {
 		utils.SetSuccessMessage(c, "Agencia creada correctamente")
@@ -60,7 +64,7 @@ func (ctrl *AgenciaController) Store(c *gin.Context) {
 
 func (ctrl *AgenciaController) Edit(c *gin.Context) {
 	id := c.Param("id")
-	agencia, err := ctrl.service.FindByID(c.Request.Context(), id)
+	agencia, err := ctrl.service.GetByID(c.Request.Context(), id)
 	if err != nil {
 		c.String(http.StatusNotFound, "Agencia no encontrada")
 		return
@@ -74,18 +78,25 @@ func (ctrl *AgenciaController) Edit(c *gin.Context) {
 
 func (ctrl *AgenciaController) Update(c *gin.Context) {
 	id := c.Param("id")
-	nombre := c.PostForm("nombre")
-	telefono := c.PostForm("telefono")
-	estado := c.PostForm("estado") == "on"
-
-	if nombre == "" {
-		utils.SetErrorMessage(c, "El nombre es requerido")
+	var req dtos.UpdateAgenciaRequest
+	if err := c.ShouldBind(&req); err != nil {
+		utils.SetErrorMessage(c, "Datos inválidos")
 		c.Redirect(http.StatusFound, "/admin/agencias")
 		return
 	}
 
-	err := ctrl.service.Update(c.Request.Context(), id, nombre, telefono, estado)
+	existing, err := ctrl.service.GetByID(c.Request.Context(), id)
 	if err != nil {
+		utils.SetErrorMessage(c, "Agencia no encontrada")
+		c.Redirect(http.StatusFound, "/admin/agencias")
+		return
+	}
+
+	existing.Nombre = req.Nombre
+	existing.Telefono = req.Telefono
+	existing.Estado = req.Estado == "on"
+
+	if err := ctrl.service.Update(c.Request.Context(), existing); err != nil {
 		utils.SetErrorMessage(c, "Error al actualizar agencia")
 	} else {
 		utils.SetSuccessMessage(c, "Agencia actualizada correctamente")
