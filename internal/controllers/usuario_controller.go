@@ -34,7 +34,7 @@ func (ctrl *UsuarioController) Index(c *gin.Context) {
 
 	msg := c.Query("msg")
 
-	var result interface{}
+	var result any
 	var err error
 
 	if roleType == "FUNCIONARIO" {

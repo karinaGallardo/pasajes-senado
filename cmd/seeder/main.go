@@ -278,6 +278,9 @@ func seedCatalogosViaje() {
 	configs.DB.FirstOrCreate(&itinIdaVuelta, models.TipoItinerario{Codigo: "IDA_VUELTA"})
 	configs.DB.FirstOrCreate(&itinSoloIda, models.TipoItinerario{Codigo: "SOLO_IDA"})
 
+	itinSoloVuelta := models.TipoItinerario{Codigo: "SOLO_VUELTA", Nombre: "Solo Vuelta"}
+	configs.DB.FirstOrCreate(&itinSoloVuelta, models.TipoItinerario{Codigo: "SOLO_VUELTA"})
+
 	fmt.Println("Catálogos sincronizados.")
 }
 

@@ -4,9 +4,9 @@ import (
 	"net/http"
 	"sistema-pasajes/internal/appcontext"
 
+	// csrf "github.com/utrack/gin-csrf"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
-	csrf "github.com/utrack/gin-csrf"
 )
 
 // Render procesa plantillas HTML inyectando tokens CSRF, contexto del usuario, roles y mensajes flash.
@@ -15,7 +15,7 @@ func Render(c *gin.Context, templateName string, data gin.H) {
 		data = gin.H{}
 	}
 
-	data["csrf_token"] = csrf.GetToken(c)
+	// data["csrf_token"] = csrf.GetToken(c)
 
 	user := appcontext.CurrentUser(c)
 	if user != nil {

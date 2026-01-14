@@ -23,3 +23,18 @@ func (s *TipoItinerarioService) GetByCodigo(ctx context.Context, codigo string) 
 func (s *TipoItinerarioService) GetAll(ctx context.Context) ([]models.TipoItinerario, error) {
 	return s.repo.WithContext(ctx).FindAll()
 }
+
+func (s *TipoItinerarioService) EnsureDefaults(ctx context.Context) error {
+	defaults := []models.TipoItinerario{
+		{Codigo: "IDA_VUELTA", Nombre: "Ida y Vuelta"},
+		{Codigo: "SOLO_IDA", Nombre: "Solo Ida"},
+		{Codigo: "SOLO_VUELTA", Nombre: "Solo Vuelta"},
+	}
+
+	for _, d := range defaults {
+		if err := s.repo.WithContext(ctx).FirstOrCreate(&d); err != nil {
+			return err
+		}
+	}
+	return nil
+}

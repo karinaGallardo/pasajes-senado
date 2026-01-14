@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 	"os"
@@ -9,6 +10,7 @@ import (
 
 	"sistema-pasajes/internal/configs"
 	"sistema-pasajes/internal/routes"
+	"sistema-pasajes/internal/services"
 	"sistema-pasajes/internal/utils"
 
 	"github.com/gin-contrib/secure"
@@ -16,12 +18,16 @@ import (
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
-	csrf "github.com/utrack/gin-csrf"
 	"github.com/webstradev/gin-pagination/v2/pkg/pagination"
 )
 
 func main() {
 	configs.ConnectDB()
+
+	itinerarioService := services.NewTipoItinerarioService()
+	if err := itinerarioService.EnsureDefaults(context.Background()); err != nil {
+		log.Printf("Error seeding itineraries: %v", err)
+	}
 
 	isDev := viper.GetString("ENV") != "production"
 	if !isDev {
@@ -78,21 +84,21 @@ func main() {
 		pagination.WithMaxPageSize(100),
 	))
 
-	r.Use(csrf.Middleware(csrf.Options{
-		Secret: sessionSecret,
-		ErrorFunc: func(c *gin.Context) {
-			log.Printf("[CSRF ERROR] Method: %s, Path: %s, RemoteAddr: %s, HX-Request: %v",
-				c.Request.Method, c.Request.URL.Path, c.ClientIP(), c.GetHeader("HX-Request"))
+	// r.Use(csrf.Middleware(csrf.Options{
+	// 	Secret: sessionSecret,
+	// 	ErrorFunc: func(c *gin.Context) {
+	// 		log.Printf("[CSRF ERROR] Method: %s, Path: %s, RemoteAddr: %s, HX-Request: %v",
+	// 			c.Request.Method, c.Request.URL.Path, c.ClientIP(), c.GetHeader("HX-Request"))
 
-			if c.GetHeader("HX-Request") == "true" {
-				c.String(400, "CSRF token mismatch - Recargue la página")
-				c.Abort()
-				return
-			}
-			c.String(400, "CSRF token mismatch. Por favor, recargue la página e intente de nuevo.")
-			c.Abort()
-		},
-	}))
+	// 		if c.GetHeader("HX-Request") == "true" {
+	// 			c.String(400, "CSRF token mismatch - Recargue la página")
+	// 			c.Abort()
+	// 			return
+	// 		}
+	// 		c.String(400, "CSRF token mismatch. Por favor, recargue la página e intente de nuevo.")
+	// 		c.Abort()
+	// 	},
+	// }))
 
 	r.Static("/static", "./web/static")
 	r.Static("/uploads", "./uploads")

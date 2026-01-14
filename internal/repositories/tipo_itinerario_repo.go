@@ -32,3 +32,7 @@ func (r *TipoItinerarioRepository) FindAll() ([]models.TipoItinerario, error) {
 	err := r.db.Find(&tipos).Error
 	return tipos, err
 }
+
+func (r *TipoItinerarioRepository) FirstOrCreate(tipo *models.TipoItinerario) error {
+	return r.db.Where("codigo = ?", tipo.Codigo).FirstOrCreate(tipo).Error
+}
