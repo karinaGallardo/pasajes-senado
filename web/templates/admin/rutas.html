@@ -1,7 +1,8 @@
 {{ define "admin/rutas" }} {{ template "layout_start" . }}
 
 <script>
-  const destinosData = {{ json .Destinos }}.map(d => ({
+  const rawDestinos = {{ json .Destinos }};
+  const destinosData = (rawDestinos || []).map(d => ({
     value: d.iata,
     label: d.ciudad + (d.aeropuerto ? ' - ' + d.aeropuerto : '') + ' (' + d.iata + ')'
   }));
