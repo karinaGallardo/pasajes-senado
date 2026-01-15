@@ -1,6 +1,7 @@
 package routes
 
 import (
+	"net/http"
 	"sistema-pasajes/internal/controllers"
 	"sistema-pasajes/internal/middleware"
 
@@ -155,4 +156,10 @@ func SetupRoutes(r *gin.Engine) {
 			sysAdmin.POST("/admin/oficinas/:id/delete", orgCtrl.DeleteOficina)
 		}
 	}
+
+	r.NoRoute(func(c *gin.Context) {
+		c.HTML(http.StatusNotFound, "errors/404", gin.H{
+			"Title": "Página no encontrada",
+		})
+	})
 }

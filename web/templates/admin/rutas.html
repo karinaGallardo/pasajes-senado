@@ -1,57 +1,18 @@
 {{ define "admin/rutas" }} {{ template "layout_start" . }}
 
 <script>
-  const rawDestinos = {{ json .Destinos }};
-  const destinosData = (rawDestinos || []).map(d => ({
+  var rawDestinos = [];
+  try {
+    rawDestinos = JSON.parse("{{ json .Destinos }}");
+  } catch (e) {
+    console.error("Error parsing destinations:", e);
+    rawDestinos = [];
+  }
+
+  var globalDestinos = (rawDestinos || []).map((d) => ({
     value: d.iata,
-    label: d.ciudad + (d.aeropuerto ? ' - ' + d.aeropuerto : '') + ' (' + d.iata + ')'
+    label: (d.ciudad || "") + (d.aeropuerto ? " - " + d.aeropuerto : "") + " (" + (d.iata || "") + ")",
   }));
-
-  document.addEventListener('alpine:init', () => {
-    Alpine.data('searchableSelect', (name, placeholder = 'Seleccione una opción', initialValue = '') => ({
-      options: destinosData,
-      name: name,
-      value: initialValue,
-      placeholder: placeholder,
-      open: false,
-      search: '',
-
-      get filteredOptions() {
-        if (this.search === '') return this.options;
-        return this.options.filter(item =>
-          item.label.toLowerCase().includes(this.search.toLowerCase()) ||
-          item.value.toLowerCase().includes(this.search.toLowerCase())
-        );
-      },
-
-      get selectedLabel() {
-        const item = this.options.find(o => o.value === this.value);
-        return item ? item.label : this.placeholder;
-      },
-
-      toggle() {
-        if (this.open) {
-          return this.close();
-        }
-        this.search = '';
-        this.open = true;
-        this.$nextTick(() => {
-          this.$refs.searchInput.focus();
-        });
-      },
-
-      close(focusAfter) {
-        this.open = false;
-        this.search = '';
-        if (focusAfter) focusAfter.focus();
-      },
-
-      select(val) {
-        this.value = val;
-        this.close(this.$refs.button);
-      }
-    }))
-  });
 </script>
 
 <div class="mt-8">
@@ -64,19 +25,20 @@
     <!-- New Ruta Form -->
     <div class="py-6 h-fit z-20 overflow-visible">
       <h2 class="text-lg font-bold text-primary-700 mb-4 border-b pb-2">Nueva Ruta</h2>
-      <form action="/admin/rutas" method="POST" class="space-y-6">
+      <form action="/admin/rutas" method="POST" class="space-y-6" x-data="{ loading: false }" @submit="loading = true">
         <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
         <!-- Origen -->
-        <div class="relative" x-data="searchableSelect('origen_iata', 'Seleccione Origen')">
+        <!-- Origen -->
+        <div class="relative" x-data="searchableSelect({ items: globalDestinos, placeholder: 'Seleccione Origen' })">
           <label class="block text-sm font-medium text-neutral-700 mb-1">Lugar de Origen</label>
-          <input type="hidden" :name="name" :value="value" required />
+          <input type="hidden" name="origen_iata" :value="value" required />
 
           <button
             x-ref="button"
-            @click="toggle()"
+            @click="open = !open; if(open) $nextTick(() => $refs.searchInput.focus())"
             type="button"
             class="relative w-full bg-white border border-neutral-300 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
-            <span class="block truncate" :class="{'text-neutral-500': !value, 'text-neutral-900': value}" x-text="selectedLabel"></span>
+            <span class="block truncate" :class="{'text-neutral-500': !value, 'text-neutral-900': value}" x-text="label"></span>
             <span class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
               <i class="ph ph-caret-up-down text-xl text-neutral-400"></i>
             </span>
@@ -84,7 +46,7 @@
 
           <div
             x-show="open"
-            @click.away="close($refs.button)"
+            @click.away="open = false"
             class="absolute z-50 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm"
             style="display: none">
             <div class="sticky top-0 bg-white p-2 border-b z-10">
@@ -96,15 +58,15 @@
                 placeholder="Buscar ciudad o aeropuerto..." />
             </div>
             <ul class="pt-1">
-              <template x-for="option in filteredOptions" :key="option.value">
-                <li @click="select(option.value)" class="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-primary-50 text-neutral-900">
-                  <span class="block truncate" x-text="option.label" :class="{'font-semibold': value === option.value, 'font-normal': value !== option.value}"></span>
-                  <span x-show="value === option.value" class="absolute inset-y-0 right-0 flex items-center pr-4 text-primary-600">
+              <template x-for="item in filteredItems" :key="item.value">
+                <li @click="select(item)" class="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-primary-50 text-neutral-900">
+                  <span class="block truncate" x-text="item.label" :class="{'font-semibold': value === item.value, 'font-normal': value !== item.value}"></span>
+                  <span x-show="value === item.value" class="absolute inset-y-0 right-0 flex items-center pr-4 text-primary-600">
                     <i class="ph ph-check text-xl"></i>
                   </span>
                 </li>
               </template>
-              <li x-show="filteredOptions.length === 0" class="cursor-default select-none relative py-2 pl-3 pr-9 text-neutral-500 italic">No se encontraron resultados</li>
+              <li x-show="filteredItems.length === 0" class="cursor-default select-none relative py-2 pl-3 pr-9 text-neutral-500 italic">No se encontraron resultados</li>
             </ul>
           </div>
         </div>
@@ -113,16 +75,16 @@
         <div x-data="{ scales: [] }">
           <template x-for="(scale, index) in scales" :key="index">
             <div class="relative mb-4 flex items-start gap-2">
-              <div class="flex-1" x-data="searchableSelect('escalas_iata[]', 'Seleccione Escala')">
+              <div class="flex-1" x-data="searchableSelect({ items: globalDestinos, placeholder: 'Seleccione Escala' })">
                 <label class="block text-sm font-medium text-neutral-700 mb-1" x-text="'Escala ' + (index + 1)"></label>
-                <input type="hidden" :name="name" :value="value" />
+                <input type="hidden" name="escalas_iata[]" :value="value" />
 
                 <button
                   x-ref="button"
-                  @click="toggle()"
+                  @click="open = !open; if(open) $nextTick(() => $refs.searchInput.focus())"
                   type="button"
                   class="relative w-full bg-white border border-neutral-300 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
-                  <span class="block truncate" :class="{'text-neutral-500': !value, 'text-neutral-900': value}" x-text="selectedLabel"></span>
+                  <span class="block truncate" :class="{'text-neutral-500': !value, 'text-neutral-900': value}" x-text="label"></span>
                   <span class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
                     <svg class="h-5 w-5 text-neutral-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
                       <path
@@ -135,7 +97,7 @@
 
                 <div
                   x-show="open"
-                  @click.away="close($refs.button)"
+                  @click.away="open = false"
                   class="absolute z-50 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm"
                   style="display: none">
                   <div class="sticky top-0 bg-white p-2 border-b z-10">
@@ -147,12 +109,12 @@
                       placeholder="Buscar..." />
                   </div>
                   <ul class="pt-1">
-                    <template x-for="option in filteredOptions" :key="option.value">
-                      <li @click="select(option.value)" class="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-primary-50 text-neutral-900">
-                        <span class="block truncate" x-text="option.label" :class="{'font-semibold': value === option.value, 'font-normal': value !== option.value}"></span>
+                    <template x-for="item in filteredItems" :key="item.value">
+                      <li @click="select(item)" class="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-primary-50 text-neutral-900">
+                        <span class="block truncate" x-text="item.label" :class="{'font-semibold': value === item.value, 'font-normal': value !== item.value}"></span>
                       </li>
                     </template>
-                    <li x-show="filteredOptions.length === 0" class="cursor-default select-none relative py-2 pl-3 pr-9 text-neutral-500 italic">No se encontraron resultados</li>
+                    <li x-show="filteredItems.length === 0" class="cursor-default select-none relative py-2 pl-3 pr-9 text-neutral-500 italic">No se encontraron resultados</li>
                   </ul>
                 </div>
               </div>
@@ -169,16 +131,17 @@
         </div>
 
         <!-- Destino -->
-        <div class="relative" x-data="searchableSelect('destino_iata', 'Seleccione Destino')">
+        <!-- Destino -->
+        <div class="relative" x-data="searchableSelect({ items: globalDestinos, placeholder: 'Seleccione Destino' })">
           <label class="block text-sm font-medium text-neutral-700 mb-1">Lugar de Destino</label>
-          <input type="hidden" :name="name" :value="value" required />
+          <input type="hidden" name="destino_iata" :value="value" required />
 
           <button
             x-ref="button"
-            @click="toggle()"
+            @click="open = !open; if(open) $nextTick(() => $refs.searchInput.focus())"
             type="button"
             class="relative w-full bg-white border border-neutral-300 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
-            <span class="block truncate" :class="{'text-neutral-500': !value, 'text-neutral-900': value}" x-text="selectedLabel"></span>
+            <span class="block truncate" :class="{'text-neutral-500': !value, 'text-neutral-900': value}" x-text="label"></span>
             <span class="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
               <i class="ph ph-caret-up-down text-xl text-neutral-400"></i>
             </span>
@@ -186,8 +149,8 @@
 
           <div
             x-show="open"
-            @click.away="close($refs.button)"
-            class="absolute z-50 mt-1 bottom-10 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm"
+            @click.away="open = false"
+            class="absolute z-50 mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm"
             style="display: none">
             <div class="sticky top-0 bg-white p-2 border-b z-10">
               <input
@@ -198,20 +161,29 @@
                 placeholder="Buscar ciudad o aeropuerto..." />
             </div>
             <ul class="pt-1">
-              <template x-for="option in filteredOptions" :key="option.value">
-                <li @click="select(option.value)" class="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-primary-50 text-neutral-900">
-                  <span class="block truncate" x-text="option.label" :class="{'font-semibold': value === option.value, 'font-normal': value !== option.value}"></span>
-                  <span x-show="value === option.value" class="absolute inset-y-0 right-0 flex items-center pr-4 text-primary-600">
+              <template x-for="item in filteredItems" :key="item.value">
+                <li @click="select(item)" class="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-primary-50 text-neutral-900">
+                  <span class="block truncate" x-text="item.label" :class="{'font-semibold': value === item.value, 'font-normal': value !== item.value}"></span>
+                  <span x-show="value === item.value" class="absolute inset-y-0 right-0 flex items-center pr-4 text-primary-600">
                     <i class="ph ph-check text-xl"></i>
                   </span>
                 </li>
               </template>
-              <li x-show="filteredOptions.length === 0" class="cursor-default select-none relative py-2 pl-3 pr-9 text-neutral-500 italic">No se encontraron resultados</li>
+              <li x-show="filteredItems.length === 0" class="cursor-default select-none relative py-2 pl-3 pr-9 text-neutral-500 italic">No se encontraron resultados</li>
             </ul>
           </div>
         </div>
 
-        <button type="submit" class="w-full bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700 font-medium">Registrar Ruta</button>
+        <button
+          type="submit"
+          :disabled="loading"
+          class="w-full bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700 font-medium flex justify-center items-center disabled:opacity-50 disabled:cursor-not-allowed">
+          <span x-show="!loading">Registrar Ruta</span>
+          <span x-show="loading" class="flex items-center">
+            <i class="ph ph-spinner animate-spin mr-2 text-xl"></i>
+            Registrando...
+          </span>
+        </button>
       </form>
     </div>
 

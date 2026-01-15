@@ -89,13 +89,10 @@
     })),
     initialValue: '{{ if .Usuario.EncargadoID }}{{ .Usuario.EncargadoID }}{{ end }}',
     initialLabel: '{{ if .Usuario.Encargado }}{{ .Usuario.Encargado.GetNombreCompleto }}{{ end }}',
-    disabled: {{ if eq .Usuario.Tipo `SENADOR_SUPLENTE` }}true{{ else }}false{{ end }}
+    disabled: false
   })">
   <label class="block text-sm font-medium text-neutral-700">Encargado de Trámites</label>
-  <p class="text-[11px] text-neutral-500 mb-2 leading-tight">
-    {{ if eq .Usuario.Tipo "SENADOR_SUPLENTE" }} Este campo está vinculado al Senador Titular. El encargado asignado al titular gestionará también los pasajes del suplente. {{ else
-    }} Busque por nombre o CI al funcionario que gestionará los pasajes. {{ end }}
-  </p>
+  <p class="text-[11px] text-neutral-500 mb-2 leading-tight">Busque por nombre o CI al funcionario que gestionará los pasajes.</p>
 
   <div class="relative mt-1">
     <input type="hidden" name="encargado_id" :value="value" />
