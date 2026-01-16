@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"sistema-pasajes/internal/appcontext"
 	"sistema-pasajes/internal/dtos"
+	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/services"
 	"sistema-pasajes/internal/utils"
 	"strconv"
@@ -76,6 +77,33 @@ func (ctrl *UsuarioController) Table(c *gin.Context) {
 		if errDb != nil {
 			err = errDb
 		}
+
+		if searchTerm != "" {
+			var filtered []models.Usuario
+			lowerTerm := strings.ToLower(searchTerm)
+			for _, u := range usuarios {
+				match := strings.Contains(strings.ToLower(u.GetNombreCompleto()), lowerTerm) ||
+					strings.Contains(strings.ToLower(u.CI), lowerTerm) ||
+					strings.Contains(strings.ToLower(u.Username), lowerTerm) ||
+					strings.Contains(strings.ToLower(u.Email), lowerTerm)
+
+				if !match {
+					suplente := u.GetSuplente()
+					if suplente != nil {
+						match = strings.Contains(strings.ToLower(suplente.GetNombreCompleto()), lowerTerm) ||
+							strings.Contains(strings.ToLower(suplente.CI), lowerTerm) ||
+							strings.Contains(strings.ToLower(suplente.Username), lowerTerm) ||
+							strings.Contains(strings.ToLower(suplente.Email), lowerTerm)
+					}
+				}
+
+				if match {
+					filtered = append(filtered, u)
+				}
+			}
+			usuarios = filtered
+		}
+
 		result = gin.H{"Usuarios": usuarios}
 	}
 

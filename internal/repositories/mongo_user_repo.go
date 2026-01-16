@@ -8,6 +8,7 @@ import (
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
 type MongoUser struct {
@@ -74,7 +75,8 @@ func (r *MongoUserRepository) FindByCI(ci string) (*MongoUser, error) {
 	defer cancel()
 
 	var user MongoUser
-	err := collection.FindOne(ctx, bson.M{"ci": ci}).Decode(&user)
+	opts := options.FindOne().SetSort(bson.D{{Key: "_id", Value: -1}})
+	err := collection.FindOne(ctx, bson.M{"ci": ci}, opts).Decode(&user)
 	if err != nil {
 		return nil, err
 	}

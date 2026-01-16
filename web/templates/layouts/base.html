@@ -30,7 +30,9 @@
           get filteredItems() {
             if (this.search === "") return this.items;
             const q = this.search.toLowerCase();
-            return this.items.filter((i) => (i.label && i.label.toLowerCase().includes(q)) || (i.value && i.value.toLowerCase().includes(q)));
+            return this.items.filter(
+              (i) => (i.label && i.label.toLowerCase().includes(q)) || (i.value && i.value.toLowerCase().includes(q)) || (i.extra && i.extra.toLowerCase().includes(q))
+            );
           },
 
           select(item) {
