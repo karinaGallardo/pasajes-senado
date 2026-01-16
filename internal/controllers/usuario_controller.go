@@ -28,7 +28,18 @@ func NewUsuarioController() *UsuarioController {
 }
 
 func (ctrl *UsuarioController) Index(c *gin.Context) {
+	currentUser := appcontext.CurrentUser(c)
+	if currentUser == nil {
+		c.Redirect(http.StatusFound, "/auth/login")
+		return
+	}
+
 	roleType := c.DefaultQuery("rol", "SENADOR")
+
+	if !currentUser.IsAdmin() {
+		roleType = "SENADOR"
+	}
+
 	searchTerm := c.Query("q")
 	page := c.GetInt("page")
 	limit := c.GetInt("limit")
@@ -62,7 +73,17 @@ func (ctrl *UsuarioController) Index(c *gin.Context) {
 }
 
 func (ctrl *UsuarioController) Table(c *gin.Context) {
+	currentUser := appcontext.CurrentUser(c)
+	if currentUser == nil {
+		c.Status(http.StatusUnauthorized)
+		return
+	}
+
 	roleType := c.DefaultQuery("rol", "SENADOR")
+
+	if !currentUser.IsAdmin() {
+		roleType = "SENADOR"
+	}
 	searchTerm := c.Query("q")
 	page := c.GetInt("page")
 	limit := c.GetInt("limit")
@@ -281,6 +302,11 @@ func (ctrl *UsuarioController) UpdateOrigin(c *gin.Context) {
 }
 
 func (ctrl *UsuarioController) Sync(c *gin.Context) {
+	currentUser := appcontext.CurrentUser(c)
+	if currentUser == nil || !currentUser.IsAdmin() {
+		c.String(http.StatusForbidden, "No autorizado")
+		return
+	}
 	roleType := c.DefaultQuery("rol", "SENADOR")
 	var count int
 	var err error
@@ -300,6 +326,11 @@ func (ctrl *UsuarioController) Sync(c *gin.Context) {
 	c.Redirect(http.StatusFound, "/usuarios?rol="+roleType)
 }
 func (ctrl *UsuarioController) GetSyncModal(c *gin.Context) {
+	currentUser := appcontext.CurrentUser(c)
+	if currentUser == nil || !currentUser.IsAdmin() {
+		c.String(http.StatusForbidden, "No autorizado")
+		return
+	}
 	roleType := c.DefaultQuery("rol", "SENADOR")
 	utils.Render(c, "usuarios/components/modal_sync_confirm", gin.H{
 		"Rol": roleType,

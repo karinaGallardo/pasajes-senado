@@ -92,7 +92,7 @@ func SetupRoutes(r *gin.Engine) {
 		protected.GET("/catalogos/ambitos", catalogoCtrl.GetAmbitos)
 
 		adminOnly := protected.Group("/")
-		adminOnly.Use(middleware.RequireRole("ADMIN"))
+		adminOnly.Use(middleware.RequireRole("ADMIN", "RESPONSABLE"))
 		{
 			adminOnly.GET("/usuarios", usuarioCtrl.Index)
 			adminOnly.GET("/usuarios/table", usuarioCtrl.Table)

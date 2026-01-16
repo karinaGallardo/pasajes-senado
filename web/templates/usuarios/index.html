@@ -9,6 +9,7 @@
     </div>
     <div class="flex space-x-3">
       <!-- Sync Button (HTMX Modal) -->
+      {{ if .CurrentUser.IsAdmin }}
       <button
         hx-get="/usuarios/sync-modal"
         hx-include="[name='rol']"
@@ -17,6 +18,7 @@
         <i class="ph ph-arrows-clockwise text-xl -ml-1 mr-2"></i>
         <span x-text="activeTab === 'SENADOR' ? 'Sincronizar Senadores' : 'Sincronizar Funcionarios'">Sincronizar</span>
       </button>
+      {{ end }}
     </div>
   </div>
 
@@ -36,6 +38,7 @@
           Senadores
         </button>
 
+        {{ if .CurrentUser.IsAdmin }}
         <button
           type="button"
           class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors focus:outline-none"
@@ -46,6 +49,7 @@
           hx-indicator="#table-loader">
           Funcionarios
         </button>
+        {{ end }}
       </nav>
     </div>
 
