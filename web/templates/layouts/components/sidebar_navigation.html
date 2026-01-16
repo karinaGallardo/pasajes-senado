@@ -62,7 +62,6 @@
       Administración
     </div>
 
-    {{ if .CurrentUser.IsAdmin }}
     <a
       href="/usuarios"
       :title="sidebarCollapsed ? 'Usuarios' : ''"
@@ -71,7 +70,6 @@
       <i class="ph ph-users text-xl mr-3 min-w-[20px] {{ if eq .Title `Gestión de Usuarios` }} text-primary {{ else }} text-neutral-400 group-hover:text-neutral-500 {{ end }}"></i>
       <span x-show="!sidebarCollapsed" class="transition-opacity duration-300">Usuarios</span>
     </a>
-    {{ end }}
 
     <a
       href="/admin/aerolineas"
