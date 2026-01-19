@@ -24,9 +24,6 @@ func NewDashboardController() *DashboardController {
 }
 
 func (ctrl *DashboardController) Index(c *gin.Context) {
-	solicitudes, _ := ctrl.solicitudService.GetAll(c.Request.Context())
-	descargos, _ := ctrl.descargoService.GetAll(c.Request.Context())
-
 	user := appcontext.CurrentUser(c)
 	var senadoresCalculados []models.Usuario
 
@@ -36,6 +33,15 @@ func (ctrl *DashboardController) Index(c *gin.Context) {
 			senadoresCalculados = assigned
 		}
 	}
+
+	var solicitudes []models.Solicitud
+	if user != nil && user.IsAdminOrResponsable() {
+		solicitudes, _ = ctrl.solicitudService.GetAll(c.Request.Context())
+	} else if user != nil {
+		solicitudes, _ = ctrl.solicitudService.GetByUserID(c.Request.Context(), user.ID)
+	}
+
+	descargos, _ := ctrl.descargoService.GetAll(c.Request.Context())
 
 	var pendientes, aprobados, finalizados int
 	for _, s := range solicitudes {

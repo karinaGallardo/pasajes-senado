@@ -87,3 +87,19 @@ func (v AsignacionVoucher) GetDescargo() *Descargo {
 	}
 	return nil
 }
+
+func (v AsignacionVoucher) IsVencido() bool {
+	if v.FechaHasta == nil {
+		return false
+	}
+	expirationTime := v.FechaHasta.Add(24 * time.Hour)
+	return time.Now().After(expirationTime)
+}
+
+func (v AsignacionVoucher) IsActiveWeek() bool {
+	if v.FechaDesde == nil || v.FechaHasta == nil {
+		return false
+	}
+	now := time.Now()
+	return now.After(*v.FechaDesde) && now.Before(v.FechaHasta.Add(24*time.Hour))
+}

@@ -179,7 +179,7 @@ func (s *AuthService) syncUserToPostgres(ctx context.Context, authUser, profile 
 }
 
 func (s *AuthService) ensureDefaultRole(ctx context.Context, user *models.Usuario, profile bson.M) error {
-	if user.RolCodigo != nil {
+	if user.RolCodigo != nil && *user.RolCodigo != "" {
 		return nil
 	}
 

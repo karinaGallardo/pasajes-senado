@@ -132,6 +132,14 @@ func (s *SolicitudService) GetAll(ctx context.Context) ([]models.Solicitud, erro
 	return s.repo.WithContext(ctx).FindAll()
 }
 
+func (s *SolicitudService) GetByUserID(ctx context.Context, userID string) ([]models.Solicitud, error) {
+	return s.repo.WithContext(ctx).FindByUserID(userID)
+}
+
+func (s *SolicitudService) GetByUserIdOrAccesibleByEncargadoID(ctx context.Context, userID string) ([]models.Solicitud, error) {
+	return s.repo.WithContext(ctx).FindByUserIdOrAccesibleByEncargadoID(userID)
+}
+
 func (s *SolicitudService) GetByID(ctx context.Context, id string) (*models.Solicitud, error) {
 	return s.repo.WithContext(ctx).FindByID(id)
 }

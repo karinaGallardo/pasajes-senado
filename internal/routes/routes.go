@@ -37,15 +37,15 @@ func SetupRoutes(r *gin.Engine) {
 		protected.GET("/cupos/derecho/:id", cupoCtrl.Derecho)
 
 		protected.GET("/solicitudes", solicitudCtrl.Index)
-		protected.GET("/solicitudes/nueva", solicitudCtrl.Create)
-		protected.GET("/solicitudes/:id", solicitudCtrl.Show)
-		protected.POST("/solicitudes", solicitudCtrl.Store) // Generic Store
-		protected.GET("/solicitudes/check-cupo", solicitudCtrl.CheckCupo)
-		protected.POST("/solicitudes/:id/aprobar", solicitudCtrl.Approve)
-		protected.POST("/solicitudes/:id/rechazar", solicitudCtrl.Reject)
-		protected.GET("/solicitudes/:id/editar", solicitudCtrl.Edit)
-		protected.POST("/solicitudes/:id/actualizar", solicitudCtrl.Update)
-		protected.GET("/solicitudes/:id/print", solicitudCtrl.PrintPV01)
+		// protected.GET("/solicitudes/nueva", solicitudCtrl.Create)
+		// protected.GET("/solicitudes/:id", solicitudCtrl.Show)
+		// protected.POST("/solicitudes", solicitudCtrl.Store) // Generic Store
+		// protected.GET("/solicitudes/check-cupo", solicitudCtrl.CheckCupo)
+		// protected.POST("/solicitudes/:id/aprobar", solicitudCtrl.Approve)
+		// protected.POST("/solicitudes/:id/rechazar", solicitudCtrl.Reject)
+		// protected.GET("/solicitudes/:id/editar", solicitudCtrl.Edit)
+		// protected.POST("/solicitudes/:id/actualizar", solicitudCtrl.Update)
+		// protected.GET("/solicitudes/:id/print", solicitudCtrl.PrintPV01)
 
 		// Solicitudes Derecho (Voucher)
 		protected.GET("/solicitudes/derecho/crear/:voucher_id/:itinerario_code", solicitudDerechoCtrl.Create)

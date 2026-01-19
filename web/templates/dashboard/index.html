@@ -27,10 +27,10 @@
         </div>
       </div>
       <div class="mt-4">
-        <a href="/solicitudes" class="text-sm font-semibold text-neutral hover:text-primary flex items-center">
-          Ver listado
-          <span aria-hidden="true" class="ml-1">&rarr;</span>
-        </a>
+        <span class="text-sm font-semibold text-neutral flex items-center cursor-default">
+          Ver listado en tabla
+          <span aria-hidden="true" class="ml-1">&darr;</span>
+        </span>
       </div>
     </div>
 
@@ -46,10 +46,10 @@
         </div>
       </div>
       <div class="mt-4">
-        <a href="/solicitudes" class="text-sm font-semibold text-secondary hover:text-primary flex items-center">
-          Gestionar boletos
-          <span aria-hidden="true" class="ml-1">&rarr;</span>
-        </a>
+        <span class="text-sm font-semibold text-secondary flex items-center cursor-default">
+          Gestionar en tabla
+          <span aria-hidden="true" class="ml-1">&darr;</span>
+        </span>
       </div>
     </div>
 
@@ -119,7 +119,7 @@
   <div class="bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden">
     <div class="px-6 py-4 border-b border-neutral-200 bg-neutral-50 flex justify-between items-center">
       <h3 class="text-lg font-brand font-bold text-neutral-900">Actividad Reciente</h3>
-      <a href="/solicitudes/nueva" class="text-sm font-medium text-secondary hover:text-primary-900">+ Nueva Solicitud</a>
+      <!-- <a href="/solicitudes/nueva" class="text-sm font-medium text-secondary hover:text-primary-900">+ Nueva Solicitud</a> -->
     </div>
     <div class="overflow-x-auto">
       <table class="min-w-full divide-y divide-gray-200">
@@ -143,9 +143,9 @@
               {{ end }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-700">
-              {{ if .Origen }}{{ .Origen.Nombre }}{{ else }}?{{ end }}
+              {{ if .Origen }}{{ .Origen.Ciudad }}{{ else }}?{{ end }}
               <span class="text-neutral-400 mx-1">&rarr;</span>
-              {{ if .Destino }}{{ .Destino.Nombre }}{{ else }}?{{ end }}
+              {{ if .Destino }}{{ .Destino.Ciudad }}{{ else }}?{{ end }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">{{ if .FechaIda }}{{ .FechaIda.Format "02/01/2006" }}{{ else }} - {{ end }}</td>
             <td class="px-6 py-4 whitespace-nowrap">
@@ -159,7 +159,7 @@
               </span>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-              <a href="/solicitudes/{{ .ID }}" class="text-secondary hover:text-primary-900">Detalles</a>
+              <a href="/solicitudes/derecho/{{ .ID }}/detalle" class="text-secondary hover:text-primary-900">Detalles</a>
             </td>
           </tr>
           {{ end }}

@@ -37,7 +37,7 @@
       <span x-show="!sidebarCollapsed" class="transition-opacity duration-300">Solicitudes</span>
     </a>
 
-    <a
+    <!-- <a
       href="/descargos"
       :title="sidebarCollapsed ? 'Descargos' : ''"
       class="group flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap
@@ -55,7 +55,7 @@
       <i
         class="ph ph-currency-dollar text-xl mr-3 min-w-[20px] {{ if eq .Title `Compensaciones` }} text-primary {{ else }} text-neutral-400 group-hover:text-neutral-500 {{ end }}"></i>
       <span x-show="!sidebarCollapsed" class="transition-opacity duration-300">Compensaciones</span>
-    </a>
+    </a> -->
 
     {{ if .CurrentUser.IsAdminOrResponsable }}
     <div class="mt-8 mb-2 px-2 text-xs font-semibold text-neutral-400 uppercase tracking-wider transition-opacity duration-300 whitespace-nowrap" x-show="!sidebarCollapsed">

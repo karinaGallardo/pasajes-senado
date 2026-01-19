@@ -59,7 +59,7 @@ func SearchUsuario(term string) func(db *gorm.DB) *gorm.DB {
 			return db
 		}
 		likeTerm := "%" + term + "%"
-		return db.Where("(username LIKE ? OR ci LIKE ? OR firstname LIKE ? OR lastname LIKE ? OR email LIKE ?)",
+		return db.Where("(username ILIKE ? OR ci ILIKE ? OR firstname ILIKE ? OR lastname ILIKE ? OR email ILIKE ?)",
 			likeTerm, likeTerm, likeTerm, likeTerm, likeTerm)
 	}
 }

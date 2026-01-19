@@ -62,7 +62,7 @@
             </thead>
             <tbody class="divide-y divide-gray-200 bg-white">
               {{ range .Vouchers }}
-              <tr class="transition-colors hover:bg-neutral-50">
+              <tr class="transition-colors {{ if .IsActiveWeek }} bg-primary-50/50 ring-1 ring-inset ring-primary-100 {{ else }} hover:bg-neutral-50 {{ end }}">
                 <!-- Semana -->
                 <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-neutral-900 sm:pl-6">{{ .Semana }}</td>
 
@@ -90,14 +90,18 @@
                 <!-- Acciones -->
                 <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6" onclick="event.stopPropagation()">
                   <div class="flex justify-end gap-2">
+                    {{ $isVencido := .IsVencido }}
+
                     <!-- Ida -->
-                    {{ $solIda := .GetSolicitudIda }} {{ if not $solIda }}
+                    {{ $solIda := .GetSolicitudIda }} {{ if not $solIda }} {{ if $isVencido }}
+                    <span class="text-neutral-300 font-bold text-[10px] uppercase border border-neutral-100 bg-neutral-50 rounded px-2 py-1 cursor-not-allowed">No solicitado</span>
+                    {{ else }}
                     <a
                       href="/solicitudes/derecho/crear/{{ .ID }}/SOLO_IDA"
                       class="text-neutral-500 hover:text-secondary hover:border-secondary font-bold text-[10px] uppercase border border-neutral-200 bg-white rounded px-2 py-1 transition-colors">
                       Crear Ida
                     </a>
-                    {{ else }} {{ $st := $solIda.GetEstado }} {{ if eq $st "SOLICITADO" }}
+                    {{ end }} {{ else }} {{ $st := $solIda.GetEstado }} {{ if eq $st "SOLICITADO" }}
                     <a
                       href="/solicitudes/derecho/{{ $solIda.ID }}/editar"
                       class="text-amber-700 hover:bg-amber-100 font-bold text-[10px] uppercase border border-amber-100 bg-amber-50 rounded px-2 py-1 transition-colors">
@@ -112,13 +116,15 @@
                     {{ end }} {{ end }}
 
                     <!-- Vuelta -->
-                    {{ $solVuelta := .GetSolicitudVuelta }} {{ if not $solVuelta }}
+                    {{ $solVuelta := .GetSolicitudVuelta }} {{ if not $solVuelta }} {{ if $isVencido }}
+                    <span class="text-neutral-300 font-bold text-[10px] uppercase border border-neutral-100 bg-neutral-50 rounded px-2 py-1 cursor-not-allowed">No solicitado</span>
+                    {{ else }}
                     <a
                       href="/solicitudes/derecho/crear/{{ .ID }}/SOLO_VUELTA"
                       class="text-neutral-500 hover:text-secondary hover:border-secondary font-bold text-[10px] uppercase border border-neutral-200 bg-white rounded px-2 py-1 transition-colors">
                       Crear Vuelta
                     </a>
-                    {{ else }} {{ $stV := $solVuelta.GetEstado }} {{ if eq $stV "SOLICITADO" }}
+                    {{ end }} {{ else }} {{ $stV := $solVuelta.GetEstado }} {{ if eq $stV "SOLICITADO" }}
                     <a
                       href="/solicitudes/derecho/{{ $solVuelta.ID }}/editar"
                       class="text-amber-700 hover:bg-amber-100 font-bold text-[10px] uppercase border border-amber-100 bg-amber-50 rounded px-2 py-1 transition-colors">
