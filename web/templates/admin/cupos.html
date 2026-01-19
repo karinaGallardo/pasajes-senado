@@ -1,135 +1,18 @@
 {{ define "admin/cupos" }} {{ template "layout_start" . }}
 
 <div class="space-y-6" x-data="{ generating: false, resetting: false, refreshing: false }">
-  <!-- Header -->
-  <div class="flex justify-between items-center bg-white p-6 rounded-xl shadow-sm border border-neutral-100">
+  <!-- Unified Header & Controls -->
+  <div class="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-6 rounded-xl shadow-sm border border-neutral-100 gap-4">
     <div>
       <h1 class="text-2xl font-bold text-neutral-900">Gestión de Cupos</h1>
-      <p class="text-neutral-500">Administración de cupos mensuales para pasajes por derecho.</p>
+      <p class="text-neutral-500 text-sm">Administración de cupos mensuales para pasajes por derecho.</p>
     </div>
 
-    <!-- Formulario Generación -->
-    <form action="/admin/cupos/generar" method="POST" class="flex gap-2 items-end" @submit="generating = true">
-      <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
-      <input type="hidden" name="gestion" value="{{ .Gestion }}" />
-      <div class="flex flex-col">
-        <label class="block text-xs font-semibold text-neutral-700 uppercase">Gestión</label>
-        <span class="w-24 border border-neutral-200 rounded-md text-sm p-2 bg-neutral-100 text-neutral-600 font-bold block text-center h-[38px] flex items-center justify-center">
-          {{ .Gestion }}
-        </span>
-      </div>
-      <div>
-        <label class="block text-xs font-semibold text-neutral-700 uppercase">Mes</label>
-        <select name="mes" class="border-neutral-300 rounded-md text-sm w-32 p-2 bg-neutral-50" :disabled="generating">
-          {{ range $i, $m := .Meses }} {{ if gt $i 0 }}
-          <option value="{{ $i }}" {{ if eq $i $.Mes }}selected{{ end }}>{{ $m }}</option>
-          {{ end }} {{ end }}
-        </select>
-      </div>
-      <button
-        type="submit"
-        class="bg-primary hover:bg-primary-800 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
-        :disabled="generating">
-        <template x-if="generating">
-          <i class="ph ph-spinner animate-spin text-lg"></i>
-        </template>
-        <span x-text="generating ? 'Generando...' : 'Generar / Actualizar'"></span>
-      </button>
-    </form>
-  </div>
-
-  <!-- Reset Zone -->
-  <div class="flex justify-end">
-    <form action="/admin/cupos/reset" method="POST" id="reset-form" @submit="resetting = true">
-      <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
-      <input type="hidden" name="gestion" value="{{ .Gestion }}" />
-      <input type="hidden" name="mes" value="{{ .Mes }}" />
-    </form>
-
-    <button
-      hx-post="/admin/cupos/reset"
-      hx-include="#reset-form"
-      hx-target="body"
-      hx-confirm="Esta acción recalculará las semanas del período, asegurará que todos los senadores tengan su cupo asignado y sincronizará los saldos. ¿Sincronizar y Corregir Mes?"
-      class="text-secondary hover:text-primary-800 text-xs font-semibold underline disabled:opacity-50 transition-colors">
-      <i class="ph ph-arrows-clockwise mr-1"></i>
-      Sincronizar y Recalcular Mes
-    </button>
-  </div>
-
-  <!-- Filtro / Navegación -->
-  <div class="bg-neutral-50 p-4 rounded-lg flex gap-4 items-center justify-center border border-neutral-200">
-    <form action="/admin/cupos" method="GET" class="flex items-center gap-4" @submit="refreshing = true">
-      <input type="hidden" name="gestion" value="{{ .Gestion }}" />
-      <span class="text-sm font-medium text-neutral-700">Visualizando período:</span>
-      <span class="px-3 py-1 bg-white border border-neutral-300 rounded-md text-sm font-bold text-neutral-600">{{ .Gestion }}</span>
-      <select name="mes" class="form-select h-9 text-sm rounded-md border-neutral-300 w-32" :disabled="refreshing">
-        {{ range $i, $m := .Meses }} {{ if gt $i 0 }}
-        <option value="{{ $i }}" {{ if eq $i $.Mes }}selected{{ end }}>{{ $m }}</option>
-        {{ end }} {{ end }}
-      </select>
-      <button type="submit" class="text-secondary hover:text-primary-900 font-medium text-sm underline disabled:opacity-50" :disabled="refreshing">
-        <span x-text="refreshing ? 'Cargando...' : 'Refrescar Tabla'"></span>
-      </button>
-    </form>
+    <div class="flex flex-col md:flex-row items-end md:items-center gap-4 w-full md:w-auto">{{ template "admin/components/cupos_actions" . }}</div>
   </div>
 
   <!-- Tabla -->
-  <div class="bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden">
-    <div class="overflow-x-auto">
-      <table class="min-w-full divide-y divide-gray-200">
-        <thead class="bg-neutral-50">
-          <tr>
-            <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-10">#</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Senador / Usuario</th>
-            <th class="px-6 py-3 text-center text-xs font-medium text-neutral-500 uppercase tracking-wider">Total Semanas</th>
-            <th class="px-6 py-3 text-center text-xs font-medium text-neutral-500 uppercase tracking-wider">Usados</th>
-            <th class="px-6 py-3 text-center text-xs font-medium text-neutral-500 uppercase tracking-wider">Saldo</th>
-            <th class="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">Acciones</th>
-          </tr>
-        </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
-          {{ range $i, $cupo := .Cupos }}
-          <tr class="hover:bg-neutral-50 transition-colors">
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500 font-mono">{{ inc $i }}</td>
-            <td class="px-6 py-4 whitespace-nowrap">
-              <div class="text-sm font-bold text-neutral-900">{{ .Senador.GetNombreCompleto }}</div>
-              <div class="text-xs text-neutral-500">
-                <span
-                  class="px-1 inline-flex text-xxs leading-5 font-semibold rounded-full 
-                                {{ if eq .Senador.Tipo `SENADOR_TITULAR` }}bg-gold/20 text-primary-800 {{ end }}
-                                {{ if eq .Senador.Tipo `SENADOR_SUPLENTE` }}bg-secondary/20 text-primary-900 {{ end }}">
-                  {{ .Senador.Tipo }}
-                </span>
-              </div>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-bold text-neutral-900">{{ .CupoTotal }}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-bold text-danger-600">{{ .CupoUsado }}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-bold text-success-600">{{ .Saldo }}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-              <button
-                hx-get="/admin/cupos/{{ .ID }}/vouchers"
-                hx-target="#modal-container"
-                class="text-primary hover:text-primary-800 bg-primary-50 px-3 py-1 rounded-md border border-primary-100 text-xs font-bold transition-all disabled:opacity-50">
-                Ver Vouchers
-              </button>
-            </td>
-          </tr>
-          {{ else }}
-          <tr>
-            <td colspan="6" class="px-6 py-10 text-center text-neutral-500">
-              <div class="flex flex-col items-center justify-center">
-                <i class="ph ph-clipboard-text text-5xl text-neutral-300 mb-2"></i>
-                <p>No hay registros de cupos para este período.</p>
-                <p class="text-xs mt-1">Utilice el botón "Generar / Actualizar" para calcular los cupos del mes.</p>
-              </div>
-            </td>
-          </tr>
-          {{ end }}
-        </tbody>
-      </table>
-    </div>
-  </div>
+  <div class="bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden" id="table-cupos-container">{{ template "admin/components/table_cupos" . }}</div>
 </div>
 
 {{ template "layout_end" . }} {{ end }}

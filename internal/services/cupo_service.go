@@ -222,6 +222,28 @@ func (s *CupoService) TransferirVoucher(ctx context.Context, voucherID string, d
 	return s.voucherRepo.WithContext(ctx).Update(voucher)
 }
 
+func (s *CupoService) RevertirTransferencia(ctx context.Context, voucherID string) error {
+	voucher, err := s.voucherRepo.WithContext(ctx).FindByID(voucherID)
+	if err != nil {
+		return errors.New("voucher no encontrado")
+	}
+
+	if !voucher.EsTransferido {
+		return errors.New("el voucher no ha sido transferido")
+	}
+
+	if voucher.EstadoVoucherCodigo != "DISPONIBLE" {
+		return errors.New("no se puede revertir: el voucher ya fue utilizado por el beneficiario")
+	}
+
+	voucher.EsTransferido = false
+	voucher.BeneficiarioID = nil
+	voucher.FechaTransfer = nil
+	voucher.MotivoTransfer = ""
+
+	return s.voucherRepo.WithContext(ctx).Update(voucher)
+}
+
 func (s *CupoService) ProcesarConsumoPasaje(ctx context.Context, usuarioID string, gestion, mes int) error {
 	return s.IncrementarUso(ctx, usuarioID, gestion, mes)
 }

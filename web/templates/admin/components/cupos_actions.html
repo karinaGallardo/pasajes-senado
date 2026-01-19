@@ -1,0 +1,64 @@
+{{ define "admin/components/cupos_actions" }}
+<div id="cupos-actions-container" class="flex flex-col md:flex-row items-end md:items-center gap-4 w-full md:w-auto" hx-swap-oob="true">
+  <!-- Filtro Periodo (HTMX) -->
+  <form
+    class="flex items-center gap-2 bg-neutral-50 p-1.5 rounded-lg border border-neutral-200"
+    hx-get="/admin/cupos"
+    hx-target="#table-cupos-container"
+    hx-indicator="#loading-indicator">
+    <input type="hidden" name="gestion" value="{{ .Gestion }}" />
+    <span class="px-3 py-1.5 bg-white border border-neutral-200 rounded-md text-sm font-bold text-neutral-600 shadow-sm">{{ .Gestion }}</span>
+    <select
+      name="mes"
+      class="block w-32 rounded-md border-neutral-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 text-sm py-1.5 pl-2 pr-8 bg-white text-neutral-700 cursor-pointer"
+      @change="$el.form.requestSubmit()">
+      {{ range $i, $m := .Meses }} {{ if gt $i 0 }}
+      <option value="{{ $i }}" {{ if eq $i $.Mes }}selected{{ end }}>{{ $m }}</option>
+      {{ end }} {{ end }}
+    </select>
+    <div id="loading-indicator" class="htmx-indicator pr-2">
+      <i class="ph ph-spinner animate-spin text-primary-500"></i>
+    </div>
+  </form>
+
+  <!-- Actions Divider -->
+  <div class="h-8 w-px bg-neutral-200 hidden md:block"></div>
+
+  <div class="flex items-center gap-2">
+    {{ if .HasVouchers }}
+    <!-- Sincronizar Button (Show only if vouchers EXIST) -->
+    <form action="/admin/cupos/reset" method="POST" id="reset-form" @submit="resetting = true" class="hidden">
+      <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
+      <input type="hidden" name="gestion" value="{{ .Gestion }}" />
+      <input type="hidden" name="mes" value="{{ .Mes }}" />
+    </form>
+    <button
+      hx-post="/admin/cupos/reset"
+      hx-include="#reset-form"
+      hx-target="body"
+      hx-confirm="Esta acción recalculará las semanas del período seleccionado. ¿Continuar con la sincronización?"
+      class="text-neutral-500 hover:text-primary-600 hover:bg-primary-50 p-2 rounded-lg transition-colors"
+      title="Sincronizar y recalcular mes">
+      <i class="ph ph-arrows-clockwise text-xl"></i>
+    </button>
+    {{ else }}
+    <!-- Generar Button (Show only if vouchers DO NOT exist) -->
+    <form action="/admin/cupos/generar" method="POST" @submit="generating = true" class="flex">
+      <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
+      <input type="hidden" name="gestion" value="{{ .Gestion }}" />
+      <input type="hidden" name="mes" value="{{ .Mes }}" />
+
+      <button
+        type="submit"
+        class="bg-primary hover:bg-primary-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+        :disabled="generating">
+        <template x-if="generating">
+          <i class="ph ph-spinner animate-spin"></i>
+        </template>
+        <span x-text="generating ? 'Generando...' : 'Generar Vouchers'"></span>
+      </button>
+    </form>
+    {{ end }}
+  </div>
+</div>
+{{ end }}

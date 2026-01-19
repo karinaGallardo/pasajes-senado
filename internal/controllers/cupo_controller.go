@@ -49,16 +49,26 @@ func (ctrl *CupoController) Index(c *gin.Context) {
 		nombreMes = meses[mes]
 	}
 
-	users, _ := ctrl.userService.GetByRoleType(c.Request.Context(), "SENADOR")
+	data := gin.H{
+		"Cupos":          cupos,
+		"Gestion":        gestion,
+		"Mes":            mes,
+		"NombreMes":      nombreMes,
+		"Meses":          meses,
+		"HasVouchers":    len(cupos) > 0,
+		"CurrentGestion": now.Year(),
+		"CurrentMes":     int(now.Month()),
+	}
 
-	utils.Render(c, "admin/cupos", gin.H{
-		"Cupos":     cupos,
-		"Users":     users,
-		"Gestion":   gestion,
-		"Mes":       mes,
-		"NombreMes": nombreMes,
-		"Meses":     meses,
-	})
+	if c.GetHeader("HX-Request") == "true" {
+		utils.Render(c, "admin/components/cupos_response", data)
+		return
+	}
+
+	users, _ := ctrl.userService.GetByRoleType(c.Request.Context(), "SENADOR")
+	data["Users"] = users
+
+	utils.Render(c, "admin/cupos", data)
 }
 
 func (ctrl *CupoController) Generar(c *gin.Context) {
@@ -100,6 +110,25 @@ func (ctrl *CupoController) Transferir(c *gin.Context) {
 	}
 
 	c.Redirect(http.StatusFound, fmt.Sprintf("/admin/cupos?gestion=%s&mes=%s", req.Gestion, req.Mes))
+}
+
+func (ctrl *CupoController) RevertirTransferencia(c *gin.Context) {
+	voucherID := c.Param("id")
+	gestion := c.Query("gestion")
+	mes := c.Query("mes")
+
+	err := ctrl.service.RevertirTransferencia(c.Request.Context(), voucherID)
+	if err != nil {
+		fmt.Printf("Error revirtiendo transferencia: %v\n", err)
+	}
+
+	targetURL := fmt.Sprintf("/admin/cupos?gestion=%s&mes=%s", gestion, mes)
+	if c.GetHeader("HX-Request") == "true" {
+		c.Header("HX-Redirect", targetURL)
+		c.Status(http.StatusOK)
+		return
+	}
+	c.Redirect(http.StatusFound, targetURL)
 }
 
 func (ctrl *CupoController) Reset(c *gin.Context) {

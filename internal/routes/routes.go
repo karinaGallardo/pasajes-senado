@@ -110,8 +110,9 @@ func SetupRoutes(r *gin.Engine) {
 			sysAdmin.POST("/admin/cupos/generar", cupoCtrl.Generar)
 			sysAdmin.GET("/admin/cupos/:id/vouchers", cupoCtrl.GetVouchersByCupo)
 			sysAdmin.GET("/admin/cupos/vouchers/:id/modal-transferir", cupoCtrl.GetTransferModal)
-			sysAdmin.POST("/admin/cupos/transferir", cupoCtrl.Transferir)
-			sysAdmin.POST("/admin/cupos/reset", cupoCtrl.Reset)
+			protected.POST("/admin/cupos/transferir", cupoCtrl.Transferir)
+			protected.POST("/admin/cupos/vouchers/:id/revertir-transferencia", cupoCtrl.RevertirTransferencia)
+			protected.POST("/admin/cupos/reset", cupoCtrl.Reset)
 
 			aerolineaCtrl := controllers.NewAerolineaController()
 			sysAdmin.GET("/admin/aerolineas", aerolineaCtrl.Index)
