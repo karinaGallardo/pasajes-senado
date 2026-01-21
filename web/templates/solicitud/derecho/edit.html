@@ -6,21 +6,21 @@
     activeTab: '{{ .ActiveTab }}',
     origen: '{{ if eq .ActiveTab `SOLO_VUELTA` }}LPB{{ else }}{{ .TargetUser.GetOrigenIATA }}{{ end }}',
     lpbName: 'La Paz - El Alto',
-    
+
     userOrigenName: '{{ .TargetUser.GetOrigenNombre }}',
     userOrigenCode: '{{ .TargetUser.GetOrigenIATA }}',
     targetShortName: '{{ .TargetUser.GetNombreCompleto }}',
 
     isSubmitting: false,
-    
-    selectedDaySalida: '{{ if .IsEdit }}{{ if eq .ActiveTab `SOLO_VUELTA` }}{{ .Solicitud.FechaVuelta.Format `2006-01-02` }}{{ else }}{{ .Solicitud.FechaIda.Format `2006-01-02` }}{{ end }}{{ else }}{{ .Voucher.FechaDesde.Format `2006-01-02` }}{{ end }}',
+
+    selectedDaySalida: '{{ if .IsEdit }}{{ if eq .ActiveTab `SOLO_VUELTA` }}{{ .Solicitud.FechaVuelta.Format `2006-01-02` }}{{ else }}{{ .Solicitud.FechaIda.Format `2006-01-02` }}{{ end }}{{ else }}{{ .Item.FechaDesde.Format `2006-01-02` }}{{ end }}',
     selectedTimeSalida: '{{ if .IsEdit }}{{ if eq .ActiveTab `SOLO_VUELTA` }}{{ .Solicitud.FechaVuelta.Format `15:04` }}{{ else }}{{ .Solicitud.FechaIda.Format `15:04` }}{{ end }}{{ else }}08:00{{ end }}',
-    
+
     isEdit: {{ .IsEdit }},
     editId: '{{ .Solicitud.ID }}',
     motivo: '{{ if .IsEdit }}{{ .Solicitud.Motivo }}{{ end }}',
     aerolinea: '{{ if .IsEdit }}{{ .Solicitud.AerolineaSugerida }}{{ end }}',
-    voucherSelected: '{{ .VoucherID }}',
+    itemSelected: '{{ .ItemID }}',
 }">
   <!-- HEADER -->
   <div class="bg-neutral-50 border border-neutral-200 p-3 flex items-center justify-between rounded-lg shadow-sm">
@@ -33,8 +33,8 @@
       <div>
         <h3 class="text-lg font-bold text-neutral-800">Emitir Pasaje: {{ .Itinerario.Nombre }}</h3>
         <p class="text-xs text-neutral-500 font-medium">
-          Semana {{ .Voucher.Semana }} ({{ if .Voucher.FechaDesde }}{{ .Voucher.FechaDesde.Format "02/01" }}{{ end }} - {{ if .Voucher.FechaHasta }}{{ .Voucher.FechaHasta.Format
-          "02/01" }}{{ end }})
+          Semana {{ .Item.Semana }} ({{ if .Item.FechaDesde }}{{ .Item.FechaDesde.Format "02/01" }}{{ end }} - {{ if .Item.FechaHasta }}{{ .Item.FechaHasta.Format "02/01" }}{{ end
+          }})
         </p>
       </div>
     </div>

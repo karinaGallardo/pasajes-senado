@@ -6,7 +6,7 @@ import (
 	"gorm.io/gorm"
 )
 
-type EstadoVoucher struct {
+type EstadoCupoDerecho struct {
 	Codigo      string `gorm:"primaryKey;size:50;not null"`
 	Nombre      string `gorm:"size:100;not null"`
 	Descripcion string `gorm:"size:255"`
@@ -17,6 +17,6 @@ type EstadoVoucher struct {
 	DeletedAt gorm.DeletedAt `gorm:"index;type:timestamp"`
 }
 
-func (EstadoVoucher) TableName() string {
-	return "estados_voucher"
+func (EstadoCupoDerecho) TableName() string {
+	return "estados_cupo_derecho"
 }

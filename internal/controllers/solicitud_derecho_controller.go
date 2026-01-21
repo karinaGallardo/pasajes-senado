@@ -51,12 +51,12 @@ func (ctrl *SolicitudDerechoController) Create(c *gin.Context) {
 
 	currentUser := appcontext.CurrentUser(c)
 
-	voucherID := c.Param("voucher_id")
+	itemID := c.Param("item_id")
 	itinerarioCode := c.Param("itinerario_code")
 
-	voucher, err := ctrl.cupoService.GetVoucherByID(c.Request.Context(), voucherID)
+	item, err := ctrl.cupoService.GetCupoDerechoItemByID(c.Request.Context(), itemID)
 	if err != nil {
-		c.String(http.StatusNotFound, "Voucher no encontrada")
+		c.String(http.StatusNotFound, "Derecho no encontrado")
 		return
 	}
 
@@ -66,9 +66,9 @@ func (ctrl *SolicitudDerechoController) Create(c *gin.Context) {
 		return
 	}
 
-	targetUser, err := ctrl.userService.GetByID(c.Request.Context(), voucher.SenadorID)
+	targetUser, err := ctrl.userService.GetByID(c.Request.Context(), item.SenTitularID)
 	if err != nil {
-		c.String(http.StatusInternalServerError, "Usuario titular del voucher no encontrado")
+		c.String(http.StatusInternalServerError, "Usuario titular del derecho no encontrado")
 		return
 	}
 
@@ -95,7 +95,7 @@ func (ctrl *SolicitudDerechoController) Create(c *gin.Context) {
 
 	tipoSolicitud, ambitoNac, _ := ctrl.tipoSolicitudService.GetByCodigoAndAmbito(c.Request.Context(), "USO_CUPO", "NACIONAL")
 
-	weekDays := ctrl.cupoService.GetVoucherWeekDays(voucher)
+	weekDays := ctrl.cupoService.GetCupoDerechoItemWeekDays(item)
 
 	origenIATA := targetUser.GetOrigenIATA()
 
@@ -122,7 +122,7 @@ func (ctrl *SolicitudDerechoController) Create(c *gin.Context) {
 		"TargetUser":   targetUser,
 		"Aerolineas":   aerolineas,
 		"AlertaOrigen": alertaOrigen,
-		"Voucher":      voucher,
+		"Item":         item,
 		"WeekDays":     weekDays,
 
 		"Concepto":      tipoSolicitud.ConceptoViaje,
@@ -142,8 +142,8 @@ func (ctrl *SolicitudDerechoController) Store(c *gin.Context) {
 		return
 	}
 
-	if req.VoucherID == "" {
-		c.String(http.StatusBadRequest, "Voucher ID requerido para solicitud de derecho")
+	if req.CupoDerechoItemID == "" {
+		c.String(http.StatusBadRequest, "ID de Registro de Derecho requerido para solicitud")
 		return
 	}
 
@@ -179,14 +179,14 @@ func (ctrl *SolicitudDerechoController) Edit(c *gin.Context) {
 		return
 	}
 
-	if solicitud.VoucherID == nil {
+	if solicitud.CupoDerechoItemID == nil {
 		c.String(http.StatusBadRequest, "Esta solicitud no corresponde a un pasaje por derecho")
 		return
 	}
 
-	voucher, err := ctrl.cupoService.GetVoucherByID(c.Request.Context(), *solicitud.VoucherID)
+	item, err := ctrl.cupoService.GetCupoDerechoItemByID(c.Request.Context(), *solicitud.CupoDerechoItemID)
 	if err != nil {
-		c.String(http.StatusInternalServerError, "Voucher asociado no encontrado")
+		c.String(http.StatusInternalServerError, "Derecho asociado no encontrado")
 		return
 	}
 
@@ -228,8 +228,8 @@ func (ctrl *SolicitudDerechoController) Edit(c *gin.Context) {
 	}
 
 	weekDays := []gin.H{}
-	if voucher.FechaDesde != nil {
-		start := *voucher.FechaDesde
+	if item.FechaDesde != nil {
+		start := *item.FechaDesde
 		names := []string{"Dom", "Lun", "Mar", "Mie", "Jue", "Vie", "Sab"}
 		for i := 0; i < 7; i++ {
 			d := start.AddDate(0, 0, i)
@@ -249,8 +249,8 @@ func (ctrl *SolicitudDerechoController) Edit(c *gin.Context) {
 		"Itinerarios":        TiposItinerario,
 		"ItinerarioIdaID":    ItinerarioIdaID,
 		"ItinerarioVueltaID": ItinerarioVueltaID,
-		"Voucher":            voucher,
-		"VoucherID":          voucher.ID,
+		"Item":               item,
+		"ItemID":             item.ID,
 		"ActiveTab":          ActiveTab,
 		"Solicitud":          solicitud,
 		"IsEdit":             true,

@@ -11,18 +11,24 @@ import (
 // TemplateFuncs exporta el mapa de funciones para uso en plantillas HTML.
 func TemplateFuncs() template.FuncMap {
 	return template.FuncMap{
-		"add":   Add,
-		"sum":   Sum,
-		"sub":   Sub,
-		"mul":   Mul,
-		"inc":   Inc,
-		"dt":    FormatDate,
-		"df":    FormatDateRange,
-		"dtl":   FormatDateTimeES,
-		"deref": DerefString,
-		"safe":  UnsafeHTML,
-		"json":  ToJSON,
+		"add":         Add,
+		"sum":         Sum,
+		"sub":         Sub,
+		"mul":         Mul,
+		"inc":         Inc,
+		"dt":          FormatDate,
+		"df":          FormatDateRange,
+		"dtl":         FormatDateTimeES,
+		"deref":       DerefString,
+		"safe":        UnsafeHTML,
+		"json":        ToJSON,
+		"currentYear": CurrentYear,
+		"monthName":   GetMonthName,
 	}
+}
+
+func CurrentYear() int {
+	return time.Now().Year()
 }
 
 // UnsafeHTML retorna el string como template.HTML para omitir el escape automático.

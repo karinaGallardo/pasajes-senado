@@ -35,7 +35,7 @@ func (ac *AuthController) Login(c *gin.Context) {
 		return
 	}
 
-	user, err := ac.authService.AuthenticateAndSync(c.Request.Context(), req.Username, req.Password)
+	user, err := ac.authService.Authenticate(c.Request.Context(), req.Username, req.Password)
 	if err != nil {
 		utils.Render(c, "auth/login", gin.H{
 			"error": err.Error(),
@@ -47,10 +47,13 @@ func (ac *AuthController) Login(c *gin.Context) {
 	session.Set("user_id", user.ID)
 	session.Set("username", user.Username)
 
-	roleCode := "FUNCIONARIO"
-	if user.Rol != nil {
-		roleCode = user.Rol.Codigo
+	if user.Rol == nil || user.Rol.Codigo == "" {
+		utils.Render(c, "auth/login", gin.H{
+			"error": "Error: El usuario no tiene un rol asignado en el sistema.",
+		})
+		return
 	}
+	roleCode := user.Rol.Codigo
 	session.Set("role", roleCode)
 	session.Set("nombre", user.GetNombreCompleto())
 	session.Save()

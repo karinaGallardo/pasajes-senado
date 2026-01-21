@@ -4,8 +4,17 @@
   <!-- HEADER -->
   <div class="flex justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-neutral-200">
     <div>
-      <h2 class="text-xl font-bold text-neutral-800 tracking-tight">Gestión de Pasajes - {{ .TargetUser.GetNombreCompleto }}</h2>
-      <p class="text-sm text-neutral-500">Administración de cupos y solicitudes</p>
+      <div class="flex items-center gap-3">
+        <h2 class="text-xl font-bold text-neutral-800 tracking-tight">Gestión de Pasajes - {{ .TargetUser.GetNombreCompleto }}</h2>
+        {{ if eq .TargetUser.Tipo "SENADOR_TITULAR" }}
+        <span class="inline-flex items-center rounded-md bg-purple-50 px-2 py-1 text-xs font-medium text-purple-700 ring-1 ring-inset ring-purple-700/10">Titular</span>
+        {{ else if eq .TargetUser.Tipo "SENADOR_SUPLENTE" }}
+        <span class="inline-flex items-center rounded-md bg-blue-50 px-2 py-1 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">Suplente</span>
+        {{ else }}
+        <span class="inline-flex items-center rounded-md bg-gray-50 px-2 py-1 text-xs font-medium text-gray-600 ring-1 ring-inset ring-gray-500/10">{{ .TargetUser.Tipo }}</span>
+        {{ end }}
+      </div>
+      <p class="text-sm text-neutral-500">Administración de derechos de pasaje y solicitudes</p>
     </div>
     <div class="flex items-center space-x-3">
       <!-- Action buttons if needed -->
@@ -37,7 +46,7 @@
   <div class="bg-white rounded-lg shadow-sm border border-neutral-200 overflow-hidden">
     <div class="p-6 border-b border-neutral-100 flex justify-between items-center bg-neutral-50/50">
       <div>
-        <h3 class="text-xs font-bold text-secondary uppercase tracking-wider mb-1">Cupos Anuales</h3>
+        <h3 class="text-xs font-bold text-secondary uppercase tracking-wider mb-1">Derechos de Pasaje Anuales</h3>
         <p class="text-sm font-medium text-neutral-600">Gestión {{ .Gestion }}</p>
       </div>
     </div>
@@ -48,6 +57,14 @@
         <div class="flex items-center space-x-4">
           <h3 class="text-lg font-bold text-neutral-800 uppercase tracking-wide">{{ .MonthName }}</h3>
           <div class="h-px bg-neutral-200 flex-1"></div>
+          {{ if $.CurrentUser.IsAdminOrResponsable }}
+          <a
+            href="/admin/cupos?gestion={{ $.Gestion }}&mes={{ .MonthNum }}"
+            class="text-neutral-400 hover:text-primary transition-colors text-xs font-bold uppercase tracking-wider flex items-center gap-1">
+            Ver Gestión
+            <i class="ph ph-arrow-right"></i>
+          </a>
+          {{ end }}
         </div>
 
         <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 rounded-lg">
@@ -61,7 +78,7 @@
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200 bg-white">
-              {{ range .Vouchers }}
+              {{ range .Items }}
               <tr class="transition-colors {{ if .IsActiveWeek }} bg-primary-50/50 ring-1 ring-inset ring-primary-100 {{ else }} hover:bg-neutral-50 {{ end }}">
                 <!-- Semana -->
                 <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-neutral-900 sm:pl-6">{{ .Semana }}</td>
@@ -80,17 +97,34 @@
                 <td class="whitespace-nowrap px-3 py-4 text-sm">
                   <span
                     class="inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase 
-                    {{ if eq .EstadoVoucherCodigo `DISPONIBLE` }} bg-success-100 text-success-700 
-                    {{ else if eq .EstadoVoucherCodigo `RESERVADO` }} bg-amber-100 text-amber-700 
+                    {{ if eq .EstadoCupoDerechoCodigo `DISPONIBLE` }} bg-success-100 text-success-700 
+                    {{ else if eq .EstadoCupoDerechoCodigo `RESERVADO` }} bg-amber-100 text-amber-700 
                     {{ else }} bg-primary-100 text-primary-700 {{ end }}">
-                    {{ .EstadoVoucherCodigo }}
+                    {{ .EstadoCupoDerechoCodigo }}
                   </span>
                 </td>
 
                 <!-- Acciones -->
                 <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6" onclick="event.stopPropagation()">
                   <div class="flex justify-end gap-2">
-                    {{ $isVencido := .IsVencido }}
+                    {{ if $.CurrentUser.IsAdminOrResponsable }} {{ if .EsTransferido }}
+                    <button
+                      hx-post="/admin/cupos/derechos/{{ .ID }}/revertir-transferencia?gestion={{ .Gestion }}&mes={{ .Mes }}"
+                      hx-target="body"
+                      hx-confirm="¿Está seguro de revertir esta transferencia?"
+                      class="text-danger-600 hover:text-danger-900 border border-danger-200 bg-white font-bold text-[10px] uppercase px-2 py-1 rounded hover:bg-danger-50 transition-colors inline-flex items-center gap-1">
+                      <span class="[.htmx-request_&]:hidden">Deshacer</span>
+                      <i class="ph ph-spinner animate-spin hidden [.htmx-request_&]:block"></i>
+                    </button>
+                    {{ else if and (eq .EstadoCupoDerechoCodigo "DISPONIBLE") (not .IsVencido) }}
+                    <button
+                      hx-get="/admin/cupos/derechos/{{ .ID }}/modal-transferir?gestion={{ .Gestion }}&mes={{ .Mes }}"
+                      hx-target="#modal-container"
+                      class="text-primary-600 hover:text-primary-900 border border-primary-200 bg-white font-bold text-[10px] uppercase px-2 py-1 rounded hover:bg-primary-50 transition-colors inline-flex items-center gap-1">
+                      <span class="[.htmx-request_&]:hidden">Transferir</span>
+                      <i class="ph ph-spinner animate-spin hidden [.htmx-request_&]:block"></i>
+                    </button>
+                    {{ end }} {{ end }} {{ $isVencido := .IsVencido }}
 
                     <!-- Ida -->
                     {{ $solIda := .GetSolicitudIda }} {{ if not $solIda }} {{ if $isVencido }}
@@ -141,7 +175,7 @@
                     <!-- Descargo -->
                     {{ $descargo := .GetDescargo }} {{ $anyTravel := or $solIda $solVuelta }}
                     <a
-                      href="/solicitudes/derecho/formulario?voucher_id={{ .ID }}&itinerario_code=DESCARGO&user_id={{ $targetUserID }}"
+                      href="/solicitudes/derecho/formulario?item_id={{ .ID }}&itinerario_code=DESCARGO&user_id={{ $targetUserID }}"
                       class="font-bold text-[10px] uppercase border rounded px-2 py-1 transition-colors
                                 {{ if $anyTravel }}
                                     {{ if not $descargo }} text-danger-700 bg-danger-50 border-danger-100 hover:bg-danger-100

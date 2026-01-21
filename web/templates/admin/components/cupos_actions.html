@@ -25,8 +25,8 @@
   <div class="h-8 w-px bg-neutral-200 hidden md:block"></div>
 
   <div class="flex items-center gap-2">
-    {{ if .HasVouchers }}
-    <!-- Sincronizar Button (Show only if vouchers EXIST) -->
+    {{ if .HasCupos }}
+    <!-- Sincronizar Button (Show only if cupos EXIST) -->
     <form action="/admin/cupos/reset" method="POST" id="reset-form" @submit="resetting = true" class="hidden">
       <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
       <input type="hidden" name="gestion" value="{{ .Gestion }}" />
@@ -37,12 +37,15 @@
       hx-include="#reset-form"
       hx-target="body"
       hx-confirm="Esta acción recalculará las semanas del período seleccionado. ¿Continuar con la sincronización?"
-      class="text-neutral-500 hover:text-primary-600 hover:bg-primary-50 p-2 rounded-lg transition-colors"
+      class="text-neutral-500 hover:text-primary-600 hover:bg-primary-50 p-2 rounded-lg transition-colors relative disabled:opacity-50"
       title="Sincronizar y recalcular mes">
-      <i class="ph ph-arrows-clockwise text-xl"></i>
+      <!-- Default Content -->
+      <i class="ph ph-arrows-clockwise text-xl [.htmx-request_&]:hidden"></i>
+      <!-- Loading Spinner -->
+      <i class="ph ph-spinner animate-spin text-xl hidden [.htmx-request_&]:block"></i>
     </button>
     {{ else }}
-    <!-- Generar Button (Show only if vouchers DO NOT exist) -->
+    <!-- Generar Button (Show only if cupos DO NOT exist) -->
     <form action="/admin/cupos/generar" method="POST" @submit="generating = true" class="flex">
       <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
       <input type="hidden" name="gestion" value="{{ .Gestion }}" />
@@ -55,7 +58,7 @@
         <template x-if="generating">
           <i class="ph ph-spinner animate-spin"></i>
         </template>
-        <span x-text="generating ? 'Generando...' : 'Generar Vouchers'"></span>
+        <span x-text="generating ? 'Generando...' : 'Generar cupos por Derecho'"></span>
       </button>
     </form>
     {{ end }}

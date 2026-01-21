@@ -46,9 +46,9 @@ func main() {
 		&models.EstadoPasaje{},
 
 		// Gestión de Cupos
-		&models.EstadoVoucher{},
-		&models.Cupo{},
-		&models.AsignacionVoucher{},
+		&models.EstadoCupoDerecho{},
+		&models.CupoDerecho{},
+		&models.CupoDerechoItem{},
 
 		// Operaciones Principales
 		&models.Solicitud{},

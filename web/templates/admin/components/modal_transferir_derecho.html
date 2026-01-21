@@ -1,4 +1,4 @@
-{{ define "admin/components/modal_transferir_voucher" }}
+{{ define "admin/components/modal_transferir_derecho" }}
 <div x-data="{ open: true }" x-show="open" class="fixed z-[60] inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
   <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
     <div
@@ -18,17 +18,26 @@
       @click.away="open = false">
       <form action="/admin/cupos/transferir" method="POST" x-data="{ submitting: false }" @submit="submitting = true">
         <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
-        <input type="hidden" name="voucher_id" value="{{ .Voucher.ID }}" />
+        <input type="hidden" name="item_id" value="{{ .Item.ID }}" />
         <input type="hidden" name="gestion" value="{{ .Gestion }}" />
         <input type="hidden" name="mes" value="{{ .Mes }}" />
+        <input type="hidden" name="return_url" value="{{ .ReturnURL }}" />
 
-        <h3 class="text-lg leading-6 font-medium text-neutral-900 mb-4">Transferir Pasaje</h3>
+        <h3 class="text-lg leading-6 font-medium text-neutral-900 mb-4">Transferir Derecho de Pasaje</h3>
         <p class="text-sm text-neutral-500 mb-4">
           De:
           <strong class="text-neutral-900">{{ .Senador.GetNombreCompleto }}</strong>
+          {{ if eq .Senador.Tipo "SENADOR_TITULAR" }}
+          <span class="inline-flex items-center rounded-md bg-purple-50 px-2 py-0.5 text-xs font-medium text-purple-700 ring-1 ring-inset ring-purple-700/10 mb-1">Titular</span>
+          {{ else if eq .Senador.Tipo "SENADOR_SUPLENTE" }}
+          <span class="inline-flex items-center rounded-md bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10 mb-1">Suplente</span>
+          {{ end }}
+          <br />
           <br />
           Semana:
-          <strong class="text-primary">{{ .Voucher.Semana }}</strong>
+          <strong class="text-primary">{{ .Item.Semana }}</strong>
+          -
+          <span class="text-neutral-600 uppercase">{{ .MesName }} / {{ .Gestion }}</span>
         </p>
 
         <div class="mb-4">
@@ -40,12 +49,15 @@
               <div>
                 <div class="text-xs text-primary-500 font-bold uppercase tracking-wider mb-0.5">Transferencia Permitida a:</div>
                 <div class="text-sm font-black text-primary-900">{{ $dest.GetNombreCompleto }}</div>
-                <div class="text-[10px] text-primary-400 font-bold uppercase">{{ $dest.Tipo }}</div>
-              </div>
-              <div class="bg-primary-600 p-1.5 rounded-lg">
-                <svg class="h-4 w-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path>
-                </svg>
+                <div class="text-[10px] text-primary-400 font-bold uppercase">
+                  {{ if eq $dest.Tipo "SENADOR_TITULAR" }}
+                  <span class="inline-flex items-center rounded-md bg-purple-50 px-2 py-0.5 text-[10px] font-medium text-purple-700 ring-1 ring-inset ring-purple-700/10">
+                    Titular
+                  </span>
+                  {{ else if eq $dest.Tipo "SENADOR_SUPLENTE" }}
+                  <span class="inline-flex items-center rounded-md bg-blue-50 px-2 py-0.5 text-[10px] font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">Suplente</span>
+                  {{ else }} {{ $dest.Tipo }} {{ end }}
+                </div>
               </div>
             </div>
             <input type="hidden" name="destino_id" value="{{ $dest.ID }}" />
@@ -62,13 +74,7 @@
           </select>
           {{ else }}
           <div class="p-3 bg-danger-50 border border-danger-200 rounded-md flex items-center gap-2">
-            <svg class="h-5 w-5 text-danger-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
-            </svg>
+            <i class="ph ph-warning-circle text-xl text-danger-500"></i>
             <span class="text-xs text-danger-600 font-bold">Sin destinatarios válidos encontrados.</span>
           </div>
           {{ end }}
@@ -89,13 +95,7 @@
             type="submit"
             :disabled="submitting || {{ if eq (len .Candidates) 0 }}true{{ else }}false{{ end }}"
             class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary-600 text-base font-medium text-white hover:bg-primary-700 sm:col-start-2 sm:text-sm disabled:opacity-50 flex items-center justify-center gap-2">
-            <svg x-show="submitting" class="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-              <path
-                class="opacity-75"
-                fill="currentColor"
-                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
+            <i x-show="submitting" class="ph ph-spinner animate-spin text-lg"></i>
             <span x-text="submitting ? 'Procesando...' : 'Confirmar'"></span>
           </button>
           <button

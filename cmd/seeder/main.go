@@ -19,7 +19,7 @@ func main() {
 	seedCatalogosViaje()
 	seedDestinos()
 	seedEstadosSolicitud()
-	seedEstadosVoucher()
+	seedEstadosCupoDerecho()
 	seedEstadosPasaje()
 	seedViaticosAndConfig()
 	seedGeneros()
@@ -109,27 +109,29 @@ func seedDestinos() {
 		fmt.Println("Cargando destinos adicionales desde JSON...")
 		var boaData BoaData
 		if errLen := json.Unmarshal(fileContent, &boaData); errLen == nil {
-			for _, item := range boaData.Data {
-				var existing models.Destino
-				if err := configs.DB.Where("iata = ?", item.CodigoIata).First(&existing).Error; err == nil {
-					continue
-				}
+			/*
+				for _, item := range boaData.Data {
+						var existing models.Destino
+						if err := configs.DB.Where("iata = ?", item.CodigoIata).First(&existing).Error; err == nil {
+							continue
+						}
 
-				ambito := "INTERNACIONAL"
-				if item.TypeAirport == "N" {
-					ambito = "NACIONAL"
-				}
+						ambito := "INTERNACIONAL"
+						if item.TypeAirport == "N" {
+							ambito = "NACIONAL"
+						}
 
-				newDest := models.Destino{
-					IATA:         item.CodigoIata,
-					Ciudad:       item.CityName,
-					Aeropuerto:   item.Name,
-					Pais:         &item.CountryName,
-					AmbitoCodigo: ambito,
-					Estado:       true,
-				}
-				configs.DB.Create(&newDest)
-			}
+						newDest := models.Destino{
+							IATA:         item.CodigoIata,
+							Ciudad:       item.CityName,
+							Aeropuerto:   item.Name,
+							Pais:         &item.CountryName,
+							AmbitoCodigo: ambito,
+							Estado:       true,
+						}
+						configs.DB.Create(&newDest)
+					}
+			*/
 		} else {
 			fmt.Printf("Error parseando JSON de destinos: %v\n", errLen)
 		}
@@ -355,13 +357,13 @@ func seedRolesAndPermissions() {
 	fmt.Println("Roles y Permisos sincronizados correctamente.")
 }
 
-func seedEstadosVoucher() {
-	fmt.Println("Sincronizando Estados de Voucher...")
-	estados := []models.EstadoVoucher{
-		{Codigo: "DISPONIBLE", Nombre: "Disponible", Color: "green", Descripcion: "Voucher habilitado para uso"},
-		{Codigo: "USADO", Nombre: "Usado", Color: "gray", Descripcion: "Voucher ya utilizado en un viaje"},
-		{Codigo: "VENCIDO", Nombre: "Vencido", Color: "red", Descripcion: "Voucher expirado (fuera de fecha)"},
-		{Codigo: "RESERVADO", Nombre: "Reservado", Color: "yellow", Descripcion: "Voucher en proceso de asignación"},
+func seedEstadosCupoDerecho() {
+	fmt.Println("Sincronizando Estados de Derechos de Pasaje...")
+	estados := []models.EstadoCupoDerecho{
+		{Codigo: "DISPONIBLE", Nombre: "Disponible", Color: "green", Descripcion: "Derecho habilitado para uso"},
+		{Codigo: "USADO", Nombre: "Usado", Color: "gray", Descripcion: "Derecho ya utilizado en un viaje"},
+		{Codigo: "VENCIDO", Nombre: "Vencido", Color: "red", Descripcion: "Derecho expirado (fuera de fecha)"},
+		{Codigo: "RESERVADO", Nombre: "Reservado", Color: "yellow", Descripcion: "Derecho en proceso de asignación"},
 	}
 
 	for _, e := range estados {

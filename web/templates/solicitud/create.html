@@ -12,18 +12,18 @@
     lpbCode: 'LPB',
     lpbName: 'La Paz - El Alto',
     isLocked: true,
-    voucherSelected: '',
-    
+    itemSelected: '',
+
     activeTab: 'IDA',
     isSubmitting: false,
-    
+
     minDate: '',
     maxDate: '',
     weekDays: [],
 
     selectedDaySalida: '',
     selectedTimeSalida: '08:00',
-    
+
     isEdit: false,
     editId: '',
     motivo: '',
@@ -45,17 +45,17 @@
         this.minDate = min;
         this.maxDate = max;
         this.generateWeek(min);
-        
+
         this.selectedDaySalida = min;
     },
 
-    selectVoucher(voucherId, min, max, tab) {
+    selectItem(itemId, min, max, tab) {
         this.resetForm();
-        this.voucherSelected = voucherId;
+        this.itemSelected = itemId;
         this.activeTab = tab;
         this.showForm = true;
         this.tipo = 'SOLO_IDA';
-        
+
         if (tab === 'VUELTA') {
           this.origen = 'LPB';
           this.tipoItinerarioId = this.itinerarioVuelta;
@@ -65,20 +65,20 @@
             this.origen = this.userOrigenCode;
           }
         }
-        
+
         this.initSelection(min, max);
-        
+
         setTimeout(() => {
           const formElement = document.getElementById('main-form-container');
           if (formElement) formElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }, 100);
     },
 
-    loadEdit(voucherId, min, max, tab, solId, origen, fSalidaStr, motivoStr, aerolineaStr, itinId) {
+    loadEdit(itemId, min, max, tab, solId, origen, fSalidaStr, motivoStr, aerolineaStr, itinId) {
         this.resetForm();
         this.isEdit = true;
         this.editId = solId;
-        this.voucherSelected = voucherId;
+        this.itemSelected = itemId;
         this.activeTab = tab;
         this.showForm = true;
         this.tipo = 'SOLO_IDA';
@@ -110,9 +110,9 @@
 
     checkAutoOpen() {
         const urlParams = new URLSearchParams(window.location.search);
-        const vID = urlParams.get('auto_voucher');
+        const vID = urlParams.get('auto_item');
         const tab = urlParams.get('auto_tab');
-        
+
         if (vID && tab) {
             this.$nextTick(() => {
                 const btn = document.getElementById(`btn-${tab}-${vID}`);
@@ -120,7 +120,7 @@
                     btn.click();
                 }
             });
-            
+
             const newUrl = window.location.protocol + '//' + window.location.host + window.location.pathname;
             window.history.replaceState({path:newUrl}, '', newUrl);
         }
@@ -139,7 +139,7 @@
         const mm = String(d.getMonth() + 1).padStart(2, '0');
         const dd = String(d.getDate()).padStart(2, '0');
         const dateStr = `${yyyy}-${mm}-${dd}`;
-        
+
         days.push({
             date: dateStr,
             name: names[d.getDay()],
@@ -193,38 +193,38 @@
   </div>
   {{ end }}
 
-  <!-- PASO 1: SELECCIÓN DE VOUCHER -->
+  <!-- PASO 1: SELECCIÓN DE CUPO -->
   <div class="bg-white rounded-lg shadow-sm border border-neutral-200 overflow-hidden">
     <div class="p-6 border-b border-neutral-100 flex justify-between items-center bg-neutral-50/50">
       <div>
-        <h3 class="text-xs font-bold text-secondary uppercase tracking-wider mb-1">Paso 1: Selección de Bolsa</h3>
+        <h3 class="text-xs font-bold text-secondary uppercase tracking-wider mb-1">Paso 1: Selección de Cupo</h3>
         <p class="text-sm font-medium text-neutral-600">Disponibilidad del Mes</p>
       </div>
       <button x-show="showForm" @click="showForm = false" class="text-xs font-bold text-primary hover:underline flex items-center">
         <i class="ph ph-caret-up text-lg mr-1"></i>
-        Cambiar Bolsa de Pasajes
+        Cambiar Cupo de Pasajes
       </button>
     </div>
 
     <div class="p-6">
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {{ range .Vouchers }}
+        {{ range .Items }}
         <div
           class="relative border rounded-xl p-5 transition-all duration-200 flex flex-col items-center text-center space-y-3
-            {{ if eq .EstadoVoucherCodigo `DISPONIBLE` }}
+            {{ if eq .EstadoCupoDerechoCodigo `DISPONIBLE` }}
               bg-white border-neutral-200 cursor-pointer hover:border-secondary hover:shadow-md
             {{ else }}
               bg-neutral-50 border-neutral-100 opacity-75
             {{ end }}"
-          :class="{ 
-              'border-secondary ring-2 ring-secondary/10 bg-primary-50/10 shadow-sm': voucherSelected === '{{ .ID }}' 
+          :class="{
+              'border-secondary ring-2 ring-secondary/10 bg-primary-50/10 shadow-sm': itemSelected === '{{ .ID }}' 
           }"
           @click="
-            {{ if eq .EstadoVoucherCodigo `DISPONIBLE` }}
-              selectVoucher('{{ .ID }}', '{{ if .FechaDesde }}{{ .FechaDesde.Format `2006-01-02` }}{{ end }}', '{{ if .FechaHasta }}{{ .FechaHasta.Format `2006-01-02` }}{{ end }}', 'IDA');
+            {{ if eq .EstadoCupoDerechoCodigo `DISPONIBLE` }}
+              selectItem('{{ .ID }}', '{{ if .FechaDesde }}{{ .FechaDesde.Format `2006-01-02` }}{{ end }}', '{{ if .FechaHasta }}{{ .FechaHasta.Format `2006-01-02` }}{{ end }}', 'IDA');
             {{ end }}
           ">
-          <div class="absolute top-2 right-2" x-show="voucherSelected === '{{ .ID }}'">
+          <div class="absolute top-2 right-2" x-show="itemSelected === '{{ .ID }}'">
             <i class="ph ph-check-circle text-2xl text-secondary"></i>
           </div>
 
@@ -244,10 +244,10 @@
           <!-- Status badge -->
           <span
             class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase 
-            {{ if eq .EstadoVoucherCodigo `DISPONIBLE` }} bg-success-100 text-success-700 
-            {{ else if eq .EstadoVoucherCodigo `RESERVADO` }} bg-amber-100 text-amber-700 
+            {{ if eq .EstadoCupoDerechoCodigo `DISPONIBLE` }} bg-success-100 text-success-700 
+            {{ else if eq .EstadoCupoDerechoCodigo `RESERVADO` }} bg-amber-100 text-amber-700 
             {{ else }} bg-primary-100 text-primary-700 {{ end }}">
-            {{ .EstadoVoucherCodigo }}
+            {{ .EstadoCupoDerechoCodigo }}
           </span>
 
           <!-- Quick Actions -->
@@ -257,7 +257,7 @@
             <button
               type="button"
               id="btn-IDA-{{ .ID }}"
-              @click.stop="selectVoucher('{{ .ID }}', '{{ if .FechaDesde }}{{ .FechaDesde.Format `2006-01-02` }}{{ end }}', '{{ if .FechaHasta }}{{ .FechaHasta.Format `2006-01-02` }}{{ end }}', 'IDA')"
+              @click.stop="selectItem('{{ .ID }}', '{{ if .FechaDesde }}{{ .FechaDesde.Format `2006-01-02` }}{{ end }}', '{{ if .FechaHasta }}{{ .FechaHasta.Format `2006-01-02` }}{{ end }}', 'IDA')"
               class="group/btn relative px-2.5 py-1 rounded text-[9px] font-bold uppercase border transition-all bg-white text-neutral-500 border-neutral-200 hover:border-secondary hover:text-secondary">
               Crear Ida
             </button>
@@ -299,7 +299,7 @@
             <button
               type="button"
               id="btn-VUELTA-{{ .ID }}"
-              @click.stop="selectVoucher('{{ .ID }}', '{{ if .FechaDesde }}{{ .FechaDesde.Format `2006-01-02` }}{{ end }}', '{{ if .FechaHasta }}{{ .FechaHasta.Format `2006-01-02` }}{{ end }}', 'VUELTA')"
+              @click.stop="selectItem('{{ .ID }}', '{{ if .FechaDesde }}{{ .FechaDesde.Format `2006-01-02` }}{{ end }}', '{{ if .FechaHasta }}{{ .FechaHasta.Format `2006-01-02` }}{{ end }}', 'VUELTA')"
               class="group/btn relative px-2.5 py-1 rounded text-[9px] font-bold uppercase border transition-all bg-white text-neutral-500 border-neutral-200 hover:border-secondary hover:text-secondary">
               Crear Vuelta
             </button>
@@ -340,7 +340,7 @@
             {{ $descargo := .GetDescargo }} {{ $anyTravel := or $solIda $solVuelta }}
             <button
               type="button"
-              @click.stop="selectVoucher('{{ .ID }}', '{{ if .FechaDesde }}{{ .FechaDesde.Format `2006-01-02` }}{{ end }}', '{{ if .FechaHasta }}{{ .FechaHasta.Format `2006-01-02` }}{{ end }}', 'DESCARGO')"
+              @click.stop="selectItem('{{ .ID }}', '{{ if .FechaDesde }}{{ .FechaDesde.Format `2006-01-02` }}{{ end }}', '{{ if .FechaHasta }}{{ .FechaHasta.Format `2006-01-02` }}{{ end }}', 'DESCARGO')"
               class="group/btn relative px-2.5 py-1 rounded text-[9px] font-bold uppercase border transition-all
               {{ if $anyTravel }}
                 {{ if not $descargo }} bg-danger-50 text-danger-700 border-danger-100 

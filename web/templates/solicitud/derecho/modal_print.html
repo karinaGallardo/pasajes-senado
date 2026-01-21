@@ -45,12 +45,17 @@
               </svg>
               Descargar PDF
             </a>
-            <button @click="modalOpen = false" class="bg-white px-4 py-2 border border-neutral-300 rounded-md text-neutral-700 hover:bg-neutral-50 transition-colors">Cerrar</button>
+            <button @click="modalOpen = false" class="bg-white px-4 py-2 border border-neutral-300 rounded-md text-neutral-700 hover:bg-neutral-50 transition-colors">
+              Cerrar
+            </button>
           </div>
         </div>
 
         <div class="bg-neutral-100 p-0 rounded-lg overflow-hidden h-[80vh]">
-          <iframe src="/solicitudes/{{ if .Solicitud.VoucherID }}derecho/{{ end }}{{ .Solicitud.ID }}/print" class="w-full h-full border-0" title="Vista Previa PDF"></iframe>
+          <iframe
+            src="/solicitudes/{{ if .Solicitud.CupoDerechoItemID }}derecho/{{ end }}{{ .Solicitud.ID }}/print"
+            class="w-full h-full border-0"
+            title="Vista Previa PDF"></iframe>
         </div>
       </div>
     </div>

@@ -22,13 +22,13 @@
       <tr class="hover:bg-neutral-50 transition-colors">
         <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500 font-mono">{{ inc $i }}</td>
         <td class="px-6 py-4 whitespace-nowrap">
-          <div class="text-sm font-bold text-neutral-900">{{ .Senador.GetNombreCompleto }}</div>
+          <div class="text-sm font-bold text-neutral-900">{{ .SenTitular.GetNombreCompleto }}</div>
           <div class="text-xs text-neutral-500">
             <span
               class="px-1 inline-flex text-xxs leading-5 font-semibold rounded-full 
-                            {{ if eq .Senador.Tipo `SENADOR_TITULAR` }}bg-gold/20 text-primary-800 {{ end }}
-                            {{ if eq .Senador.Tipo `SENADOR_SUPLENTE` }}bg-secondary/20 text-primary-900 {{ end }}">
-              {{ .Senador.Tipo }}
+                            {{ if eq .SenTitular.Tipo `SENADOR_TITULAR` }}bg-gold/20 text-primary-800 {{ end }}
+                            {{ if eq .SenTitular.Tipo `SENADOR_SUPLENTE` }}bg-secondary/20 text-primary-900 {{ end }}">
+              {{ .SenTitular.Tipo }}
             </span>
           </div>
         </td>
@@ -36,12 +36,11 @@
         <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-bold text-danger-600">{{ .CupoUsado }}</td>
         <td class="px-6 py-4 whitespace-nowrap text-center text-sm font-bold text-success-600">{{ .Saldo }}</td>
         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-          <button
-            hx-get="/admin/cupos/{{ .ID }}/vouchers"
-            hx-target="#modal-container"
-            class="text-primary hover:text-primary-800 bg-primary-50 px-3 py-1 rounded-md border border-primary-100 text-xs font-bold transition-all disabled:opacity-50">
-            Ver Vouchers
-          </button>
+          <a
+            href="/cupos/derecho/{{ .SenTitularID }}/{{ .Gestion }}/{{ .Mes }}"
+            class="text-primary hover:text-primary-800 bg-primary-50 px-3 py-1 rounded-md border border-primary-100 text-xs font-bold transition-all disabled:opacity-50 inline-block">
+            Ver Cupos
+          </a>
         </td>
       </tr>
       {{ else }}

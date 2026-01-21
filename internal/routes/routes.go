@@ -34,7 +34,8 @@ func SetupRoutes(r *gin.Engine) {
 
 		protected.GET("/perfil", perfilCtrl.Show)
 
-		protected.GET("/cupos/derecho/:id", cupoCtrl.Derecho)
+		protected.GET("/cupos/derecho/:id/:gestion", cupoCtrl.DerechoByYear)
+		protected.GET("/cupos/derecho/:id/:gestion/:mes", cupoCtrl.DerechoByMonth)
 
 		protected.GET("/solicitudes", solicitudCtrl.Index)
 		// protected.GET("/solicitudes/nueva", solicitudCtrl.Create)
@@ -47,8 +48,8 @@ func SetupRoutes(r *gin.Engine) {
 		// protected.POST("/solicitudes/:id/actualizar", solicitudCtrl.Update)
 		// protected.GET("/solicitudes/:id/print", solicitudCtrl.PrintPV01)
 
-		// Solicitudes Derecho (Voucher)
-		protected.GET("/solicitudes/derecho/crear/:voucher_id/:itinerario_code", solicitudDerechoCtrl.Create)
+		// Solicitudes Derecho
+		protected.GET("/solicitudes/derecho/crear/:item_id/:itinerario_code", solicitudDerechoCtrl.Create)
 		protected.POST("/solicitudes/derecho", solicitudDerechoCtrl.Store)
 		protected.GET("/solicitudes/derecho/:id/detalle", solicitudDerechoCtrl.Show)
 		protected.GET("/solicitudes/derecho/:id/editar", solicitudDerechoCtrl.Edit)
@@ -108,10 +109,10 @@ func SetupRoutes(r *gin.Engine) {
 		{
 			sysAdmin.GET("/admin/cupos", cupoCtrl.Index)
 			sysAdmin.POST("/admin/cupos/generar", cupoCtrl.Generar)
-			sysAdmin.GET("/admin/cupos/:id/vouchers", cupoCtrl.GetVouchersByCupo)
-			sysAdmin.GET("/admin/cupos/vouchers/:id/modal-transferir", cupoCtrl.GetTransferModal)
+			sysAdmin.GET("/admin/cupos/:id/derechos", cupoCtrl.GetCuposByCupo)
+			sysAdmin.GET("/admin/cupos/derechos/:id/modal-transferir", cupoCtrl.GetTransferModal)
 			protected.POST("/admin/cupos/transferir", cupoCtrl.Transferir)
-			protected.POST("/admin/cupos/vouchers/:id/revertir-transferencia", cupoCtrl.RevertirTransferencia)
+			protected.POST("/admin/cupos/derechos/:id/revertir-transferencia", cupoCtrl.RevertirTransferencia)
 			protected.POST("/admin/cupos/reset", cupoCtrl.Reset)
 
 			aerolineaCtrl := controllers.NewAerolineaController()

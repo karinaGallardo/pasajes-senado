@@ -14,7 +14,7 @@ type CreateSolicitudRequest struct {
 	FechaVuelta       string `form:"fecha_retorno"`
 	Motivo            string `form:"motivo"`
 	AerolineaSugerida string `form:"aerolinea"`
-	VoucherID         string `form:"voucher_id"`
+	CupoDerechoItemID string `form:"cupo_derecho_item_id"`
 	ActiveTab         string `form:"active_tab"`
 }
 

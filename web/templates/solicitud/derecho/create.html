@@ -3,9 +3,8 @@
 <div
   class="mt-2 max-w-5xl mx-auto space-y-2"
   x-data="{
-    selectedDaySalida: '{{ if .Voucher.FechaDesde }}{{ .Voucher.FechaDesde.Format `2006-01-02` }}{{ end }}',
+    selectedDaySalida: '{{ if .Item.FechaDesde }}{{ .Item.FechaDesde.Format `2006-01-02` }}{{ end }}',
     selectedTimeSalida: '08:00',
-    
     isSubmitting: false,
     isEdit: false,
     editId: '',
@@ -23,8 +22,8 @@
       <div>
         <h3 class="text-lg font-bold text-neutral-800">Emitir Pasaje: {{ .Itinerario.Nombre }}</h3>
         <p class="text-xs text-neutral-500 font-medium">
-          Semana {{ .Voucher.Semana }} ({{ if .Voucher.FechaDesde }}{{ .Voucher.FechaDesde.Format "02/01" }}{{ end }} - {{ if .Voucher.FechaHasta }}{{ .Voucher.FechaHasta.Format
-          "02/01" }}{{ end }})
+          Semana {{ .Item.Semana }} ({{ if .Item.FechaDesde }}{{ .Item.FechaDesde.Format "02/01" }}{{ end }} - {{ if .Item.FechaHasta }}{{ .Item.FechaHasta.Format "02/01" }}{{ end
+          }})
         </p>
       </div>
     </div>

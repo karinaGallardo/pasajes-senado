@@ -104,7 +104,7 @@ func (r *UsuarioRepository) FindByRoleType(roleType string) ([]models.Usuario, e
 	switch roleType {
 	case "SENADOR":
 		query = query.Preload("Suplentes").Preload("Suplentes.Origen").Preload("Suplentes.Departamento").
-			Where("tipo = ?", "SENADOR_TITULAR").
+			Where("tipo IN ?", []string{"SENADOR_TITULAR", "SENADOR_SUPLENTE"}).
 			Order("lastname ASC, firstname ASC")
 	case "FUNCIONARIO":
 		query = query.Preload("Cargo").

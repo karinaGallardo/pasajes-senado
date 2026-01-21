@@ -18,7 +18,7 @@ func NewSolicitudService() *SolicitudService {
 		repo:              repositories.NewSolicitudRepository(),
 		tipoSolicitudRepo: repositories.NewTipoSolicitudRepository(),
 		usuarioRepo:       repositories.NewUsuarioRepository(),
-		voucherRepo:       repositories.NewAsignacionVoucherRepository(),
+		itemRepo:          repositories.NewCupoDerechoItemRepository(),
 		tipoItinRepo:      repositories.NewTipoItinerarioRepository(),
 	}
 }
@@ -27,7 +27,7 @@ type SolicitudService struct {
 	repo              *repositories.SolicitudRepository
 	tipoSolicitudRepo *repositories.TipoSolicitudRepository
 	usuarioRepo       *repositories.UsuarioRepository
-	voucherRepo       *repositories.AsignacionVoucherRepository
+	itemRepo          *repositories.CupoDerechoItemRepository
 	tipoItinRepo      *repositories.TipoItinerarioRepository
 }
 
@@ -71,8 +71,8 @@ func (s *SolicitudService) Create(ctx context.Context, req dtos.CreateSolicitudR
 		AerolineaSugerida: req.AerolineaSugerida,
 	}
 
-	if req.VoucherID != "" {
-		solicitud.VoucherID = &req.VoucherID
+	if req.CupoDerechoItemID != "" {
+		solicitud.CupoDerechoItemID = &req.CupoDerechoItemID
 	}
 
 	tipoSolicitud, err := s.tipoSolicitudRepo.WithContext(ctx).FindByID(solicitud.TipoSolicitudID)
@@ -146,7 +146,7 @@ func (s *SolicitudService) GetByID(ctx context.Context, id string) (*models.Soli
 
 func (s *SolicitudService) Approve(ctx context.Context, id string) error {
 	return s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
-		voucherRepoTx := s.voucherRepo.WithTx(tx)
+		itemRepoTx := s.itemRepo.WithTx(tx)
 
 		solicitud, err := repoTx.FindByID(id)
 		if err != nil {
@@ -157,11 +157,11 @@ func (s *SolicitudService) Approve(ctx context.Context, id string) error {
 			return err
 		}
 
-		if solicitud.VoucherID != nil {
-			voucher, err := voucherRepoTx.FindByID(*solicitud.VoucherID)
-			if err == nil && voucher != nil {
-				voucher.EstadoVoucherCodigo = "RESERVADO"
-				if err := voucherRepoTx.Update(voucher); err != nil {
+		if solicitud.CupoDerechoItemID != nil {
+			item, err := itemRepoTx.FindByID(*solicitud.CupoDerechoItemID)
+			if err == nil && item != nil {
+				item.EstadoCupoDerechoCodigo = "RESERVADO"
+				if err := itemRepoTx.Update(item); err != nil {
 					return err
 				}
 			}
@@ -173,7 +173,7 @@ func (s *SolicitudService) Approve(ctx context.Context, id string) error {
 
 func (s *SolicitudService) Finalize(ctx context.Context, id string) error {
 	return s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
-		voucherRepoTx := s.voucherRepo.WithTx(tx)
+		itemRepoTx := s.itemRepo.WithTx(tx)
 
 		solicitud, err := repoTx.FindByID(id)
 		if err != nil {
@@ -184,11 +184,11 @@ func (s *SolicitudService) Finalize(ctx context.Context, id string) error {
 			return err
 		}
 
-		if solicitud.VoucherID != nil {
-			voucher, err := voucherRepoTx.FindByID(*solicitud.VoucherID)
-			if err == nil && voucher != nil {
-				voucher.EstadoVoucherCodigo = "USADO"
-				if err := voucherRepoTx.Update(voucher); err != nil {
+		if solicitud.CupoDerechoItemID != nil {
+			item, err := itemRepoTx.FindByID(*solicitud.CupoDerechoItemID)
+			if err == nil && item != nil {
+				item.EstadoCupoDerechoCodigo = "USADO"
+				if err := itemRepoTx.Update(item); err != nil {
 					return err
 				}
 			}

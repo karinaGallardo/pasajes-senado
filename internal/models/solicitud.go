@@ -8,8 +8,8 @@ type Solicitud struct {
 	UsuarioID string  `gorm:"size:24;not null"`
 	Usuario   Usuario `gorm:"constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
 
-	VoucherID         *string            `gorm:"size:36;index;default:null"`
-	AsignacionVoucher *AsignacionVoucher `gorm:"foreignKey:VoucherID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;<-:false"`
+	CupoDerechoItemID *string          `gorm:"size:36;index;default:null"`
+	CupoDerechoItem   *CupoDerechoItem `gorm:"foreignKey:CupoDerechoItemID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;<-:false"`
 
 	TipoSolicitudID string         `gorm:"size:36;not null;index"`
 	TipoSolicitud   *TipoSolicitud `gorm:"foreignKey:TipoSolicitudID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;<-:false"`

@@ -2,6 +2,7 @@ package controllers
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"sistema-pasajes/internal/appcontext"
 	"sistema-pasajes/internal/dtos"
@@ -55,7 +56,7 @@ func (ctrl *CupoController) Index(c *gin.Context) {
 		"Mes":            mes,
 		"NombreMes":      nombreMes,
 		"Meses":          meses,
-		"HasVouchers":    len(cupos) > 0,
+		"HasCupos":       len(cupos) > 0,
 		"CurrentGestion": now.Year(),
 		"CurrentMes":     int(now.Month()),
 	}
@@ -89,40 +90,49 @@ func (ctrl *CupoController) Generar(c *gin.Context) {
 		mes = int(now.Month())
 	}
 
-	err := ctrl.service.GenerateVouchersForMonth(c.Request.Context(), gestion, mes)
+	err := ctrl.service.GenerateCuposDerechoForMonth(c.Request.Context(), gestion, mes)
 	if err != nil {
-		// log.Printf("Error generando cupos: %v\n", err)
+		log.Printf("Error generando cupos: %v\n", err)
 	}
 
 	c.Redirect(http.StatusFound, fmt.Sprintf("/admin/cupos?gestion=%d&mes=%d", gestion, mes))
 }
 
 func (ctrl *CupoController) Transferir(c *gin.Context) {
-	var req dtos.TransferirVoucherRequest
+	var req dtos.TransferirCupoDerechoItemRequest
 	if err := c.ShouldBind(&req); err != nil {
 		c.Redirect(http.StatusFound, "/admin/cupos")
 		return
 	}
 
-	err := ctrl.service.TransferirVoucher(c.Request.Context(), req.VoucherID, req.DestinoID, req.Motivo)
+	err := ctrl.service.TransferirCupoDerecho(c.Request.Context(), req.ItemID, req.DestinoID, req.Motivo)
 	if err != nil {
-		// log.Printf("Error transfiriendo voucher: %v\n", err)
+		log.Printf("Error transfiriendo cupo derecho: %v\n", err)
 	}
 
-	c.Redirect(http.StatusFound, fmt.Sprintf("/admin/cupos?gestion=%s&mes=%s", req.Gestion, req.Mes))
+	targetURL := fmt.Sprintf("/admin/cupos?gestion=%s&mes=%s", req.Gestion, req.Mes)
+	if req.ReturnURL != "" {
+		targetURL = req.ReturnURL
+	}
+
+	c.Redirect(http.StatusFound, targetURL)
 }
 
 func (ctrl *CupoController) RevertirTransferencia(c *gin.Context) {
-	voucherID := c.Param("id")
+	itemID := c.Param("id")
 	gestion := c.Query("gestion")
 	mes := c.Query("mes")
 
-	err := ctrl.service.RevertirTransferencia(c.Request.Context(), voucherID)
+	err := ctrl.service.RevertirTransferencia(c.Request.Context(), itemID)
 	if err != nil {
 		fmt.Printf("Error revirtiendo transferencia: %v\n", err)
 	}
 
 	targetURL := fmt.Sprintf("/admin/cupos?gestion=%s&mes=%s", gestion, mes)
+	if ref := c.Request.Referer(); ref != "" {
+		targetURL = ref
+	}
+
 	if c.GetHeader("HX-Request") == "true" {
 		c.Header("HX-Redirect", targetURL)
 		c.Status(http.StatusOK)
@@ -149,27 +159,27 @@ func (ctrl *CupoController) Reset(c *gin.Context) {
 		mes = int(now.Month())
 	}
 
-	err := ctrl.service.ResetVouchersForMonth(c.Request.Context(), gestion, mes)
+	err := ctrl.service.ResetCuposDerechoForMonth(c.Request.Context(), gestion, mes)
 	if err != nil {
-		// log.Printf("Error reset cupos: %v\n", err)
+		log.Printf("Error reset cupos derecho: %v\n", err)
 	}
 
 	c.Redirect(http.StatusFound, fmt.Sprintf("/admin/cupos?gestion=%d&mes=%d", gestion, mes))
 }
 
-func (ctrl *CupoController) GetVouchersByCupo(c *gin.Context) {
+func (ctrl *CupoController) GetCuposByCupo(c *gin.Context) {
 	cupoID := c.Param("id")
 
-	vouchers, err := ctrl.service.GetVouchersByCupoID(c.Request.Context(), cupoID)
+	items, err := ctrl.service.GetCuposDerechoByCupoID(c.Request.Context(), cupoID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
 	var suplente *models.Usuario
-	if len(vouchers) > 0 {
-		senadorID := vouchers[0].SenadorID
-		s, err := ctrl.userService.GetSuplenteByTitularID(c.Request.Context(), senadorID)
+	if len(items) > 0 {
+		titularID := items[0].SenTitularID
+		s, err := ctrl.userService.GetSuplenteByTitularID(c.Request.Context(), titularID)
 		if err == nil {
 			suplente = s
 		}
@@ -177,8 +187,8 @@ func (ctrl *CupoController) GetVouchersByCupo(c *gin.Context) {
 
 	if c.GetHeader("HX-Request") == "true" {
 		cupo, _ := ctrl.service.GetByID(c.Request.Context(), cupoID)
-		utils.Render(c, "admin/components/modal_vouchers_cupo", gin.H{
-			"Vouchers": vouchers,
+		utils.Render(c, "admin/components/modal_derechos_cupo", gin.H{
+			"Items":    items,
 			"Suplente": suplente,
 			"Cupo":     cupo,
 		})
@@ -186,21 +196,21 @@ func (ctrl *CupoController) GetVouchersByCupo(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"vouchers": vouchers,
+		"items":    items,
 		"suplente": suplente,
 	})
 }
 
 func (ctrl *CupoController) GetTransferModal(c *gin.Context) {
-	voucherID := c.Param("id")
-	voucher, err := ctrl.service.GetVoucherByID(c.Request.Context(), voucherID)
+	itemID := c.Param("id")
+	item, err := ctrl.service.GetCupoDerechoItemByID(c.Request.Context(), itemID)
 	if err != nil {
-		c.String(http.StatusNotFound, "Voucher no encontrado")
+		c.String(http.StatusNotFound, "Derecho no encontrado")
 		return
 	}
 
-	senador, _ := ctrl.userService.GetByID(c.Request.Context(), voucher.SenadorID)
-	suplente, _ := ctrl.userService.GetSuplenteByTitularID(c.Request.Context(), voucher.SenadorID)
+	senador, _ := ctrl.userService.GetByID(c.Request.Context(), item.SenTitularID)
+	suplente, _ := ctrl.userService.GetSuplenteByTitularID(c.Request.Context(), item.SenTitularID)
 
 	var candidates []models.Usuario
 	if senador.Tipo == "SENADOR_TITULAR" && suplente != nil {
@@ -209,23 +219,34 @@ func (ctrl *CupoController) GetTransferModal(c *gin.Context) {
 		candidates, _ = ctrl.userService.GetByRoleType(c.Request.Context(), "SENADOR")
 	}
 
-	utils.Render(c, "admin/components/modal_transferir_voucher", gin.H{
-		"Voucher":    voucher,
+	gestion := c.Query("gestion")
+	mesStr := c.Query("mes")
+	mesName := ""
+	if mesInt, err := strconv.Atoi(mesStr); err == nil {
+		mesName = utils.GetMonthName(mesInt)
+	}
+
+	utils.Render(c, "admin/components/modal_transferir_derecho", gin.H{
+		"Item":       item,
 		"Senador":    senador,
 		"Candidates": candidates,
-		"Gestion":    c.Query("gestion"),
-		"Mes":        c.Query("mes"),
+		"Gestion":    gestion,
+		"Mes":        mesStr,
+		"MesName":    mesName,
+		"ReturnURL":  c.Request.Referer(),
 	})
 }
 
 type MonthGroup struct {
 	MonthNum  int
 	MonthName string
-	Vouchers  []models.AsignacionVoucher
+	Items     []models.CupoDerechoItem
 }
 
-func (ctrl *CupoController) Derecho(c *gin.Context) {
+func (ctrl *CupoController) DerechoByYear(c *gin.Context) {
 	id := c.Param("id")
+	gestionStr := c.Param("gestion")
+
 	targetUser, err := ctrl.userService.GetByID(c.Request.Context(), id)
 	if err != nil {
 		c.String(http.StatusNotFound, "Usuario no encontrado")
@@ -240,8 +261,13 @@ func (ctrl *CupoController) Derecho(c *gin.Context) {
 
 	now := time.Now()
 	gestion := now.Year()
+	if gestionStr != "" {
+		if g, err := strconv.Atoi(gestionStr); err == nil {
+			gestion = g
+		}
+	}
 
-	vouchers, _ := ctrl.service.GetVouchersByUsuarioAndGestion(c.Request.Context(), id, gestion)
+	items, _ := ctrl.service.GetCuposDerechoByUsuarioAndGestion(c.Request.Context(), id, gestion)
 
 	mesesNames := utils.GetMonthNames()
 
@@ -250,19 +276,19 @@ func (ctrl *CupoController) Derecho(c *gin.Context) {
 		grouped[i] = &MonthGroup{
 			MonthNum:  i,
 			MonthName: mesesNames[i],
-			Vouchers:  []models.AsignacionVoucher{},
+			Items:     []models.CupoDerechoItem{},
 		}
 	}
 
-	for _, v := range vouchers {
+	for _, v := range items {
 		if v.Mes >= 1 && v.Mes <= 12 {
-			grouped[v.Mes].Vouchers = append(grouped[v.Mes].Vouchers, v)
+			grouped[v.Mes].Items = append(grouped[v.Mes].Items, v)
 		}
 	}
 
 	var displayMonths []*MonthGroup
 	for i := 1; i <= 12; i++ {
-		if len(grouped[i].Vouchers) > 0 {
+		if len(grouped[i].Items) > 0 {
 			displayMonths = append(displayMonths, grouped[i])
 		}
 	}
@@ -272,5 +298,65 @@ func (ctrl *CupoController) Derecho(c *gin.Context) {
 		"User":       appContextUser,
 		"Months":     displayMonths,
 		"Gestion":    gestion,
+	})
+}
+
+func (ctrl *CupoController) DerechoByMonth(c *gin.Context) {
+	id := c.Param("id")
+	gestionStr := c.Param("gestion")
+	mesStr := c.Param("mes")
+
+	targetUser, err := ctrl.userService.GetByID(c.Request.Context(), id)
+	if err != nil {
+		c.String(http.StatusNotFound, "Usuario no encontrado")
+		return
+	}
+
+	appContextUser := appcontext.CurrentUser(c)
+	if appContextUser == nil {
+		c.Redirect(http.StatusFound, "/auth/login")
+		return
+	}
+
+	gestion, err := strconv.Atoi(gestionStr)
+	if err != nil {
+		gestion = time.Now().Year() // Fallback safety
+	}
+
+	mes, err := strconv.Atoi(mesStr)
+	if err != nil {
+		mes = 0
+	}
+
+	items, _ := ctrl.service.GetCuposDerechoByUsuarioAndGestion(c.Request.Context(), id, gestion)
+
+	mesesNames := utils.GetMonthNames()
+
+	grouped := make([]*MonthGroup, 13)
+	for i := 1; i <= 12; i++ {
+		grouped[i] = &MonthGroup{
+			MonthNum:  i,
+			MonthName: mesesNames[i],
+			Items:     []models.CupoDerechoItem{},
+		}
+	}
+
+	for _, v := range items {
+		if v.Mes == mes {
+			grouped[v.Mes].Items = append(grouped[v.Mes].Items, v)
+		}
+	}
+
+	var displayMonths []*MonthGroup
+	if mes >= 1 && mes <= 12 {
+		displayMonths = append(displayMonths, grouped[mes])
+	}
+
+	utils.Render(c, "cupo/derecho", gin.H{
+		"TargetUser":  targetUser,
+		"User":        appContextUser,
+		"Months":      displayMonths,
+		"Gestion":     gestion,
+		"TargetMonth": mes,
 	})
 }

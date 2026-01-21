@@ -2,38 +2,39 @@ package models
 
 import "time"
 
-type AsignacionVoucher struct {
+type CupoDerechoItem struct {
 	BaseModel
-	SenadorID string   `gorm:"size:36;not null;index"`
-	Senador   *Usuario `gorm:"foreignKey:SenadorID"`
+	SenTitularID string   `gorm:"size:36;not null;index;comment:Senador dueño del cupo por derecho"`
+	SenTitular   *Usuario `gorm:"foreignKey:SenTitularID"`
+
+	SenAsignadoID string   `gorm:"size:36;not null;index;comment:Senador que tiene el derecho de uso actual"`
+	SenAsignado   *Usuario `gorm:"foreignKey:SenAsignadoID"`
+
+	EsTransferido  bool       `gorm:"default:false;comment:Indica si el derecho ha sido transferido"`
+	FechaTransfer  *time.Time `gorm:"type:timestamp;comment:Fecha de la transferencia"`
+	MotivoTransfer string     `gorm:"size:255;comment:Motivo de la transferencia"`
 
 	Gestion int    `gorm:"not null;index"`
 	Mes     int    `gorm:"not null;index"`
-	Semana  string `gorm:"size:20;index"`
+	Semana  string `gorm:"size:50;index"`
 
-	CupoID string `gorm:"size:36;index"`
-	Cupo   *Cupo  `gorm:"foreignKey:CupoID"`
+	CupoDerechoID string       `gorm:"size:36;index;comment:ID del cupo por derecho"`
+	CupoDerecho   *CupoDerecho `gorm:"foreignKey:CupoDerechoID"`
 
-	EstadoVoucherCodigo string         `gorm:"size:50;default:'DISPONIBLE';index" json:"Estado"`
-	EstadoVoucher       *EstadoVoucher `gorm:"foreignKey:EstadoVoucherCodigo"`
+	EstadoCupoDerechoCodigo string             `gorm:"size:50;default:'DISPONIBLE';index" json:"Estado"`
+	EstadoCupoDerecho       *EstadoCupoDerecho `gorm:"foreignKey:EstadoCupoDerechoCodigo"`
 
-	Solicitudes []Solicitud `gorm:"foreignKey:VoucherID"`
+	Solicitudes []Solicitud `gorm:"foreignKey:CupoDerechoItemID"`
 
-	EsTransferido  bool       `gorm:"default:false"`
-	BeneficiarioID *string    `gorm:"size:36;index;default:null"`
-	Beneficiario   *Usuario   `gorm:"foreignKey:BeneficiarioID"`
-	FechaTransfer  *time.Time `gorm:"type:timestamp"`
-	MotivoTransfer string     `gorm:"size:255"`
-
-	FechaDesde *time.Time `gorm:"type:timestamp"`
-	FechaHasta *time.Time `gorm:"type:timestamp"`
+	FechaDesde *time.Time `gorm:"type:timestamp;comment:Fecha desde la cual el cupo es válido"`
+	FechaHasta *time.Time `gorm:"type:timestamp;comment:Fecha hasta la cual el cupo es válido"`
 }
 
-func (AsignacionVoucher) TableName() string {
-	return "asignaciones_voucher"
+func (CupoDerechoItem) TableName() string {
+	return "cupo_derecho_items"
 }
 
-func (v AsignacionVoucher) GetSolicitudIda() *Solicitud {
+func (v CupoDerechoItem) GetSolicitudIda() *Solicitud {
 	for i := range v.Solicitudes {
 		s := &v.Solicitudes[i]
 		if s.TipoItinerario != nil && (s.TipoItinerario.Codigo == "SOLO_IDA" || s.TipoItinerario.Codigo == "IDA_VUELTA") {
@@ -51,7 +52,7 @@ func (v AsignacionVoucher) GetSolicitudIda() *Solicitud {
 	return nil
 }
 
-func (v AsignacionVoucher) GetSolicitudVuelta() *Solicitud {
+func (v CupoDerechoItem) GetSolicitudVuelta() *Solicitud {
 	for i := range v.Solicitudes {
 		s := &v.Solicitudes[i]
 		if s.TipoItinerario != nil && (s.TipoItinerario.Codigo == "SOLO_VUELTA") {
@@ -79,7 +80,7 @@ func (v AsignacionVoucher) GetSolicitudVuelta() *Solicitud {
 	return nil
 }
 
-func (v AsignacionVoucher) GetDescargo() *Descargo {
+func (v CupoDerechoItem) GetDescargo() *Descargo {
 	for i := range v.Solicitudes {
 		if v.Solicitudes[i].Descargo != nil {
 			return v.Solicitudes[i].Descargo
@@ -88,7 +89,7 @@ func (v AsignacionVoucher) GetDescargo() *Descargo {
 	return nil
 }
 
-func (v AsignacionVoucher) IsVencido() bool {
+func (v CupoDerechoItem) IsVencido() bool {
 	if v.FechaHasta == nil {
 		return false
 	}
@@ -96,7 +97,7 @@ func (v AsignacionVoucher) IsVencido() bool {
 	return time.Now().After(expirationTime)
 }
 
-func (v AsignacionVoucher) IsActiveWeek() bool {
+func (v CupoDerechoItem) IsActiveWeek() bool {
 	if v.FechaDesde == nil || v.FechaHasta == nil {
 		return false
 	}

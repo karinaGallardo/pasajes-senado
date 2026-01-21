@@ -1,4 +1,4 @@
-{{ define "admin/components/modal_vouchers_cupo" }}
+{{ define "admin/components/modal_derechos_cupo" }}
 <div x-data="{ open: true }" x-show="open" class="fixed z-50 inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
   <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
     <div
@@ -17,8 +17,8 @@
         <div class="sm:flex sm:items-start">
           <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
             <h3 class="text-lg leading-6 font-medium text-neutral-900" id="modal-title">
-              Detalle de Vouchers -
-              <span class="font-bold text-primary">{{ if .Cupo.Senador }}{{ .Cupo.Senador.GetNombreCompleto }}{{ else }}Senador{{ end }}</span>
+              Detalle de Derechos de Pasaje -
+              <span class="font-bold text-primary">{{ if .Cupo.SenTitular }}{{ .Cupo.SenTitular.GetNombreCompleto }}{{ else }}Senador{{ end }}</span>
             </h3>
 
             {{ if .Suplente }}
@@ -40,7 +40,7 @@
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-gray-200">
-                    {{ range .Vouchers }}
+                    {{ range .Items }}
                     <tr class="hover:bg-neutral-50 transition-colors">
                       <td class="px-4 py-3 whitespace-nowrap">
                         <div class="text-sm font-bold text-neutral-700">{{ .Semana }}</div>
@@ -51,18 +51,18 @@
                       <td class="px-4 py-3 whitespace-nowrap text-center">
                         <span
                           class="px-2 py-1 text-xs font-bold rounded-md 
-                          {{ if eq .EstadoVoucherCodigo `DISPONIBLE` }}bg-success-100 text-success-800
-                          {{ else if eq .EstadoVoucherCodigo `USADO` }}bg-neutral-100 text-neutral-800
+                          {{ if eq .EstadoCupoDerechoCodigo `DISPONIBLE` }}bg-success-100 text-success-800
+                          {{ else if eq .EstadoCupoDerechoCodigo `USADO` }}bg-neutral-100 text-neutral-800
                           {{ else }}bg-warning-100 text-warning-800{{ end }}">
-                          {{ .EstadoVoucherCodigo }}
+                          {{ .EstadoCupoDerechoCodigo }}
                         </span>
                       </td>
                       <td class="px-4 py-3 whitespace-nowrap text-sm text-neutral-500">
                         {{ if .EsTransferido }}
                         <div>
                           <span class="text-xs text-orange-600 font-bold block">TRANSFERIDO</span>
-                          {{ if .Beneficiario }}
-                          <div class="text-[11px] font-medium text-neutral-700 mt-0.5">A: {{ .Beneficiario.GetNombreCompleto }}</div>
+                          {{ if .SenAsignado }}
+                          <div class="text-[11px] font-medium text-neutral-700 mt-0.5">A: {{ .SenAsignado.GetNombreCompleto }}</div>
                           {{ end }} {{ if .MotivoTransfer }}
                           <span class="text-[10px] italic text-neutral-400">("{{ .MotivoTransfer }}")</span>
                           {{ end }}
@@ -74,18 +74,20 @@
                       <td class="px-4 py-3 whitespace-nowrap text-right text-sm">
                         {{ if .EsTransferido }}
                         <button
-                          hx-post="/admin/cupos/vouchers/{{ .ID }}/revertir-transferencia?gestion={{ .Gestion }}&mes={{ .Mes }}"
+                          hx-post="/admin/cupos/derechos/{{ .ID }}/revertir-transferencia?gestion={{ .Gestion }}&mes={{ .Mes }}"
                           hx-target="body"
                           hx-confirm="¿Está seguro de revertir esta transferencia?"
-                          class="text-danger-600 hover:text-danger-900 font-medium font-bold px-2 py-1 rounded hover:bg-danger-50 transition-colors">
-                          Deshacer
+                          class="text-danger-600 hover:text-danger-900 font-medium font-bold px-2 py-1 rounded hover:bg-danger-50 transition-colors inline-flex items-center gap-1 disabled:opacity-50">
+                          <span class="[.htmx-request_&]:hidden">Deshacer</span>
+                          <i class="ph ph-spinner animate-spin hidden [.htmx-request_&]:block"></i>
                         </button>
-                        {{ else if eq .EstadoVoucherCodigo "DISPONIBLE" }}
+                        {{ else if eq .EstadoCupoDerechoCodigo "DISPONIBLE" }}
                         <button
-                          hx-get="/admin/cupos/vouchers/{{ .ID }}/modal-transferir?gestion={{ .Gestion }}&mes={{ .Mes }}"
+                          hx-get="/admin/cupos/derechos/{{ .ID }}/modal-transferir?gestion={{ .Gestion }}&mes={{ .Mes }}"
                           hx-target="#modal-container"
-                          class="text-primary-600 hover:text-primary-900 font-medium font-bold px-2 py-1 rounded hover:bg-primary-50 transition-colors">
-                          Transferir
+                          class="text-primary-600 hover:text-primary-900 font-medium font-bold px-2 py-1 rounded hover:bg-primary-50 transition-colors inline-flex items-center gap-1 disabled:opacity-50">
+                          <span class="[.htmx-request_&]:hidden">Transferir</span>
+                          <i class="ph ph-spinner animate-spin hidden [.htmx-request_&]:block"></i>
                         </button>
                         {{ end }}
                       </td>
