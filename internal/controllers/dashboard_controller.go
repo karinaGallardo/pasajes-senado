@@ -5,6 +5,7 @@ import (
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/services"
 	"sistema-pasajes/internal/utils"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -59,6 +60,7 @@ func (ctrl *DashboardController) Index(c *gin.Context) {
 		}
 	}
 
+	now := time.Now()
 	utils.Render(c, "dashboard/index", gin.H{
 		"Title":               "Panel de Control",
 		"Pendientes":          pendientes,
@@ -66,5 +68,7 @@ func (ctrl *DashboardController) Index(c *gin.Context) {
 		"Descargos":           len(descargos),
 		"Recent":              solicitudes,
 		"SenadoresEncargados": senadoresCalculados,
+		"Gestion":             now.Year(),
+		"Mes":                 int(now.Month()),
 	})
 }
