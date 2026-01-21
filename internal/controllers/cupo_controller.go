@@ -105,7 +105,19 @@ func (ctrl *CupoController) Transferir(c *gin.Context) {
 		return
 	}
 
-	err := ctrl.service.TransferirCupoDerecho(c.Request.Context(), req.ItemID, req.DestinoID, req.Motivo)
+	item, err := ctrl.service.GetCupoDerechoItemByID(c.Request.Context(), req.ItemID)
+	if err != nil {
+		c.String(http.StatusNotFound, "Derecho no encontrado")
+		return
+	}
+
+	authUser := appcontext.CurrentUser(c)
+	if !authUser.IsAdminOrResponsable() && authUser.ID != item.SenTitularID {
+		c.String(http.StatusForbidden, "No tiene permiso para transferir este derecho")
+		return
+	}
+
+	err = ctrl.service.TransferirCupoDerecho(c.Request.Context(), req.ItemID, req.DestinoID, req.Motivo)
 	if err != nil {
 		log.Printf("Error transfiriendo cupo derecho: %v\n", err)
 	}
@@ -123,7 +135,19 @@ func (ctrl *CupoController) RevertirTransferencia(c *gin.Context) {
 	gestion := c.Query("gestion")
 	mes := c.Query("mes")
 
-	err := ctrl.service.RevertirTransferencia(c.Request.Context(), itemID)
+	item, err := ctrl.service.GetCupoDerechoItemByID(c.Request.Context(), itemID)
+	if err != nil {
+		c.String(http.StatusNotFound, "Derecho no encontrado")
+		return
+	}
+
+	authUser := appcontext.CurrentUser(c)
+	if !authUser.IsAdminOrResponsable() && authUser.ID != item.SenTitularID {
+		c.String(http.StatusForbidden, "No tiene permiso para revertir esta transferencia")
+		return
+	}
+
+	err = ctrl.service.RevertirTransferencia(c.Request.Context(), itemID)
 	if err != nil {
 		fmt.Printf("Error revirtiendo transferencia: %v\n", err)
 	}
@@ -206,6 +230,12 @@ func (ctrl *CupoController) GetTransferModal(c *gin.Context) {
 	item, err := ctrl.service.GetCupoDerechoItemByID(c.Request.Context(), itemID)
 	if err != nil {
 		c.String(http.StatusNotFound, "Derecho no encontrado")
+		return
+	}
+
+	authUser := appcontext.CurrentUser(c)
+	if !authUser.IsAdminOrResponsable() && authUser.ID != item.SenTitularID {
+		c.String(http.StatusForbidden, "No tiene permiso para transferir este derecho")
 		return
 	}
 

@@ -24,7 +24,17 @@
             </span>
           </div>
           <div class="ml-4">
-            <div class="text-sm font-medium text-neutral-900">{{ $user.Username }}</div>
+            <div class="flex items-center gap-2">
+              <div class="text-sm font-medium text-neutral-900">{{ $user.Username }}</div>
+              {{ if $user.IsBlocked }}
+              <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-bold bg-red-100 text-red-800">
+                <svg class="mr-1 h-2 w-2 text-red-400" fill="currentColor" viewBox="0 0 8 8">
+                  <circle cx="4" cy="4" r="3" />
+                </svg>
+                BLOQUEADO
+              </span>
+              {{ end }}
+            </div>
             <div class="text-sm text-neutral-500">{{ $user.CI }}</div>
           </div>
         </div>
@@ -59,6 +69,36 @@
           </svg>
           Solicitar
         </a> -->
+        {{ if $user.IsBlocked }}
+        <button
+          x-data="{ loading: false }"
+          @htmx:before-request="loading = true"
+          @htmx:after-request="loading = false"
+          class="text-red-600 hover:text-red-800 font-bold disabled:opacity-50 inline-flex items-center mr-4"
+          hx-post="/usuarios/{{ $user.ID }}/unblock"
+          hx-confirm="¿Está seguro de desbloquear a este usuario?"
+          hx-disabled-elt="this">
+          <span x-show="!loading" class="inline-flex items-center">
+            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                stroke-width="2"
+                d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z"></path>
+            </svg>
+            Desbloquear
+          </span>
+          <span x-show="loading" class="inline-flex items-center" style="display: none">
+            <svg class="animate-spin mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path
+                class="opacity-75"
+                fill="currentColor"
+                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+          </span>
+        </button>
+        {{ end }}
         <button
           x-data="{ loading: false }"
           @htmx:before-request="loading = true"

@@ -49,6 +49,9 @@ type Usuario struct {
 	Suplentes []Usuario `gorm:"foreignKey:TitularID"`
 
 	FullName string `gorm:"-" json:"full_name"`
+
+	LoginAttempts int  `gorm:"default:0" json:"login_attempts"`
+	IsBlocked     bool `gorm:"default:false" json:"is_blocked"`
 }
 
 func (u *Usuario) AfterFind(tx *gorm.DB) (err error) {

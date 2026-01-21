@@ -98,6 +98,7 @@ func SetupRoutes(r *gin.Engine) {
 			adminOnly.GET("/usuarios", usuarioCtrl.Index)
 			adminOnly.GET("/usuarios/table", usuarioCtrl.Table)
 			adminOnly.POST("/usuarios/sync", usuarioCtrl.Sync)
+			adminOnly.POST("/usuarios/:id/unblock", usuarioCtrl.Unblock)
 			adminOnly.GET("/usuarios/sync-modal", usuarioCtrl.GetSyncModal)
 		}
 		protected.GET("/usuarios/:id/modal-editar", usuarioCtrl.GetEditModal)
@@ -110,10 +111,10 @@ func SetupRoutes(r *gin.Engine) {
 			sysAdmin.GET("/admin/cupos", cupoCtrl.Index)
 			sysAdmin.POST("/admin/cupos/generar", cupoCtrl.Generar)
 			sysAdmin.GET("/admin/cupos/:id/derechos", cupoCtrl.GetCuposByCupo)
-			sysAdmin.GET("/admin/cupos/derechos/:id/modal-transferir", cupoCtrl.GetTransferModal)
+			protected.GET("/admin/cupos/derechos/:id/modal-transferir", cupoCtrl.GetTransferModal)
 			protected.POST("/admin/cupos/transferir", cupoCtrl.Transferir)
 			protected.POST("/admin/cupos/derechos/:id/revertir-transferencia", cupoCtrl.RevertirTransferencia)
-			protected.POST("/admin/cupos/reset", cupoCtrl.Reset)
+			sysAdmin.POST("/admin/cupos/reset", cupoCtrl.Reset)
 
 			aerolineaCtrl := controllers.NewAerolineaController()
 			sysAdmin.GET("/admin/aerolineas", aerolineaCtrl.Index)

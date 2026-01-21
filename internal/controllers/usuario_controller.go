@@ -325,6 +325,36 @@ func (ctrl *UsuarioController) Sync(c *gin.Context) {
 	utils.SetSuccessMessage(c, "Sincronizados "+strconv.Itoa(count)+" registros")
 	c.Redirect(http.StatusFound, "/usuarios?rol="+roleType)
 }
+
+func (ctrl *UsuarioController) Unblock(c *gin.Context) {
+	id := c.Param("id")
+	usuario, err := ctrl.userService.GetByID(c.Request.Context(), id)
+	if err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Usuario no encontrado"})
+		return
+	}
+
+	usuario.IsBlocked = false
+	usuario.LoginAttempts = 0
+
+	if err := ctrl.userService.Update(c.Request.Context(), usuario); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al desbloquear usuario"})
+		return
+	}
+
+	if c.GetHeader("HX-Request") == "true" {
+		c.Header("HX-Trigger", "reloadTable")
+		c.Status(http.StatusOK)
+		return
+	}
+
+	referer := c.Request.Header.Get("Referer")
+	if referer == "" {
+		referer = "/usuarios"
+	}
+	c.Redirect(http.StatusFound, referer)
+}
+
 func (ctrl *UsuarioController) GetSyncModal(c *gin.Context) {
 	currentUser := appcontext.CurrentUser(c)
 	if currentUser == nil || !currentUser.IsAdmin() {

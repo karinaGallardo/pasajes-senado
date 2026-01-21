@@ -13,7 +13,12 @@
     <tr>
       <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500 font-medium">{{ inc $index }}</td>
       <td class="px-6 py-4 whitespace-nowrap border-r border-neutral-100">
-        <div class="text-sm text-neutral-900 font-bold">{{ $user.GetNombreCompleto }}</div>
+        <div class="flex items-center gap-2">
+          <div class="text-sm text-neutral-900 font-bold">{{ $user.GetNombreCompleto }}</div>
+          {{ if $user.IsBlocked }}
+          <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-red-100 text-red-800">BLOQUEADO</span>
+          {{ end }}
+        </div>
         <div class="text-[11px] text-neutral-500 font-medium">CI: {{ $user.CI }}</div>
 
         <div class="mt-1 space-y-0.5">
@@ -42,11 +47,24 @@
             hx-target="#modal-container">
             Editar Titular
           </button>
+          {{ if $user.IsBlocked }}
+          <button
+            class="text-[10px] text-white hover:bg-red-700 font-bold bg-red-600 px-1.5 py-0.5 rounded border border-red-700 transition-colors"
+            hx-post="/usuarios/{{ $user.ID }}/unblock"
+            hx-confirm="¿Desbloquear titular?">
+            Desbloquear
+          </button>
+          {{ end }}
         </div>
       </td>
       <td class="px-6 py-4 whitespace-nowrap">
         {{ $suplente := $user.GetSuplente }} {{ if $suplente }}
-        <div class="text-sm text-neutral-900 font-bold">{{ $suplente.GetNombreCompleto }}</div>
+        <div class="flex items-center gap-2">
+          <div class="text-sm text-neutral-900 font-bold">{{ $suplente.GetNombreCompleto }}</div>
+          {{ if $suplente.IsBlocked }}
+          <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-red-100 text-red-800">BLOQUEADO</span>
+          {{ end }}
+        </div>
         <div class="text-[11px] text-neutral-500 font-medium">CI: {{ $suplente.CI }}</div>
 
         <div class="mt-1 space-y-0.5">
@@ -75,6 +93,14 @@
             hx-target="#modal-container">
             Editar Suplente
           </button>
+          {{ if $suplente.IsBlocked }}
+          <button
+            class="text-[10px] text-white hover:bg-red-700 font-bold bg-red-600 px-1.5 py-0.5 rounded border border-red-700 transition-colors"
+            hx-post="/usuarios/{{ $suplente.ID }}/unblock"
+            hx-confirm="¿Desbloquear suplente?">
+            Desbloquear
+          </button>
+          {{ end }}
         </div>
         {{ else }}
         <span class="text-neutral-400 italic text-xs">Sin suplente asignado</span>

@@ -107,7 +107,7 @@
                 <!-- Acciones -->
                 <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6" onclick="event.stopPropagation()">
                   <div class="flex justify-end gap-2">
-                    {{ if $.CurrentUser.IsAdminOrResponsable }} {{ if .EsTransferido }}
+                    {{ if or $.CurrentUser.IsAdminOrResponsable (eq $.CurrentUser.ID .SenTitularID) }} {{ if .EsTransferido }}
                     <button
                       hx-post="/admin/cupos/derechos/{{ .ID }}/revertir-transferencia?gestion={{ .Gestion }}&mes={{ .Mes }}"
                       hx-target="body"
@@ -116,7 +116,7 @@
                       <span class="[.htmx-request_&]:hidden">Deshacer</span>
                       <i class="ph ph-spinner animate-spin hidden [.htmx-request_&]:block"></i>
                     </button>
-                    {{ else if and (eq .EstadoCupoDerechoCodigo "DISPONIBLE") (not .IsVencido) }}
+                    {{ else if eq .EstadoCupoDerechoCodigo "DISPONIBLE" }}
                     <button
                       hx-get="/admin/cupos/derechos/{{ .ID }}/modal-transferir?gestion={{ .Gestion }}&mes={{ .Mes }}"
                       hx-target="#modal-container"
