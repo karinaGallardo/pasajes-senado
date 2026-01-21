@@ -235,6 +235,9 @@ func (ctrl *UsuarioController) Update(c *gin.Context) {
 		usuario.EncargadoID = nil
 	}
 
+	usuario.Email = req.Email
+	usuario.Phone = req.Phone
+
 	if err := ctrl.userService.Update(c.Request.Context(), usuario); err != nil {
 		c.String(http.StatusInternalServerError, "Error actualizando usuario")
 		return
