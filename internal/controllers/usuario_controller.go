@@ -14,16 +14,18 @@ import (
 )
 
 type UsuarioController struct {
-	userService    *services.UsuarioService
-	rolService     *services.RolService
-	destinoService *services.DestinoService
+	userService        *services.UsuarioService
+	rolService         *services.RolService
+	destinoService     *services.DestinoService
+	organigramaService *services.OrganigramaService
 }
 
 func NewUsuarioController() *UsuarioController {
 	return &UsuarioController{
-		userService:    services.NewUsuarioService(),
-		rolService:     services.NewRolService(),
-		destinoService: services.NewDestinoService(),
+		userService:        services.NewUsuarioService(),
+		rolService:         services.NewRolService(),
+		destinoService:     services.NewDestinoService(),
+		organigramaService: services.NewOrganigramaService(),
 	}
 }
 
@@ -149,6 +151,8 @@ func (ctrl *UsuarioController) Edit(c *gin.Context) {
 	destinos, _ := ctrl.destinoService.GetAll(c.Request.Context())
 
 	funcionarios, _ := ctrl.userService.GetByRoleType(c.Request.Context(), "FUNCIONARIO")
+	cargos, _ := ctrl.organigramaService.GetAllCargos(c.Request.Context())
+	oficinas, _ := ctrl.organigramaService.GetAllOficinas(c.Request.Context())
 
 	viewName := "usuarios/edit"
 	if c.GetHeader("HX-Request") == "true" {
@@ -160,6 +164,8 @@ func (ctrl *UsuarioController) Edit(c *gin.Context) {
 		"Roles":        roles,
 		"Destinos":     destinos,
 		"Funcionarios": funcionarios,
+		"Cargos":       cargos,
+		"Oficinas":     oficinas,
 	})
 }
 
@@ -174,12 +180,16 @@ func (ctrl *UsuarioController) GetEditModal(c *gin.Context) {
 	destinos, _ := ctrl.destinoService.GetAll(c.Request.Context())
 
 	funcionarios, _ := ctrl.userService.GetByRoleType(c.Request.Context(), "FUNCIONARIO")
+	cargos, _ := ctrl.organigramaService.GetAllCargos(c.Request.Context())
+	oficinas, _ := ctrl.organigramaService.GetAllOficinas(c.Request.Context())
 
 	utils.Render(c, "usuarios/components/edit_modal", gin.H{
 		"Usuario":      usuario,
 		"Roles":        roles,
 		"Destinos":     destinos,
 		"Funcionarios": funcionarios,
+		"Cargos":       cargos,
+		"Oficinas":     oficinas,
 	})
 }
 

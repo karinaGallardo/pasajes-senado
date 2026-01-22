@@ -11,7 +11,8 @@ type SenadorData struct {
 }
 
 type ItemData struct {
-	Unit string `bson:"unit"`
+	Unit        string `bson:"unit"`
+	Descripcion string `bson:"descripcion"`
 }
 
 type FuncionarioPermanente struct {
@@ -24,6 +25,7 @@ type ItemUnitData struct {
 
 type FuncionarioEventual struct {
 	UnitData ItemUnitData `bson:"unit_data"`
+	Cargo    string       `bson:"cargo"`
 }
 
 type MongoPersonaView struct {
@@ -38,6 +40,8 @@ type MongoPersonaView struct {
 	Email                 interface{}           `bson:"email"`
 	Gender                interface{}           `bson:"gender"`
 	TipoFuncionario       interface{}           `bson:"tipo_funcionario"`
+	Cargo                 interface{}           `bson:"cargo"`
+	Dependencia           interface{}           `bson:"dependencia"`
 	SenadorData           SenadorData           `bson:"senador_data"`
 	FuncionarioPermanente FuncionarioPermanente `bson:"funcionario_permanente"`
 	FuncionarioEventual   FuncionarioEventual   `bson:"funcionario_eventual"`

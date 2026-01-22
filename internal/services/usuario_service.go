@@ -14,6 +14,8 @@ type UsuarioService struct {
 	peopleRepo    *repositories.PeopleViewRepository
 	deptoRepo     *repositories.DepartamentoRepository
 	mongoUserRepo *repositories.MongoUserRepository
+	cargoRepo     *repositories.CargoRepository
+	oficinaRepo   *repositories.OficinaRepository
 }
 
 func NewUsuarioService() *UsuarioService {
@@ -22,6 +24,8 @@ func NewUsuarioService() *UsuarioService {
 		peopleRepo:    repositories.NewPeopleViewRepository(),
 		deptoRepo:     repositories.NewDepartamentoRepository(),
 		mongoUserRepo: repositories.NewMongoUserRepository(),
+		cargoRepo:     repositories.NewCargoRepository(),
+		oficinaRepo:   repositories.NewOficinaRepository(),
 	}
 }
 
@@ -79,8 +83,12 @@ func (s *UsuarioService) SyncStaff(ctx context.Context) (int, error) {
 		user.Lastname = utils.CleanName(utils.GetString(mStaff.Lastname))
 		user.Surname = utils.CleanName(utils.GetString(mStaff.Surname))
 		user.Tipo = utils.GetString(mStaff.TipoFuncionario)
-		user.Email = utils.CleanString(utils.GetString(mStaff.Email))
-		user.Phone = utils.CleanString(utils.GetString(mStaff.Phone))
+
+		if !exists {
+			user.Email = utils.CleanString(utils.GetString(mStaff.Email))
+			user.Phone = utils.CleanString(utils.GetString(mStaff.Phone))
+		}
+
 		user.Address = utils.CleanString(utils.GetString(mStaff.Address))
 
 		dept := utils.GetString(mStaff.SenadorData.Departamento)
@@ -88,6 +96,28 @@ func (s *UsuarioService) SyncStaff(ctx context.Context) (int, error) {
 			if depto, err := s.deptoRepo.WithContext(ctx).FindByNombre(dept); err == nil {
 				user.DepartamentoCode = &depto.Codigo
 			}
+		}
+
+		cargoName := utils.GetString(mStaff.Cargo)
+		if cargoName != "" {
+			if cargo, err := s.cargoRepo.WithContext(ctx).FindByDescripcion(cargoName); err == nil {
+				user.CargoID = &cargo.ID
+			} else {
+				user.CargoID = nil
+			}
+		} else {
+			user.CargoID = nil
+		}
+
+		oficinaName := utils.GetString(mStaff.Dependencia)
+		if oficinaName != "" {
+			if oficina, err := s.oficinaRepo.WithContext(ctx).FindByDetalle(oficinaName); err == nil {
+				user.OficinaID = &oficina.ID
+			} else {
+				user.OficinaID = nil
+			}
+		} else {
+			user.OficinaID = nil
 		}
 
 		if user.RolCodigo == nil {
@@ -153,8 +183,12 @@ func (s *UsuarioService) SyncSenators(ctx context.Context) (int, error) {
 		user.Lastname = utils.CleanName(utils.GetString(mSen.Lastname))
 		user.Surname = utils.CleanName(utils.GetString(mSen.Surname))
 		user.Tipo = utils.GetString(mSen.TipoFuncionario)
-		user.Email = utils.CleanString(utils.GetString(mSen.Email))
-		user.Phone = utils.CleanString(utils.GetString(mSen.Phone))
+
+		if !exists {
+			user.Email = utils.CleanString(utils.GetString(mSen.Email))
+			user.Phone = utils.CleanString(utils.GetString(mSen.Phone))
+		}
+
 		user.Address = utils.CleanString(utils.GetString(mSen.Address))
 
 		dept := utils.GetString(mSen.SenadorData.Departamento)
@@ -162,6 +196,28 @@ func (s *UsuarioService) SyncSenators(ctx context.Context) (int, error) {
 			if depto, err := s.deptoRepo.WithContext(ctx).FindByNombre(dept); err == nil {
 				user.DepartamentoCode = &depto.Codigo
 			}
+		}
+
+		cargoName := utils.GetString(mSen.Cargo)
+		if cargoName != "" {
+			if cargo, err := s.cargoRepo.WithContext(ctx).FindByDescripcion(cargoName); err == nil {
+				user.CargoID = &cargo.ID
+			} else {
+				user.CargoID = nil
+			}
+		} else {
+			user.CargoID = nil
+		}
+
+		oficinaName := utils.GetString(mSen.Dependencia)
+		if oficinaName != "" {
+			if oficina, err := s.oficinaRepo.WithContext(ctx).FindByDetalle(oficinaName); err == nil {
+				user.OficinaID = &oficina.ID
+			} else {
+				user.OficinaID = nil
+			}
+		} else {
+			user.OficinaID = nil
 		}
 
 		if user.RolCodigo == nil {

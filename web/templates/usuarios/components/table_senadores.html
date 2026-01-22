@@ -22,7 +22,11 @@
         <div class="text-[11px] text-neutral-500 font-medium">CI: {{ $user.CI }}</div>
 
         <div class="mt-1 space-y-0.5">
-          {{ if $user.Email }}
+          {{ if $user.Cargo }}
+          <div class="text-[10px] text-neutral-500 font-bold uppercase">{{ $user.Cargo.Descripcion }}</div>
+          {{ end }} {{ if $user.Oficina }}
+          <div class="text-[10px] text-neutral-400">{{ $user.Oficina.Detalle }}</div>
+          {{ end }} {{ if $user.Email }}
           <div class="text-[10px] text-neutral-400 flex items-center">
             <i class="ph ph-envelope text-xs mr-1"></i>
             {{ $user.Email }}
@@ -49,7 +53,7 @@
           </button>
           {{ if $user.IsBlocked }}
           <button
-            class="text-[10px] text-white hover:bg-red-700 font-bold bg-red-600 px-1.5 py-0.5 rounded border border-red-700 transition-colors"
+            class="text-[10px] text-red-600 hover:text-red-900 font-bold bg-red-50 px-1.5 py-0.5 rounded border border-red-100 transition-colors"
             hx-post="/usuarios/{{ $user.ID }}/unblock"
             hx-confirm="¿Desbloquear titular?">
             Desbloquear
@@ -68,7 +72,11 @@
         <div class="text-[11px] text-neutral-500 font-medium">CI: {{ $suplente.CI }}</div>
 
         <div class="mt-1 space-y-0.5">
-          {{ if $suplente.Email }}
+          {{ if $suplente.Cargo }}
+          <div class="text-[10px] text-neutral-500 font-bold uppercase">{{ $suplente.Cargo.Descripcion }}</div>
+          {{ end }} {{ if $suplente.Oficina }}
+          <div class="text-[10px] text-neutral-400">{{ $suplente.Oficina.Detalle }}</div>
+          {{ end }} {{ if $suplente.Email }}
           <div class="text-[10px] text-neutral-400 flex items-center">
             <i class="ph ph-envelope text-xs mr-1"></i>
             {{ $suplente.Email }}
@@ -95,7 +103,7 @@
           </button>
           {{ if $suplente.IsBlocked }}
           <button
-            class="text-[10px] text-white hover:bg-red-700 font-bold bg-red-600 px-1.5 py-0.5 rounded border border-red-700 transition-colors"
+            class="text-[10px] text-red-600 hover:text-red-900 font-bold bg-red-50 px-1.5 py-0.5 rounded border border-red-100 transition-colors"
             hx-post="/usuarios/{{ $suplente.ID }}/unblock"
             hx-confirm="¿Desbloquear suplente?">
             Desbloquear
@@ -110,6 +118,7 @@
         {{ if $user.Departamento }}
         <div class="text-[11px] text-primary-600 font-bold uppercase tracking-tighter">{{ $user.Departamento.Nombre }}</div>
         {{ end }}
+        <div class="text-[10px] text-neutral-300 font-bold uppercase tracking-tighter mt-1">{{ $user.Tipo }}</div>
       </td>
     </tr>
     {{ end }}

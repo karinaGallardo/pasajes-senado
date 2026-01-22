@@ -39,3 +39,9 @@ func (r *CargoRepository) FindByID(id string) (*models.Cargo, error) {
 func (r *CargoRepository) Delete(id string) error {
 	return r.db.Delete(&models.Cargo{}, "id = ?", id).Error
 }
+
+func (r *CargoRepository) FindByDescripcion(descripcion string) (*models.Cargo, error) {
+	var cargo models.Cargo
+	err := r.db.Where("descripcion = ?", descripcion).First(&cargo).Error
+	return &cargo, err
+}

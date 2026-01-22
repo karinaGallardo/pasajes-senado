@@ -47,15 +47,53 @@ func (r *PeopleViewRepository) FindSenatorDataByCI(ci string) (*models.MongoPers
 	}
 	defer cancel()
 
-	var result models.MongoPersonaView
+	var results []models.MongoPersonaView
 	filter := bson.M{"ci": ci}
 
-	err := collection.FindOne(ctx, filter).Decode(&result)
+	pipeline := mongo.Pipeline{
+		{{Key: "$match", Value: filter}},
+		{{Key: "$addFields", Value: bson.M{
+			"cargo": bson.M{
+				"$cond": bson.M{
+					"if":   bson.M{"$eq": []any{"$tipo_funcionario", "FUNCIONARIO_PERMANENTE"}},
+					"then": "$funcionario_permanente.item_data.descripcion",
+					"else": bson.M{
+						"$cond": bson.M{
+							"if":   bson.M{"$in": []any{"$tipo_funcionario", []string{"SENADOR_TITULAR", "SENADOR_SUPLENTE"}}},
+							"then": "$tipo_funcionario",
+							"else": "$funcionario_eventual.cargo",
+						},
+					},
+				},
+			},
+			"dependencia": bson.M{
+				"$cond": bson.M{
+					"if":   bson.M{"$eq": []any{"$tipo_funcionario", "FUNCIONARIO_PERMANENTE"}},
+					"then": "$funcionario_permanente.item_data.unit",
+					"else": bson.M{
+						"$cond": bson.M{
+							"if":   bson.M{"$in": []any{"$tipo_funcionario", []string{"SENADOR_TITULAR", "SENADOR_SUPLENTE"}}},
+							"then": "CAMARA DE SENADORES",
+							"else": "$funcionario_eventual.unit_data.name",
+						},
+					},
+				},
+			},
+		}}},
+	}
+
+	cursor, err := collection.Aggregate(ctx, pipeline)
 	if err != nil {
 		return nil, err
 	}
 
-	return &result, nil
+	defer cursor.Close(ctx)
+
+	if err := cursor.All(ctx, &results); err != nil || len(results) == 0 {
+		return nil, err
+	}
+
+	return &results[0], nil
 }
 
 func (r *PeopleViewRepository) FindAllActiveSenators() ([]models.MongoPersonaView, error) {
@@ -80,7 +118,15 @@ func (r *PeopleViewRepository) FindAllActiveSenators() ([]models.MongoPersonaVie
 		"tipo_funcionario":    bson.M{"$in": []string{"SENADOR_TITULAR", "SENADOR_SUPLENTE"}},
 	}
 
-	cursor, err := collection.Find(ctx, filter)
+	pipeline := mongo.Pipeline{
+		{{Key: "$match", Value: filter}},
+		{{Key: "$addFields", Value: bson.M{
+			"cargo":       "$tipo_funcionario",
+			"dependencia": "CAMARA DE SENADORES",
+		}}},
+	}
+
+	cursor, err := collection.Aggregate(ctx, pipeline)
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +161,27 @@ func (r *PeopleViewRepository) FindAllActiveStaff() ([]models.MongoPersonaView, 
 		"senador_data.active": bson.M{"$ne": true},
 	}
 
-	cursor, err := collection.Find(ctx, filter)
+	pipeline := mongo.Pipeline{
+		{{Key: "$match", Value: filter}},
+		{{Key: "$addFields", Value: bson.M{
+			"cargo": bson.M{
+				"$cond": bson.M{
+					"if":   bson.M{"$eq": []any{"$tipo_funcionario", "FUNCIONARIO_PERMANENTE"}},
+					"then": "$funcionario_permanente.item_data.descripcion",
+					"else": "$funcionario_eventual.cargo",
+				},
+			},
+			"dependencia": bson.M{
+				"$cond": bson.M{
+					"if":   bson.M{"$eq": []any{"$tipo_funcionario", "FUNCIONARIO_PERMANENTE"}},
+					"then": "$funcionario_permanente.item_data.unit",
+					"else": "$funcionario_eventual.unit_data.name",
+				},
+			},
+		}}},
+	}
+
+	cursor, err := collection.Aggregate(ctx, pipeline)
 	if err != nil {
 		return nil, err
 	}

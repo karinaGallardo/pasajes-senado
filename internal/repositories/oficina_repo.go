@@ -40,3 +40,9 @@ func (r *OficinaRepository) FindByID(id string) (*models.Oficina, error) {
 func (r *OficinaRepository) Delete(id string) error {
 	return r.db.Delete(&models.Oficina{}, "id = ?", id).Error
 }
+
+func (r *OficinaRepository) FindByDetalle(detalle string) (*models.Oficina, error) {
+	var oficina models.Oficina
+	err := r.db.Where("detalle = ?", detalle).First(&oficina).Error
+	return &oficina, err
+}
