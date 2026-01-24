@@ -5,8 +5,6 @@ import (
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
 	"sistema-pasajes/internal/utils"
-
-	"go.mongodb.org/mongo-driver/bson/primitive"
 )
 
 type UsuarioService struct {
@@ -66,9 +64,7 @@ func (s *UsuarioService) SyncStaff(ctx context.Context) (int, error) {
 		} else {
 			user = &models.Usuario{}
 			user.CI = ci
-			if oid, ok := mStaff.ID.(primitive.ObjectID); ok {
-				user.ID = oid.Hex()
-			}
+			user.ID = mStaff.ID.Hex()
 		}
 
 		mongoUser, _ := s.mongoUserRepo.WithContext(ctx).FindByCI(ci)
@@ -78,27 +74,27 @@ func (s *UsuarioService) SyncStaff(ctx context.Context) (int, error) {
 			user.Username = ci
 		}
 
-		user.Firstname = utils.CleanName(utils.GetString(mStaff.Firstname))
-		user.Secondname = utils.CleanName(utils.GetString(mStaff.Secondname))
-		user.Lastname = utils.CleanName(utils.GetString(mStaff.Lastname))
-		user.Surname = utils.CleanName(utils.GetString(mStaff.Surname))
-		user.Tipo = utils.GetString(mStaff.TipoFuncionario)
+		user.Firstname = utils.CleanName(mStaff.Firstname)
+		user.Secondname = utils.CleanName(mStaff.Secondname)
+		user.Lastname = utils.CleanName(mStaff.Lastname)
+		user.Surname = utils.CleanName(mStaff.Surname)
+		user.Tipo = mStaff.TipoFuncionario
 
 		if !exists {
-			user.Email = utils.CleanString(utils.GetString(mStaff.Email))
-			user.Phone = utils.CleanString(utils.GetString(mStaff.Phone))
+			user.Email = utils.CleanString(mStaff.Email)
+			user.Phone = utils.CleanString(mStaff.Phone)
 		}
 
-		user.Address = utils.CleanString(utils.GetString(mStaff.Address))
+		user.Address = utils.CleanString(mStaff.Address)
 
-		dept := utils.GetString(mStaff.SenadorData.Departamento)
+		dept := mStaff.SenadorData.Departamento
 		if dept != "" {
 			if depto, err := s.deptoRepo.WithContext(ctx).FindByNombre(dept); err == nil {
 				user.DepartamentoCode = &depto.Codigo
 			}
 		}
 
-		cargoName := utils.GetString(mStaff.Cargo)
+		cargoName := mStaff.Cargo
 		if cargoName != "" {
 			if cargo, err := s.cargoRepo.WithContext(ctx).FindByDescripcion(cargoName); err == nil {
 				user.CargoID = &cargo.ID
@@ -109,7 +105,7 @@ func (s *UsuarioService) SyncStaff(ctx context.Context) (int, error) {
 			user.CargoID = nil
 		}
 
-		oficinaName := utils.GetString(mStaff.Dependencia)
+		oficinaName := mStaff.Dependencia
 		if oficinaName != "" {
 			if oficina, err := s.oficinaRepo.WithContext(ctx).FindByDetalle(oficinaName); err == nil {
 				user.OficinaID = &oficina.ID
@@ -147,123 +143,130 @@ func (s *UsuarioService) SyncSenators(ctx context.Context) (int, error) {
 		}
 	}
 
-	var pgSenators []models.Usuario
-	pgSenators, _ = s.repo.FindAllSenators()
+	var count int
 
-	for _, user := range pgSenators {
-		if _, exists := mongoMap[user.CI]; !exists {
-			s.repo.Delete(&user)
-		}
-	}
+	// Usamos transacción para garantizar atomicidad
+	err = s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.UsuarioRepository) error {
+		pgSenators, _ := repoTx.FindAllSenators()
 
-	count := 0
-	for ci, mSen := range mongoMap {
-		user, err := s.repo.WithContext(ctx).FindByCIUnscoped(ci)
-		exists := err == nil
-
-		if exists {
-			s.repo.Restore(user)
-		} else {
-			user = &models.Usuario{}
-			user.CI = ci
-			if oid, ok := mSen.ID.(primitive.ObjectID); ok {
-				user.ID = oid.Hex()
+		for _, user := range pgSenators {
+			if _, exists := mongoMap[user.CI]; !exists {
+				repoTx.Delete(&user)
 			}
 		}
 
-		mongoUser, _ := s.mongoUserRepo.WithContext(ctx).FindByCI(ci)
-		if mongoUser != nil && mongoUser.Username != "" {
-			user.Username = mongoUser.Username
-		} else {
-			user.Username = ci
-		}
+		for ci, mSen := range mongoMap {
+			user, err := repoTx.FindByCIUnscoped(ci)
+			exists := err == nil
 
-		user.Firstname = utils.CleanName(utils.GetString(mSen.Firstname))
-		user.Secondname = utils.CleanName(utils.GetString(mSen.Secondname))
-		user.Lastname = utils.CleanName(utils.GetString(mSen.Lastname))
-		user.Surname = utils.CleanName(utils.GetString(mSen.Surname))
-		user.Tipo = utils.GetString(mSen.TipoFuncionario)
-
-		if !exists {
-			user.Email = utils.CleanString(utils.GetString(mSen.Email))
-			user.Phone = utils.CleanString(utils.GetString(mSen.Phone))
-		}
-
-		user.Address = utils.CleanString(utils.GetString(mSen.Address))
-
-		dept := utils.GetString(mSen.SenadorData.Departamento)
-		if dept != "" {
-			if depto, err := s.deptoRepo.WithContext(ctx).FindByNombre(dept); err == nil {
-				user.DepartamentoCode = &depto.Codigo
+			if exists {
+				repoTx.Restore(user)
+			} else {
+				user = &models.Usuario{}
+				user.CI = ci
+				user.ID = mSen.ID.Hex()
 			}
-		}
 
-		cargoName := utils.GetString(mSen.Cargo)
-		if cargoName != "" {
-			if cargo, err := s.cargoRepo.WithContext(ctx).FindByDescripcion(cargoName); err == nil {
-				user.CargoID = &cargo.ID
+			mongoUser, _ := s.mongoUserRepo.WithContext(ctx).FindByCI(ci)
+			if mongoUser != nil && mongoUser.Username != "" {
+				user.Username = mongoUser.Username
+			} else {
+				user.Username = ci
+			}
+
+			user.Firstname = utils.CleanName(mSen.Firstname)
+			user.Secondname = utils.CleanName(mSen.Secondname)
+			user.Lastname = utils.CleanName(mSen.Lastname)
+			user.Surname = utils.CleanName(mSen.Surname)
+			user.Tipo = mSen.TipoFuncionario
+
+			if !exists {
+				user.Email = utils.CleanString(mSen.Email)
+				user.Phone = utils.CleanString(mSen.Phone)
+			}
+
+			user.Address = utils.CleanString(mSen.Address)
+
+			dept := mSen.SenadorData.Departamento
+			if dept != "" {
+				if depto, err := s.deptoRepo.WithContext(ctx).FindByNombre(dept); err == nil {
+					user.DepartamentoCode = &depto.Codigo
+				}
+			}
+
+			cargoName := mSen.Cargo
+			if cargoName != "" {
+				if cargo, err := s.cargoRepo.WithContext(ctx).FindByDescripcion(cargoName); err == nil {
+					user.CargoID = &cargo.ID
+				} else {
+					user.CargoID = nil
+				}
 			} else {
 				user.CargoID = nil
 			}
-		} else {
-			user.CargoID = nil
-		}
 
-		oficinaName := utils.GetString(mSen.Dependencia)
-		if oficinaName != "" {
-			if oficina, err := s.oficinaRepo.WithContext(ctx).FindByDetalle(oficinaName); err == nil {
-				user.OficinaID = &oficina.ID
+			oficinaName := mSen.Dependencia
+			if oficinaName != "" {
+				if oficina, err := s.oficinaRepo.WithContext(ctx).FindByDetalle(oficinaName); err == nil {
+					user.OficinaID = &oficina.ID
+				} else {
+					user.OficinaID = nil
+				}
 			} else {
 				user.OficinaID = nil
 			}
-		} else {
-			user.OficinaID = nil
-		}
 
-		if user.RolCodigo == nil {
-			senadorRole := "SENADOR"
-			user.RolCodigo = &senadorRole
-		}
-
-		if err := s.repo.WithContext(ctx).Save(user); err == nil {
-			count++
-		}
-	}
-
-	for _, mSen := range mongoSenators {
-		tipo := utils.GetString(mSen.TipoFuncionario)
-		if tipo != "SENADOR_SUPLENTE" && tipo != "SENADOR_TITULAR" {
-			continue
-		}
-
-		ci := utils.CleanString(mSen.CI)
-		user, err := s.repo.WithContext(ctx).FindByCI(ci)
-		if err != nil {
-			continue
-		}
-
-		switch tipo {
-		case "SENADOR_SUPLENTE":
-			titularCI := utils.CleanString(mSen.SenadorData.Titular)
-			if titularCI != "" {
-				titular, err := s.repo.WithContext(ctx).FindByCI(titularCI)
-				if err == nil {
-					user.TitularID = &titular.ID
-					user.EncargadoID = titular.EncargadoID
-					s.repo.WithContext(ctx).Save(user)
-				}
+			if user.RolCodigo == nil {
+				senadorRole := "SENADOR"
+				user.RolCodigo = &senadorRole
 			}
-		case "SENADOR_TITULAR":
-			suplenteCI := utils.CleanString(mSen.SenadorData.Suplente)
-			if suplenteCI != "" {
-				suplente, err := s.repo.WithContext(ctx).FindByCI(suplenteCI)
-				if err == nil {
-					suplente.TitularID = &user.ID
-					suplente.EncargadoID = user.EncargadoID
-					s.repo.WithContext(ctx).Save(suplente)
-				}
+
+			if err := repoTx.Save(user); err == nil {
+				count++
 			}
 		}
+
+		// Segunda pasada para relaciones
+		for _, mSen := range mongoSenators {
+			tipo := mSen.TipoFuncionario
+			if tipo != "SENADOR_SUPLENTE" && tipo != "SENADOR_TITULAR" {
+				continue
+			}
+
+			ci := utils.CleanString(mSen.CI)
+			user, err := repoTx.FindByCI(ci)
+			if err != nil {
+				continue
+			}
+
+			switch tipo {
+			case "SENADOR_SUPLENTE":
+				titularCI := utils.CleanString(mSen.SenadorData.SuTitularCI)
+				if titularCI != "" {
+					titular, err := repoTx.FindByCI(titularCI)
+					if err == nil {
+						user.TitularID = &titular.ID
+						user.EncargadoID = titular.EncargadoID
+						repoTx.Save(user)
+					}
+				}
+			case "SENADOR_TITULAR":
+				suplenteCI := utils.CleanString(mSen.SenadorData.SuSuplenteCI)
+				if suplenteCI != "" {
+					suplente, err := repoTx.FindByCI(suplenteCI)
+					if err == nil {
+						suplente.TitularID = &user.ID
+						suplente.EncargadoID = user.EncargadoID
+						repoTx.Save(suplente)
+					}
+				}
+			}
+		}
+		return nil
+	})
+
+	if err != nil {
+		return 0, err
 	}
 
 	return count, nil

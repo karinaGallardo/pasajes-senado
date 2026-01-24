@@ -75,6 +75,8 @@ func (r *UsuarioRepository) FindPaginated(roleType string, page, limit int, sear
 		Preload("Departamento").
 		Preload("Cargo").
 		Preload("Oficina").
+		Preload("Titular").
+		Preload("Suplentes").
 		Scopes(FilterByRoleType(roleType), SearchUsuario(searchTerm))
 	baseQuery.Count(&total)
 
@@ -104,8 +106,9 @@ func (r *UsuarioRepository) FindByRoleType(roleType string) ([]models.Usuario, e
 
 	switch roleType {
 	case "SENADOR":
-		query = query.Preload("Suplentes").Preload("Suplentes.Origen").Preload("Suplentes.Departamento").
-			Where("tipo IN ?", []string{"SENADOR_TITULAR", "SENADOR_SUPLENTE"}).
+		query = query.Preload("Titular").
+			Preload("Suplentes").Preload("Suplentes.Origen").Preload("Suplentes.Departamento").
+			Where("tipo = ?", "SENADOR_TITULAR").
 			Order("lastname ASC, firstname ASC")
 	case "FUNCIONARIO":
 		query = query.Preload("Cargo").Preload("Oficina").

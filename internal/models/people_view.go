@@ -1,48 +1,30 @@
 package models
 
+import "go.mongodb.org/mongo-driver/bson/primitive"
+
 type SenadorData struct {
 	Departamento string `bson:"departamento"`
 	Sigla        string `bson:"sigla"`
 	Tipo         string `bson:"tipo"`
-	Suplente     string `bson:"suplente"`
-	Titular      string `bson:"titular"`
+	SuSuplenteCI string `bson:"su_suplente_ci"`
+	SuTitularCI  string `bson:"su_titular_ci"`
 	Gestion      string `bson:"gestion"`
 	Active       bool   `bson:"active"`
 }
 
-type ItemData struct {
-	Unit        string `bson:"unit"`
-	Descripcion string `bson:"descripcion"`
-}
-
-type FuncionarioPermanente struct {
-	ItemData ItemData `bson:"item_data"`
-}
-
-type ItemUnitData struct {
-	Name string `bson:"name"`
-}
-
-type FuncionarioEventual struct {
-	UnitData ItemUnitData `bson:"unit_data"`
-	Cargo    string       `bson:"cargo"`
-}
-
 type MongoPersonaView struct {
-	ID                    interface{}           `bson:"_id"`
-	CI                    string                `bson:"ci"`
-	Firstname             interface{}           `bson:"firstname"`
-	Secondname            interface{}           `bson:"secondname"`
-	Lastname              interface{}           `bson:"lastname"`
-	Surname               interface{}           `bson:"surname"`
-	Phone                 interface{}           `bson:"phone"`
-	Address               interface{}           `bson:"address"`
-	Email                 interface{}           `bson:"email"`
-	Gender                interface{}           `bson:"gender"`
-	TipoFuncionario       interface{}           `bson:"tipo_funcionario"`
-	Cargo                 interface{}           `bson:"cargo"`
-	Dependencia           interface{}           `bson:"dependencia"`
-	SenadorData           SenadorData           `bson:"senador_data"`
-	FuncionarioPermanente FuncionarioPermanente `bson:"funcionario_permanente"`
-	FuncionarioEventual   FuncionarioEventual   `bson:"funcionario_eventual"`
+	ID              primitive.ObjectID `bson:"_id"`
+	CI              string             `bson:"ci"`
+	Firstname       string             `bson:"firstname"`
+	Secondname      string             `bson:"secondname"`
+	Lastname        string             `bson:"lastname"`
+	Surname         string             `bson:"surname"`
+	Phone           string             `bson:"phone"`
+	Address         string             `bson:"address"`
+	Email           string             `bson:"email"`
+	Gender          string             `bson:"gender"`
+	TipoFuncionario string             `bson:"tipo_funcionario"`
+	Cargo           string             `bson:"cargo"`
+	Dependencia     string             `bson:"dependencia"`
+	SenadorData     SenadorData        `bson:"senador_data"`
 }

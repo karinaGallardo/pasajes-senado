@@ -105,10 +105,8 @@ func (s *ReportService) GeneratePV01(ctx context.Context, solicitud *models.Soli
 			tipoUsuario = senadorData.Tipo
 		}
 
-		if personaView.FuncionarioPermanente.ItemData.Unit != "" {
-			unit = personaView.FuncionarioPermanente.ItemData.Unit
-		} else if personaView.FuncionarioEventual.UnitData.Name != "" {
-			unit = personaView.FuncionarioEventual.UnitData.Name
+		if dep := utils.GetString(personaView.Dependencia); dep != "" {
+			unit = dep
 		}
 	}
 
