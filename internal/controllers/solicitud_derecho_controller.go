@@ -147,9 +147,6 @@ func (ctrl *SolicitudDerechoController) Store(c *gin.Context) {
 		return
 	}
 
-	req.Autorizacion = "PD"
-	req.Motivo = ""
-
 	usuario := appcontext.CurrentUser(c)
 
 	solicitud, err := ctrl.solicitudService.Create(c.Request.Context(), req, usuario)

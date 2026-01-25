@@ -107,7 +107,7 @@
                 <!-- Acciones -->
                 <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6" onclick="event.stopPropagation()">
                   <div class="flex justify-end gap-2">
-                    {{ if or $.CurrentUser.IsAdminOrResponsable (eq $.CurrentUser.ID .SenTitularID) }} {{ if .EsTransferido }}
+                    {{ if $.CurrentUser.IsAdminOrResponsable }} {{ if .EsTransferido }}
                     <button
                       hx-post="/admin/cupos/derechos/{{ .ID }}/revertir-transferencia?gestion={{ .Gestion }}&mes={{ .Mes }}"
                       hx-target="body"
@@ -116,7 +116,7 @@
                       <span class="[.htmx-request_&]:hidden">Deshacer</span>
                       <i class="ph ph-spinner animate-spin hidden [.htmx-request_&]:block"></i>
                     </button>
-                    {{ else if and (eq .EstadoCupoDerechoCodigo "DISPONIBLE") (not .IsVencido) }} {{ if eq $.TargetUser.Tipo "SENADOR_TITULAR" }}
+                    {{ else if and (eq .EstadoCupoDerechoCodigo "DISPONIBLE") (not .IsVencido) }}
                     <button
                       hx-get="/admin/cupos/derechos/{{ .ID }}/modal-transferir?gestion={{ .Gestion }}&mes={{ .Mes }}"
                       hx-target="#modal-container"
@@ -124,9 +124,7 @@
                       <span class="[.htmx-request_&]:hidden">Transferir</span>
                       <i class="ph ph-spinner animate-spin hidden [.htmx-request_&]:block"></i>
                     </button>
-                    {{ else }}
-                    <!-- Suplente toma cupo -->
-                    {{ if not $suplenteHasQuota }}
+                    {{ end }} {{ end }} {{ if and (eq $.CurrentUser.Tipo "SENADOR_SUPLENTE") (eq .EstadoCupoDerechoCodigo "DISPONIBLE") (not .IsVencido) (not $suplenteHasQuota) }}
                     <button
                       hx-post="/admin/cupos/transferir"
                       hx-target="body"
@@ -136,7 +134,7 @@
                       <span class="[.htmx-request_&]:hidden">Tomar Cupo</span>
                       <i class="ph ph-spinner animate-spin hidden [.htmx-request_&]:block"></i>
                     </button>
-                    {{ end }} {{ end }} {{ end }} {{ end }} {{ if eq .SenAsignadoID $.TargetUser.ID }} {{ $isVencido := .IsVencido }}
+                    {{ end }} {{ if eq .SenAsignadoID $.TargetUser.ID }} {{ $isVencido := .IsVencido }}
 
                     <!-- Ida -->
                     {{ $solIda := .GetSolicitudIda }} {{ if not $solIda }} {{ if $isVencido }}

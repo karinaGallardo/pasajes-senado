@@ -112,11 +112,18 @@ func (ctrl *CupoController) Transferir(c *gin.Context) {
 		return
 	}
 
+	if item.FechaHasta != nil {
+		limit := item.FechaHasta.AddDate(0, 0, 1)
+		if time.Now().After(limit) {
+			c.String(http.StatusBadRequest, "No se puede transferir un cupo de una semana pasada (Vencido)")
+			return
+		}
+	}
+
 	authUser := appcontext.CurrentUser(c)
-	isTitular := authUser.ID == item.SenTitularID
 	isSelfAssign := authUser.ID == req.DestinoID && strings.Contains(authUser.Tipo, "SUPLENTE")
 
-	if !authUser.IsAdminOrResponsable() && !isTitular && !isSelfAssign {
+	if !authUser.IsAdminOrResponsable() && !isSelfAssign {
 		c.String(http.StatusForbidden, "No tiene permiso para transferir este derecho")
 		return
 	}
@@ -156,15 +163,16 @@ func (ctrl *CupoController) RevertirTransferencia(c *gin.Context) {
 	gestion := c.Query("gestion")
 	mes := c.Query("mes")
 
-	item, err := ctrl.service.GetCupoDerechoItemByID(c.Request.Context(), itemID)
+	_, err := ctrl.service.GetCupoDerechoItemByID(c.Request.Context(), itemID)
 	if err != nil {
 		c.String(http.StatusNotFound, "Derecho no encontrado")
 		return
 	}
 
 	authUser := appcontext.CurrentUser(c)
-	if !authUser.IsAdminOrResponsable() && authUser.ID != item.SenTitularID {
-		c.String(http.StatusForbidden, "No tiene permiso para revertir esta transferencia")
+
+	if !authUser.IsAdminOrResponsable() {
+		c.String(http.StatusForbidden, "No tiene permiso para realizar esta acción")
 		return
 	}
 

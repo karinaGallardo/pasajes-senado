@@ -280,7 +280,16 @@
           <input type="hidden" name="aerolinea_sugerida" :value="aerolinea" />
         </div>
 
-        {{ if not .Item }}
+        <div class="md:col-span-2 space-y-1.5">
+          <label class="block text-xs font-bold text-neutral-500 uppercase tracking-tight">Autorización</label>
+          <input
+            type="text"
+            name="autorizacion"
+            value="{{ if .Item }}PD{{ end }}"
+            class="w-full px-4 py-2.5 bg-white border border-neutral-200 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-bold text-neutral-700 transition-all placeholder:text-neutral-400 placeholder:font-medium"
+            placeholder="Código de autorización" />
+        </div>
+
         <div class="md:col-span-2 space-y-1.5">
           <label class="block text-xs font-bold text-neutral-500 uppercase tracking-tight">Motivo del Viaje</label>
           <textarea
@@ -290,7 +299,6 @@
             placeholder="Ej: Cumplimiento de funciones legislativas..."
             class="w-full px-4 py-3 bg-white border border-neutral-200 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-bold text-neutral-700 transition-all placeholder:text-neutral-400 placeholder:font-medium"></textarea>
         </div>
-        {{ end }}
       </div>
     </section>
   </div>
