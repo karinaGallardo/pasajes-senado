@@ -52,10 +52,7 @@
         </div>
 
         <div class="bg-neutral-100 p-0 rounded-lg overflow-hidden h-[80vh]">
-          <iframe
-            src="/solicitudes/{{ if .Solicitud.CupoDerechoItemID }}derecho/{{ end }}{{ .Solicitud.ID }}/print"
-            class="w-full h-full border-0"
-            title="Vista Previa PDF"></iframe>
+          <iframe src="/solicitudes/derecho/{{ .Solicitud.ID }}/print" class="w-full h-full border-0" title="Vista Previa PDF"></iframe>
         </div>
       </div>
     </div>

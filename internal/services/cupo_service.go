@@ -173,9 +173,6 @@ func (s *CupoService) generateCuposDerechoTx(cupoRepoTx *repositories.CupoDerech
 		for i := count; i < targetTotal; i++ {
 			weekNum := i + 1
 			label := fmt.Sprintf("SEMANA %d", weekNum)
-			if weekNum == semanas {
-				label = fmt.Sprintf("SEMANA %d (REGIONAL)", weekNum)
-			}
 
 			var startDate, endDate *time.Time
 			if i < len(weeksInfo) {

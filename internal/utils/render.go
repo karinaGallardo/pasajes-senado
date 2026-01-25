@@ -3,6 +3,7 @@ package utils
 import (
 	"net/http"
 	"sistema-pasajes/internal/appcontext"
+	"time"
 
 	// csrf "github.com/utrack/gin-csrf"
 	"github.com/gin-contrib/sessions"
@@ -14,6 +15,8 @@ func Render(c *gin.Context, templateName string, data gin.H) {
 	if data == nil {
 		data = gin.H{}
 	}
+
+	data["CurrentYear"] = time.Now().Year()
 
 	// data["csrf_token"] = csrf.GetToken(c)
 

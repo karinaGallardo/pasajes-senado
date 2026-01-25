@@ -104,10 +104,10 @@ func (s *ReportService) GeneratePV01(ctx context.Context, solicitud *models.Soli
 		if senadorData.Tipo != "" {
 			tipoUsuario = senadorData.Tipo
 		}
+	}
 
-		if dep := utils.GetString(personaView.Dependencia); dep != "" {
-			unit = dep
-		}
+	if solicitud.Usuario.Oficina != nil {
+		unit = solicitud.Usuario.Oficina.Detalle
 	}
 
 	drawLabelBox("SENADOR POR EL DPTO. :", origenUser, 40, 60, true)
@@ -173,6 +173,8 @@ func (s *ReportService) GeneratePV01(ctx context.Context, solicitud *models.Soli
 			routeText += fmt.Sprintf(" - %s", solicitud.Origen.Ciudad)
 		case "SOLO_IDA":
 			tipoItinerario = "IDA"
+		case "SOLO_VUELTA":
+			tipoItinerario = "VUELTA"
 		default:
 			if strings.Contains(strings.ToUpper(solicitud.TipoItinerario.Nombre), "VUELTA") && !strings.Contains(strings.ToUpper(solicitud.TipoItinerario.Codigo), "SOLO") {
 				tipoItinerario = "IDA Y VUELTA"

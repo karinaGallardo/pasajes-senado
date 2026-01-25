@@ -16,6 +16,7 @@ type CreateSolicitudRequest struct {
 	AerolineaSugerida string `form:"aerolinea"`
 	CupoDerechoItemID string `form:"cupo_derecho_item_id"`
 	ActiveTab         string `form:"active_tab"`
+	Autorizacion      string `form:"autorizacion"`
 }
 
 type UpdateSolicitudRequest struct {

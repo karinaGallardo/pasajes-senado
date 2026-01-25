@@ -58,7 +58,7 @@ func (r *SolicitudRepository) FindByUserIdOrAccesibleByEncargadoID(userID string
 
 func (r *SolicitudRepository) FindByID(id string) (*models.Solicitud, error) {
 	var solicitud models.Solicitud
-	err := r.db.Preload("Usuario").Preload("Origen").Preload("Destino").Preload("Pasajes.Aerolinea").Preload("Pasajes.Agencia").Preload("Pasajes.EstadoPasaje").Preload("Pasajes").Preload("Viaticos").Preload("TipoSolicitud.ConceptoViaje").Preload("EstadoSolicitud").Preload("TipoItinerario").Preload("AmbitoViaje").First(&solicitud, "id = ?", id).Error
+	err := r.db.Preload("Usuario").Preload("Usuario.Oficina").Preload("Usuario.Cargo").Preload("Origen").Preload("Destino").Preload("Pasajes.Aerolinea").Preload("Pasajes.Agencia").Preload("Pasajes.EstadoPasaje").Preload("Pasajes").Preload("Viaticos").Preload("TipoSolicitud.ConceptoViaje").Preload("EstadoSolicitud").Preload("TipoItinerario").Preload("AmbitoViaje").First(&solicitud, "id = ?", id).Error
 	if err != nil {
 		return nil, err
 	}

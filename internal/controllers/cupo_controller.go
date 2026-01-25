@@ -10,6 +10,7 @@ import (
 	"sistema-pasajes/internal/services"
 	"sistema-pasajes/internal/utils"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -112,9 +113,29 @@ func (ctrl *CupoController) Transferir(c *gin.Context) {
 	}
 
 	authUser := appcontext.CurrentUser(c)
-	if !authUser.IsAdminOrResponsable() && authUser.ID != item.SenTitularID {
+	isTitular := authUser.ID == item.SenTitularID
+	isSelfAssign := authUser.ID == req.DestinoID && strings.Contains(authUser.Tipo, "SUPLENTE")
+
+	if !authUser.IsAdminOrResponsable() && !isTitular && !isSelfAssign {
 		c.String(http.StatusForbidden, "No tiene permiso para transferir este derecho")
 		return
+	}
+
+	if isSelfAssign {
+		gestionInt, _ := strconv.Atoi(req.Gestion)
+		mesInt, _ := strconv.Atoi(req.Mes)
+		items, _ := ctrl.service.GetCuposDerechoByUsuarioAndGestion(c.Request.Context(), authUser.ID, gestionInt)
+		count := 0
+		for _, it := range items {
+			if it.Mes == mesInt && it.SenAsignadoID == authUser.ID {
+				count++
+			}
+		}
+		if count > 0 {
+			c.Header("HX-Retarget", "#flash-messages")
+			c.String(http.StatusBadRequest, "Límite mensual alcanzado: Solo puede tomar 1 cupo automáticamente.")
+			return
+		}
 	}
 
 	err = ctrl.service.TransferirCupoDerecho(c.Request.Context(), req.ItemID, req.DestinoID, req.Motivo)
@@ -268,9 +289,10 @@ func (ctrl *CupoController) GetTransferModal(c *gin.Context) {
 }
 
 type MonthGroup struct {
-	MonthNum  int
-	MonthName string
-	Items     []models.CupoDerechoItem
+	MonthNum         int
+	MonthName        string
+	Items            []models.CupoDerechoItem
+	SuplenteHasQuota bool
 }
 
 func (ctrl *CupoController) DerechoByYear(c *gin.Context) {
@@ -297,7 +319,12 @@ func (ctrl *CupoController) DerechoByYear(c *gin.Context) {
 		}
 	}
 
-	items, _ := ctrl.service.GetCuposDerechoByUsuarioAndGestion(c.Request.Context(), id, gestion)
+	var idParaCupos = id
+	if targetUser.TitularID != nil {
+		idParaCupos = *targetUser.TitularID
+	}
+
+	items, _ := ctrl.service.GetCuposDerechoByUsuarioAndGestion(c.Request.Context(), idParaCupos, gestion)
 
 	mesesNames := utils.GetMonthNames()
 
@@ -313,6 +340,9 @@ func (ctrl *CupoController) DerechoByYear(c *gin.Context) {
 	for _, v := range items {
 		if v.Mes >= 1 && v.Mes <= 12 {
 			grouped[v.Mes].Items = append(grouped[v.Mes].Items, v)
+			if v.SenAsignadoID == id {
+				grouped[v.Mes].SuplenteHasQuota = true
+			}
 		}
 	}
 
@@ -358,7 +388,12 @@ func (ctrl *CupoController) DerechoByMonth(c *gin.Context) {
 		mes = 0
 	}
 
-	items, _ := ctrl.service.GetCuposDerechoByUsuarioAndGestion(c.Request.Context(), id, gestion)
+	var idParaCupos = id
+	if targetUser.TitularID != nil {
+		idParaCupos = *targetUser.TitularID
+	}
+
+	items, _ := ctrl.service.GetCuposDerechoByUsuarioAndGestion(c.Request.Context(), idParaCupos, gestion)
 
 	mesesNames := utils.GetMonthNames()
 
@@ -374,6 +409,9 @@ func (ctrl *CupoController) DerechoByMonth(c *gin.Context) {
 	for _, v := range items {
 		if v.Mes == mes {
 			grouped[v.Mes].Items = append(grouped[v.Mes].Items, v)
+			if v.SenAsignadoID == id {
+				grouped[v.Mes].SuplenteHasQuota = true
+			}
 		}
 	}
 

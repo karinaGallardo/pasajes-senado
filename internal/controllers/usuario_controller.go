@@ -9,6 +9,7 @@ import (
 	"sistema-pasajes/internal/utils"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -58,7 +59,10 @@ func (ctrl *UsuarioController) Index(c *gin.Context) {
 		if errDb != nil {
 			err = errDb
 		}
-		result = gin.H{"Usuarios": usuarios}
+		result = gin.H{
+			"Usuarios":    usuarios,
+			"CurrentYear": time.Now().Year(),
+		}
 	}
 
 	if err != nil {
@@ -127,7 +131,11 @@ func (ctrl *UsuarioController) Table(c *gin.Context) {
 			usuarios = filtered
 		}
 
-		result = gin.H{"Usuarios": usuarios}
+		result = gin.H{
+			"Usuarios":    usuarios,
+			"CurrentYear": time.Now().Year(),
+		}
+
 	}
 
 	if err != nil {

@@ -69,6 +69,7 @@ func (s *SolicitudService) Create(ctx context.Context, req dtos.CreateSolicitudR
 		FechaVuelta:       fechaVuelta,
 		Motivo:            req.Motivo,
 		AerolineaSugerida: req.AerolineaSugerida,
+		Autorizacion:      req.Autorizacion,
 	}
 
 	if req.CupoDerechoItemID != "" {

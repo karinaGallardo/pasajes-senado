@@ -100,6 +100,15 @@
         <h3 class="text-lg leading-6 font-medium text-neutral-900 mb-4">Detalles de la Solicitud</h3>
         <dl class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-6">
           <div class="sm:col-span-1">
+            <dt class="text-sm font-medium text-neutral-500">Beneficiario</dt>
+            <dd class="mt-1 text-sm text-neutral-900 font-bold uppercase">
+              {{ .Solicitud.Usuario.GetNombreCompleto }}
+              <span class="inline-flex items-center rounded-md bg-neutral-50 px-2 py-1 text-xs font-medium text-neutral-600 ring-1 ring-inset ring-neutral-500/10 ml-2">
+                {{ if eq .Solicitud.Usuario.Tipo "SENADOR_TITULAR" }}TITULAR{{ else }}SUPLENTE{{ end }}
+              </span>
+            </dd>
+          </div>
+          <div class="sm:col-span-1">
             <dt class="text-sm font-medium text-neutral-500">Origen</dt>
             <dd class="mt-1 text-sm text-neutral-900">{{ .Solicitud.Origen.Ciudad }} ({{ .Solicitud.Origen.IATA }})</dd>
           </div>

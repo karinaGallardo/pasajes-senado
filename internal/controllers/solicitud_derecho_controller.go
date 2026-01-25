@@ -66,7 +66,7 @@ func (ctrl *SolicitudDerechoController) Create(c *gin.Context) {
 		return
 	}
 
-	targetUser, err := ctrl.userService.GetByID(c.Request.Context(), item.SenTitularID)
+	targetUser, err := ctrl.userService.GetByID(c.Request.Context(), item.SenAsignadoID)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Usuario titular del derecho no encontrado")
 		return
@@ -146,6 +146,9 @@ func (ctrl *SolicitudDerechoController) Store(c *gin.Context) {
 		c.String(http.StatusBadRequest, "ID de Registro de Derecho requerido para solicitud")
 		return
 	}
+
+	req.Autorizacion = "PD"
+	req.Motivo = ""
 
 	usuario := appcontext.CurrentUser(c)
 

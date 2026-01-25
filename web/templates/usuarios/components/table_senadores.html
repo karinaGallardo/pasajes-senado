@@ -41,7 +41,7 @@
 
         <div class="flex space-x-2 mt-2">
           <a
-            href="/cupos/derecho/{{ $user.ID }}"
+            href="/cupos/derecho/{{ $user.ID }}/{{ $.CurrentYear }}"
             class="text-[10px] text-primary-600 hover:text-primary-900 font-bold bg-primary-50 px-1.5 py-0.5 rounded border border-primary-100 transition-colors">
             Ver Cupos
           </a>
@@ -91,7 +91,7 @@
 
         <div class="flex space-x-2 mt-2">
           <a
-            href="/cupos/derecho/{{ $suplente.ID }}"
+            href="/cupos/derecho/{{ $suplente.ID }}/{{ $.CurrentYear }}"
             class="text-[10px] text-primary-600 hover:text-primary-900 font-bold bg-primary-50 px-1.5 py-0.5 rounded border border-primary-100 transition-colors">
             Ver Cupos
           </a>
