@@ -165,10 +165,19 @@ func (s *ReportService) GeneratePV01(ctx context.Context, solicitud *models.Soli
 
 	tipoItinerario := "IDA"
 	routeText := fmt.Sprintf("%s - %s", solicitud.Origen.Ciudad, solicitud.Destino.Ciudad)
+
 	if solicitud.TipoItinerario != nil {
-		if strings.Contains(strings.ToUpper(solicitud.TipoItinerario.Nombre), "VUELTA") {
+		switch solicitud.TipoItinerario.Codigo {
+		case "IDA_VUELTA":
 			tipoItinerario = "IDA Y VUELTA"
 			routeText += fmt.Sprintf(" - %s", solicitud.Origen.Ciudad)
+		case "SOLO_IDA":
+			tipoItinerario = "IDA"
+		default:
+			if strings.Contains(strings.ToUpper(solicitud.TipoItinerario.Nombre), "VUELTA") && !strings.Contains(strings.ToUpper(solicitud.TipoItinerario.Codigo), "SOLO") {
+				tipoItinerario = "IDA Y VUELTA"
+				routeText += fmt.Sprintf(" - %s", solicitud.Origen.Ciudad)
+			}
 		}
 	}
 

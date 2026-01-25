@@ -42,6 +42,11 @@ func (r *CargoRepository) Delete(id string) error {
 
 func (r *CargoRepository) FindByDescripcion(descripcion string) (*models.Cargo, error) {
 	var cargo models.Cargo
-	err := r.db.Where("descripcion = ?", descripcion).First(&cargo).Error
+	err := r.db.Where("descripcion ILIKE ?", descripcion).First(&cargo).Error
 	return &cargo, err
+}
+func (r *CargoRepository) GetNextCodigo() (int, error) {
+	var maxCodigo int
+	err := r.db.Model(&models.Cargo{}).Select("COALESCE(MAX(codigo), 0)").Scan(&maxCodigo).Error
+	return maxCodigo + 1, err
 }

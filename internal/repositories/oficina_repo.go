@@ -43,6 +43,11 @@ func (r *OficinaRepository) Delete(id string) error {
 
 func (r *OficinaRepository) FindByDetalle(detalle string) (*models.Oficina, error) {
 	var oficina models.Oficina
-	err := r.db.Where("detalle = ?", detalle).First(&oficina).Error
+	err := r.db.Where("detalle ILIKE ?", detalle).First(&oficina).Error
 	return &oficina, err
+}
+func (r *OficinaRepository) GetNextCodigo() (int, error) {
+	var maxCodigo int
+	err := r.db.Model(&models.Oficina{}).Select("COALESCE(MAX(codigo), 0)").Scan(&maxCodigo).Error
+	return maxCodigo + 1, err
 }

@@ -99,7 +99,16 @@ func (s *UsuarioService) SyncStaff(ctx context.Context) (int, error) {
 			if cargo, err := s.cargoRepo.WithContext(ctx).FindByDescripcion(cargoName); err == nil {
 				user.CargoID = &cargo.ID
 			} else {
-				user.CargoID = nil
+				if nextCode, err := s.cargoRepo.WithContext(ctx).GetNextCodigo(); err == nil {
+					newCargo := &models.Cargo{
+						Codigo:      nextCode,
+						Descripcion: cargoName,
+						Categoria:   0,
+					}
+					if err := s.cargoRepo.WithContext(ctx).Create(newCargo); err == nil {
+						user.CargoID = &newCargo.ID
+					}
+				}
 			}
 		} else {
 			user.CargoID = nil
@@ -110,7 +119,15 @@ func (s *UsuarioService) SyncStaff(ctx context.Context) (int, error) {
 			if oficina, err := s.oficinaRepo.WithContext(ctx).FindByDetalle(oficinaName); err == nil {
 				user.OficinaID = &oficina.ID
 			} else {
-				user.OficinaID = nil
+				if nextCode, err := s.oficinaRepo.WithContext(ctx).GetNextCodigo(); err == nil {
+					newOficina := &models.Oficina{
+						Codigo:  nextCode,
+						Detalle: oficinaName,
+					}
+					if err := s.oficinaRepo.WithContext(ctx).Create(newOficina); err == nil {
+						user.OficinaID = &newOficina.ID
+					}
+				}
 			}
 		} else {
 			user.OficinaID = nil
@@ -145,7 +162,6 @@ func (s *UsuarioService) SyncSenators(ctx context.Context) (int, error) {
 
 	var count int
 
-	// Usamos transacción para garantizar atomicidad
 	err = s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.UsuarioRepository) error {
 		pgSenators, _ := repoTx.FindAllSenators()
 
@@ -199,7 +215,16 @@ func (s *UsuarioService) SyncSenators(ctx context.Context) (int, error) {
 				if cargo, err := s.cargoRepo.WithContext(ctx).FindByDescripcion(cargoName); err == nil {
 					user.CargoID = &cargo.ID
 				} else {
-					user.CargoID = nil
+					if nextCode, err := s.cargoRepo.WithContext(ctx).GetNextCodigo(); err == nil {
+						newCargo := &models.Cargo{
+							Codigo:      nextCode,
+							Descripcion: cargoName,
+							Categoria:   0,
+						}
+						if err := s.cargoRepo.WithContext(ctx).Create(newCargo); err == nil {
+							user.CargoID = &newCargo.ID
+						}
+					}
 				}
 			} else {
 				user.CargoID = nil
@@ -210,7 +235,15 @@ func (s *UsuarioService) SyncSenators(ctx context.Context) (int, error) {
 				if oficina, err := s.oficinaRepo.WithContext(ctx).FindByDetalle(oficinaName); err == nil {
 					user.OficinaID = &oficina.ID
 				} else {
-					user.OficinaID = nil
+					if nextCode, err := s.oficinaRepo.WithContext(ctx).GetNextCodigo(); err == nil {
+						newOficina := &models.Oficina{
+							Codigo:  nextCode,
+							Detalle: oficinaName,
+						}
+						if err := s.oficinaRepo.WithContext(ctx).Create(newOficina); err == nil {
+							user.OficinaID = &newOficina.ID
+						}
+					}
 				}
 			} else {
 				user.OficinaID = nil
