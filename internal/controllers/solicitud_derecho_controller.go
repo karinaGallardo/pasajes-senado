@@ -115,6 +115,29 @@ func (ctrl *SolicitudDerechoController) Create(c *gin.Context) {
 	} else {
 		origen = lpbLoc
 		destino = userLoc
+
+		existingSolicitudes, _ := ctrl.solicitudService.GetByCupoDerechoItemID(c.Request.Context(), itemID)
+		var fechaIda *time.Time
+		for _, sol := range existingSolicitudes {
+			if sol.TipoItinerario.Codigo == "SOLO_IDA" && sol.FechaIda != nil {
+				stateCode := sol.GetEstadoCodigo()
+				if stateCode != "RECHAZADO" && stateCode != "ELIMINADO" {
+					fechaIda = sol.FechaIda
+					break
+				}
+			}
+		}
+
+		if fechaIda != nil {
+			var filteredDays []map[string]string
+			fechaIdaStr := fechaIda.Format("2006-01-02")
+			for _, d := range weekDays {
+				if d["date"] > fechaIdaStr {
+					filteredDays = append(filteredDays, d)
+				}
+			}
+			weekDays = filteredDays
+		}
 	}
 
 	utils.Render(c, "solicitud/derecho/create", gin.H{

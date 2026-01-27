@@ -14,9 +14,10 @@ import (
 )
 
 type CupoService struct {
-	repo     *repositories.CupoDerechoRepository
-	userRepo *repositories.UsuarioRepository
-	itemRepo *repositories.CupoDerechoItemRepository
+	repo          *repositories.CupoDerechoRepository
+	userRepo      *repositories.UsuarioRepository
+	itemRepo      *repositories.CupoDerechoItemRepository
+	solicitudRepo *repositories.SolicitudRepository
 }
 
 type CupoInfo struct {
@@ -29,9 +30,10 @@ type CupoInfo struct {
 
 func NewCupoService() *CupoService {
 	return &CupoService{
-		repo:     repositories.NewCupoDerechoRepository(),
-		userRepo: repositories.NewUsuarioRepository(),
-		itemRepo: repositories.NewCupoDerechoItemRepository(),
+		repo:          repositories.NewCupoDerechoRepository(),
+		userRepo:      repositories.NewUsuarioRepository(),
+		itemRepo:      repositories.NewCupoDerechoItemRepository(),
+		solicitudRepo: repositories.NewSolicitudRepository(),
 	}
 }
 
@@ -398,4 +400,8 @@ func (s *CupoService) GetCupoDerechoItemByID(ctx context.Context, id string) (*m
 
 func (s *CupoService) GetCupoDerechoItemWeekDays(item *models.CupoDerechoItem) []map[string]string {
 	return utils.GetWeekDays(item.FechaDesde, item.FechaHasta)
+}
+
+func (s *CupoService) GetSolicitudesByCupoItem(ctx context.Context, itemID string) ([]models.Solicitud, error) {
+	return s.solicitudRepo.WithContext(ctx).FindByCupoDerechoItemID(itemID)
 }

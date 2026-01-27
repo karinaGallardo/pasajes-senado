@@ -37,19 +37,52 @@ func (r *SolicitudRepository) Create(solicitud *models.Solicitud) error {
 
 func (r *SolicitudRepository) FindAll() ([]models.Solicitud, error) {
 	var solicitudes []models.Solicitud
-	err := r.db.Preload("Usuario").Preload("Origen").Preload("Destino").Preload("TipoSolicitud.ConceptoViaje").Preload("EstadoSolicitud").Order("created_at desc").Find(&solicitudes).Error
+	err := r.db.Preload("Usuario").
+		Preload("Origen").
+		Preload("Destino").
+		Preload("TipoSolicitud.ConceptoViaje").
+		Preload("EstadoSolicitud").
+		Order("created_at desc").
+		Find(&solicitudes).Error
 	return solicitudes, err
 }
 
 func (r *SolicitudRepository) FindByUserID(userID string) ([]models.Solicitud, error) {
 	var solicitudes []models.Solicitud
-	err := r.db.Preload("Usuario").Preload("Origen").Preload("Destino").Preload("TipoSolicitud.ConceptoViaje").Preload("EstadoSolicitud").Order("created_at desc").Where("usuario_id = ?", userID).Find(&solicitudes).Error
+	err := r.db.Preload("Usuario").
+		Preload("Origen").
+		Preload("Destino").
+		Preload("TipoSolicitud.ConceptoViaje").
+		Preload("EstadoSolicitud").
+		Order("created_at desc").Where("usuario_id = ?", userID).Find(&solicitudes).Error
+	return solicitudes, err
+}
+
+func (r *SolicitudRepository) FindByCupoDerechoItemID(itemID string) ([]models.Solicitud, error) {
+	var solicitudes []models.Solicitud
+	err := r.db.Preload("Usuario").
+		Preload("Usuario.Encargado").
+		Preload("Usuario.Oficina").
+		Preload("Usuario.Departamento").
+		Preload("Usuario.Origen").
+		Preload("Origen").
+		Preload("Destino").
+		Preload("TipoItinerario").
+		Preload("TipoSolicitud.ConceptoViaje").
+		Preload("EstadoSolicitud").
+		Preload("CupoDerechoItem").
+		Where("cupo_derecho_item_id = ?", itemID).
+		Find(&solicitudes).Error
 	return solicitudes, err
 }
 
 func (r *SolicitudRepository) FindByUserIdOrAccesibleByEncargadoID(userID string) ([]models.Solicitud, error) {
 	var solicitudes []models.Solicitud
-	err := r.db.Preload("Usuario").Preload("Origen").Preload("Destino").Preload("TipoSolicitud.ConceptoViaje").Preload("EstadoSolicitud").
+	err := r.db.Preload("Usuario").
+		Preload("Origen").
+		Preload("Destino").
+		Preload("TipoSolicitud.ConceptoViaje").
+		Preload("EstadoSolicitud").
 		Order("created_at desc").
 		Where("usuario_id = ? OR usuario_id IN (?)", userID, r.db.Table("usuarios").Select("id").Where("encargado_id = ?", userID)).
 		Find(&solicitudes).Error
@@ -58,7 +91,19 @@ func (r *SolicitudRepository) FindByUserIdOrAccesibleByEncargadoID(userID string
 
 func (r *SolicitudRepository) FindByID(id string) (*models.Solicitud, error) {
 	var solicitud models.Solicitud
-	err := r.db.Preload("Usuario").Preload("Usuario.Oficina").Preload("Usuario.Cargo").Preload("Origen").Preload("Destino").Preload("Pasajes.Aerolinea").Preload("Pasajes.Agencia").Preload("Pasajes.EstadoPasaje").Preload("Pasajes").Preload("Viaticos").Preload("TipoSolicitud.ConceptoViaje").Preload("EstadoSolicitud").Preload("TipoItinerario").Preload("AmbitoViaje").First(&solicitud, "id = ?", id).Error
+	err := r.db.Preload("Usuario").
+		Preload("Origen").
+		Preload("Destino").
+		Preload("Pasajes.Aerolinea").
+		Preload("Pasajes.Agencia").
+		Preload("Pasajes.EstadoPasaje").
+		Preload("Pasajes").
+		Preload("Viaticos").
+		Preload("TipoSolicitud.ConceptoViaje").
+		Preload("EstadoSolicitud").
+		Preload("TipoItinerario").
+		Preload("AmbitoViaje").
+		First(&solicitud, "id = ?", id).Error
 	if err != nil {
 		return nil, err
 	}

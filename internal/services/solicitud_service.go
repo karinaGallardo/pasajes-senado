@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"errors"
+	"fmt"
 	"sistema-pasajes/internal/dtos"
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
@@ -15,20 +16,22 @@ import (
 
 func NewSolicitudService() *SolicitudService {
 	return &SolicitudService{
-		repo:              repositories.NewSolicitudRepository(),
-		tipoSolicitudRepo: repositories.NewTipoSolicitudRepository(),
-		usuarioRepo:       repositories.NewUsuarioRepository(),
-		itemRepo:          repositories.NewCupoDerechoItemRepository(),
-		tipoItinRepo:      repositories.NewTipoItinerarioRepository(),
+		repo:                repositories.NewSolicitudRepository(),
+		tipoSolicitudRepo:   repositories.NewTipoSolicitudRepository(),
+		usuarioRepo:         repositories.NewUsuarioRepository(),
+		itemRepo:            repositories.NewCupoDerechoItemRepository(),
+		tipoItinRepo:        repositories.NewTipoItinerarioRepository(),
+		codigoSecuenciaRepo: repositories.NewCodigoSecuenciaRepository(),
 	}
 }
 
 type SolicitudService struct {
-	repo              *repositories.SolicitudRepository
-	tipoSolicitudRepo *repositories.TipoSolicitudRepository
-	usuarioRepo       *repositories.UsuarioRepository
-	itemRepo          *repositories.CupoDerechoItemRepository
-	tipoItinRepo      *repositories.TipoItinerarioRepository
+	repo                *repositories.SolicitudRepository
+	tipoSolicitudRepo   *repositories.TipoSolicitudRepository
+	usuarioRepo         *repositories.UsuarioRepository
+	itemRepo            *repositories.CupoDerechoItemRepository
+	tipoItinRepo        *repositories.TipoItinerarioRepository
+	codigoSecuenciaRepo *repositories.CodigoSecuenciaRepository
 }
 
 func (s *SolicitudService) Create(ctx context.Context, req dtos.CreateSolicitudRequest, currentUser *models.Usuario) (*models.Solicitud, error) {
@@ -105,24 +108,35 @@ func (s *SolicitudService) Create(ctx context.Context, req dtos.CreateSolicitudR
 
 	solicitud.EstadoSolicitudCodigo = utils.Ptr("SOLICITADO")
 
-	var codigo string
-	for range 10 {
-		generated, err := utils.GenerateCode(5)
-		if err != nil {
-			return nil, errors.New("error generando código solicitud")
-		}
-		exists, _ := s.repo.WithContext(ctx).ExistsByCodigo(generated)
-		if !exists {
-			codigo = generated
-			break
-		}
-	}
-	if codigo == "" {
-		return nil, errors.New("no se pudo generar un código único después de varios intentos")
-	}
-	solicitud.Codigo = codigo
+	err = s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
+		secuenciaRepoTx := s.codigoSecuenciaRepo.WithTx(tx)
+		itemRepoTx := s.itemRepo.WithTx(tx)
 
-	if err := s.repo.WithContext(ctx).Create(solicitud); err != nil {
+		currentYear := time.Now().Year()
+		nextVal, err := secuenciaRepoTx.GetNext(currentYear, "SPD")
+		if err != nil {
+			return errors.New("error generando codigo de secuencia de solicitud")
+		}
+
+		solicitud.Codigo = fmt.Sprintf("SPD-%d%04d", currentYear%100, nextVal)
+
+		if err := repoTx.Create(solicitud); err != nil {
+			return err
+		}
+
+		if solicitud.CupoDerechoItemID != nil {
+			item, err := itemRepoTx.FindByID(*solicitud.CupoDerechoItemID)
+			if err == nil && item != nil {
+				item.EstadoCupoDerechoCodigo = "RESERVADO"
+				if err := itemRepoTx.Update(item); err != nil {
+					return err
+				}
+			}
+		}
+		return nil
+	})
+
+	if err != nil {
 		return nil, err
 	}
 
@@ -139,6 +153,10 @@ func (s *SolicitudService) GetByUserID(ctx context.Context, userID string) ([]mo
 
 func (s *SolicitudService) GetByUserIdOrAccesibleByEncargadoID(ctx context.Context, userID string) ([]models.Solicitud, error) {
 	return s.repo.WithContext(ctx).FindByUserIdOrAccesibleByEncargadoID(userID)
+}
+
+func (s *SolicitudService) GetByCupoDerechoItemID(ctx context.Context, itemID string) ([]models.Solicitud, error) {
+	return s.repo.WithContext(ctx).FindByCupoDerechoItemID(itemID)
 }
 
 func (s *SolicitudService) GetByID(ctx context.Context, id string) (*models.Solicitud, error) {
@@ -200,7 +218,23 @@ func (s *SolicitudService) Finalize(ctx context.Context, id string) error {
 }
 
 func (s *SolicitudService) Reject(ctx context.Context, id string) error {
-	return s.repo.WithContext(ctx).UpdateStatus(id, "RECHAZADO")
+	solicitud, err := s.repo.WithContext(ctx).FindByID(id)
+	if err != nil {
+		return err
+	}
+
+	if err := s.repo.WithContext(ctx).UpdateStatus(id, "RECHAZADO"); err != nil {
+		return err
+	}
+
+	if solicitud.CupoDerechoItemID != nil {
+		item, err := s.itemRepo.WithContext(ctx).FindByID(*solicitud.CupoDerechoItemID)
+		if err == nil && item != nil {
+			item.EstadoCupoDerechoCodigo = "DISPONIBLE"
+			_ = s.itemRepo.WithContext(ctx).Update(item)
+		}
+	}
+	return nil
 }
 
 func (s *SolicitudService) Update(ctx context.Context, solicitud *models.Solicitud) error {
@@ -208,5 +242,20 @@ func (s *SolicitudService) Update(ctx context.Context, solicitud *models.Solicit
 }
 
 func (s *SolicitudService) Delete(ctx context.Context, id string) error {
-	return s.repo.WithContext(ctx).Delete(id)
+	return s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
+		itemRepoTx := s.itemRepo.WithTx(tx)
+
+		solicitud, err := repoTx.FindByID(id)
+		if err == nil && solicitud != nil && solicitud.CupoDerechoItemID != nil {
+			item, err := itemRepoTx.FindByID(*solicitud.CupoDerechoItemID)
+			if err == nil && item != nil {
+				item.EstadoCupoDerechoCodigo = "DISPONIBLE"
+				if err := itemRepoTx.Update(item); err != nil {
+					return err
+				}
+			}
+		}
+
+		return repoTx.Delete(id)
+	})
 }

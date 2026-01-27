@@ -124,11 +124,19 @@
                       <span class="[.htmx-request_&]:hidden">Transferir</span>
                       <i class="ph ph-spinner animate-spin hidden [.htmx-request_&]:block"></i>
                     </button>
+                    {{ end }} {{ if and .GetSolicitudIda .GetSolicitudVuelta }}
+                    <button
+                      hx-get="/admin/cupos/derechos/{{ .ID }}/modal-print"
+                      hx-target="#modal-container"
+                      class="text-neutral-600 hover:text-neutral-900 border border-neutral-200 bg-white font-bold text-xs uppercase px-3 py-1.5 rounded hover:bg-neutral-50 transition-colors inline-flex items-center gap-1"
+                      title="Imprimir solicitudes por cupo">
+                      <i class="ph ph-printer text-[15px]"></i>
+                    </button>
                     {{ end }} {{ end }} {{ if and (eq $.CurrentUser.Tipo "SENADOR_SUPLENTE") (eq .EstadoCupoDerechoCodigo "DISPONIBLE") (not .IsVencido) (not $suplenteHasQuota) }}
                     <button
                       hx-post="/admin/cupos/transferir"
                       hx-target="body"
-                      hx-vals='{"item_id": "{{.ID}}", "destino_id": "{{$.TargetUser.ID}}", "motivo": "Tomado por suplente", "gestion": "{{.Gestion}}", "mes": "{{.Mes}}", "return_url": "/cupos/derecho/{{$.TargetUser.ID}}/{{$.Gestion}}"}'
+                      hx-vals='{"item_id": "{{.ID}}", "destino_id": "{{$.CurrentUser.ID}}", "motivo": "Tomado por suplente", "gestion": "{{.Gestion}}", "mes": "{{.Mes}}", "return_url": "/cupos/derecho/{{$.TargetUser.ID}}/{{$.Gestion}}"}'
                       hx-confirm="¿Desea TOMAR este cupo para su uso?"
                       class="text-secondary-600 hover:text-secondary-900 border border-secondary-200 bg-white font-bold text-[10px] uppercase px-2 py-1 rounded hover:bg-secondary-50 transition-colors inline-flex items-center gap-1">
                       <span class="[.htmx-request_&]:hidden">Tomar Cupo</span>

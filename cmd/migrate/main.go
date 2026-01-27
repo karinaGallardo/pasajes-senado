@@ -34,6 +34,7 @@ func main() {
 
 		// Configuración del Sistema
 		&models.Configuracion{},
+		&models.CodigoSecuencia{},
 		&models.CategoriaViatico{},
 		&models.CategoriaCompensacion{},
 

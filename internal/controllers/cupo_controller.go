@@ -17,14 +17,16 @@ import (
 )
 
 type CupoController struct {
-	service     *services.CupoService
-	userService *services.UsuarioService
+	service       *services.CupoService
+	userService   *services.UsuarioService
+	reportService *services.ReportService
 }
 
 func NewCupoController() *CupoController {
 	return &CupoController{
-		service:     services.NewCupoService(),
-		userService: services.NewUsuarioService(),
+		service:       services.NewCupoService(),
+		userService:   services.NewUsuarioService(),
+		reportService: services.NewReportService(),
 	}
 }
 
@@ -186,12 +188,40 @@ func (ctrl *CupoController) RevertirTransferencia(c *gin.Context) {
 		targetURL = ref
 	}
 
-	if c.GetHeader("HX-Request") == "true" {
-		c.Header("HX-Redirect", targetURL)
-		c.Status(http.StatusOK)
+	c.Redirect(http.StatusFound, targetURL)
+}
+
+func (ctrl *CupoController) PrintRequests(c *gin.Context) {
+	id := c.Param("id")
+
+	item, err := ctrl.service.GetCupoDerechoItemByID(c.Request.Context(), id)
+	if err != nil {
+		c.String(http.StatusNotFound, "Cupo no encontrado")
 		return
 	}
-	c.Redirect(http.StatusFound, targetURL)
+
+	pdfBytes, err := ctrl.reportService.GenerateCupoSolicitudesPDF(c.Request.Context(), item.ID)
+	if err != nil {
+		c.String(http.StatusInternalServerError, "Error generando reporte: "+err.Error())
+		return
+	}
+
+	filename := fmt.Sprintf("solicitudes_cupo_%s.pdf", item.Semana)
+	c.Header("Content-Disposition", "inline; filename="+filename)
+	c.Data(http.StatusOK, "application/pdf", pdfBytes)
+}
+
+func (ctrl *CupoController) GetPrintModal(c *gin.Context) {
+	id := c.Param("id")
+	item, err := ctrl.service.GetCupoDerechoItemByID(c.Request.Context(), id)
+	if err != nil {
+		c.String(http.StatusNotFound, "Cupo no encontrado")
+		return
+	}
+
+	utils.Render(c, "cupo/modal_print", gin.H{
+		"Item": item,
+	})
 }
 
 func (ctrl *CupoController) Reset(c *gin.Context) {
@@ -388,7 +418,7 @@ func (ctrl *CupoController) DerechoByMonth(c *gin.Context) {
 
 	gestion, err := strconv.Atoi(gestionStr)
 	if err != nil {
-		gestion = time.Now().Year() // Fallback safety
+		gestion = time.Now().Year()
 	}
 
 	mes, err := strconv.Atoi(mesStr)

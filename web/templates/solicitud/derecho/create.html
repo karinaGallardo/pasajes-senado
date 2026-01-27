@@ -3,7 +3,7 @@
 <div
   class="mt-2 max-w-5xl mx-auto space-y-2"
   x-data="{
-    selectedDaySalida: '{{ if .Item.FechaDesde }}{{ .Item.FechaDesde.Format `2006-01-02` }}{{ end }}',
+    selectedDaySalida: '{{ if .WeekDays }}{{ with index .WeekDays 0 }}{{ .date }}{{ end }}{{ else if .Item.FechaDesde }}{{ .Item.FechaDesde.Format `2006-01-02` }}{{ end }}',
     selectedTimeSalida: '08:00',
     isSubmitting: false,
     isEdit: false,

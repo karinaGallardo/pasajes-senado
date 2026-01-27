@@ -23,6 +23,30 @@ func main() {
 	seedEstadosPasaje()
 	seedViaticosAndConfig()
 	seedGeneros()
+	seedCodigoSecuencia()
+}
+
+func seedCodigoSecuencia() {
+	fmt.Println("Sincronizando Secuencia SPD...")
+	gestion := 2026
+	tipo := "SPD"
+
+	var seq models.CodigoSecuencia
+	err := configs.DB.Where("gestion = ? AND tipo = ?", gestion, tipo).First(&seq).Error
+	if err != nil {
+		seq = models.CodigoSecuencia{
+			Gestion: gestion,
+			Tipo:    tipo,
+			Numero:  0,
+		}
+		if err := configs.DB.Create(&seq).Error; err != nil {
+			log.Printf("Error creando seed secuencia: %v", err)
+		} else {
+			fmt.Printf("Secuencia SPD-%d inicializada en 0.\n", gestion)
+		}
+	} else {
+		fmt.Printf("Secuencia SPD-%d ya existe (valor actual: %d).\n", gestion, seq.Numero)
+	}
 }
 
 func assignPermsToRole(rol *models.Rol, perms []*models.Permiso) {

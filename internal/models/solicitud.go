@@ -4,7 +4,7 @@ import "time"
 
 type Solicitud struct {
 	BaseModel
-	Codigo    string  `gorm:"size:8;uniqueIndex"`
+	Codigo    string  `gorm:"size:12;uniqueIndex"`
 	UsuarioID string  `gorm:"size:24;not null"`
 	Usuario   Usuario `gorm:"constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
 

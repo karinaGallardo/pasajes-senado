@@ -114,6 +114,8 @@ func SetupRoutes(r *gin.Engine) {
 			protected.GET("/admin/cupos/derechos/:id/modal-transferir", cupoCtrl.GetTransferModal)
 			protected.POST("/admin/cupos/transferir", cupoCtrl.Transferir)
 			protected.POST("/admin/cupos/derechos/:id/revertir-transferencia", cupoCtrl.RevertirTransferencia)
+			protected.GET("/admin/cupos/derechos/:id/print", cupoCtrl.PrintRequests)
+			protected.GET("/admin/cupos/derechos/:id/modal-print", cupoCtrl.GetPrintModal)
 			sysAdmin.POST("/admin/cupos/reset", cupoCtrl.Reset)
 
 			aerolineaCtrl := controllers.NewAerolineaController()
