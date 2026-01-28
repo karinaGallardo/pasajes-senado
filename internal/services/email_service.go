@@ -26,59 +26,84 @@ func (s *EmailService) SendEmail(to []string, subject string, body string) error
 	fromEmail := viper.GetString("SMTP_FROM_EMAIL")
 
 	addr := fmt.Sprintf("%s:%s", smtpServer, smtpPort)
-	log.Printf("[EmailService] Conectando a %s (SSL)...", addr)
+	log.Printf("[EmailService] Config: %s, User: %s", addr, smtpUser)
 
 	tlsConfig := &tls.Config{
 		InsecureSkipVerify: true,
 		ServerName:         smtpServer,
 	}
 
-	dialer := &net.Dialer{
-		Timeout: 30 * time.Second,
-	}
+	var client *smtp.Client
+	var err error
 
-	conn, err := tls.DialWithDialer(dialer, "tcp", addr, tlsConfig)
-	if err != nil {
-		log.Printf("[EmailService] Error crítico al conectar: %v", err)
-		return fmt.Errorf("falló tls.DialWithDialer: %w", err)
-	}
-	defer conn.Close()
+	if smtpPort == "465" {
+		log.Printf("[EmailService] Conectando vía SMTPS (Implicit SSL) a %s...", addr)
+		dialer := &net.Dialer{Timeout: 30 * time.Second}
+		conn, err := tls.DialWithDialer(dialer, "tcp", addr, tlsConfig)
+		if err != nil {
+			log.Printf("[EmailService] Error SMTPS: %v", err)
+			return fmt.Errorf("falló SMTPS dial: %w", err)
+		}
 
-	conn.SetDeadline(time.Now().Add(60 * time.Second))
+		client, err = smtp.NewClient(conn, smtpServer)
+		if err != nil {
+			conn.Close()
+			return fmt.Errorf("falló smtp.NewClient SMTPS: %w", err)
+		}
+	} else {
+		log.Printf("[EmailService] Conectando vía SMTP (Plain/STARTTLS) a %s...", addr)
+		conn, err := net.DialTimeout("tcp", addr, 30*time.Second)
+		if err != nil {
+			log.Printf("[EmailService] Error TCP: %v", err)
+			return fmt.Errorf("falló TCP dial: %w", err)
+		}
 
-	log.Println("[EmailService] Creando cliente SMTP...")
-	client, err := smtp.NewClient(conn, smtpServer)
-	if err != nil {
-		return fmt.Errorf("falló smtp.NewClient: %w", err)
+		conn.SetDeadline(time.Now().Add(60 * time.Second))
+
+		client, err = smtp.NewClient(conn, smtpServer)
+		if err != nil {
+			conn.Close()
+			return fmt.Errorf("falló smtp.NewClient SMTP: %w", err)
+		}
+
+		if ok, _ := client.Extension("STARTTLS"); ok {
+			log.Println("[EmailService] Iniciando STARTTLS...")
+			if err = client.StartTLS(tlsConfig); err != nil {
+				client.Quit()
+				return fmt.Errorf("falló STARTTLS: %w", err)
+			}
+		}
 	}
 	defer client.Quit()
 
 	log.Println("[EmailService] Autenticando...")
 	auth := smtp.PlainAuth("", smtpUser, smtpPass, smtpServer)
 	if err = client.Auth(auth); err != nil {
-		log.Printf("[EmailService] Error en Auth: %v", err)
-		return fmt.Errorf("falló autenticación: %w", err)
+		log.Printf("[EmailService] Error Auth: %v", err)
+		return fmt.Errorf("autenticación fallida: %w", err)
 	}
 
-	log.Println("[EmailService] Configurando remitente y destinatarios...")
 	if err = client.Mail(fromEmail); err != nil {
-		return fmt.Errorf("falló comando MAIL FROM: %w", err)
+		return fmt.Errorf("MAIL FROM error: %w", err)
 	}
-	for _, addr := range to {
+	recipients := to
+	recipients = append(recipients, fromEmail)
+
+	for _, addr := range recipients {
 		if err = client.Rcpt(addr); err != nil {
-			return fmt.Errorf("falló comando RCPT TO (%s): %w", addr, err)
+			return fmt.Errorf("RCPT TO error: %w", err)
 		}
 	}
 
-	log.Println("[EmailService] Enviando DATA...")
 	w, err := client.Data()
 	if err != nil {
-		return fmt.Errorf("falló comando DATA: %w", err)
+		return fmt.Errorf("DATA error: %w", err)
 	}
 
 	headers := make(map[string]string)
 	headers["From"] = fromEmail
 	headers["To"] = to[0]
+	headers["Bcc"] = fromEmail
 	headers["Subject"] = subject
 	headers["MIME-Version"] = "1.0"
 	headers["Content-Type"] = "text/html; charset=\"utf-8\""
@@ -91,14 +116,14 @@ func (s *EmailService) SendEmail(to []string, subject string, body string) error
 
 	_, err = w.Write([]byte(message.String()))
 	if err != nil {
-		return fmt.Errorf("falló escribiendo contenido: %w", err)
+		return fmt.Errorf("write error: %w", err)
 	}
 
 	err = w.Close()
 	if err != nil {
-		return fmt.Errorf("falló cerrando data writer: %w", err)
+		return fmt.Errorf("failed closing data: %w", err)
 	}
 
-	log.Println("[EmailService] Correo enviado exitosamente.")
+	log.Println("[EmailService] Envío exitoso.")
 	return nil
 }
