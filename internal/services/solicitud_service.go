@@ -22,6 +22,7 @@ func NewSolicitudService() *SolicitudService {
 		itemRepo:            repositories.NewCupoDerechoItemRepository(),
 		tipoItinRepo:        repositories.NewTipoItinerarioRepository(),
 		codigoSecuenciaRepo: repositories.NewCodigoSecuenciaRepository(),
+		emailService:        NewEmailService(),
 	}
 }
 
@@ -32,6 +33,7 @@ type SolicitudService struct {
 	itemRepo            *repositories.CupoDerechoItemRepository
 	tipoItinRepo        *repositories.TipoItinerarioRepository
 	codigoSecuenciaRepo *repositories.CodigoSecuenciaRepository
+	emailService        *EmailService
 }
 
 func (s *SolicitudService) Create(ctx context.Context, req dtos.CreateSolicitudRequest, currentUser *models.Usuario) (*models.Solicitud, error) {
@@ -140,7 +142,63 @@ func (s *SolicitudService) Create(ctx context.Context, req dtos.CreateSolicitudR
 		return nil, err
 	}
 
+	go s.sendCreationEmail(solicitud)
+
 	return solicitud, nil
+}
+
+func (s *SolicitudService) sendCreationEmail(solicitud *models.Solicitud) {
+	fullSol, err := s.GetByID(context.Background(), solicitud.ID)
+	if err != nil {
+		fmt.Printf("Error reloading solicitud for email: %v\n", err)
+		return
+	}
+
+	beneficiary := fullSol.Usuario
+	if beneficiary.Email == "" {
+		fmt.Printf("Beneficiary %s has no email\n", beneficiary.Username)
+		return
+	}
+
+	subject := fmt.Sprintf("Solicitud de Pasaje Creada - %s", fullSol.Codigo)
+
+	rut := fmt.Sprintf("%s -> %s", fullSol.Origen.Ciudad, fullSol.Destino.Ciudad)
+	fecha := "-"
+	if fullSol.FechaIda != nil {
+		fecha = utils.FormatDateShortES(*fullSol.FechaIda)
+	}
+
+	body := fmt.Sprintf(`
+		<div style="font-family: Arial, sans-serif; color: #333;">
+			<h2>Solicitud de Pasaje Registrada</h2>
+			<p>Hola <strong>%s</strong>,</p>
+			<p>Se ha registrado una nueva solicitud de pasaje a su nombre con los siguientes detalles:</p>
+			<table style="border-collapse: collapse; width: 100%%; max-width: 600px;">
+				<tr>
+					<td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Código:</strong></td>
+					<td style="padding: 8px; border-bottom: 1px solid #ddd;">%s</td>
+				</tr>
+				<tr>
+					<td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Ruta:</strong></td>
+					<td style="padding: 8px; border-bottom: 1px solid #ddd;">%s</td>
+				</tr>
+				<tr>
+					<td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Fecha Ida:</strong></td>
+					<td style="padding: 8px; border-bottom: 1px solid #ddd;">%s</td>
+				</tr>
+				<tr>
+					<td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Estado:</strong></td>
+					<td style="padding: 8px; border-bottom: 1px solid #ddd;">%s</td>
+				</tr>
+			</table>
+			<p style="margin-top: 20px;">Puede revisar el estado de su solicitud ingresando al sistema.</p>
+		</div>
+	`, beneficiary.GetNombreCompleto(), fullSol.Codigo, rut, fecha, fullSol.GetEstado())
+
+	err = s.emailService.SendEmail([]string{beneficiary.Email}, subject, body)
+	if err != nil {
+		fmt.Printf("Error sending email: %v\n", err)
+	}
 }
 
 func (s *SolicitudService) GetAll(ctx context.Context) ([]models.Solicitud, error) {

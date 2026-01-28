@@ -145,6 +145,7 @@ func SetupRoutes(r *gin.Engine) {
 			confCtrl := controllers.NewConfiguracionController()
 			sysAdmin.GET("/admin/configuracion", confCtrl.Index)
 			sysAdmin.POST("/admin/configuracion", confCtrl.Update)
+			sysAdmin.POST("/admin/configuracion/test-email", confCtrl.TestEmail)
 
 			catCompCtrl := controllers.NewCategoriaCompensacionController()
 			sysAdmin.GET("/admin/compensaciones/categorias", catCompCtrl.Index)
