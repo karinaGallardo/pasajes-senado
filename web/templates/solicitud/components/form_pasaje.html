@@ -14,6 +14,7 @@
     <input type="hidden" name="tipo_itinerario" value="{{ .Itinerario.Codigo }}" />
     <input type="hidden" name="cupo_derecho_item_id" value="{{ .Item.ID }}" />
     <input type="hidden" name="target_user_id" value="{{ .TargetUser.ID }}" />
+    <input type="hidden" name="return_url" value="{{ .ReturnURL }}" />
 
     <!-- SECCIÓN A: RESUMEN DE DERECHO -->
     <section class="bg-primary-50/50 p-4 rounded-xl border border-primary-100/50 flex flex-wrap gap-6 items-center">
@@ -31,9 +32,51 @@
       </div>
     </section>
 
+    <section>
+      <div class="flex items-center mb-2 mt-2">
+        <span class="text-xs font-bold text-secondary uppercase tracking-widest">Información del Trayecto</span>
+      </div>
+      <!-- Route visualization -->
+      <div class="md:col-span-2 flex items-center justify-center space-x-12 py-3 bg-neutral-50 rounded-2xl border border-dashed border-neutral-300">
+        <!-- Origen -->
+        <div class="text-center">
+          <span class="block text-xl font-black text-neutral-900 tracking-tight">{{ .Origen.Ciudad }}</span>
+          <span class="block text-[9px] font-bold text-neutral-400 uppercase mt-1 tracking-widest">{{ .Origen.Aeropuerto }}</span>
+          <div class="mt-2">
+            <span class="px-2 py-0.5 bg-primary text-white text-[10px] font-black rounded">{{ .Origen.IATA }}</span>
+          </div>
+        </div>
+
+        <!-- Icono Vuelo -->
+        <div class="flex flex-col items-center">
+          <div class="flex items-center space-x-2">
+            <div class="w-1.5 h-1.5 rounded-full bg-primary/40"></div>
+            <div class="w-20 h-px border-t-2 border-dashed border-primary/30"></div>
+            <div class="bg-white p-2 rounded-full shadow-sm border border-neutral-100 text-primary transform rotate-90">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+              </svg>
+            </div>
+            <div class="w-20 h-px border-t-2 border-dashed border-primary/30"></div>
+            <div class="w-1.5 h-1.5 rounded-full bg-primary/40"></div>
+          </div>
+          <span class="text-[9px] font-bold text-primary/50 uppercase mt-3 tracking-widest">Vuelo</span>
+        </div>
+
+        <!-- Destino -->
+        <div class="text-center">
+          <span class="block text-xl font-black text-neutral-900 tracking-tight">{{ .Destino.Ciudad }}</span>
+          <span class="block text-[9px] font-bold text-neutral-400 uppercase mt-1 tracking-widest">{{ .Destino.Aeropuerto }}</span>
+          <div class="mt-2">
+            <span class="px-2 py-0.5 bg-secondary text-white text-[10px] font-black rounded">{{ .Destino.IATA }}</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- SECCIÓN B: CALENDARIO -->
     <section>
-      <div class="flex items-center mb-6">
+      <div class="flex items-center mb-2 mt-2">
         <span class="text-xs font-bold text-secondary uppercase tracking-widest">¿Cuándo desea viajar?</span>
         <div class="flex-1 h-px bg-neutral-100 ml-4"></div>
       </div>
@@ -203,49 +246,7 @@
 
     <!-- SECCIÓN C: DESTINO Y JUSTIFICACIÓN -->
     <section>
-      <div class="flex items-center mb-6">
-        <span class="text-xs font-bold text-secondary uppercase tracking-widest">Información del Trayecto</span>
-        <div class="flex-1 h-px bg-neutral-100 ml-4"></div>
-      </div>
-
       <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <!-- Route visualization -->
-        <div class="md:col-span-2 flex items-center justify-center space-x-12 py-8 bg-neutral-50 rounded-2xl border border-dashed border-neutral-300">
-          <!-- Origen -->
-          <div class="text-center">
-            <span class="block text-xl font-black text-neutral-900 tracking-tight">{{ .Origen.Ciudad }}</span>
-            <span class="block text-[9px] font-bold text-neutral-400 uppercase mt-1 tracking-widest">{{ .Origen.Aeropuerto }}</span>
-            <div class="mt-2">
-              <span class="px-2 py-0.5 bg-primary text-white text-[10px] font-black rounded">{{ .Origen.IATA }}</span>
-            </div>
-          </div>
-
-          <!-- Icono Vuelo -->
-          <div class="flex flex-col items-center">
-            <div class="flex items-center space-x-2">
-              <div class="w-1.5 h-1.5 rounded-full bg-primary/40"></div>
-              <div class="w-20 h-px border-t-2 border-dashed border-primary/30"></div>
-              <div class="bg-white p-2 rounded-full shadow-sm border border-neutral-100 text-primary transform rotate-90">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                </svg>
-              </div>
-              <div class="w-20 h-px border-t-2 border-dashed border-primary/30"></div>
-              <div class="w-1.5 h-1.5 rounded-full bg-primary/40"></div>
-            </div>
-            <span class="text-[9px] font-bold text-primary/50 uppercase mt-3 tracking-widest">Vuelo</span>
-          </div>
-
-          <!-- Destino -->
-          <div class="text-center">
-            <span class="block text-xl font-black text-neutral-900 tracking-tight">{{ .Destino.Ciudad }}</span>
-            <span class="block text-[9px] font-bold text-neutral-400 uppercase mt-1 tracking-widest">{{ .Destino.Aeropuerto }}</span>
-            <div class="mt-2">
-              <span class="px-2 py-0.5 bg-secondary text-white text-[10px] font-black rounded">{{ .Destino.IATA }}</span>
-            </div>
-          </div>
-        </div>
-
         <!-- Hidden values for submission -->
         <input type="hidden" name="origen" value="{{ .Origen.IATA }}" />
         <input type="hidden" name="destino" value="{{ .Destino.IATA }}" />
@@ -286,6 +287,7 @@
             type="text"
             name="autorizacion"
             value="{{ if .Item }}PD{{ end }}"
+            maxlength="100"
             class="w-full px-4 py-2.5 bg-white border border-neutral-200 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-bold text-neutral-700 transition-all placeholder:text-neutral-400 placeholder:font-medium"
             placeholder="Código de autorización" />
         </div>
@@ -310,20 +312,35 @@
       </svg>
       Al enviar, el sistema notificará al área administrativa.
     </div>
-    <button
-      type="submit"
-      :disabled="isSubmitting"
-      :class="isSubmitting ? 'opacity-50 cursor-not-allowed' : 'hover:bg-primary-800'"
-      class="inline-flex justify-center py-2 px-8 border border-transparent shadow-sm text-sm font-bold rounded-md text-white bg-primary transition-colors">
-      <div x-show="isSubmitting" class="flex items-center space-x-2">
-        <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-        </svg>
-        <span>Guardando...</span>
-      </div>
-      <span x-show="!isSubmitting" x-text="isEdit ? 'Guardar Cambios' : 'Confirmar Solicitud'"></span>
-    </button>
+
+    <div
+      x-data="{ error: '' }"
+      x-effect="
+       const now = new Date();
+       const selectedDate = new Date(selectedDaySalida + 'T' + selectedTimeSalida);
+       if (selectedDate < now) {
+         error = 'La fecha y hora seleccionada ya ha pasado.';
+       } else {
+         error = '';
+       }
+    "
+      class="flex flex-col items-end gap-2">
+      <span x-show="error" x-text="error" class="text-xs text-red-500 font-bold"></span>
+      <button
+        type="submit"
+        :disabled="isSubmitting || error !== ''"
+        :class="(isSubmitting || error !== '') ? 'opacity-50 cursor-not-allowed bg-neutral-400' : 'bg-primary hover:bg-primary-800'"
+        class="inline-flex justify-center py-2 px-8 border border-transparent shadow-sm text-sm font-bold rounded-md text-white transition-colors">
+        <div x-show="isSubmitting" class="flex items-center space-x-2">
+          <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          <span>Guardando...</span>
+        </div>
+        <span x-show="!isSubmitting" x-text="isEdit ? 'Guardar Cambios' : 'Confirmar Solicitud'"></span>
+      </button>
+    </div>
   </div>
 </form>
 {{ end }}

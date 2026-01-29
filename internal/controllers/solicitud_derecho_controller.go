@@ -140,7 +140,7 @@ func (ctrl *SolicitudDerechoController) Create(c *gin.Context) {
 		}
 	}
 
-	utils.Render(c, "solicitud/derecho/create", gin.H{
+	data := gin.H{
 		"Title":        "Pasaje por Derecho - " + targetUser.GetNombreCompleto(),
 		"TargetUser":   targetUser,
 		"Aerolineas":   aerolineas,
@@ -155,6 +155,62 @@ func (ctrl *SolicitudDerechoController) Create(c *gin.Context) {
 		"Itinerario": itinerario,
 		"Origen":     origen,
 		"Destino":    destino,
+	}
+	utils.Render(c, "solicitud/derecho/create", data)
+}
+
+func (ctrl *SolicitudDerechoController) GetCreateModal(c *gin.Context) {
+	itemID := c.Param("item_id")
+	itinerarioCode := c.Param("itinerario_code")
+
+	item, _ := ctrl.cupoService.GetCupoDerechoItemByID(c.Request.Context(), itemID)
+	itinerario, _ := ctrl.tipoItinerarioService.GetByCodigo(c.Request.Context(), itinerarioCode)
+	targetUser, _ := ctrl.userService.GetByID(c.Request.Context(), item.SenAsignadoID)
+
+	aerolineas, _ := ctrl.aerolineaService.GetAllActive(c.Request.Context())
+	tipoSolicitud, ambitoNac, _ := ctrl.tipoSolicitudService.GetByCodigoAndAmbito(c.Request.Context(), "USO_CUPO", "NACIONAL")
+	weekDays := ctrl.cupoService.GetCupoDerechoItemWeekDays(item)
+
+	// Validar que no se pueda solicitar para días pasados
+	today := time.Now().Format("2006-01-02")
+	var validDays []map[string]string
+	for _, d := range weekDays {
+		if d["date"] >= today {
+			validDays = append(validDays, d)
+		}
+	}
+	weekDays = validDays
+
+	var origen, destino *models.Destino
+	userLoc, _ := ctrl.destinoService.GetByIATA(c.Request.Context(), targetUser.GetOrigenIATA())
+	lpbLoc, _ := ctrl.destinoService.GetByIATA(c.Request.Context(), "LPB")
+
+	if itinerario.Codigo == "SOLO_IDA" {
+		origen = userLoc
+		destino = lpbLoc
+	} else {
+		origen = lpbLoc
+		destino = userLoc
+	}
+
+	referer := c.Request.Referer()
+	if referer == "" {
+		referer = "/cupos/derecho/" + targetUser.ID
+	}
+
+	utils.Render(c, "solicitud/derecho/modal_form", gin.H{
+		"TargetUser":    targetUser,
+		"Aerolineas":    aerolineas,
+		"Item":          item,
+		"WeekDays":      weekDays,
+		"Concepto":      tipoSolicitud.ConceptoViaje,
+		"TipoSolicitud": tipoSolicitud,
+		"Ambito":        ambitoNac,
+		"Itinerario":    itinerario,
+		"Origen":        origen,
+		"Destino":       destino,
+		"IsEdit":        false,
+		"ReturnURL":     referer,
 	})
 }
 
@@ -179,7 +235,11 @@ func (ctrl *SolicitudDerechoController) Store(c *gin.Context) {
 	}
 
 	utils.SetSuccessMessage(c, "Solicitud creada correctamente")
-	c.Redirect(http.StatusFound, fmt.Sprintf("/solicitudes/derecho/%s/detalle", solicitud.ID))
+	targetURL := fmt.Sprintf("/solicitudes/derecho/%s/detalle", solicitud.ID)
+	if req.ReturnURL != "" {
+		targetURL = req.ReturnURL
+	}
+	c.Redirect(http.StatusFound, targetURL)
 }
 
 func (ctrl *SolicitudDerechoController) Edit(c *gin.Context) {
@@ -265,7 +325,7 @@ func (ctrl *SolicitudDerechoController) Edit(c *gin.Context) {
 		}
 	}
 
-	utils.Render(c, "solicitud/derecho/edit", gin.H{
+	data := gin.H{
 		"Aerolineas":         aerolineas,
 		"TargetUser":         &solicitud.Usuario,
 		"Itinerarios":        TiposItinerario,
@@ -283,6 +343,50 @@ func (ctrl *SolicitudDerechoController) Edit(c *gin.Context) {
 		"TipoSolicitud":      solicitud.TipoSolicitud,
 		"Ambito":             solicitud.AmbitoViaje,
 		"Itinerario":         solicitud.TipoItinerario,
+	}
+	utils.Render(c, "solicitud/derecho/edit", data)
+}
+
+func (ctrl *SolicitudDerechoController) GetEditModal(c *gin.Context) {
+	id := c.Param("id")
+	solicitud, _ := ctrl.solicitudService.GetByID(c.Request.Context(), id)
+	item, _ := ctrl.cupoService.GetCupoDerechoItemByID(c.Request.Context(), *solicitud.CupoDerechoItemID)
+	aerolineas, _ := ctrl.aerolineaService.GetAllActive(c.Request.Context())
+
+	origenIATA := solicitud.Usuario.GetOrigenIATA()
+	userLoc, _ := ctrl.destinoService.GetByIATA(c.Request.Context(), origenIATA)
+	lpbLoc, _ := ctrl.destinoService.GetByIATA(c.Request.Context(), "LPB")
+
+	var origen, destino *models.Destino
+	if solicitud.TipoItinerario.Codigo == "SOLO_IDA" {
+		origen = userLoc
+		destino = lpbLoc
+	} else {
+		origen = lpbLoc
+		destino = userLoc
+	}
+
+	weekDays := ctrl.cupoService.GetCupoDerechoItemWeekDays(item)
+
+	referer := c.Request.Referer()
+	if referer == "" {
+		referer = "/cupos/derecho/" + solicitud.Usuario.ID
+	}
+
+	utils.Render(c, "solicitud/derecho/modal_form", gin.H{
+		"Aerolineas":    aerolineas,
+		"TargetUser":    &solicitud.Usuario,
+		"Item":          item,
+		"Solicitud":     solicitud,
+		"IsEdit":        true,
+		"WeekDays":      weekDays,
+		"Origen":        origen,
+		"Destino":       destino,
+		"Concepto":      solicitud.TipoSolicitud.ConceptoViaje,
+		"TipoSolicitud": solicitud.TipoSolicitud,
+		"Ambito":        solicitud.AmbitoViaje,
+		"Itinerario":    solicitud.TipoItinerario,
+		"ReturnURL":     referer,
 	})
 }
 
@@ -342,7 +446,12 @@ func (ctrl *SolicitudDerechoController) Update(c *gin.Context) {
 	}
 
 	utils.SetSuccessMessage(c, "Solicitud actualizada correctamente")
-	c.Redirect(http.StatusFound, fmt.Sprintf("/solicitudes/derecho/%s/detalle", solicitud.ID))
+
+	targetURL := fmt.Sprintf("/solicitudes/derecho/%s/detalle", solicitud.ID)
+	if req.ReturnURL != "" {
+		targetURL = req.ReturnURL
+	}
+	c.Redirect(http.StatusFound, targetURL)
 }
 
 func (ctrl *SolicitudDerechoController) Show(c *gin.Context) {

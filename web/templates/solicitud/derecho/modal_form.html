@@ -1,0 +1,59 @@
+{{ define "solicitud/derecho/modal_form" }}
+<div x-data="{ open: true }" x-show="open" class="fixed z-[60] inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+  <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+    <div
+      x-show="open"
+      x-transition:enter="ease-out duration-300"
+      x-transition:enter-start="opacity-0"
+      x-transition:enter-end="opacity-100"
+      x-transition:leave="ease-in duration-200"
+      x-transition:leave-start="opacity-100"
+      x-transition:leave-end="opacity-0"
+      class="fixed inset-0 bg-neutral-500 bg-opacity-75 transition-opacity"
+      @click="open = false"></div>
+
+    <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+    <div
+      class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full sm:p-6"
+      @click.away="open = false"
+      x-data="{
+        selectedDaySalida: '{{ if .IsEdit }}{{ if eq .Itinerario.Codigo `SOLO_VUELTA` }}{{ .Solicitud.FechaVuelta.Format `2006-01-02` }}{{ else }}{{ .Solicitud.FechaIda.Format `2006-01-02` }}{{ end }}{{ else }}{{ if .WeekDays }}{{ with index .WeekDays 0 }}{{ .date }}{{ end }}{{ else if .Item.FechaDesde }}{{ .Item.FechaDesde.Format `2006-01-02` }}{{ end }}{{ end }}',
+        selectedTimeSalida: '{{ if .IsEdit }}{{ if eq .Itinerario.Codigo `SOLO_VUELTA` }}{{ .Solicitud.FechaVuelta.Format `15:04` }}{{ else }}{{ .Solicitud.FechaIda.Format `15:04` }}{{ end }}{{ else }}08:00{{ end }}',
+        isSubmitting: false,
+        isEdit: {{ .IsEdit }},
+        editId: '{{ if .IsEdit }}{{ .Solicitud.ID }}{{ end }}',
+        motivo: '{{ if .IsEdit }}{{ .Solicitud.Motivo }}{{ end }}',
+        aerolinea: '{{ if .IsEdit }}{{ .Solicitud.AerolineaSugerida }}{{ end }}'
+      }">
+      <div class="flex items-center justify-between mb-4 border-b pb-3">
+        <div class="flex items-center space-x-3">
+          <div class="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+            <i class="ph ph-airplane-tilt text-2xl"></i>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-neutral-800">{{ if .IsEdit }}Editar{{ else }}Nueva{{ end }} Solicitud de Pasaje: {{ .Itinerario.Nombre }}</h3>
+            <p class="text-xs text-neutral-500 font-medium tracking-tighter">{{ .TargetUser.GetNombreCompleto }} • {{ .Item.Semana }} / {{ .Item.Mes | monthName }}</p>
+          </div>
+        </div>
+        <button @click="open = false" class="text-neutral-400 hover:text-neutral-600 transition-colors">
+          <i class="ph ph-x text-2xl"></i>
+        </button>
+      </div>
+
+      {{ if .AlertaOrigen }}
+      <div class="bg-amber-50 border-l-4 border-amber-400 p-3 rounded-md mb-4 flex items-center gap-3">
+        <i class="ph ph-warning text-amber-500 text-xl"></i>
+        <p class="text-xs text-amber-700 font-medium">
+          {{ .AlertaOrigen }}
+          <a href="{{ if eq .AuthUser.ID .TargetUser.ID }}/perfil{{ else }}/usuarios/{{ .TargetUser.ID }}/editar{{ end }}" class="font-bold underline hover:text-amber-800 ml-1">
+            Configurar ahora
+          </a>
+        </p>
+      </div>
+      {{ end }}
+
+      <div id="modal-form-container">{{ template "solicitud/components/form_pasaje" . }}</div>
+    </div>
+  </div>
+</div>
+{{ end }}
