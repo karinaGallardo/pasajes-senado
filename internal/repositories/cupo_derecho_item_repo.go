@@ -7,6 +7,7 @@ import (
 	"sistema-pasajes/internal/configs"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 type CupoDerechoItemRepository struct {
@@ -35,65 +36,99 @@ func (r *CupoDerechoItemRepository) Create(item *models.CupoDerechoItem) error {
 
 func (r *CupoDerechoItemRepository) FindByHolderAndPeriodo(userID string, gestion, mes int) ([]models.CupoDerechoItem, error) {
 	var list []models.CupoDerechoItem
-	err := r.db.Preload("Solicitudes.Pasajes").Preload("Solicitudes.Descargo").Preload("Solicitudes.TipoItinerario").
-		Where("sen_asignado_id = ? AND gestion = ? AND mes = ?", userID, gestion, mes).Find(&list).Error
+	err := r.db.
+		Preload("Solicitudes.Descargo").
+		Preload("Solicitudes.TipoItinerario").
+		Where("sen_asignado_id = ? AND gestion = ? AND mes = ?", userID, gestion, mes).
+		Find(&list).Error
 	return list, err
 }
 
 func (r *CupoDerechoItemRepository) FindByHolderAndGestion(userID string, gestion int) ([]models.CupoDerechoItem, error) {
 	var list []models.CupoDerechoItem
-	err := r.db.Preload("Solicitudes.Pasajes").Preload("Solicitudes.Descargo").Preload("Solicitudes.TipoItinerario").
-		Where("sen_asignado_id = ? AND gestion = ?", userID, gestion).Order("mes asc, semana asc").Find(&list).Error
+	err := r.db.
+		Preload("Solicitudes.Descargo").
+		Preload("Solicitudes.TipoItinerario").
+		Where("sen_asignado_id = ? AND gestion = ?", userID, gestion).
+		Order("mes asc, semana asc").
+		Find(&list).Error
 	return list, err
 }
 
 func (r *CupoDerechoItemRepository) FindAvailableByHolderAndPeriodo(userID string, gestion, mes int) (*models.CupoDerechoItem, error) {
 	var item models.CupoDerechoItem
-	err := r.db.Where("sen_asignado_id = ? AND gestion = ? AND mes = ? AND estado_cupo_derecho_codigo = 'DISPONIBLE'", userID, gestion, mes).First(&item).Error
+	err := r.db.
+		Where("sen_asignado_id = ? AND gestion = ? AND mes = ? AND estado_cupo_derecho_codigo = 'DISPONIBLE'", userID, gestion, mes).
+		First(&item).Error
 	return &item, err
 }
 
 func (r *CupoDerechoItemRepository) FindForTitularByPeriodo(senadorID string, gestion, mes int) ([]models.CupoDerechoItem, error) {
 	var list []models.CupoDerechoItem
-	err := r.db.Preload("Solicitudes.Pasajes").Preload("Solicitudes.Descargo").Preload("Solicitudes.TipoItinerario").
-		Where("sen_titular_id = ? AND gestion = ? AND mes = ?", senadorID, gestion, mes).Find(&list).Error
+	err := r.db.
+		Preload("SenAsignado").
+		Preload("Solicitudes.Descargo").
+		Preload("Solicitudes.TipoItinerario").
+		Where("sen_titular_id = ? AND gestion = ? AND mes = ?", senadorID, gestion, mes).
+		Order("semana asc").
+		Find(&list).Error
 	return list, err
 }
 
 func (r *CupoDerechoItemRepository) FindForSuplenteByPeriodo(beneficiarioID string, gestion, mes int) ([]models.CupoDerechoItem, error) {
 	var list []models.CupoDerechoItem
-	err := r.db.Preload("Solicitudes.Pasajes").Preload("Solicitudes.Descargo").Preload("Solicitudes.TipoItinerario").
-		Where("sen_asignado_id = ? AND es_transferido = true AND gestion = ? AND mes = ?", beneficiarioID, gestion, mes).Find(&list).Error
+	err := r.db.
+		Preload("Solicitudes.Descargo").
+		Preload("Solicitudes.TipoItinerario").
+		Where("sen_asignado_id = ? AND es_transferido = true AND gestion = ? AND mes = ?", beneficiarioID, gestion, mes).
+		Find(&list).Error
 	return list, err
 }
 
 func (r *CupoDerechoItemRepository) FindForTitularByGestion(senadorID string, gestion int) ([]models.CupoDerechoItem, error) {
 	var list []models.CupoDerechoItem
-	err := r.db.Preload("Solicitudes.Pasajes").Preload("Solicitudes.Descargo").Preload("Solicitudes.TipoItinerario").
-		Where("sen_titular_id = ? AND gestion = ?", senadorID, gestion).Order("mes asc, semana asc").Find(&list).Error
+	err := r.db.
+		Preload("SenAsignado").
+		Preload("Solicitudes.Descargo").
+		Preload("Solicitudes.TipoItinerario").
+		Where("sen_titular_id = ? AND gestion = ?", senadorID, gestion).
+		Order("mes asc, semana asc").
+		Find(&list).Error
 	return list, err
 }
 
 func (r *CupoDerechoItemRepository) FindForSuplenteByGestion(beneficiarioID string, gestion int) ([]models.CupoDerechoItem, error) {
 	var list []models.CupoDerechoItem
-	err := r.db.Preload("Solicitudes.Pasajes").Preload("Solicitudes.Descargo").Preload("Solicitudes.TipoItinerario").
-		Where("sen_asignado_id = ? AND es_transferido = true AND gestion = ?", beneficiarioID, gestion).Order("mes asc, semana asc").Find(&list).Error
+	err := r.db.
+		Preload("Solicitudes.Descargo").
+		Preload("Solicitudes.TipoItinerario").
+		Where("sen_asignado_id = ? AND es_transferido = true AND gestion = ?", beneficiarioID, gestion).
+		Order("mes asc, semana asc").
+		Find(&list).Error
 	return list, err
 }
 
 func (r *CupoDerechoItemRepository) Update(item *models.CupoDerechoItem) error {
-	return r.db.Save(item).Error
+	return r.db.Omit(clause.Associations).Save(item).Error
 }
 
 func (r *CupoDerechoItemRepository) FindByPeriodo(gestion, mes int) ([]models.CupoDerechoItem, error) {
 	var list []models.CupoDerechoItem
-	err := r.db.Preload("SenTitular").Preload("SenAsignado").Where("gestion = ? AND mes = ?", gestion, mes).Find(&list).Error
+	err := r.db.
+		Preload("SenTitular").
+		Preload("SenAsignado").
+		Where("gestion = ? AND mes = ?", gestion, mes).
+		Find(&list).Error
 	return list, err
 }
 
 func (r *CupoDerechoItemRepository) FindByID(id string) (*models.CupoDerechoItem, error) {
 	var v models.CupoDerechoItem
-	err := r.db.First(&v, "id = ?", id).Error
+	err := r.db.
+		Preload("SenTitular").
+		Preload("SenAsignado").
+		First(&v, "id = ?", id).
+		Error
 	return &v, err
 }
 
@@ -103,6 +138,11 @@ func (r *CupoDerechoItemRepository) DeleteUnscoped(v *models.CupoDerechoItem) er
 
 func (r *CupoDerechoItemRepository) FindByCupoDerechoID(cupoDerechoID string) ([]models.CupoDerechoItem, error) {
 	var list []models.CupoDerechoItem
-	err := r.db.Preload("SenTitular").Preload("SenAsignado").Where("cupo_derecho_id = ?", cupoDerechoID).Find(&list).Error
+	err := r.db.
+		Preload("SenTitular").
+		Preload("SenAsignado").
+		Where("cupo_derecho_id = ?", cupoDerechoID).
+		Find(&list).
+		Error
 	return list, err
 }

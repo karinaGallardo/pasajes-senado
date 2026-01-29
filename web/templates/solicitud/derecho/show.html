@@ -155,7 +155,7 @@
 
           <div class="flex space-x-2">
             <!-- Workflow Actions -->
-            {{ if eq .Solicitud.EstadoSolicitud.Codigo "SOLICITADO" }} {{ if .CurrentUser.IsAdminOrResponsable }}
+            {{ if eq .Solicitud.EstadoSolicitud.Codigo "SOLICITADO" }} {{ if .AuthUser.IsAdminOrResponsable }}
             <div class="flex space-x-2">
               <button
                 hx-post="/solicitudes/derecho/{{ .Solicitud.ID }}/aprobar"
@@ -199,7 +199,7 @@
         <div class="px-4 py-5 sm:px-6 flex justify-between items-center">
           <h3 class="text-lg leading-6 font-medium text-neutral-900">Pasajes Asignados</h3>
 
-          {{ if .CurrentUser.IsAdminOrResponsable }}
+          {{ if .AuthUser.IsAdminOrResponsable }}
           <button
             hx-get="/solicitudes/{{ .Solicitud.ID }}/pasajes/nuevo"
             hx-target="#modal-container"
@@ -306,7 +306,7 @@
                       class="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50"
                       style="display: none">
                       <div class="py-1" role="menu" aria-orientation="vertical" aria-labelledby="options-menu">
-                        {{ if and $.CurrentUser.IsAdminOrResponsable (ne (deref .EstadoPasajeCodigo) "VALIDANDO_USO") }}
+                        {{ if and $.AuthUser.IsAdminOrResponsable (ne (deref .EstadoPasajeCodigo) "VALIDANDO_USO") }}
                         <button
                           type="button"
                           hx-get="/pasajes/{{ .ID }}/editar"
@@ -316,7 +316,7 @@
                           role="menuitem">
                           Editar
                         </button>
-                        {{ end }} {{ if and ($.CurrentUser.CanMarkUsado $.Solicitud) (or (eq (deref .EstadoPasajeCodigo) "EMITIDO") (eq (deref .EstadoPasajeCodigo)
+                        {{ end }} {{ if and ($.AuthUser.CanMarkUsado $.Solicitud) (or (eq (deref .EstadoPasajeCodigo) "EMITIDO") (eq (deref .EstadoPasajeCodigo)
                         "USO_RECHAZADO")) }}
                         <button
                           type="button"
@@ -327,7 +327,7 @@
                           role="menuitem">
                           {{ if eq (deref .EstadoPasajeCodigo) "USO_RECHAZADO" }}Subir de nuevo{{ else }}Marcar como Usado{{ end }}
                         </button>
-                        {{ end }} {{ if and $.CurrentUser.IsAdminOrResponsable (eq (deref .EstadoPasajeCodigo) "VALIDANDO_USO") }}
+                        {{ end }} {{ if and $.AuthUser.IsAdminOrResponsable (eq (deref .EstadoPasajeCodigo) "VALIDANDO_USO") }}
                         <button
                           type="button"
                           @click="openMenu=false; $dispatch('pasaje-action', { action: 'validar_uso_ok', id: '{{.ID}}' })"
@@ -352,7 +352,7 @@
                           role="menuitem">
                           Cambiar Pase a Bordo
                         </button>
-                        {{ end }} {{ if and $.CurrentUser.IsAdminOrResponsable (ne (deref .EstadoPasajeCodigo) "VALIDANDO_USO") }}
+                        {{ end }} {{ if and $.AuthUser.IsAdminOrResponsable (ne (deref .EstadoPasajeCodigo) "VALIDANDO_USO") }}
                         <button
                           type="button"
                           hx-get="/pasajes/{{ .ID }}/reprogramar"
@@ -362,7 +362,7 @@
                           role="menuitem">
                           Reprogramar
                         </button>
-                        {{ end }} {{ if and $.CurrentUser.IsAdminOrResponsable (ne (deref .EstadoPasajeCodigo) "VALIDANDO_USO") }}
+                        {{ end }} {{ if and $.AuthUser.IsAdminOrResponsable (ne (deref .EstadoPasajeCodigo) "VALIDANDO_USO") }}
                         <div class="border-t border-neutral-100"></div>
                         <button
                           type="button"

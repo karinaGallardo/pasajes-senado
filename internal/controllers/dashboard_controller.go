@@ -25,21 +25,21 @@ func NewDashboardController() *DashboardController {
 }
 
 func (ctrl *DashboardController) Index(c *gin.Context) {
-	user := appcontext.CurrentUser(c)
+	authUser := appcontext.AuthUser(c)
 	var senadoresCalculados []models.Usuario
 
-	if user != nil {
-		assigned, err := ctrl.usuarioService.GetSenatorsByEncargado(c.Request.Context(), user.ID)
+	if authUser != nil {
+		assigned, err := ctrl.usuarioService.GetSenatorsByEncargado(c.Request.Context(), authUser.ID)
 		if err == nil && len(assigned) > 0 {
 			senadoresCalculados = assigned
 		}
 	}
 
 	var solicitudes []models.Solicitud
-	if user != nil && user.IsAdminOrResponsable() {
+	if authUser != nil && authUser.IsAdminOrResponsable() {
 		solicitudes, _ = ctrl.solicitudService.GetAll(c.Request.Context())
-	} else if user != nil {
-		solicitudes, _ = ctrl.solicitudService.GetByUserID(c.Request.Context(), user.ID)
+	} else if authUser != nil {
+		solicitudes, _ = ctrl.solicitudService.GetByUserID(c.Request.Context(), authUser.ID)
 	}
 
 	descargos, _ := ctrl.descargoService.GetAll(c.Request.Context())

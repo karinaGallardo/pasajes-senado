@@ -184,7 +184,7 @@
       <div class="ml-3">
         <p class="text-sm text-amber-700 font-medium">
           {{ .AlertaOrigen }}
-          <a href="{{ if eq .CurrentUser.ID .TargetUser.ID }}/perfil{{ else }}/usuarios/{{ .TargetUser.ID }}/editar{{ end }}" class="font-bold underline hover:text-amber-800 ml-1">
+          <a href="{{ if eq .AuthUser.ID .TargetUser.ID }}/perfil{{ else }}/usuarios/{{ .TargetUser.ID }}/editar{{ end }}" class="font-bold underline hover:text-amber-800 ml-1">
             Configurar ahora
           </a>
         </p>

@@ -101,10 +101,120 @@ func (ctrl *CupoController) Generar(c *gin.Context) {
 	c.Redirect(http.StatusFound, fmt.Sprintf("/admin/cupos?gestion=%d&mes=%d", gestion, mes))
 }
 
+func (ctrl *CupoController) TomarCupo(c *gin.Context) {
+	var req dtos.TransferirCupoDerechoItemRequest
+	if err := c.ShouldBind(&req); err != nil {
+		c.String(http.StatusBadRequest, "Datos inválidos")
+		return
+	}
+
+	authUser := appcontext.AuthUser(c)
+	if !strings.Contains(authUser.Tipo, "SUPLENTE") {
+		c.String(http.StatusForbidden, "Solo los senadores suplentes pueden tomar cupos")
+		return
+	}
+
+	// For security, ensure the destination is the authenticated user
+	req.TargetUserID = authUser.ID
+	req.Motivo = "Tomado por el propio suplente"
+
+	item, err := ctrl.service.GetCupoDerechoItemByID(c.Request.Context(), req.ItemID)
+	if err != nil {
+		c.String(http.StatusNotFound, "Derecho no encontrado")
+		return
+	}
+
+	if item.FechaHasta != nil && time.Now().After(item.FechaHasta.AddDate(0, 0, 1)) {
+		c.String(http.StatusBadRequest, "No se puede tomar un cupo vencido")
+		return
+	}
+
+	// Monthly Check
+	gestionInt, _ := strconv.Atoi(req.Gestion)
+	mesInt, _ := strconv.Atoi(req.Mes)
+	items, _ := ctrl.service.GetCuposDerechoByUsuarioAndGestion(c.Request.Context(), authUser.ID, gestionInt)
+	count := 0
+	for _, it := range items {
+		if it.Mes == mesInt && it.SenAsignadoID == authUser.ID {
+			count++
+		}
+	}
+	if count > 0 {
+		c.Header("HX-Retarget", "#flash-messages")
+		c.String(http.StatusBadRequest, "Límite mensual alcanzado: Solo puede tomar 1 cupo automáticamente.")
+		return
+	}
+
+	targetUserID := authUser.ID
+	err = ctrl.service.TransferirCupoDerecho(c.Request.Context(), req.ItemID, targetUserID, req.Motivo)
+	if err != nil {
+		c.String(http.StatusInternalServerError, "Error: "+err.Error())
+		return
+	}
+
+	targetURL := fmt.Sprintf("/cupos/derecho/%s/%s/%s", targetUserID, req.Gestion, req.Mes)
+	if req.ReturnURL != "" {
+		targetURL = req.ReturnURL
+	}
+	c.Redirect(http.StatusFound, targetURL)
+}
+
+func (ctrl *CupoController) AsignarCupo(c *gin.Context) {
+	var req dtos.TransferirCupoDerechoItemRequest
+	if err := c.ShouldBind(&req); err != nil {
+		c.String(http.StatusBadRequest, "Datos inválidos")
+		return
+	}
+
+	authUser := appcontext.AuthUser(c)
+	targetUserID := req.TargetUserID
+	isEncargado := false
+	targetUser, _ := ctrl.userService.GetByID(c.Request.Context(), targetUserID)
+	if targetUser != nil && targetUser.EncargadoID != nil && *targetUser.EncargadoID == authUser.ID {
+		isEncargado = true
+	}
+
+	if !authUser.IsAdminOrResponsable() && !isEncargado {
+		c.String(http.StatusForbidden, "No tiene permiso para asignar cupos")
+		return
+	}
+
+	req.Motivo = "Asignación mensual de cupo"
+
+	item, err := ctrl.service.GetCupoDerechoItemByID(c.Request.Context(), req.ItemID)
+	if err != nil {
+		c.String(http.StatusNotFound, "Derecho no encontrado")
+		return
+	}
+
+	if item.FechaHasta != nil && time.Now().After(item.FechaHasta.AddDate(0, 0, 1)) {
+		c.String(http.StatusBadRequest, "No se puede asignar un cupo vencido")
+		return
+	}
+
+	err = ctrl.service.TransferirCupoDerecho(c.Request.Context(), req.ItemID, targetUserID, req.Motivo)
+	if err != nil {
+		c.String(http.StatusInternalServerError, "Error: "+err.Error())
+		return
+	}
+
+	targetURL := fmt.Sprintf("/cupos/derecho/%s/%s/%s", targetUserID, req.Gestion, req.Mes)
+	if req.ReturnURL != "" {
+		targetURL = req.ReturnURL
+	}
+	c.Redirect(http.StatusFound, targetURL)
+}
+
 func (ctrl *CupoController) Transferir(c *gin.Context) {
 	var req dtos.TransferirCupoDerechoItemRequest
 	if err := c.ShouldBind(&req); err != nil {
 		c.Redirect(http.StatusFound, "/admin/cupos")
+		return
+	}
+
+	authUser := appcontext.AuthUser(c)
+	if !authUser.IsAdminOrResponsable() {
+		c.String(http.StatusForbidden, "No tiene permiso para transferir derechos")
 		return
 	}
 
@@ -114,40 +224,12 @@ func (ctrl *CupoController) Transferir(c *gin.Context) {
 		return
 	}
 
-	if item.FechaHasta != nil {
-		limit := item.FechaHasta.AddDate(0, 0, 1)
-		if time.Now().After(limit) {
-			c.String(http.StatusBadRequest, "No se puede transferir un cupo de una semana pasada (Vencido)")
-			return
-		}
-	}
-
-	authUser := appcontext.CurrentUser(c)
-	isSelfAssign := authUser.ID == req.DestinoID && strings.Contains(authUser.Tipo, "SUPLENTE")
-
-	if !authUser.IsAdminOrResponsable() && !isSelfAssign {
-		c.String(http.StatusForbidden, "No tiene permiso para transferir este derecho")
+	if item.FechaHasta != nil && time.Now().After(item.FechaHasta.AddDate(0, 0, 1)) {
+		c.String(http.StatusBadRequest, "No se puede transferir un cupo vencido")
 		return
 	}
-
-	if isSelfAssign {
-		gestionInt, _ := strconv.Atoi(req.Gestion)
-		mesInt, _ := strconv.Atoi(req.Mes)
-		items, _ := ctrl.service.GetCuposDerechoByUsuarioAndGestion(c.Request.Context(), authUser.ID, gestionInt)
-		count := 0
-		for _, it := range items {
-			if it.Mes == mesInt && it.SenAsignadoID == authUser.ID {
-				count++
-			}
-		}
-		if count > 0 {
-			c.Header("HX-Retarget", "#flash-messages")
-			c.String(http.StatusBadRequest, "Límite mensual alcanzado: Solo puede tomar 1 cupo automáticamente.")
-			return
-		}
-	}
-
-	err = ctrl.service.TransferirCupoDerecho(c.Request.Context(), req.ItemID, req.DestinoID, req.Motivo)
+	targetUserID := req.TargetUserID
+	err = ctrl.service.TransferirCupoDerecho(c.Request.Context(), req.ItemID, targetUserID, req.Motivo)
 	if err != nil {
 		log.Printf("Error transfiriendo cupo derecho: %v\n", err)
 	}
@@ -171,7 +253,7 @@ func (ctrl *CupoController) RevertirTransferencia(c *gin.Context) {
 		return
 	}
 
-	authUser := appcontext.CurrentUser(c)
+	authUser := appcontext.AuthUser(c)
 
 	if !authUser.IsAdminOrResponsable() {
 		c.String(http.StatusForbidden, "No tiene permiso para realizar esta acción")
@@ -292,7 +374,7 @@ func (ctrl *CupoController) GetTransferModal(c *gin.Context) {
 		return
 	}
 
-	authUser := appcontext.CurrentUser(c)
+	authUser := appcontext.AuthUser(c)
 	if !authUser.IsAdminOrResponsable() && authUser.ID != item.SenTitularID {
 		c.String(http.StatusForbidden, "No tiene permiso para transferir este derecho")
 		return
@@ -326,25 +408,52 @@ func (ctrl *CupoController) GetTransferModal(c *gin.Context) {
 	})
 }
 
+type Permissions struct {
+	CanManage       bool
+	CanTransfer     bool
+	CanRevert       bool
+	CanPrint        bool
+	CanTomarCupo    bool
+	CanAsignarCupo  bool
+	CanCreateIda    bool
+	CanCreateVuelta bool
+	CanEditIda      bool
+	CanEditVuelta   bool
+	CanViewIda      bool
+	CanViewVuelta   bool
+	CanDescargo     bool
+}
+
+type CupoDerechoItemView struct {
+	models.CupoDerechoItem
+	Permissions Permissions
+}
+
 type MonthGroup struct {
 	MonthNum         int
 	MonthName        string
-	Items            []models.CupoDerechoItem
+	Items            []CupoDerechoItemView
 	SuplenteHasQuota bool
+	TargetHasQuota   bool
 }
 
 func (ctrl *CupoController) DerechoByYear(c *gin.Context) {
-	id := c.Param("id")
+	senadorUserID := c.Param("senador_user_id")
 	gestionStr := c.Param("gestion")
 
-	targetUser, err := ctrl.userService.GetByID(c.Request.Context(), id)
+	targetUser, err := ctrl.userService.GetByID(c.Request.Context(), senadorUserID)
 	if err != nil {
 		c.String(http.StatusNotFound, "Usuario no encontrado")
 		return
 	}
 
-	appContextUser := appcontext.CurrentUser(c)
-	if appContextUser == nil {
+	if !strings.Contains(targetUser.Tipo, "SENADOR") {
+		c.String(http.StatusBadRequest, "El usuario no es un senador")
+		return
+	}
+
+	authUser := appcontext.AuthUser(c)
+	if authUser == nil {
 		c.Redirect(http.StatusFound, "/auth/login")
 		return
 	}
@@ -357,7 +466,7 @@ func (ctrl *CupoController) DerechoByYear(c *gin.Context) {
 		}
 	}
 
-	var idParaCupos = id
+	var idParaCupos = senadorUserID
 	if targetUser.TitularID != nil {
 		idParaCupos = *targetUser.TitularID
 	}
@@ -371,16 +480,110 @@ func (ctrl *CupoController) DerechoByYear(c *gin.Context) {
 		grouped[i] = &MonthGroup{
 			MonthNum:  i,
 			MonthName: mesesNames[i],
-			Items:     []models.CupoDerechoItem{},
+			Items:     []CupoDerechoItemView{},
 		}
 	}
 
 	for _, v := range items {
 		if v.Mes >= 1 && v.Mes <= 12 {
-			grouped[v.Mes].Items = append(grouped[v.Mes].Items, v)
-			if v.SenAsignadoID == id {
+			grouped[v.Mes].Items = append(grouped[v.Mes].Items, CupoDerechoItemView{CupoDerechoItem: v})
+			if strings.Contains(targetUser.Tipo, "SUPLENTE") && v.SenAsignadoID == senadorUserID {
 				grouped[v.Mes].SuplenteHasQuota = true
 			}
+			if v.SenAsignadoID == senadorUserID {
+				grouped[v.Mes].TargetHasQuota = true
+			}
+		}
+	}
+
+	isViewerAdminOrResponsable := authUser.IsAdminOrResponsable()
+	isViewerSuplente := strings.Contains(authUser.Tipo, "SUPLENTE")
+	isTargetSuplente := strings.Contains(targetUser.Tipo, "SUPLENTE")
+	isEncargado := targetUser.EncargadoID != nil && *targetUser.EncargadoID == authUser.ID
+
+	for i := 1; i <= 12; i++ {
+		// Populate Permissions for each item
+		for j := range grouped[i].Items {
+			item := &grouped[i].Items[j]
+			perms := Permissions{}
+			modelItem := item.CupoDerechoItem
+
+			isDisponible := modelItem.IsDisponible()
+			isVencido := modelItem.IsVencido()
+			isTransferido := modelItem.EsTransferido
+			isOwner := modelItem.SenAsignadoID == targetUser.ID
+			targetHasQuota := grouped[i].TargetHasQuota
+
+			// 1. Admin Actions
+			if isViewerAdminOrResponsable {
+				if isTransferido {
+					perms.CanRevert = true
+				}
+				if modelItem.GetSolicitudIda() != nil || modelItem.GetSolicitudVuelta() != nil {
+					perms.CanPrint = true
+				}
+			}
+
+			// 2. Tomar / Asignar Cupo (Para el Target Suplente)
+			hasTitular := targetUser.TitularID != nil
+			if isDisponible && !isVencido && hasTitular && modelItem.SenAsignadoID == *targetUser.TitularID {
+				// Opción 1: El mismo suplente toma su cupo (Solo si no tiene cupo)
+				if isTargetSuplente && !targetHasQuota && isViewerSuplente && authUser.ID == targetUser.ID {
+					perms.CanTomarCupo = true
+				}
+
+				// Opción 2: Encargado asigna (Solo si no tiene cupo)
+				if isEncargado && !targetHasQuota && isTargetSuplente {
+					perms.CanAsignarCupo = true
+				}
+
+				// Opción 3: Admin/Responsable asigna (Solo si no tiene cupo)
+				if isViewerAdminOrResponsable && !targetHasQuota && isTargetSuplente && !isTransferido {
+					perms.CanAsignarCupo = true
+				}
+			}
+
+			// 3. Transferencia (Admin/Responsable)
+			if isViewerAdminOrResponsable && isDisponible && !isVencido && !perms.CanAsignarCupo && !isTransferido {
+				perms.CanTransfer = true
+			}
+
+			// 3. Solicitudes (Owner Only)
+			if isOwner {
+				solIda := modelItem.GetSolicitudIda()
+				solVuelta := modelItem.GetSolicitudVuelta()
+
+				// Ida
+				if solIda == nil {
+					if !isVencido {
+						perms.CanCreateIda = true
+					}
+				} else {
+					if solIda.GetEstado() == "SOLICITADO" {
+						perms.CanEditIda = true
+					} else {
+						perms.CanViewIda = true
+					}
+				}
+
+				// Vuelta
+				if solVuelta == nil {
+					if !isVencido {
+						perms.CanCreateVuelta = true
+					}
+				} else {
+					if solVuelta.GetEstado() == "SOLICITADO" {
+						perms.CanEditVuelta = true
+					} else {
+						perms.CanViewVuelta = true
+					}
+				}
+
+				// Descargo
+				perms.CanDescargo = true
+			}
+
+			item.Permissions = perms
 		}
 	}
 
@@ -393,25 +596,29 @@ func (ctrl *CupoController) DerechoByYear(c *gin.Context) {
 
 	utils.Render(c, "cupo/derecho", gin.H{
 		"TargetUser": targetUser,
-		"User":       appContextUser,
 		"Months":     displayMonths,
 		"Gestion":    gestion,
 	})
 }
 
 func (ctrl *CupoController) DerechoByMonth(c *gin.Context) {
-	id := c.Param("id")
+	senadorUserID := c.Param("senador_user_id")
 	gestionStr := c.Param("gestion")
 	mesStr := c.Param("mes")
 
-	targetUser, err := ctrl.userService.GetByID(c.Request.Context(), id)
+	targetUser, err := ctrl.userService.GetByID(c.Request.Context(), senadorUserID)
 	if err != nil {
 		c.String(http.StatusNotFound, "Usuario no encontrado")
 		return
 	}
 
-	appContextUser := appcontext.CurrentUser(c)
-	if appContextUser == nil {
+	if !strings.Contains(targetUser.Tipo, "SENADOR") {
+		c.String(http.StatusBadRequest, "El usuario no es un senador")
+		return
+	}
+
+	authUser := appcontext.AuthUser(c)
+	if authUser == nil {
 		c.Redirect(http.StatusFound, "/auth/login")
 		return
 	}
@@ -426,41 +633,132 @@ func (ctrl *CupoController) DerechoByMonth(c *gin.Context) {
 		mes = 0
 	}
 
-	var idParaCupos = id
+	var idParaCupos = senadorUserID
 	if targetUser.TitularID != nil {
 		idParaCupos = *targetUser.TitularID
 	}
 
-	items, _ := ctrl.service.GetCuposDerechoByUsuarioAndGestion(c.Request.Context(), idParaCupos, gestion)
+	items, err := ctrl.service.GetCuposDerechoByUsuario(c.Request.Context(), idParaCupos, gestion, mes)
+	if err != nil {
+		fmt.Printf("Error obteniendo cupos: %v\n", err)
+	}
 
-	mesesNames := utils.GetMonthNames()
+	mesName := utils.GetMonthName(mes)
 
-	grouped := make([]*MonthGroup, 13)
-	for i := 1; i <= 12; i++ {
-		grouped[i] = &MonthGroup{
-			MonthNum:  i,
-			MonthName: mesesNames[i],
-			Items:     []models.CupoDerechoItem{},
-		}
+	var viewItems []CupoDerechoItemView
+	for _, v := range items {
+		viewItems = append(viewItems, CupoDerechoItemView{CupoDerechoItem: v})
+	}
+
+	currentMonthGroup := &MonthGroup{
+		MonthNum:  mes,
+		MonthName: mesName,
+		Items:     viewItems,
 	}
 
 	for _, v := range items {
-		if v.Mes == mes {
-			grouped[v.Mes].Items = append(grouped[v.Mes].Items, v)
-			if v.SenAsignadoID == id {
-				grouped[v.Mes].SuplenteHasQuota = true
-			}
+		if strings.Contains(targetUser.Tipo, "SUPLENTE") && v.SenAsignadoID == senadorUserID {
+			currentMonthGroup.SuplenteHasQuota = true
+		}
+		if v.SenAsignadoID == senadorUserID {
+			currentMonthGroup.TargetHasQuota = true
 		}
 	}
 
-	var displayMonths []*MonthGroup
-	if mes >= 1 && mes <= 12 {
-		displayMonths = append(displayMonths, grouped[mes])
+	isViewerAdminOrResponsable := authUser.IsAdminOrResponsable()
+	isViewerSuplente := strings.Contains(authUser.Tipo, "SUPLENTE")
+	isTargetSuplente := strings.Contains(targetUser.Tipo, "SUPLENTE")
+	isEncargado := targetUser.EncargadoID != nil && *targetUser.EncargadoID == authUser.ID
+
+	// Populate Permissions
+	for j := range currentMonthGroup.Items {
+		item := &currentMonthGroup.Items[j]
+		perms := Permissions{}
+		modelItem := item.CupoDerechoItem
+
+		isDisponible := modelItem.IsDisponible()
+		isVencido := modelItem.IsVencido()
+		isTransferido := modelItem.EsTransferido
+		isOwner := modelItem.SenAsignadoID == targetUser.ID
+		targetHasQuota := currentMonthGroup.TargetHasQuota
+
+		// 1. Admin Actions (Calculo base)
+		if isViewerAdminOrResponsable {
+			if isTransferido {
+				perms.CanRevert = true
+			}
+			if modelItem.GetSolicitudIda() != nil || modelItem.GetSolicitudVuelta() != nil {
+				perms.CanPrint = true
+			}
+		}
+
+		// 2. Tomar / Asignar Cupo (Para el Target Suplente)
+		hasTitular := targetUser.TitularID != nil
+		if isDisponible && !isVencido && hasTitular && modelItem.SenAsignadoID == *targetUser.TitularID {
+			// Opción 1: El mismo suplente toma su cupo (Solo si no tiene cupo)
+			if isTargetSuplente && !targetHasQuota && isViewerSuplente && authUser.ID == targetUser.ID {
+				perms.CanTomarCupo = true
+			}
+
+			// Opción 2: Encargado asigna (Solo si no tiene cupo)
+			if isEncargado && !targetHasQuota && isTargetSuplente {
+				perms.CanAsignarCupo = true
+			}
+
+			// Opción 3: Admin/Responsable asigna (Solo si no tiene cupo)
+			if isViewerAdminOrResponsable && !targetHasQuota && isTargetSuplente && !isTransferido {
+				perms.CanAsignarCupo = true
+			}
+		}
+
+		// 3. Transferencia (Admin/Responsable)
+		// Si es Admin y NO se activó la asignación directa (porque ya tiene cupo o falta idoneidad), mostramos Transferir
+		if isViewerAdminOrResponsable && isDisponible && !isVencido && !perms.CanAsignarCupo {
+			perms.CanTransfer = true
+		}
+
+		// 3. Solicitudes (Owner Only)
+		if isOwner {
+			solIda := modelItem.GetSolicitudIda()
+			solVuelta := modelItem.GetSolicitudVuelta()
+
+			// Ida
+			if solIda == nil {
+				if !isVencido {
+					perms.CanCreateIda = true
+				}
+			} else {
+				if solIda.GetEstado() == "SOLICITADO" {
+					perms.CanEditIda = true
+				} else {
+					perms.CanViewIda = true
+				}
+			}
+
+			// Vuelta
+			if solVuelta == nil {
+				if !isVencido {
+					perms.CanCreateVuelta = true
+				}
+			} else {
+				if solVuelta.GetEstado() == "SOLICITADO" {
+					perms.CanEditVuelta = true
+				} else {
+					perms.CanViewVuelta = true
+				}
+			}
+
+			// Descargo
+			perms.CanDescargo = true
+		}
+
+		item.Permissions = perms
 	}
+
+	displayMonths := []*MonthGroup{currentMonthGroup}
 
 	utils.Render(c, "cupo/derecho", gin.H{
 		"TargetUser":  targetUser,
-		"User":        appContextUser,
 		"Months":      displayMonths,
 		"Gestion":     gestion,
 		"TargetMonth": mes,

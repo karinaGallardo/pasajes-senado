@@ -67,8 +67,8 @@
           x-data="{ 
                 tipo: '{{ if .Solicitud.TipoItinerario }}{{ if .Solicitud.TipoItinerario.EsIdaVuelta }}IDA_VUELTA{{ else }}SOLO_IDA{{ end }}{{ else }}IDA_VUELTA{{ end }}',
                 origen: '{{ .Solicitud.OrigenCode }}',
-                userOrigenCode: '{{ .CurrentUser.GetOrigenIATA }}',
-                userOrigenName: '{{ if .CurrentUser.Origen }}{{ .CurrentUser.Origen.Nombre }}{{ else }}Mi Origen{{ end }}',
+                userOrigenCode: '{{ .AuthUser.GetOrigenIATA }}',
+                userOrigenName: '{{ if .AuthUser.Origen }}{{ .AuthUser.Origen.Nombre }}{{ else }}Mi Origen{{ end }}',
                 lpbCode: 'LPB',
                 lpbName: 'La Paz - El Alto',
                 isLocked: true
@@ -126,11 +126,11 @@
                 x-model="origen"
                 :class="{ 'bg-neutral-100 pointer-events-none text-neutral-500': isLocked }"
                 class="shadow-sm focus:ring-secondary focus:border-secondary block w-full sm:text-sm border-neutral-300 rounded-md p-2 border transition-colors">
-                {{ if .CurrentUser.GetOrigenIATA }}
-                <option value="{{ .CurrentUser.GetOrigenIATA }}">
-                  {{ if .CurrentUser.Origen }}{{ .CurrentUser.Origen.Nombre }}{{ else }}Mi Origen{{ end }} ({{ .CurrentUser.GetOrigenIATA }})
+                {{ if .AuthUser.GetOrigenIATA }}
+                <option value="{{ .AuthUser.GetOrigenIATA }}">
+                  {{ if .AuthUser.Origen }}{{ .AuthUser.Origen.Nombre }}{{ else }}Mi Origen{{ end }} ({{ .AuthUser.GetOrigenIATA }})
                 </option>
-                {{ end }} {{ if ne .CurrentUser.GetOrigenIATA "LPB" }}
+                {{ end }} {{ if ne .AuthUser.GetOrigenIATA "LPB" }}
                 <option value="LPB">La Paz - El Alto (LPB)</option>
                 {{ end }}
               </select>

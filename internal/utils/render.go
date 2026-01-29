@@ -20,12 +20,12 @@ func Render(c *gin.Context, templateName string, data gin.H) {
 
 	// data["csrf_token"] = csrf.GetToken(c)
 
-	user := appcontext.CurrentUser(c)
-	if user != nil {
-		data["CurrentUser"] = user
+	authUser := appcontext.AuthUser(c)
+	if authUser != nil {
+		data["AuthUser"] = authUser
 		role := ""
-		if user.Rol != nil {
-			role = user.Rol.Codigo
+		if authUser.Rol != nil {
+			role = authUser.Rol.Codigo
 		}
 		data["IsAdmin"] = role == "ADMIN"
 		data["IsResponsable"] = role == "RESPONSABLE"

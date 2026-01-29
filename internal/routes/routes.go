@@ -34,8 +34,8 @@ func SetupRoutes(r *gin.Engine) {
 
 		protected.GET("/perfil", perfilCtrl.Show)
 
-		protected.GET("/cupos/derecho/:id/:gestion", cupoCtrl.DerechoByYear)
-		protected.GET("/cupos/derecho/:id/:gestion/:mes", cupoCtrl.DerechoByMonth)
+		protected.GET("/cupos/derecho/:senador_user_id/:gestion", cupoCtrl.DerechoByYear)
+		protected.GET("/cupos/derecho/:senador_user_id/:gestion/:mes", cupoCtrl.DerechoByMonth)
 
 		protected.GET("/solicitudes", solicitudCtrl.Index)
 		// protected.GET("/solicitudes/nueva", solicitudCtrl.Create)
@@ -112,6 +112,8 @@ func SetupRoutes(r *gin.Engine) {
 			sysAdmin.POST("/admin/cupos/generar", cupoCtrl.Generar)
 			sysAdmin.GET("/admin/cupos/:id/derechos", cupoCtrl.GetCuposByCupo)
 			protected.GET("/admin/cupos/derechos/:id/modal-transferir", cupoCtrl.GetTransferModal)
+			protected.POST("/admin/cupos/tomar", cupoCtrl.TomarCupo)
+			protected.POST("/admin/cupos/asignar", cupoCtrl.AsignarCupo)
 			protected.POST("/admin/cupos/transferir", cupoCtrl.Transferir)
 			protected.POST("/admin/cupos/derechos/:id/revertir-transferencia", cupoCtrl.RevertirTransferencia)
 			protected.GET("/admin/cupos/derechos/:id/print", cupoCtrl.PrintRequests)

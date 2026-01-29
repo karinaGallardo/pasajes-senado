@@ -43,7 +43,7 @@
         <div class="flex space-x-2 items-center">
           <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-warning-100 text-warning-800 mr-4">Pendiente de Aprobación</span>
 
-          {{ if .CurrentUser.IsAdminOrResponsable }}
+          {{ if .AuthUser.IsAdminOrResponsable }}
           <form action="/descargos/{{ .Descargo.ID }}/aprobar" method="POST" x-data="{ loading: false }" @submit="loading = true">
             <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
             <button

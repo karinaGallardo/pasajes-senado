@@ -44,7 +44,7 @@ func AuthRequired() gin.HandlerFunc {
 
 func RequireRole(allowedRoles ...string) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		user := appcontext.CurrentUser(c)
+		user := appcontext.AuthUser(c)
 		if user == nil {
 			c.AbortWithStatus(http.StatusUnauthorized)
 			return

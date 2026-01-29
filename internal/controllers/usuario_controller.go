@@ -31,15 +31,15 @@ func NewUsuarioController() *UsuarioController {
 }
 
 func (ctrl *UsuarioController) Index(c *gin.Context) {
-	currentUser := appcontext.CurrentUser(c)
-	if currentUser == nil {
+	authUser := appcontext.AuthUser(c)
+	if authUser == nil {
 		c.Redirect(http.StatusFound, "/auth/login")
 		return
 	}
 
 	roleType := c.DefaultQuery("rol", "SENADOR")
 
-	if !currentUser.IsAdmin() {
+	if !authUser.IsAdmin() {
 		roleType = "SENADOR"
 	}
 
@@ -79,15 +79,15 @@ func (ctrl *UsuarioController) Index(c *gin.Context) {
 }
 
 func (ctrl *UsuarioController) Table(c *gin.Context) {
-	currentUser := appcontext.CurrentUser(c)
-	if currentUser == nil {
+	authUser := appcontext.AuthUser(c)
+	if authUser == nil {
 		c.Status(http.StatusUnauthorized)
 		return
 	}
 
 	roleType := c.DefaultQuery("rol", "SENADOR")
 
-	if !currentUser.IsAdmin() {
+	if !authUser.IsAdmin() {
 		roleType = "SENADOR"
 	}
 	searchTerm := c.Query("q")
@@ -216,19 +216,19 @@ func (ctrl *UsuarioController) Update(c *gin.Context) {
 		return
 	}
 
-	currentUser := appcontext.CurrentUser(c)
-	if currentUser == nil {
+	authUser := appcontext.AuthUser(c)
+	if authUser == nil {
 		c.String(http.StatusUnauthorized, "No autorizado")
 		return
 	}
 
 	isPrivileged := false
 
-	if currentUser.IsAdminOrResponsable() {
+	if authUser.IsAdminOrResponsable() {
 		isPrivileged = true
-	} else if currentUser.ID == usuario.ID {
+	} else if authUser.ID == usuario.ID {
 		isPrivileged = true
-	} else if usuario.EncargadoID != nil && *usuario.EncargadoID == currentUser.ID {
+	} else if usuario.EncargadoID != nil && *usuario.EncargadoID == authUser.ID {
 		isPrivileged = true
 	}
 
@@ -294,15 +294,15 @@ func (ctrl *UsuarioController) UpdateOrigin(c *gin.Context) {
 		return
 	}
 
-	currentUser := appcontext.CurrentUser(c)
-	if currentUser == nil {
+	authUser := appcontext.AuthUser(c)
+	if authUser == nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "No autorizado"})
 		return
 	}
 
-	isEncargado := targetUser.EncargadoID != nil && *targetUser.EncargadoID == currentUser.ID
-	isAdmin := currentUser.IsAdmin()
-	isSelf := targetUser.ID == currentUser.ID
+	isEncargado := targetUser.EncargadoID != nil && *targetUser.EncargadoID == authUser.ID
+	isAdmin := authUser.IsAdmin()
+	isSelf := targetUser.ID == authUser.ID
 
 	if !isEncargado && !isAdmin && !isSelf {
 		c.JSON(http.StatusForbidden, gin.H{"error": "No tiene permisos para modificar este usuario"})
@@ -323,8 +323,8 @@ func (ctrl *UsuarioController) UpdateOrigin(c *gin.Context) {
 }
 
 func (ctrl *UsuarioController) Sync(c *gin.Context) {
-	currentUser := appcontext.CurrentUser(c)
-	if currentUser == nil || !currentUser.IsAdmin() {
+	authUser := appcontext.AuthUser(c)
+	if authUser == nil || !authUser.IsAdmin() {
 		c.String(http.StatusForbidden, "No autorizado")
 		return
 	}
@@ -377,8 +377,8 @@ func (ctrl *UsuarioController) Unblock(c *gin.Context) {
 }
 
 func (ctrl *UsuarioController) GetSyncModal(c *gin.Context) {
-	currentUser := appcontext.CurrentUser(c)
-	if currentUser == nil || !currentUser.IsAdmin() {
+	authUser := appcontext.AuthUser(c)
+	if authUser == nil || !authUser.IsAdmin() {
 		c.String(http.StatusForbidden, "No autorizado")
 		return
 	}

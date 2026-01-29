@@ -49,7 +49,7 @@ func NewSolicitudDerechoController() *SolicitudDerechoController {
 
 func (ctrl *SolicitudDerechoController) Create(c *gin.Context) {
 
-	currentUser := appcontext.CurrentUser(c)
+	authUser := appcontext.AuthUser(c)
 
 	itemID := c.Param("item_id")
 	itinerarioCode := c.Param("itinerario_code")
@@ -73,11 +73,11 @@ func (ctrl *SolicitudDerechoController) Create(c *gin.Context) {
 	}
 
 	canCreate := false
-	if currentUser.ID == targetUser.ID {
+	if authUser.ID == targetUser.ID {
 		canCreate = true
-	} else if currentUser.IsAdminOrResponsable() {
+	} else if authUser.IsAdminOrResponsable() {
 		canCreate = true
-	} else if targetUser.EncargadoID != nil && *targetUser.EncargadoID == currentUser.ID {
+	} else if targetUser.EncargadoID != nil && *targetUser.EncargadoID == authUser.ID {
 		canCreate = true
 	}
 
@@ -170,9 +170,9 @@ func (ctrl *SolicitudDerechoController) Store(c *gin.Context) {
 		return
 	}
 
-	usuario := appcontext.CurrentUser(c)
+	authUser := appcontext.AuthUser(c)
 
-	solicitud, err := ctrl.solicitudService.Create(c.Request.Context(), req, usuario)
+	solicitud, err := ctrl.solicitudService.Create(c.Request.Context(), req, authUser)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Error creando solicitud: "+err.Error())
 		return
@@ -195,9 +195,9 @@ func (ctrl *SolicitudDerechoController) Edit(c *gin.Context) {
 		return
 	}
 
-	currentUser := appcontext.CurrentUser(c)
+	authUser := appcontext.AuthUser(c)
 
-	if !currentUser.CanEditSolicitud(*solicitud) {
+	if !authUser.CanEditSolicitud(*solicitud) {
 		c.String(http.StatusForbidden, "No tiene permisos para editar esta solicitud")
 		return
 	}
@@ -268,7 +268,6 @@ func (ctrl *SolicitudDerechoController) Edit(c *gin.Context) {
 	utils.Render(c, "solicitud/derecho/edit", gin.H{
 		"Aerolineas":         aerolineas,
 		"TargetUser":         &solicitud.Usuario,
-		"User":               currentUser,
 		"Itinerarios":        TiposItinerario,
 		"ItinerarioIdaID":    ItinerarioIdaID,
 		"ItinerarioVueltaID": ItinerarioVueltaID,
@@ -417,8 +416,8 @@ func (ctrl *SolicitudDerechoController) Show(c *gin.Context) {
 
 func (ctrl *SolicitudDerechoController) Approve(c *gin.Context) {
 	id := c.Param("id")
-	currentUser := appcontext.CurrentUser(c)
-	if currentUser == nil || !currentUser.CanApproveReject() {
+	authUser := appcontext.AuthUser(c)
+	if authUser == nil || !authUser.CanApproveReject() {
 		c.String(http.StatusForbidden, "No tiene permisos para realizar esta acción")
 		return
 	}
@@ -432,8 +431,8 @@ func (ctrl *SolicitudDerechoController) Approve(c *gin.Context) {
 
 func (ctrl *SolicitudDerechoController) Reject(c *gin.Context) {
 	id := c.Param("id")
-	currentUser := appcontext.CurrentUser(c)
-	if currentUser == nil || !currentUser.CanApproveReject() {
+	authUser := appcontext.AuthUser(c)
+	if authUser == nil || !authUser.CanApproveReject() {
 		c.String(http.StatusForbidden, "No tiene permisos para realizar esta acción")
 		return
 	}

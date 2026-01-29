@@ -11,10 +11,10 @@ type ResetCupoRequest struct {
 }
 
 type TransferirCupoDerechoItemRequest struct {
-	ItemID    string `form:"item_id" binding:"required"`
-	DestinoID string `form:"destino_id" binding:"required"`
-	Motivo    string `form:"motivo"`
-	Gestion   string `form:"gestion"`
-	Mes       string `form:"mes"`
-	ReturnURL string `form:"return_url"`
+	ItemID       string `form:"item_id" binding:"required"`
+	TargetUserID string `form:"target_user_id" binding:"required"`
+	Motivo       string `form:"motivo"`
+	Gestion      string `form:"gestion"`
+	Mes          string `form:"mes"`
+	ReturnURL    string `form:"return_url"`
 }

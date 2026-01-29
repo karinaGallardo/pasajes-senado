@@ -25,12 +25,7 @@
   <div class="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-md">
     <div class="flex">
       <div class="flex-shrink-0">
-        <svg class="h-5 w-5 text-amber-400" viewBox="0 0 20 20" fill="currentColor">
-          <path
-            fill-rule="evenodd"
-            d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-            clip-rule="evenodd" />
-        </svg>
+        <i class="ph ph-warning text-xl text-amber-400"></i>
       </div>
       <div class="ml-3">
         <p class="text-sm text-amber-700 font-medium">
@@ -52,12 +47,12 @@
     </div>
 
     <div class="p-6 space-y-12">
-      {{ $targetUserID := .TargetUser.ID }} {{ range .Months }} {{ $suplenteHasQuota := .SuplenteHasQuota }}
+      {{ $targetUserID := .TargetUser.ID }} {{ range .Months }}
       <div class="space-y-4">
         <div class="flex items-center space-x-4">
           <h3 class="text-lg font-bold text-neutral-800 uppercase tracking-wide">{{ .MonthName }}</h3>
           <div class="h-px bg-neutral-200 flex-1"></div>
-          {{ if $.CurrentUser.IsAdminOrResponsable }}
+          {{ if $.AuthUser.IsAdminOrResponsable }}
           <a
             href="/admin/cupos?gestion={{ $.Gestion }}&mes={{ .MonthNum }}"
             class="text-neutral-400 hover:text-primary transition-colors text-xs font-bold uppercase tracking-wider flex items-center gap-1">
@@ -107,16 +102,19 @@
                 <!-- Acciones -->
                 <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6" onclick="event.stopPropagation()">
                   <div class="flex justify-end gap-2">
-                    {{ if $.CurrentUser.IsAdminOrResponsable }} {{ if .EsTransferido }}
-                    <button
-                      hx-post="/admin/cupos/derechos/{{ .ID }}/revertir-transferencia?gestion={{ .Gestion }}&mes={{ .Mes }}"
-                      hx-target="body"
-                      hx-confirm="¿Está seguro de revertir esta transferencia?"
-                      class="text-danger-600 hover:text-danger-900 border border-danger-200 bg-white font-bold text-[10px] uppercase px-2 py-1 rounded hover:bg-danger-50 transition-colors inline-flex items-center gap-1">
-                      <span class="[.htmx-request_&]:hidden">Deshacer</span>
-                      <i class="ph ph-spinner animate-spin hidden [.htmx-request_&]:block"></i>
-                    </button>
-                    {{ else if and (eq .EstadoCupoDerechoCodigo "DISPONIBLE") (not .IsVencido) }}
+                    <!-- Admin Actions -->
+                    {{ if .Permissions.CanRevert }}
+                    <div class="flex flex-col items-end relative">
+                      <button
+                        hx-post="/admin/cupos/derechos/{{ .ID }}/revertir-transferencia?gestion={{ .Gestion }}&mes={{ .Mes }}"
+                        hx-target="body"
+                        hx-confirm="¿Está seguro de revertir la transferencia{{ if .SenAsignado }} a {{.SenAsignado.GetNombreCompleto}}{{ end }}? El cupo volverá al titular."
+                        class="text-danger-600 hover:text-danger-900 border border-danger-200 bg-white font-bold text-[10px] uppercase px-2 py-1 rounded hover:bg-danger-50 transition-colors inline-flex items-center gap-1">
+                        <span class="[.htmx-request_&]:hidden">Revertir Transferencia</span>
+                        <i class="ph ph-spinner animate-spin hidden [.htmx-request_&]:block"></i>
+                      </button>
+                    </div>
+                    {{ end }} {{ if .Permissions.CanTransfer }}
                     <button
                       hx-get="/admin/cupos/derechos/{{ .ID }}/modal-transferir?gestion={{ .Gestion }}&mes={{ .Mes }}"
                       hx-target="#modal-container"
@@ -124,7 +122,7 @@
                       <span class="[.htmx-request_&]:hidden">Transferir</span>
                       <i class="ph ph-spinner animate-spin hidden [.htmx-request_&]:block"></i>
                     </button>
-                    {{ end }} {{ if and .GetSolicitudIda .GetSolicitudVuelta }}
+                    {{ end }} {{ if .Permissions.CanPrint }}
                     <button
                       hx-get="/admin/cupos/derechos/{{ .ID }}/modal-print"
                       hx-target="#modal-container"
@@ -132,34 +130,51 @@
                       title="Imprimir solicitudes por cupo">
                       <i class="ph ph-printer text-[15px]"></i>
                     </button>
-                    {{ end }} {{ end }} {{ if and (eq $.CurrentUser.Tipo "SENADOR_SUPLENTE") (eq .EstadoCupoDerechoCodigo "DISPONIBLE") (not .IsVencido) (not $suplenteHasQuota) }}
+                    {{ end }}
+
+                    <!-- Suplente Actions -->
+                    <!-- Suplente Actions (Auto-servicio) -->
+                    {{ if .Permissions.CanTomarCupo }}
                     <button
-                      hx-post="/admin/cupos/transferir"
+                      hx-post="/admin/cupos/tomar"
                       hx-target="body"
-                      hx-vals='{"item_id": "{{.ID}}", "destino_id": "{{$.CurrentUser.ID}}", "motivo": "Tomado por suplente", "gestion": "{{.Gestion}}", "mes": "{{.Mes}}", "return_url": "/cupos/derecho/{{$.TargetUser.ID}}/{{$.Gestion}}"}'
-                      hx-confirm="¿Desea TOMAR este cupo para su uso?"
+                      hx-vals='{"item_id": "{{.ID}}", "gestion": "{{.Gestion}}", "mes": "{{.Mes}}", "return_url": "/cupos/derecho/{{$targetUserID}}/{{.Gestion}}"}'
+                      hx-confirm="¿Desea TOMAR este cupo para su uso personal?"
                       class="text-secondary-600 hover:text-secondary-900 border border-secondary-200 bg-white font-bold text-[10px] uppercase px-2 py-1 rounded hover:bg-secondary-50 transition-colors inline-flex items-center gap-1">
                       <span class="[.htmx-request_&]:hidden">Tomar Cupo</span>
                       <i class="ph ph-spinner animate-spin hidden [.htmx-request_&]:block"></i>
                     </button>
-                    {{ end }} {{ if eq .SenAsignadoID $.TargetUser.ID }} {{ $isVencido := .IsVencido }}
+                    {{ end }}
+
+                    <!-- Asignación por Terceros (Admin/Encargado) -->
+                    {{ if .Permissions.CanAsignarCupo }}
+                    <button
+                      hx-post="/admin/cupos/asignar"
+                      hx-target="body"
+                      hx-vals='{"item_id": "{{.ID}}", "target_user_id": "{{$targetUserID}}", "gestion": "{{.Gestion}}", "mes": "{{.Mes}}", "return_url": "/cupos/derecho/{{$targetUserID}}/{{.Gestion}}"}'
+                      hx-confirm="¿Desea ASIGNAR este cupo al suplente {{$.TargetUser.GetNombreCompleto}}?"
+                      class="text-primary-600 hover:text-primary-900 border border-primary-200 bg-white font-bold text-[10px] uppercase px-2 py-1 rounded hover:bg-primary-50 transition-colors inline-flex items-center gap-1">
+                      <span class="[.htmx-request_&]:hidden">Asignar Cupo</span>
+                      <i class="ph ph-spinner animate-spin hidden [.htmx-request_&]:block"></i>
+                    </button>
+                    {{ end }}
+
+                    <!-- Owner Actions (Solicitudes) -->
 
                     <!-- Ida -->
-                    {{ $solIda := .GetSolicitudIda }} {{ if not $solIda }} {{ if $isVencido }}
-                    <span class="text-neutral-300 font-bold text-[10px] uppercase border border-neutral-100 bg-neutral-50 rounded px-2 py-1 cursor-not-allowed">No solicitado</span>
-                    {{ else }}
+                    {{ if .Permissions.CanCreateIda }}
                     <a
                       href="/solicitudes/derecho/crear/{{ .ID }}/SOLO_IDA"
                       class="text-neutral-500 hover:text-secondary hover:border-secondary font-bold text-[10px] uppercase border border-neutral-200 bg-white rounded px-2 py-1 transition-colors">
                       Crear Ida
                     </a>
-                    {{ end }} {{ else }} {{ $st := $solIda.GetEstado }} {{ if eq $st "SOLICITADO" }}
+                    {{ else }} {{ if .Permissions.CanEditIda }} {{ $solIda := .GetSolicitudIda }}
                     <a
                       href="/solicitudes/derecho/{{ $solIda.ID }}/editar"
                       class="text-amber-700 hover:bg-amber-100 font-bold text-[10px] uppercase border border-amber-100 bg-amber-50 rounded px-2 py-1 transition-colors">
                       Editar Ida
                     </a>
-                    {{ else }}
+                    {{ else if .Permissions.CanViewIda }} {{ $solIda := .GetSolicitudIda }}
                     <a
                       href="/solicitudes/derecho/{{ $solIda.ID }}/detalle"
                       class="text-primary-700 hover:bg-primary-100 font-bold text-[10px] uppercase border border-primary-100 bg-primary-50 rounded px-2 py-1 transition-colors">
@@ -168,21 +183,19 @@
                     {{ end }} {{ end }}
 
                     <!-- Vuelta -->
-                    {{ $solVuelta := .GetSolicitudVuelta }} {{ if not $solVuelta }} {{ if $isVencido }}
-                    <span class="text-neutral-300 font-bold text-[10px] uppercase border border-neutral-100 bg-neutral-50 rounded px-2 py-1 cursor-not-allowed">No solicitado</span>
-                    {{ else }}
+                    {{ if .Permissions.CanCreateVuelta }}
                     <a
                       href="/solicitudes/derecho/crear/{{ .ID }}/SOLO_VUELTA"
                       class="text-neutral-500 hover:text-secondary hover:border-secondary font-bold text-[10px] uppercase border border-neutral-200 bg-white rounded px-2 py-1 transition-colors">
                       Crear Vuelta
                     </a>
-                    {{ end }} {{ else }} {{ $stV := $solVuelta.GetEstado }} {{ if eq $stV "SOLICITADO" }}
+                    {{ else }} {{ if .Permissions.CanEditVuelta }} {{ $solVuelta := .GetSolicitudVuelta }}
                     <a
                       href="/solicitudes/derecho/{{ $solVuelta.ID }}/editar"
                       class="text-amber-700 hover:bg-amber-100 font-bold text-[10px] uppercase border border-amber-100 bg-amber-50 rounded px-2 py-1 transition-colors">
                       Editar Vuelta
                     </a>
-                    {{ else }}
+                    {{ else if .Permissions.CanViewVuelta }} {{ $solVuelta := .GetSolicitudVuelta }}
                     <a
                       href="/solicitudes/derecho/{{ $solVuelta.ID }}/detalle"
                       class="text-primary-700 hover:bg-primary-100 font-bold text-[10px] uppercase border border-primary-100 bg-primary-50 rounded px-2 py-1 transition-colors">
@@ -191,19 +204,21 @@
                     {{ end }} {{ end }}
 
                     <!-- Descargo -->
-                    {{ $descargo := .GetDescargo }} {{ $anyTravel := or $solIda $solVuelta }}
+                    {{ if .Permissions.CanDescargo }} {{ $descargo := .GetDescargo }} {{ $anyTravel := or .GetSolicitudIda .GetSolicitudVuelta }}
                     <a
                       href="/solicitudes/derecho/formulario?item_id={{ .ID }}&itinerario_code=DESCARGO&user_id={{ $targetUserID }}"
                       class="font-bold text-[10px] uppercase border rounded px-2 py-1 transition-colors
-                                {{ if $anyTravel }}
-                                    {{ if not $descargo }} text-danger-700 bg-danger-50 border-danger-100 hover:bg-danger-100
-                                    {{ else if eq $descargo.Estado `APROBADO` }} text-success-700 bg-success-50 border-success-100
-                                    {{ else }} text-primary bg-primary/5 border-primary/10 {{ end }}
-                                {{ else }}
-                                    text-neutral-300 bg-neutral-50 border-neutral-100 cursor-not-allowed pointer-events-none
-                                {{ end }}">
+                        {{ if $anyTravel }}
+                            {{ if not $descargo }} text-danger-700 bg-danger-50 border-danger-100 hover:bg-danger-100
+                            {{ else if eq $descargo.Estado `APROBADO` }} text-success-700 bg-success-50 border-success-100
+                            {{ else }} text-primary bg-primary/5 border-primary/10 {{ end }}
+                        {{ else }}
+                            text-neutral-300 bg-neutral-50 border-neutral-100 cursor-not-allowed pointer-events-none
+                        {{ end }}">
                       Descargo
                     </a>
+                    {{ end }} {{ if .EsTransferido }}
+                    <span class="text-[11px] text-neutral-400 whitespace-nowrap mt-0.5">Asignado a: {{ .SenAsignado.GetNombreCompleto }}</span>
                     {{ end }}
                   </div>
                 </td>

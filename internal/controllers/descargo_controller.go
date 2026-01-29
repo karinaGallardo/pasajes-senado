@@ -63,13 +63,13 @@ func (ctrl *DescargoController) Store(c *gin.Context) {
 		return
 	}
 
-	userContext := appcontext.CurrentUser(c)
-	if userContext == nil {
+	authUser := appcontext.AuthUser(c)
+	if authUser == nil {
 		c.Redirect(http.StatusFound, "/auth/login")
 		return
 	}
 
-	if _, err := ctrl.descargoService.Create(c.Request.Context(), req, userContext.ID); err != nil {
+	if _, err := ctrl.descargoService.Create(c.Request.Context(), req, authUser.ID); err != nil {
 		log.Printf("Error creando descargo: %v", err)
 		c.Redirect(http.StatusFound, "/solicitudes?error=ErrorCreacion")
 		return
@@ -105,12 +105,12 @@ func (ctrl *DescargoController) Approve(c *gin.Context) {
 	}
 
 	descargo.Estado = "APROBADO"
-	userContext := appcontext.CurrentUser(c)
-	if userContext == nil {
+	authUser := appcontext.AuthUser(c)
+	if authUser == nil {
 		c.Redirect(http.StatusFound, "/auth/login")
 		return
 	}
-	descargo.UpdatedBy = &userContext.ID
+	descargo.UpdatedBy = &authUser.ID
 
 	ctrl.descargoService.Update(c.Request.Context(), descargo)
 

@@ -58,8 +58,8 @@ func (ctrl *ViaticoController) Calculate(c *gin.Context) {
 
 func (ctrl *ViaticoController) Store(c *gin.Context) {
 	solicitudID := c.Param("id")
-	currentUser := appcontext.CurrentUser(c)
-	if currentUser == nil {
+	authUser := appcontext.AuthUser(c)
+	if authUser == nil {
 		c.Redirect(http.StatusFound, "/auth/login")
 		return
 	}
@@ -70,7 +70,7 @@ func (ctrl *ViaticoController) Store(c *gin.Context) {
 		return
 	}
 
-	if _, err := ctrl.viaticoService.RegistrarViatico(c.Request.Context(), solicitudID, req, currentUser.ID); err != nil {
+	if _, err := ctrl.viaticoService.RegistrarViatico(c.Request.Context(), solicitudID, req, authUser.ID); err != nil {
 		c.String(http.StatusInternalServerError, "Error asignando viático: "+err.Error())
 		return
 	}
@@ -252,12 +252,12 @@ func (ctrl *ViaticoController) Print(c *gin.Context) {
 	pdf.SetXY(80, ySig+2)
 	pdf.CellFormat(50, 4, tr("ELABORADO POR"), "", 1, "C", false, 0, "")
 	pdf.SetXY(80, ySig+6)
-	currentUser := appcontext.CurrentUser(c)
-	currentUserName := ""
-	if currentUser != nil {
-		currentUserName = currentUser.GetNombreCompleto()
+	authUser := appcontext.AuthUser(c)
+	authUserName := ""
+	if authUser != nil {
+		authUserName = authUser.GetNombreCompleto()
 	}
-	pdf.CellFormat(50, 4, tr(currentUserName), "", 1, "C", false, 0, "")
+	pdf.CellFormat(50, 4, tr(authUserName), "", 1, "C", false, 0, "")
 
 	pdf.SetXY(140, ySig)
 	pdf.Cell(50, 0, "__________________________")

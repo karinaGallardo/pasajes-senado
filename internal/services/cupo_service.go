@@ -132,6 +132,18 @@ func (s *CupoService) GenerateCuposDerechoForMonth(ctx context.Context, gestion 
 }
 
 func (s *CupoService) generateCuposDerechoForSenador(ctx context.Context, user *models.Usuario, gestion int, mes int) error {
+	// Check before starting a transaction
+	existing, err := s.repo.WithContext(ctx).FindByTitularAndPeriodo(user.ID, gestion, mes)
+	if err == nil && existing != nil {
+		// Verify if it has items (quick check)
+		items, _ := s.itemRepo.WithContext(ctx).FindByCupoDerechoID(existing.ID)
+		weeksInfo := utils.GetWeeksInMonth(gestion, time.Month(mes))
+		if len(items) >= len(weeksInfo) {
+			// Already complete, no need for transaction
+			return nil
+		}
+	}
+
 	return s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.CupoDerechoRepository, tx *gorm.DB) error {
 		return s.generateCuposDerechoTx(repoTx, s.itemRepo.WithTx(tx), user, gestion, mes)
 	})
@@ -206,44 +218,52 @@ func (s *CupoService) generateCuposDerechoTx(cupoRepoTx *repositories.CupoDerech
 	return s.syncCupoUsadoTx(cupoRepoTx, itemRepoTx, user.ID, gestion, mes)
 }
 
-func (s *CupoService) TransferirCupoDerecho(ctx context.Context, itemID string, destinoID string, motivo string) error {
-	item, err := s.itemRepo.WithContext(ctx).FindByID(itemID)
-	if err != nil {
-		return errors.New("derecho no encontrado")
-	}
+func (s *CupoService) TransferirCupoDerecho(ctx context.Context, itemID string, targetUserID string, motivo string) error {
+	return s.repo.RunTransaction(func(repoTx *repositories.CupoDerechoRepository, tx *gorm.DB) error {
+		itemRepoTx := s.itemRepo.WithTx(tx)
 
-	if item.EstadoCupoDerechoCodigo != "DISPONIBLE" {
-		return errors.New("el derecho no está disponible para transferencia (ya usado o transferido)")
-	}
+		item, err := itemRepoTx.FindByID(itemID)
+		if err != nil {
+			return errors.New("derecho no encontrado")
+		}
 
-	item.EsTransferido = true
-	item.SenAsignadoID = destinoID
-	item.FechaTransfer = utils.Ptr(time.Now())
-	item.MotivoTransfer = motivo
+		if item.EstadoCupoDerechoCodigo != "DISPONIBLE" {
+			return errors.New("el derecho no está disponible para transferencia (ya usado o transferido)")
+		}
 
-	return s.itemRepo.WithContext(ctx).Update(item)
+		item.EsTransferido = true
+		item.SenAsignadoID = targetUserID
+		item.FechaTransfer = utils.Ptr(time.Now())
+		item.MotivoTransfer = motivo
+
+		return itemRepoTx.Update(item)
+	})
 }
 
 func (s *CupoService) RevertirTransferencia(ctx context.Context, itemID string) error {
-	item, err := s.itemRepo.WithContext(ctx).FindByID(itemID)
-	if err != nil {
-		return errors.New("derecho no encontrado")
-	}
+	return s.repo.RunTransaction(func(repoTx *repositories.CupoDerechoRepository, tx *gorm.DB) error {
+		itemRepoTx := s.itemRepo.WithTx(tx)
 
-	if !item.EsTransferido {
-		return errors.New("el derecho no ha sido transferido")
-	}
+		item, err := itemRepoTx.FindByID(itemID)
+		if err != nil {
+			return errors.New("derecho no encontrado")
+		}
 
-	if item.EstadoCupoDerechoCodigo != "DISPONIBLE" {
-		return errors.New("no se puede revertir: el derecho ya fue utilizado por el beneficiario")
-	}
+		if !item.EsTransferido {
+			return errors.New("el derecho no ha sido transferido")
+		}
 
-	item.EsTransferido = false
-	item.SenAsignadoID = item.SenTitularID
-	item.FechaTransfer = nil
-	item.MotivoTransfer = ""
+		if item.EstadoCupoDerechoCodigo != "DISPONIBLE" {
+			return errors.New("no se puede revertir: el derecho ya fue utilizado por el beneficiario")
+		}
 
-	return s.itemRepo.WithContext(ctx).Update(item)
+		item.EsTransferido = false
+		item.SenAsignadoID = item.SenTitularID
+		item.FechaTransfer = nil
+		item.MotivoTransfer = ""
+
+		return itemRepoTx.Update(item)
+	})
 }
 
 func (s *CupoService) ProcesarConsumoPasaje(ctx context.Context, usuarioID string, gestion, mes int) error {
@@ -358,27 +378,31 @@ func (s *CupoService) GetCuposDerechoByCupoID(ctx context.Context, cupoID string
 	return s.itemRepo.WithContext(ctx).FindByCupoDerechoID(cupoID)
 }
 
-func (s *CupoService) GetCuposDerechoByUsuario(ctx context.Context, usuarioID string, gestion, mes int) ([]models.CupoDerechoItem, error) {
-	user, err := s.userRepo.WithContext(ctx).FindByID(usuarioID)
+func (s *CupoService) GetCuposDerechoByUsuario(ctx context.Context, authUserID string, gestion, mes int) ([]models.CupoDerechoItem, error) {
+	user, err := s.userRepo.WithContext(ctx).FindByID(authUserID)
 	if err != nil {
 		return nil, err
 	}
 
+	// Optimization: Only ensure if it's the current or future period
+	now := time.Now()
+	isCurrentOrFuture := (gestion > now.Year()) || (gestion == now.Year() && mes >= int(now.Month()))
+
 	if user.Tipo == "SENADOR_TITULAR" {
-		_ = s.EnsureUserCuposDerecho(ctx, usuarioID, gestion, mes)
-		return s.itemRepo.WithContext(ctx).FindForTitularByPeriodo(usuarioID, gestion, mes)
+		if isCurrentOrFuture {
+			_ = s.EnsureUserCuposDerecho(ctx, authUserID, gestion, mes)
+		}
+		return s.itemRepo.WithContext(ctx).FindForTitularByPeriodo(authUserID, gestion, mes)
 	}
 
 	if user.Tipo == "SENADOR_SUPLENTE" && user.TitularID != nil {
-		titular, err := s.userRepo.WithContext(ctx).FindByID(*user.TitularID)
-		if err == nil && titular != nil {
-			_ = s.EnsureUserCuposDerecho(ctx, titular.ID, gestion, mes)
+		if isCurrentOrFuture {
+			_ = s.EnsureUserCuposDerecho(ctx, *user.TitularID, gestion, mes)
 		}
-		return s.itemRepo.WithContext(ctx).FindForSuplenteByPeriodo(usuarioID, gestion, mes)
+		return s.itemRepo.WithContext(ctx).FindForSuplenteByPeriodo(authUserID, gestion, mes)
 	}
 
-	_ = s.EnsureUserCuposDerecho(ctx, usuarioID, gestion, mes)
-	return s.itemRepo.WithContext(ctx).FindByHolderAndPeriodo(usuarioID, gestion, mes)
+	return s.itemRepo.WithContext(ctx).FindByHolderAndPeriodo(authUserID, gestion, mes)
 }
 
 func (s *CupoService) GetCuposDerechoByUsuarioAndGestion(ctx context.Context, usuarioID string, gestion int) ([]models.CupoDerechoItem, error) {

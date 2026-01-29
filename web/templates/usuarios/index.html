@@ -9,7 +9,7 @@
     </div>
     <div class="flex space-x-3">
       <!-- Sync Button (HTMX Modal) -->
-      {{ if .CurrentUser.IsAdmin }}
+      {{ if .AuthUser.IsAdmin }}
       <button
         hx-get="/usuarios/sync-modal"
         hx-include="[name='rol']"
@@ -38,7 +38,7 @@
           Senadores
         </button>
 
-        {{ if .CurrentUser.IsAdmin }}
+        {{ if .AuthUser.IsAdmin }}
         <button
           type="button"
           class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors focus:outline-none"

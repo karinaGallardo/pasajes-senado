@@ -22,8 +22,8 @@ func NewSolicitudController() *SolicitudController {
 }
 
 func (ctrl *SolicitudController) Index(c *gin.Context) {
-	user := appcontext.CurrentUser(c)
-	if user == nil {
+	authUser := appcontext.AuthUser(c)
+	if authUser == nil {
 		c.Redirect(302, "/auth/login")
 		return
 	}
@@ -31,10 +31,10 @@ func (ctrl *SolicitudController) Index(c *gin.Context) {
 	var solicitudes []models.Solicitud
 	var err error
 
-	if user.IsAdminOrResponsable() {
+	if authUser.IsAdminOrResponsable() {
 		solicitudes, err = ctrl.service.GetAll(c.Request.Context())
 	} else {
-		solicitudes, err = ctrl.service.GetByUserIdOrAccesibleByEncargadoID(c.Request.Context(), user.ID)
+		solicitudes, err = ctrl.service.GetByUserIdOrAccesibleByEncargadoID(c.Request.Context(), authUser.ID)
 	}
 
 	if err != nil {
@@ -68,7 +68,6 @@ func (ctrl *SolicitudController) Index(c *gin.Context) {
 		"Title":       "Bandeja de Solicitudes",
 		"Solicitudes": solicitudes,
 		"Usuarios":    usuariosMap,
-		"CurrentUser": user,
 	})
 }
 

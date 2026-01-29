@@ -9,7 +9,6 @@ require (
 	github.com/jung-kurt/gofpdf v1.16.2
 	github.com/matoous/go-nanoid/v2 v2.1.0
 	github.com/spf13/viper v1.21.0
-	github.com/utrack/gin-csrf v0.0.0-20190424104817-40fb8d2c8fca
 	github.com/webstradev/gin-pagination/v2 v2.1.3
 	go.mongodb.org/mongo-driver v1.17.6
 	golang.org/x/crypto v0.44.0
@@ -22,8 +21,6 @@ require (
 	github.com/bytedance/sonic v1.14.0 // indirect
 	github.com/bytedance/sonic/loader v0.3.0 // indirect
 	github.com/cloudwego/base64x v0.1.6 // indirect
-	github.com/dchest/uniuri v0.0.0-20160212164326-8902c56451e9 // indirect
-	github.com/emersion/go-imap v1.2.1 // indirect
 	github.com/fsnotify/fsnotify v1.9.0 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.8 // indirect
 	github.com/gin-contrib/sse v1.1.0 // indirect

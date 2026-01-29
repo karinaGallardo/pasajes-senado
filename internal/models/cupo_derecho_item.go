@@ -104,3 +104,7 @@ func (v CupoDerechoItem) IsActiveWeek() bool {
 	now := time.Now()
 	return now.After(*v.FechaDesde) && now.Before(v.FechaHasta.Add(24*time.Hour))
 }
+
+func (v CupoDerechoItem) IsDisponible() bool {
+	return v.EstadoCupoDerechoCodigo == "DISPONIBLE"
+}

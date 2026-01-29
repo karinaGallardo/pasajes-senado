@@ -272,7 +272,7 @@
   <body class="bg-neutral-50 font-sans antialiased text-neutral-900" x-data="{ sidebarOpen: false, sidebarCollapsed: false }">
     <div class="flex h-screen overflow-hidden">
       <!-- SIDEBAR -->
-      {{ if .CurrentUser }}
+      {{ if .AuthUser }}
       <aside
         class="flex flex-col bg-white border-r border-neutral-200 transition-all duration-300 transform lg:translate-x-0 lg:static fixed z-30 h-full"
         :class="{
@@ -307,7 +307,7 @@
       <!-- MAIN COLUMN -->
       <div class="flex-1 flex flex-col overflow-hidden relative">
         <!-- HEADER -->
-        {{ if .CurrentUser }}
+        {{ if .AuthUser }}
         <header class="h-20 bg-white border-b border-neutral-200 flex items-center justify-between px-6 lg:px-8 flex-shrink-0">
           <!-- Search Bar -->
           <div class="flex-1 max-w-lg flex items-center">
@@ -331,11 +331,11 @@
             <div class="flex items-center pl-4 border-l border-neutral-200" x-data="{ open: false }">
               <div class="flex items-center cursor-pointer" @click="open = !open">
                 <div class="text-right mr-3 hidden md:block">
-                  <div class="text-sm font-medium text-neutral-900">{{ .CurrentUser.GetNombreCompleto }}</div>
-                  <div class="text-xs text-neutral-500">{{ .CurrentUser.Rol.Codigo }}</div>
+                  <div class="text-sm font-medium text-neutral-900">{{ .AuthUser.GetNombreCompleto }}</div>
+                  <div class="text-xs text-neutral-500">{{ .AuthUser.Rol.Codigo }}</div>
                 </div>
                 <div class="h-10 w-10 rounded-full bg-primary flex items-center justify-center text-white font-bold shadow-sm">
-                  {{ printf "%.1s" .CurrentUser.GetNombreCompleto }}
+                  {{ printf "%.1s" .AuthUser.GetNombreCompleto }}
                 </div>
               </div>
               <div
