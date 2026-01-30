@@ -41,8 +41,8 @@ func (s *ReportService) GenerateCupoSolicitudesPDF(ctx context.Context, cupoItem
 		}
 	}
 
-	if !hasIda || !hasVuelta {
-		return nil, fmt.Errorf("se requiere solicitud de Ida y Vuelta para generar este reporte unificado")
+	if !hasIda && !hasVuelta {
+		return nil, fmt.Errorf("se requiere al menos una solicitud (Ida o Vuelta) para generar este reporte")
 	}
 
 	pdf := s.GenerateCupoReport(ctx, solicitudes)
