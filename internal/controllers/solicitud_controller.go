@@ -28,13 +28,15 @@ func (ctrl *SolicitudController) Index(c *gin.Context) {
 		return
 	}
 
+	status := c.Query("estado")
+
 	var solicitudes []models.Solicitud
 	var err error
 
 	if authUser.IsAdminOrResponsable() {
-		solicitudes, err = ctrl.service.GetAll(c.Request.Context())
+		solicitudes, err = ctrl.service.GetAll(c.Request.Context(), status)
 	} else {
-		solicitudes, err = ctrl.service.GetByUserIdOrAccesibleByEncargadoID(c.Request.Context(), authUser.ID)
+		solicitudes, err = ctrl.service.GetByUserIdOrAccesibleByEncargadoID(c.Request.Context(), authUser.ID, status)
 	}
 
 	if err != nil {
@@ -68,6 +70,7 @@ func (ctrl *SolicitudController) Index(c *gin.Context) {
 		"Title":       "Bandeja de Solicitudes",
 		"Solicitudes": solicitudes,
 		"Usuarios":    usuariosMap,
+		"Status":      status,
 	})
 }
 

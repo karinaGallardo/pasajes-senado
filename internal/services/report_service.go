@@ -14,11 +14,13 @@ import (
 
 type ReportService struct {
 	solicitudRepo *repositories.SolicitudRepository
+	aerolineaRepo *repositories.AerolineaRepository
 }
 
 func NewReportService() *ReportService {
 	return &ReportService{
 		solicitudRepo: repositories.NewSolicitudRepository(),
+		aerolineaRepo: repositories.NewAerolineaRepository(),
 	}
 }
 
@@ -240,7 +242,16 @@ func (s *ReportService) GenerateCupoReport(ctx context.Context, solicitudes []mo
 			pdf.SetTextColor(0, 0, 0)
 			pdf.SetFont("Arial", "", 7)
 
-			pdf.CellFormat(20, 6, tr(sol.AerolineaSugerida), "1", 0, "C", false, 0, "")
+			aerolineaNombre := sol.AerolineaSugerida
+			if aerolinea, err := s.aerolineaRepo.FindByID(sol.AerolineaSugerida); err == nil {
+				if aerolinea.Sigla != "" {
+					aerolineaNombre = aerolinea.Sigla
+				} else {
+					aerolineaNombre = aerolinea.Nombre
+				}
+			}
+
+			pdf.CellFormat(20, 6, tr(aerolineaNombre), "1", 0, "C", false, 0, "")
 			pdf.CellFormat(40, 6, tr(rut), "1", 0, "C", false, 0, "")
 			pdf.CellFormat(25, 6, tr(fecha), "1", 0, "C", false, 0, "")
 			pdf.CellFormat(20, 6, hora, "1", 1, "C", false, 0, "")

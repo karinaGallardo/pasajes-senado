@@ -454,6 +454,44 @@ func (ctrl *SolicitudDerechoController) Update(c *gin.Context) {
 	c.Redirect(http.StatusFound, targetURL)
 }
 
+type StepView struct {
+	Icon         string
+	Label        string
+	WrapperClass string
+	LabelClass   string
+}
+
+type StatusCardView struct {
+	BorderClass string
+	TextClass   string
+}
+
+type SolicitudPermissions struct {
+	CanEdit           bool
+	CanApproveReject  bool
+	CanRevertApproval bool
+	CanMakeDescargo   bool
+	CanAssignPasaje   bool
+	IsAdminOrResp     bool
+}
+
+type PasajePermissions struct {
+	CanEdit         bool
+	CanMarkUsado    bool
+	CanValidateUso  bool
+	CanReprogramar  bool
+	CanDevolver     bool
+	CanAnular       bool
+	CanEmitir       bool
+	ShowActionsMenu bool
+}
+
+type PasajeView struct {
+	models.Pasaje
+	Perms            PasajePermissions
+	StatusColorClass string // e.g. "bg-success-100 text-success-800"
+}
+
 func (ctrl *SolicitudDerechoController) Show(c *gin.Context) {
 	id := c.Param("id")
 	solicitud, err := ctrl.solicitudService.GetByID(c.Request.Context(), id)
@@ -463,30 +501,155 @@ func (ctrl *SolicitudDerechoController) Show(c *gin.Context) {
 		return
 	}
 
+	authUser := appcontext.AuthUser(c)
 	st := "SOLICITADO"
 	if solicitud.EstadoSolicitudCodigo != nil {
 		st = *solicitud.EstadoSolicitudCodigo
 	}
-	step1 := true
-	step2 := st == "APROBADO" || st == "FINALIZADO"
-	step3 := st == "FINALIZADO"
 
-	mermaidGraph := "graph TD; A[Registro Solicitud] --> B{¿Autorización?}; B -- Aprobado --> C[Gestión Pasajes]; C --> D[Viaje / Finalizado]; B -- Rechazado --> E[Solicitud Rechazada];\n"
-	mermaidGraph += "classDef default fill:#fff,stroke:#333,stroke-width:1px; classDef active fill:#03738C,stroke:#03738C,stroke-width:2px,color:#fff;\n"
-
-	switch st {
-	case "SOLICITADO":
-		mermaidGraph += "class A active;"
-	case "APROBADO":
-		mermaidGraph += "class C active;"
-	case "FINALIZADO":
-		mermaidGraph += "class D active;"
-	case "RECHAZADO":
-		mermaidGraph += "class E active;"
+	// --- 1. Permissions Logic ---
+	hasEmitted := false
+	for _, p := range solicitud.Pasajes {
+		if p.EstadoPasajeCodigo != nil && *p.EstadoPasajeCodigo == "EMITIDO" {
+			hasEmitted = true
+			break
+		}
 	}
 
-	aerolineas, _ := ctrl.aerolineaService.GetAllActive(c.Request.Context())
+	perms := SolicitudPermissions{
+		CanEdit:           authUser.CanEditSolicitud(*solicitud),
+		CanApproveReject:  authUser.CanApproveReject() && st == "SOLICITADO",
+		CanRevertApproval: authUser.IsAdminOrResponsable() && st == "APROBADO" && len(solicitud.Pasajes) == 0,
+		CanAssignPasaje:   authUser.IsAdminOrResponsable() && st == "APROBADO",
+		CanMakeDescargo:   hasEmitted,
+		IsAdminOrResp:     authUser.IsAdminOrResponsable(),
+	}
 
+	// --- 2. Stepper Logic ---
+	// Helper to create step style
+	makeStep := func(active, completed bool, colorBase, icon, label string) StepView {
+		sv := StepView{
+			Icon:  icon,
+			Label: label,
+		}
+		if active || completed {
+			sv.WrapperClass = fmt.Sprintf("bg-%s-500 text-white border-none", colorBase)
+			sv.LabelClass = fmt.Sprintf("text-%s-500", colorBase)
+		} else {
+			sv.WrapperClass = "bg-white border-2 border-neutral-200 text-neutral-400"
+			sv.LabelClass = "text-neutral-400"
+		}
+		return sv
+	}
+
+	steps := make(map[string]StepView)
+
+	// Step 1: Solicitado (Always active/completed) (Blue -> Primary)
+	steps["Solicitado"] = makeStep(true, true, "primary", "ph ph-file-text text-lg", "Solicitado")
+
+	// Step 2: Aprobado / Rechazado
+	rejected := st == "RECHAZADO"
+	if rejected {
+		steps["Aprobado"] = StepView{
+			Icon:         "ph ph-x text-xl font-bold",
+			Label:        "Rechazado",
+			WrapperClass: "bg-danger-500 text-white border-none",
+			LabelClass:   "text-danger-500",
+		}
+	} else {
+		// Aprobado is active if state is APROBADO, EMITIDO, or FINALIZADO
+		isAp := st == "APROBADO" || st == "EMITIDO" || st == "FINALIZADO"
+		steps["Aprobado"] = makeStep(isAp, isAp, "success", "ph ph-check text-xl font-bold", "Aprobado")
+	}
+
+	// Step 3: Emitido (Teal -> Secondary)
+	isEm := st == "EMITIDO" || st == "FINALIZADO"
+	steps["Emitido"] = makeStep(isEm, isEm, "secondary", "ph ph-ticket text-xl", "Emitido")
+
+	// Step 4: Finalizado (Gray -> Neutral)
+	isFin := st == "FINALIZADO"
+	steps["Finalizado"] = makeStep(isFin, isFin, "neutral", "ph ph-flag-checkered text-xl", "Finalizado")
+
+	showNextSteps := !rejected
+
+	// --- 3. Status Card Logic ---
+	statusCard := StatusCardView{}
+	switch st {
+	case "SOLICITADO":
+		statusCard.BorderClass = "border-primary-500"
+		statusCard.TextClass = "text-primary-700"
+	case "RECHAZADO":
+		statusCard.BorderClass = "border-danger-500"
+		statusCard.TextClass = "text-danger-700"
+	case "APROBADO":
+		statusCard.BorderClass = "border-success-500"
+		statusCard.TextClass = "text-success-700"
+	case "EMITIDO":
+		statusCard.BorderClass = "border-secondary-500"
+		statusCard.TextClass = "text-secondary-700"
+	case "FINALIZADO":
+		statusCard.BorderClass = "border-neutral-500"
+		statusCard.TextClass = "text-neutral-700"
+	default:
+		statusCard.BorderClass = "border-neutral-200"
+		statusCard.TextClass = "text-neutral-900"
+	}
+
+	// --- 4. Pasajes Views (con permisos pre-calculados) ---
+	var pasajesViews []PasajeView
+	for _, p := range solicitud.Pasajes {
+		pCode := ""
+		if p.EstadoPasajeCodigo != nil {
+			pCode = *p.EstadoPasajeCodigo
+		}
+
+		pv := PasajeView{Pasaje: p}
+
+		// Status Color logic
+		if p.EstadoPasaje != nil {
+			pv.StatusColorClass = fmt.Sprintf("bg-%s-100 text-%s-800", p.EstadoPasaje.Color, p.EstadoPasaje.Color)
+		} else {
+			// Fallback logic
+			switch pCode {
+			case "RESERVADO":
+				pv.StatusColorClass = "bg-secondary-100 text-secondary-800"
+			case "EMITIDO":
+				pv.StatusColorClass = "bg-success-100 text-success-800"
+			case "REPROGRAMADO", "NO SHOW", "VALIDANDO_USO", "NO_SE_PRESENTO":
+				pv.StatusColorClass = "bg-warning-100 text-warning-800"
+			case "DEVUELTO", "USO_RECHAZADO":
+				pv.StatusColorClass = "bg-danger-100 text-danger-800"
+			case "USADO":
+				pv.StatusColorClass = "bg-primary-100 text-primary-800"
+			case "ANULADO":
+				pv.StatusColorClass = "bg-neutral-100 text-neutral-800"
+			default:
+				pv.StatusColorClass = "bg-neutral-100 text-neutral-800"
+			}
+		}
+
+		// Permissions logic for this pasaje
+		pPerms := PasajePermissions{}
+
+		// Individual Actions
+		canEmitir := authUser.IsAdminOrResponsable() && pCode == "RESERVADO"
+		pPerms.CanEdit = authUser.IsAdminOrResponsable() && pCode != "VALIDANDO_USO"
+		pPerms.CanMarkUsado = authUser.CanMarkUsado(*solicitud) && (pCode == "EMITIDO" || pCode == "USO_RECHAZADO")
+		pPerms.CanValidateUso = authUser.IsAdminOrResponsable() && pCode == "VALIDANDO_USO"
+		pPerms.CanReprogramar = authUser.IsAdminOrResponsable() && pCode != "VALIDANDO_USO"
+		pPerms.CanDevolver = authUser.IsAdminOrResponsable() && pCode != "VALIDANDO_USO"
+		pPerms.CanAnular = authUser.IsAdminOrResponsable() && pCode != "VALIDANDO_USO"
+		pPerms.CanEmitir = canEmitir // New permission
+
+		// Actions Menu Visibility
+		pPerms.ShowActionsMenu = pPerms.CanEdit || pPerms.CanMarkUsado || pPerms.CanValidateUso || pPerms.CanReprogramar || pPerms.CanDevolver || pPerms.CanAnular || pPerms.CanEmitir
+
+		pv.Perms = pPerms
+		pasajesViews = append(pasajesViews, pv)
+	}
+
+	// Dependencies
+	aerolineas, _ := ctrl.aerolineaService.GetAllActive(c.Request.Context())
 	userIDsMap := make(map[string]bool)
 	if solicitud.CreatedBy != nil {
 		userIDsMap[*solicitud.CreatedBy] = true
@@ -494,32 +657,29 @@ func (ctrl *SolicitudDerechoController) Show(c *gin.Context) {
 	if solicitud.UpdatedBy != nil {
 		userIDsMap[*solicitud.UpdatedBy] = true
 	}
-
 	var ids []string
 	for id := range userIDsMap {
 		ids = append(ids, id)
 	}
-
 	usuarios, _ := ctrl.userService.GetByIDs(c.Request.Context(), ids)
 	usuariosMap := make(map[string]*models.Usuario)
 	for i := range usuarios {
 		usuariosMap[usuarios[i].ID] = &usuarios[i]
 	}
 
-	rutas, _ := ctrl.rutaService.GetAll(c.Request.Context())
-	agencias, _ := ctrl.agenciaService.GetAllActive(c.Request.Context())
-
 	utils.Render(c, "solicitud/derecho/show", gin.H{
-		"Title":        "Detalle Solicitud (Derecho) #" + id,
-		"Solicitud":    solicitud,
-		"Usuarios":     usuariosMap,
-		"Step1":        step1,
-		"Step2":        step2,
-		"Step3":        step3,
-		"MermaidGraph": mermaidGraph,
-		"Aerolineas":   aerolineas,
-		"Rutas":        rutas,
-		"Agencias":     agencias,
+		"Title":     "Detalle Solicitud (Derecho) #" + id,
+		"Solicitud": solicitud,
+		"Usuarios":  usuariosMap,
+
+		// New View Data
+		"Perms":         perms,
+		"Steps":         steps,
+		"ShowNextSteps": showNextSteps,
+		"StatusCard":    statusCard,
+		"PasajesView":   pasajesViews,
+
+		"Aerolineas": aerolineas,
 	})
 }
 
@@ -535,6 +695,21 @@ func (ctrl *SolicitudDerechoController) Approve(c *gin.Context) {
 		return
 	}
 	utils.SetSuccessMessage(c, "Solicitud APROBADA correctamente")
+	c.Redirect(http.StatusFound, "/solicitudes/derecho/"+id+"/detalle")
+}
+
+func (ctrl *SolicitudDerechoController) RevertApproval(c *gin.Context) {
+	id := c.Param("id")
+	authUser := appcontext.AuthUser(c)
+	if authUser == nil || !authUser.IsAdminOrResponsable() {
+		c.String(http.StatusForbidden, "No tiene permisos para realizar esta acción")
+		return
+	}
+	if err := ctrl.solicitudService.RevertApproval(c.Request.Context(), id); err != nil {
+		c.String(http.StatusInternalServerError, "Error al revertir aprobación: "+err.Error())
+		return
+	}
+	utils.SetSuccessMessage(c, "Estado revertido a SOLICITADO")
 	c.Redirect(http.StatusFound, "/solicitudes/derecho/"+id+"/detalle")
 }
 

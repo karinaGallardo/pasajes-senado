@@ -57,6 +57,7 @@ func SetupRoutes(r *gin.Engine) {
 		protected.GET("/solicitudes/derecho/:id/modal-editar", solicitudDerechoCtrl.GetEditModal)
 		protected.POST("/solicitudes/derecho/:id/actualizar", solicitudDerechoCtrl.Update)
 		protected.POST("/solicitudes/derecho/:id/aprobar", solicitudDerechoCtrl.Approve)
+		protected.POST("/solicitudes/derecho/:id/revertir-aprobacion", solicitudDerechoCtrl.RevertApproval)
 		protected.POST("/solicitudes/derecho/:id/rechazar", solicitudDerechoCtrl.Reject)
 		protected.GET("/solicitudes/derecho/:id/print", solicitudDerechoCtrl.Print)
 		protected.DELETE("/solicitudes/derecho/:id", solicitudDerechoCtrl.Destroy)

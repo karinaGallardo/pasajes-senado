@@ -18,7 +18,7 @@ func NewEmailService() *EmailService {
 	return &EmailService{}
 }
 
-func (s *EmailService) SendEmail(to []string, subject string, body string) error {
+func (s *EmailService) SendEmail(to []string, cc []string, bcc []string, subject string, body string) error {
 	smtpServer := viper.GetString("SMTP_SERVER")
 	smtpPort := viper.GetString("SMTP_PORT")
 	smtpUser := viper.GetString("SMTP_USER")
@@ -86,12 +86,20 @@ func (s *EmailService) SendEmail(to []string, subject string, body string) error
 	if err = client.Mail(fromEmail); err != nil {
 		return fmt.Errorf("MAIL FROM error: %w", err)
 	}
-	recipients := to
+
+	recipients := make([]string, 0)
+	recipients = append(recipients, to...)
+	recipients = append(recipients, cc...)
+	recipients = append(recipients, bcc...)
+	// Always BCC the sender for records
 	recipients = append(recipients, fromEmail)
 
 	for _, addr := range recipients {
+		if addr == "" {
+			continue
+		}
 		if err = client.Rcpt(addr); err != nil {
-			return fmt.Errorf("RCPT TO error: %w", err)
+			return fmt.Errorf("RCPT TO error for %s: %w", addr, err)
 		}
 	}
 
@@ -102,8 +110,10 @@ func (s *EmailService) SendEmail(to []string, subject string, body string) error
 
 	headers := make(map[string]string)
 	headers["From"] = fromEmail
-	headers["To"] = to[0]
-	headers["Bcc"] = fromEmail
+	headers["To"] = strings.Join(to, ", ")
+	if len(cc) > 0 {
+		headers["Cc"] = strings.Join(cc, ", ")
+	}
 	headers["Subject"] = subject
 	headers["MIME-Version"] = "1.0"
 	headers["Content-Type"] = "text/html; charset=\"utf-8\""

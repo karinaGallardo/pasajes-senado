@@ -35,26 +35,37 @@ func (r *SolicitudRepository) Create(solicitud *models.Solicitud) error {
 	return r.db.Create(solicitud).Error
 }
 
-func (r *SolicitudRepository) FindAll() ([]models.Solicitud, error) {
+func (r *SolicitudRepository) FindAll(status string) ([]models.Solicitud, error) {
 	var solicitudes []models.Solicitud
-	err := r.db.Preload("Usuario").
+	query := r.db.Preload("Usuario").
 		Preload("Origen").
 		Preload("Destino").
 		Preload("TipoSolicitud.ConceptoViaje").
 		Preload("EstadoSolicitud").
-		Order("created_at desc").
-		Find(&solicitudes).Error
+		Order("created_at desc")
+
+	if status != "" {
+		query = query.Where("estado_solicitud_codigo = ?", status)
+	}
+
+	err := query.Find(&solicitudes).Error
 	return solicitudes, err
 }
 
-func (r *SolicitudRepository) FindByUserID(userID string) ([]models.Solicitud, error) {
+func (r *SolicitudRepository) FindByUserID(userID string, status string) ([]models.Solicitud, error) {
 	var solicitudes []models.Solicitud
-	err := r.db.Preload("Usuario").
+	query := r.db.Preload("Usuario").
 		Preload("Origen").
 		Preload("Destino").
 		Preload("TipoSolicitud.ConceptoViaje").
 		Preload("EstadoSolicitud").
-		Order("created_at desc").Where("usuario_id = ?", userID).Find(&solicitudes).Error
+		Order("created_at desc").Where("usuario_id = ?", userID)
+
+	if status != "" {
+		query = query.Where("estado_solicitud_codigo = ?", status)
+	}
+
+	err := query.Find(&solicitudes).Error
 	return solicitudes, err
 }
 
@@ -76,22 +87,28 @@ func (r *SolicitudRepository) FindByCupoDerechoItemID(itemID string) ([]models.S
 	return solicitudes, err
 }
 
-func (r *SolicitudRepository) FindByUserIdOrAccesibleByEncargadoID(userID string) ([]models.Solicitud, error) {
+func (r *SolicitudRepository) FindByUserIdOrAccesibleByEncargadoID(userID string, status string) ([]models.Solicitud, error) {
 	var solicitudes []models.Solicitud
-	err := r.db.Preload("Usuario").
+	query := r.db.Preload("Usuario").
 		Preload("Origen").
 		Preload("Destino").
 		Preload("TipoSolicitud.ConceptoViaje").
 		Preload("EstadoSolicitud").
 		Order("created_at desc").
-		Where("usuario_id = ? OR usuario_id IN (?)", userID, r.db.Table("usuarios").Select("id").Where("encargado_id = ?", userID)).
-		Find(&solicitudes).Error
+		Where("usuario_id = ? OR usuario_id IN (?)", userID, r.db.Table("usuarios").Select("id").Where("encargado_id = ?", userID))
+
+	if status != "" {
+		query = query.Where("estado_solicitud_codigo = ?", status)
+	}
+
+	err := query.Find(&solicitudes).Error
 	return solicitudes, err
 }
 
 func (r *SolicitudRepository) FindByID(id string) (*models.Solicitud, error) {
 	var solicitud models.Solicitud
 	err := r.db.Preload("Usuario").
+		Preload("Usuario.Encargado").
 		Preload("Origen").
 		Preload("Destino").
 		Preload("Pasajes.Aerolinea").

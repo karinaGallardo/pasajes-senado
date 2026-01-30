@@ -56,24 +56,29 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
-h1, h2, h3, .font-brand {
+h1,
+h2,
+h3,
+.font-brand {
   font-family: var(--font-brand);
 }
 
 /* Custom scrollbar matched to app style */
 .custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  height: 10px;
+  width: 10px;
 }
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
+  background: #f5f5f5;
+  border-radius: 0 0 8px 8px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #d1d1d1; /* neutral-300 */
-  border-radius: 10px;
+  background-color: #d4d4d4;
+  border-radius: 20px;
+  border: 3px solid #f5f5f5;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #a3a3a3; /* neutral-400 */
+  background-color: #03738c;
 }
 
 /* Alpine.js cloak */
@@ -91,4 +96,12 @@ h1, h2, h3, .font-brand {
 .htmx-request.htmx-indicator {
   opacity: 1;
   pointer-events: auto;
+}
+
+/* HTMX Button Loading States */
+button.htmx-request .button-text {
+  display: none;
+}
+button.htmx-request .button-loading {
+  display: inline-flex;
 }

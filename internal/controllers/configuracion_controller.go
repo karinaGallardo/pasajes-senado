@@ -54,7 +54,7 @@ func (ctrl *ConfiguracionController) TestEmail(c *gin.Context) {
 		return
 	}
 
-	err := ctrl.emailService.SendEmail([]string{email}, "Test Email de Sistema Pasajes", "<h1>Correo de Prueba</h1><p>Si ves esto, la configuración SMTP funciona correctamente.</p>")
+	err := ctrl.emailService.SendEmail([]string{email}, nil, nil, "Test Email de Sistema Pasajes", "<h1>Correo de Prueba</h1><p>Si ves esto, la configuración SMTP funciona correctamente.</p>")
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

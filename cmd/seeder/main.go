@@ -243,11 +243,17 @@ func seedProveedores() {
 	fmt.Println("Sincronizando Proveedores (Aerolineas y Agencias)...")
 
 	aerolineas := []models.Aerolinea{
-		{Nombre: "BoA - Boliviana de Aviación", Estado: true},
-		{Nombre: "EcoJet", Estado: true},
+		{Nombre: "BoA - Boliviana de Aviación", Sigla: "BoA", Estado: true},
+		{Nombre: "EcoJet", Sigla: "EcoJet", Estado: true},
 	}
 	for _, a := range aerolineas {
-		configs.DB.Where("nombre = ?", a.Nombre).FirstOrCreate(&a)
+		var existing models.Aerolinea
+		if err := configs.DB.Where("nombre = ?", a.Nombre).First(&existing).Error; err != nil {
+			configs.DB.Create(&a)
+		} else {
+			existing.Sigla = a.Sigla
+			configs.DB.Save(&existing)
+		}
 	}
 
 	agencias := []models.Agencia{
@@ -398,14 +404,15 @@ func seedEstadosCupoDerecho() {
 func seedEstadosPasaje() {
 	fmt.Println("Sincronizando Estados de Pasaje...")
 	estados := []models.EstadoPasaje{
-		{Codigo: "EMITIDO", Nombre: "Emitido", Color: "green", Descripcion: "Pasaje emitido correctamente"},
-		{Codigo: "REPROGRAMADO", Nombre: "Reprogramado", Color: "yellow", Descripcion: "Pasaje reprogramado con costo adicional"},
-		{Codigo: "DEVUELTO", Nombre: "Devuelto", Color: "red", Descripcion: "Pasaje devuelto o cancelado"},
-		{Codigo: "USADO", Nombre: "Usado", Color: "blue", Descripcion: "Pasaje utilizado por el viajero"},
-		{Codigo: "ANULADO", Nombre: "Anulado", Color: "gray", Descripcion: "Pasaje anulado por error u otros motivos"},
-		{Codigo: "NO_SE_PRESENTO", Nombre: "No se presentó", Color: "orange", Descripcion: "El pasajero no se presentó al vuelo"},
-		{Codigo: "VALIDANDO_USO", Nombre: "Uso por Validar", Color: "yellow", Descripcion: "Pase a bordo subido, pendiente de validación"},
-		{Codigo: "USO_RECHAZADO", Nombre: "Uso Rechazado", Color: "red", Descripcion: "Pase a bordo rechazado, debe subirse nuevamente"},
+		{Codigo: "RESERVADO", Nombre: "Reservado", Color: "secondary", Descripcion: "Pasaje reservado, pendiente de emisión"},
+		{Codigo: "EMITIDO", Nombre: "Emitido", Color: "success", Descripcion: "Pasaje emitido correctamente"},
+		{Codigo: "REPROGRAMADO", Nombre: "Reprogramado", Color: "warning", Descripcion: "Pasaje reprogramado con costo adicional"},
+		{Codigo: "DEVUELTO", Nombre: "Devuelto", Color: "danger", Descripcion: "Pasaje devuelto o cancelado"},
+		{Codigo: "USADO", Nombre: "Usado", Color: "primary", Descripcion: "Pasaje utilizado por el viajero"},
+		{Codigo: "ANULADO", Nombre: "Anulado", Color: "neutral", Descripcion: "Pasaje anulado por error u otros motivos"},
+		{Codigo: "NO_SE_PRESENTO", Nombre: "No se presentó", Color: "warning", Descripcion: "El pasajero no se presentó al vuelo"},
+		{Codigo: "VALIDANDO_USO", Nombre: "Uso por Validar", Color: "warning", Descripcion: "Pase a bordo subido, pendiente de validación"},
+		{Codigo: "USO_RECHAZADO", Nombre: "Uso Rechazado", Color: "danger", Descripcion: "Pase a bordo rechazado, debe subirse nuevamente"},
 	}
 
 	for _, e := range estados {

@@ -1,38 +1,46 @@
 {{ define "solicitud/index" }} {{ template "layout_start" . }}
 
-<style>
-  .custom-scrollbar::-webkit-scrollbar {
-    height: 10px;
-    width: 10px;
-  }
-  .custom-scrollbar::-webkit-scrollbar-track {
-    background: #f5f5f5;
-    border-radius: 0 0 8px 8px;
-  }
-  .custom-scrollbar::-webkit-scrollbar-thumb {
-    background-color: #d4d4d4;
-    border-radius: 20px;
-    border: 3px solid #f5f5f5;
-  }
-  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background-color: #03738c;
-  }
-</style>
 <div class="space-y-6">
   <!-- Header Actions -->
   <div class="flex justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-neutral-200">
     <div>
       <h2 class="text-xl font-bold text-neutral-800">Solicitudes de Pasajes</h2>
-      <p class="text-sm text-neutral-500">Gestione las solicitudes de viaje (FV-01)</p>
+      <p class="text-sm text-neutral-500">Gestione las solicitudes de viaje</p>
     </div>
-    <div class="hidden">
-      <!-- <a href="/solicitudes/nueva" class="bg-primary hover:bg-primary-800 text-white font-medium py-2 px-4 rounded-md transition duration-150 ease-in-out flex items-center shadow">
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor">
-        <path fill-rule="evenodd" d="M10 5a1 1 0 011 1v3h3a1 1 0 110 2h-3v3a1 1 0 11-2 0v-3H6a1 1 0 110-2h3V6a1 1 0 011-1z" clip-rule="evenodd" />
-      </svg>
-      Nueva Solicitud
-    </a> -->
-    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="flex flex-wrap gap-2 pb-2 border-b border-neutral-100">
+    <a
+      href="/solicitudes"
+      class="px-3 py-1.5 text-xs font-medium rounded-full {{ if eq .Status `` }}bg-neutral-800 text-white{{ else }}bg-white text-neutral-600 border border-neutral-200 hover:bg-neutral-50{{ end }}">
+      Todos
+    </a>
+    <a
+      href="/solicitudes?estado=SOLICITADO"
+      class="px-3 py-1.5 text-xs font-medium rounded-full {{ if eq .Status `SOLICITADO` }}bg-primary text-white{{ else }}bg-white text-neutral-600 border border-neutral-200 hover:bg-neutral-50{{ end }}">
+      Solicitados
+    </a>
+    <a
+      href="/solicitudes?estado=APROBADO"
+      class="px-3 py-1.5 text-xs font-medium rounded-full {{ if eq .Status `APROBADO` }}bg-success-600 text-white{{ else }}bg-white text-neutral-600 border border-neutral-200 hover:bg-neutral-50{{ end }}">
+      Aprobados
+    </a>
+    <a
+      href="/solicitudes?estado=EMITIDO"
+      class="px-3 py-1.5 text-xs font-medium rounded-full {{ if eq .Status `EMITIDO` }}bg-secondary text-white{{ else }}bg-white text-neutral-600 border border-neutral-200 hover:bg-neutral-50{{ end }}">
+      Emitidos
+    </a>
+    <a
+      href="/solicitudes?estado=RECHAZADO"
+      class="px-3 py-1.5 text-xs font-medium rounded-full {{ if eq .Status `RECHAZADO` }}bg-danger-600 text-white{{ else }}bg-white text-neutral-600 border border-neutral-200 hover:bg-neutral-50{{ end }}">
+      Rechazados
+    </a>
+    <a
+      href="/solicitudes?estado=FINALIZADO"
+      class="px-3 py-1.5 text-xs font-medium rounded-full {{ if eq .Status `FINALIZADO` }}bg-neutral-600 text-white{{ else }}bg-white text-neutral-600 border border-neutral-200 hover:bg-neutral-50{{ end }}">
+      Finalizados
+    </a>
   </div>
 
   <!-- Table -->
@@ -110,7 +118,6 @@
         <tr>
           <td colspan="7" class="px-6 py-10 text-center text-neutral-500">
             <p class="mb-2">No hay solicitudes registradas.</p>
-            <a href="/solicitudes/nueva" class="text-primary hover:underline">Crear la primera</a>
           </td>
         </tr>
         {{ end }}

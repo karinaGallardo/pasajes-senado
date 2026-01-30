@@ -195,22 +195,22 @@ func (s *SolicitudService) sendCreationEmail(solicitud *models.Solicitud) {
 		</div>
 	`, beneficiary.GetNombreCompleto(), fullSol.Codigo, rut, fecha, fullSol.GetEstado())
 
-	err = s.emailService.SendEmail([]string{beneficiary.Email}, subject, body)
+	err = s.emailService.SendEmail([]string{beneficiary.Email}, nil, nil, subject, body)
 	if err != nil {
 		fmt.Printf("Error sending email: %v\n", err)
 	}
 }
 
-func (s *SolicitudService) GetAll(ctx context.Context) ([]models.Solicitud, error) {
-	return s.repo.WithContext(ctx).FindAll()
+func (s *SolicitudService) GetAll(ctx context.Context, status string) ([]models.Solicitud, error) {
+	return s.repo.WithContext(ctx).FindAll(status)
 }
 
-func (s *SolicitudService) GetByUserID(ctx context.Context, userID string) ([]models.Solicitud, error) {
-	return s.repo.WithContext(ctx).FindByUserID(userID)
+func (s *SolicitudService) GetByUserID(ctx context.Context, userID string, status string) ([]models.Solicitud, error) {
+	return s.repo.WithContext(ctx).FindByUserID(userID, status)
 }
 
-func (s *SolicitudService) GetByUserIdOrAccesibleByEncargadoID(ctx context.Context, userID string) ([]models.Solicitud, error) {
-	return s.repo.WithContext(ctx).FindByUserIdOrAccesibleByEncargadoID(userID)
+func (s *SolicitudService) GetByUserIdOrAccesibleByEncargadoID(ctx context.Context, userID string, status string) ([]models.Solicitud, error) {
+	return s.repo.WithContext(ctx).FindByUserIdOrAccesibleByEncargadoID(userID, status)
 }
 
 func (s *SolicitudService) GetByCupoDerechoItemID(ctx context.Context, itemID string) ([]models.Solicitud, error) {
@@ -242,6 +242,29 @@ func (s *SolicitudService) Approve(ctx context.Context, id string) error {
 					return err
 				}
 			}
+		}
+
+		return nil
+	})
+}
+
+func (s *SolicitudService) RevertApproval(ctx context.Context, id string) error {
+	return s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
+		solicitud, err := repoTx.FindByID(id)
+		if err != nil {
+			return err
+		}
+
+		if *solicitud.EstadoSolicitudCodigo != "APROBADO" {
+			return errors.New("la solicitud no está en estado APROBADO")
+		}
+
+		if len(solicitud.Pasajes) > 0 {
+			return errors.New("no se puede revertir la aprobación porque ya tiene pasajes asignados")
+		}
+
+		if err := repoTx.UpdateStatus(id, "SOLICITADO"); err != nil {
+			return err
 		}
 
 		return nil

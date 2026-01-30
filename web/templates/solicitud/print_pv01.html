@@ -1,35 +1,11 @@
 {{ define "solicitud/print_pv01" }}
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
     <title>Formulario PV-01 - Solicitud de Pasajes</title>
     <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet" />
-    <style>
-      @media print {
-        body {
-          -webkit-print-color-adjust: exact;
-          print-color-adjust: exact;
-          padding: 0;
-          margin: 0;
-        }
-        .no-print {
-          display: none;
-        }
-        .page-break {
-          page-break-after: always;
-        }
-      }
-      body {
-        font-family: "Times New Roman", serif;
-      }
-      .border-sl {
-        border: 1px solid #000;
-      }
-      .bg-neutral-custom {
-        background-color: #f3f4f6;
-      }
-    </style>
+    <link href="/static/css/print.css" rel="stylesheet" />
   </head>
   <body class="bg-neutral-100 p-8 print:p-0 print:bg-white text-sm">
     <!-- Action Bar -->

@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"fmt"
 	"sistema-pasajes/internal/dtos"
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
@@ -9,14 +10,18 @@ import (
 )
 
 type PasajeService struct {
-	repo       *repositories.PasajeRepository
-	estadoRepo *repositories.EstadoPasajeRepository
+	repo          *repositories.PasajeRepository
+	estadoRepo    *repositories.EstadoPasajeRepository
+	solicitudRepo *repositories.SolicitudRepository
+	emailService  *EmailService
 }
 
 func NewPasajeService() *PasajeService {
 	return &PasajeService{
-		repo:       repositories.NewPasajeRepository(),
-		estadoRepo: repositories.NewEstadoPasajeRepository(),
+		repo:          repositories.NewPasajeRepository(),
+		estadoRepo:    repositories.NewEstadoPasajeRepository(),
+		solicitudRepo: repositories.NewSolicitudRepository(),
+		emailService:  NewEmailService(),
 	}
 }
 
@@ -30,18 +35,19 @@ func (s *PasajeService) Create(ctx context.Context, solicitudID string, req dtos
 	}
 
 	pasaje := &models.Pasaje{
-		SolicitudID:   solicitudID,
-		AerolineaID:   aerolineaID,
-		AgenciaID:     &req.AgenciaID,
-		NumeroVuelo:   req.NumeroVuelo,
-		Ruta:          req.Ruta,
-		FechaVuelo:    fechaVuelo,
-		CodigoReserva: req.CodigoReserva,
-		NumeroBoleto:  req.NumeroBoleto,
-		NumeroFactura: req.NumeroFactura,
-		Glosa:         req.Glosa,
-		Costo:         costo,
-		Archivo:       filePath,
+		SolicitudID:        solicitudID,
+		EstadoPasajeCodigo: utils.Ptr("RESERVADO"),
+		AerolineaID:        aerolineaID,
+		AgenciaID:          &req.AgenciaID,
+		NumeroVuelo:        req.NumeroVuelo,
+		Ruta:               req.Ruta,
+		FechaVuelo:         fechaVuelo,
+		CodigoReserva:      req.CodigoReserva,
+		NumeroBoleto:       req.NumeroBoleto,
+		NumeroFactura:      req.NumeroFactura,
+		Glosa:              req.Glosa,
+		Costo:              costo,
+		Archivo:            filePath,
 	}
 
 	if err := s.repo.WithContext(ctx).Create(pasaje); err != nil {
@@ -171,5 +177,77 @@ func (s *PasajeService) UpdateStatus(ctx context.Context, pasajeID string, statu
 		pasaje.ArchivoPaseAbordo = archivoPase
 	}
 
-	return s.repo.WithContext(ctx).Update(pasaje)
+	if err := s.repo.WithContext(ctx).Update(pasaje); err != nil {
+		return err
+	}
+
+	if status == "EMITIDO" {
+		go func(p *models.Pasaje) {
+			ctx := context.Background()
+			sol, err := s.solicitudRepo.WithContext(ctx).FindByID(p.SolicitudID)
+			if err == nil && sol != nil {
+				s.sendEmissionEmail(sol, p)
+			}
+		}(pasaje)
+	}
+
+	return nil
+}
+
+func (s *PasajeService) sendEmissionEmail(sol *models.Solicitud, pasaje *models.Pasaje) {
+	usuario := sol.Usuario
+	if usuario.Email == "" {
+		return
+	}
+
+	to := []string{usuario.Email}
+	var cc []string
+
+	if usuario.Encargado != nil && usuario.Encargado.Email != "" {
+		cc = append(cc, usuario.Encargado.Email)
+	}
+
+	subject := fmt.Sprintf("Pasaje Emitido - Solicitud %s", sol.Codigo)
+
+	ruta := pasaje.Ruta
+	fecha := utils.FormatDateShortES(pasaje.FechaVuelo)
+	boleto := pasaje.NumeroBoleto
+
+	body := fmt.Sprintf(`
+		<div style="font-family: Arial, sans-serif; color: #333; max-width: 600px;">
+			<div style="background-color: #03738C; color: white; padding: 15px; border-radius: 5px 5px 0 0;">
+				<h2 style="margin:0;">Pasaje Emitido</h2>
+			</div>
+			<div style="padding: 20px; border: 1px solid #ddd; border-top: none; border-radius: 0 0 5px 5px;">
+				<p>Estimado/a <strong>%s</strong>,</p>
+				<p>Su pasaje correspondiente a la solicitud <strong>%s</strong> ha sido emitido exitosamente.</p>
+				
+				<h3 style="color: #03738C; border-bottom: 1px solid #eee; padding-bottom: 5px;">Detalles del Vuelo</h3>
+				<table style="width: 100%%; border-collapse: collapse; margin-top: 10px;">
+					<tr>
+						<td style="padding: 8px 0; color: #666;"><strong>Ruta:</strong></td>
+						<td style="padding: 8px 0;">%s</td>
+					</tr>
+					<tr>
+						<td style="padding: 8px 0; color: #666;"><strong>Fecha:</strong></td>
+						<td style="padding: 8px 0;">%s</td>
+					</tr>
+					<tr>
+						<td style="padding: 8px 0; color: #666;"><strong>Boleto:</strong></td>
+						<td style="padding: 8px 0;">%s</td>
+					</tr>
+					<tr>
+						<td style="padding: 8px 0; color: #666;"><strong>Reserva (PNR):</strong></td>
+						<td style="padding: 8px 0;">%s</td>
+					</tr>
+				</table>
+				
+				<div style="margin-top: 25px; text-align: center;">
+					<a href="#" style="background-color: #03738C; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">Ver Pasaje en el Sistema</a>
+				</div>
+			</div>
+		</div>
+	`, usuario.GetNombreCompleto(), sol.Codigo, ruta, fecha, boleto, pasaje.CodigoReserva)
+
+	_ = s.emailService.SendEmail(to, cc, nil, subject, body)
 }
