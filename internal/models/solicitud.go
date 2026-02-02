@@ -43,6 +43,9 @@ type Solicitud struct {
 	Descargo *Descargo `gorm:"foreignKey:SolicitudID"`
 
 	Autorizacion string `gorm:"size:100;index"`
+
+	// Flags for Printing logic
+	VueltaSeparada bool `gorm:"default:false"`
 }
 
 func (Solicitud) TableName() string {

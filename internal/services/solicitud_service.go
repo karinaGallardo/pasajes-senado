@@ -44,7 +44,7 @@ func (s *SolicitudService) Create(ctx context.Context, req dtos.CreateSolicitudR
 	}
 
 	var fechaVuelta *time.Time
-	if req.FechaVuelta != "" {
+	if req.FechaVuelta != "" && req.TipoItinerarioCode != "SOLO_IDA" {
 		if t, err := time.Parse(layout, req.FechaVuelta); err == nil {
 			fechaVuelta = &t
 		}
@@ -57,8 +57,16 @@ func (s *SolicitudService) Create(ctx context.Context, req dtos.CreateSolicitudR
 
 	itinID := req.TipoItinerarioID
 	if itinID == "" {
-		if itin, _ := s.tipoItinRepo.WithContext(ctx).FindByCodigo("IDA_VUELTA"); itin != nil {
-			itinID = itin.ID
+		if req.TipoItinerarioCode != "" {
+			if itin, _ := s.tipoItinRepo.WithContext(ctx).FindByCodigo(req.TipoItinerarioCode); itin != nil {
+				itinID = itin.ID
+			}
+		}
+		// Fallback
+		if itinID == "" {
+			if itin, _ := s.tipoItinRepo.WithContext(ctx).FindByCodigo("IDA_VUELTA"); itin != nil {
+				itinID = itin.ID
+			}
 		}
 	}
 

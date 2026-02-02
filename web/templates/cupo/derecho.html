@@ -122,15 +122,16 @@
                       <span class="[.htmx-request_&]:hidden">Transferir</span>
                       <i class="ph ph-spinner animate-spin hidden [.htmx-request_&]:block"></i>
                     </button>
-                    {{ end }} {{ if .Permissions.CanPrint }}
+                    {{ end }} {{ if .Permissions.CanPrint }} {{ $printSol := .GetSolicitudIda }} {{ if not $printSol }}{{ $printSol = .GetSolicitudVuelta }}{{ end }} {{ if
+                    $printSol }}
                     <button
-                      hx-get="/admin/cupos/derechos/{{ .ID }}/modal-print"
+                      hx-get="/solicitudes/derecho/{{ $printSol.ID }}/print"
                       hx-target="#modal-container"
                       class="text-neutral-600 hover:text-neutral-900 border border-neutral-200 bg-white font-bold text-xs uppercase px-3 py-1.5 rounded hover:bg-neutral-50 transition-colors inline-flex items-center gap-1"
-                      title="Imprimir solicitudes por cupo">
+                      title="Imprimir Solicitud">
                       <i class="ph ph-printer text-[15px]"></i>
                     </button>
-                    {{ end }}
+                    {{ end }} {{ end }}
 
                     <!-- Suplente Actions -->
                     <!-- Suplente Actions (Auto-servicio) -->
@@ -161,49 +162,39 @@
 
                     <!-- Owner Actions (Solicitudes) -->
 
-                    <!-- Ida -->
+                    <!-- Solicitar Pasaje (Ida o Ida+Vuelta) -->
                     {{ if .Permissions.CanCreateIda }}
                     <button
-                      hx-get="/solicitudes/derecho/modal-crear/{{ .ID }}/SOLO_IDA"
+                      hx-get="/solicitudes/derecho/modal-crear/{{ .ID }}/IDA_VUELTA"
                       hx-target="#modal-container"
-                      class="text-neutral-500 hover:text-secondary hover:border-secondary font-bold text-[10px] uppercase border border-neutral-200 bg-white rounded px-2 py-1 transition-colors cursor-pointer">
-                      Crear Ida
+                      class="text-white bg-primary hover:bg-primary-800 font-bold text-[10px] uppercase border border-primary bg-primary rounded px-2 py-1.5 transition-colors cursor-pointer mb-2 w-full text-center block shadow-sm">
+                      Solicitar Pasaje
                     </button>
-                    {{ else }} {{ if .Permissions.CanEditIda }} {{ $solIda := .GetSolicitudIda }}
+                    {{ else }} {{ $solIda := .GetSolicitudIda }}
+
+                    <!-- Agendar Retorno (Si falta vuelta) -->
+                    {{ if .Permissions.CanCreateVuelta }}
                     <button
                       hx-get="/solicitudes/derecho/{{ $solIda.ID }}/modal-editar"
                       hx-target="#modal-container"
-                      class="text-amber-700 hover:bg-amber-100 font-bold text-[10px] uppercase border border-amber-100 bg-amber-50 rounded px-2 py-1 transition-colors cursor-pointer">
-                      Editar Ida
+                      class="text-neutral-500 hover:text-secondary hover:border-secondary font-bold text-[10px] uppercase border border-neutral-200 bg-white rounded px-2 py-1 transition-colors cursor-pointer w-full text-center block mb-1">
+                      Agendar Retorno
                     </button>
-                    {{ else if .Permissions.CanViewIda }} {{ $solIda := .GetSolicitudIda }}
+                    {{ end }}
+
+                    <!-- Editar / Ver Solicitud -->
+                    {{ if .Permissions.CanEditIda }}
+                    <button
+                      hx-get="/solicitudes/derecho/{{ $solIda.ID }}/modal-editar"
+                      hx-target="#modal-container"
+                      class="text-amber-700 hover:bg-amber-100 font-bold text-[10px] uppercase border border-amber-100 bg-amber-50 rounded px-2 py-1 transition-colors cursor-pointer mb-1 block w-full text-center">
+                      Editar Solicitud
+                    </button>
+                    {{ else if .Permissions.CanViewIda }}
                     <a
                       href="/solicitudes/derecho/{{ $solIda.ID }}/detalle"
-                      class="text-primary-700 hover:bg-primary-100 font-bold text-[10px] uppercase border border-primary-100 bg-primary-50 rounded px-2 py-1 transition-colors">
-                      Ver Ida
-                    </a>
-                    {{ end }} {{ end }}
-
-                    <!-- Vuelta -->
-                    {{ if .Permissions.CanCreateVuelta }}
-                    <button
-                      hx-get="/solicitudes/derecho/modal-crear/{{ .ID }}/SOLO_VUELTA"
-                      hx-target="#modal-container"
-                      class="text-neutral-500 hover:text-secondary hover:border-secondary font-bold text-[10px] uppercase border border-neutral-200 bg-white rounded px-2 py-1 transition-colors cursor-pointer">
-                      Crear Vuelta
-                    </button>
-                    {{ else }} {{ if .Permissions.CanEditVuelta }} {{ $solVuelta := .GetSolicitudVuelta }}
-                    <button
-                      hx-get="/solicitudes/derecho/{{ $solVuelta.ID }}/modal-editar"
-                      hx-target="#modal-container"
-                      class="text-amber-700 hover:bg-amber-100 font-bold text-[10px] uppercase border border-amber-100 bg-amber-50 rounded px-2 py-1 transition-colors cursor-pointer">
-                      Editar Vuelta
-                    </button>
-                    {{ else if .Permissions.CanViewVuelta }} {{ $solVuelta := .GetSolicitudVuelta }}
-                    <a
-                      href="/solicitudes/derecho/{{ $solVuelta.ID }}/detalle"
-                      class="text-primary-700 hover:bg-primary-100 font-bold text-[10px] uppercase border border-primary-100 bg-primary-50 rounded px-2 py-1 transition-colors">
-                      Ver Vuelta
+                      class="text-primary-700 hover:bg-primary-100 font-bold text-[10px] uppercase border border-primary-100 bg-primary-50 rounded px-2 py-1 transition-colors mb-1 block w-full text-center">
+                      Ver Solicitud
                     </a>
                     {{ end }} {{ end }}
 

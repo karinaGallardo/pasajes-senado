@@ -409,19 +409,20 @@ func (ctrl *CupoController) GetTransferModal(c *gin.Context) {
 }
 
 type Permissions struct {
-	CanManage       bool
-	CanTransfer     bool
-	CanRevert       bool
-	CanPrint        bool
-	CanTomarCupo    bool
-	CanAsignarCupo  bool
-	CanCreateIda    bool
-	CanCreateVuelta bool
-	CanEditIda      bool
-	CanEditVuelta   bool
-	CanViewIda      bool
-	CanViewVuelta   bool
-	CanDescargo     bool
+	CanManage          bool
+	CanTransfer        bool
+	CanRevert          bool
+	CanPrint           bool
+	CanTomarCupo       bool
+	CanAsignarCupo     bool
+	CanCreateIda       bool
+	CanCreateVuelta    bool
+	CanCreateIdaVuelta bool
+	CanEditIda         bool
+	CanEditVuelta      bool
+	CanViewIda         bool
+	CanViewVuelta      bool
+	CanDescargo        bool
 }
 
 type CupoDerechoItemView struct {
@@ -568,7 +569,7 @@ func (ctrl *CupoController) DerechoByYear(c *gin.Context) {
 
 				// Vuelta
 				if solVuelta == nil {
-					if !isVencido {
+					if !isVencido && solIda != nil {
 						perms.CanCreateVuelta = true
 					}
 				} else {
@@ -577,6 +578,12 @@ func (ctrl *CupoController) DerechoByYear(c *gin.Context) {
 					} else {
 						perms.CanViewVuelta = true
 					}
+				}
+
+				// Ida y Vuelta (Round Trip) in Single Request
+				// Only possible if NO requests exist yet and cupo is active
+				if solIda == nil && solVuelta == nil && !isVencido {
+					perms.CanCreateIdaVuelta = true
 				}
 
 				// Descargo
@@ -746,6 +753,11 @@ func (ctrl *CupoController) DerechoByMonth(c *gin.Context) {
 				} else {
 					perms.CanViewVuelta = true
 				}
+			}
+
+			// Ida y Vuelta (Round Trip) in Single Request
+			if solIda == nil && solVuelta == nil && !isVencido {
+				perms.CanCreateIdaVuelta = true
 			}
 
 			// Descargo

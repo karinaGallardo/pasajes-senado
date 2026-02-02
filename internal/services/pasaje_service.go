@@ -7,6 +7,9 @@ import (
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
 	"sistema-pasajes/internal/utils"
+	"strings"
+
+	"github.com/spf13/viper"
 )
 
 type PasajeService struct {
@@ -213,6 +216,13 @@ func (s *PasajeService) sendEmissionEmail(sol *models.Solicitud, pasaje *models.
 	fecha := utils.FormatDateShortES(pasaje.FechaVuelo)
 	boleto := pasaje.NumeroBoleto
 
+	baseURL := viper.GetString("APP_URL")
+	if baseURL == "" {
+		baseURL = "http://localhost:8284"
+	}
+	cleanPath := strings.ReplaceAll(pasaje.Archivo, "\\", "/")
+	fileURL := fmt.Sprintf("%s/%s", baseURL, cleanPath)
+
 	body := fmt.Sprintf(`
 		<div style="font-family: Arial, sans-serif; color: #333; max-width: 600px;">
 			<div style="background-color: #03738C; color: white; padding: 15px; border-radius: 5px 5px 0 0;">
@@ -221,7 +231,7 @@ func (s *PasajeService) sendEmissionEmail(sol *models.Solicitud, pasaje *models.
 			<div style="padding: 20px; border: 1px solid #ddd; border-top: none; border-radius: 0 0 5px 5px;">
 				<p>Estimado/a <strong>%s</strong>,</p>
 				<p>Su pasaje correspondiente a la solicitud <strong>%s</strong> ha sido emitido exitosamente.</p>
-				
+
 				<h3 style="color: #03738C; border-bottom: 1px solid #eee; padding-bottom: 5px;">Detalles del Vuelo</h3>
 				<table style="width: 100%%; border-collapse: collapse; margin-top: 10px;">
 					<tr>
@@ -241,13 +251,13 @@ func (s *PasajeService) sendEmissionEmail(sol *models.Solicitud, pasaje *models.
 						<td style="padding: 8px 0;">%s</td>
 					</tr>
 				</table>
-				
+
 				<div style="margin-top: 25px; text-align: center;">
-					<a href="#" style="background-color: #03738C; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">Ver Pasaje en el Sistema</a>
+					<a href="%s" style="background-color: #03738C; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">Ver Pasaje en el Sistema</a>
 				</div>
 			</div>
 		</div>
-	`, usuario.GetNombreCompleto(), sol.Codigo, ruta, fecha, boleto, pasaje.CodigoReserva)
+	`, usuario.GetNombreCompleto(), sol.Codigo, ruta, fecha, boleto, pasaje.CodigoReserva, fileURL)
 
 	_ = s.emailService.SendEmail(to, cc, nil, subject, body)
 }

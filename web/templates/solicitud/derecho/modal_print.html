@@ -1,5 +1,12 @@
 {{ define "solicitud/derecho/modal_print" }}
-<div x-data="{ modalOpen: true }" x-show="modalOpen" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true" x-cloak>
+<div
+  x-data="{ modalOpen: true, printMode: '' }"
+  x-show="modalOpen"
+  class="fixed inset-0 z-50 overflow-y-auto"
+  aria-labelledby="modal-title"
+  role="dialog"
+  aria-modal="true"
+  x-cloak>
   <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
     <!-- Backdrop -->
     <div
@@ -33,7 +40,7 @@
           <h3 class="text-xl font-bold text-neutral-900" id="modal-title">Vista Previa de Impresión</h3>
           <div class="flex space-x-2">
             <a
-              href="/solicitudes/derecho/{{ .Solicitud.ID }}/print"
+              :href="`/solicitudes/derecho/{{ .Solicitud.ID }}/print?mode=` + printMode"
               target="_blank"
               class="inline-flex items-center px-4 py-2 bg-primary text-white rounded-md hover:bg-primary-800 transition-colors">
               <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -51,8 +58,31 @@
           </div>
         </div>
 
-        <div class="bg-neutral-100 p-0 rounded-lg overflow-hidden h-[80vh]">
-          <iframe src="/solicitudes/derecho/{{ .Solicitud.ID }}/print" class="w-full h-full border-0" title="Vista Previa PDF"></iframe>
+        <!-- Print Mode Controls -->
+        {{ if .Solicitud.VueltaSeparada }}
+        <div class="flex flex-col sm:flex-row gap-4 mb-4 px-4 py-3 bg-neutral-50 rounded-lg border border-neutral-200">
+          <span class="text-xs font-bold text-neutral-500 uppercase tracking-widest self-center mr-2">Opciones de Impresión:</span>
+          <label class="inline-flex items-center cursor-pointer select-none">
+            <input type="radio" value="" x-model="printMode" class="form-radio text-primary h-4 w-4 border-neutral-300 focus:ring-primary" />
+            <span class="ml-2 text-sm font-bold text-neutral-700">Completa (Ida y Vuelta)</span>
+          </label>
+          <div class="h-4 w-px bg-neutral-300 self-center hidden sm:block"></div>
+          <label class="inline-flex items-center cursor-pointer select-none">
+            <input type="radio" value="ida" x-model="printMode" class="form-radio text-primary h-4 w-4 border-neutral-300 focus:ring-primary" />
+            <span class="ml-2 text-sm font-bold text-neutral-700">Solo Ida</span>
+          </label>
+          <label class="inline-flex items-center cursor-pointer select-none">
+            <input type="radio" value="vuelta" x-model="printMode" class="form-radio text-primary h-4 w-4 border-neutral-300 focus:ring-primary" />
+            <span class="ml-2 text-sm font-bold text-neutral-700">Solo Vuelta</span>
+          </label>
+        </div>
+        {{ else }}
+        <!-- Single Print Mode (Implicit) -->
+        <div class="mb-4 text-sm text-neutral-500 italic px-1">Imprimiendo solicitud completa.</div>
+        {{ end }}
+
+        <div class="bg-neutral-100 p-0 rounded-lg overflow-hidden h-[75vh]">
+          <iframe :src="`/solicitudes/derecho/{{ .Solicitud.ID }}/print?mode=` + printMode" class="w-full h-full border-0" title="Vista Previa PDF"></iframe>
         </div>
       </div>
     </div>

@@ -305,52 +305,34 @@ func (s *ReportService) GenerateCupoReport(ctx context.Context, solicitudes []mo
 	return pdf
 }
 
-func (s *ReportService) GeneratePV01(ctx context.Context, solicitud *models.Solicitud, personaView *models.MongoPersonaView) *gofpdf.Fpdf {
-	pdf := gofpdf.New("P", "mm", "A4", "")
+func (s *ReportService) GeneratePV01(ctx context.Context, solicitud *models.Solicitud, personaView *models.MongoPersonaView, mode string) *gofpdf.Fpdf {
+	pdf := gofpdf.New("P", "mm", "Letter", "")
 	tr := pdf.UnicodeTranslatorFromDescriptor("")
 	pdf.AddPage()
 	pdf.SetFont("Arial", "B", 16)
 
 	xHeader, yHeader := 10.0, 10.0
-	wHeader, hHeader := 190.0, 30.0
+	hHeader := 22.0
 
 	pdf.SetLineWidth(0.1)
-	pdf.Rect(xHeader, yHeader, wHeader, hHeader, "D")
+	pdf.Line(xHeader, yHeader+hHeader, xHeader+167, yHeader+hHeader)
 
-	pdf.Line(xHeader+50, yHeader, xHeader+50, yHeader+hHeader)
-	pdf.Line(xHeader+150, yHeader, xHeader+150, yHeader+hHeader)
-
-	pdf.SetXY(xHeader, yHeader+6)
+	pdf.SetXY(xHeader, yHeader+9)
 	pdf.SetFont("Arial", "B", 12)
-	pdf.CellFormat(50, 6, "FORM-PV-01", "", 1, "C", false, 0, "")
+	pdf.CellFormat(40, 6, "FORM-PV-01", "", 1, "C", false, 0, "")
 
-	displayCode := solicitud.Codigo
-	if displayCode == "" {
-		displayCode = solicitud.ID
-		if len(displayCode) > 8 {
-			displayCode = displayCode[:8]
-		}
-	}
-
-	pdf.SetXY(xHeader, yHeader+16)
+	pdf.SetXY(xHeader+40, yHeader+4)
 	pdf.SetFont("Arial", "B", 14)
-	pdf.CellFormat(50, 6, displayCode, "", 1, "C", false, 0, "")
+	pdf.CellFormat(115, 8, tr("FORMULARIO DE SOLICITUD"), "", 1, "C", false, 0, "")
 
-	pdf.SetXY(xHeader+50, yHeader+5)
-	pdf.SetFont("Arial", "B", 16)
-	pdf.CellFormat(100, 10, "FORMULARIO DE SOLICITUD", "", 1, "C", false, 0, "")
+	pdf.SetXY(xHeader+40, yHeader+11)
+	pdf.SetFont("Arial", "B", 9)
+	pdf.CellFormat(115, 6, tr("PASAJES AEREOS PARA SENADORAS Y SENADORES"), "", 1, "C", false, 0, "")
 
-	pdf.SetXY(xHeader+50, yHeader+15)
-	pdf.SetFont("Arial", "B", 10)
-	pdf.CellFormat(100, 5, "PASAJES AEREOS PARA SENADORAS Y", "", 1, "C", false, 0, "")
-	pdf.SetXY(xHeader+50, yHeader+20)
-	pdf.CellFormat(100, 5, "SENADORES", "", 1, "C", false, 0, "")
+	pdf.Image("web/static/img/logo_senado.png", xHeader+160, yHeader-6, 30, 0, false, "", 0, "")
 
-	pdf.Image("web/static/img/logo_senado.png", xHeader+155, yHeader+2, 25, 0, false, "", 0, "")
-
-	pdf.SetY(50)
+	pdf.SetY(40)
 	pdf.SetFont("Arial", "", 10)
-	pdf.CellFormat(190, 5, fmt.Sprintf("Fecha de Solicitud: %s", solicitud.CreatedAt.Format("02/01/2006 15:04")), "", 1, "C", false, 0, "")
 
 	drawLabelBox := func(label, value string, wLabel, wBox float64, sameLine bool) {
 		h := 6.0
@@ -368,6 +350,7 @@ func (s *ReportService) GeneratePV01(ctx context.Context, solicitud *models.Soli
 		}
 	}
 
+	// Body
 	drawLabelBox("NOMBRE Y APELLIDOS :", solicitud.Usuario.GetNombreCompleto(), 40, 150, false)
 	drawLabelBox("C.I. :", solicitud.Usuario.CI, 40, 60, true)
 	drawLabelBox("TEL. REF :", solicitud.Usuario.Phone, 30, 60, false)
@@ -431,86 +414,170 @@ func (s *ReportService) GeneratePV01(ctx context.Context, solicitud *models.Soli
 	if solicitud.TipoSolicitud != nil {
 		concepto = solicitud.TipoSolicitud.Nombre
 	}
-	pdf.SetFont("Arial", "B", 7)
-	pdf.SetXY(110, pdf.GetY()+5)
-	pdf.Cell(0, 5, tr("Si, el concepto es POR DERECHO :"))
-	pdf.SetXY(10, pdf.GetY()+5)
+	// Note: simplified logic compared to CupoReport which checks ConceptoViaje
+	if solicitud.TipoSolicitud != nil && solicitud.TipoSolicitud.ConceptoViaje != nil {
+		concepto = solicitud.TipoSolicitud.ConceptoViaje.Nombre
+	}
 
+	pdf.SetXY(10, pdf.GetY()+5)
 	drawLabelBox("CONCEPTO DE VIAJE :", concepto, 40, 60, true)
 
 	mesYNum := ""
 	if strings.Contains(strings.ToUpper(concepto), "DERECHO") {
-		if solicitud.FechaIda != nil {
-			mesYNum = utils.TranslateMonth(solicitud.FechaIda.Month())
-		} else if solicitud.FechaVuelta != nil {
-			mesYNum = utils.TranslateMonth(solicitud.FechaVuelta.Month())
+		dateRef := solicitud.FechaIda
+		if dateRef == nil {
+			dateRef = solicitud.FechaVuelta
+		}
+		if dateRef != nil {
+			mesYNum = utils.TranslateMonth(dateRef.Month())
 		}
 	}
-	drawLabelBox("MES Y N° DE PASAJE :", mesYNum, 40, 50, false)
+	drawLabelBox("MES DE VIAJE :", mesYNum, 40, 50, false)
 
 	pdf.Ln(5)
 
-	tipoItinerario := "IDA"
-	routeText := fmt.Sprintf("%s - %s", solicitud.Origen.Ciudad, solicitud.Destino.Ciudad)
+	// SEGMENTS LOGIC
+	drawSegment := func(title string, sol *models.Solicitud) {
+		pdf.SetFont("Arial", "B", 9)
+		pdf.CellFormat(190, 6, tr(" "+title), "B", 1, "L", false, 0, "")
 
-	if solicitud.TipoItinerario != nil {
-		switch solicitud.TipoItinerario.Codigo {
-		case "IDA_VUELTA":
-			tipoItinerario = "IDA Y VUELTA"
-			routeText += fmt.Sprintf(" - %s", solicitud.Origen.Ciudad)
-		case "SOLO_IDA":
-			tipoItinerario = "IDA"
-		case "SOLO_VUELTA":
-			tipoItinerario = "VUELTA"
-		default:
-			if strings.Contains(strings.ToUpper(solicitud.TipoItinerario.Nombre), "VUELTA") && !strings.Contains(strings.ToUpper(solicitud.TipoItinerario.Codigo), "SOLO") {
-				tipoItinerario = "IDA Y VUELTA"
-				routeText += fmt.Sprintf(" - %s", solicitud.Origen.Ciudad)
+		if sol != nil {
+			fecha := "-"
+			hora := "-"
+			if sol.FechaIda != nil {
+				fecha = utils.FormatDateShortES(*sol.FechaIda)
+				hora = sol.FechaIda.Format("15:04")
+			}
+			fechaSol := sol.CreatedAt.Format("02/01/2006")
+			horaSol := sol.CreatedAt.Format("15:04")
+
+			rut := fmt.Sprintf("%s  >>  %s", sol.Origen.Ciudad, sol.Destino.Ciudad)
+
+			// Table Header
+			pdf.SetFont("Arial", "B", 7)
+			pdf.SetFillColor(245, 245, 245)
+
+			// Headers
+			pdf.CellFormat(30, 8, tr("CÓDIGO SOLICITUD"), "1", 0, "C", true, 0, "")
+			pdf.CellFormat(30, 8, tr("FECHA/HORA SOLICITUD"), "1", 0, "C", true, 0, "")
+			pdf.CellFormat(25, 8, tr("ESTADO"), "1", 0, "C", true, 0, "")
+			pdf.CellFormat(20, 8, tr("AEROLÍNEA"), "1", 0, "C", true, 0, "")
+			pdf.CellFormat(40, 8, tr("RUTA"), "1", 0, "C", true, 0, "")
+			pdf.CellFormat(25, 8, tr("FECHA VIAJE"), "1", 0, "C", true, 0, "")
+			pdf.CellFormat(20, 8, tr("HORA VIAJE"), "1", 1, "C", true, 0, "")
+
+			// Data Row
+			pdf.SetFont("Arial", "", 7)
+			pdf.CellFormat(30, 6, sol.Codigo, "1", 0, "C", false, 0, "")
+			pdf.CellFormat(30, 6, fmt.Sprintf("%s %s", fechaSol, horaSol), "1", 0, "C", false, 0, "")
+
+			pdf.SetFont("Arial", "B", 7)
+			pdf.SetTextColor(0, 0, 128)
+			pdf.CellFormat(25, 6, tr(sol.GetEstado()), "1", 0, "C", false, 0, "")
+			pdf.SetTextColor(0, 0, 0)
+			pdf.SetFont("Arial", "", 7)
+
+			aerolineaNombre := sol.AerolineaSugerida
+			if aerolinea, err := s.aerolineaRepo.FindByID(sol.AerolineaSugerida); err == nil {
+				if aerolinea.Sigla != "" {
+					aerolineaNombre = aerolinea.Sigla
+				} else {
+					aerolineaNombre = aerolinea.Nombre
+				}
+			}
+
+			pdf.CellFormat(20, 6, tr(aerolineaNombre), "1", 0, "C", false, 0, "")
+			pdf.CellFormat(40, 6, tr(rut), "1", 0, "C", false, 0, "")
+			pdf.CellFormat(25, 6, tr(fecha), "1", 0, "C", false, 0, "")
+			pdf.CellFormat(20, 6, hora, "1", 1, "C", false, 0, "")
+
+			// Motivo
+			pdf.SetFont("Arial", "B", 8)
+			pdf.CellFormat(190, 6, tr("JUSTIFICACIÓN / MOTIVO"), "L,R", 1, "L", true, 0, "")
+			pdf.SetFont("Arial", "", 8)
+			pdf.MultiCell(190, 6, tr(sol.Motivo), "L,R,B", "L", false)
+
+		} else {
+			pdf.SetFont("Arial", "I", 9)
+			pdf.CellFormat(190, 10, tr(" TRAMO NO SOLICITADO / DISPONIBLE"), "", 1, "C", false, 0, "")
+		}
+		pdf.Ln(2)
+	}
+
+	var ida, vuelta *models.Solicitud
+
+	// Determine configuration based on Mode and Itinerary
+	if mode == "ida" {
+		tmp := *solicitud
+		ida = &tmp
+	} else if mode == "vuelta" {
+		if solicitud.FechaVuelta != nil {
+			tmp := *solicitud
+			tmp.FechaIda = tmp.FechaVuelta
+			tmp.Origen, tmp.Destino = tmp.Destino, tmp.Origen
+			vuelta = &tmp
+		}
+	} else {
+		// Auto / Complete mode
+		if solicitud.TipoItinerario != nil {
+			code := solicitud.TipoItinerario.Codigo
+			switch code {
+			case "SOLO_IDA":
+				tmp := *solicitud
+				ida = &tmp
+			case "SOLO_VUELTA":
+				tmp := *solicitud
+				tmp.FechaIda = tmp.FechaVuelta
+				tmp.Origen, tmp.Destino = tmp.Destino, tmp.Origen
+				vuelta = &tmp
+			default:
+				// Round Trip (IDA_VUELTA) or default
+				tmpIda := *solicitud
+				ida = &tmpIda
+
+				// Set vuelta only if it makes sense (e.g., date exists or we want to show it as available/empty?)
+				// CupoReport logic implies we show segments even if empty? No, it uses if sol != nil.
+				// If we have a round trip request, we should probably show the Vuelta segment even if Pending (date nil).
+				// If date is nil, the table will show "-".
+
+				tmpVuelta := *solicitud
+				tmpVuelta.FechaIda = tmpVuelta.FechaVuelta
+				tmpVuelta.Origen, tmpVuelta.Destino = tmpVuelta.Destino, tmpVuelta.Origen
+				vuelta = &tmpVuelta
 			}
 		}
 	}
 
-	pdf.SetFont("Arial", "B", 10)
-	pdf.CellFormat(0, 8, tr(fmt.Sprintf("SOLICITA PASAJES DE %s EN LA SIGUIENTE RUTA", tipoItinerario)), "", 1, "C", false, 0, "")
+	drawSegment("TRAYECTO DE IDA", ida)
+	drawSegment("TRAYECTO DE VUELTA", vuelta)
 
-	pdf.SetFont("Arial", "B", 10)
-	pdf.CellFormat(190, 8, tr(routeText), "1", 1, "C", false, 0, "")
-	pdf.Ln(8)
-	pdf.SetFont("Arial", "B", 10)
-	pdf.CellFormat(190, 8, tr("JUSTIFICACION / MOTIVO"), "", 1, "L", false, 0, "")
-	pdf.SetFont("Arial", "", 10)
-	pdf.MultiCell(190, 6, tr(solicitud.Motivo), "1", "L", false)
+	pdf.Ln(5)
 
-	pdf.SetY(230)
+	pdf.SetY(220)
 
 	pdf.SetFont("Arial", "B", 8)
-	pdf.SetXY(20, 230)
-	pdf.Cell(50, 0, "__________________________")
-	pdf.SetXY(20, 235)
-	pdf.CellFormat(50, 4, "SOLICITANTE", "", 1, "C", false, 0, "")
-	pdf.SetX(20)
+	pdf.SetXY(35, 230)
+	pdf.Cell(60, 0, "__________________________")
+	pdf.SetXY(35, 235)
+	pdf.CellFormat(60, 4, tr("ENCARGADO DE PASAJES"), "", 1, "C", false, 0, "")
+	pdf.SetX(35)
 	pdf.SetFont("Arial", "", 7)
-	pdf.CellFormat(50, 4, tr(solicitud.Usuario.GetNombreCompleto()), "", 1, "C", false, 0, "")
+	encargadoName := ""
+	if solicitud.Usuario.Encargado != nil {
+		encargadoName = solicitud.Usuario.Encargado.GetNombreCompleto()
+	}
+	pdf.CellFormat(60, 4, tr(encargadoName), "", 1, "C", false, 0, "")
 
 	pdf.SetFont("Arial", "B", 8)
-	pdf.SetXY(80, 230)
-	pdf.Cell(50, 0, "__________________________")
-	pdf.SetXY(80, 235)
-	pdf.CellFormat(50, 4, tr("AUTORIZACIÓN"), "", 1, "C", false, 0, "")
-	pdf.SetX(80)
+	pdf.SetXY(115, 230)
+	pdf.Cell(60, 0, "__________________________")
+	pdf.SetXY(115, 235)
+	pdf.CellFormat(60, 4, tr("SENADORA / SENADOR"), "", 1, "C", false, 0, "")
+	pdf.SetX(115)
 	pdf.SetFont("Arial", "", 7)
-	pdf.CellFormat(50, 4, tr("Jefe Inmediato / Autoridad"), "", 1, "C", false, 0, "")
+	pdf.CellFormat(60, 4, tr(solicitud.Usuario.GetNombreCompleto()), "", 1, "C", false, 0, "")
 
-	pdf.SetFont("Arial", "B", 8)
-	pdf.SetXY(140, 230)
-	pdf.Cell(50, 0, "__________________________")
-	pdf.SetXY(140, 235)
-	pdf.CellFormat(50, 4, tr("ADMINISTRACIÓN"), "", 1, "C", false, 0, "")
-	pdf.SetX(140)
-	pdf.SetFont("Arial", "", 7)
-	pdf.CellFormat(50, 4, tr("Verificación Cupo/Ppto"), "", 1, "C", false, 0, "")
-
-	pdf.SetY(270)
+	pdf.SetY(250)
 	pdf.SetFont("Arial", "I", 8)
 	pdf.CellFormat(0, 5, tr(fmt.Sprintf("Generado electrónicamente por Sistema Pasajes Senado - %s", time.Now().Format("02/01/2006 15:04:05"))), "", 1, "C", false, 0, "")
 

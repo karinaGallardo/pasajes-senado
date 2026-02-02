@@ -176,8 +176,8 @@
             </div>
 
             <!-- Return -->
-            {{ if .Solicitud.FechaVuelta }}
-            <div class="flex items-start space-x-3 p-3 rounded-lg bg-neutral-50 border border-neutral-100 hover:border-neutral-200 transition-colors">
+            <div
+              class="flex items-start space-x-3 p-3 rounded-lg border hover:border-neutral-200 transition-colors {{ if .Solicitud.FechaVuelta }} bg-neutral-50 border-neutral-100 {{ else }} bg-warning-50 border-warning-200 {{ end }}">
               <div class="text-neutral-400 mt-0.5 bg-white p-1.5 rounded-md border border-neutral-100 shadow-sm">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transform rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path
@@ -189,10 +189,18 @@
               </div>
               <div>
                 <p class="text-[10px] font-bold text-neutral-500 uppercase tracking-wide">Fecha Retorno</p>
+                {{ if .Solicitud.FechaVuelta }}
                 <p class="text-sm font-bold text-neutral-900 mt-0.5">{{ dtl .Solicitud.FechaVuelta }}</p>
+                {{ else }} {{ if and .Solicitud.TipoItinerario (eq .Solicitud.TipoItinerario.Codigo "SOLO_IDA") }}
+                <p class="text-sm font-bold text-neutral-400 mt-0.5">No aplica</p>
+                {{ else }}
+                <div class="flex items-center gap-1.5 mt-0.5 text-warning-700">
+                  <i class="ph ph-warning-circle text-lg"></i>
+                  <p class="text-sm font-bold">Falta programar</p>
+                </div>
+                {{ end }} {{ end }}
               </div>
             </div>
-            {{ end }}
 
             <!-- Airline -->
             <div class="flex items-start space-x-3 p-3 rounded-lg bg-neutral-50 border border-neutral-100 hover:border-neutral-200 transition-colors sm:col-span-2">
@@ -218,19 +226,20 @@
           </div>
 
           <!-- Right Column: Route Visual (Wider) -->
+          {{ $isRoundTrip := and .Solicitud.TipoItinerario (ne .Solicitud.TipoItinerario.Codigo "SOLO_IDA") }}
           <div
             class="lg:col-span-7 flex flex-col md:flex-row items-center justify-between bg-neutral-50/50 rounded-xl border border-neutral-200 border-dashed p-6 relative overflow-hidden h-full">
             <!-- Origen -->
-            <div class="text-center md:text-left z-10 w-full md:w-auto">
+            <div class="text-center {{ if $isRoundTrip }}md:text-center{{ else }}md:text-left{{ end }} z-10 w-full md:w-auto">
               <p class="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1">Origen</p>
               <p class="text-2xl font-black text-neutral-800 leading-none">{{ .Solicitud.Origen.Ciudad }}</p>
               <p class="text-xs text-neutral-500 font-medium mt-1">{{ .Solicitud.Origen.Aeropuerto }}</p>
-              <div class="mt-2 text-center md:text-left">
+              <div class="mt-2 text-center {{ if $isRoundTrip }}md:text-center{{ else }}md:text-left{{ end }}">
                 <span class="px-2 py-1 bg-neutral-200 text-neutral-700 font-mono font-bold text-xs rounded">{{ .Solicitud.Origen.IATA }}</span>
               </div>
             </div>
 
-            <!-- Connector -->
+            <!-- Connector 1 -->
             <div class="flex-1 px-4 w-full md:w-auto flex flex-col items-center justify-center relative py-6 md:py-0 z-0">
               <div class="w-full h-px border-t-2 border-dashed border-neutral-300 absolute top-1/2 left-0 transform -translate-y-1/2 hidden md:block"></div>
               <div class="bg-white p-2 rounded-full border border-neutral-200 relative z-10 text-neutral-400 transform rotate-90 md:rotate-0 shadow-sm">
@@ -242,14 +251,41 @@
             </div>
 
             <!-- Destino -->
-            <div class="text-center md:text-right z-10 w-full md:w-auto">
+            <div class="text-center {{ if $isRoundTrip }}md:text-center{{ else }}md:text-right{{ end }} z-10 w-full md:w-auto">
               <p class="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1">Destino</p>
               <p class="text-2xl font-black text-neutral-800 leading-none">{{ .Solicitud.Destino.Ciudad }}</p>
               <p class="text-xs text-neutral-500 font-medium mt-1">{{ .Solicitud.Destino.Aeropuerto }}</p>
-              <div class="mt-2 text-center md:text-right">
+              <div class="mt-2 text-center {{ if $isRoundTrip }}md:text-center{{ else }}md:text-right{{ end }}">
                 <span class="px-2 py-1 bg-primary text-white font-mono font-bold text-xs rounded border border-primary-600 shadow-sm">{{ .Solicitud.Destino.IATA }}</span>
               </div>
             </div>
+
+            {{ if $isRoundTrip }}
+            <!-- Connector 2 -->
+            <!-- Connector 2 -->
+            <div class="flex-1 px-4 w-full md:w-auto flex flex-col items-center justify-center relative py-6 md:py-0 z-0 {{ if not .Solicitud.FechaVuelta }}opacity-60{{ end }}">
+              <div
+                class="w-full h-px border-t-2 border-dashed {{ if .Solicitud.FechaVuelta }}border-neutral-300{{ else }}border-neutral-200{{ end }} absolute top-1/2 left-0 transform -translate-y-1/2 hidden md:block"></div>
+              <div
+                class="bg-white p-2 rounded-full border {{ if .Solicitud.FechaVuelta }}border-neutral-200 text-neutral-600{{ else }}border-neutral-100 text-neutral-300{{ end }} relative z-10 transform rotate-90 md:rotate-0 shadow-sm">
+                <i class="ph ph-airplane-landing text-xl"></i>
+              </div>
+              <span
+                class="text-[11px] font-bold {{ if .Solicitud.FechaVuelta }}text-primary{{ else }}text-neutral-400{{ end }} uppercase mt-2 bg-neutral-50 px-2 rounded-full relative z-10">
+                Retorno
+              </span>
+            </div>
+
+            <!-- Origen (Final) -->
+            <div class="text-center md:text-right z-10 w-full md:w-auto">
+              <p class="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1">Origen</p>
+              <p class="text-2xl font-black text-neutral-800 leading-none">{{ .Solicitud.Origen.Ciudad }}</p>
+              <p class="text-xs text-neutral-500 font-medium mt-1">{{ .Solicitud.Origen.Aeropuerto }}</p>
+              <div class="mt-2 text-center md:text-right">
+                <span class="px-2 py-1 bg-neutral-200 text-neutral-700 font-mono font-bold text-xs rounded">{{ .Solicitud.Origen.IATA }}</span>
+              </div>
+            </div>
+            {{ end }}
           </div>
         </div>
 

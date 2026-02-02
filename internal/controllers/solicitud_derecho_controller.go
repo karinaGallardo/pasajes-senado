@@ -109,7 +109,7 @@ func (ctrl *SolicitudDerechoController) Create(c *gin.Context) {
 
 	lpbLoc, _ := ctrl.destinoService.GetByIATA(c.Request.Context(), "LPB")
 
-	if itinerario.Codigo == "SOLO_IDA" {
+	if itinerario.Codigo == "SOLO_IDA" || itinerario.Codigo == "IDA_VUELTA" {
 		origen = userLoc
 		destino = lpbLoc
 	} else {
@@ -169,23 +169,29 @@ func (ctrl *SolicitudDerechoController) GetCreateModal(c *gin.Context) {
 
 	aerolineas, _ := ctrl.aerolineaService.GetAllActive(c.Request.Context())
 	tipoSolicitud, ambitoNac, _ := ctrl.tipoSolicitudService.GetByCodigoAndAmbito(c.Request.Context(), "USO_CUPO", "NACIONAL")
-	weekDays := ctrl.cupoService.GetCupoDerechoItemWeekDays(item)
 
-	// Validar que no se pueda solicitar para días pasados
-	today := time.Now().Format("2006-01-02")
-	var validDays []map[string]string
-	for _, d := range weekDays {
-		if d["date"] >= today {
-			validDays = append(validDays, d)
-		}
+	// Calculate Min/Max Dates for Calendar
+	// Calculate Min/Max Dates for Calendar (Extended Range: +/- 2 weeks)
+	var minDateIda string
+	if item.FechaDesde != nil {
+		minDateIda = item.FechaDesde.AddDate(0, 0, -14).Format("2006-01-02")
+	} else {
+		minDateIda = time.Now().AddDate(0, 0, -14).Format("2006-01-02")
 	}
-	weekDays = validDays
+
+	var maxDateIda string
+	if item.FechaHasta != nil {
+		maxDateIda = item.FechaHasta.AddDate(0, 0, 14).Format("2006-01-02")
+	}
+
+	minDateVuelta := minDateIda
+	maxDateVuelta := maxDateIda
 
 	var origen, destino *models.Destino
 	userLoc, _ := ctrl.destinoService.GetByIATA(c.Request.Context(), targetUser.GetOrigenIATA())
 	lpbLoc, _ := ctrl.destinoService.GetByIATA(c.Request.Context(), "LPB")
 
-	if itinerario.Codigo == "SOLO_IDA" {
+	if itinerario.Codigo == "SOLO_IDA" || itinerario.Codigo == "IDA_VUELTA" {
 		origen = userLoc
 		destino = lpbLoc
 	} else {
@@ -199,18 +205,23 @@ func (ctrl *SolicitudDerechoController) GetCreateModal(c *gin.Context) {
 	}
 
 	utils.Render(c, "solicitud/derecho/modal_form", gin.H{
-		"TargetUser":    targetUser,
-		"Aerolineas":    aerolineas,
-		"Item":          item,
-		"WeekDays":      weekDays,
-		"Concepto":      tipoSolicitud.ConceptoViaje,
-		"TipoSolicitud": tipoSolicitud,
-		"Ambito":        ambitoNac,
-		"Itinerario":    itinerario,
-		"Origen":        origen,
-		"Destino":       destino,
-		"IsEdit":        false,
-		"ReturnURL":     referer,
+		"TargetUser":        targetUser,
+		"Aerolineas":        aerolineas,
+		"Item":              item,
+		"Concepto":          tipoSolicitud.ConceptoViaje,
+		"TipoSolicitud":     tipoSolicitud,
+		"Ambito":            ambitoNac,
+		"Itinerario":        itinerario,
+		"Origen":            origen,
+		"Destino":           destino,
+		"IsEdit":            false,
+		"ReturnURL":         referer,
+		"MinDateIda":        minDateIda,
+		"MaxDateIda":        maxDateIda,
+		"MinDateVuelta":     minDateVuelta,
+		"MaxDateVuelta":     maxDateVuelta,
+		"DefaultDateIda":    time.Now().AddDate(0, 0, 1).Format("2006-01-02"),
+		"DefaultDateVuelta": time.Now().AddDate(0, 0, 4).Format("2006-01-02"),
 	})
 }
 
@@ -366,7 +377,23 @@ func (ctrl *SolicitudDerechoController) GetEditModal(c *gin.Context) {
 		destino = userLoc
 	}
 
-	weekDays := ctrl.cupoService.GetCupoDerechoItemWeekDays(item)
+	// Calculate Return Days (Current Week + Next Week)
+	// Calculate Min/Max Dates for Calendar (Edit Mode)
+	// Calculate Min/Max Dates for Calendar (Extended Range: +/- 2 weeks)
+	var minDateIda string
+	if item.FechaDesde != nil {
+		minDateIda = item.FechaDesde.AddDate(0, 0, -14).Format("2006-01-02")
+	} else {
+		minDateIda = time.Now().AddDate(0, 0, -14).Format("2006-01-02")
+	}
+
+	var maxDateIda string
+	if item.FechaHasta != nil {
+		maxDateIda = item.FechaHasta.AddDate(0, 0, 14).Format("2006-01-02")
+	}
+
+	minDateVuelta := minDateIda
+	maxDateVuelta := maxDateIda
 
 	referer := c.Request.Referer()
 	if referer == "" {
@@ -379,14 +406,17 @@ func (ctrl *SolicitudDerechoController) GetEditModal(c *gin.Context) {
 		"Item":          item,
 		"Solicitud":     solicitud,
 		"IsEdit":        true,
-		"WeekDays":      weekDays,
-		"Origen":        origen,
-		"Destino":       destino,
 		"Concepto":      solicitud.TipoSolicitud.ConceptoViaje,
 		"TipoSolicitud": solicitud.TipoSolicitud,
 		"Ambito":        solicitud.AmbitoViaje,
 		"Itinerario":    solicitud.TipoItinerario,
 		"ReturnURL":     referer,
+		"Origen":        origen,
+		"Destino":       destino,
+		"MinDateIda":    minDateIda,
+		"MaxDateIda":    maxDateIda,
+		"MinDateVuelta": minDateVuelta,
+		"MaxDateVuelta": maxDateVuelta,
 	})
 }
 
@@ -424,22 +454,43 @@ func (ctrl *SolicitudDerechoController) Update(c *gin.Context) {
 		return
 	}
 
-	if solicitud.EstadoSolicitudCodigo != nil && *solicitud.EstadoSolicitudCodigo != "SOLICITADO" {
-		c.String(http.StatusForbidden, "No editable")
+	// Allow editing if SOLICITADO or APROBADO (e.g. to add return date)
+	currentStatus := "SOLICITADO"
+	if solicitud.EstadoSolicitudCodigo != nil {
+		currentStatus = *solicitud.EstadoSolicitudCodigo
+	}
+
+	if currentStatus != "SOLICITADO" && currentStatus != "APROBADO" {
+		c.String(http.StatusForbidden, "No editable. El estado actual ("+currentStatus+") no permite modificaciones.")
 		return
 	}
 
-	solicitud.TipoSolicitudID = req.TipoSolicitudID
-	solicitud.AmbitoViajeID = req.AmbitoViajeID
 	if req.TipoItinerarioID != "" {
 		solicitud.TipoItinerarioID = req.TipoItinerarioID
 	}
-	solicitud.OrigenIATA = req.OrigenIATA
-	solicitud.DestinoIATA = req.DestinoIATA
-	solicitud.FechaIda = fechaIda
+
+	// Only allow modifying Critical Fields if NOT Approved yet
+	// This prevents accidentally changing the 'Ida' date/route of an already active trip
+	if currentStatus == "SOLICITADO" {
+		solicitud.TipoSolicitudID = req.TipoSolicitudID
+		solicitud.AmbitoViajeID = req.AmbitoViajeID
+		solicitud.OrigenIATA = req.OrigenIATA
+		solicitud.DestinoIATA = req.DestinoIATA
+		solicitud.FechaIda = fechaIda
+	}
 	solicitud.FechaVuelta = fechaVuelta
 	solicitud.Motivo = req.Motivo
 	solicitud.AerolineaSugerida = req.AerolineaSugerida
+
+	// If it was APPROVED, revert to SOLICITADO to trigger re-approval of adjustments
+	if currentStatus == "APROBADO" {
+		solicitud.EstadoSolicitudCodigo = utils.Ptr("SOLICITADO")
+		// If we are saving a return date on an already approved request, this constitutes a separate return booking flow
+		if fechaVuelta != nil {
+			solicitud.VueltaSeparada = true
+		}
+	}
+
 	if err := ctrl.solicitudService.Update(c.Request.Context(), solicitud); err != nil {
 		c.String(http.StatusInternalServerError, "Error actualizando: "+err.Error())
 		return
@@ -749,7 +800,8 @@ func (ctrl *SolicitudDerechoController) Print(c *gin.Context) {
 		personaView = nil
 	}
 
-	pdf := ctrl.reportService.GeneratePV01(c.Request.Context(), solicitud, personaView)
+	mode := c.Query("mode")
+	pdf := ctrl.reportService.GeneratePV01(c.Request.Context(), solicitud, personaView, mode)
 
 	c.Header("Content-Type", "application/pdf")
 	c.Header("Content-Disposition", fmt.Sprintf("inline; filename=FORM-PV01-%s.pdf", solicitud.ID))
