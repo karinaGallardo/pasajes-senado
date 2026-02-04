@@ -9,8 +9,8 @@
   x-transition:enter-end="opacity-100 translate-y-0">
   <div class="p-2 pt-0 space-y-2">
     <!-- VALORES POR DEFECTO (HIDDEN) -->
-    <input type="hidden" name="tipo_solicitud_id" value="{{ .TipoSolicitud.ID }}" />
-    <input type="hidden" name="ambito_viaje_id" value="{{ .Ambito.ID }}" />
+    <input type="hidden" name="tipo_solicitud_codigo" value="{{ .TipoSolicitud.Codigo }}" />
+    <input type="hidden" name="ambito_viaje_codigo" value="{{ .Ambito.Codigo }}" />
     <!-- Itinerary Type managed by Switcher below -->
     <input type="hidden" name="cupo_derecho_item_id" value="{{ .Item.ID }}" />
     <input type="hidden" name="target_user_id" value="{{ .TargetUser.ID }}" />
@@ -167,7 +167,7 @@
                       <div
                         class="absolute w-0.5 bg-primary origin-bottom transition-all duration-300 pointer-events-none"
                         :style="`height: ${mode === 'hours' && (parseInt(currentH) >= 13 || parseInt(currentH) === 0) ? '40px' : '72px'}; bottom: 50%; left: 50%; transform: rotate(${mode === 'hours' ? (parseInt(currentH) % 12 || 12) * 30 : parseInt(currentM) * 6}deg);`">
-                        <div class="absolute -top-1.5 -left-1.5 w-3.5 h-3.5 bg-primary border-2 border-white rounded-full shadow-sm"></div>
+                        <div class="absolute -top-4 -left-4 w-8 h-8 bg-primary rounded-full shadow-sm"></div>
                       </div>
                       <template x-if="mode === 'hours'">
                         <div class="relative w-full h-full">
@@ -186,7 +186,7 @@
                               type="button"
                               @click="setHour(n)"
                               class="absolute w-6 h-6 flex items-center justify-center text-[9px] font-bold rounded-full transition-colors z-10 focus:outline-none"
-                              :class="parseInt(currentH) === n ? 'text-white' : 'text-neutral-400 hover:bg-secondary/10'"
+                              :class="parseInt(currentH) === n ? 'text-white' : 'text-neutral-500 hover:bg-secondary/10'"
                               :style="`left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(${((n % 12 || 12) * 30) - 90}deg) translate(40px) rotate(${-(((n % 12 || 12) * 30) - 90)}deg)`">
                               <span x-text="n.toString().padStart(2, '0')"></span>
                             </button>
@@ -314,7 +314,7 @@
                         <div
                           class="absolute w-0.5 bg-primary origin-bottom transition-all duration-300 pointer-events-none"
                           :style="`height: ${mode === 'hours' && (parseInt(currentH) >= 13 || parseInt(currentH) === 0) ? '40px' : '72px'}; bottom: 50%; left: 50%; transform: rotate(${mode === 'hours' ? (parseInt(currentH) % 12 || 12) * 30 : parseInt(currentM) * 6}deg);`">
-                          <div class="absolute -top-1.5 -left-1.5 w-3.5 h-3.5 bg-primary border-2 border-white rounded-full shadow-sm"></div>
+                          <div class="absolute -top-4 -left-4 w-8 h-8 bg-primary rounded-full shadow-sm"></div>
                         </div>
                         <template x-if="mode === 'hours'">
                           <div class="relative w-full h-full">
@@ -333,7 +333,7 @@
                                 type="button"
                                 @click="setHour(n)"
                                 class="absolute w-6 h-6 flex items-center justify-center text-[9px] font-bold rounded-full transition-colors z-10 focus:outline-none"
-                                :class="parseInt(currentH) === n ? 'text-white' : 'text-neutral-400 hover:bg-secondary/10'"
+                                :class="parseInt(currentH) === n ? 'text-white' : 'text-neutral-500 hover:bg-secondary/10'"
                                 :style="`left: 50%; top: 50%; transform: translate(-50%, -50%) rotate(${((n % 12 || 12) * 30) - 90}deg) translate(40px) rotate(${-(((n % 12 || 12) * 30) - 90)}deg)`">
                                 <span x-text="n.toString().padStart(2, '0')"></span>
                               </button>
@@ -391,7 +391,7 @@
         <!-- Hidden fields required for update (always present) -->
         <input type="hidden" name="origen_cod" value="{{ .Origen.IATA }}" />
         <input type="hidden" name="destino_cod" value="{{ .Destino.IATA }}" />
-        <input type="hidden" name="tipo_itinerario_id" value="{{ .Itinerario.ID }}" />
+        <input type="hidden" name="tipo_itinerario_codigo" value="{{ .Itinerario.Codigo }}" />
 
         <div class="md:col-span-2 space-y-1.5">
           <label class="block text-xs font-bold text-neutral-500 uppercase tracking-tight">Línea Aérea</label>
@@ -468,8 +468,9 @@
             name="autorizacion"
             value="{{ if .Item }}PD{{ end }}"
             maxlength="100"
-            class="w-full px-4 py-2.5 bg-white border border-neutral-200 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-bold text-neutral-700 transition-all placeholder:text-neutral-400 placeholder:font-medium"
-            placeholder="Código de autorización" />
+            class="w-full px-4 py-2.5 bg-white border border-neutral-200 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-bold text-neutral-700 transition-all placeholder:text-neutral-400 placeholder:font-medium disabled:bg-neutral-100 disabled:text-neutral-500 disabled:cursor-not-allowed"
+            placeholder="Código de autorización"
+            disabled />
         </div>
 
         <div class="md:col-span-2 space-y-1.5">
@@ -479,7 +480,8 @@
             x-model="motivo"
             rows="3"
             placeholder="Ej: Cumplimiento de funciones legislativas..."
-            class="w-full px-4 py-3 bg-white border border-neutral-200 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-bold text-neutral-700 transition-all placeholder:text-neutral-400 placeholder:font-medium"></textarea>
+            disabled
+            class="w-full px-4 py-3 bg-white border border-neutral-200 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-bold text-neutral-700 transition-all placeholder:text-neutral-400 placeholder:font-medium disabled:bg-neutral-100 disabled:text-neutral-500"></textarea>
         </div>
       </div>
     </section>

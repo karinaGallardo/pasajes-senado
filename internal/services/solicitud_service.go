@@ -44,7 +44,7 @@ func (s *SolicitudService) Create(ctx context.Context, req dtos.CreateSolicitudR
 	}
 
 	var fechaVuelta *time.Time
-	if req.FechaVuelta != "" && req.TipoItinerarioCode != "SOLO_IDA" {
+	if req.FechaVuelta != "" && req.TipoItinerarioCodigo != "SOLO_IDA" {
 		if t, err := time.Parse(layout, req.FechaVuelta); err == nil {
 			fechaVuelta = &t
 		}
@@ -55,41 +55,37 @@ func (s *SolicitudService) Create(ctx context.Context, req dtos.CreateSolicitudR
 		realSolicitanteID = currentUser.ID
 	}
 
-	itinID := req.TipoItinerarioID
-	if itinID == "" {
-		if req.TipoItinerarioCode != "" {
-			if itin, _ := s.tipoItinRepo.WithContext(ctx).FindByCodigo(req.TipoItinerarioCode); itin != nil {
-				itinID = itin.ID
-			}
-		}
-		// Fallback
-		if itinID == "" {
-			if itin, _ := s.tipoItinRepo.WithContext(ctx).FindByCodigo("IDA_VUELTA"); itin != nil {
-				itinID = itin.ID
-			}
-		}
+	// Resolve TipoItinerario
+	var tipoItin *models.TipoItinerario
+	if req.TipoItinerarioCodigo != "" {
+		tipoItin, _ = s.tipoItinRepo.WithContext(ctx).FindByCodigo(req.TipoItinerarioCodigo)
+	}
+	if tipoItin == nil && req.TipoItinerario != "" {
+		tipoItin, _ = s.tipoItinRepo.WithContext(ctx).FindByCodigo(req.TipoItinerario)
+	}
+	if tipoItin == nil {
+		tipoItin, _ = s.tipoItinRepo.WithContext(ctx).FindByCodigo("IDA_VUELTA")
+	}
+
+	if tipoItin == nil {
+		return nil, errors.New("tipo de itinerario no válido")
 	}
 
 	solicitud := &models.Solicitud{
-		BaseModel:         models.BaseModel{CreatedBy: &currentUser.ID},
-		UsuarioID:         realSolicitanteID,
-		TipoSolicitudID:   req.TipoSolicitudID,
-		AmbitoViajeID:     req.AmbitoViajeID,
-		TipoItinerarioID:  itinID,
-		OrigenIATA:        req.OrigenIATA,
-		DestinoIATA:       req.DestinoIATA,
-		FechaIda:          fechaIda,
-		FechaVuelta:       fechaVuelta,
-		Motivo:            req.Motivo,
-		AerolineaSugerida: req.AerolineaSugerida,
-		Autorizacion:      req.Autorizacion,
+		BaseModel:            models.BaseModel{CreatedBy: &currentUser.ID},
+		UsuarioID:            realSolicitanteID,
+		TipoSolicitudCodigo:  req.TipoSolicitudCodigo,
+		AmbitoViajeCodigo:    req.AmbitoViajeCodigo,
+		TipoItinerarioCodigo: tipoItin.Codigo,
+		Motivo:               req.Motivo,
+		Autorizacion:         req.Autorizacion,
 	}
 
 	if req.CupoDerechoItemID != "" {
 		solicitud.CupoDerechoItemID = &req.CupoDerechoItemID
 	}
 
-	tipoSolicitud, err := s.tipoSolicitudRepo.WithContext(ctx).FindByID(solicitud.TipoSolicitudID)
+	tipoSolicitud, err := s.tipoSolicitudRepo.WithContext(ctx).FindByID(solicitud.TipoSolicitudCodigo)
 	if err != nil {
 		return nil, errors.New("tipo de solicitud inválido o no encontrado")
 	}
@@ -117,6 +113,54 @@ func (s *SolicitudService) Create(ctx context.Context, req dtos.CreateSolicitudR
 	}
 
 	solicitud.EstadoSolicitudCodigo = utils.Ptr("SOLICITADO")
+
+	// Build Items
+	var items []models.SolicitudItem
+	itinCode := tipoItin.Codigo
+
+	// Common: Tramo 1 (IDA or VUELTA single)
+	switch itinCode {
+	case "SOLO_IDA", "IDA_VUELTA":
+		items = append(items, models.SolicitudItem{
+			Tipo:              models.TipoSolicitudItemIda,
+			OrigenIATA:        req.OrigenIATA,
+			DestinoIATA:       req.DestinoIATA,
+			Fecha:             fechaIda,
+			Hora:              s.formatTime(fechaIda),
+			AerolineaSugerida: req.AerolineaSugerida,
+			EstadoCodigo:      utils.Ptr("SOLICITADO"),
+		})
+	case "SOLO_VUELTA":
+		// Assumption: User input for Origin/Dest matches the leg (e.g. Origin=MIA, Dest=VVI for Return)
+		items = append(items, models.SolicitudItem{
+			Tipo:              models.TipoSolicitudItemVuelta,
+			OrigenIATA:        req.OrigenIATA,
+			DestinoIATA:       req.DestinoIATA,
+			Fecha:             fechaIda, // Single date input usually
+			Hora:              s.formatTime(fechaIda),
+			AerolineaSugerida: req.AerolineaSugerida,
+			EstadoCodigo:      utils.Ptr("SOLICITADO"),
+		})
+	}
+
+	// Tramo 2: VUELTA (if Round Trip)
+	if itinCode == "IDA_VUELTA" {
+		st := "SOLICITADO"
+		if fechaVuelta == nil {
+			st = "PENDIENTE"
+		}
+		items = append(items, models.SolicitudItem{
+			Tipo:              models.TipoSolicitudItemVuelta,
+			OrigenIATA:        req.DestinoIATA, // Swap
+			DestinoIATA:       req.OrigenIATA,  // Swap
+			Fecha:             fechaVuelta,
+			Hora:              s.formatTime(fechaVuelta),
+			AerolineaSugerida: req.AerolineaSugerida,
+			EstadoCodigo:      utils.Ptr(st),
+		})
+	}
+
+	solicitud.Items = items
 
 	err = s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
 		secuenciaRepoTx := s.codigoSecuenciaRepo.WithTx(tx)
@@ -155,6 +199,14 @@ func (s *SolicitudService) Create(ctx context.Context, req dtos.CreateSolicitudR
 	return solicitud, nil
 }
 
+// Helper locally if not in utils
+func (SolicitudService) formatTime(t *time.Time) string {
+	if t == nil {
+		return ""
+	}
+	return t.Format("15:04")
+}
+
 func (s *SolicitudService) sendCreationEmail(solicitud *models.Solicitud) {
 	fullSol, err := s.GetByID(context.Background(), solicitud.ID)
 	if err != nil {
@@ -170,10 +222,36 @@ func (s *SolicitudService) sendCreationEmail(solicitud *models.Solicitud) {
 
 	subject := fmt.Sprintf("Solicitud de Pasaje Creada - %s", fullSol.Codigo)
 
-	rut := fmt.Sprintf("%s -> %s", fullSol.Origen.Ciudad, fullSol.Destino.Ciudad)
+	rut := "-"
 	fecha := "-"
-	if fullSol.FechaIda != nil {
-		fecha = utils.FormatDateShortES(*fullSol.FechaIda)
+	var mainItem *models.SolicitudItem
+
+	for i := range fullSol.Items {
+		it := &fullSol.Items[i]
+		if it.Tipo == models.TipoSolicitudItemIda {
+			mainItem = it
+			break
+		}
+	}
+	if mainItem == nil && len(fullSol.Items) > 0 {
+		mainItem = &fullSol.Items[0]
+	}
+
+	if mainItem != nil {
+		origen := "-"
+		if mainItem.Origen != nil {
+			origen = mainItem.Origen.Ciudad
+		}
+		destino := "-"
+		if mainItem.Destino != nil {
+			destino = mainItem.Destino.Ciudad
+		}
+
+		rut = fmt.Sprintf("%s -> %s", origen, destino)
+
+		if mainItem.Fecha != nil {
+			fecha = utils.FormatDateShortES(*mainItem.Fecha)
+		}
 	}
 
 	body := fmt.Sprintf(`
@@ -209,6 +287,33 @@ func (s *SolicitudService) sendCreationEmail(solicitud *models.Solicitud) {
 	}
 }
 
+func (s *SolicitudService) sendRevertApprovalEmail(solicitud *models.Solicitud) {
+	fullSol, err := s.GetByID(context.Background(), solicitud.ID)
+	if err != nil {
+		fmt.Printf("Error reloading solicitud for email: %v\n", err)
+		return
+	}
+
+	beneficiary := fullSol.Usuario
+	if beneficiary.Email == "" {
+		return
+	}
+
+	subject := fmt.Sprintf("Solicitud de Pasaje Revertida - %s", fullSol.Codigo)
+
+	body := fmt.Sprintf(`
+		<div style="font-family: Arial, sans-serif; color: #333;">
+			<h2>Estado de Solicitud Actualizado</h2>
+			<p>Hola <strong>%s</strong>,</p>
+			<p>La aprobación de su solicitud <strong>%s</strong> ha sido revertida a estado SOLICITADO.</p>
+			<p>Esto puede deberse a ajustes necesarios en el itinerario.</p>
+			<p>Por favor revise el sistema para más detalles.</p>
+		</div>
+	`, beneficiary.GetNombreCompleto(), fullSol.Codigo)
+
+	_ = s.emailService.SendEmail([]string{beneficiary.Email}, nil, nil, subject, body)
+}
+
 func (s *SolicitudService) GetAll(ctx context.Context, status string) ([]models.Solicitud, error) {
 	return s.repo.WithContext(ctx).FindAll(status)
 }
@@ -238,7 +343,19 @@ func (s *SolicitudService) Approve(ctx context.Context, id string) error {
 			return err
 		}
 
-		if err := repoTx.UpdateStatus(id, "APROBADO"); err != nil {
+		for i := range solicitud.Items {
+			item := &solicitud.Items[i]
+			if item.GetEstado() == "SOLICITADO" {
+				st := "APROBADO"
+				item.EstadoCodigo = &st
+				if err := tx.Save(item).Error; err != nil {
+					return err
+				}
+			}
+		}
+
+		solicitud.UpdateStatusBasedOnItems()
+		if err := repoTx.Update(solicitud); err != nil {
 			return err
 		}
 
@@ -257,26 +374,54 @@ func (s *SolicitudService) Approve(ctx context.Context, id string) error {
 }
 
 func (s *SolicitudService) RevertApproval(ctx context.Context, id string) error {
-	return s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
+	var solicitudForEmail *models.Solicitud
+	err := s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
 		solicitud, err := repoTx.FindByID(id)
 		if err != nil {
 			return err
 		}
 
-		if *solicitud.EstadoSolicitudCodigo != "APROBADO" {
+		if solicitud.EstadoSolicitudCodigo == nil || *solicitud.EstadoSolicitudCodigo != "APROBADO" {
 			return errors.New("la solicitud no está en estado APROBADO")
 		}
 
-		if len(solicitud.Pasajes) > 0 {
+		hasPasajes := false
+		for _, t := range solicitud.Items {
+			if t.PasajeID != nil {
+				hasPasajes = true
+				break
+			}
+		}
+
+		if hasPasajes {
 			return errors.New("no se puede revertir la aprobación porque ya tiene pasajes asignados")
 		}
 
-		if err := repoTx.UpdateStatus(id, "SOLICITADO"); err != nil {
-			return err
+		// Revert items
+		for i := range solicitud.Items {
+			item := &solicitud.Items[i]
+			if item.GetEstado() == "APROBADO" {
+				st := "SOLICITADO"
+				item.EstadoCodigo = &st
+				if err := tx.Save(item).Error; err != nil {
+					return err
+				}
+			}
 		}
 
+		solicitud.UpdateStatusBasedOnItems()
+		if err := repoTx.Update(solicitud); err != nil {
+			return err
+		}
+		solicitudForEmail = solicitud
 		return nil
 	})
+
+	if err == nil && solicitudForEmail != nil {
+		go s.sendRevertApprovalEmail(solicitudForEmail)
+	}
+
+	return err
 }
 
 func (s *SolicitudService) Finalize(ctx context.Context, id string) error {
@@ -307,23 +452,39 @@ func (s *SolicitudService) Finalize(ctx context.Context, id string) error {
 }
 
 func (s *SolicitudService) Reject(ctx context.Context, id string) error {
-	solicitud, err := s.repo.WithContext(ctx).FindByID(id)
-	if err != nil {
-		return err
-	}
-
-	if err := s.repo.WithContext(ctx).UpdateStatus(id, "RECHAZADO"); err != nil {
-		return err
-	}
-
-	if solicitud.CupoDerechoItemID != nil {
-		item, err := s.itemRepo.WithContext(ctx).FindByID(*solicitud.CupoDerechoItemID)
-		if err == nil && item != nil {
-			item.EstadoCupoDerechoCodigo = "DISPONIBLE"
-			_ = s.itemRepo.WithContext(ctx).Update(item)
+	return s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
+		solicitud, err := repoTx.FindByID(id)
+		if err != nil {
+			return err
 		}
-	}
-	return nil
+
+		// Reject all items
+		for i := range solicitud.Items {
+			item := &solicitud.Items[i]
+			st := "RECHAZADO"
+			item.EstadoCodigo = &st
+			if err := tx.Save(item).Error; err != nil {
+				return err
+			}
+		}
+
+		solicitud.UpdateStatusBasedOnItems()
+		if err := repoTx.Update(solicitud); err != nil {
+			return err
+		}
+
+		if solicitud.CupoDerechoItemID != nil {
+			itemRepoTx := s.itemRepo.WithTx(tx)
+			item, err := itemRepoTx.FindByID(*solicitud.CupoDerechoItemID)
+			if err == nil && item != nil {
+				item.EstadoCupoDerechoCodigo = "DISPONIBLE"
+				if err := itemRepoTx.Update(item); err != nil {
+					return err
+				}
+			}
+		}
+		return nil
+	})
 }
 
 func (s *SolicitudService) Update(ctx context.Context, solicitud *models.Solicitud) error {

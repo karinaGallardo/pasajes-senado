@@ -30,15 +30,15 @@
 
         <!-- Tipo Solicitud -->
         <div class="sm:col-span-2">
-          <label for="tipo_solicitud_id" class="block text-sm font-medium text-neutral-700">Tipo de Solicitud</label>
+          <label for="tipo_solicitud_codigo" class="block text-sm font-medium text-neutral-700">Tipo de Solicitud</label>
           <div class="mt-1">
             <select
-              id="tipo_solicitud_id"
-              name="tipo_solicitud_id"
+              id="tipo_solicitud_codigo"
+              name="tipo_solicitud_codigo"
               required
               class="shadow-sm focus:ring-secondary focus:border-secondary block w-full sm:text-sm border-neutral-300 rounded-md p-2 border">
               {{ range .TiposSolicitud }}
-              <option value="{{ .ID }}" {{ if eq .ID $.Solicitud.TipoSolicitudID }}selected{{ end }}>{{ .Nombre }}</option>
+              <option value="{{ .Codigo }}" {{ if eq .Codigo $.Solicitud.TipoSolicitudCodigo }}selected{{ end }}>{{ .Nombre }}</option>
               {{ end }}
             </select>
           </div>
@@ -46,15 +46,15 @@
 
         <!-- Ámbito -->
         <div class="sm:col-span-2">
-          <label for="ambito_viaje_id" class="block text-sm font-medium text-neutral-700">Ámbito</label>
+          <label for="ambito_viaje_codigo" class="block text-sm font-medium text-neutral-700">Ámbito</label>
           <div class="mt-1">
             <select
-              id="ambito_viaje_id"
-              name="ambito_viaje_id"
+              id="ambito_viaje_codigo"
+              name="ambito_viaje_codigo"
               required
               class="shadow-sm focus:ring-secondary focus:border-secondary block w-full sm:text-sm border-neutral-300 rounded-md p-2 border">
               {{ range .AmbitosViaje }}
-              <option value="{{ .ID }}" {{ if eq .ID $.Solicitud.AmbitoViajeID }}selected{{ end }}>{{ .Nombre }}</option>
+              <option value="{{ .Codigo }}" {{ if eq .Codigo $.Solicitud.AmbitoViajeCodigo }}selected{{ end }}>{{ .Nombre }}</option>
               {{ end }}
             </select>
           </div>
@@ -64,9 +64,9 @@
         <!-- Origen y Destino con Lógica Estricta Restored -->
         <div
           class="sm:col-span-6 grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6"
-          x-data="{ 
+          x-data="{
                 tipo: '{{ if .Solicitud.TipoItinerario }}{{ if .Solicitud.TipoItinerario.EsIdaVuelta }}IDA_VUELTA{{ else }}SOLO_IDA{{ end }}{{ else }}IDA_VUELTA{{ end }}',
-                origen: '{{ .Solicitud.OrigenCode }}',
+                origen: '{{ .Solicitud.GetOrigenIATA }}',
                 userOrigenCode: '{{ .AuthUser.GetOrigenIATA }}',
                 userOrigenName: '{{ if .AuthUser.Origen }}{{ .AuthUser.Origen.Nombre }}{{ else }}Mi Origen{{ end }}',
                 lpbCode: 'LPB',
@@ -83,10 +83,13 @@
                   isLocked = false;
                 }
              ">
-          <input type="hidden" name="tipo_itinerario_id" :value="tipo === 'IDA_VUELTA' ? '{{ (index .TiposItinerario 0).ID }}' : '{{ (index .TiposItinerario 1).ID }}'" />
-          {{ $idIdaVuelta := "" }} {{ $idSoloIda := "" }} {{ range .TiposItinerario }} {{ if eq .Codigo "IDA_VUELTA" }} {{ $idIdaVuelta = .ID }} {{ end }} {{ if eq .Codigo
-          "SOLO_IDA" }} {{ $idSoloIda = .ID }} {{ end }} {{ end }}
-          <input type="hidden" name="tipo_itinerario_id" x-bind:value="tipo === 'IDA_VUELTA' ? '{{ $idIdaVuelta }}' : '{{ $idSoloIda }}'" />
+          <input
+            type="hidden"
+            name="tipo_itinerario_codigo"
+            :value="tipo === 'IDA_VUELTA' ? '{{ (index .TiposItinerario 0).Codigo }}' : '{{ (index .TiposItinerario 1).Codigo }}'" />
+          {{ $idIdaVuelta := "" }} {{ $idSoloIda := "" }} {{ range .TiposItinerario }} {{ if eq .Codigo "IDA_VUELTA" }} {{ $idIdaVuelta = .Codigo }} {{ end }} {{ if eq .Codigo
+          "SOLO_IDA" }} {{ $idSoloIda = .Codigo }} {{ end }} {{ end }}
+          <input type="hidden" name="tipo_itinerario_codigo" x-bind:value="tipo === 'IDA_VUELTA' ? '{{ $idIdaVuelta }}' : '{{ $idSoloIda }}'" />
 
           <!-- 1. BLOQUE ITINERARIO -->
           <div class="sm:col-span-6 border-b border-neutral-100 pb-4 mb-4">
@@ -169,7 +172,7 @@
               type="datetime-local"
               name="fecha_salida"
               required
-              value="{{ if .Solicitud.FechaIda }}{{ .Solicitud.FechaIda.Format `2006-01-02T15:04` }}{{ end }}"
+              value="{{ if .Solicitud.GetFechaIda }}{{ .Solicitud.GetFechaIda.Format `2006-01-02T15:04` }}{{ end }}"
               class="mt-1 shadow-sm focus:ring-secondary block w-full sm:text-sm border-neutral-300 rounded-md p-2 border" />
           </div>
 
@@ -178,7 +181,7 @@
             <input
               type="datetime-local"
               name="fecha_retorno"
-              value="{{ if .Solicitud.FechaVuelta }}{{ .Solicitud.FechaVuelta.Format `2006-01-02T15:04` }}{{ end }}"
+              value="{{ if .Solicitud.GetFechaVuelta }}{{ .Solicitud.GetFechaVuelta.Format `2006-01-02T15:04` }}{{ end }}"
               class="mt-1 shadow-sm focus:ring-secondary block w-full sm:text-sm border-neutral-300 rounded-md p-2 border" />
           </div>
         </div>

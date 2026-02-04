@@ -21,15 +21,15 @@ func (r *TipoSolicitudRepository) WithContext(ctx context.Context) *TipoSolicitu
 	return &TipoSolicitudRepository{db: r.db.WithContext(ctx)}
 }
 
-func (r *TipoSolicitudRepository) FindByID(id string) (*models.TipoSolicitud, error) {
+func (r *TipoSolicitudRepository) FindByID(codigo string) (*models.TipoSolicitud, error) {
 	var tipo models.TipoSolicitud
-	err := r.db.Preload("ConceptoViaje").First(&tipo, "id = ?", id).Error
+	err := r.db.Preload("ConceptoViaje").First(&tipo, "codigo = ?", codigo).Error
 	return &tipo, err
 }
 
-func (r *TipoSolicitudRepository) FindByConceptoID(conceptoID string) ([]models.TipoSolicitud, error) {
+func (r *TipoSolicitudRepository) FindByConceptoCodigo(conceptoCodigo string) ([]models.TipoSolicitud, error) {
 	var tipos []models.TipoSolicitud
-	err := r.db.Where("concepto_viaje_id = ?", conceptoID).Find(&tipos).Error
+	err := r.db.Where("concepto_viaje_codigo = ?", conceptoCodigo).Find(&tipos).Error
 	return tipos, err
 }
 
@@ -39,9 +39,9 @@ func (r *TipoSolicitudRepository) FindAll() ([]models.TipoSolicitud, error) {
 	return tipos, err
 }
 
-func (r *TipoSolicitudRepository) FindAmbitosByTipoID(tipoID string) ([]models.AmbitoViaje, error) {
+func (r *TipoSolicitudRepository) FindAmbitosByTipoCodigo(tipoCodigo string) ([]models.AmbitoViaje, error) {
 	var tipo models.TipoSolicitud
-	err := r.db.Preload("Ambitos").First(&tipo, "id = ?", tipoID).Error
+	err := r.db.Preload("Ambitos").First(&tipo, "codigo = ?", tipoCodigo).Error
 	if err != nil {
 		return nil, err
 	}
@@ -57,8 +57,8 @@ func (r *TipoSolicitudRepository) FindByCodigoAndAmbito(tipoCodigo, ambitoCodigo
 	var tipo models.TipoSolicitud
 	err := r.db.Preload("ConceptoViaje").
 		Preload("Ambitos", "codigo = ?", ambitoCodigo).
-		Joins("JOIN tipo_solicitud_ambitos tsa ON tsa.tipo_solicitud_id = tipo_solicitudes.id").
-		Joins("JOIN ambito_viajes av ON av.id = tsa.ambito_viaje_id").
+		Joins("JOIN tipo_solic_ambitos tsa ON tsa.tipo_solicitud_codigo = tipo_solicitudes.codigo").
+		Joins("JOIN ambito_viajes av ON av.codigo = tsa.ambito_viaje_codigo").
 		Where("tipo_solicitudes.codigo = ? AND av.codigo = ?", tipoCodigo, ambitoCodigo).
 		First(&tipo).Error
 

@@ -49,9 +49,9 @@ func (r *PasajeRepository) WithContext(ctx context.Context) *PasajeRepository {
 	return &PasajeRepository{db: r.db.WithContext(ctx)}
 }
 
-func (r *PasajeRepository) RunTransaction(fn func(repo *PasajeRepository) error) error {
+func (r *PasajeRepository) RunTransaction(fn func(repo *PasajeRepository, tx *gorm.DB) error) error {
 	return r.db.Transaction(func(tx *gorm.DB) error {
 		txRepo := r.WithTx(tx)
-		return fn(txRepo)
+		return fn(txRepo, tx)
 	})
 }

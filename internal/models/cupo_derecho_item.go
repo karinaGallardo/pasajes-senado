@@ -37,16 +37,13 @@ func (CupoDerechoItem) TableName() string {
 func (v CupoDerechoItem) GetSolicitudIda() *Solicitud {
 	for i := range v.Solicitudes {
 		s := &v.Solicitudes[i]
-		if s.TipoItinerario != nil && (s.TipoItinerario.Codigo == "SOLO_IDA" || s.TipoItinerario.Codigo == "IDA_VUELTA") {
-			if s.FechaIda != nil && (s.EstadoSolicitudCodigo == nil || *s.EstadoSolicitudCodigo != "RECHAZADO") {
+		if s.EstadoSolicitudCodigo != nil && *s.EstadoSolicitudCodigo == "RECHAZADO" {
+			continue
+		}
+		for _, t := range s.Items {
+			if t.Tipo == TipoSolicitudItemIda {
 				return s
 			}
-		}
-	}
-	for i := range v.Solicitudes {
-		s := &v.Solicitudes[i]
-		if s.FechaIda != nil && (s.EstadoSolicitudCodigo == nil || *s.EstadoSolicitudCodigo != "RECHAZADO") {
-			return s
 		}
 	}
 	return nil
@@ -55,26 +52,13 @@ func (v CupoDerechoItem) GetSolicitudIda() *Solicitud {
 func (v CupoDerechoItem) GetSolicitudVuelta() *Solicitud {
 	for i := range v.Solicitudes {
 		s := &v.Solicitudes[i]
-		if s.TipoItinerario != nil && (s.TipoItinerario.Codigo == "SOLO_VUELTA") {
-			if s.FechaIda != nil && (s.EstadoSolicitudCodigo == nil || *s.EstadoSolicitudCodigo != "RECHAZADO") {
+		if s.EstadoSolicitudCodigo != nil && *s.EstadoSolicitudCodigo == "RECHAZADO" {
+			continue
+		}
+		for _, t := range s.Items {
+			if t.Tipo == TipoSolicitudItemVuelta {
 				return s
 			}
-		}
-	}
-
-	for i := range v.Solicitudes {
-		s := &v.Solicitudes[i]
-		if s.TipoItinerario != nil && (s.TipoItinerario.Codigo == "IDA_VUELTA") {
-			if s.FechaVuelta != nil && (s.EstadoSolicitudCodigo == nil || *s.EstadoSolicitudCodigo != "RECHAZADO") {
-				return s
-			}
-		}
-	}
-
-	for i := range v.Solicitudes {
-		s := &v.Solicitudes[i]
-		if s.FechaVuelta != nil && (s.EstadoSolicitudCodigo == nil || *s.EstadoSolicitudCodigo != "RECHAZADO") {
-			return s
 		}
 	}
 	return nil

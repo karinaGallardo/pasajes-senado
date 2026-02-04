@@ -123,20 +123,20 @@
         <dl class="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-6">
           <div class="sm:col-span-1">
             <dt class="text-sm font-medium text-neutral-500">Origen</dt>
-            <dd class="mt-1 text-sm text-neutral-900">{{ .Solicitud.Origen.Ciudad }}</dd>
+            <dd class="mt-1 text-sm text-neutral-900">{{ .Solicitud.GetOrigenCiudad }}</dd>
           </div>
           <div class="sm:col-span-1">
             <dt class="text-sm font-medium text-neutral-500">Destino</dt>
-            <dd class="mt-1 text-sm text-neutral-900">{{ .Solicitud.Destino.Ciudad }}</dd>
+            <dd class="mt-1 text-sm text-neutral-900">{{ .Solicitud.GetDestinoCiudad }}</dd>
           </div>
           <div class="sm:col-span-1">
             <dt class="text-sm font-medium text-neutral-500">Fecha Salida</dt>
-            <dd class="mt-1 text-sm text-neutral-900">{{ if .Solicitud.FechaIda }}{{ dtl .Solicitud.FechaIda }}{{ else }} - {{ end }}</dd>
+            <dd class="mt-1 text-sm text-neutral-900">{{ if .Solicitud.GetFechaIda }}{{ dtl .Solicitud.GetFechaIda }}{{ else }} - {{ end }}</dd>
           </div>
           <div class="sm:col-span-1">
             <dt class="text-sm font-medium text-neutral-500">Fecha Retorno</dt>
             <dd class="mt-1 text-sm text-neutral-900">
-              {{ if .Solicitud.FechaVuelta }} {{ dtl .Solicitud.FechaVuelta }} {{ else }}
+              {{ if .Solicitud.GetFechaVuelta }} {{ dtl .Solicitud.GetFechaVuelta }} {{ else }}
               <span class="text-neutral-400 italic">Sólo ida</span>
               {{ end }}
             </dd>
@@ -227,35 +227,33 @@
 
         <!-- List of Assigned Passages -->
         <div class="border-t border-neutral-200">
-          {{ if .Solicitud.Pasajes }}
+          {{ $hasAnyPasaje := false }} {{ range .Solicitud.Items }}{{ if .Pasaje }}{{ $hasAnyPasaje = true }}{{ end }}{{ end }} {{ if $hasAnyPasaje }}
           <ul role="list" class="divide-y divide-gray-200">
-            {{ range .Solicitud.Pasajes }}
+            {{ range .Solicitud.Items }} {{ if .Pasaje }} {{ with .Pasaje }}
             <li class="px-4 py-4 sm:px-6">
               <div class="flex items-center justify-between">
-                <div class="text-sm font-medium text-primary truncate">{{ .Aerolinea }} - Vuelo {{ .NumeroVuelo }}</div>
+                <div class="text-sm font-medium text-primary truncate">
+                  {{ if .Aerolinea }}{{ .Aerolinea.Nombre }}{{ else }}{{ .AerolineaID }}{{ end }} - Vuelo {{ .NumeroVuelo }}
+                </div>
                 <div class="ml-2 flex-shrink-0 flex">
-                  <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-success-100 text-success-800">{{ .Estado }}</span>
+                  <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-success-100 text-success-800">{{ deref .EstadoPasajeCodigo }}</span>
                 </div>
               </div>
               <div class="mt-2 sm:flex sm:justify-between">
                 <div class="sm:flex">
                   <p class="flex items-center text-sm text-neutral-500 mr-6">
-                    <!-- Heroicon name: solid/calendar -->
                     <i class="ph ph-calendar-blank flex-shrink-0 mr-1.5 text-lg text-neutral-400"></i>
                     {{ dtl .FechaVuelo }}
                   </p>
                   <p class="flex items-center text-sm text-neutral-500">
-                    <!-- Heroicon name: solid/ticket -->
                     <i class="ph ph-ticket flex-shrink-0 mr-1.5 text-lg text-neutral-400"></i>
                     Boleto: {{ .NumeroBoleto }} (Reserva: {{ .CodigoReserva }})
                   </p>
                 </div>
                 <div class="mt-2 flex items-center justify-between">
-                  <div class="mt-2 flex items-center text-sm text-neutral-500 sm:mt-0">
-                    <p class="font-bold text-neutral-900 bg-neutral-100 px-2 py-1 rounded">Bs {{ printf "%.2f" .Costo }}</p>
-                  </div>
+                  <p class="font-bold text-neutral-900 bg-neutral-100 px-2 py-1 rounded">Bs {{ printf "%.2f" .Costo }}</p>
 
-                  <div class="flex space-x-2">
+                  <div class="flex space-x-2 ml-4">
                     {{ if $.AuthUser.IsAdminOrResponsable }} {{ if eq .Estado "EMITIDO" }}
                     <button
                       hx-get="/pasajes/{{ .ID }}/editar"
@@ -263,31 +261,12 @@
                       class="text-xs font-bold text-primary-600 hover:text-primary-800 bg-primary-50 px-2 py-1 rounded border border-primary-200">
                       Editar
                     </button>
-                    <button
-                      hx-get="/pasajes/{{ .ID }}/reprogramar"
-                      hx-target="#modal-container"
-                      class="text-xs font-bold text-orange-600 hover:text-orange-800 bg-orange-50 px-2 py-1 rounded border border-orange-200">
-                      Reprogramar
-                    </button>
-                    <button
-                      hx-get="/pasajes/{{ .ID }}/devolver"
-                      hx-target="#modal-container"
-                      class="text-xs font-bold text-danger-600 hover:text-danger-800 bg-danger-50 px-2 py-1 rounded border border-danger-200">
-                      Devolver
-                    </button>
-                    {{ end }} {{ end }} {{ if eq .Estado "VALIDANDO_USO" }} {{ if $.AuthUser.IsAdminOrResponsable }}
-                    <button
-                      hx-get="/pasajes/{{ .ID }}/usado"
-                      hx-target="#modal-container"
-                      class="text-xs font-bold text-success-600 hover:text-success-800 bg-success-50 px-2 py-1 rounded border border-success-200">
-                      Validar Uso
-                    </button>
-                    {{ end }} {{ end }}
+                    {{ end }}{{ end }}
                   </div>
                 </div>
               </div>
             </li>
-            {{ end }}
+            {{ end }} {{ end }} {{ end }}
           </ul>
           {{ else }}
           <div class="text-center py-6">

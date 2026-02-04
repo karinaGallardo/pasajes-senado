@@ -90,13 +90,13 @@
           </td>
           <td class="px-6 py-4 text-sm text-neutral-700 font-medium">
             <div class="flex flex-col md:flex-row md:items-center">
-              <span>{{ .Origen.Ciudad }}</span>
+              <span>{{ .GetOrigenCiudad }}</span>
               <span class="text-neutral-400 mx-1 hidden md:inline">&rarr;</span>
               <span class="text-neutral-400 md:hidden text-xs my-0.5">a</span>
-              <span>{{ .Destino.Ciudad }}</span>
+              <span>{{ .GetDestinoCiudad }}</span>
             </div>
           </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500 text-center">{{ dtl .FechaIda }}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500 text-center">{{ dtl .GetFechaIda }}</td>
           <td class="px-6 py-4 whitespace-nowrap text-center">
             <span
               class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ if eq .EstadoSolicitud.Codigo `SOLICITADO` }}bg-warning-100 text-warning-800{{ else if eq .EstadoSolicitud.Codigo `APROBADO` }}bg-success-100 text-success-800{{ else }}bg-neutral-100 text-neutral-800{{ end }}">

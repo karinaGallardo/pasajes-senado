@@ -10,21 +10,24 @@ import (
 	"strings"
 
 	"github.com/spf13/viper"
+	"gorm.io/gorm"
 )
 
 type PasajeService struct {
-	repo          *repositories.PasajeRepository
-	estadoRepo    *repositories.EstadoPasajeRepository
-	solicitudRepo *repositories.SolicitudRepository
-	emailService  *EmailService
+	repo              *repositories.PasajeRepository
+	estadoRepo        *repositories.EstadoPasajeRepository
+	solicitudRepo     *repositories.SolicitudRepository
+	solicitudItemRepo *repositories.SolicitudItemRepository
+	emailService      *EmailService
 }
 
 func NewPasajeService() *PasajeService {
 	return &PasajeService{
-		repo:          repositories.NewPasajeRepository(),
-		estadoRepo:    repositories.NewEstadoPasajeRepository(),
-		solicitudRepo: repositories.NewSolicitudRepository(),
-		emailService:  NewEmailService(),
+		repo:              repositories.NewPasajeRepository(),
+		estadoRepo:        repositories.NewEstadoPasajeRepository(),
+		solicitudRepo:     repositories.NewSolicitudRepository(),
+		solicitudItemRepo: repositories.NewSolicitudItemRepository(),
+		emailService:      NewEmailService(),
 	}
 }
 
@@ -53,9 +56,29 @@ func (s *PasajeService) Create(ctx context.Context, solicitudID string, req dtos
 		Archivo:            filePath,
 	}
 
-	if err := s.repo.WithContext(ctx).Create(pasaje); err != nil {
+	err := s.repo.RunTransaction(func(repo *repositories.PasajeRepository, tx *gorm.DB) error {
+		if err := repo.Create(pasaje); err != nil {
+			return err
+		}
+
+		itemRepo := s.solicitudItemRepo.WithTx(tx)
+		item, err := itemRepo.FindByID(req.SolicitudItemID)
+		if err != nil {
+			return fmt.Errorf("item no encontrado: %w", err)
+		}
+
+		item.PasajeID = &pasaje.ID
+		if err := itemRepo.Update(item); err != nil {
+			return fmt.Errorf("error linkeando pasaje a item: %w", err)
+		}
+
+		return nil
+	})
+
+	if err != nil {
 		return nil, err
 	}
+
 	return pasaje, nil
 }
 
@@ -114,7 +137,7 @@ func (s *PasajeService) Reprogramar(ctx context.Context, req dtos.ReprogramarPas
 		aerolineaID = &req.AerolineaID
 	}
 
-	return s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.PasajeRepository) error {
+	return s.repo.RunTransaction(func(repoTx *repositories.PasajeRepository, tx *gorm.DB) error {
 		pasajeAnterior, err := repoTx.FindByID(req.PasajeAnteriorID)
 		if err != nil {
 			return err
@@ -143,7 +166,21 @@ func (s *PasajeService) Reprogramar(ctx context.Context, req dtos.ReprogramarPas
 			CodigoReserva:      req.CodigoReserva,
 		}
 
-		return repoTx.Create(nuevoPasaje)
+		if err := repoTx.Create(nuevoPasaje); err != nil {
+			return err
+		}
+
+		// Update SolicitudItem to point to the new pasaje
+		itemRepo := s.solicitudItemRepo.WithTx(tx)
+		item, err := itemRepo.FindByPasajeID(pasajeAnterior.ID)
+		if err == nil {
+			item.PasajeID = &nuevoPasaje.ID
+			if err := itemRepo.Update(item); err != nil {
+				return fmt.Errorf("error updating item with new pasaje: %w", err)
+			}
+		}
+
+		return nil
 	})
 }
 func (s *PasajeService) Update(ctx context.Context, pasaje *models.Pasaje) error {

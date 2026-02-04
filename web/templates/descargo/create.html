@@ -6,7 +6,7 @@
     <div class="flex-1 min-w-0">
       <h2 class="text-2xl font-bold leading-7 text-neutral-900 sm:text-3xl sm:truncate">Realizar Descargo (FV-05)</h2>
       <p class="text-sm text-neutral-500 mt-1">
-        Para Solicitud #{{ .Solicitud.ID }} - {{ .Solicitud.Destino }}
+        Para Solicitud #{{ .Solicitud.ID }} - {{ .Solicitud.GetDestinoCiudad }}
       </p>
     </div>
   </div>
@@ -22,7 +22,7 @@
           <h4 class="text-sm font-bold text-primary mb-2">Resumen del Viaje</h4>
           <p class="text-sm text-primary"><strong>Motivo:</strong> {{ .Solicitud.Motivo }}</p>
           <p class="text-sm text-primary">
-            <strong>Fechas:</strong> {{ if .Solicitud.FechaIda }}{{ .Solicitud.FechaIda.Format "02/01/2006" }}{{ else }} - {{ end }} - {{ if .Solicitud.FechaVuelta }}{{ .Solicitud.FechaVuelta.Format "02/01/2006" }}{{ else }} - {{ end }}
+            <strong>Fechas:</strong> {{ if .Solicitud.GetFechaIda }}{{ .Solicitud.GetFechaIda.Format "02/01/2006" }}{{ else }} - {{ end }} - {{ if .Solicitud.GetFechaVuelta }}{{ .Solicitud.GetFechaVuelta.Format "02/01/2006" }}{{ else }} - {{ end }}
           </p>
         </div>
 

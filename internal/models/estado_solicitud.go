@@ -7,7 +7,7 @@ import (
 )
 
 type EstadoSolicitud struct {
-	Codigo      string `gorm:"primaryKey;size:20;not null"`
+	Codigo      string `gorm:"primaryKey;size:30;not null"`
 	Nombre      string `gorm:"size:100;not null"`
 	Descripcion string `gorm:"size:255"`
 	Color       string `gorm:"size:20;default:'gray'"`

@@ -9,22 +9,20 @@
       x-transition:leave="ease-in duration-200"
       x-transition:leave-start="opacity-100"
       x-transition:leave-end="opacity-0"
-      class="fixed inset-0 bg-neutral-500 bg-opacity-75 transition-opacity"
-      @click="open = false"></div>
+      class="fixed inset-0 bg-neutral-500 bg-opacity-75 transition-opacity"></div>
 
     <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
     <div
-      class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full sm:p-6"
-      @click.away="open = false"
+      class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full sm:p-6"
       x-data="{
-        selectedDaySalida: '{{ if .IsEdit }}{{ if eq .Itinerario.Codigo `SOLO_VUELTA` }}{{ .Solicitud.FechaVuelta.Format `2006-01-02` }}{{ else }}{{ .Solicitud.FechaIda.Format `2006-01-02` }}{{ end }}{{ else }}{{ .DefaultDateIda }}{{ end }}',
-        selectedTimeSalida: '{{ if .IsEdit }}{{ if eq .Itinerario.Codigo `SOLO_VUELTA` }}{{ .Solicitud.FechaVuelta.Format `15:04` }}{{ else }}{{ .Solicitud.FechaIda.Format `15:04` }}{{ end }}{{ else }}08:00{{ end }}',
-        selectedDayRetorno: '{{ if and .IsEdit .Solicitud.FechaVuelta }}{{ .Solicitud.FechaVuelta.Format `2006-01-02` }}{{ else }}{{ .DefaultDateVuelta }}{{ end }}',
-        selectedTimeRetorno: '{{ if and .IsEdit .Solicitud.FechaVuelta }}{{ .Solicitud.FechaVuelta.Format `15:04` }}{{ else }}18:00{{ end }}',
+        selectedDaySalida: '{{ if .IsEdit }}{{ if eq .Itinerario.Codigo `SOLO_VUELTA` }}{{ if .Solicitud.GetFechaVuelta }}{{ .Solicitud.GetFechaVuelta.Format `2006-01-02` }}{{ end }}{{ else }}{{ if .Solicitud.GetFechaIda }}{{ .Solicitud.GetFechaIda.Format `2006-01-02` }}{{ end }}{{ end }}{{ else }}{{ .DefaultDateIda }}{{ end }}',
+        selectedTimeSalida: '{{ if .IsEdit }}{{ if eq .Itinerario.Codigo `SOLO_VUELTA` }}{{ if .Solicitud.GetFechaVuelta }}{{ .Solicitud.GetFechaVuelta.Format `15:04` }}{{ end }}{{ else }}{{ if .Solicitud.GetFechaIda }}{{ .Solicitud.GetFechaIda.Format `15:04` }}{{ end }}{{ end }}{{ else }}08:00{{ end }}',
+        selectedDayRetorno: '{{ if and .IsEdit .Solicitud.GetFechaVuelta }}{{ .Solicitud.GetFechaVuelta.Format `2006-01-02` }}{{ else }}{{ .DefaultDateVuelta }}{{ end }}',
+        selectedTimeRetorno: '{{ if and .IsEdit .Solicitud.GetFechaVuelta }}{{ .Solicitud.GetFechaVuelta.Format `15:04` }}{{ else }}18:00{{ end }}',
         isSubmitting: false,
         isEdit: {{ .IsEdit }},
         tipoItinerario: 'IDA_VUELTA',
-        vueltaPorConfirmar: {{ if and .IsEdit (not .Solicitud.FechaVuelta) }}true{{ else }}false{{ end }},
+        vueltaPorConfirmar: {{ if and .IsEdit (not .Solicitud.GetFechaVuelta) }}true{{ else }}false{{ end }},
         editId: '{{ if .IsEdit }}{{ .Solicitud.ID }}{{ end }}',
         motivo: '{{ if .IsEdit }}{{ .Solicitud.Motivo }}{{ end }}',
         aerolinea: '{{ if .IsEdit }}{{ .Solicitud.AerolineaSugerida }}{{ end }}'
@@ -35,8 +33,14 @@
             <i class="ph ph-airplane-tilt text-2xl"></i>
           </div>
           <div>
-            <h3 class="text-lg font-bold text-neutral-800">{{ if .IsEdit }}Editar{{ else }}Nueva{{ end }} Solicitud de Pasaje: {{ .Itinerario.Nombre }}</h3>
-            <p class="text-xs text-neutral-500 font-medium tracking-tighter">{{ .TargetUser.GetNombreCompleto }} • {{ .Item.Semana }} / {{ .Item.Mes | monthName }}</p>
+            <h3 class="text-lg font-bold text-neutral-800">
+              {{ if .IsEdit }}{{ if not .Solicitud.GetFechaVuelta }}Agendar Retorno{{ else }}Editar Solicitud{{ end }}{{ else }}Nueva Solicitud{{ end }}: {{ .Itinerario.Nombre }}
+            </h3>
+            <p class="text-xs text-neutral-500 font-medium tracking-tighter">
+              {{ .TargetUser.GetNombreCompleto }} • {{ .Item.Semana }} / {{ .Item.Mes | monthName }} {{ if .Item.FechaDesde }}
+              <span class="ml-1 text-secondary">({{ .Item.FechaDesde.Format "02/01" }} - {{ if .Item.FechaHasta }}{{ .Item.FechaHasta.Format "02/01" }}{{ end }})</span>
+              {{ end }}
+            </p>
           </div>
         </div>
         <button @click="open = false" class="text-neutral-400 hover:text-neutral-600 transition-colors">

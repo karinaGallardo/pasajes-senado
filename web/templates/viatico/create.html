@@ -16,15 +16,15 @@
       </div>
       <div>
         <span class="text-sm text-neutral-500 block">Destino</span>
-        <span class="font-medium">{{ .Solicitud.Destino.Nombre }}</span>
+        <span class="font-medium">{{ .Solicitud.GetDestinoCiudad }}</span>
       </div>
       <div>
         <span class="text-sm text-neutral-500 block">Fecha Salida</span>
-        <span class="font-medium">{{ if .Solicitud.FechaIda }}{{ .Solicitud.FechaIda.Format "02/01/2006 15:04" }}{{ else }} - {{ end }}</span>
+        <span class="font-medium">{{ if .Solicitud.GetFechaIda }}{{ .Solicitud.GetFechaIda.Format "02/01/2006 15:04" }}{{ else }} - {{ end }}</span>
       </div>
       <div>
         <span class="text-sm text-neutral-500 block">Fecha Retorno(Est.)</span>
-        <span class="font-medium">{{ if .Solicitud.FechaVuelta }} {{ .Solicitud.FechaVuelta.Format "02/01/2006" }} {{ else }} (Solo Ida) {{ end }}</span>
+        <span class="font-medium">{{ if .Solicitud.GetFechaVuelta }} {{ .Solicitud.GetFechaVuelta.Format "02/01/2006" }} {{ else }} (Solo Ida) {{ end }}</span>
       </div>
     </div>
   </div>
@@ -42,7 +42,7 @@
             type="date"
             name="fecha_desde"
             required
-            value='{{ if .Solicitud.FechaIda }}{{ .Solicitud.FechaIda.Format "2006-01-02" }}{{ end }}'
+            value='{{ if .Solicitud.GetFechaIda }}{{ .Solicitud.GetFechaIda.Format "2006-01-02" }}{{ end }}'
             class="w-full border-neutral-300 rounded-md shadow-sm focus:border-primary-500 focus:ring-primary-500" />
         </div>
         <div>
@@ -51,7 +51,7 @@
             type="date"
             name="fecha_hasta"
             required
-            value='{{ if .Solicitud.FechaVuelta }}{{ .Solicitud.FechaVuelta.Format "2006-01-02" }}{{ end }}'
+            value='{{ if .Solicitud.GetFechaVuelta }}{{ .Solicitud.GetFechaVuelta.Format "2006-01-02" }}{{ end }}'
             class="w-full border-neutral-300 rounded-md shadow-sm focus:border-primary-500 focus:ring-primary-500" />
         </div>
 
@@ -91,7 +91,7 @@
             type="text"
             name="lugar"
             required
-            value="{{ .Solicitud.Destino.Nombre }}"
+            value="{{ .Solicitud.GetDestinoCiudad }}"
             class="w-full border-neutral-300 rounded-md shadow-sm focus:border-primary-500 focus:ring-primary-500" />
         </div>
 

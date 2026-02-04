@@ -38,8 +38,9 @@ func (r *SolicitudRepository) Create(solicitud *models.Solicitud) error {
 func (r *SolicitudRepository) FindAll(status string) ([]models.Solicitud, error) {
 	var solicitudes []models.Solicitud
 	query := r.db.Preload("Usuario").
-		Preload("Origen").
-		Preload("Destino").
+		Preload("Items").
+		Preload("Items.Origen").
+		Preload("Items.Destino").
 		Preload("TipoSolicitud.ConceptoViaje").
 		Preload("EstadoSolicitud").
 		Order("created_at desc")
@@ -55,8 +56,9 @@ func (r *SolicitudRepository) FindAll(status string) ([]models.Solicitud, error)
 func (r *SolicitudRepository) FindByUserID(userID string, status string) ([]models.Solicitud, error) {
 	var solicitudes []models.Solicitud
 	query := r.db.Preload("Usuario").
-		Preload("Origen").
-		Preload("Destino").
+		Preload("Items").
+		Preload("Items.Origen").
+		Preload("Items.Destino").
 		Preload("TipoSolicitud.ConceptoViaje").
 		Preload("EstadoSolicitud").
 		Order("created_at desc").Where("usuario_id = ?", userID)
@@ -76,8 +78,9 @@ func (r *SolicitudRepository) FindByCupoDerechoItemID(itemID string) ([]models.S
 		Preload("Usuario.Oficina").
 		Preload("Usuario.Departamento").
 		Preload("Usuario.Origen").
-		Preload("Origen").
-		Preload("Destino").
+		Preload("Items").
+		Preload("Items.Origen").
+		Preload("Items.Destino").
 		Preload("TipoItinerario").
 		Preload("TipoSolicitud.ConceptoViaje").
 		Preload("EstadoSolicitud").
@@ -90,8 +93,9 @@ func (r *SolicitudRepository) FindByCupoDerechoItemID(itemID string) ([]models.S
 func (r *SolicitudRepository) FindByUserIdOrAccesibleByEncargadoID(userID string, status string) ([]models.Solicitud, error) {
 	var solicitudes []models.Solicitud
 	query := r.db.Preload("Usuario").
-		Preload("Origen").
-		Preload("Destino").
+		Preload("Items").
+		Preload("Items.Origen").
+		Preload("Items.Destino").
 		Preload("TipoSolicitud.ConceptoViaje").
 		Preload("EstadoSolicitud").
 		Order("created_at desc").
@@ -109,12 +113,13 @@ func (r *SolicitudRepository) FindByID(id string) (*models.Solicitud, error) {
 	var solicitud models.Solicitud
 	err := r.db.Preload("Usuario").
 		Preload("Usuario.Encargado").
-		Preload("Origen").
-		Preload("Destino").
-		Preload("Pasajes.Aerolinea").
-		Preload("Pasajes.Agencia").
-		Preload("Pasajes.EstadoPasaje").
-		Preload("Pasajes").
+		Preload("Items").
+		Preload("Items.Origen").
+		Preload("Items.Destino").
+		Preload("Items.Pasaje.Aerolinea").
+		Preload("Items.Pasaje.Agencia").
+		Preload("Items.Pasaje.EstadoPasaje").
+		Preload("Items.Pasaje").
 		Preload("Viaticos").
 		Preload("TipoSolicitud.ConceptoViaje").
 		Preload("EstadoSolicitud").

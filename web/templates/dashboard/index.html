@@ -143,11 +143,11 @@
               {{ end }}
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-700">
-              {{ if .Origen }}{{ .Origen.Ciudad }}{{ else }}?{{ end }}
+              {{ .GetOrigenCiudad }}
               <span class="text-neutral-400 mx-1">&rarr;</span>
-              {{ if .Destino }}{{ .Destino.Ciudad }}{{ else }}?{{ end }}
+              {{ .GetDestinoCiudad }}
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">{{ if .FechaIda }}{{ .FechaIda.Format "02/01/2006" }}{{ else }} - {{ end }}</td>
+            <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">{{ if .GetFechaIda }}{{ .GetFechaIda.Format "02/01/2006" }}{{ else }} - {{ end }}</td>
             <td class="px-6 py-4 whitespace-nowrap">
               <span
                 class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 

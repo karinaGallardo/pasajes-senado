@@ -125,7 +125,7 @@ func (u *Usuario) CanEditSolicitud(s Solicitud) bool {
 		return false
 	}
 
-	if u.IsAdmin() {
+	if u.IsAdminOrResponsable() {
 		return true
 	}
 

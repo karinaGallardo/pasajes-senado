@@ -64,7 +64,8 @@ func ConnectDB() {
 
 	DB = database
 	RegisterAuditCallbacks(DB)
-	log.Println("Conexión a PostgreSQL Exitosa")
+	// log.Println("Conexión a PostgreSQL Exitosa")
+	log.Printf("Conexión a PostgreSQL Exitosa (%s:%s)\n", viper.GetString("DB_HOST"), viper.GetString("DB_PORT"))
 
 	mongoPort := viper.GetString("MONGO_PORT")
 	if mongoPort == "" {

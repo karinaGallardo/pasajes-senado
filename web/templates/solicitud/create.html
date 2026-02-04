@@ -278,7 +278,7 @@
                   '{{ if $solIda.FechaIda }}{{ $solIda.FechaIda.Format `2006-01-02T15:04` }}{{ end }}',
                   $el.dataset.motivo,
                   '{{ $solIda.AerolineaSugerida }}',
-                  '{{ $solIda.TipoItinerarioID }}'
+                  '{{ $solIda.TipoItinerarioCodigo }}'
                 )"
               class="group/btn relative px-2.5 py-1 rounded text-[9px] font-bold uppercase border transition-all bg-amber-50 text-amber-700 border-amber-100 hover:bg-amber-100">
               Editar Ida
@@ -320,7 +320,7 @@
                   '{{ if $solVuelta.FechaVuelta }}{{ $solVuelta.FechaVuelta.Format `2006-01-02T15:04` }}{{ else if $solVuelta.FechaIda }}{{ $solVuelta.FechaIda.Format `2006-01-02T15:04` }}{{ end }}',
                   $el.dataset.motivo,
                   '{{ $solVuelta.AerolineaSugerida }}',
-                  '{{ $solVuelta.TipoItinerarioID }}'
+                  '{{ $solVuelta.TipoItinerarioCodigo }}'
                 )"
               class="group/btn relative px-2.5 py-1 rounded text-[9px] font-bold uppercase border transition-all bg-amber-50 text-amber-700 border-amber-100 hover:bg-amber-100">
               Editar Vuelta

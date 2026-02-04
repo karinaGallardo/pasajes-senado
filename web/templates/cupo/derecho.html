@@ -172,18 +172,15 @@
                     </button>
                     {{ else }} {{ $solIda := .GetSolicitudIda }}
 
-                    <!-- Agendar Retorno (Si falta vuelta) -->
+                    <!-- Acciones sobre Solicitud Existente -->
                     {{ if .Permissions.CanCreateVuelta }}
                     <button
                       hx-get="/solicitudes/derecho/{{ $solIda.ID }}/modal-editar"
                       hx-target="#modal-container"
-                      class="text-neutral-500 hover:text-secondary hover:border-secondary font-bold text-[10px] uppercase border border-neutral-200 bg-white rounded px-2 py-1 transition-colors cursor-pointer w-full text-center block mb-1">
-                      Agendar Retorno
+                      class="text-amber-700 hover:bg-amber-100 font-bold text-[10px] uppercase border border-amber-100 bg-amber-50 rounded px-2 py-1 transition-colors cursor-pointer w-full text-center block mb-1">
+                      Editar / Agendar Retorno
                     </button>
-                    {{ end }}
-
-                    <!-- Editar / Ver Solicitud -->
-                    {{ if .Permissions.CanEditIda }}
+                    {{ else if .Permissions.CanEditIda }}
                     <button
                       hx-get="/solicitudes/derecho/{{ $solIda.ID }}/modal-editar"
                       hx-target="#modal-container"

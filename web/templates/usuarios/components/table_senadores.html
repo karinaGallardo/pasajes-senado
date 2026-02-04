@@ -5,7 +5,6 @@
       <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-10">#</th>
       <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Senador Titular</th>
       <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Senador Suplente</th>
-      <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Departamento</th>
     </tr>
   </thead>
   <tbody class="divide-y divide-gray-200 bg-white">
@@ -23,7 +22,7 @@
 
         <div class="mt-1 space-y-0.5">
           {{ if $user.Cargo }}
-          <div class="text-[10px] text-neutral-500 font-bold uppercase">{{ $user.Cargo.Descripcion }}</div>
+          <div class="text-[10px] text-neutral-500 font-bold uppercase">{{ $user.Cargo.Descripcion }} por {{ $user.Departamento.Nombre }}</div>
           {{ end }} {{ if $user.Oficina }}
           <div class="text-[10px] text-neutral-400">{{ $user.Oficina.Detalle }}</div>
           {{ end }} {{ if $user.Email }}
@@ -73,7 +72,7 @@
 
         <div class="mt-1 space-y-0.5">
           {{ if $suplente.Cargo }}
-          <div class="text-[10px] text-neutral-500 font-bold uppercase">{{ $suplente.Cargo.Descripcion }}</div>
+          <div class="text-[10px] text-neutral-500 font-bold uppercase">{{ $suplente.Cargo.Descripcion }} por {{ $suplente.Departamento.Nombre }}</div>
           {{ end }} {{ if $suplente.Oficina }}
           <div class="text-[10px] text-neutral-400">{{ $suplente.Oficina.Detalle }}</div>
           {{ end }} {{ if $suplente.Email }}
@@ -113,12 +112,6 @@
         {{ else }}
         <span class="text-neutral-400 italic text-xs">Sin suplente asignado</span>
         {{ end }}
-      </td>
-      <td class="px-6 py-4 whitespace-nowrap">
-        {{ if $user.Departamento }}
-        <div class="text-[11px] text-primary-600 font-bold uppercase tracking-tighter">{{ $user.Departamento.Nombre }}</div>
-        {{ end }}
-        <div class="text-[10px] text-neutral-300 font-bold uppercase tracking-tighter mt-1">{{ $user.Tipo }}</div>
       </td>
     </tr>
     {{ end }}

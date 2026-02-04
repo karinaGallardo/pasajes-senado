@@ -273,39 +273,6 @@ func (ctrl *CupoController) RevertirTransferencia(c *gin.Context) {
 	c.Redirect(http.StatusFound, targetURL)
 }
 
-func (ctrl *CupoController) PrintRequests(c *gin.Context) {
-	id := c.Param("id")
-
-	item, err := ctrl.service.GetCupoDerechoItemByID(c.Request.Context(), id)
-	if err != nil {
-		c.String(http.StatusNotFound, "Cupo no encontrado")
-		return
-	}
-
-	pdfBytes, err := ctrl.reportService.GenerateCupoSolicitudesPDF(c.Request.Context(), item.ID)
-	if err != nil {
-		c.String(http.StatusInternalServerError, "Error generando reporte: "+err.Error())
-		return
-	}
-
-	filename := fmt.Sprintf("solicitudes_cupo_%s.pdf", item.Semana)
-	c.Header("Content-Disposition", "inline; filename="+filename)
-	c.Data(http.StatusOK, "application/pdf", pdfBytes)
-}
-
-func (ctrl *CupoController) GetPrintModal(c *gin.Context) {
-	id := c.Param("id")
-	item, err := ctrl.service.GetCupoDerechoItemByID(c.Request.Context(), id)
-	if err != nil {
-		c.String(http.StatusNotFound, "Cupo no encontrado")
-		return
-	}
-
-	utils.Render(c, "cupo/modal_print", gin.H{
-		"Item": item,
-	})
-}
-
 func (ctrl *CupoController) Reset(c *gin.Context) {
 	var req dtos.ResetCupoRequest
 	if err := c.ShouldBind(&req); err != nil {

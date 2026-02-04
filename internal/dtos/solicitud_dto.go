@@ -1,13 +1,13 @@
 package dtos
 
 type CreateSolicitudRequest struct {
-	ConceptoID      string `form:"concepto_id"`
-	TipoSolicitudID string `form:"tipo_solicitud_id" binding:"required"`
-	AmbitoViajeID   string `form:"ambito_viaje_id" binding:"required"`
-	TargetUserID    string `form:"target_user_id"`
+	ConceptoCodigo      string `form:"concepto_codigo"`
+	TipoSolicitudCodigo string `form:"tipo_solicitud_codigo" binding:"required"`
+	AmbitoViajeCodigo   string `form:"ambito_viaje_codigo" binding:"required"`
+	TargetUserID        string `form:"target_user_id"`
 
-	TipoItinerarioID   string `form:"tipo_itinerario_id"`
-	TipoItinerarioCode string `form:"tipo_itinerario"`
+	TipoItinerarioCodigo string `form:"tipo_itinerario_codigo"`
+	TipoItinerario       string `form:"tipo_itinerario"` // Mantener por compatibilidad con algunos switches en frontend si fuera necesario
 
 	OrigenIATA        string `form:"origen" binding:"required"`
 	DestinoIATA       string `form:"destino" binding:"required"`
@@ -22,15 +22,15 @@ type CreateSolicitudRequest struct {
 }
 
 type UpdateSolicitudRequest struct {
-	TipoSolicitudID   string `form:"tipo_solicitud_id" binding:"required"`
-	AmbitoViajeID     string `form:"ambito_viaje_id" binding:"required"`
-	TipoItinerarioID  string `form:"tipo_itinerario_id" binding:"required"`
-	OrigenIATA        string `form:"origen_cod" binding:"required"`
-	DestinoIATA       string `form:"destino_cod" binding:"required"`
-	FechaIda          string `form:"fecha_salida"`
-	FechaVuelta       string `form:"fecha_retorno"`
-	Motivo            string `form:"motivo"`
-	AerolineaSugerida string `form:"aerolinea_sugerida"`
-	ActiveTab         string `form:"active_tab"`
-	ReturnURL         string `form:"return_url"`
+	TipoSolicitudCodigo  string `form:"tipo_solicitud_codigo" binding:"required"`
+	AmbitoViajeCodigo    string `form:"ambito_viaje_codigo" binding:"required"`
+	TipoItinerarioCodigo string `form:"tipo_itinerario_codigo" binding:"required"`
+	OrigenIATA           string `form:"origen_cod" binding:"required"`
+	DestinoIATA          string `form:"destino_cod" binding:"required"`
+	FechaIda             string `form:"fecha_salida"`
+	FechaVuelta          string `form:"fecha_retorno"`
+	Motivo               string `form:"motivo"`
+	AerolineaSugerida    string `form:"aerolinea_sugerida"`
+	ActiveTab            string `form:"active_tab"`
+	ReturnURL            string `form:"return_url"`
 }

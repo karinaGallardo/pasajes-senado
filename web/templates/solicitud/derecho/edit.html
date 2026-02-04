@@ -13,8 +13,8 @@
 
     isSubmitting: false,
 
-    selectedDaySalida: '{{ if .IsEdit }}{{ if eq .ActiveTab `SOLO_VUELTA` }}{{ .Solicitud.FechaVuelta.Format `2006-01-02` }}{{ else }}{{ .Solicitud.FechaIda.Format `2006-01-02` }}{{ end }}{{ else }}{{ .Item.FechaDesde.Format `2006-01-02` }}{{ end }}',
-    selectedTimeSalida: '{{ if .IsEdit }}{{ if eq .ActiveTab `SOLO_VUELTA` }}{{ .Solicitud.FechaVuelta.Format `15:04` }}{{ else }}{{ .Solicitud.FechaIda.Format `15:04` }}{{ end }}{{ else }}08:00{{ end }}',
+    selectedDaySalida: '{{ if .IsEdit }}{{ if eq .ActiveTab `SOLO_VUELTA` }}{{ if .Solicitud.GetFechaVuelta }}{{ .Solicitud.GetFechaVuelta.Format `2006-01-02` }}{{ end }}{{ else }}{{ if .Solicitud.GetFechaIda }}{{ .Solicitud.GetFechaIda.Format `2006-01-02` }}{{ end }}{{ end }}{{ else }}{{ .Item.FechaDesde.Format `2006-01-02` }}{{ end }}',
+    selectedTimeSalida: '{{ if .IsEdit }}{{ if eq .ActiveTab `SOLO_VUELTA` }}{{ if .Solicitud.GetFechaVuelta }}{{ .Solicitud.GetFechaVuelta.Format `15:04` }}{{ end }}{{ else }}{{ if .Solicitud.GetFechaIda }}{{ .Solicitud.GetFechaIda.Format `15:04` }}{{ end }}{{ end }}{{ else }}08:00{{ end }}',
 
     isEdit: {{ .IsEdit }},
     editId: '{{ .Solicitud.ID }}',

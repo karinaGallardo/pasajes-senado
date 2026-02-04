@@ -18,8 +18,8 @@ func NewCatalogoController() *CatalogoController {
 }
 
 func (ctrl *CatalogoController) GetTipos(c *gin.Context) {
-	conceptoID := c.Query("concepto_id")
-	tipos, _ := ctrl.tipoSolicitudService.GetByConcepto(c.Request.Context(), conceptoID)
+	conceptoCodigo := c.Query("concepto_codigo")
+	tipos, _ := ctrl.tipoSolicitudService.GetByConcepto(c.Request.Context(), conceptoCodigo)
 
 	c.HTML(http.StatusOK, "catalogos/options_tipos", gin.H{
 		"Tipos": tipos,
@@ -27,8 +27,8 @@ func (ctrl *CatalogoController) GetTipos(c *gin.Context) {
 }
 
 func (ctrl *CatalogoController) GetAmbitos(c *gin.Context) {
-	tipoID := c.Query("tipo_solicitud_id")
-	ambitos, _ := ctrl.tipoSolicitudService.GetAmbitosByTipo(c.Request.Context(), tipoID)
+	tipoCodigo := c.Query("tipo_solicitud_codigo")
+	ambitos, _ := ctrl.tipoSolicitudService.GetAmbitosByTipo(c.Request.Context(), tipoCodigo)
 
 	c.HTML(http.StatusOK, "catalogos/options_ambitos", gin.H{
 		"Ambitos": ambitos,

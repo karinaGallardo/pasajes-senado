@@ -9,13 +9,11 @@
       x-transition:leave="ease-in duration-200"
       x-transition:leave-start="opacity-100"
       x-transition:leave-end="opacity-0"
-      class="fixed inset-0 bg-neutral-500 bg-opacity-75 transition-opacity"
-      @click="open = false"></div>
+      class="fixed inset-0 bg-neutral-500 bg-opacity-75 transition-opacity"></div>
 
     <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
     <div
-      class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6"
-      @click.away="open = false">
+      class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
       <form action="/admin/cupos/transferir" method="POST" x-data="{ submitting: false }" @submit="submitting = true">
         <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
         <input type="hidden" name="item_id" value="{{ .Item.ID }}" />

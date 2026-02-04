@@ -8,13 +8,13 @@ import (
 
 type Destino struct {
 	IATA               string        `gorm:"primaryKey;size:5;not null" json:"iata"`
-	Ciudad             string        `gorm:"size:100;not null;uniqueIndex:idx_destino_location" json:"ciudad"`
+	Ciudad             string        `gorm:"size:100;not null" json:"ciudad"`
 	Aeropuerto         string        `gorm:"size:255" json:"aeropuerto"`
 	AmbitoCodigo       string        `gorm:"size:20;not null;index"`
 	Ambito             *AmbitoViaje  `gorm:"foreignKey:AmbitoCodigo;references:Codigo"`
-	DepartamentoCodigo *string       `gorm:"size:5;index;uniqueIndex:idx_destino_location"`
+	DepartamentoCodigo *string       `gorm:"size:5;index"`
 	Departamento       *Departamento `gorm:"foreignKey:DepartamentoCodigo;references:Codigo"`
-	Pais               *string       `gorm:"size:100;uniqueIndex:idx_destino_location" json:"pais"`
+	Pais               *string       `gorm:"size:100" json:"pais"`
 	Estado             bool          `gorm:"default:true"`
 
 	CreatedAt time.Time      `gorm:"index;type:timestamp"`

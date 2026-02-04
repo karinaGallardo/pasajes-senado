@@ -19,6 +19,7 @@ func main() {
 	seedCatalogosViaje()
 	seedDestinos()
 	seedEstadosSolicitud()
+	seedEstadosSolicitudItem()
 	seedEstadosCupoDerecho()
 	seedEstadosPasaje()
 	seedViaticosAndConfig()
@@ -187,8 +188,8 @@ func seedEstadosSolicitud() {
 	fmt.Println("Sincronizando Estados de Solicitud...")
 	estados := []models.EstadoSolicitud{
 		{Codigo: "SOLICITADO", Nombre: "Solicitado", Color: "blue", Descripcion: "Solicitud creada, pendiente de aprobación"},
+		{Codigo: "PARCIALMENTE_APROBADO", Nombre: "Parcialmente Aprobado", Color: "orange", Descripcion: "Algunos tramos aprobados, otros pendientes"},
 		{Codigo: "APROBADO", Nombre: "Aprobado", Color: "green", Descripcion: "Solicitud aprobada, pasajes en emisión"},
-		{Codigo: "EMITIDO", Nombre: "Pasaje Emitido", Color: "teal", Descripcion: "Pasajes emitidos y enviados al beneficiario"},
 		{Codigo: "RECHAZADO", Nombre: "Rechazado", Color: "red", Descripcion: "Solicitud rechazada por autoridad"},
 		{Codigo: "FINALIZADO", Nombre: "Finalizado", Color: "gray", Descripcion: "Viaje completado y cerrado"},
 	}
@@ -282,25 +283,25 @@ func seedCatalogosViaje() {
 	configs.DB.FirstOrCreate(&conceptoOfi, models.ConceptoViaje{Codigo: "OFICIAL"})
 
 	tipoCupo := models.TipoSolicitud{
-		Codigo:          "USO_CUPO",
-		Nombre:          "Uso de Cupo Mensual",
-		ConceptoViajeID: conceptoDer.ID,
+		Codigo:              "USO_CUPO",
+		Nombre:              "Uso de Cupo Mensual",
+		ConceptoViajeCodigo: conceptoDer.Codigo,
 	}
 	configs.DB.FirstOrCreate(&tipoCupo, models.TipoSolicitud{Codigo: "USO_CUPO"})
 
 	configs.DB.Model(&tipoCupo).Association("Ambitos").Append(&ambitoNac)
 
 	tipoComision := models.TipoSolicitud{
-		Codigo:          "COMISION",
-		Nombre:          "Comisión Oficial",
-		ConceptoViajeID: conceptoOfi.ID,
+		Codigo:              "COMISION",
+		Nombre:              "Comisión Oficial",
+		ConceptoViajeCodigo: conceptoOfi.Codigo,
 	}
 	configs.DB.FirstOrCreate(&tipoComision, models.TipoSolicitud{Codigo: "COMISION"})
 	configs.DB.Model(&tipoComision).Association("Ambitos").Append(&ambitoNac, &ambitoInt)
 	tipoInvitacion := models.TipoSolicitud{
-		Codigo:          "INVITACION",
-		Nombre:          "Invitación Institucional",
-		ConceptoViajeID: conceptoOfi.ID,
+		Codigo:              "INVITACION",
+		Nombre:              "Invitación Institucional",
+		ConceptoViajeCodigo: conceptoOfi.Codigo,
 	}
 	configs.DB.FirstOrCreate(&tipoInvitacion, models.TipoSolicitud{Codigo: "INVITACION"})
 	configs.DB.Model(&tipoInvitacion).Association("Ambitos").Append(&ambitoNac, &ambitoInt)
@@ -429,5 +430,22 @@ func seedGeneros() {
 
 	for _, g := range generos {
 		configs.DB.Where("codigo = ?", g.Codigo).FirstOrCreate(&g)
+	}
+}
+
+func seedEstadosSolicitudItem() {
+	fmt.Println("Sincronizando Estados de Solicitud Item...")
+	estados := []models.EstadoSolicitudItem{
+		{Codigo: "PENDIENTE", Nombre: "Pendiente", Color: "gray", Descripcion: "Item pendiente o no solicitado"},
+		{Codigo: "SOLICITADO", Nombre: "Solicitado", Color: "blue", Descripcion: "Item solicitado"},
+		{Codigo: "APROBADO", Nombre: "Aprobado", Color: "green", Descripcion: "Item aprobado por autoridad"},
+		{Codigo: "RECHAZADO", Nombre: "Rechazado", Color: "red", Descripcion: "Item rechazado"},
+		{Codigo: "EMITIDO", Nombre: "Emitido", Color: "teal", Descripcion: "Boleto emitido"},
+		{Codigo: "FINALIZADO", Nombre: "Finalizado", Color: "gray", Descripcion: "Item completado"},
+		{Codigo: "CANCELADO", Nombre: "Cancelado", Color: "red", Descripcion: "Item cancelado"},
+	}
+
+	for _, e := range estados {
+		configs.DB.Where("codigo = ?", e.Codigo).FirstOrCreate(&e)
 	}
 }

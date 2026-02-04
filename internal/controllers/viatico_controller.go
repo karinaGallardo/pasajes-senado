@@ -33,8 +33,11 @@ func (ctrl *ViaticoController) Create(c *gin.Context) {
 	}
 
 	dias := 0.0
-	if solicitud.FechaVuelta != nil && solicitud.FechaIda != nil {
-		diff := solicitud.FechaVuelta.Sub(*solicitud.FechaIda)
+	fIda := solicitud.GetFechaIda()
+	fVuelta := solicitud.GetFechaVuelta()
+
+	if fVuelta != nil && fIda != nil {
+		diff := fVuelta.Sub(*fIda)
 		dias = diff.Hours() / 24
 		if dias < 1 {
 			dias = 1
@@ -156,9 +159,13 @@ func (ctrl *ViaticoController) Print(c *gin.Context) {
 		pdf.Ln(2)
 
 		drawLabelBox("SOLICITUD :", sol.Codigo, 40, 60, true)
-		drawLabelBox("FECHA VIAJE :", sol.FechaIda.Format("02/01/2006"), 30, 60, false)
+		fechaSol := "-"
+		if fIda := sol.GetFechaIda(); fIda != nil {
+			fechaSol = fIda.Format("02/01/2006")
+		}
+		drawLabelBox("FECHA VIAJE :", fechaSol, 30, 60, false)
 		drawLabelBox("MOTIVO :", sol.Motivo, 40, 150, false)
-		drawLabelBox("LUGAR :", fmt.Sprintf("%s - %s", sol.Origen.Ciudad, sol.Destino.Ciudad), 40, 150, false)
+		drawLabelBox("LUGAR :", fmt.Sprintf("%s - %s", sol.GetOrigenCiudad(), sol.GetDestinoCiudad()), 40, 150, false)
 	}
 
 	pdf.Ln(5)

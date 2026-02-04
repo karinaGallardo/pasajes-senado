@@ -119,12 +119,19 @@ func (ctrl *SolicitudDerechoController) Create(c *gin.Context) {
 		existingSolicitudes, _ := ctrl.solicitudService.GetByCupoDerechoItemID(c.Request.Context(), itemID)
 		var fechaIda *time.Time
 		for _, sol := range existingSolicitudes {
-			if sol.TipoItinerario.Codigo == "SOLO_IDA" && sol.FechaIda != nil {
+			if sol.TipoItinerario.Codigo == "SOLO_IDA" {
 				stateCode := sol.GetEstadoCodigo()
 				if stateCode != "RECHAZADO" && stateCode != "ELIMINADO" {
-					fechaIda = sol.FechaIda
-					break
+					for _, item := range sol.Items {
+						if item.Fecha != nil {
+							fechaIda = item.Fecha
+							break
+						}
+					}
 				}
+			}
+			if fechaIda != nil {
+				break
 			}
 		}
 
@@ -291,10 +298,10 @@ func (ctrl *SolicitudDerechoController) Edit(c *gin.Context) {
 
 	for _, t := range TiposItinerario {
 		if t.Codigo == "SOLO_IDA" {
-			ItinerarioIdaID = t.ID
+			ItinerarioIdaID = t.Codigo
 		}
 		if t.Codigo == "SOLO_VUELTA" {
-			ItinerarioVueltaID = t.ID
+			ItinerarioVueltaID = t.Codigo
 		}
 	}
 
@@ -454,7 +461,6 @@ func (ctrl *SolicitudDerechoController) Update(c *gin.Context) {
 		return
 	}
 
-	// Allow editing if SOLICITADO or APROBADO (e.g. to add return date)
 	currentStatus := "SOLICITADO"
 	if solicitud.EstadoSolicitudCodigo != nil {
 		currentStatus = *solicitud.EstadoSolicitudCodigo
@@ -465,30 +471,49 @@ func (ctrl *SolicitudDerechoController) Update(c *gin.Context) {
 		return
 	}
 
-	if req.TipoItinerarioID != "" {
-		solicitud.TipoItinerarioID = req.TipoItinerarioID
+	if req.TipoItinerarioCodigo != "" {
+		solicitud.TipoItinerarioCodigo = req.TipoItinerarioCodigo
 	}
 
-	// Only allow modifying Critical Fields if NOT Approved yet
-	// This prevents accidentally changing the 'Ida' date/route of an already active trip
 	if currentStatus == "SOLICITADO" {
-		solicitud.TipoSolicitudID = req.TipoSolicitudID
-		solicitud.AmbitoViajeID = req.AmbitoViajeID
-		solicitud.OrigenIATA = req.OrigenIATA
-		solicitud.DestinoIATA = req.DestinoIATA
-		solicitud.FechaIda = fechaIda
+		solicitud.TipoSolicitudCodigo = req.TipoSolicitudCodigo
+		solicitud.AmbitoViajeCodigo = req.AmbitoViajeCodigo
+
+		orig, _ := ctrl.destinoService.GetByIATA(c.Request.Context(), req.OrigenIATA)
+		dest, _ := ctrl.destinoService.GetByIATA(c.Request.Context(), req.DestinoIATA)
+
+		for i := range solicitud.Items {
+			it := &solicitud.Items[i]
+			switch it.Tipo {
+			case models.TipoSolicitudItemIda:
+				it.Fecha = fechaIda
+				if orig != nil {
+					it.OrigenIATA = orig.IATA
+					it.Origen = orig
+				}
+				if dest != nil {
+					it.DestinoIATA = dest.IATA
+					it.Destino = dest
+				}
+			case models.TipoSolicitudItemVuelta:
+				it.Fecha = fechaVuelta
+				// Para la vuelta, el destino de llegada es el origen del viaje (regresa a casa)
+				if orig != nil {
+					it.DestinoIATA = orig.IATA
+					it.Destino = orig
+				}
+				if dest != nil {
+					it.OrigenIATA = dest.IATA
+					it.Origen = dest
+				}
+			}
+		}
 	}
-	solicitud.FechaVuelta = fechaVuelta
 	solicitud.Motivo = req.Motivo
-	solicitud.AerolineaSugerida = req.AerolineaSugerida
 
 	// If it was APPROVED, revert to SOLICITADO to trigger re-approval of adjustments
 	if currentStatus == "APROBADO" {
 		solicitud.EstadoSolicitudCodigo = utils.Ptr("SOLICITADO")
-		// If we are saving a return date on an already approved request, this constitutes a separate return booking flow
-		if fechaVuelta != nil {
-			solicitud.VueltaSeparada = true
-		}
 	}
 
 	if err := ctrl.solicitudService.Update(c.Request.Context(), solicitud); err != nil {
@@ -560,8 +585,8 @@ func (ctrl *SolicitudDerechoController) Show(c *gin.Context) {
 
 	// --- 1. Permissions Logic ---
 	hasEmitted := false
-	for _, p := range solicitud.Pasajes {
-		if p.EstadoPasajeCodigo != nil && *p.EstadoPasajeCodigo == "EMITIDO" {
+	for _, item := range solicitud.Items {
+		if item.Pasaje != nil && item.Pasaje.EstadoPasajeCodigo != nil && *item.Pasaje.EstadoPasajeCodigo == "EMITIDO" {
 			hasEmitted = true
 			break
 		}
@@ -570,7 +595,7 @@ func (ctrl *SolicitudDerechoController) Show(c *gin.Context) {
 	perms := SolicitudPermissions{
 		CanEdit:           authUser.CanEditSolicitud(*solicitud),
 		CanApproveReject:  authUser.CanApproveReject() && st == "SOLICITADO",
-		CanRevertApproval: authUser.IsAdminOrResponsable() && st == "APROBADO" && len(solicitud.Pasajes) == 0,
+		CanRevertApproval: authUser.IsAdminOrResponsable() && st == "APROBADO",
 		CanAssignPasaje:   authUser.IsAdminOrResponsable() && st == "APROBADO",
 		CanMakeDescargo:   hasEmitted,
 		IsAdminOrResp:     authUser.IsAdminOrResponsable(),
@@ -648,13 +673,17 @@ func (ctrl *SolicitudDerechoController) Show(c *gin.Context) {
 
 	// --- 4. Pasajes Views (con permisos pre-calculados) ---
 	var pasajesViews []PasajeView
-	for _, p := range solicitud.Pasajes {
+	for _, item := range solicitud.Items {
+		if item.Pasaje == nil {
+			continue
+		}
+		p := item.Pasaje
 		pCode := ""
 		if p.EstadoPasajeCodigo != nil {
 			pCode = *p.EstadoPasajeCodigo
 		}
 
-		pv := PasajeView{Pasaje: p}
+		pv := PasajeView{Pasaje: *p}
 
 		// Status Color logic
 		if p.EstadoPasaje != nil {

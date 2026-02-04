@@ -16,12 +16,12 @@ func NewTipoSolicitudService() *TipoSolicitudService {
 	}
 }
 
-func (s *TipoSolicitudService) GetByConcepto(ctx context.Context, conceptoID string) ([]models.TipoSolicitud, error) {
-	return s.repo.WithContext(ctx).FindByConceptoID(conceptoID)
+func (s *TipoSolicitudService) GetByConcepto(ctx context.Context, conceptoCodigo string) ([]models.TipoSolicitud, error) {
+	return s.repo.WithContext(ctx).FindByConceptoCodigo(conceptoCodigo)
 }
 
-func (s *TipoSolicitudService) GetAmbitosByTipo(ctx context.Context, tipoID string) ([]models.AmbitoViaje, error) {
-	return s.repo.WithContext(ctx).FindAmbitosByTipoID(tipoID)
+func (s *TipoSolicitudService) GetAmbitosByTipo(ctx context.Context, tipoCodigo string) ([]models.AmbitoViaje, error) {
+	return s.repo.WithContext(ctx).FindAmbitosByTipoCodigo(tipoCodigo)
 }
 
 func (s *TipoSolicitudService) GetByID(ctx context.Context, id string) (*models.TipoSolicitud, error) {

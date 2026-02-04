@@ -8,7 +8,6 @@ import (
 
 func main() {
 	configs.ConnectDB()
-
 	log.Println("Iniciando migración completa de base de datos...")
 
 	err := configs.DB.AutoMigrate(
@@ -44,6 +43,7 @@ func main() {
 		&models.AmbitoViaje{},
 		&models.TipoItinerario{},
 		&models.EstadoSolicitud{},
+		&models.EstadoSolicitudItem{},
 		&models.EstadoPasaje{},
 
 		// Gestión de Cupos
@@ -53,6 +53,7 @@ func main() {
 
 		// Operaciones Principales
 		&models.Solicitud{},
+		&models.SolicitudItem{},
 		&models.Pasaje{},
 		&models.Viatico{},
 		&models.DetalleViatico{},

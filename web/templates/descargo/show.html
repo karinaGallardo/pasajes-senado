@@ -79,14 +79,14 @@
           </div>
           <div>
             <dt class="text-xs font-semibold text-neutral-500 uppercase">Destino</dt>
-            <dd class="text-sm text-neutral-900">{{ .Descargo.Solicitud.Origen.Nombre }} - {{ .Descargo.Solicitud.Destino.Nombre }}</dd>
+            <dd class="text-sm text-neutral-900">{{ .Descargo.Solicitud.GetOrigenCiudad }} - {{ .Descargo.Solicitud.GetDestinoCiudad }}</dd>
           </div>
           <div>
             <dt class="text-xs font-semibold text-neutral-500 uppercase">Período</dt>
             <dd class="text-sm text-neutral-900">
-              {{ if .Descargo.Solicitud.FechaIda }}{{ .Descargo.Solicitud.FechaIda.Format "02/01/06" }}{{ else }} - {{ end }}
+              {{ if .Descargo.Solicitud.GetFechaIda }}{{ .Descargo.Solicitud.GetFechaIda.Format "02/01/06" }}{{ else }} - {{ end }}
               <br />
-              {{ if .Descargo.Solicitud.FechaVuelta }}{{ .Descargo.Solicitud.FechaVuelta.Format "02/01/06" }}{{ else }} - {{ end }}
+              {{ if .Descargo.Solicitud.GetFechaVuelta }}{{ .Descargo.Solicitud.GetFechaVuelta.Format "02/01/06" }}{{ else }} - {{ end }}
             </dd>
           </div>
         </dl>

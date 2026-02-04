@@ -1,5 +1,5 @@
 {{ define "layout_start" }}
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
@@ -9,13 +9,15 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 
-    <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.8/dist/htmx.min.js"></script>
+    <script src="/static/lib/htmx/htmx.min.js"></script>
     <script>
-      document.addEventListener("htmx:configRequest", (event) => {
+      /*
+        document.addEventListener("htmx:configRequest", (event) => {
         event.detail.headers["X-CSRF-Token"] = "{{ .csrf_token }}";
       });
+      */
     </script>
-    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.15.3/dist/cdn.min.js"></script>
+    <script defer src="/static/lib/alpinejs/alpine.min.js"></script>
     <script>
       document.addEventListener("alpine:init", () => {
         Alpine.data("searchableSelect", (config) => ({
@@ -31,7 +33,7 @@
             if (this.search === "") return this.items;
             const q = this.search.toLowerCase();
             return this.items.filter(
-              (i) => (i.label && i.label.toLowerCase().includes(q)) || (i.value && i.value.toLowerCase().includes(q)) || (i.extra && i.extra.toLowerCase().includes(q))
+              (i) => (i.label && i.label.toLowerCase().includes(q)) || (i.value && i.value.toLowerCase().includes(q)) || (i.extra && i.extra.toLowerCase().includes(q)),
             );
           },
 
@@ -47,8 +49,8 @@
     <link rel="stylesheet" type="text/css" href="/static/lib/phosphor/regular/style.css" />
     <link rel="stylesheet" type="text/css" href="/static/lib/phosphor/bold/style.css" />
     <link rel="stylesheet" type="text/css" href="/static/lib/phosphor/fill/style.css" />
-    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <!-- <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script> -->
+    <script src="/static/lib/sweetalert2/sweetalert2.min.js"></script>
     <script>
       document.addEventListener("htmx:confirm", function (e) {
         if (!e.detail.question) return;
@@ -80,7 +82,7 @@
       });
     </script>
 
-    <script src="https://cdn.tailwindcss.com?plugins=forms,typography,aspect-ratio"></script>
+    <script src="/static/lib/tailwindcss/tailwindcss_plugins.js"></script>
     <script>
       tailwind.config = {
         theme: {
@@ -334,9 +336,7 @@
                   <div class="text-sm font-medium text-neutral-900">{{ .AuthUser.GetNombreCompleto }}</div>
                   <div class="text-xs text-neutral-500">{{ .AuthUser.Rol.Codigo }}</div>
                 </div>
-                <div class="h-10 w-10 rounded-full bg-primary flex items-center justify-center text-white font-bold shadow-sm">
-                  {{ printf "%.1s" .AuthUser.GetNombreCompleto }}
-                </div>
+                <div class="h-10 w-10 rounded-full bg-primary flex items-center justify-center text-white font-bold shadow-sm">{{ printf "%.1s" .AuthUser.GetNombreCompleto }}</div>
               </div>
               <div
                 x-show="open"
