@@ -36,12 +36,3 @@ func (r *SolicitudItemRepository) FindByID(id string) (*models.SolicitudItem, er
 	}
 	return &item, nil
 }
-
-func (r *SolicitudItemRepository) FindByPasajeID(pasajeID string) (*models.SolicitudItem, error) {
-	var item models.SolicitudItem
-	err := r.db.Where("pasaje_id = ?", pasajeID).First(&item).Error
-	if err != nil {
-		return nil, err
-	}
-	return &item, nil
-}

@@ -199,10 +199,11 @@ func (ctrl *PasajeController) GetCreateModal(c *gin.Context) {
 	rutas, _ := ctrl.rutaService.GetAll(c.Request.Context())
 
 	utils.Render(c, "solicitud/components/modal_crear_pasaje", gin.H{
-		"Solicitud":  solicitud,
-		"Aerolineas": aerolineas,
-		"Agencias":   agencias,
-		"Rutas":      rutas,
+		"Solicitud":       solicitud,
+		"Aerolineas":      aerolineas,
+		"Agencias":        agencias,
+		"Rutas":           rutas,
+		"SolicitudItemID": c.Query("item_id"),
 	})
 }
 

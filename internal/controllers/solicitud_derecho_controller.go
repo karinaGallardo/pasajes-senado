@@ -478,6 +478,7 @@ func (ctrl *SolicitudDerechoController) Update(c *gin.Context) {
 	if currentStatus == "SOLICITADO" {
 		solicitud.TipoSolicitudCodigo = req.TipoSolicitudCodigo
 		solicitud.AmbitoViajeCodigo = req.AmbitoViajeCodigo
+		solicitud.AerolineaSugerida = req.AerolineaSugerida
 
 		orig, _ := ctrl.destinoService.GetByIATA(c.Request.Context(), req.OrigenIATA)
 		dest, _ := ctrl.destinoService.GetByIATA(c.Request.Context(), req.DestinoIATA)
@@ -586,20 +587,27 @@ func (ctrl *SolicitudDerechoController) Show(c *gin.Context) {
 	// --- 1. Permissions Logic ---
 	hasEmitted := false
 	for _, item := range solicitud.Items {
-		if item.Pasaje != nil && item.Pasaje.EstadoPasajeCodigo != nil && *item.Pasaje.EstadoPasajeCodigo == "EMITIDO" {
-			hasEmitted = true
+		for _, p := range item.Pasajes {
+			if p.EstadoPasajeCodigo != nil && *p.EstadoPasajeCodigo == "EMITIDO" {
+				hasEmitted = true
+				break
+			}
+		}
+		if hasEmitted {
 			break
 		}
 	}
 
 	perms := SolicitudPermissions{
 		CanEdit:           authUser.CanEditSolicitud(*solicitud),
-		CanApproveReject:  authUser.CanApproveReject() && st == "SOLICITADO",
-		CanRevertApproval: authUser.IsAdminOrResponsable() && st == "APROBADO",
-		CanAssignPasaje:   authUser.IsAdminOrResponsable() && st == "APROBADO",
+		CanApproveReject:  authUser.CanApproveReject(),
+		CanRevertApproval: authUser.IsAdminOrResponsable() && (st == "APROBADO" || st == "PARCIALMENTE_APROBADO" || st == "EMITIDO"),
+		CanAssignPasaje:   authUser.IsAdminOrResponsable(),
 		CanMakeDescargo:   hasEmitted,
 		IsAdminOrResp:     authUser.IsAdminOrResponsable(),
 	}
+
+	approvalLabel := "Acciones"
 
 	// --- 2. Stepper Logic ---
 	// Helper to create step style
@@ -674,60 +682,58 @@ func (ctrl *SolicitudDerechoController) Show(c *gin.Context) {
 	// --- 4. Pasajes Views (con permisos pre-calculados) ---
 	var pasajesViews []PasajeView
 	for _, item := range solicitud.Items {
-		if item.Pasaje == nil {
-			continue
-		}
-		p := item.Pasaje
-		pCode := ""
-		if p.EstadoPasajeCodigo != nil {
-			pCode = *p.EstadoPasajeCodigo
-		}
-
-		pv := PasajeView{Pasaje: *p}
-
-		// Status Color logic
-		if p.EstadoPasaje != nil {
-			pv.StatusColorClass = fmt.Sprintf("bg-%s-100 text-%s-800", p.EstadoPasaje.Color, p.EstadoPasaje.Color)
-		} else {
-			// Fallback logic
-			switch pCode {
-			case "RESERVADO":
-				pv.StatusColorClass = "bg-secondary-100 text-secondary-800"
-			case "EMITIDO":
-				pv.StatusColorClass = "bg-success-100 text-success-800"
-			case "REPROGRAMADO", "NO SHOW", "VALIDANDO_USO", "NO_SE_PRESENTO":
-				pv.StatusColorClass = "bg-warning-100 text-warning-800"
-			case "DEVUELTO", "USO_RECHAZADO":
-				pv.StatusColorClass = "bg-danger-100 text-danger-800"
-			case "USADO":
-				pv.StatusColorClass = "bg-primary-100 text-primary-800"
-			case "ANULADO":
-				pv.StatusColorClass = "bg-neutral-100 text-neutral-800"
-			default:
-				pv.StatusColorClass = "bg-neutral-100 text-neutral-800"
+		for i := range item.Pasajes {
+			p := &item.Pasajes[i]
+			pCode := ""
+			if p.EstadoPasajeCodigo != nil {
+				pCode = *p.EstadoPasajeCodigo
 			}
+
+			pv := PasajeView{Pasaje: *p}
+
+			// Status Color logic
+			if p.EstadoPasaje != nil {
+				pv.StatusColorClass = fmt.Sprintf("bg-%s-100 text-%s-800", p.EstadoPasaje.Color, p.EstadoPasaje.Color)
+			} else {
+				// Fallback logic
+				switch pCode {
+				case "RESERVADO":
+					pv.StatusColorClass = "bg-secondary-100 text-secondary-800"
+				case "EMITIDO":
+					pv.StatusColorClass = "bg-success-100 text-success-800"
+				case "REPROGRAMADO", "NO SHOW", "VALIDANDO_USO", "NO_SE_PRESENTO":
+					pv.StatusColorClass = "bg-warning-100 text-warning-800"
+				case "DEVUELTO", "USO_RECHAZADO":
+					pv.StatusColorClass = "bg-danger-100 text-danger-800"
+				case "USADO":
+					pv.StatusColorClass = "bg-primary-100 text-primary-800"
+				case "ANULADO":
+					pv.StatusColorClass = "bg-neutral-100 text-neutral-800"
+				default:
+					pv.StatusColorClass = "bg-neutral-100 text-neutral-800"
+				}
+			}
+
+			// Permissions logic for this pasaje
+			pPerms := PasajePermissions{}
+
+			// Individual Actions
+			canEmitir := authUser.IsAdminOrResponsable() && pCode == "RESERVADO"
+			pPerms.CanEdit = authUser.IsAdminOrResponsable() && pCode != "VALIDANDO_USO"
+			pPerms.CanMarkUsado = authUser.CanMarkUsado(*solicitud) && (pCode == "EMITIDO" || pCode == "USO_RECHAZADO")
+			pPerms.CanValidateUso = authUser.IsAdminOrResponsable() && pCode == "VALIDANDO_USO"
+			pPerms.CanReprogramar = authUser.IsAdminOrResponsable() && pCode != "VALIDANDO_USO"
+			pPerms.CanDevolver = authUser.IsAdminOrResponsable() && pCode != "VALIDANDO_USO"
+			pPerms.CanAnular = authUser.IsAdminOrResponsable() && pCode != "VALIDANDO_USO"
+			pPerms.CanEmitir = canEmitir // New permission
+
+			// Actions Menu Visibility
+			pPerms.ShowActionsMenu = pPerms.CanEdit || pPerms.CanMarkUsado || pPerms.CanValidateUso || pPerms.CanReprogramar || pPerms.CanDevolver || pPerms.CanAnular || pPerms.CanEmitir
+
+			pv.Perms = pPerms
+			pasajesViews = append(pasajesViews, pv)
 		}
-
-		// Permissions logic for this pasaje
-		pPerms := PasajePermissions{}
-
-		// Individual Actions
-		canEmitir := authUser.IsAdminOrResponsable() && pCode == "RESERVADO"
-		pPerms.CanEdit = authUser.IsAdminOrResponsable() && pCode != "VALIDANDO_USO"
-		pPerms.CanMarkUsado = authUser.CanMarkUsado(*solicitud) && (pCode == "EMITIDO" || pCode == "USO_RECHAZADO")
-		pPerms.CanValidateUso = authUser.IsAdminOrResponsable() && pCode == "VALIDANDO_USO"
-		pPerms.CanReprogramar = authUser.IsAdminOrResponsable() && pCode != "VALIDANDO_USO"
-		pPerms.CanDevolver = authUser.IsAdminOrResponsable() && pCode != "VALIDANDO_USO"
-		pPerms.CanAnular = authUser.IsAdminOrResponsable() && pCode != "VALIDANDO_USO"
-		pPerms.CanEmitir = canEmitir // New permission
-
-		// Actions Menu Visibility
-		pPerms.ShowActionsMenu = pPerms.CanEdit || pPerms.CanMarkUsado || pPerms.CanValidateUso || pPerms.CanReprogramar || pPerms.CanDevolver || pPerms.CanAnular || pPerms.CanEmitir
-
-		pv.Perms = pPerms
-		pasajesViews = append(pasajesViews, pv)
 	}
-
 	// Dependencies
 	aerolineas, _ := ctrl.aerolineaService.GetAllActive(c.Request.Context())
 	userIDsMap := make(map[string]bool)
@@ -758,6 +764,7 @@ func (ctrl *SolicitudDerechoController) Show(c *gin.Context) {
 		"ShowNextSteps": showNextSteps,
 		"StatusCard":    statusCard,
 		"PasajesView":   pasajesViews,
+		"ApprovalLabel": approvalLabel,
 
 		"Aerolineas": aerolineas,
 	})
@@ -852,4 +859,36 @@ func (ctrl *SolicitudDerechoController) Destroy(c *gin.Context) {
 
 	utils.SetSuccessMessage(c, "Solicitud eliminada")
 	c.Redirect(http.StatusFound, fmt.Sprintf("/cupos/derecho/%s", solicitud.UsuarioID))
+}
+
+func (ctrl *SolicitudDerechoController) ApproveItem(c *gin.Context) {
+	id := c.Param("id")
+	itemID := c.Param("item_id")
+	authUser := appcontext.AuthUser(c)
+	if authUser == nil || !authUser.CanApproveReject() {
+		c.String(http.StatusForbidden, "No tiene permisos para realizar esta acción")
+		return
+	}
+	if err := ctrl.solicitudService.ApproveItem(c.Request.Context(), id, itemID); err != nil {
+		c.String(http.StatusInternalServerError, "Error al aprobar el tramo: "+err.Error())
+		return
+	}
+	utils.SetSuccessMessage(c, "Tramo APROBADO correctamente")
+	c.Redirect(http.StatusFound, "/solicitudes/derecho/"+id+"/detalle")
+}
+
+func (ctrl *SolicitudDerechoController) RejectItem(c *gin.Context) {
+	id := c.Param("id")
+	itemID := c.Param("item_id")
+	authUser := appcontext.AuthUser(c)
+	if authUser == nil || !authUser.CanApproveReject() {
+		c.String(http.StatusForbidden, "No tiene permisos para realizar esta acción")
+		return
+	}
+	if err := ctrl.solicitudService.RejectItem(c.Request.Context(), id, itemID); err != nil {
+		c.String(http.StatusInternalServerError, "Error al rechazar el tramo: "+err.Error())
+		return
+	}
+	utils.SetSuccessMessage(c, "Tramo RECHAZADO")
+	c.Redirect(http.StatusFound, "/solicitudes/derecho/"+id+"/detalle")
 }

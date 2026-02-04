@@ -31,6 +31,8 @@ type Solicitud struct {
 
 	Motivo string `gorm:"type:text"`
 
+	AerolineaSugerida string `gorm:"size:100;comment:Aerolinea sugerida para todos los tramos"`
+
 	// New Decoupled Items
 	Items []SolicitudItem `gorm:"foreignKey:SolicitudID"`
 }
@@ -66,8 +68,8 @@ func (s *Solicitud) UpdateStatusBasedOnItems() {
 
 	for _, item := range s.Items {
 		st := item.GetEstado()
-		// Ignoramos cancelados para determinar estado de aprobación del viaje efectivo
-		if st == "CANCELADO" {
+		// Ignoramos cancelados y pendientes (no solicitados aun) para determinar aprobación
+		if st == "CANCELADO" || st == "PENDIENTE" {
 			continue
 		}
 		activeCount++

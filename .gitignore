@@ -22,3 +22,7 @@
 /tmp_rebuild
 /docs
 /consultas_mongo_db
+/.dockerignore
+/Dockerfile
+/docker-compose.yml
+/seeder

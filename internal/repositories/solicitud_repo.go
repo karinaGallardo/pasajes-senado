@@ -116,10 +116,11 @@ func (r *SolicitudRepository) FindByID(id string) (*models.Solicitud, error) {
 		Preload("Items").
 		Preload("Items.Origen").
 		Preload("Items.Destino").
-		Preload("Items.Pasaje.Aerolinea").
-		Preload("Items.Pasaje.Agencia").
-		Preload("Items.Pasaje.EstadoPasaje").
-		Preload("Items.Pasaje").
+		Preload("Items.Destino").
+		Preload("Items.Pasajes.Aerolinea").
+		Preload("Items.Pasajes.Agencia").
+		Preload("Items.Pasajes.EstadoPasaje").
+		Preload("Items.Pasajes").
 		Preload("Viaticos").
 		Preload("TipoSolicitud.ConceptoViaje").
 		Preload("EstadoSolicitud").

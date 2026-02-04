@@ -40,9 +40,9 @@
                   class="mt-1 block w-full rounded-md border-neutral-300 shadow-sm focus:border-secondary focus:ring-secondary sm:text-sm p-2 border">
                   <option value="">-- Seleccionar Segmento --</option>
                   {{ range .Solicitud.Items }}
-                  <option value="{{ .ID }}" {{ if .PasajeID }}disabled{{ end }}>
+                  <option value="{{ .ID }}" {{ if .Pasajes }}disabled{{ end }} {{ if eq .ID $.SolicitudItemID }}selected{{ end }}>
                     {{ .Tipo }} : {{ if .Origen }}{{ .Origen.IATA }}{{ else }}{{ .OrigenIATA }}{{ end }} -> {{ if .Destino }}{{ .Destino.IATA }}{{ else }}{{ .DestinoIATA }}{{ end
-                    }} {{ if .Fecha }}({{ .Fecha.Format "02/01/2006" }}){{ end }} {{ if .PasajeID }} [YA ASIGNADO]{{ end }}
+                    }} {{ if .Fecha }}({{ .Fecha.Format "02/01/2006" }}){{ end }} {{ if .Pasajes }} [YA ASIGNADO]{{ end }}
                   </option>
                   {{ end }}
                 </select>

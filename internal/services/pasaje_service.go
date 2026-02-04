@@ -42,6 +42,7 @@ func (s *PasajeService) Create(ctx context.Context, solicitudID string, req dtos
 
 	pasaje := &models.Pasaje{
 		SolicitudID:        solicitudID,
+		SolicitudItemID:    &req.SolicitudItemID,
 		EstadoPasajeCodigo: utils.Ptr("RESERVADO"),
 		AerolineaID:        aerolineaID,
 		AgenciaID:          &req.AgenciaID,
@@ -60,18 +61,7 @@ func (s *PasajeService) Create(ctx context.Context, solicitudID string, req dtos
 		if err := repo.Create(pasaje); err != nil {
 			return err
 		}
-
-		itemRepo := s.solicitudItemRepo.WithTx(tx)
-		item, err := itemRepo.FindByID(req.SolicitudItemID)
-		if err != nil {
-			return fmt.Errorf("item no encontrado: %w", err)
-		}
-
-		item.PasajeID = &pasaje.ID
-		if err := itemRepo.Update(item); err != nil {
-			return fmt.Errorf("error linkeando pasaje a item: %w", err)
-		}
-
+		// Since SolicitudItem has HasMany Pasajes, we dont need to update the item side with a single ID
 		return nil
 	})
 
@@ -150,6 +140,7 @@ func (s *PasajeService) Reprogramar(ctx context.Context, req dtos.ReprogramarPas
 
 		nuevoPasaje := &models.Pasaje{
 			SolicitudID:        pasajeAnterior.SolicitudID,
+			SolicitudItemID:    pasajeAnterior.SolicitudItemID,
 			PasajeAnteriorID:   &req.PasajeAnteriorID,
 			EstadoPasajeCodigo: &newState,
 			AerolineaID:        aerolineaID,
@@ -168,16 +159,6 @@ func (s *PasajeService) Reprogramar(ctx context.Context, req dtos.ReprogramarPas
 
 		if err := repoTx.Create(nuevoPasaje); err != nil {
 			return err
-		}
-
-		// Update SolicitudItem to point to the new pasaje
-		itemRepo := s.solicitudItemRepo.WithTx(tx)
-		item, err := itemRepo.FindByPasajeID(pasajeAnterior.ID)
-		if err == nil {
-			item.PasajeID = &nuevoPasaje.ID
-			if err := itemRepo.Update(item); err != nil {
-				return fmt.Errorf("error updating item with new pasaje: %w", err)
-			}
 		}
 
 		return nil
@@ -257,7 +238,10 @@ func (s *PasajeService) sendEmissionEmail(sol *models.Solicitud, pasaje *models.
 	if baseURL == "" {
 		baseURL = "http://localhost:8284"
 	}
+	// Asegurar que las barras sean forward slashes para URL
 	cleanPath := strings.ReplaceAll(pasaje.Archivo, "\\", "/")
+	// Si el path no empieza con /, agregarlo si baseURL no lo tiene, o simplemente concatenar con /
+	// Asumimos que cleanPath es relativo ex: "uploads/..."
 	fileURL := fmt.Sprintf("%s/%s", baseURL, cleanPath)
 
 	body := fmt.Sprintf(`
@@ -268,7 +252,7 @@ func (s *PasajeService) sendEmissionEmail(sol *models.Solicitud, pasaje *models.
 			<div style="padding: 20px; border: 1px solid #ddd; border-top: none; border-radius: 0 0 5px 5px;">
 				<p>Estimado/a <strong>%s</strong>,</p>
 				<p>Su pasaje correspondiente a la solicitud <strong>%s</strong> ha sido emitido exitosamente.</p>
-
+				
 				<h3 style="color: #03738C; border-bottom: 1px solid #eee; padding-bottom: 5px;">Detalles del Vuelo</h3>
 				<table style="width: 100%%; border-collapse: collapse; margin-top: 10px;">
 					<tr>
@@ -288,13 +272,17 @@ func (s *PasajeService) sendEmissionEmail(sol *models.Solicitud, pasaje *models.
 						<td style="padding: 8px 0;">%s</td>
 					</tr>
 				</table>
-
+				
 				<div style="margin-top: 25px; text-align: center;">
-					<a href="%s" style="background-color: #03738C; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">Ver Pasaje en el Sistema</a>
+					<a href="%s" target="_blank" style="background-color: #03738C; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">Ver Pasaje en el Sistema</a>
 				</div>
+				<p style="font-size: 12px; color: #999; margin-top: 20px; text-align: center;">
+					Si tiene problemas con el enlace, copie y pegue la siguiente URL en su navegador:<br>
+					<a href="%s" style="color: #03738C;">%s</a>
+				</p>
 			</div>
 		</div>
-	`, usuario.GetNombreCompleto(), sol.Codigo, ruta, fecha, boleto, pasaje.CodigoReserva, fileURL)
+	`, usuario.GetNombreCompleto(), sol.Codigo, ruta, fecha, boleto, pasaje.CodigoReserva, fileURL, fileURL, fileURL)
 
 	_ = s.emailService.SendEmail(to, cc, nil, subject, body)
 }

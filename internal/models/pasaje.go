@@ -6,6 +6,9 @@ type Pasaje struct {
 	BaseModel
 	SolicitudID string `gorm:"not null;size:36"`
 
+	SolicitudItemID *string        `gorm:"size:36;index"`
+	SolicitudItem   *SolicitudItem `gorm:"foreignKey:SolicitudItemID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
+
 	AerolineaID *string    `gorm:"size:36"`
 	Aerolinea   *Aerolinea `gorm:"foreignKey:AerolineaID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;<-:false"`
 
@@ -36,4 +39,21 @@ type Pasaje struct {
 
 func (Pasaje) TableName() string {
 	return "pasajes"
+}
+
+func (p Pasaje) GetEstado() string {
+	if p.EstadoPasaje != nil {
+		return p.EstadoPasaje.Nombre
+	}
+	if p.EstadoPasajeCodigo == nil {
+		return "EMITIDO"
+	}
+	return *p.EstadoPasajeCodigo
+}
+
+func (p Pasaje) GetEstadoCodigo() string {
+	if p.EstadoPasajeCodigo == nil {
+		return ""
+	}
+	return *p.EstadoPasajeCodigo
 }

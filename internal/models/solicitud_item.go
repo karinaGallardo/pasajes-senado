@@ -25,14 +25,11 @@ type SolicitudItem struct {
 	Fecha *time.Time `gorm:"type:timestamp"`
 	Hora  string     `gorm:"size:5"`
 
-	AerolineaSugerida string `gorm:"size:100"`
-
 	EstadoCodigo *string              `gorm:"size:20;index;default:'SOLICITADO'"`
 	Estado       *EstadoSolicitudItem `gorm:"foreignKey:EstadoCodigo;references:Codigo;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;<-:false"`
 
-	// Link to Pasaje if issued?
-	PasajeID *string `gorm:"size:36;index;default:null"`
-	Pasaje   *Pasaje `gorm:"foreignKey:PasajeID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL"`
+	// Relation to Pasajes (History of tickets for this leg)
+	Pasajes []Pasaje `gorm:"foreignKey:SolicitudItemID"`
 }
 
 func (SolicitudItem) TableName() string {

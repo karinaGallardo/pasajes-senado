@@ -59,6 +59,8 @@ func SetupRoutes(r *gin.Engine) {
 		protected.POST("/solicitudes/derecho/:id/aprobar", solicitudDerechoCtrl.Approve)
 		protected.POST("/solicitudes/derecho/:id/revertir-aprobacion", solicitudDerechoCtrl.RevertApproval)
 		protected.POST("/solicitudes/derecho/:id/rechazar", solicitudDerechoCtrl.Reject)
+		protected.POST("/solicitudes/derecho/:id/items/:item_id/aprobar", solicitudDerechoCtrl.ApproveItem)
+		protected.POST("/solicitudes/derecho/:id/items/:item_id/rechazar", solicitudDerechoCtrl.RejectItem)
 		protected.GET("/solicitudes/derecho/:id/print", solicitudDerechoCtrl.Print)
 		protected.DELETE("/solicitudes/derecho/:id", solicitudDerechoCtrl.Destroy)
 

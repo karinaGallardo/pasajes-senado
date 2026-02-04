@@ -39,6 +39,7 @@ func (r *CupoDerechoItemRepository) FindByHolderAndPeriodo(userID string, gestio
 	err := r.db.
 		Preload("Solicitudes.Descargo").
 		Preload("Solicitudes.TipoItinerario").
+		Preload("Solicitudes.Items").
 		Where("sen_asignado_id = ? AND gestion = ? AND mes = ?", userID, gestion, mes).
 		Find(&list).Error
 	return list, err
@@ -49,6 +50,7 @@ func (r *CupoDerechoItemRepository) FindByHolderAndGestion(userID string, gestio
 	err := r.db.
 		Preload("Solicitudes.Descargo").
 		Preload("Solicitudes.TipoItinerario").
+		Preload("Solicitudes.Items").
 		Where("sen_asignado_id = ? AND gestion = ?", userID, gestion).
 		Order("mes asc, semana asc").
 		Find(&list).Error
@@ -69,6 +71,7 @@ func (r *CupoDerechoItemRepository) FindForTitularByPeriodo(senadorID string, ge
 		Preload("SenAsignado").
 		Preload("Solicitudes.Descargo").
 		Preload("Solicitudes.TipoItinerario").
+		Preload("Solicitudes.Items").
 		Where("sen_titular_id = ? AND gestion = ? AND mes = ?", senadorID, gestion, mes).
 		Order("semana asc").
 		Find(&list).Error
@@ -80,6 +83,7 @@ func (r *CupoDerechoItemRepository) FindForSuplenteByPeriodo(beneficiarioID stri
 	err := r.db.
 		Preload("Solicitudes.Descargo").
 		Preload("Solicitudes.TipoItinerario").
+		Preload("Solicitudes.Items").
 		Where("sen_asignado_id = ? AND es_transferido = true AND gestion = ? AND mes = ?", beneficiarioID, gestion, mes).
 		Find(&list).Error
 	return list, err
@@ -91,6 +95,7 @@ func (r *CupoDerechoItemRepository) FindForTitularByGestion(senadorID string, ge
 		Preload("SenAsignado").
 		Preload("Solicitudes.Descargo").
 		Preload("Solicitudes.TipoItinerario").
+		Preload("Solicitudes.Items").
 		Where("sen_titular_id = ? AND gestion = ?", senadorID, gestion).
 		Order("mes asc, semana asc").
 		Find(&list).Error
@@ -102,6 +107,7 @@ func (r *CupoDerechoItemRepository) FindForSuplenteByGestion(beneficiarioID stri
 	err := r.db.
 		Preload("Solicitudes.Descargo").
 		Preload("Solicitudes.TipoItinerario").
+		Preload("Solicitudes.Items").
 		Where("sen_asignado_id = ? AND es_transferido = true AND gestion = ?", beneficiarioID, gestion).
 		Order("mes asc, semana asc").
 		Find(&list).Error

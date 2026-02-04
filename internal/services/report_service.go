@@ -219,8 +219,8 @@ func (s *ReportService) GeneratePV01(ctx context.Context, solicitud *models.Soli
 			pdf.SetTextColor(0, 0, 0)
 			pdf.SetFont("Arial", "", 7)
 
-			aerolineaNombre := item.AerolineaSugerida
-			if aerolinea, err := s.aerolineaRepo.FindByID(item.AerolineaSugerida); err == nil {
+			aerolineaNombre := solicitud.AerolineaSugerida
+			if aerolinea, err := s.aerolineaRepo.FindByID(solicitud.AerolineaSugerida); err == nil {
 				if aerolinea.Sigla != "" {
 					aerolineaNombre = aerolinea.Sigla
 				} else {

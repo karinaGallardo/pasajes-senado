@@ -79,6 +79,7 @@ func (s *SolicitudService) Create(ctx context.Context, req dtos.CreateSolicitudR
 		TipoItinerarioCodigo: tipoItin.Codigo,
 		Motivo:               req.Motivo,
 		Autorizacion:         req.Autorizacion,
+		AerolineaSugerida:    req.AerolineaSugerida,
 	}
 
 	if req.CupoDerechoItemID != "" {
@@ -122,24 +123,22 @@ func (s *SolicitudService) Create(ctx context.Context, req dtos.CreateSolicitudR
 	switch itinCode {
 	case "SOLO_IDA", "IDA_VUELTA":
 		items = append(items, models.SolicitudItem{
-			Tipo:              models.TipoSolicitudItemIda,
-			OrigenIATA:        req.OrigenIATA,
-			DestinoIATA:       req.DestinoIATA,
-			Fecha:             fechaIda,
-			Hora:              s.formatTime(fechaIda),
-			AerolineaSugerida: req.AerolineaSugerida,
-			EstadoCodigo:      utils.Ptr("SOLICITADO"),
+			Tipo:         models.TipoSolicitudItemIda,
+			OrigenIATA:   req.OrigenIATA,
+			DestinoIATA:  req.DestinoIATA,
+			Fecha:        fechaIda,
+			Hora:         s.formatTime(fechaIda),
+			EstadoCodigo: utils.Ptr("SOLICITADO"),
 		})
 	case "SOLO_VUELTA":
 		// Assumption: User input for Origin/Dest matches the leg (e.g. Origin=MIA, Dest=VVI for Return)
 		items = append(items, models.SolicitudItem{
-			Tipo:              models.TipoSolicitudItemVuelta,
-			OrigenIATA:        req.OrigenIATA,
-			DestinoIATA:       req.DestinoIATA,
-			Fecha:             fechaIda, // Single date input usually
-			Hora:              s.formatTime(fechaIda),
-			AerolineaSugerida: req.AerolineaSugerida,
-			EstadoCodigo:      utils.Ptr("SOLICITADO"),
+			Tipo:         models.TipoSolicitudItemVuelta,
+			OrigenIATA:   req.OrigenIATA,
+			DestinoIATA:  req.DestinoIATA,
+			Fecha:        fechaIda, // Single date input usually
+			Hora:         s.formatTime(fechaIda),
+			EstadoCodigo: utils.Ptr("SOLICITADO"),
 		})
 	}
 
@@ -150,13 +149,12 @@ func (s *SolicitudService) Create(ctx context.Context, req dtos.CreateSolicitudR
 			st = "PENDIENTE"
 		}
 		items = append(items, models.SolicitudItem{
-			Tipo:              models.TipoSolicitudItemVuelta,
-			OrigenIATA:        req.DestinoIATA, // Swap
-			DestinoIATA:       req.OrigenIATA,  // Swap
-			Fecha:             fechaVuelta,
-			Hora:              s.formatTime(fechaVuelta),
-			AerolineaSugerida: req.AerolineaSugerida,
-			EstadoCodigo:      utils.Ptr(st),
+			Tipo:         models.TipoSolicitudItemVuelta,
+			OrigenIATA:   req.DestinoIATA, // Swap
+			DestinoIATA:  req.OrigenIATA,  // Swap
+			Fecha:        fechaVuelta,
+			Hora:         s.formatTime(fechaVuelta),
+			EstadoCodigo: utils.Ptr(st),
 		})
 	}
 
@@ -343,9 +341,34 @@ func (s *SolicitudService) Approve(ctx context.Context, id string) error {
 			return err
 		}
 
+		hasIda := false
+		hasVuelta := false
+		for i := range solicitud.Items {
+			switch solicitud.Items[i].Tipo {
+			case models.TipoSolicitudItemIda:
+				hasIda = true
+			case models.TipoSolicitudItemVuelta:
+				hasVuelta = true
+			}
+		}
+
+		approveAll := hasIda && hasVuelta
+
 		for i := range solicitud.Items {
 			item := &solicitud.Items[i]
-			if item.GetEstado() == "SOLICITADO" {
+			shouldApprove := false
+
+			if approveAll {
+				shouldApprove = true
+			} else {
+				// Approve only if it has a confirmed date (i.e., not PENDING placeholder)
+				// Re-using the PENDIENTE status logic we added
+				if item.GetEstado() != "PENDIENTE" {
+					shouldApprove = true
+				}
+			}
+
+			if shouldApprove && item.GetEstado() == "SOLICITADO" {
 				st := "APROBADO"
 				item.EstadoCodigo = &st
 				if err := tx.Save(item).Error; err != nil {
@@ -387,7 +410,7 @@ func (s *SolicitudService) RevertApproval(ctx context.Context, id string) error 
 
 		hasPasajes := false
 		for _, t := range solicitud.Items {
-			if t.PasajeID != nil {
+			if len(t.Pasajes) > 0 {
 				hasPasajes = true
 				break
 			}
@@ -507,5 +530,90 @@ func (s *SolicitudService) Delete(ctx context.Context, id string) error {
 		}
 
 		return repoTx.Delete(id)
+	})
+}
+
+func (s *SolicitudService) ApproveItem(ctx context.Context, solicitudID, itemID string) error {
+	return s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
+		solicitud, err := repoTx.FindByID(solicitudID)
+		if err != nil {
+			return err
+		}
+		found := false
+		for i := range solicitud.Items {
+			if solicitud.Items[i].ID == itemID {
+				st := "APROBADO"
+				solicitud.Items[i].EstadoCodigo = &st
+				if err := tx.Save(&solicitud.Items[i]).Error; err != nil {
+					return err
+				}
+				found = true
+				break
+			}
+		}
+		if !found {
+			return fmt.Errorf("item no encontrado")
+		}
+		solicitud.UpdateStatusBasedOnItems()
+		if err := repoTx.Update(solicitud); err != nil {
+			return err
+		}
+
+		// Si es derecho, marcar como reservado
+		if solicitud.CupoDerechoItemID != nil {
+			itemRepoTx := s.itemRepo.WithTx(tx)
+			item, err := itemRepoTx.FindByID(*solicitud.CupoDerechoItemID)
+			if err == nil && item != nil {
+				item.EstadoCupoDerechoCodigo = "RESERVADO"
+				itemRepoTx.Update(item)
+			}
+		}
+		return nil
+	})
+}
+
+func (s *SolicitudService) RejectItem(ctx context.Context, solicitudID, itemID string) error {
+	return s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
+		solicitud, err := repoTx.FindByID(solicitudID)
+		if err != nil {
+			return err
+		}
+		found := false
+		for i := range solicitud.Items {
+			if solicitud.Items[i].ID == itemID {
+				st := "RECHAZADO"
+				solicitud.Items[i].EstadoCodigo = &st
+				if err := tx.Save(&solicitud.Items[i]).Error; err != nil {
+					return err
+				}
+				found = true
+				break
+			}
+		}
+		if !found {
+			return fmt.Errorf("item no encontrado")
+		}
+		solicitud.UpdateStatusBasedOnItems()
+		if err := repoTx.Update(solicitud); err != nil {
+			return err
+		}
+		// Si todos los items activos son rechazados, liberar el cupo
+		allRejected := true
+		for _, it := range solicitud.Items {
+			st := it.GetEstado()
+			if st != "RECHAZADO" && st != "CANCELADO" && st != "PENDIENTE" {
+				allRejected = false
+				break
+			}
+		}
+		if allRejected && solicitud.CupoDerechoItemID != nil {
+			itemRepoTx := s.itemRepo.WithTx(tx)
+			item, err := itemRepoTx.FindByID(*solicitud.CupoDerechoItemID)
+			if err == nil && item != nil {
+				item.EstadoCupoDerechoCodigo = "DISPONIBLE"
+				itemRepoTx.Update(item)
+			}
+		}
+		return nil
 	})
 }
