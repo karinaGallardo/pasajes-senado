@@ -40,10 +40,15 @@ func (s *PasajeService) Create(ctx context.Context, solicitudID string, req dtos
 		aerolineaID = &req.AerolineaID
 	}
 
+	status := "RESERVADO"
+	if filePath != "" {
+		status = "EMITIDO"
+	}
+
 	pasaje := &models.Pasaje{
 		SolicitudID:        solicitudID,
 		SolicitudItemID:    &req.SolicitudItemID,
-		EstadoPasajeCodigo: utils.Ptr("RESERVADO"),
+		EstadoPasajeCodigo: &status,
 		AerolineaID:        aerolineaID,
 		AgenciaID:          &req.AgenciaID,
 		NumeroVuelo:        req.NumeroVuelo,
@@ -61,12 +66,21 @@ func (s *PasajeService) Create(ctx context.Context, solicitudID string, req dtos
 		if err := repo.Create(pasaje); err != nil {
 			return err
 		}
-		// Since SolicitudItem has HasMany Pasajes, we dont need to update the item side with a single ID
 		return nil
 	})
 
 	if err != nil {
 		return nil, err
+	}
+
+	if status == "EMITIDO" {
+		go func(p *models.Pasaje) {
+			ctx := context.Background()
+			sol, _ := s.solicitudRepo.WithContext(ctx).FindByID(p.SolicitudID)
+			if sol != nil {
+				s.sendEmissionEmail(sol, p)
+			}
+		}(pasaje)
 	}
 
 	return pasaje, nil
@@ -187,15 +201,18 @@ func (s *PasajeService) DevolverPasaje(ctx context.Context, req dtos.DevolverPas
 	return s.repo.WithContext(ctx).Update(pasaje)
 }
 
-func (s *PasajeService) UpdateStatus(ctx context.Context, pasajeID string, status string, archivoPase string) error {
-	pasaje, err := s.repo.WithContext(ctx).FindByID(pasajeID)
+func (s *PasajeService) UpdateStatus(ctx context.Context, id string, status string, ticketPath string, pasePath string) error {
+	pasaje, err := s.repo.WithContext(ctx).FindByID(id)
 	if err != nil {
 		return err
 	}
 
 	pasaje.EstadoPasajeCodigo = &status
-	if status == "VALIDANDO_USO" && archivoPase != "" {
-		pasaje.ArchivoPaseAbordo = archivoPase
+	if ticketPath != "" {
+		pasaje.Archivo = ticketPath
+	}
+	if pasePath != "" {
+		pasaje.ArchivoPaseAbordo = pasePath
 	}
 
 	if err := s.repo.WithContext(ctx).Update(pasaje); err != nil {

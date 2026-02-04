@@ -183,7 +183,7 @@
               <div class="flex-1">
                 <div class="flex items-center gap-3 mb-2">
                   <span
-                    class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tight {{ if eq .GetEstado "EMITIDO" }} bg-success-100 text-success-800 {{ else if eq .GetEstado "ANULADO" }} bg-neutral-200 text-neutral-600 {{ else }} bg-primary-100 text-primary-800 {{ end }}">
+                    class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tight {{ if eq .GetEstado "EMITIDO" }} bg-success-100 text-success-800 {{ else if eq .GetEstado "ANULADO" }} bg-neutral-200 text-neutral-600 {{ else if eq .GetEstado "RESERVADO" }} bg-warning-100 text-warning-800 {{ else }} bg-primary-100 text-primary-800 {{ end }}">
                     {{ .GetEstado }}
                   </span>
                   <span class="text-xs font-bold text-neutral-900">{{ if .Aerolinea }}{{ .Aerolinea.Nombre }}{{ else }}Aerolínea N/A{{ end }}</span>
@@ -227,8 +227,17 @@
                     <button @click="openMenu = !openMenu" class="p-1.5 rounded-md hover:bg-neutral-200 text-neutral-600 transition-colors">
                       <i class="ph ph-dots-three-vertical text-xl"></i>
                     </button>
-                    <div x-show="openMenu" @click.away="openMenu = false" class="absolute right-0 mt-2 w-48 bg-white border border-neutral-200 rounded-lg shadow-xl z-50 py-1" x-cloak>
+                     <div x-show="openMenu" @click.away="openMenu = false" class="absolute right-0 mt-2 w-48 bg-white border border-neutral-200 rounded-lg shadow-xl z-50 py-1" x-cloak>
+                       {{ if eq .GetEstado "RESERVADO" }}
+                       <button @click="$dispatch('pasaje-action', { action: 'emitir', id: '{{.ID}}' })" class="block w-full text-left px-4 py-2 text-xs text-secondary-600 hover:bg-secondary-50 font-bold">
+                        <i class="ph ph-airplane-tilt mr-2"></i>Emitir Pasaje
+                       </button>
+                       {{ end }}
                        <button hx-get="/pasajes/{{ .ID }}/editar" hx-target="#modal-container" class="block w-full text-left px-4 py-2 text-xs hover:bg-neutral-50">Editar</button>
+                       {{ if eq .GetEstado "EMITIDO" }}
+                       <button hx-get="/pasajes/{{ .ID }}/reprogramar" hx-target="#modal-container" class="block w-full text-left px-4 py-2 text-xs hover:bg-neutral-50 text-warning-600 font-bold">Reprogramar</button>
+                       <button hx-get="/pasajes/{{ .ID }}/devolver" hx-target="#modal-container" class="block w-full text-left px-4 py-2 text-xs hover:bg-neutral-50 text-danger-600">Devolver</button>
+                       {{ end }}
                        <button @click="$dispatch('pasaje-action', { action: 'anular', id: '{{.ID}}' })" class="block w-full text-left px-4 py-2 text-xs text-danger-600 hover:bg-danger-50">Anular</button>
                     </div>
                  </div>
@@ -446,6 +455,38 @@
 
       let title, text, confirmButtonText, confirmButtonColor, newStatus;
 
+      if (action === "emitir") {
+        Swal.fire({
+          title: "¿Emitir Pasaje?",
+          html: `
+            <p class="text-sm text-neutral-600 mb-4 text-center">Suba el billete electrónico (PDF) para finalizar la emisión.</p>
+            <div class="flex flex-col items-center justify-center p-4 border-2 border-dashed border-neutral-300 rounded-lg hover:bg-neutral-50 transition-colors cursor-pointer" onclick="document.getElementById('swal-file').click()">
+              <i class="ph ph-file-pdf text-4xl text-danger-500 mb-2"></i>
+              <span id="file-name" class="text-xs font-bold text-neutral-500">Seleccionar PDF</span>
+              <input type="file" id="swal-file" class="hidden" accept=".pdf" onchange="document.getElementById('file-name').innerText = this.files[0].name" />
+            </div>
+          `,
+          icon: "info",
+          showCancelButton: true,
+          confirmButtonColor: "#0396A6",
+          cancelButtonColor: "#6b7280",
+          confirmButtonText: "Sí, emitir",
+          cancelButtonText: "Cancelar",
+          preConfirm: () => {
+            const file = document.getElementById("swal-file").files[0];
+            if (!file) {
+              Swal.showValidationMessage("Debe seleccionar el archivo del pasaje");
+            }
+            return { file: file };
+          },
+        }).then((result) => {
+          if (result.isConfirmed) {
+            updatePasajeStatus(id, "EMITIDO", result.value.file);
+          }
+        });
+        return;
+      }
+
       switch (action) {
         case "anular":
           title = "¿Anular Pasaje?";
@@ -467,13 +508,6 @@
           confirmButtonText = "Sí, rechazar";
           confirmButtonColor = "#ef4444"; // Danger
           newStatus = "USO_RECHAZADO";
-          break;
-        case "emitir":
-          title = "¿Emitir Pasaje?";
-          text = "Confirma la emisión del pasaje. Se notificará al beneficiario.";
-          confirmButtonText = "Sí, emitir";
-          confirmButtonColor = "#0396A6"; // Secondary
-          newStatus = "EMITIDO";
           break;
         default:
           return;
@@ -502,10 +536,13 @@
       });
     });
 
-    function updatePasajeStatus(id, status) {
+    function updatePasajeStatus(id, status, file = null) {
       const formData = new FormData();
       formData.append("id", id);
       formData.append("status", status);
+      if (file) {
+        formData.append("archivo_ticket", file);
+      }
 
       fetch("/pasajes/update-status", {
         method: "POST",

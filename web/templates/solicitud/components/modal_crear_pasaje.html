@@ -33,19 +33,40 @@
               </div>
 
               <div class="col-span-6">
-                <label for="solicitud_item_id" class="block text-sm font-medium text-neutral-700">Tramo / Segmento</label>
-                <select
-                  name="solicitud_item_id"
-                  required
-                  class="mt-1 block w-full rounded-md border-neutral-300 shadow-sm focus:border-secondary focus:ring-secondary sm:text-sm p-2 border">
-                  <option value="">-- Seleccionar Segmento --</option>
-                  {{ range .Solicitud.Items }}
-                  <option value="{{ .ID }}" {{ if .Pasajes }}disabled{{ end }} {{ if eq .ID $.SolicitudItemID }}selected{{ end }}>
-                    {{ .Tipo }} : {{ if .Origen }}{{ .Origen.IATA }}{{ else }}{{ .OrigenIATA }}{{ end }} -> {{ if .Destino }}{{ .Destino.IATA }}{{ else }}{{ .DestinoIATA }}{{ end
-                    }} {{ if .Fecha }}({{ .Fecha.Format "02/01/2006" }}){{ end }} {{ if .Pasajes }} [YA ASIGNADO]{{ end }}
-                  </option>
+                {{ $selectedItem := "" }}
+                {{ range .Solicitud.Items }}
+                  {{ if eq .ID $.SolicitudItemID }}
+                    {{ $selectedItem = . }}
                   {{ end }}
-                </select>
+                {{ end }}
+
+                <label class="block text-sm font-medium text-neutral-500 uppercase text-[10px] font-bold tracking-wider">Tramo / Segmento Seleccionado</label>
+                <input type="hidden" name="solicitud_item_id" value="{{ $.SolicitudItemID }}" />
+                
+                <div class="mt-1 flex items-center justify-between p-3 bg-neutral-50 rounded-lg border border-neutral-200 shadow-sm">
+                  {{ if $selectedItem }}
+                  <div class="flex items-center gap-3">
+                    <div class="h-8 w-8 rounded flex items-center justify-center {{ if eq $selectedItem.Tipo "IDA" }} bg-primary-50 text-primary-600 {{ else }} bg-secondary-50 text-secondary-600 {{ end }}">
+                      <i class="ph {{ if eq $selectedItem.Tipo "IDA" }}ph-airplane-takeoff{{ else }}ph-airplane-landing{{ end }} text-lg"></i>
+                    </div>
+                    <div>
+                      <div class="flex items-center gap-2">
+                        <span class="text-[10px] font-black uppercase text-neutral-400 tracking-tighter">{{ $selectedItem.Tipo }}</span>
+                        <h4 class="text-sm font-bold text-neutral-900">
+                          {{ if $selectedItem.Origen }}{{ $selectedItem.Origen.Ciudad }} ({{ $selectedItem.Origen.IATA }}){{ else }}{{ $selectedItem.OrigenIATA }}{{ end }}
+                          <i class="ph ph-arrow-right mx-1 text-neutral-300"></i>
+                          {{ if $selectedItem.Destino }}{{ $selectedItem.Destino.Ciudad }} ({{ $selectedItem.Destino.IATA }}){{ else }}{{ $selectedItem.DestinoIATA }}{{ end }}
+                        </h4>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="text-right">
+                    <p class="text-[11px] font-bold text-neutral-600">{{ if $selectedItem.Fecha }}{{ $selectedItem.Fecha.Format "02/01/2006" }}{{ else }}Fecha N/A{{ end }}</p>
+                  </div>
+                  {{ else }}
+                  <p class="text-xs text-danger-600 font-bold italic">Error: Tramo no identificado</p>
+                  {{ end }}
+                </div>
               </div>
 
               <div
@@ -56,12 +77,12 @@
                       { value: '{{ .Tramo }}', label: '{{ .Tramo }}' },
                       {{ end }}
                   ],
-                  initialValue: '{{ .Solicitud.GetOrigenCiudad }} - {{ .Solicitud.GetDestinoCiudad }}',
-                  initialLabel: '{{ .Solicitud.GetOrigenCiudad }} - {{ .Solicitud.GetDestinoCiudad }}'
+                  initialValue: '',
+                  initialLabel: ''
                 })">
-                <label class="block text-sm font-medium text-neutral-700">Ruta (Origen - Destino)</label>
+                <label class="block text-sm font-medium text-neutral-700">Ruta / Itinerario (Incluyendo Escalas)</label>
                 <div class="relative mt-1">
-                  <input type="hidden" name="ruta" :value="value" />
+                  <input type="hidden" name="ruta" :value="value" required />
 
                   <div class="relative">
                     <div
@@ -104,7 +125,7 @@
               </div>
 
               <div
-                class="col-span-3"
+                class="col-span-2"
                 x-data="searchableSelect({
                      items: [
                        {{ range .Agencias }}
@@ -158,7 +179,7 @@
               </div>
 
               <div
-                class="col-span-3"
+                class="col-span-2"
                 x-data="searchableSelect({
                      items: [
                        {{ range .Aerolineas }}
@@ -210,7 +231,7 @@
                   </div>
                 </div>
               </div>
-              <div class="col-span-3">
+              <div class="col-span-2">
                 <label class="block text-sm font-medium text-neutral-700">Nº Vuelo</label>
                 <input
                   type="text"
@@ -220,7 +241,7 @@
                   placeholder="Ej: OB-123" />
               </div>
 
-              <div class="col-span-6 sm:col-span-3">
+              <div class="col-span-3">
                 <label class="block text-sm font-medium text-neutral-700">Fecha y Hora Vuelo</label>
                 <input
                   type="datetime-local"
@@ -229,16 +250,9 @@
                   class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md border p-2" />
               </div>
 
-              <div class="col-span-6 sm:col-span-3">
-                <label class="block text-sm font-medium text-neutral-700">Código Reserva (PNR)</label>
-                <input
-                  type="text"
-                  name="codigo_reserva"
-                  class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md border p-2"
-                  placeholder="Ej: X7Y8Z9" />
-              </div>
+              <input type="hidden" name="codigo_reserva" value="" />
 
-              <div class="col-span-3">
+              <div class="col-span-2">
                 <label class="block text-sm font-medium text-neutral-700">Nº Boleto</label>
                 <input
                   type="text"
@@ -248,16 +262,9 @@
                   placeholder="Ej: 93021..." />
               </div>
 
-              <div class="col-span-3">
-                <label class="block text-sm font-medium text-neutral-700">Nº Factura / Recibo</label>
-                <input
-                  type="text"
-                  name="numero_factura"
-                  class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md border p-2"
-                  placeholder="Ej: 45678" />
-              </div>
+              <input type="hidden" name="numero_factura" value="" />
 
-              <div class="col-span-3">
+              <div class="col-span-1">
                 <label class="block text-sm font-medium text-neutral-700">Costo (Bs)</label>
                 <input
                   type="number"
@@ -285,8 +292,7 @@
                     name="archivo"
                     accept=".pdf"
                     class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                    @change="fileName = $event.target.files[0].name"
-                    required />
+                    @change="fileName = $event.target.files[0].name" />
 
                   <div class="space-y-1 text-center" x-show="!fileName">
                     <svg class="mx-auto h-12 w-12 text-neutral-400 group-hover:text-neutral-500 transition-colors" stroke="currentColor" fill="none" viewBox="0 0 48 48">

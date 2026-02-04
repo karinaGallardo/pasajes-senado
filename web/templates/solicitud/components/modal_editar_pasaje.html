@@ -110,7 +110,7 @@
             </div>
 
             <div
-              class="col-span-3"
+              class="col-span-2"
               x-data="searchableSelect({
                    items: [
                      {{ range .Agencias }}
@@ -118,6 +118,7 @@
                      {{ end }}
                    ],
                    initialValue: agencia_id,
+                   initialLabel: '{{ if .Pasaje.Agencia }}{{ .Pasaje.Agencia.Nombre }}{{ end }}',
                    placeholder: '-- Seleccionar --'
                  })"
               x-init="$watch('value', v => agencia_id = v)">
@@ -163,7 +164,7 @@
             </div>
 
             <div
-              class="col-span-3"
+              class="col-span-2"
               x-data="searchableSelect({
                    items: [
                      {{ range .Aerolineas }}
@@ -171,6 +172,7 @@
                      {{ end }}
                    ],
                    initialValue: aerolinea_id,
+                   initialLabel: '{{ if .Pasaje.Aerolinea }}{{ .Pasaje.Aerolinea.Nombre }}{{ end }}',
                    placeholder: '-- Seleccionar --'
                  })"
               x-init="$watch('value', v => aerolinea_id = v)">
@@ -215,7 +217,7 @@
               </div>
             </div>
 
-            <div class="col-span-3">
+            <div class="col-span-2">
               <label class="block text-sm font-medium text-neutral-700">Nº Vuelo</label>
               <input
                 type="text"
@@ -225,7 +227,7 @@
                 class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md border p-2" />
             </div>
 
-            <div class="col-span-6 sm:col-span-3">
+            <div class="col-span-2">
               <label class="block text-sm font-medium text-neutral-700">Fecha y Hora Vuelo</label>
               <input
                 type="datetime-local"
@@ -235,16 +237,9 @@
                 class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md border p-2" />
             </div>
 
-            <div class="col-span-6 sm:col-span-3">
-              <label class="block text-sm font-medium text-neutral-700">Código Reserva (PNR)</label>
-              <input
-                type="text"
-                name="codigo_reserva"
-                x-model="codigo_reserva"
-                class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md border p-2" />
-            </div>
+            <input type="hidden" name="codigo_reserva" x-model="codigo_reserva" />
 
-            <div class="col-span-3">
+            <div class="col-span-2">
               <label class="block text-sm font-medium text-neutral-700">Nº Boleto</label>
               <input
                 type="text"
@@ -254,16 +249,9 @@
                 class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md border p-2" />
             </div>
 
-            <div class="col-span-3">
-              <label class="block text-sm font-medium text-neutral-700">Nº Factura / Recibo</label>
-              <input
-                type="text"
-                name="numero_factura"
-                x-model="numero_factura"
-                class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md border p-2" />
-            </div>
+            <input type="hidden" name="numero_factura" x-model="numero_factura" />
 
-            <div class="col-span-3">
+            <div class="col-span-2">
               <label class="block text-sm font-medium text-neutral-700">Costo (Bs)</label>
               <input
                 type="number"
@@ -319,47 +307,6 @@
                     </svg>
                   </div>
                   <p class="text-sm font-bold text-neutral-900 truncate px-4" x-text="fileName"></p>
-                </div>
-              </div>
-            </div>
-
-            <!-- New Field for Boarding Pass -->
-            <div class="col-span-6 pt-2" x-data="{ paseName: '' }">
-              <label class="block text-sm font-medium text-neutral-700 mb-2">Pase a Bordo (PDF/Imagen) - Opcional</label>
-              <div
-                class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-neutral-300 border-dashed rounded-md bg-white hover:bg-neutral-50 transition-colors cursor-pointer relative group">
-                <input
-                  type="file"
-                  name="archivo_pase_abordo"
-                  accept=".pdf,image/*"
-                  class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                  @change="paseName = $event.target.files[0]?.name" />
-
-                <div class="space-y-1 text-center" x-show="!paseName">
-                  <svg class="mx-auto h-12 w-12 text-neutral-400 group-hover:text-neutral-500 transition-colors" stroke="currentColor" fill="none" viewBox="0 0 48 48">
-                    <path
-                      d="M28 8H12a4 4 0 00-4 4v20m32-12v8m0 0v8a4 4 0 01-4 4H12a4 4 0 01-4-4v-4m32-4l-3.172-3.172a4 4 0 00-5.656 0L28 28M8 32l9.172-9.172a4 4 0 015.656 0L28 28m0 0l4 4m4-24h8m-4-4v8m-12 4h.02"
-                      stroke-width="2"
-                      stroke-linecap="round"
-                      stroke-linejoin="round" />
-                  </svg>
-                  <div class="flex text-sm text-neutral-600 justify-center">
-                    <span class="font-bold text-success-600 group-hover:underline">Cargar Pase a Bordo</span>
-                  </div>
-                  <p class="text-xs text-neutral-500">PDF o Imágenes</p>
-                </div>
-
-                <div class="space-y-1 text-center" x-show="paseName" x-cloak>
-                  <div class="mx-auto h-12 w-12 bg-success-100 rounded-full flex items-center justify-center">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-success-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
-                        d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                    </svg>
-                  </div>
-                  <p class="text-sm font-bold text-neutral-900 truncate px-4" x-text="paseName"></p>
                 </div>
               </div>
             </div>

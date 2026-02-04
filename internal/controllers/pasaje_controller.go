@@ -61,14 +61,18 @@ func (ctrl *PasajeController) UpdateStatus(c *gin.Context) {
 		return
 	}
 
-	var pasePath string
+	var ticketPath, pasePath string
 	if req.Status == "VALIDANDO_USO" {
 		if file, err := c.FormFile("archivo_pase_abordo"); err == nil {
 			pasePath, _ = utils.SaveUploadedFile(c, file, "uploads/pases_abordo", "pase_"+req.ID+"_")
 		}
+	} else if req.Status == "EMITIDO" {
+		if file, err := c.FormFile("archivo_ticket"); err == nil {
+			ticketPath, _ = utils.SaveUploadedFile(c, file, "uploads/pasajes", "pasaje_"+req.ID+"_")
+		}
 	}
 
-	if err := ctrl.pasajeService.UpdateStatus(c.Request.Context(), req.ID, req.Status, pasePath); err != nil {
+	if err := ctrl.pasajeService.UpdateStatus(c.Request.Context(), req.ID, req.Status, ticketPath, pasePath); err != nil {
 		if c.GetHeader("X-Requested-With") == "XMLHttpRequest" {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al actualizar estado"})
 		} else {

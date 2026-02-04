@@ -22,7 +22,9 @@
 
         <div class="mt-1 space-y-0.5">
           {{ if $user.Cargo }}
-          <div class="text-[10px] text-neutral-500 font-bold uppercase">{{ $user.Cargo.Descripcion }} por {{ $user.Departamento.Nombre }}</div>
+          <div class="text-[10px] text-neutral-500 font-bold uppercase">
+            {{ $user.Cargo.Descripcion }} {{ if $user.Departamento }} por {{ $user.Departamento.Nombre }} {{ end }}
+          </div>
           {{ end }} {{ if $user.Oficina }}
           <div class="text-[10px] text-neutral-400">{{ $user.Oficina.Detalle }}</div>
           {{ end }} {{ if $user.Email }}
@@ -72,7 +74,9 @@
 
         <div class="mt-1 space-y-0.5">
           {{ if $suplente.Cargo }}
-          <div class="text-[10px] text-neutral-500 font-bold uppercase">{{ $suplente.Cargo.Descripcion }} por {{ $suplente.Departamento.Nombre }}</div>
+          <div class="text-[10px] text-neutral-500 font-bold uppercase">
+            {{ $suplente.Cargo.Descripcion }} {{ if $suplente.Departamento }} por {{ $suplente.Departamento.Nombre }} {{ end }}
+          </div>
           {{ end }} {{ if $suplente.Oficina }}
           <div class="text-[10px] text-neutral-400">{{ $suplente.Oficina.Detalle }}</div>
           {{ end }} {{ if $suplente.Email }}
