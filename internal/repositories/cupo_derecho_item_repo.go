@@ -133,6 +133,7 @@ func (r *CupoDerechoItemRepository) FindByID(id string) (*models.CupoDerechoItem
 	err := r.db.
 		Preload("SenTitular").
 		Preload("SenAsignado").
+		Preload("Solicitudes.Items").
 		First(&v, "id = ?", id).
 		Error
 	return &v, err

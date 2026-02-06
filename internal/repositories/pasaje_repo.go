@@ -33,7 +33,11 @@ func (r *PasajeRepository) Delete(id uint) error {
 
 func (r *PasajeRepository) FindByID(id string) (*models.Pasaje, error) {
 	var pasaje models.Pasaje
-	err := r.db.Preload("EstadoPasaje").First(&pasaje, "id = ?", id).Error
+	err := r.db.Preload("EstadoPasaje").
+		Preload("Agencia").
+		Preload("Aerolinea").
+		Preload("SolicitudItem").
+		First(&pasaje, "id = ?", id).Error
 	return &pasaje, err
 }
 
@@ -54,4 +58,10 @@ func (r *PasajeRepository) RunTransaction(fn func(repo *PasajeRepository, tx *go
 		txRepo := r.WithTx(tx)
 		return fn(txRepo, tx)
 	})
+}
+
+func (r *PasajeRepository) FindByNumeroBoleto(numeroBoleto string) (*models.Pasaje, error) {
+	var pasaje models.Pasaje
+	err := r.db.Where("numero_boleto = ?", numeroBoleto).First(&pasaje).Error
+	return &pasaje, err
 }

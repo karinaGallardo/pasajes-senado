@@ -80,6 +80,21 @@
           }
         });
       });
+
+      // Global event listener for showAlert trigger
+      document.addEventListener("showAlert", function (evt) {
+        const data = evt.detail;
+        Swal.fire({
+          icon: data.icon || "info",
+          title: data.title || "",
+          text: data.text || "",
+          confirmButtonColor: "#03738C",
+          customClass: {
+            popup: "rounded-xl font-sans",
+            confirmButton: "rounded-lg px-4 py-2 text-sm font-medium shadow-sm",
+          },
+        });
+      });
     </script>
 
     <script src="/static/lib/tailwindcss/tailwindcss_plugins.js"></script>
@@ -353,7 +368,7 @@
         </header>
 
         <!-- Flash Messages (Sticky between header and content) -->
-        <div class="flex-shrink-0">{{ template "layouts/components/flash_messages" . }}</div>
+        <div id="flash-messages" class="flex-shrink-0">{{ template "layouts/components/flash_messages" . }}</div>
         {{ end }}
 
         <!-- SCROLLABLE CONTENT AREA -->

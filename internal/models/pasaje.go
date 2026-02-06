@@ -43,7 +43,7 @@ func (Pasaje) TableName() string {
 
 func (p Pasaje) GetEstado() string {
 	if p.EstadoPasaje != nil {
-		return p.EstadoPasaje.Nombre
+		return p.EstadoPasaje.Codigo
 	}
 	if p.EstadoPasajeCodigo == nil {
 		return "EMITIDO"

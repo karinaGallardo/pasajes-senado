@@ -14,12 +14,16 @@ import (
 type DescargoController struct {
 	descargoService  *services.DescargoService
 	solicitudService *services.SolicitudService
+	reportService    *services.ReportService
+	peopleService    *services.PeopleService
 }
 
 func NewDescargoController() *DescargoController {
 	return &DescargoController{
 		descargoService:  services.NewDescargoService(),
 		solicitudService: services.NewSolicitudService(),
+		reportService:    services.NewReportService(),
+		peopleService:    services.NewPeopleService(),
 	}
 }
 
@@ -119,4 +123,30 @@ func (ctrl *DescargoController) Approve(c *gin.Context) {
 	}
 
 	c.Redirect(http.StatusFound, "/descargos/"+id)
+}
+
+func (ctrl *DescargoController) DownloadPV5(c *gin.Context) {
+	solicitudID := c.Query("solicitud_id")
+	if solicitudID == "" {
+		c.String(http.StatusBadRequest, "solicitud_id requerido")
+		return
+	}
+
+	solicitud, err := ctrl.solicitudService.GetByID(c.Request.Context(), solicitudID)
+	if err != nil {
+		c.String(http.StatusNotFound, "Solicitud no encontrada")
+		return
+	}
+
+	personaView, _ := ctrl.peopleService.GetSenatorDataByCI(c.Request.Context(), solicitud.Usuario.CI)
+
+	pdf := ctrl.reportService.GeneratePV05(c.Request.Context(), solicitud, personaView)
+
+	filename := "PV5_Descargo_" + solicitud.Codigo + ".pdf"
+	c.Header("Content-Disposition", "attachment; filename="+filename)
+	c.Header("Content-Type", "application/pdf")
+
+	if err := pdf.Output(c.Writer); err != nil {
+		log.Printf("Error generating PDF: %v", err)
+	}
 }

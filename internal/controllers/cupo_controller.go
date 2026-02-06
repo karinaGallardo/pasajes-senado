@@ -124,7 +124,7 @@ func (ctrl *CupoController) TomarCupo(c *gin.Context) {
 		return
 	}
 
-	if item.FechaHasta != nil && time.Now().After(item.FechaHasta.AddDate(0, 0, 1)) {
+	if item.IsVencido() {
 		c.String(http.StatusBadRequest, "No se puede tomar un cupo vencido")
 		return
 	}
@@ -187,7 +187,7 @@ func (ctrl *CupoController) AsignarCupo(c *gin.Context) {
 		return
 	}
 
-	if item.FechaHasta != nil && time.Now().After(item.FechaHasta.AddDate(0, 0, 1)) {
+	if item.IsVencido() {
 		c.String(http.StatusBadRequest, "No se puede asignar un cupo vencido")
 		return
 	}
@@ -224,7 +224,7 @@ func (ctrl *CupoController) Transferir(c *gin.Context) {
 		return
 	}
 
-	if item.FechaHasta != nil && time.Now().After(item.FechaHasta.AddDate(0, 0, 1)) {
+	if item.IsVencido() {
 		c.String(http.StatusBadRequest, "No se puede transferir un cupo vencido")
 		return
 	}
@@ -263,6 +263,11 @@ func (ctrl *CupoController) RevertirTransferencia(c *gin.Context) {
 	err = ctrl.service.RevertirTransferencia(c.Request.Context(), itemID)
 	if err != nil {
 		fmt.Printf("Error revirtiendo transferencia: %v\n", err)
+		if c.GetHeader("HX-Request") == "true" {
+			c.Header("HX-Trigger", fmt.Sprintf(`{"showAlert": {"icon": "error", "title": "No se puede revertir", "text": "%s"}}`, err.Error()))
+			c.Status(http.StatusNoContent)
+			return
+		}
 	}
 
 	targetURL := fmt.Sprintf("/admin/cupos?gestion=%s&mes=%s", gestion, mes)
@@ -484,7 +489,7 @@ func (ctrl *CupoController) DerechoByYear(c *gin.Context) {
 
 			// 1. Admin Actions
 			if isViewerAdminOrResponsable {
-				if isTransferido {
+				if isTransferido && modelItem.CanBeReverted() {
 					perms.CanRevert = true
 				}
 				if modelItem.GetSolicitudIda() != nil || modelItem.GetSolicitudVuelta() != nil {
@@ -512,12 +517,12 @@ func (ctrl *CupoController) DerechoByYear(c *gin.Context) {
 			}
 
 			// 3. Transferencia (Admin/Responsable)
-			if isViewerAdminOrResponsable && isDisponible && !isVencido && !perms.CanAsignarCupo && !isTransferido {
+			if isViewerAdminOrResponsable && !isVencido && !isTransferido && !perms.CanAsignarCupo {
 				perms.CanTransfer = true
 			}
 
-			// 3. Solicitudes (Owner Only)
-			if isOwner {
+			// 4. Solicitudes (Owner, Admin or Encargado)
+			if isOwner || isViewerAdminOrResponsable || isEncargado {
 				solIda := modelItem.GetSolicitudIda()
 				solVuelta := modelItem.GetSolicitudVuelta()
 
@@ -526,12 +531,8 @@ func (ctrl *CupoController) DerechoByYear(c *gin.Context) {
 					if !isVencido {
 						perms.CanCreateIda = true
 					}
-				} else {
-					if solIda.GetEstado() == "SOLICITADO" {
-						perms.CanEditIda = true
-					} else {
-						perms.CanViewIda = true
-					}
+				} else if solIda.GetEstado() == "SOLICITADO" || (isViewerAdminOrResponsable && solIda.GetEstado() == "APROBADO") {
+					perms.CanEditIda = true
 				}
 
 				// Vuelta
@@ -539,12 +540,8 @@ func (ctrl *CupoController) DerechoByYear(c *gin.Context) {
 					if !isVencido && solIda != nil {
 						perms.CanCreateVuelta = true
 					}
-				} else {
-					if solVuelta.GetEstado() == "SOLICITADO" {
-						perms.CanEditVuelta = true
-					} else {
-						perms.CanViewVuelta = true
-					}
+				} else if solVuelta.GetEstado() == "SOLICITADO" || (isViewerAdminOrResponsable && solVuelta.GetEstado() == "APROBADO") {
+					perms.CanEditVuelta = true
 				}
 
 				// Ida y Vuelta (Round Trip) in Single Request
@@ -552,9 +549,6 @@ func (ctrl *CupoController) DerechoByYear(c *gin.Context) {
 				if solIda == nil && solVuelta == nil && !isVencido {
 					perms.CanCreateIdaVuelta = true
 				}
-
-				// Descargo
-				perms.CanDescargo = true
 			}
 
 			item.Permissions = perms
@@ -562,9 +556,29 @@ func (ctrl *CupoController) DerechoByYear(c *gin.Context) {
 	}
 
 	var displayMonths []*MonthGroup
-	for i := 1; i <= 12; i++ {
-		if len(grouped[i].Items) > 0 {
-			displayMonths = append(displayMonths, grouped[i])
+
+	currentYear := time.Now().Year()
+	currentMonth := int(time.Now().Month())
+
+	if gestion == currentYear {
+		// Current month and future months first
+		for i := currentMonth; i <= 12; i++ {
+			if len(grouped[i].Items) > 0 {
+				displayMonths = append(displayMonths, grouped[i])
+			}
+		}
+		// Past months at the end
+		for i := 1; i < currentMonth; i++ {
+			if len(grouped[i].Items) > 0 {
+				displayMonths = append(displayMonths, grouped[i])
+			}
+		}
+	} else {
+		// Standard order for other years
+		for i := 1; i <= 12; i++ {
+			if len(grouped[i].Items) > 0 {
+				displayMonths = append(displayMonths, grouped[i])
+			}
 		}
 	}
 
@@ -658,7 +672,7 @@ func (ctrl *CupoController) DerechoByMonth(c *gin.Context) {
 
 		// 1. Admin Actions (Calculo base)
 		if isViewerAdminOrResponsable {
-			if isTransferido {
+			if isTransferido && modelItem.CanBeReverted() {
 				perms.CanRevert = true
 			}
 			if modelItem.GetSolicitudIda() != nil || modelItem.GetSolicitudVuelta() != nil {
@@ -686,13 +700,12 @@ func (ctrl *CupoController) DerechoByMonth(c *gin.Context) {
 		}
 
 		// 3. Transferencia (Admin/Responsable)
-		// Si es Admin y NO se activó la asignación directa (porque ya tiene cupo o falta idoneidad), mostramos Transferir
-		if isViewerAdminOrResponsable && isDisponible && !isVencido && !perms.CanAsignarCupo {
+		if isViewerAdminOrResponsable && !isVencido && !isTransferido && !perms.CanAsignarCupo {
 			perms.CanTransfer = true
 		}
 
-		// 3. Solicitudes (Owner Only)
-		if isOwner {
+		// 4. Solicitudes (Owner, Admin or Encargado)
+		if isOwner || isViewerAdminOrResponsable || isEncargado {
 			solIda := modelItem.GetSolicitudIda()
 			solVuelta := modelItem.GetSolicitudVuelta()
 
@@ -701,12 +714,8 @@ func (ctrl *CupoController) DerechoByMonth(c *gin.Context) {
 				if !isVencido {
 					perms.CanCreateIda = true
 				}
-			} else {
-				if solIda.GetEstado() == "SOLICITADO" {
-					perms.CanEditIda = true
-				} else {
-					perms.CanViewIda = true
-				}
+			} else if solIda.GetEstado() == "SOLICITADO" || (isViewerAdminOrResponsable && solIda.GetEstado() == "APROBADO") {
+				perms.CanEditIda = true
 			}
 
 			// Vuelta
@@ -714,21 +723,14 @@ func (ctrl *CupoController) DerechoByMonth(c *gin.Context) {
 				if !isVencido {
 					perms.CanCreateVuelta = true
 				}
-			} else {
-				if solVuelta.GetEstado() == "SOLICITADO" {
-					perms.CanEditVuelta = true
-				} else {
-					perms.CanViewVuelta = true
-				}
+			} else if solVuelta.GetEstado() == "SOLICITADO" || (isViewerAdminOrResponsable && solVuelta.GetEstado() == "APROBADO") {
+				perms.CanEditVuelta = true
 			}
 
 			// Ida y Vuelta (Round Trip) in Single Request
 			if solIda == nil && solVuelta == nil && !isVencido {
 				perms.CanCreateIdaVuelta = true
 			}
-
-			// Descargo
-			perms.CanDescargo = true
 		}
 
 		item.Permissions = perms

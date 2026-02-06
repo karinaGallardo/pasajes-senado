@@ -13,22 +13,20 @@ import (
 )
 
 type PasajeController struct {
-	pasajeService       *services.PasajeService
-	aerolineaService    *services.AerolineaService
-	estadoPasajeService *services.EstadoPasajeService
-	agenciaService      *services.AgenciaService
-	rutaService         *services.RutaService
-	solicitudService    *services.SolicitudService
+	agenciaService   *services.AgenciaService
+	rutaService      *services.RutaService
+	solicitudService *services.SolicitudService
+	pasajeService    *services.PasajeService
+	aerolineaService *services.AerolineaService
 }
 
 func NewPasajeController() *PasajeController {
 	return &PasajeController{
-		pasajeService:       services.NewPasajeService(),
-		aerolineaService:    services.NewAerolineaService(),
-		estadoPasajeService: services.NewEstadoPasajeService(),
-		agenciaService:      services.NewAgenciaService(),
-		rutaService:         services.NewRutaService(),
-		solicitudService:    services.NewSolicitudService(),
+		agenciaService:   services.NewAgenciaService(),
+		rutaService:      services.NewRutaService(),
+		solicitudService: services.NewSolicitudService(),
+		pasajeService:    services.NewPasajeService(),
+		aerolineaService: services.NewAerolineaService(),
 	}
 }
 
@@ -62,13 +60,14 @@ func (ctrl *PasajeController) UpdateStatus(c *gin.Context) {
 	}
 
 	var ticketPath, pasePath string
-	if req.Status == "VALIDANDO_USO" {
-		if file, err := c.FormFile("archivo_pase_abordo"); err == nil {
-			pasePath, _ = utils.SaveUploadedFile(c, file, "uploads/pases_abordo", "pase_"+req.ID+"_")
-		}
-	} else if req.Status == "EMITIDO" {
+	switch req.Status {
+	case "EMITIDO":
 		if file, err := c.FormFile("archivo_ticket"); err == nil {
 			ticketPath, _ = utils.SaveUploadedFile(c, file, "uploads/pasajes", "pasaje_"+req.ID+"_")
+		}
+	case "USADO":
+		if file, err := c.FormFile("archivo_pase_abordo"); err == nil {
+			pasePath, _ = utils.SaveUploadedFile(c, file, "uploads/pases_abordo", "pase_"+req.ID+"_")
 		}
 	}
 
@@ -87,12 +86,12 @@ func (ctrl *PasajeController) UpdateStatus(c *gin.Context) {
 	} else {
 		msg := "Estado actualizado correctamente"
 		switch req.Status {
-		case "VALIDANDO_USO":
-			msg = "Documento enviado para validación"
+		case "EMITIDO":
+			msg = "Pasaje emitido correctamente"
 		case "USADO":
-			msg = "Uso del pasaje aprobado correctamente"
-		case "USO_RECHAZADO":
-			msg = "Uso del pasaje rechazado. El beneficiario deberá subirlo nuevamente."
+			msg = "Pase a bordo registrado y validado"
+		case "ANULADO":
+			msg = "Pasaje anulado correctamente"
 		}
 		utils.SetSuccessMessage(c, msg)
 		c.Redirect(http.StatusFound, c.Request.Header.Get("Referer"))
@@ -113,28 +112,6 @@ func (ctrl *PasajeController) Devolver(c *gin.Context) {
 	}
 
 	utils.SetSuccessMessage(c, "Pasaje marcado como DEVUELTO correctamente")
-	c.Redirect(http.StatusFound, c.Request.Header.Get("Referer"))
-}
-
-func (ctrl *PasajeController) Reprogramar(c *gin.Context) {
-	var req dtos.ReprogramarPasajeRequest
-	if err := c.ShouldBind(&req); err != nil {
-		c.Redirect(http.StatusFound, "/solicitudes?error=DatosInvalidos")
-		return
-	}
-
-	var filePath string
-	if file, err := c.FormFile("archivo"); err == nil {
-		filePath, _ = utils.SaveUploadedFile(c, file, "uploads/pasajes", "pasaje_"+req.PasajeAnteriorID+"_reprog_")
-	}
-
-	if err := ctrl.pasajeService.Reprogramar(c.Request.Context(), req, filePath); err != nil {
-		utils.SetErrorMessage(c, "Error: "+err.Error())
-		c.Redirect(http.StatusFound, "/solicitudes")
-		return
-	}
-
-	utils.SetSuccessMessage(c, "Pasaje reprogramado exitosamente")
 	c.Redirect(http.StatusFound, c.Request.Header.Get("Referer"))
 }
 
@@ -224,26 +201,6 @@ func (ctrl *PasajeController) GetEditModal(c *gin.Context) {
 	rutas, _ := ctrl.rutaService.GetAll(c.Request.Context())
 
 	utils.Render(c, "solicitud/components/modal_editar_pasaje", gin.H{
-		"Pasaje":     pasaje,
-		"Aerolineas": aerolineas,
-		"Agencias":   agencias,
-		"Rutas":      rutas,
-	})
-}
-
-func (ctrl *PasajeController) GetReprogramarModal(c *gin.Context) {
-	id := c.Param("id")
-	pasaje, err := ctrl.pasajeService.GetByID(c.Request.Context(), id)
-	if err != nil {
-		c.String(http.StatusNotFound, "Pasaje no encontrado")
-		return
-	}
-
-	aerolineas, _ := ctrl.aerolineaService.GetAllActive(c.Request.Context())
-	agencias, _ := ctrl.agenciaService.GetAllActive(c.Request.Context())
-	rutas, _ := ctrl.rutaService.GetAll(c.Request.Context())
-
-	utils.Render(c, "solicitud/components/modal_reprogramar_pasaje", gin.H{
 		"Pasaje":     pasaje,
 		"Aerolineas": aerolineas,
 		"Agencias":   agencias,

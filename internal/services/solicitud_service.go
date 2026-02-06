@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/spf13/viper"
 	"gorm.io/gorm"
 )
 
@@ -22,6 +23,8 @@ func NewSolicitudService() *SolicitudService {
 		itemRepo:            repositories.NewCupoDerechoItemRepository(),
 		tipoItinRepo:        repositories.NewTipoItinerarioRepository(),
 		codigoSecuenciaRepo: repositories.NewCodigoSecuenciaRepository(),
+		solicitudItemRepo:   repositories.NewSolicitudItemRepository(),
+		pasajeRepo:          repositories.NewPasajeRepository(),
 		emailService:        NewEmailService(),
 	}
 }
@@ -33,6 +36,8 @@ type SolicitudService struct {
 	itemRepo            *repositories.CupoDerechoItemRepository
 	tipoItinRepo        *repositories.TipoItinerarioRepository
 	codigoSecuenciaRepo *repositories.CodigoSecuenciaRepository
+	solicitudItemRepo   *repositories.SolicitudItemRepository
+	pasajeRepo          *repositories.PasajeRepository
 	emailService        *EmailService
 }
 
@@ -252,32 +257,49 @@ func (s *SolicitudService) sendCreationEmail(solicitud *models.Solicitud) {
 		}
 	}
 
+	baseURL := viper.GetString("APP_URL")
+	if baseURL == "" {
+		baseURL = "http://localhost:8284"
+	}
+	solURL := fmt.Sprintf("%s/solicitudes/derecho/%s/detalle", baseURL, fullSol.ID)
+
 	body := fmt.Sprintf(`
-		<div style="font-family: Arial, sans-serif; color: #333;">
-			<h2>Solicitud de Pasaje Registrada</h2>
-			<p>Hola <strong>%s</strong>,</p>
-			<p>Se ha registrado una nueva solicitud de pasaje a su nombre con los siguientes detalles:</p>
-			<table style="border-collapse: collapse; width: 100%%; max-width: 600px;">
-				<tr>
-					<td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Código:</strong></td>
-					<td style="padding: 8px; border-bottom: 1px solid #ddd;">%s</td>
-				</tr>
-				<tr>
-					<td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Ruta:</strong></td>
-					<td style="padding: 8px; border-bottom: 1px solid #ddd;">%s</td>
-				</tr>
-				<tr>
-					<td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Fecha Ida:</strong></td>
-					<td style="padding: 8px; border-bottom: 1px solid #ddd;">%s</td>
-				</tr>
-				<tr>
-					<td style="padding: 8px; border-bottom: 1px solid #ddd;"><strong>Estado:</strong></td>
-					<td style="padding: 8px; border-bottom: 1px solid #ddd;">%s</td>
-				</tr>
-			</table>
-			<p style="margin-top: 20px;">Puede revisar el estado de su solicitud ingresando al sistema.</p>
+		<div style="font-family: Arial, sans-serif; color: #333; max-width: 600px;">
+			<div style="background-color: #03738C; color: white; padding: 15px; border-radius: 5px 5px 0 0;">
+				<h2 style="margin:0;">Solicitud de Pasaje Registrada</h2>
+			</div>
+			<div style="padding: 20px; border: 1px solid #ddd; border-top: none; border-radius: 0 0 5px 5px;">
+				<p>Hola <strong>%s</strong>,</p>
+				<p>Se ha registrado una nueva solicitud de pasaje a su nombre con los siguientes detalles:</p>
+				<table style="border-collapse: collapse; width: 100%%; margin-bottom: 20px;">
+					<tr>
+						<td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Código:</strong></td>
+						<td style="padding: 8px; border-bottom: 1px solid #eee;">%s</td>
+					</tr>
+					<tr>
+						<td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Ruta:</strong></td>
+						<td style="padding: 8px; border-bottom: 1px solid #eee;">%s</td>
+					</tr>
+					<tr>
+						<td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Fecha Ida:</strong></td>
+						<td style="padding: 8px; border-bottom: 1px solid #eee;">%s</td>
+					</tr>
+					<tr>
+						<td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Estado:</strong></td>
+						<td style="padding: 8px; border-bottom: 1px solid #eee;">%s</td>
+					</tr>
+				</table>
+
+				<div style="margin-top: 25px; text-align: center;">
+					<a href="%s" target="_blank" style="background-color: #03738C; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">Ver Detalles en el Sistema</a>
+				</div>
+				<p style="font-size: 11px; color: #999; margin-top: 20px; text-align: center;">
+					Si el botón no funciona, copie y pegue esta URL:<br>
+					%s
+				</p>
+			</div>
 		</div>
-	`, beneficiary.GetNombreCompleto(), fullSol.Codigo, rut, fecha, fullSol.GetEstado())
+	`, beneficiary.GetNombreCompleto(), fullSol.Codigo, rut, fecha, fullSol.GetEstado(), solURL, solURL)
 
 	err = s.emailService.SendEmail([]string{beneficiary.Email}, nil, nil, subject, body)
 	if err != nil {
@@ -299,15 +321,32 @@ func (s *SolicitudService) sendRevertApprovalEmail(solicitud *models.Solicitud) 
 
 	subject := fmt.Sprintf("Solicitud de Pasaje Revertida - %s", fullSol.Codigo)
 
+	baseURL := viper.GetString("APP_URL")
+	if baseURL == "" {
+		baseURL = "http://localhost:8284"
+	}
+	solURL := fmt.Sprintf("%s/solicitudes/derecho/%s/detalle", baseURL, fullSol.ID)
+
 	body := fmt.Sprintf(`
-		<div style="font-family: Arial, sans-serif; color: #333;">
-			<h2>Estado de Solicitud Actualizado</h2>
-			<p>Hola <strong>%s</strong>,</p>
-			<p>La aprobación de su solicitud <strong>%s</strong> ha sido revertida a estado SOLICITADO.</p>
-			<p>Esto puede deberse a ajustes necesarios en el itinerario.</p>
-			<p>Por favor revise el sistema para más detalles.</p>
+		<div style="font-family: Arial, sans-serif; color: #333; max-width: 600px;">
+			<div style="background-color: #d97706; color: white; padding: 15px; border-radius: 5px 5px 0 0;">
+				<h2 style="margin:0;">Aprobación Revertida</h2>
+			</div>
+			<div style="padding: 20px; border: 1px solid #ddd; border-top: none; border-radius: 0 0 5px 5px;">
+				<p>Hola <strong>%s</strong>,</p>
+				<p>La aprobación de su solicitud <strong>%s</strong> ha sido revertida al estado <strong>SOLICITADO</strong>.</p>
+				<p>Esto puede deberse a ajustes necesarios en el itinerario o cambios de último momento.</p>
+
+				<div style="margin-top: 25px; text-align: center;">
+					<a href="%s" target="_blank" style="background-color: #d97706; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">Ver Solicitud</a>
+				</div>
+				<p style="font-size: 11px; color: #999; margin-top: 20px; text-align: center;">
+					Si el botón no funciona/no se ve, copie esta URL:<br>
+					%s
+				</p>
+			</div>
 		</div>
-	`, beneficiary.GetNombreCompleto(), fullSol.Codigo)
+	`, beneficiary.GetNombreCompleto(), fullSol.Codigo, solURL, solURL)
 
 	_ = s.emailService.SendEmail([]string{beneficiary.Email}, nil, nil, subject, body)
 }
@@ -330,6 +369,10 @@ func (s *SolicitudService) GetByCupoDerechoItemID(ctx context.Context, itemID st
 
 func (s *SolicitudService) GetByID(ctx context.Context, id string) (*models.Solicitud, error) {
 	return s.repo.WithContext(ctx).FindByID(id)
+}
+
+func (s *SolicitudService) GetItemByID(ctx context.Context, id string) (*models.SolicitudItem, error) {
+	return s.solicitudItemRepo.FindByID(id)
 }
 
 func (s *SolicitudService) Approve(ctx context.Context, id string) error {
@@ -404,8 +447,13 @@ func (s *SolicitudService) RevertApproval(ctx context.Context, id string) error 
 			return err
 		}
 
-		if solicitud.EstadoSolicitudCodigo == nil || *solicitud.EstadoSolicitudCodigo != "APROBADO" {
-			return errors.New("la solicitud no está en estado APROBADO")
+		st := ""
+		if solicitud.EstadoSolicitudCodigo != nil {
+			st = *solicitud.EstadoSolicitudCodigo
+		}
+
+		if st != "APROBADO" && st != "PARCIALMENTE_APROBADO" && st != "EMITIDO" {
+			return errors.New("la solicitud no está en un estado que permita revertir la aprobación (" + st + ")")
 		}
 
 		hasPasajes := false
@@ -511,7 +559,22 @@ func (s *SolicitudService) Reject(ctx context.Context, id string) error {
 }
 
 func (s *SolicitudService) Update(ctx context.Context, solicitud *models.Solicitud) error {
-	return s.repo.WithContext(ctx).Update(solicitud)
+	return s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
+		// Update parent
+		if err := tx.Save(solicitud).Error; err != nil {
+			return err
+		}
+
+		// Update items explicitly
+		for i := range solicitud.Items {
+			if err := tx.Save(&solicitud.Items[i]).Error; err != nil {
+				return err
+			}
+		}
+
+		solicitud.UpdateStatusBasedOnItems()
+		return tx.Save(solicitud).Error
+	})
 }
 
 func (s *SolicitudService) Delete(ctx context.Context, id string) error {
@@ -614,6 +677,108 @@ func (s *SolicitudService) RejectItem(ctx context.Context, solicitudID, itemID s
 				itemRepoTx.Update(item)
 			}
 		}
+		return nil
+	})
+}
+
+func (s *SolicitudService) RevertApprovalItem(ctx context.Context, solicitudID, itemID string) error {
+	return s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
+		solicitud, err := repoTx.FindByID(solicitudID)
+		if err != nil {
+			return err
+		}
+		found := false
+		for i := range solicitud.Items {
+			it := &solicitud.Items[i]
+			if it.ID == itemID {
+				estado := it.GetEstado()
+				if estado != "APROBADO" && estado != "EMITIDO" {
+					return fmt.Errorf("el tramo no está en un estado que permita revertir la aprobación (%s)", estado)
+				}
+				if len(it.Pasajes) > 0 {
+					return fmt.Errorf("no se puede revertir la aprobación porque ya tiene pasajes asignados")
+				}
+
+				st := "SOLICITADO"
+				it.EstadoCodigo = &st
+				if err := tx.Save(it).Error; err != nil {
+					return err
+				}
+				found = true
+				break
+			}
+		}
+		if !found {
+			return fmt.Errorf("item no encontrado")
+		}
+
+		solicitud.UpdateStatusBasedOnItems()
+		if err := repoTx.Update(solicitud); err != nil {
+			return err
+		}
+
+		if solicitud.CupoDerechoItemID != nil {
+			itemRepoTx := s.itemRepo.WithTx(tx)
+			cupoItem, err := itemRepoTx.FindByID(*solicitud.CupoDerechoItemID)
+			if err == nil && cupoItem != nil {
+				if solicitud.GetEstado() == "SOLICITADO" {
+					cupoItem.EstadoCupoDerechoCodigo = "DISPONIBLE"
+					itemRepoTx.Update(cupoItem)
+				}
+			}
+		}
+
+		return nil
+	})
+}
+
+func (s *SolicitudService) ReprogramarItem(ctx context.Context, req dtos.ReprogramarSolicitudItemRequest) error {
+	stateReprog := "REPROGRAMADO"
+	pasajeAnulado := "ANULADO"
+	fecha := utils.ParseDate("2006-01-02", req.Fecha)
+
+	return s.repo.RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
+		// 1. Find old Item
+		var oldItem models.SolicitudItem
+		if err := tx.First(&oldItem, "id = ?", req.SolicitudItemID).Error; err != nil {
+			return fmt.Errorf("item de solicitud no encontrado: %v", err)
+		}
+
+		// 2. Mark old item as REPROGRAMADO
+		if err := tx.Model(&oldItem).Update("estado_codigo", stateReprog).Error; err != nil {
+			return fmt.Errorf("error marcando item anterior como reprogramado: %v", err)
+		}
+
+		// 3. Find and annul any associated Pasajes (issued tickets)
+		var pasajes []models.Pasaje
+		if err := tx.Find(&pasajes, "solicitud_item_id = ? AND estado_pasaje_codigo = 'EMITIDO'", oldItem.ID).Error; err == nil {
+			for i := range pasajes {
+				p := &pasajes[i]
+				p.EstadoPasajeCodigo = &pasajeAnulado
+				if req.Motivo != "" {
+					p.Glosa += " | Reprogramado. Motivo: " + req.Motivo
+				}
+				if err := tx.Save(p).Error; err != nil {
+					return fmt.Errorf("error anulando pasaje: %v", err)
+				}
+			}
+		}
+
+		// 4. Create NEW SolicitudItem
+		newItem := models.SolicitudItem{
+			SolicitudID:  oldItem.SolicitudID,
+			Tipo:         oldItem.Tipo,
+			OrigenIATA:   oldItem.OrigenIATA,
+			DestinoIATA:  oldItem.DestinoIATA,
+			Fecha:        &fecha,
+			Hora:         req.Hora,
+			EstadoCodigo: utils.Ptr("SOLICITADO"),
+		}
+
+		if err := tx.Create(&newItem).Error; err != nil {
+			return fmt.Errorf("error creando nuevo item de solicitud: %v", err)
+		}
+
 		return nil
 	})
 }

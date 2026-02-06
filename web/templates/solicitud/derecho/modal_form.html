@@ -37,9 +37,7 @@
               {{ if .IsEdit }}{{ if not .Solicitud.GetFechaVuelta }}Agendar Retorno{{ else }}Editar Solicitud{{ end }}{{ else }}Nueva Solicitud{{ end }}: {{ .Itinerario.Nombre }}
             </h3>
             <p class="text-xs text-neutral-500 font-medium tracking-tighter">
-              {{ .TargetUser.GetNombreCompleto }} • {{ .Item.Semana }} / {{ .Item.Mes | monthName }} {{ if .Item.FechaDesde }}
-              <span class="ml-1 text-secondary">({{ .Item.FechaDesde.Format "02/01" }} - {{ if .Item.FechaHasta }}{{ .Item.FechaHasta.Format "02/01" }}{{ end }})</span>
-              {{ end }}
+              {{ .TargetUser.GetNombreCompleto }} • {{ .Item.Semana }} / {{ .Item.Mes | monthName }} {{ .Item.Gestion }}
             </p>
           </div>
         </div>

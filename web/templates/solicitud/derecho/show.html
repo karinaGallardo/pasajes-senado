@@ -100,7 +100,7 @@
     </div>
 
     <!-- Itinerario y Pasajes -->
-    <div class="bg-white shadow sm:rounded-lg overflow-hidden border border-neutral-200">
+    <div class="bg-white shadow sm:rounded-lg border border-neutral-200">
       <div class="px-6 py-4 border-b border-neutral-200 bg-neutral-50 flex justify-between items-center">
         <h3 class="text-sm font-bold text-neutral-800 uppercase tracking-wider">Itinerario y Pasajes</h3>
         {{ if .Perms.CanRevertApproval }}
@@ -117,6 +117,7 @@
 
       <div class="divide-y divide-neutral-200 transition-all">
         {{ range .Solicitud.Items }}
+        {{ $item := . }}
         <div class="p-6">
           <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <!-- Tramo Info -->
@@ -146,7 +147,7 @@
 
             <!-- Tramo Actions -->
             <div class="flex items-center gap-2">
-              {{ if $.Perms.IsAdminOrResp }} {{ if eq .GetEstado "SOLICITADO" }}
+              {{ if and $.Perms.IsAdminOrResp (ne .GetEstado `REPROGRAMADO`) }} {{ if eq .GetEstado "SOLICITADO" }}
               <button
                 hx-post="/solicitudes/derecho/{{ $.Solicitud.ID }}/items/{{ .ID }}/aprobar"
                 hx-confirm="¿Aprobar este tramo?"
@@ -163,7 +164,15 @@
                 <i class="ph ph-x mr-1.5"></i>
                 Rechazar
               </button>
-              {{ end }} {{ if or (eq .GetEstado "APROBADO") (eq .GetEstado "EMITIDO") }}
+              {{ end }} {{ if and (or (eq .GetEstado "APROBADO") (eq .GetEstado "EMITIDO")) (not .HasActivePasaje) }}
+              <button
+                hx-post="/solicitudes/derecho/{{ $.Solicitud.ID }}/items/{{ .ID }}/revertir-aprobacion"
+                hx-confirm="¿Está seguro de revertir la aprobación de este tramo? Volverá a estado SOLICITADO."
+                hx-target="body"
+                class="inline-flex items-center px-3 py-1.5 border border-warning-600 rounded-lg shadow-sm text-xs font-bold text-warning-700 bg-white hover:bg-warning-50 transition-colors">
+                <i class="ph ph-arrow-u-up-left mr-1.5"></i>
+                Revertir
+              </button>
               <button
                 hx-get="/solicitudes/{{ $.Solicitud.ID }}/pasajes/nuevo?item_id={{ .ID }}"
                 hx-target="#modal-container"
@@ -171,7 +180,15 @@
                 <i class="ph ph-plus mr-1.5"></i>
                 Asignar Pasaje
               </button>
-              {{ end }} {{ end }}
+              {{ end }} {{ if eq .GetEstado "EMITIDO" }}
+              <button
+               hx-get="/solicitud-items/{{ .ID }}/reprogramar"
+               hx-target="#modal-container"
+               class="inline-flex items-center px-3 py-1.5 border border-transparent rounded-lg shadow-sm text-xs font-bold text-white bg-warning-600 hover:bg-warning-700 transition-colors">
+               <i class="ph ph-calendar-blank mr-1.5"></i>
+               Reprogramar
+             </button>
+             {{ end }} {{ end }}
             </div>
           </div>
 
@@ -181,30 +198,30 @@
             {{ range .Pasajes }}
             <div class="bg-neutral-50 border border-neutral-200 rounded-xl p-4 flex flex-col sm:flex-row justify-between gap-4 relative" x-data="{ openMenu: false }">
               <div class="flex-1">
-                <div class="flex items-center gap-3 mb-2">
+                <div class="flex items-center gap-3 mb-3">
                   <span
-                    class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tight {{ if eq .GetEstado "EMITIDO" }} bg-success-100 text-success-800 {{ else if eq .GetEstado "ANULADO" }} bg-neutral-200 text-neutral-600 {{ else if eq .GetEstado "RESERVADO" }} bg-warning-100 text-warning-800 {{ else }} bg-primary-100 text-primary-800 {{ end }}">
+                    class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tight {{ if eq .GetEstado `EMITIDO` }} bg-success-100 text-success-800 {{ else if eq .GetEstado `ANULADO` }} bg-neutral-200 text-neutral-600 {{ else if eq .GetEstado `REGISTRADO` }} bg-neutral-100 text-neutral-800 {{ else if eq .GetEstado `USADO` }} bg-primary-100 text-primary-800 {{ else }} bg-neutral-100 text-neutral-800 {{ end }}">
                     {{ .GetEstado }}
                   </span>
-                  <span class="text-xs font-bold text-neutral-900">{{ if .Aerolinea }}{{ .Aerolinea.Nombre }}{{ else }}Aerolínea N/A{{ end }}</span>
-                  <span class="text-[10px] text-neutral-400 font-mono">#{{ .NumeroBoleto }}</span>
+                  <div class="h-1 w-1 rounded-full bg-neutral-300"></div>
+                  <span class="text-[10px] text-neutral-500 font-bold uppercase tracking-widest">Detalle del Pasaje</span>
                 </div>
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-[11px] text-neutral-600">
                   <div>
-                    <span class="block text-neutral-400 uppercase font-bold tracking-tighter">Vuelo</span>
-                    <span class="font-bold text-neutral-800">{{ .NumeroVuelo }}</span>
+                    <span class="block text-neutral-400 uppercase font-bold tracking-tighter">Nº Vuelo</span>
+                    <span class="font-bold text-neutral-900">{{ .NumeroVuelo }}</span>
                   </div>
                   <div>
-                    <span class="block text-neutral-400 uppercase font-bold tracking-tighter">PNR</span>
-                    <span class="font-bold text-neutral-800">{{ .CodigoReserva }}</span>
+                    <span class="block text-neutral-400 uppercase font-bold tracking-tighter">Nº Boleto</span>
+                    <span class="font-bold text-neutral-900">{{ .NumeroBoleto }}</span>
+                  </div>
+                  <div>
+                    <span class="block text-neutral-400 uppercase font-bold tracking-tighter">Aerolínea</span>
+                    <span class="font-bold text-neutral-900">{{ if .Aerolinea }}{{ .Aerolinea.Nombre }}{{ else }}N/A{{ end }}</span>
                   </div>
                   <div>
                     <span class="block text-neutral-400 uppercase font-bold tracking-tighter">Costo</span>
-                    <span class="font-bold text-neutral-800">Bs {{ printf "%.2f" .Costo }}</span>
-                  </div>
-                  <div>
-                    <span class="block text-neutral-400 uppercase font-bold tracking-tighter">Agencia</span>
-                    <span class="font-bold text-neutral-800">{{ if .Agencia }}{{ .Agencia.Nombre }}{{ else }} - {{ end }}</span>
+                    <span class="font-bold text-secondary-600">Bs {{ printf "%.2f" .Costo }}</span>
                   </div>
                 </div>
               </div>
@@ -221,23 +238,33 @@
                 </button>
                 {{ end }}
 
-                {{ if $.Perms.IsAdminOrResp }}
+                {{ if and $.Perms.IsAdminOrResp (ne $item.GetEstado "REPROGRAMADO") }}
                  <!-- Dropdown (simplified) -->
-                 <div class="relative">
-                    <button @click="openMenu = !openMenu" class="p-1.5 rounded-md hover:bg-neutral-200 text-neutral-600 transition-colors">
-                      <i class="ph ph-dots-three-vertical text-xl"></i>
+                  <div class="relative">
+                    <button
+                      @click="openMenu = !openMenu"
+                      class="p-2 rounded-lg border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-600 transition-all shadow-sm flex items-center justify-center"
+                      title="Acciones del Pasaje">
+                      <i class="ph ph-dots-three-vertical text-lg font-bold"></i>
                     </button>
-                     <div x-show="openMenu" @click.away="openMenu = false" class="absolute right-0 mt-2 w-48 bg-white border border-neutral-200 rounded-lg shadow-xl z-50 py-1" x-cloak>
-                       {{ if eq .GetEstado "RESERVADO" }}
+                    <!-- Dropdown Menu -->
+                    <div
+                      x-show="openMenu"
+                      @click.away="openMenu = false"
+                      x-transition:enter="transition ease-out duration-100"
+                      x-transition:enter-start="transform opacity-0 scale-95"
+                      x-transition:enter-end="transform opacity-100 scale-100"
+                      class="absolute right-0 mt-2 w-56 bg-white border border-neutral-200 rounded-xl shadow-[0_10px_25px_-5px_rgba(0,0,0,0.1),0_8px_10px_-6px_rgba(0,0,0,0.1)] z-50 py-2 divide-y divide-neutral-100" 
+                      x-cloak>
+                       {{ if eq .GetEstado "REGISTRADO" }}
                        <button @click="$dispatch('pasaje-action', { action: 'emitir', id: '{{.ID}}' })" class="block w-full text-left px-4 py-2 text-xs text-secondary-600 hover:bg-secondary-50 font-bold">
                         <i class="ph ph-airplane-tilt mr-2"></i>Emitir Pasaje
                        </button>
                        {{ end }}
+                       {{ if eq .GetEstado "REGISTRADO" }}
                        <button hx-get="/pasajes/{{ .ID }}/editar" hx-target="#modal-container" class="block w-full text-left px-4 py-2 text-xs hover:bg-neutral-50">Editar</button>
-                       {{ if eq .GetEstado "EMITIDO" }}
-                       <button hx-get="/pasajes/{{ .ID }}/reprogramar" hx-target="#modal-container" class="block w-full text-left px-4 py-2 text-xs hover:bg-neutral-50 text-warning-600 font-bold">Reprogramar</button>
-                       <button hx-get="/pasajes/{{ .ID }}/devolver" hx-target="#modal-container" class="block w-full text-left px-4 py-2 text-xs hover:bg-neutral-50 text-danger-600">Devolver</button>
                        {{ end }}
+
                        <button @click="$dispatch('pasaje-action', { action: 'anular', id: '{{.ID}}' })" class="block w-full text-left px-4 py-2 text-xs text-danger-600 hover:bg-danger-50">Anular</button>
                     </div>
                  </div>
@@ -458,30 +485,23 @@
       if (action === "emitir") {
         Swal.fire({
           title: "¿Emitir Pasaje?",
-          html: `
-            <p class="text-sm text-neutral-600 mb-4 text-center">Suba el billete electrónico (PDF) para finalizar la emisión.</p>
-            <div class="flex flex-col items-center justify-center p-4 border-2 border-dashed border-neutral-300 rounded-lg hover:bg-neutral-50 transition-colors cursor-pointer" onclick="document.getElementById('swal-file').click()">
-              <i class="ph ph-file-pdf text-4xl text-danger-500 mb-2"></i>
-              <span id="file-name" class="text-xs font-bold text-neutral-500">Seleccionar PDF</span>
-              <input type="file" id="swal-file" class="hidden" accept=".pdf" onchange="document.getElementById('file-name').innerText = this.files[0].name" />
-            </div>
-          `,
+          text: "Confirma que los datos son correctos. Se enviará la notificación de emisión.",
           icon: "info",
           showCancelButton: true,
           confirmButtonColor: "#0396A6",
           cancelButtonColor: "#6b7280",
           confirmButtonText: "Sí, emitir",
           cancelButtonText: "Cancelar",
-          preConfirm: () => {
-            const file = document.getElementById("swal-file").files[0];
-            if (!file) {
-              Swal.showValidationMessage("Debe seleccionar el archivo del pasaje");
-            }
-            return { file: file };
+          customClass: {
+            popup: "rounded-xl font-sans",
+            title: "text-lg font-bold text-neutral-900",
+            htmlContainer: "text-sm text-neutral-600",
+            confirmButton: "rounded-lg px-4 py-2 text-sm font-medium shadow-sm",
+            cancelButton: "rounded-lg px-4 py-2 text-sm font-medium shadow-sm hover:bg-neutral-100 text-neutral-700 bg-white border border-neutral-300",
           },
         }).then((result) => {
           if (result.isConfirmed) {
-            updatePasajeStatus(id, "EMITIDO", result.value.file);
+            updatePasajeStatus(id, "EMITIDO");
           }
         });
         return;

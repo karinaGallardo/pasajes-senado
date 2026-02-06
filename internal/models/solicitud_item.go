@@ -42,3 +42,12 @@ func (t SolicitudItem) GetEstado() string {
 	}
 	return *t.EstadoCodigo
 }
+
+func (t SolicitudItem) HasActivePasaje() bool {
+	for _, p := range t.Pasajes {
+		if p.EstadoPasajeCodigo != nil && *p.EstadoPasajeCodigo != "ANULADO" {
+			return true
+		}
+	}
+	return false
+}

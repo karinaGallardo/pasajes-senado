@@ -405,19 +405,19 @@ func seedEstadosCupoDerecho() {
 func seedEstadosPasaje() {
 	fmt.Println("Sincronizando Estados de Pasaje...")
 	estados := []models.EstadoPasaje{
-		{Codigo: "RESERVADO", Nombre: "Reservado", Color: "secondary", Descripcion: "Pasaje reservado, pendiente de emisión"},
+		{Codigo: "REGISTRADO", Nombre: "Registrado", Color: "#6c757d", Descripcion: "Pasaje registrado en el sistema pero no emitido"},
 		{Codigo: "EMITIDO", Nombre: "Emitido", Color: "success", Descripcion: "Pasaje emitido correctamente"},
-		{Codigo: "REPROGRAMADO", Nombre: "Reprogramado", Color: "warning", Descripcion: "Pasaje reprogramado con costo adicional"},
-		{Codigo: "DEVUELTO", Nombre: "Devuelto", Color: "danger", Descripcion: "Pasaje devuelto o cancelado"},
 		{Codigo: "USADO", Nombre: "Usado", Color: "primary", Descripcion: "Pasaje utilizado por el viajero"},
 		{Codigo: "ANULADO", Nombre: "Anulado", Color: "neutral", Descripcion: "Pasaje anulado por error u otros motivos"},
-		{Codigo: "NO_SE_PRESENTO", Nombre: "No se presentó", Color: "warning", Descripcion: "El pasajero no se presentó al vuelo"},
-		{Codigo: "VALIDANDO_USO", Nombre: "Uso por Validar", Color: "warning", Descripcion: "Pase a bordo subido, pendiente de validación"},
-		{Codigo: "USO_RECHAZADO", Nombre: "Uso Rechazado", Color: "danger", Descripcion: "Pase a bordo rechazado, debe subirse nuevamente"},
 	}
 
 	for _, e := range estados {
-		configs.DB.Where("codigo = ?", e.Codigo).FirstOrCreate(&e)
+		var existing models.EstadoPasaje
+		if err := configs.DB.Where("codigo = ?", e.Codigo).First(&existing).Error; err != nil {
+			configs.DB.Create(&e)
+		} else {
+			configs.DB.Model(&existing).Updates(e)
+		}
 	}
 }
 
@@ -441,11 +441,17 @@ func seedEstadosSolicitudItem() {
 		{Codigo: "APROBADO", Nombre: "Aprobado", Color: "green", Descripcion: "Item aprobado por autoridad"},
 		{Codigo: "RECHAZADO", Nombre: "Rechazado", Color: "red", Descripcion: "Item rechazado"},
 		{Codigo: "EMITIDO", Nombre: "Emitido", Color: "teal", Descripcion: "Boleto emitido"},
+		{Codigo: "REPROGRAMADO", Nombre: "Reprogramado", Color: "warning", Descripcion: "Item reprogramado"},
 		{Codigo: "FINALIZADO", Nombre: "Finalizado", Color: "gray", Descripcion: "Item completado"},
 		{Codigo: "CANCELADO", Nombre: "Cancelado", Color: "red", Descripcion: "Item cancelado"},
 	}
 
 	for _, e := range estados {
-		configs.DB.Where("codigo = ?", e.Codigo).FirstOrCreate(&e)
+		var existing models.EstadoSolicitudItem
+		if err := configs.DB.Where("codigo = ?", e.Codigo).First(&existing).Error; err != nil {
+			configs.DB.Create(&e)
+		} else {
+			configs.DB.Model(&existing).Updates(e)
+		}
 	}
 }

@@ -280,7 +280,7 @@
                   name="archivo"
                   accept=".pdf"
                   class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                  @change="fileName = $event.target.files[0]?.name" />
+                  @change="if($event.target.files.length > 0) { fileName = $event.target.files[0].name }" />
 
                 <div class="space-y-1 text-center" x-show="!fileName">
                   <svg class="mx-auto h-12 w-12 text-neutral-400 group-hover:text-neutral-500 transition-colors" stroke="currentColor" fill="none" viewBox="0 0 48 48">

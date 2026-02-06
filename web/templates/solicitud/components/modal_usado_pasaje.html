@@ -61,7 +61,7 @@
                       id="archivo_pase_abordo"
                       accept=".pdf,image/*"
                       class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                      @change="fileName = $event.target.files[0].name"
+                      @change="if($event.target.files.length > 0) { fileName = $event.target.files[0].name }"
                       required />
 
                     <div class="space-y-1 text-center" x-show="!fileName">

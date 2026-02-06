@@ -15,7 +15,6 @@ import (
 
 type PasajeService struct {
 	repo              *repositories.PasajeRepository
-	estadoRepo        *repositories.EstadoPasajeRepository
 	solicitudRepo     *repositories.SolicitudRepository
 	solicitudItemRepo *repositories.SolicitudItemRepository
 	emailService      *EmailService
@@ -24,7 +23,6 @@ type PasajeService struct {
 func NewPasajeService() *PasajeService {
 	return &PasajeService{
 		repo:              repositories.NewPasajeRepository(),
-		estadoRepo:        repositories.NewEstadoPasajeRepository(),
 		solicitudRepo:     repositories.NewSolicitudRepository(),
 		solicitudItemRepo: repositories.NewSolicitudItemRepository(),
 		emailService:      NewEmailService(),
@@ -32,6 +30,10 @@ func NewPasajeService() *PasajeService {
 }
 
 func (s *PasajeService) Create(ctx context.Context, solicitudID string, req dtos.CreatePasajeRequest, filePath string) (*models.Pasaje, error) {
+	if filePath == "" {
+		return nil, fmt.Errorf("el documento del pasaje (PDF) es obligatorio")
+	}
+
 	costo := utils.ParseFloat(req.Costo)
 	fechaVuelo := utils.ParseDate("2006-01-02T15:04", req.FechaVuelo)
 
@@ -40,9 +42,23 @@ func (s *PasajeService) Create(ctx context.Context, solicitudID string, req dtos
 		aerolineaID = &req.AerolineaID
 	}
 
-	status := "RESERVADO"
-	if filePath != "" {
-		status = "EMITIDO"
+	status := "REGISTRADO"
+
+	if req.NumeroBoleto != "" {
+		existing, _ := s.repo.WithContext(ctx).FindByNumeroBoleto(req.NumeroBoleto)
+		if existing != nil && existing.ID != "" {
+			return nil, fmt.Errorf("ya existe un pasaje con el número de boleto %s", req.NumeroBoleto)
+		}
+	}
+
+	// Rule: One active pasaje per item
+	if req.SolicitudItemID != "" {
+		item, err := s.solicitudItemRepo.FindByID(req.SolicitudItemID)
+		if err == nil && item != nil {
+			if item.HasActivePasaje() {
+				return nil, fmt.Errorf("este tramo ya tiene un pasaje activo. Debe anular el anterior antes de asignar uno nuevo.")
+			}
+		}
 	}
 
 	pasaje := &models.Pasaje{
@@ -66,6 +82,12 @@ func (s *PasajeService) Create(ctx context.Context, solicitudID string, req dtos
 		if err := repo.Create(pasaje); err != nil {
 			return err
 		}
+
+		// Paranoid check: ensure saved record has file
+		if pasaje.Archivo == "" {
+			return fmt.Errorf("falta el documento del pasaje, por eso no se guardó el registro")
+		}
+
 		return nil
 	})
 
@@ -73,15 +95,7 @@ func (s *PasajeService) Create(ctx context.Context, solicitudID string, req dtos
 		return nil, err
 	}
 
-	if status == "EMITIDO" {
-		go func(p *models.Pasaje) {
-			ctx := context.Background()
-			sol, _ := s.solicitudRepo.WithContext(ctx).FindByID(p.SolicitudID)
-			if sol != nil {
-				s.sendEmissionEmail(sol, p)
-			}
-		}(pasaje)
-	}
+	// Email notifications are now handled upon "EMITIDO" status update, not creation.
 
 	return pasaje, nil
 }
@@ -101,6 +115,14 @@ func (s *PasajeService) UpdateFromRequest(ctx context.Context, req dtos.UpdatePa
 	pasaje, err := s.repo.WithContext(ctx).FindByID(req.ID)
 	if err != nil {
 		return err
+	}
+
+	// Validate duplicate ticket number
+	if req.NumeroBoleto != "" {
+		existing, _ := s.repo.WithContext(ctx).FindByNumeroBoleto(req.NumeroBoleto)
+		if existing != nil && existing.ID != "" && existing.ID != req.ID {
+			return fmt.Errorf("ya existe un pasaje con el número de boleto %s", req.NumeroBoleto)
+		}
 	}
 
 	pasaje.NumeroVuelo = req.NumeroVuelo
@@ -125,59 +147,14 @@ func (s *PasajeService) UpdateFromRequest(ctx context.Context, req dtos.UpdatePa
 		pasaje.ArchivoPaseAbordo = paseAbordo
 	}
 
+	// Ensure pasaje has an archive
+	if pasaje.Archivo == "" {
+		return fmt.Errorf("el pasaje debe tener un archivo PDF asociado")
+	}
+
 	return s.repo.WithContext(ctx).Update(pasaje)
 }
 
-func (s *PasajeService) Reprogramar(ctx context.Context, req dtos.ReprogramarPasajeRequest, filePath string) error {
-	stateReprog := "REPROGRAMADO"
-	newState := "EMITIDO"
-
-	costo := utils.ParseFloat(req.Costo)
-	penalidad := utils.ParseFloat(req.CostoPenalidad)
-	fecha := utils.ParseDate("2006-01-02T15:04", req.FechaVuelo)
-
-	var aerolineaID *string
-	if req.AerolineaID != "" {
-		aerolineaID = &req.AerolineaID
-	}
-
-	return s.repo.RunTransaction(func(repoTx *repositories.PasajeRepository, tx *gorm.DB) error {
-		pasajeAnterior, err := repoTx.FindByID(req.PasajeAnteriorID)
-		if err != nil {
-			return err
-		}
-
-		pasajeAnterior.EstadoPasajeCodigo = &stateReprog
-		if err := repoTx.Update(pasajeAnterior); err != nil {
-			return err
-		}
-
-		nuevoPasaje := &models.Pasaje{
-			SolicitudID:        pasajeAnterior.SolicitudID,
-			SolicitudItemID:    pasajeAnterior.SolicitudItemID,
-			PasajeAnteriorID:   &req.PasajeAnteriorID,
-			EstadoPasajeCodigo: &newState,
-			AerolineaID:        aerolineaID,
-			AgenciaID:          &req.AgenciaID,
-			NumeroVuelo:        req.NumeroVuelo,
-			Ruta:               req.Ruta,
-			FechaVuelo:         fecha,
-			NumeroBoleto:       req.NumeroBoleto,
-			Costo:              costo,
-			CostoPenalidad:     penalidad,
-			Archivo:            filePath,
-			Glosa:              req.Glosa,
-			NumeroFactura:      req.NumeroFactura,
-			CodigoReserva:      req.CodigoReserva,
-		}
-
-		if err := repoTx.Create(nuevoPasaje); err != nil {
-			return err
-		}
-
-		return nil
-	})
-}
 func (s *PasajeService) Update(ctx context.Context, pasaje *models.Pasaje) error {
 	return s.repo.WithContext(ctx).Update(pasaje)
 }
@@ -189,7 +166,7 @@ func (s *PasajeService) DevolverPasaje(ctx context.Context, req dtos.DevolverPas
 	}
 
 	costoPenalidad := utils.ParseFloat(req.CostoPenalidad)
-	pasaje.EstadoPasajeCodigo = utils.Ptr("DEVUELTO")
+	pasaje.EstadoPasajeCodigo = utils.Ptr("ANULADO")
 
 	if pasaje.Glosa != "" {
 		pasaje.Glosa += " | Devolución: " + req.Glosa
@@ -217,6 +194,19 @@ func (s *PasajeService) UpdateStatus(ctx context.Context, id string, status stri
 
 	if err := s.repo.WithContext(ctx).Update(pasaje); err != nil {
 		return err
+	}
+
+	// If Pasaje is EMITIDO, also update Request Item state to EMITIDO
+	if status == "EMITIDO" && pasaje.SolicitudItemID != nil {
+		s.solicitudItemRepo.UpdateStatus(*pasaje.SolicitudItemID, "EMITIDO")
+	}
+
+	// Trigger email if emitted
+	if status == "EMITIDO" {
+		sol, _ := s.solicitudRepo.FindByID(pasaje.SolicitudID)
+		if sol != nil {
+			go s.sendEmissionEmail(sol, pasaje)
+		}
 	}
 
 	if status == "EMITIDO" {
@@ -257,8 +247,6 @@ func (s *PasajeService) sendEmissionEmail(sol *models.Solicitud, pasaje *models.
 	}
 	// Asegurar que las barras sean forward slashes para URL
 	cleanPath := strings.ReplaceAll(pasaje.Archivo, "\\", "/")
-	// Si el path no empieza con /, agregarlo si baseURL no lo tiene, o simplemente concatenar con /
-	// Asumimos que cleanPath es relativo ex: "uploads/..."
 	fileURL := fmt.Sprintf("%s/%s", baseURL, cleanPath)
 
 	body := fmt.Sprintf(`
@@ -269,7 +257,7 @@ func (s *PasajeService) sendEmissionEmail(sol *models.Solicitud, pasaje *models.
 			<div style="padding: 20px; border: 1px solid #ddd; border-top: none; border-radius: 0 0 5px 5px;">
 				<p>Estimado/a <strong>%s</strong>,</p>
 				<p>Su pasaje correspondiente a la solicitud <strong>%s</strong> ha sido emitido exitosamente.</p>
-				
+
 				<h3 style="color: #03738C; border-bottom: 1px solid #eee; padding-bottom: 5px;">Detalles del Vuelo</h3>
 				<table style="width: 100%%; border-collapse: collapse; margin-top: 10px;">
 					<tr>
@@ -289,7 +277,7 @@ func (s *PasajeService) sendEmissionEmail(sol *models.Solicitud, pasaje *models.
 						<td style="padding: 8px 0;">%s</td>
 					</tr>
 				</table>
-				
+
 				<div style="margin-top: 25px; text-align: center;">
 					<a href="%s" target="_blank" style="background-color: #03738C; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">Ver Pasaje en el Sistema</a>
 				</div>

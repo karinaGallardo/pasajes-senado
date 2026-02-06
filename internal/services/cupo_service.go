@@ -253,8 +253,12 @@ func (s *CupoService) RevertirTransferencia(ctx context.Context, itemID string) 
 			return errors.New("el derecho no ha sido transferido")
 		}
 
+		if !item.CanBeReverted() {
+			return errors.New("no se puede revertir la transferencia: ya existen tramos de pasaje aprobados o emitidos")
+		}
+
 		if item.EstadoCupoDerechoCodigo != "DISPONIBLE" {
-			return errors.New("no se puede revertir: el derecho ya fue utilizado por el beneficiario")
+			return errors.New("no se puede revertir: el derecho ya fue utilizado (estado USADO)")
 		}
 
 		item.EsTransferido = false

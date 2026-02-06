@@ -108,10 +108,7 @@
               <input
                 type="date"
                 x-model="selectedDaySalida"
-                min="{{ .MinDateIda }}"
-                max="{{ .MaxDateIda }}"
                 class="w-full px-4 py-2.5 bg-white border border-neutral-200 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-bold text-neutral-700 transition-all font-mono" />
-              <p class="text-[10px] text-neutral-400 font-medium">Válido entre {{ .MinDateIda }} y {{ .MaxDateIda }}</p>
             </div>
 
             <!-- Time Picker (Salida) -->
@@ -255,10 +252,7 @@
                 <input
                   type="date"
                   x-model="selectedDayRetorno"
-                  min="{{ .MinDateVuelta }}"
-                  max="{{ .MaxDateVuelta }}"
                   class="w-full px-4 py-2.5 bg-white border border-neutral-200 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-bold text-neutral-700 transition-all font-mono" />
-                <p class="text-[10px] text-neutral-400 font-medium">Válido entre {{ .MinDateVuelta }} y {{ .MaxDateVuelta }}</p>
               </div>
 
               <!-- Time Picker (Retorno) -->
@@ -266,14 +260,14 @@
                 <div
                   class="w-full"
                   x-data="{
-                               open: false,
-                               mode: 'hours',
-                               currentH: '18',
-                               currentM: '00',
-                               setHour(h) { this.currentH = h.toString().padStart(2, '0'); this.mode = 'minutes'; this.sync(); },
-                               setMinute(m) { this.currentM = m.toString().padStart(2, '0'); this.open = false; this.sync(); },
-                               sync() { selectedTimeRetorno = `${this.currentH}:${this.currentM}`; }
-                             }"
+                    open: false,
+                    mode: 'hours',
+                    currentH: '18',
+                    currentM: '00',
+                    setHour(h) { this.currentH = h.toString().padStart(2, '0'); this.mode = 'minutes'; this.sync(); },
+                    setMinute(m) { this.currentM = m.toString().padStart(2, '0'); this.open = false; this.sync(); },
+                    sync() { selectedTimeRetorno = `${this.currentH}:${this.currentM}`; }
+                  }"
                   x-effect="if (selectedTimeRetorno) { const parts = selectedTimeRetorno.split(':'); if (parts.length === 2) { currentH = parts[0]; currentM = parts[1]; } }"
                   @click.away="open = false">
                   <div class="relative">

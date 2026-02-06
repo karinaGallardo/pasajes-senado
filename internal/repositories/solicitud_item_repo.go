@@ -30,9 +30,13 @@ func (r *SolicitudItemRepository) Update(item *models.SolicitudItem) error {
 
 func (r *SolicitudItemRepository) FindByID(id string) (*models.SolicitudItem, error) {
 	var item models.SolicitudItem
-	err := r.db.First(&item, "id = ?", id).Error
+	err := r.db.Preload("Origen").Preload("Destino").First(&item, "id = ?", id).Error
 	if err != nil {
 		return nil, err
 	}
 	return &item, nil
+}
+
+func (r *SolicitudItemRepository) UpdateStatus(id string, status string) error {
+	return r.db.Model(&models.SolicitudItem{}).Where("id = ?", id).Update("estado_codigo", status).Error
 }

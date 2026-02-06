@@ -74,11 +74,17 @@ func (v CupoDerechoItem) GetDescargo() *Descargo {
 }
 
 func (v CupoDerechoItem) IsVencido() bool {
-	if v.FechaHasta == nil {
-		return false
+	now := time.Now()
+
+	if now.Year() > v.Gestion {
+		return true
 	}
-	expirationTime := v.FechaHasta.Add(24 * time.Hour)
-	return time.Now().After(expirationTime)
+
+	if now.Year() == v.Gestion && int(now.Month()) > v.Mes {
+		return true
+	}
+
+	return false
 }
 
 func (v CupoDerechoItem) IsActiveWeek() bool {
@@ -91,4 +97,18 @@ func (v CupoDerechoItem) IsActiveWeek() bool {
 
 func (v CupoDerechoItem) IsDisponible() bool {
 	return v.EstadoCupoDerechoCodigo == "DISPONIBLE"
+}
+
+func (v CupoDerechoItem) CanBeReverted() bool {
+	for i := range v.Solicitudes {
+		s := &v.Solicitudes[i]
+		for j := range s.Items {
+			it := &s.Items[j]
+			estado := it.GetEstado()
+			if estado == "APROBADO" || estado == "EMITIDO" {
+				return false
+			}
+		}
+	}
+	return true
 }

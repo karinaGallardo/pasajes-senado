@@ -315,3 +315,246 @@ func (s *ReportService) GeneratePV01(ctx context.Context, solicitud *models.Soli
 
 	return pdf
 }
+
+func (s *ReportService) GeneratePV05(ctx context.Context, solicitud *models.Solicitud, personaView *models.MongoPersonaView) *gofpdf.Fpdf {
+	pdf := gofpdf.New("P", "mm", "Letter", "")
+	tr := pdf.UnicodeTranslatorFromDescriptor("")
+	pdf.AddPage()
+	pdf.SetFont("Arial", "B", 16)
+
+	xHeader, yHeader := 10.0, 10.0
+	hHeader := 22.0
+
+	pdf.SetLineWidth(0.1)
+	pdf.Line(xHeader, yHeader+hHeader, xHeader+167, yHeader+hHeader)
+
+	pdf.SetXY(xHeader, yHeader+3)
+	pdf.SetFont("Arial", "B", 12)
+	pdf.CellFormat(40, 6, "FORM-PV-05", "", 1, "C", false, 0, "")
+
+	pdf.SetX(xHeader)
+	pdf.SetFont("Arial", "B", 11)
+	pdf.CellFormat(40, 8, fmt.Sprintf("%s", solicitud.Codigo), "", 1, "C", false, 0, "") // Reuse code or generate new one? usually keeps same tracking
+	pdf.SetXY(xHeader+40, yHeader+4)
+	pdf.SetFont("Arial", "B", 14)
+	pdf.CellFormat(115, 8, tr("FORMULARIO DE DESCARGO"), "", 1, "C", false, 0, "")
+
+	pdf.SetXY(xHeader+40, yHeader+11)
+	pdf.SetFont("Arial", "B", 9)
+	pdf.CellFormat(115, 6, tr("PASAJES AEREOS PARA SENADORAS Y SENADORES"), "", 1, "C", false, 0, "")
+
+	pdf.SetXY(xHeader+40, yHeader+16)
+	pdf.SetFont("Arial", "B", 10)
+	pdf.CellFormat(115, 6, fmt.Sprintf("GESTION: %s", solicitud.CreatedAt.Format("2006")), "", 1, "C", false, 0, "")
+
+	pdf.Image("web/static/img/logo_senado.png", xHeader+160, yHeader-6, 30, 0, false, "", 0, "")
+
+	pdf.SetY(40)
+	pdf.SetFont("Arial", "", 10)
+
+	drawLabelBox := func(label, value string, wLabel, wBox float64, sameLine bool) {
+		h := 6.0
+		pdf.SetFont("Arial", "B", 8)
+		pdf.CellFormat(wLabel, h, tr(label), "", 0, "R", false, 0, "")
+
+		pdf.SetFont("Arial", "", 9)
+		if len(value) > 75 {
+			value = value[:72] + "..."
+		}
+		pdf.CellFormat(wBox, h, "  "+tr(value), "1", 0, "L", false, 0, "")
+
+		if !sameLine {
+			pdf.Ln(h + 2)
+		}
+	}
+
+	// Body
+	drawLabelBox("NOMBRE Y APELLIDOS :", solicitud.Usuario.GetNombreCompleto(), 40, 150, false)
+	drawLabelBox("C.I. :", solicitud.Usuario.CI, 40, 60, true)
+	drawLabelBox("TEL. REF :", solicitud.Usuario.Phone, 30, 60, false)
+
+	origenUser := ""
+	if solicitud.Usuario.Origen != nil {
+		origenUser = solicitud.Usuario.Origen.Ciudad
+	}
+
+	tipoUsuario := solicitud.Usuario.Tipo
+	// unit := "COMISION"
+
+	if personaView != nil {
+		senadorData := personaView.SenadorData
+		if senadorData.Departamento != "" {
+			origenUser = fmt.Sprintf("%s (%s)", senadorData.Departamento, senadorData.Sigla)
+			if senadorData.Gestion != "" {
+				origenUser += fmt.Sprintf(" | %s", senadorData.Gestion)
+			}
+		}
+		if senadorData.Tipo != "" {
+			tipoUsuario = senadorData.Tipo
+		}
+	}
+
+	drawLabelBox("SENADOR POR EL DPTO. :", origenUser, 40, 60, true)
+
+	isTitular := strings.Contains(strings.ToUpper(tipoUsuario), "TITULAR")
+	isSuplente := strings.Contains(strings.ToUpper(tipoUsuario), "SUPLENTE")
+
+	pdf.SetFont("Arial", "B", 8)
+	pdf.CellFormat(25, 6, "TITULAR", "", 0, "R", false, 0, "")
+
+	xCheck, yCheck := pdf.GetX(), pdf.GetY()
+	pdf.Rect(xCheck+1, yCheck+1, 4, 4, "D")
+	if isTitular {
+		pdf.Text(xCheck+1.5, yCheck+4.5, "X")
+	}
+	pdf.SetX(xCheck + 10)
+
+	pdf.CellFormat(20, 6, "SUPLENTE", "", 0, "R", false, 0, "")
+	xCheck, yCheck = pdf.GetX(), pdf.GetY()
+	pdf.Rect(xCheck+1, yCheck+1, 4, 4, "D")
+	if isSuplente {
+		pdf.Text(xCheck+1.5, yCheck+4.5, "X")
+	}
+	pdf.Ln(8)
+
+	// Month of travel
+	mes := ""
+	var mainDate *time.Time
+	for _, it := range solicitud.Items {
+		if it.Fecha != nil {
+			mainDate = it.Fecha
+			break
+		}
+	}
+	if mainDate != nil {
+		mes = utils.TranslateMonth(mainDate.Month())
+	}
+	drawLabelBox("CORRESPONDIENTE AL MES DE :", mes, 50, 60, false)
+	pdf.Ln(2)
+
+	pdf.SetFont("Arial", "B", 10)
+	pdf.CellFormat(190, 8, tr("DESCARGO DE PASAJES (ADJUNTAR PASES A BORDO)"), "B", 1, "C", false, 0, "")
+	pdf.Ln(2)
+
+	// Function to draw segment block
+	drawSegmentBlock := func(title string, item *models.SolicitudItem) {
+		pdf.SetFont("Arial", "B", 9)
+		pdf.CellFormat(190, 6, tr(" "+title), "B", 1, "L", false, 0, "")
+
+		yStart := pdf.GetY()
+		xStart := pdf.GetX() // Should be margin (10)
+
+		// Habilitar Fill Gray
+		pdf.SetFillColor(240, 240, 240)
+		pdf.SetFont("Arial", "B", 7)
+
+		// Headers
+		// Col 1-3: Single Height (8 is too tall compared to split? Lets use 8 total)
+		// We use 5 for top/bottom split, so 10 total height
+
+		pdf.CellFormat(30, 10, tr("RUTA"), "1", 0, "C", true, 0, "")
+		pdf.CellFormat(30, 10, tr("FECHA DE VIAJE"), "1", 0, "C", true, 0, "")
+		pdf.CellFormat(35, 10, tr("N° BOLETO ORIGINAL"), "1", 0, "C", true, 0, "")
+
+		// Col 4: Group Header
+		xReprog := pdf.GetX()
+		pdf.CellFormat(95, 5, tr("REPROGRAMACIÓN"), "1", 2, "C", true, 0, "") // Line break: 2 (below)
+
+		// Sub Headers
+		pdf.SetX(xReprog)
+		pdf.CellFormat(31, 5, tr("RUTA"), "1", 0, "C", true, 0, "")
+		pdf.CellFormat(32, 5, tr("FECHA DE VIAJE"), "1", 0, "C", true, 0, "")
+		pdf.CellFormat(32, 5, tr("N° BOLETO"), "1", 0, "C", true, 0, "")
+
+		// Reset to Data Row
+		pdf.SetXY(xStart, yStart+10)
+
+		// Data Row
+		ruta := ""
+		fecha := ""
+		boleto := ""
+
+		if item != nil {
+			ruta = fmt.Sprintf("%s - %s", item.OrigenIATA, item.DestinoIATA)
+			if item.Fecha != nil {
+				fecha = item.Fecha.Format("02/01/2006")
+			}
+			if len(item.Pasajes) > 0 {
+				boleto = item.Pasajes[len(item.Pasajes)-1].NumeroBoleto
+			}
+		}
+
+		pdf.SetFont("Arial", "", 8)
+		// 10 height to match header block? or smaller? 8 is fine.
+		hRow := 8.0
+		pdf.CellFormat(30, hRow, tr(ruta), "1", 0, "C", false, 0, "")
+		pdf.CellFormat(30, hRow, tr(fecha), "1", 0, "C", false, 0, "")
+		pdf.CellFormat(35, hRow, tr(boleto), "1", 0, "C", false, 0, "")
+
+		// Reprogramación Data (Empty)
+		pdf.CellFormat(31, hRow, "", "1", 0, "C", false, 0, "")
+		pdf.CellFormat(32, hRow, "", "1", 0, "C", false, 0, "")
+		pdf.CellFormat(32, hRow, "", "1", 1, "C", false, 0, "") // End of row
+	}
+
+	var idaItem, vueltaItem *models.SolicitudItem
+	for i := range solicitud.Items {
+		item := &solicitud.Items[i]
+		switch item.Tipo {
+		case models.TipoSolicitudItemIda:
+			idaItem = item
+		case models.TipoSolicitudItemVuelta:
+			vueltaItem = item
+		}
+	}
+
+	drawSegmentBlock("TRAMO DE IDA", idaItem)
+	pdf.Ln(4)
+	drawSegmentBlock("TRAMO DE VUELTA/RETORNO", vueltaItem)
+	pdf.Ln(6)
+
+	// Devolucion
+	pdf.SetFont("Arial", "B", 9)
+	pdf.CellFormat(190, 6, tr(" DEVOLUCIÓN DE PASAJES POR DERECHO"), "B", 1, "L", false, 0, "")
+	pdf.SetFont("Arial", "", 8)
+	pdf.CellFormat(190, 5, tr(" (En caso de no haber utilizado el boleto emitido o un tramo informar en el siguiente cuadro)"), "", 1, "L", false, 0, "")
+
+	pdf.SetFillColor(240, 240, 240)
+	pdf.SetFont("Arial", "B", 8)
+	// Full width 190. 2 Cols -> 95 each.
+	pdf.CellFormat(95, 6, "RUTA", "1", 0, "C", true, 0, "")
+	pdf.CellFormat(95, 6, "N° BOLETO", "1", 1, "C", true, 0, "")
+
+	pdf.CellFormat(95, 8, "", "1", 0, "C", false, 0, "")
+	pdf.CellFormat(95, 8, "", "1", 1, "C", false, 0, "")
+	pdf.Ln(10)
+
+	// Signatures
+	pdf.SetY(220)
+	pdf.SetFont("Arial", "B", 8)
+
+	// Left (Senador)
+	pdf.SetXY(35, 230)
+	pdf.Cell(60, 0, "__________________________")
+	pdf.SetXY(35, 235)
+	pdf.CellFormat(60, 4, tr("SENADORA / SENADOR"), "", 1, "C", false, 0, "")
+	pdf.SetX(35)
+	pdf.SetFont("Arial", "", 7)
+	pdf.CellFormat(60, 4, tr(solicitud.Usuario.GetNombreCompleto()), "", 1, "C", false, 0, "")
+	pdf.SetX(35)
+	pdf.CellFormat(60, 4, tr("(FIRMA Y SELLO)"), "", 1, "C", false, 0, "")
+
+	// Right (Responsable Presentacion - can be left blank or auto-filled)
+	pdf.SetXY(115, 230)
+	pdf.Cell(60, 0, "__________________________")
+	pdf.SetXY(115, 235)
+	pdf.CellFormat(60, 4, tr("RESPONSABLE PRESENTACION DEL DESCARGO"), "", 1, "C", false, 0, "")
+	pdf.SetX(115)
+	// pdf.CellFormat(60, 4, tr("(Firma)"), "", 1, "C", false, 0, "")
+
+	pdf.SetY(250)
+	pdf.SetFont("Arial", "I", 8)
+	pdf.CellFormat(0, 5, tr(fmt.Sprintf("Generado electrónicamente por Sistema Pasajes Senado - %s", time.Now().Format("02/01/2006 15:04:05"))), "", 1, "C", false, 0, "")
+
+	return pdf
+}

@@ -5,6 +5,10 @@
   x-data="{
     selectedDaySalida: '{{ if .WeekDays }}{{ with index .WeekDays 0 }}{{ .date }}{{ end }}{{ else if .Item.FechaDesde }}{{ .Item.FechaDesde.Format `2006-01-02` }}{{ end }}',
     selectedTimeSalida: '08:00',
+    selectedDayRetorno: {{ if .WeekDays }}{{ (index .WeekDays 1).date | json }}{{ else if .Item.FechaDesde }}{{ .Item.FechaDesde.Format `2006-01-02` | json }}{{ else }}''{{ end }},
+    selectedTimeRetorno: '18:00',
+    tipoItinerario: {{ .Itinerario.Codigo | json }},
+    vueltaPorConfirmar: false,
     isSubmitting: false,
     isEdit: false,
     editId: '',
@@ -21,11 +25,7 @@
       </div>
       <div>
         <h3 class="text-lg font-bold text-neutral-800">Nueva Solicitud: {{ .Itinerario.Nombre }}</h3>
-        <p class="text-xs text-neutral-500 font-medium">
-          Semana {{ .Item.Semana }} {{ if .Item.FechaDesde }}
-          <span class="ml-1">({{ .Item.FechaDesde.Format "02/01" }} - {{ if .Item.FechaHasta }}{{ .Item.FechaHasta.Format "02/01" }}{{ end }})</span>
-          {{ end }}
-        </p>
+        <p class="text-xs text-neutral-500 font-medium">{{ .Item.Semana }} / {{ .Item.Mes | monthName }} {{ .Item.Gestion }}</p>
       </div>
     </div>
 
