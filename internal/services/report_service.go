@@ -522,8 +522,8 @@ func (s *ReportService) GeneratePV05(ctx context.Context, solicitud *models.Soli
 	pdf.SetFillColor(240, 240, 240)
 	pdf.SetFont("Arial", "B", 8)
 	// Full width 190. 2 Cols -> 95 each.
-	pdf.CellFormat(95, 6, "RUTA", "1", 0, "C", true, 0, "")
-	pdf.CellFormat(95, 6, "N° BOLETO", "1", 1, "C", true, 0, "")
+	pdf.CellFormat(95, 6, tr("RUTA"), "1", 0, "C", true, 0, "")
+	pdf.CellFormat(95, 6, tr("N° BOLETO"), "1", 1, "C", true, 0, "")
 
 	pdf.CellFormat(95, 8, "", "1", 0, "C", false, 0, "")
 	pdf.CellFormat(95, 8, "", "1", 1, "C", false, 0, "")

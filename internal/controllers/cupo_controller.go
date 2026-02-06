@@ -528,25 +528,35 @@ func (ctrl *CupoController) DerechoByYear(c *gin.Context) {
 
 				// Ida
 				if solIda == nil {
-					if !isVencido {
+					if !isVencido && (isOwner || isViewerAdminOrResponsable) {
 						perms.CanCreateIda = true
 					}
-				} else if solIda.GetEstado() == "SOLICITADO" || (isViewerAdminOrResponsable && solIda.GetEstado() == "APROBADO") {
-					perms.CanEditIda = true
+				} else {
+					// Edit/View permissions
+					if isOwner || isViewerAdminOrResponsable || solIda.UsuarioID == targetUser.ID {
+						if solIda.GetEstado() == "SOLICITADO" || (isViewerAdminOrResponsable && solIda.GetEstado() == "APROBADO") {
+							perms.CanEditIda = true
+						}
+						perms.CanViewIda = true
+					}
 				}
 
 				// Vuelta
 				if solVuelta == nil {
-					if !isVencido && solIda != nil {
+					if !isVencido && solIda != nil && (isOwner || isViewerAdminOrResponsable) {
 						perms.CanCreateVuelta = true
 					}
-				} else if solVuelta.GetEstado() == "SOLICITADO" || (isViewerAdminOrResponsable && solVuelta.GetEstado() == "APROBADO") {
-					perms.CanEditVuelta = true
+				} else {
+					if isOwner || isViewerAdminOrResponsable || solVuelta.UsuarioID == targetUser.ID {
+						if solVuelta.GetEstado() == "SOLICITADO" || (isViewerAdminOrResponsable && solVuelta.GetEstado() == "APROBADO") {
+							perms.CanEditVuelta = true
+						}
+						perms.CanViewVuelta = true
+					}
 				}
 
 				// Ida y Vuelta (Round Trip) in Single Request
-				// Only possible if NO requests exist yet and cupo is active
-				if solIda == nil && solVuelta == nil && !isVencido {
+				if solIda == nil && solVuelta == nil && !isVencido && (isOwner || isViewerAdminOrResponsable) {
 					perms.CanCreateIdaVuelta = true
 				}
 			}
@@ -711,24 +721,34 @@ func (ctrl *CupoController) DerechoByMonth(c *gin.Context) {
 
 			// Ida
 			if solIda == nil {
-				if !isVencido {
+				if !isVencido && (isOwner || isViewerAdminOrResponsable) {
 					perms.CanCreateIda = true
 				}
-			} else if solIda.GetEstado() == "SOLICITADO" || (isViewerAdminOrResponsable && solIda.GetEstado() == "APROBADO") {
-				perms.CanEditIda = true
+			} else {
+				if isOwner || isViewerAdminOrResponsable || solIda.UsuarioID == targetUser.ID {
+					if solIda.GetEstado() == "SOLICITADO" || (isViewerAdminOrResponsable && solIda.GetEstado() == "APROBADO") {
+						perms.CanEditIda = true
+					}
+					perms.CanViewIda = true
+				}
 			}
 
 			// Vuelta
 			if solVuelta == nil {
-				if !isVencido {
+				if !isVencido && (isOwner || isViewerAdminOrResponsable) {
 					perms.CanCreateVuelta = true
 				}
-			} else if solVuelta.GetEstado() == "SOLICITADO" || (isViewerAdminOrResponsable && solVuelta.GetEstado() == "APROBADO") {
-				perms.CanEditVuelta = true
+			} else {
+				if isOwner || isViewerAdminOrResponsable || solVuelta.UsuarioID == targetUser.ID {
+					if solVuelta.GetEstado() == "SOLICITADO" || (isViewerAdminOrResponsable && solVuelta.GetEstado() == "APROBADO") {
+						perms.CanEditVuelta = true
+					}
+					perms.CanViewVuelta = true
+				}
 			}
 
 			// Ida y Vuelta (Round Trip) in Single Request
-			if solIda == nil && solVuelta == nil && !isVencido {
+			if solIda == nil && solVuelta == nil && !isVencido && (isOwner || isViewerAdminOrResponsable) {
 				perms.CanCreateIdaVuelta = true
 			}
 		}
