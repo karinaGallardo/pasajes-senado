@@ -4,7 +4,7 @@
   role="dialog"
   aria-modal="true"
   x-data="{ open: true, loading: false }"
-  x-init="$watch('open', value => { if (!value) setTimeout(() => $el.closest('#modal-container').innerHTML = '', 300) })">
+  x-init="$watch('open', function(value) { if (!value) setTimeout(function() { $el.closest('#modal-container').innerHTML = '' }, 300) })">
   <!-- Backyard (Backdrop) -->
   <div
     class="fixed inset-0 bg-neutral-900 bg-opacity-75 transition-opacity"

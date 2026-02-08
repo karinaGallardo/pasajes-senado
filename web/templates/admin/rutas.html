@@ -1,18 +1,13 @@
 {{ define "admin/rutas" }} {{ template "layout_start" . }}
 
 <script>
-  var rawDestinos = [];
-  try {
-    rawDestinos = JSON.parse("{{ json .Destinos }}");
-  } catch (e) {
-    console.error("Error parsing destinations:", e);
-    rawDestinos = [];
-  }
-
-  var globalDestinos = (rawDestinos || []).map((d) => ({
-    value: d.iata,
-    label: (d.ciudad || "") + (d.aeropuerto ? " - " + d.aeropuerto : "") + " (" + (d.iata || "") + ")",
-  }));
+  const rawDestinos = JSON.parse("{{ json .Destinos }}") || [];
+  const globalDestinos = rawDestinos.map(function (d) {
+    return {
+      value: d.iata,
+      label: (d.ciudad || "") + (d.aeropuerto ? " - " + d.aeropuerto : "") + " (" + (d.iata || "") + ")",
+    };
+  });
 </script>
 
 <div class="mt-8">
@@ -35,7 +30,7 @@
 
           <button
             x-ref="button"
-            @click="open = !open; if(open) $nextTick(() => $refs.searchInput.focus())"
+            @click="open = !open; if(open) $nextTick(function() { $refs.searchInput.focus() })"
             type="button"
             class="relative w-full bg-white border border-neutral-300 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
             <span class="block truncate" :class="{'text-neutral-500': !value, 'text-neutral-900': value}" x-text="label"></span>
@@ -81,7 +76,7 @@
 
                 <button
                   x-ref="button"
-                  @click="open = !open; if(open) $nextTick(() => $refs.searchInput.focus())"
+                  @click="open = !open; if(open) $nextTick(function() { $refs.searchInput.focus() })"
                   type="button"
                   class="relative w-full bg-white border border-neutral-300 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
                   <span class="block truncate" :class="{'text-neutral-500': !value, 'text-neutral-900': value}" x-text="label"></span>
@@ -138,7 +133,7 @@
 
           <button
             x-ref="button"
-            @click="open = !open; if(open) $nextTick(() => $refs.searchInput.focus())"
+            @click="open = !open; if(open) $nextTick(function() { $refs.searchInput.focus() })"
             type="button"
             class="relative w-full bg-white border border-neutral-300 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-primary-500 focus:border-primary-500 sm:text-sm">
             <span class="block truncate" :class="{'text-neutral-500': !value, 'text-neutral-900': value}" x-text="label"></span>

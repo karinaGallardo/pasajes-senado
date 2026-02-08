@@ -405,10 +405,10 @@
               initialLabel: '{{ $initLabel }}',
               placeholder: 'Cualquier línea aérea'
             })"
-            x-init="$watch('value', v => aerolinea = v)">
+            x-init="$watch('value', function(v) { aerolinea = v })">
             <div class="relative">
               <div
-                @click="open = true; $nextTick(() => $refs.searchInput.focus())"
+                @click="open = true; $nextTick(function() { $refs.searchInput.focus() })"
                 class="w-full px-4 py-2.5 bg-white border border-neutral-200 rounded-md shadow-sm h-[42px] flex items-center justify-between cursor-pointer focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all">
                 <span class="block truncate text-sm font-bold text-neutral-700" x-text="label"></span>
                 <span class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-neutral-400 group-hover:text-primary transition-colors">
@@ -493,7 +493,7 @@
       x-data="{ error: '' }"
       x-effect="
        const now = new Date();
-       const selectedDate = new Date(selectedDaySalida + 'T' + selectedTimeSalida);
+       const selectedDate = new Date(`${selectedDaySalida}T${selectedTimeSalida}`);
        if (selectedDate < now) {
          error = 'La fecha y hora de salida ya ha pasado.';
        } else {
@@ -501,7 +501,7 @@
        }
 
        if (error === '' && tipoItinerario === 'IDA_VUELTA' && !vueltaPorConfirmar) {
-         const returnDate = new Date(selectedDayRetorno + 'T' + selectedTimeRetorno);
+         const returnDate = new Date(`${selectedDayRetorno}T${selectedTimeRetorno}`);
          if (returnDate <= selectedDate) {
             error = 'La fecha de retorno debe ser posterior a la de salida.';
          }

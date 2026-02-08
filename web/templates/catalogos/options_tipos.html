@@ -2,7 +2,7 @@
 <option value="{{ .Codigo }}" selected>{{ .Nombre }}</option>
 {{ end }}
 <script>
-  setTimeout(() => {
+  setTimeout(function () {
     document.getElementById("tipo_solicitud_codigo").dispatchEvent(new Event("change", { bubbles: true }));
   }, 50);
 </script>

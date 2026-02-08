@@ -75,7 +75,7 @@
 
               <div class="relative">
                 <div
-                  @click="open = true; $nextTick(() => $refs.searchInput.focus())"
+                  @click="open = true; $nextTick(function() { $refs.searchInput.focus() })"
                   x-show="!open"
                   class="w-full rounded-md border border-neutral-300 bg-white py-2 pl-3 pr-10 shadow-sm focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary sm:text-sm cursor-pointer flex items-center justify-between min-h-[38px]">
                   <span x-text="label || placeholder"></span>

@@ -166,7 +166,7 @@
     }
 
     if (diasInput) {
-      [diasInput, montoSelect, percentSelect, gastosCheck].forEach((el) => {
+      [diasInput, montoSelect, percentSelect, gastosCheck].forEach(function (el) {
         el.addEventListener("change", calculate);
         el.addEventListener("input", calculate);
       });

@@ -6,6 +6,7 @@ import (
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
 	"sistema-pasajes/internal/utils"
+	"time"
 )
 
 type DescargoService struct {
@@ -38,13 +39,23 @@ func (s *DescargoService) Create(ctx context.Context, req dtos.CreateDescargoReq
 
 	var docs []models.DocumentoDescargo
 	for i := range req.DocTipo {
+		// Verify consistency of parallel arrays
 		if i < len(req.DocNumero) && req.DocNumero[i] != "" {
-			f := utils.ParseDate("2006-01-02", req.DocFecha[i])
+			var fecha time.Time
+			if i < len(req.DocFecha) {
+				fecha = utils.ParseDate("2006-01-02", req.DocFecha[i])
+			}
+
+			detalle := ""
+			if i < len(req.DocDetalle) {
+				detalle = req.DocDetalle[i]
+			}
+
 			docs = append(docs, models.DocumentoDescargo{
 				Tipo:    req.DocTipo[i],
 				Numero:  req.DocNumero[i],
-				Fecha:   f,
-				Detalle: req.DocDetalle[i],
+				Fecha:   fecha,
+				Detalle: detalle,
 			})
 		}
 	}

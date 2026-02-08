@@ -10,7 +10,7 @@
       x-transition:leave-start="opacity-100"
       x-transition:leave-end="opacity-0"
       class="fixed inset-0 bg-neutral-500 bg-opacity-75 transition-opacity"
-      @click="open = false; setTimeout(() => $el.closest('#modal-container').innerHTML = '', 300)"></div>
+      @click="open = false; setTimeout(function() { $el.closest('#modal-container').innerHTML = '' }, 300)"></div>
 
     <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
@@ -26,7 +26,7 @@
       <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
         <div class="flex justify-between items-center mb-4">
           <h3 class="text-lg leading-6 font-medium text-neutral-900" id="modal-title">{{ .Title }}</h3>
-          <button @click="open = false; setTimeout(() => $el.closest('#modal-container').innerHTML = '', 300)" class="text-neutral-400 hover:text-neutral-500">
+          <button @click="open = false; setTimeout(function() { $el.closest('#modal-container').innerHTML = '' }, 300)" class="text-neutral-400 hover:text-neutral-500">
             <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
@@ -52,7 +52,7 @@
           Descargar Archivo
         </a>
         <button
-          @click="open = false; setTimeout(() => $el.closest('#modal-container').innerHTML = '', 300)"
+          @click="open = false; setTimeout(function() { $el.closest('#modal-container').innerHTML = '' }, 300)"
           type="button"
           class="mt-3 w-full inline-flex justify-center rounded-md border border-neutral-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-neutral-700 hover:bg-neutral-50 focus:outline-none sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm">
           Cerrar

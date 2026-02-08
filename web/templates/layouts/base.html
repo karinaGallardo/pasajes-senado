@@ -9,41 +9,44 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
 
+    <script src="/static/lib/polyfills.js"></script>
     <script src="/static/lib/htmx/htmx.min.js"></script>
     <script>
       /*
-        document.addEventListener("htmx:configRequest", (event) => {
-        event.detail.headers["X-CSRF-Token"] = "{{ .csrf_token }}";
-      });
+        document.addEventListener("htmx:configRequest", function(event) {
+          event.detail.headers["X-CSRF-Token"] = "{{ .csrf_token }}";
+        });
       */
     </script>
     <script defer src="/static/lib/alpinejs/alpine.min.js"></script>
     <script>
-      document.addEventListener("alpine:init", () => {
-        Alpine.data("searchableSelect", (config) => ({
-          open: false,
-          search: "",
-          disabled: config.disabled || false,
-          value: config.initialValue || "",
-          label: config.initialLabel || config.placeholder || "Seleccione una opción",
-          placeholder: config.placeholder || "Seleccione una opción",
-          items: config.items || [],
+      document.addEventListener("alpine:init", function () {
+        Alpine.data("searchableSelect", function (config) {
+          return {
+            open: false,
+            search: "",
+            disabled: config.disabled || false,
+            value: config.initialValue || "",
+            label: config.initialLabel || config.placeholder || "Seleccione una opción",
+            placeholder: config.placeholder || "Seleccione una opción",
+            items: config.items || [],
 
-          get filteredItems() {
-            if (this.search === "") return this.items;
-            const q = this.search.toLowerCase();
-            return this.items.filter(
-              (i) => (i.label && i.label.toLowerCase().includes(q)) || (i.value && i.value.toLowerCase().includes(q)) || (i.extra && i.extra.toLowerCase().includes(q)),
-            );
-          },
+            get filteredItems() {
+              if (this.search === "") return this.items;
+              const q = this.search.toLowerCase();
+              return this.items.filter(function (i) {
+                return (i.label && i.label.toLowerCase().includes(q)) || (i.value && i.value.toLowerCase().includes(q)) || (i.extra && i.extra.toLowerCase().includes(q));
+              });
+            },
 
-          select(item) {
-            this.value = item ? item.value : "";
-            this.label = item ? item.label : this.placeholder;
-            this.open = false;
-            this.search = "";
-          },
-        }));
+            select: function (item) {
+              this.value = item ? item.value : "";
+              this.label = item ? item.label : this.placeholder;
+              this.open = false;
+              this.search = "";
+            },
+          };
+        });
       });
     </script>
     <link rel="stylesheet" type="text/css" href="/static/lib/phosphor/regular/style.css" />
@@ -238,14 +241,16 @@
             "2xl": "24px",
             full: "9999px",
           },
-          borderColor: (theme) => ({
-            ...theme("colors"),
-            DEFAULT: theme("colors.neutral.200", "#e7e7e7"),
-          }),
-          ringColor: (theme) => ({
-            ...theme("colors"),
-            DEFAULT: theme("colors.primary.DEFAULT", "#03738C"),
-          }),
+          borderColor: function (theme) {
+            return Object.assign({}, theme("colors"), {
+              DEFAULT: theme("colors.neutral.200", "#e7e7e7"),
+            });
+          },
+          ringColor: function (theme) {
+            return Object.assign({}, theme("colors"), {
+              DEFAULT: theme("colors.primary.DEFAULT", "#03738C"),
+            });
+          },
           transitionTimingFunction: {
             DEFAULT: "cubic-bezier(0.4, 0, 0.2, 1)",
             premium: "cubic-bezier(0.34, 1.56, 0.64, 1)",

@@ -43,7 +43,7 @@
           type="button"
           class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors focus:outline-none"
           :class="activeTab === 'FUNCIONARIO' ? 'border-primary text-primary' : 'border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300'"
-          @click="activeTab = 'FUNCIONARIO'; $nextTick(() => { document.querySelector('input[name=q]').value = '' })"
+          @click="activeTab = 'FUNCIONARIO'; $nextTick(function() { document.querySelector('input[name=q]').value = '' })"
           hx-get="/usuarios/table?rol=FUNCIONARIO"
           hx-target="#usuarios-table"
           hx-indicator="#table-loader">

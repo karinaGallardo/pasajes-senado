@@ -180,15 +180,7 @@
                 <i class="ph ph-plus mr-1.5"></i>
                 Asignar Pasaje
               </button>
-              {{ end }} {{ if eq .GetEstado "EMITIDO" }}
-              <button
-               hx-get="/solicitud-items/{{ .ID }}/reprogramar"
-               hx-target="#modal-container"
-               class="inline-flex items-center px-3 py-1.5 border border-transparent rounded-lg shadow-sm text-xs font-bold text-white bg-warning-600 hover:bg-warning-700 transition-colors">
-               <i class="ph ph-calendar-blank mr-1.5"></i>
-               Reprogramar
-             </button>
-             {{ end }} {{ end }}
+              {{ end }} {{ end }}
             </div>
           </div>
 
@@ -499,7 +491,7 @@
             confirmButton: "rounded-lg px-4 py-2 text-sm font-medium shadow-sm",
             cancelButton: "rounded-lg px-4 py-2 text-sm font-medium shadow-sm hover:bg-neutral-100 text-neutral-700 bg-white border border-neutral-300",
           },
-        }).then((result) => {
+        }).then(function (result) {
           if (result.isConfirmed) {
             updatePasajeStatus(id, "EMITIDO");
           }
@@ -549,7 +541,7 @@
           confirmButton: "rounded-lg px-4 py-2 text-sm font-medium shadow-sm",
           cancelButton: "rounded-lg px-4 py-2 text-sm font-medium shadow-sm hover:bg-neutral-100 text-neutral-700 bg-white border border-neutral-300",
         },
-      }).then((result) => {
+      }).then(function (result) {
         if (result.isConfirmed) {
           updatePasajeStatus(id, newStatus);
         }
@@ -571,7 +563,7 @@
           "X-Requested-With": "XMLHttpRequest",
         },
       })
-        .then((response) => {
+        .then(function (response) {
           if (response.ok) {
             window.location.reload();
           } else {
@@ -583,7 +575,7 @@
             });
           }
         })
-        .catch((error) => {
+        .catch(function (error) {
           console.error("Error:", error);
           Swal.fire({
             title: "Error de Conexión",

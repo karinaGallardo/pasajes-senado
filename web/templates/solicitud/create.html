@@ -72,7 +72,7 @@
 
         this.initSelection(min, max);
 
-        setTimeout(() => {
+        setTimeout(function() {
           const formElement = document.getElementById('main-form-container');
           if (formElement) formElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }, 100);
@@ -102,7 +102,7 @@
              }
         }
 
-        setTimeout(() => {
+        setTimeout(function() {
           const formElement = document.getElementById('main-form-container');
           if (formElement) formElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }, 100);
@@ -118,7 +118,7 @@
         const tab = urlParams.get('auto_tab');
 
         if (vID && tab) {
-            this.$nextTick(() => {
+            this.$nextTick(function() {
                 const btn = document.getElementById(`btn-${tab}-${vID}`);
                 if (btn) {
                     btn.click();
@@ -153,7 +153,7 @@
       }
       this.weekDays = days;
     }
-}"
+  }"
   x-effect="
     if (tipo === 'IDA_VUELTA') {
         isLocked = true;

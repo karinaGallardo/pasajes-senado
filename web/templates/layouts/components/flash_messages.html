@@ -1,6 +1,6 @@
 {{ define "layouts/components/flash_messages" }} {{ if .SuccessMessage }}
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
-  <div x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 5000)" class="rounded-md bg-success-50 p-4 shadow-sm border border-success-200">
+  <div x-data="{ show: true }" x-show="show" x-init="setTimeout(function() { show = false }, 5000)" class="rounded-md bg-success-50 p-4 shadow-sm border border-success-200">
     <div class="flex">
       <div class="flex-shrink-0">
         <svg class="h-5 w-5 text-success-400" viewBox="0 0 20 20" fill="currentColor">

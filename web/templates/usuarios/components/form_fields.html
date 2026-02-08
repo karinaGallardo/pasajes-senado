@@ -23,11 +23,13 @@
 <div
   class="mb-4"
   x-data="searchableSelect({
-    items: {{ json .Destinos }}.map(d => ({
-      value: d.iata,
-      label: d.ciudad + (d.aeropuerto ? ' - ' + d.aeropuerto : '') + ' (' + d.iata + ')',
-      extra: d.iata
-    })),
+    items: {{ json .Destinos }}.map(function(d) {
+      return {
+        value: d.iata,
+        label: d.ciudad + (d.aeropuerto ? ' - ' + d.aeropuerto : '') + ' (' + d.iata + ')',
+        extra: d.iata
+      };
+    }),
     initialValue: '{{ if .Usuario.OrigenIATA }}{{ deref .Usuario.OrigenIATA }}{{ end }}',
     initialLabel: '{{ if .Usuario.Origen }}{{ .Usuario.Origen.GetNombreDisplay }}{{ end }}'
   })">
@@ -37,7 +39,7 @@
 
     <div class="relative">
       <div
-        @click="open = true; $nextTick(() => $refs.searchInput.focus())"
+        @click="open = true; $nextTick(function() { $refs.searchInput.focus() })"
         x-show="!open"
         class="w-full rounded-md border border-neutral-300 bg-white py-2 px-3 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary sm:text-sm cursor-pointer flex items-center justify-between min-h-[38px]">
         <span x-text="label"></span>
@@ -77,11 +79,13 @@
 <div
   class="mb-4"
   x-data="searchableSelect({
-    items: {{ json .Funcionarios }}.map(f => ({
-      value: f.id,
-      label: f.full_name,
-      extra: f.ci
-    })),
+    items: {{ json .Funcionarios }}.map(function(f) {
+      return {
+        value: f.id,
+        label: f.full_name,
+        extra: f.ci
+      };
+    }),
     initialValue: '{{ if .Usuario.EncargadoID }}{{ .Usuario.EncargadoID }}{{ end }}',
     initialLabel: '{{ if .Usuario.Encargado }}{{ .Usuario.Encargado.GetNombreCompleto }}{{ end }}',
     disabled: false
@@ -94,7 +98,7 @@
 
     <div class="relative">
       <div
-        @click="if (!disabled) { open = true; $nextTick(() => $refs.searchInput.focus()) }"
+        @click="if (!disabled) { open = true; $nextTick(function() { $refs.searchInput.focus() }) }"
         x-show="!open"
         class="w-full rounded-md border border-neutral-300 bg-white py-2.5 pl-3 pr-10 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary sm:text-sm cursor-pointer flex items-center justify-between min-h-[38px]"
         :class="{ 'bg-neutral-100 cursor-not-allowed text-neutral-500': disabled }">
