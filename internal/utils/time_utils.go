@@ -43,12 +43,31 @@ func GetMonthNames() []string {
 	return []string{"", "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"}
 }
 
-func GetMonthName(month int) string {
-	names := GetMonthNames()
-	if month >= 1 && month <= 12 {
-		return names[month]
+func GetMonthName(month interface{}) string {
+	var mStr string
+	switch v := month.(type) {
+	case int:
+		if v >= 1 && v <= 12 {
+			return time.Month(v).String()
+		}
+		return ""
+	case time.Month:
+		mStr = v.String()
+	case string:
+		mStr = v
+	default:
+		return ""
 	}
-	return ""
+
+	meses := map[string]string{
+		"January": "Enero", "February": "Febrero", "March": "Marzo", "April": "Abril",
+		"May": "Mayo", "June": "Junio", "July": "Julio", "August": "Agosto",
+		"September": "Septiembre", "October": "Octubre", "November": "Noviembre", "December": "Diciembre",
+	}
+	if val, ok := meses[mStr]; ok {
+		return val
+	}
+	return mStr
 }
 
 // WeekRange define un intervalo de tiempo semanal.

@@ -21,7 +21,12 @@ func (s *ConfiguracionService) GetAll(ctx context.Context) ([]models.Configuraci
 }
 
 func (s *ConfiguracionService) Update(ctx context.Context, config *models.Configuracion) error {
-	return s.repo.WithContext(ctx).Update(config)
+	existing, err := s.repo.WithContext(ctx).FindByClave(config.Clave)
+	if err != nil {
+		return err
+	}
+	existing.Valor = config.Valor
+	return s.repo.WithContext(ctx).Update(existing)
 }
 
 func (s *ConfiguracionService) GetValue(ctx context.Context, clave string) string {

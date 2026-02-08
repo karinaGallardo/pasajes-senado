@@ -227,7 +227,7 @@ func seedViaticosAndConfig() {
 	confList := []models.Configuracion{
 		{Clave: "RC_IVA_TASA", Valor: "0.13", Tipo: "FLOAT"},
 		{Clave: "TC_USD_OFICIAL", Valor: "6.96", Tipo: "FLOAT"},
-		{Clave: "GESTION_ACTUAL", Valor: "2025", Tipo: "INT"},
+		{Clave: "GESTION_ACTUAL", Valor: "2026", Tipo: "INT"},
 	}
 
 	for _, cf := range confList {
@@ -236,6 +236,11 @@ func seedViaticosAndConfig() {
 		if result.Error != nil {
 			configs.DB.Create(&cf)
 		} else {
+			// Update if different (specifically adding update logic for GESTION_ACTUAL)
+			if cf.Clave == "GESTION_ACTUAL" && existing.Valor != cf.Valor {
+				existing.Valor = cf.Valor
+				configs.DB.Save(&existing)
+			}
 		}
 	}
 }
