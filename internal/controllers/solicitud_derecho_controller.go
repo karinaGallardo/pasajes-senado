@@ -486,7 +486,7 @@ func (ctrl *SolicitudDerechoController) Update(c *gin.Context) {
 		currentStatus = *solicitud.EstadoSolicitudCodigo
 	}
 
-	if currentStatus != "SOLICITADO" && currentStatus != "APROBADO" {
+	if currentStatus != "SOLICITADO" && currentStatus != "APROBADO" && currentStatus != "PARCIALMENTE_APROBADO" && currentStatus != "RECHAZADO" {
 		c.String(http.StatusForbidden, "No editable. El estado actual ("+currentStatus+") no permite modificaciones.")
 		return
 	}
@@ -495,7 +495,7 @@ func (ctrl *SolicitudDerechoController) Update(c *gin.Context) {
 		solicitud.TipoItinerarioCodigo = req.TipoItinerarioCodigo
 	}
 
-	if currentStatus == "SOLICITADO" || currentStatus == "APROBADO" {
+	if currentStatus == "SOLICITADO" || currentStatus == "APROBADO" || currentStatus == "PARCIALMENTE_APROBADO" || currentStatus == "RECHAZADO" {
 		solicitud.TipoSolicitudCodigo = req.TipoSolicitudCodigo
 		solicitud.AmbitoViajeCodigo = req.AmbitoViajeCodigo
 		solicitud.AerolineaSugerida = req.AerolineaSugerida
@@ -545,8 +545,8 @@ func (ctrl *SolicitudDerechoController) Update(c *gin.Context) {
 	}
 	solicitud.Motivo = req.Motivo
 
-	// If it was APPROVED, revert to SOLICITADO to trigger re-approval of adjustments
-	if currentStatus == "APROBADO" {
+	// If it was APPROVED, PARCIAL or REJECTED, revert to SOLICITADO to trigger re-approval of adjustments
+	if currentStatus == "APROBADO" || currentStatus == "PARCIALMENTE_APROBADO" || currentStatus == "RECHAZADO" {
 		solicitud.EstadoSolicitudCodigo = utils.Ptr("SOLICITADO")
 	}
 
@@ -683,7 +683,13 @@ func (ctrl *SolicitudDerechoController) Show(c *gin.Context) {
 	// Step 1: Solicitado (Always active/completed) (Blue -> Primary)
 	steps["Solicitado"] = makeStep(true, true, "primary", "ph ph-file-text text-lg", "Solicitado")
 
-	// Step 2: Aprobado / Rechazado
+	// Step 2: Parcialmente Aprobado (Violet -> Violet)
+	isParcial := st == "PARCIALMENTE_APROBADO"
+	isAtLeastParcial := isParcial || st == "APROBADO" || st == "EMITIDO" || st == "FINALIZADO"
+	isPastParcial := st == "APROBADO" || st == "EMITIDO" || st == "FINALIZADO"
+	steps["Parcial"] = makeStep(isAtLeastParcial, isPastParcial, "violet", "ph ph-check-square-offset text-xl", "Parcial")
+
+	// Step 3: Aprobado / Rechazado
 	rejected := st == "RECHAZADO"
 	if rejected {
 		steps["Aprobado"] = StepView{
@@ -720,6 +726,9 @@ func (ctrl *SolicitudDerechoController) Show(c *gin.Context) {
 	case "APROBADO":
 		statusCard.BorderClass = "border-success-500"
 		statusCard.TextClass = "text-success-700"
+	case "PARCIALMENTE_APROBADO":
+		statusCard.BorderClass = "border-violet-500"
+		statusCard.TextClass = "text-violet-700"
 	case "EMITIDO":
 		statusCard.BorderClass = "border-secondary-500"
 		statusCard.TextClass = "text-secondary-700"

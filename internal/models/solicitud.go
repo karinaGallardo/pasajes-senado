@@ -62,7 +62,6 @@ func (s *Solicitud) UpdateStatusBasedOnItems() {
 	allApproved := true
 	allRejected := true
 	allFinalized := true
-	anyPending := false
 	hasApproved := false
 	activeCount := 0
 
@@ -83,9 +82,6 @@ func (s *Solicitud) UpdateStatusBasedOnItems() {
 		if st != "RECHAZADO" {
 			allRejected = false
 		}
-		if st == "SOLICITADO" {
-			anyPending = true
-		}
 		if st == "APROBADO" || st == "EMITIDO" || st == "FINALIZADO" {
 			hasApproved = true
 		}
@@ -102,7 +98,7 @@ func (s *Solicitud) UpdateStatusBasedOnItems() {
 		newState = "RECHAZADO"
 	} else if allApproved {
 		newState = "APROBADO"
-	} else if anyPending && hasApproved {
+	} else if hasApproved {
 		newState = "PARCIALMENTE_APROBADO"
 	} else {
 		newState = "SOLICITADO"
