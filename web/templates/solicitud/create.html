@@ -13,7 +13,7 @@
     lpbName: 'La Paz - El Alto',
     isLocked: true,
     itemSelected: '',
-
+    selectedWeekLabel: '',
     activeTab: 'IDA',
     isSubmitting: false,
 
@@ -53,9 +53,10 @@
         this.selectedDaySalida = min;
     },
 
-    selectItem(itemId, min, max, tab) {
+    selectItem(itemId, min, max, tab, weekLabel) {
         this.resetForm();
         this.itemSelected = itemId;
+        this.selectedWeekLabel = weekLabel;
         this.activeTab = tab;
         this.showForm = true;
         this.tipo = 'SOLO_IDA';
@@ -78,11 +79,12 @@
         }, 100);
     },
 
-    loadEdit(itemId, min, max, tab, solId, origen, fSalidaStr, motivoStr, aerolineaStr, itinId) {
+    loadEdit(itemId, min, max, tab, solId, origen, fSalidaStr, motivoStr, aerolineaStr, itinId, weekLabel) {
         this.resetForm();
         this.isEdit = true;
         this.editId = solId;
         this.itemSelected = itemId;
+        this.selectedWeekLabel = weekLabel;
         this.activeTab = tab;
         this.showForm = true;
         this.tipo = 'SOLO_IDA';
@@ -168,7 +170,13 @@
   <div class="flex justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-neutral-200">
     <div>
       <h2 class="text-xl font-bold text-neutral-800 tracking-tight">Nueva Solicitud</h2>
-      <p class="text-sm text-neutral-500">Siga los pasos para emitir su pasaje</p>
+      <p class="text-sm text-neutral-500">
+        {{ .TargetUser.GetNombreCompleto }}
+        <span x-show="selectedWeekLabel" x-cloak>
+          •
+          <span class="text-primary-600 font-bold" x-text="selectedWeekLabel"></span>
+        </span>
+      </p>
     </div>
     <div class="flex items-center space-x-3">
       <a
@@ -225,7 +233,7 @@
           }"
           @click="
             {{ if eq .EstadoCupoDerechoCodigo `DISPONIBLE` }}
-              selectItem('{{ .ID }}', '{{ if .FechaDesde }}{{ .FechaDesde.Format `2006-01-02` }}{{ end }}', '{{ if .FechaHasta }}{{ .FechaHasta.Format `2006-01-02` }}{{ end }}', 'IDA');
+              selectItem('{{ .ID }}', '{{ if .FechaDesde }}{{ .FechaDesde.Format `2006-01-02` }}{{ end }}', '{{ if .FechaHasta }}{{ .FechaHasta.Format `2006-01-02` }}{{ end }}', 'IDA', '{{ .Semana }} / {{ .Mes | monthName }} {{ .Gestion }} {{ weekRange .FechaDesde .FechaHasta }}');
             {{ end }}
           ">
           <div class="absolute top-2 right-2" x-show="itemSelected === '{{ .ID }}'">
@@ -261,7 +269,7 @@
             <button
               type="button"
               id="btn-IDA-{{ .ID }}"
-              @click.stop="selectItem('{{ .ID }}', '{{ if .FechaDesde }}{{ .FechaDesde.Format `2006-01-02` }}{{ end }}', '{{ if .FechaHasta }}{{ .FechaHasta.Format `2006-01-02` }}{{ end }}', 'IDA')"
+              @click.stop="selectItem('{{ .ID }}', '{{ if .FechaDesde }}{{ .FechaDesde.Format `2006-01-02` }}{{ end }}', '{{ if .FechaHasta }}{{ .FechaHasta.Format `2006-01-02` }}{{ end }}', 'IDA', '{{ .Semana }} / {{ .Mes | monthName }} {{ .Gestion }} {{ weekRange .FechaDesde .FechaHasta }}')"
               class="group/btn relative px-2.5 py-1 rounded text-[9px] font-bold uppercase border transition-all bg-white text-neutral-500 border-neutral-200 hover:border-secondary hover:text-secondary">
               Crear Ida
             </button>
@@ -282,7 +290,8 @@
                   '{{ if $solIda.FechaIda }}{{ $solIda.FechaIda.Format `2006-01-02T15:04` }}{{ end }}',
                   $el.dataset.motivo,
                   '{{ $solIda.AerolineaSugerida }}',
-                  '{{ $solIda.TipoItinerarioCodigo }}'
+                   '{{ $solIda.TipoItinerarioCodigo }}',
+                   '{{ .Semana }} / {{ .Mes | monthName }} {{ .Gestion }} {{ weekRange .FechaDesde .FechaHasta }}'
                 )"
               class="group/btn relative px-2.5 py-1 rounded text-[9px] font-bold uppercase border transition-all bg-amber-50 text-amber-700 border-amber-100 hover:bg-amber-100">
               Editar Ida
@@ -303,7 +312,7 @@
             <button
               type="button"
               id="btn-VUELTA-{{ .ID }}"
-              @click.stop="selectItem('{{ .ID }}', '{{ if .FechaDesde }}{{ .FechaDesde.Format `2006-01-02` }}{{ end }}', '{{ if .FechaHasta }}{{ .FechaHasta.Format `2006-01-02` }}{{ end }}', 'VUELTA')"
+              @click.stop="selectItem('{{ .ID }}', '{{ if .FechaDesde }}{{ .FechaDesde.Format `2006-01-02` }}{{ end }}', '{{ if .FechaHasta }}{{ .FechaHasta.Format `2006-01-02` }}{{ end }}', 'VUELTA', '{{ .Semana }} / {{ .Mes | monthName }} {{ .Gestion }} {{ weekRange .FechaDesde .FechaHasta }}')"
               class="group/btn relative px-2.5 py-1 rounded text-[9px] font-bold uppercase border transition-all bg-white text-neutral-500 border-neutral-200 hover:border-secondary hover:text-secondary">
               Crear Vuelta
             </button>
@@ -324,7 +333,8 @@
                   '{{ if $solVuelta.FechaVuelta }}{{ $solVuelta.FechaVuelta.Format `2006-01-02T15:04` }}{{ else if $solVuelta.FechaIda }}{{ $solVuelta.FechaIda.Format `2006-01-02T15:04` }}{{ end }}',
                   $el.dataset.motivo,
                   '{{ $solVuelta.AerolineaSugerida }}',
-                  '{{ $solVuelta.TipoItinerarioCodigo }}'
+                  '{{ $solVuelta.TipoItinerarioCodigo }}',
+                  '{{ .Semana }} / {{ .Mes | monthName }} {{ .Gestion }} {{ weekRange .FechaDesde .FechaHasta }}'
                 )"
               class="group/btn relative px-2.5 py-1 rounded text-[9px] font-bold uppercase border transition-all bg-amber-50 text-amber-700 border-amber-100 hover:bg-amber-100">
               Editar Vuelta

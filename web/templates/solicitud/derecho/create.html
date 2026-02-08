@@ -13,7 +13,8 @@
     isEdit: false,
     editId: '',
     motivo: '',
-    aerolinea: ''
+    aerolinea: '',
+    selectedWeekLabel: '{{ .Item.Semana }}: del {{ if .Item.FechaDesde }}{{ .Item.FechaDesde.Format "02/01/2006" }}{{ end }} al {{ if .Item.FechaHasta }}{{ .Item.FechaHasta.Format "02/01/2006" }}{{ end }}'
 }">
   <!-- HEADER -->
   <div class="bg-neutral-50 border border-neutral-200 p-3 flex items-center justify-between rounded-lg shadow-sm">
@@ -25,7 +26,10 @@
       </div>
       <div>
         <h3 class="text-lg font-bold text-neutral-800">Nueva Solicitud: {{ .Itinerario.Nombre }}</h3>
-        <p class="text-xs text-neutral-500 font-medium">{{ .Item.Semana }} / {{ .Item.Mes | monthName }} {{ .Item.Gestion }}</p>
+        <p class="text-xs text-neutral-500 font-medium">
+          {{ .TargetUser.GetNombreCompleto }} • {{ .Item.Semana }} / {{ .Item.Mes | monthName }} {{ .Item.Gestion }}
+          <span class="text-primary-600 font-bold ml-1">{{ weekRange .Item.FechaDesde .Item.FechaHasta }}</span>
+        </p>
       </div>
     </div>
 

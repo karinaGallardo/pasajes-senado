@@ -82,6 +82,9 @@
                 <td class="whitespace-nowrap px-3 py-4 text-sm text-neutral-500">
                   <div class="flex flex-col">
                     <span class="font-bold text-neutral-900 uppercase">{{ .Mes | monthName }} {{ .Gestion }}</span>
+                    <span class="text-[10px] text-neutral-400 font-medium">
+                      {{ if .FechaDesde }}{{ .FechaDesde.Format "02/01/2006" }}{{ end }} al {{ if .FechaHasta }}{{ .FechaHasta.Format "02/01/2006" }}{{ end }}
+                    </span>
                   </div>
                 </td>
 
@@ -159,14 +162,14 @@
                       class="text-white bg-primary hover:bg-primary-800 font-bold text-[10px] uppercase border border-primary rounded px-3 py-1.5 transition-colors cursor-pointer text-center inline-flex items-center justify-center shadow-sm">
                       Solicitar Pasaje
                     </button>
-                    {{ end }} {{ $solIda := .GetSolicitudIda }} {{ if .Permissions.CanCreateVuelta }}
+                    {{ end }} {{ $solIda := .GetSolicitudIda }} {{ if and .Permissions.CanCreateVuelta $solIda }}
                     <button
                       hx-get="/solicitudes/derecho/{{ $solIda.ID }}/modal-editar"
                       hx-target="#modal-container"
                       class="text-amber-700 hover:bg-amber-100 font-bold text-[10px] uppercase border border-amber-100 bg-amber-50 rounded px-3 py-1.5 transition-colors cursor-pointer text-center inline-flex items-center justify-center">
                       Editar / Agendar Retorno
                     </button>
-                    {{ end }} {{ if .Permissions.CanEditIda }}
+                    {{ end }} {{ if and .Permissions.CanEditIda $solIda }}
                     <button
                       hx-get="/solicitudes/derecho/{{ $solIda.ID }}/modal-editar"
                       hx-target="#modal-container"

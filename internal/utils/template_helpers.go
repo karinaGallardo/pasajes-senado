@@ -24,6 +24,7 @@ func TemplateFuncs() template.FuncMap {
 		"json":        ToJSON,
 		"currentYear": CurrentYear,
 		"monthName":   GetMonthName,
+		"weekRange":   FormatWeekRange,
 	}
 }
 
@@ -100,4 +101,65 @@ func FormatDateRange(ini, fin *time.Time) string {
 func ToJSON(v any) string {
 	b, _ := json.Marshal(v)
 	return string(b)
+}
+
+// FormatWeekRange formatea un rango de fechas al estilo "(lun, 09 de feb al dom, 15 de feb)".
+func FormatWeekRange(ini, fin *time.Time) string {
+	if ini == nil || fin == nil {
+		return ""
+	}
+
+	translateDay := func(d time.Weekday) string {
+		switch d {
+		case time.Monday:
+			return "lun"
+		case time.Tuesday:
+			return "mar"
+		case time.Wednesday:
+			return "mie"
+		case time.Thursday:
+			return "jue"
+		case time.Friday:
+			return "vie"
+		case time.Saturday:
+			return "sab"
+		case time.Sunday:
+			return "dom"
+		}
+		return ""
+	}
+
+	translateMonth := func(m time.Month) string {
+		switch m {
+		case time.January:
+			return "ene"
+		case time.February:
+			return "feb"
+		case time.March:
+			return "mar"
+		case time.April:
+			return "abr"
+		case time.May:
+			return "may"
+		case time.June:
+			return "jun"
+		case time.July:
+			return "jul"
+		case time.August:
+			return "ago"
+		case time.September:
+			return "sep"
+		case time.October:
+			return "oct"
+		case time.November:
+			return "nov"
+		case time.December:
+			return "dic"
+		}
+		return ""
+	}
+
+	return fmt.Sprintf("(%s, %d de %s al %s, %d de %s)",
+		translateDay(ini.Weekday()), ini.Day(), translateMonth(ini.Month()),
+		translateDay(fin.Weekday()), fin.Day(), translateMonth(fin.Month()))
 }

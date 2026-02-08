@@ -25,7 +25,8 @@
         vueltaPorConfirmar: {{ if and .IsEdit (not .Solicitud.GetFechaVuelta) }}true{{ else }}false{{ end }},
         editId: '{{ if .IsEdit }}{{ .Solicitud.ID }}{{ end }}',
         motivo: '{{ if .IsEdit }}{{ .Solicitud.Motivo }}{{ end }}',
-        aerolinea: '{{ if .IsEdit }}{{ .Solicitud.AerolineaSugerida }}{{ end }}'
+        aerolinea: '{{ if .IsEdit }}{{ .Solicitud.AerolineaSugerida }}{{ end }}',
+        selectedWeekLabel: '{{ .Item.Semana }}: del {{ if .Item.FechaDesde }}{{ .Item.FechaDesde.Format "02/01/2006" }}{{ end }} al {{ if .Item.FechaHasta }}{{ .Item.FechaHasta.Format "02/01/2006" }}{{ end }}'
       }">
       <div class="flex items-center justify-between mb-4 border-b pb-3">
         <div class="flex items-center space-x-3">
@@ -38,6 +39,7 @@
             </h3>
             <p class="text-xs text-neutral-500 font-medium tracking-tighter">
               {{ .TargetUser.GetNombreCompleto }} • {{ .Item.Semana }} / {{ .Item.Mes | monthName }} {{ .Item.Gestion }}
+              <span class="text-primary-600 font-bold ml-1">{{ weekRange .Item.FechaDesde .Item.FechaHasta }}</span>
             </p>
           </div>
         </div>

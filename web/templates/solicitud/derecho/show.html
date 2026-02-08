@@ -308,6 +308,20 @@
         <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
           <!-- Left Column: Meta Details Grid (Narrower) -->
           <div class="lg:col-span-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {{ if .Solicitud.CupoDerechoItem }}
+            <!-- Quota Info -->
+            <div class="flex items-start space-x-3 p-3 rounded-lg bg-amber-50 border border-amber-100 hover:border-amber-200 transition-colors sm:col-span-2">
+              <div class="text-amber-500 mt-0.5 bg-white p-1.5 rounded-md border border-amber-100 shadow-sm">
+                <i class="ph ph-calendar-check text-xl"></i>
+              </div>
+              <div>
+                <p class="text-[10px] font-bold text-amber-800 uppercase tracking-wide">Información del Cupo</p>
+                <p class="text-xs font-bold text-amber-900 mt-0.5">
+                  {{ .Solicitud.CupoDerechoItem.Semana }}: del {{ if .Solicitud.CupoDerechoItem.FechaDesde }}{{ .Solicitud.CupoDerechoItem.FechaDesde.Format "02/01/2006" }}{{ end }} al {{ if .Solicitud.CupoDerechoItem.FechaHasta }}{{ .Solicitud.CupoDerechoItem.FechaHasta.Format "02/01/2006" }}{{ end }}
+                </p>
+              </div>
+            </div>
+            {{ end }}
             <!-- Departure -->
             <div class="flex items-start space-x-3 p-3 rounded-lg bg-neutral-50 border border-neutral-100 hover:border-neutral-200 transition-colors sm:col-span-2">
               <div class="text-neutral-400 mt-0.5 bg-white p-1.5 rounded-md border border-neutral-100 shadow-sm">
