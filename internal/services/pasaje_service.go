@@ -7,6 +7,7 @@ import (
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
 	"sistema-pasajes/internal/utils"
+	"sistema-pasajes/internal/worker"
 	"strings"
 
 	"github.com/spf13/viper"
@@ -215,22 +216,38 @@ func (s *PasajeService) UpdateStatus(ctx context.Context, id string, status stri
 
 	// Trigger email if emitted
 	if status == "EMITIDO" {
-		sol, _ := s.solicitudRepo.FindByID(pasaje.SolicitudID)
-		if sol != nil {
-			go s.sendEmissionEmail(sol, pasaje)
-		}
+		worker.GetPool().Submit(&EmissionEmailJob{
+			Service:  s,
+			PasajeID: id,
+		})
 	}
 
-	if status == "EMITIDO" {
-		go func(p *models.Pasaje) {
-			ctx := context.Background()
-			sol, err := s.solicitudRepo.WithContext(ctx).FindByID(p.SolicitudID)
-			if err == nil && sol != nil {
-				s.sendEmissionEmail(sol, p)
-			}
-		}(pasaje)
+	return nil
+}
+
+// EmissionEmailJob encapsula la tarea de enviar un correo de emisión.
+type EmissionEmailJob struct {
+	Service  *PasajeService
+	PasajeID string
+}
+
+func (j *EmissionEmailJob) Name() string {
+	return "EmissionEmailJob:" + j.PasajeID
+}
+
+func (j *EmissionEmailJob) Run(ctx context.Context) error {
+	// Recargamos el pasaje con preloads para tener toda la info (usuario, etc)
+	p, err := j.Service.repo.WithContext(ctx).FindByID(j.PasajeID)
+	if err != nil {
+		return err
 	}
 
+	sol, err := j.Service.solicitudRepo.WithContext(ctx).FindByID(p.SolicitudID)
+	if err != nil || sol == nil {
+		return err
+	}
+
+	j.Service.sendEmissionEmail(sol, p)
 	return nil
 }
 

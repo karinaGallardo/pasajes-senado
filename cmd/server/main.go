@@ -12,6 +12,7 @@ import (
 	"sistema-pasajes/internal/routes"
 	"sistema-pasajes/internal/services"
 	"sistema-pasajes/internal/utils"
+	"sistema-pasajes/internal/worker"
 
 	"github.com/gin-contrib/secure"
 	"github.com/gin-contrib/sessions"
@@ -23,6 +24,11 @@ import (
 
 func main() {
 	configs.ConnectDB()
+
+	// --- Background Workers ---
+	workerPool := worker.GetPool()
+	workerPool.Start(context.Background())
+	defer workerPool.Stop()
 
 	itinerarioService := services.NewTipoItinerarioService()
 	if err := itinerarioService.EnsureDefaults(context.Background()); err != nil {
