@@ -53,7 +53,7 @@ func SetupRoutes(r *gin.Engine) {
 		protected.GET("/solicitudes/derecho/modal-crear/:item_id/:itinerario_code", solicitudDerechoCtrl.GetCreateModal)
 		protected.POST("/solicitudes/derecho", solicitudDerechoCtrl.Store)
 		protected.GET("/solicitudes/derecho/:id/detalle", solicitudDerechoCtrl.Show)
-		protected.GET("/solicitudes/derecho/:id/editar", solicitudDerechoCtrl.Edit)
+		// protected.GET("/solicitudes/derecho/:id/editar", solicitudDerechoCtrl.Edit)
 		protected.GET("/solicitudes/derecho/:id/modal-editar", solicitudDerechoCtrl.GetEditModal)
 		protected.POST("/solicitudes/derecho/:id/actualizar", solicitudDerechoCtrl.Update)
 		protected.POST("/solicitudes/derecho/:id/aprobar", solicitudDerechoCtrl.Approve)

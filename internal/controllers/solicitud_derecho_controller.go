@@ -521,6 +521,15 @@ func (ctrl *SolicitudDerechoController) Update(c *gin.Context) {
 				it.Fecha = fechaVuelta
 				if fechaVuelta != nil {
 					it.Hora = fechaVuelta.Format("15:04")
+					// If it was pending (no date) and now has a date, it returns to SOLICITADO
+					if it.GetEstado() == "PENDIENTE" {
+						it.EstadoCodigo = utils.Ptr("SOLICITADO")
+					}
+				} else {
+					// If it has no date (vuelta por confirmar) and was SOLICITADO, it becomes PENDIENTE
+					if it.GetEstado() == "SOLICITADO" {
+						it.EstadoCodigo = utils.Ptr("PENDIENTE")
+					}
 				}
 				// Para la vuelta, el destino de llegada es el origen del viaje (regresa a casa)
 				if orig != nil {

@@ -202,3 +202,42 @@ func FormatWeekRangeShort(ini, fin *time.Time) string {
 		DayNameShort(ini), ini.Day(),
 		DayNameShort(fin), fin.Day())
 }
+
+// FormatDateTimeLongES formatea una fecha a formato largo y legible.
+// Ejemplo: "domingo, 08 de febrero de 2026 a las 12:56 PM"
+func FormatDateTimeLongES(t time.Time) string {
+	day := DayNameLong(&t)
+	month := GetMonthName(t.Month())
+
+	// Format: "domingo, 08 de febrero de 2026 a las 12:56 PM"
+	return fmt.Sprintf("%s, %02d de %s de %d a las %s",
+		day,
+		t.Day(),
+		strings.ToLower(month),
+		t.Year(),
+		t.Format("03:04 PM"))
+}
+
+// DayNameLong retorna el nombre completo del día en español.
+func DayNameLong(t *time.Time) string {
+	if t == nil {
+		return ""
+	}
+	switch t.Weekday() {
+	case time.Monday:
+		return "lunes"
+	case time.Tuesday:
+		return "martes"
+	case time.Wednesday:
+		return "miércoles"
+	case time.Thursday:
+		return "jueves"
+	case time.Friday:
+		return "viernes"
+	case time.Saturday:
+		return "sábado"
+	case time.Sunday:
+		return "domingo"
+	}
+	return ""
+}

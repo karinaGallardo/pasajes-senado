@@ -1,4 +1,4 @@
-{{ define "solicitud/components/form_pasaje" }}
+{{ define "solicitud/components/form_pasaje_create" }}
 <form
   method="POST"
   :action="isEdit ? ('/solicitudes/derecho/' + editId + '/actualizar') : '/solicitudes/derecho'"
@@ -94,8 +94,7 @@
 
     <!-- SECCIÓN B: CALENDARIO (Layout 2 Columnas) -->
     <section>
-      {{ $st := .Solicitud.GetEstado }} {{ $canEdit := or (not .IsEdit) (eq $st "SOLICITADO") (eq $st "RECHAZADO") (eq $st "PENDIENTE") }} {{ if $canEdit }}
-      <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
         <!-- COLUMN 1: SALIDA -->
         <div class="space-y-4">
           <div class="flex items-center justify-between mb-2 mt-2">
@@ -374,44 +373,11 @@
           </div>
         </div>
       </div>
-      {{ else }}
-      <!-- READ ONLY VERSION -->
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-neutral-50 rounded-xl border border-neutral-200">
-        <div class="space-y-2">
-          <div class="text-xs font-bold text-secondary uppercase tracking-widest mb-2">Fecha y Hora de Salida</div>
-          <div class="flex items-center gap-2">
-            <i class="ph ph-calendar text-neutral-400"></i>
-            <span class="font-mono font-bold text-neutral-700" x-text="selectedDaySalida"></span>
-            <div class="w-px h-4 bg-neutral-300 mx-2"></div>
-            <i class="ph ph-clock text-neutral-400"></i>
-            <span class="font-mono font-bold text-neutral-700" x-text="selectedTimeSalida"></span>
-          </div>
-          <input type="hidden" name="fecha_salida" :value="selectedDaySalida + 'T' + selectedTimeSalida" />
-        </div>
-
-        <div class="space-y-2">
-          <div class="text-xs font-bold text-secondary uppercase tracking-widest mb-2">Fecha y Hora de Retorno</div>
-          <template x-if="vueltaPorConfirmar">
-            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800">Por confirmar</span>
-          </template>
-          <template x-if="!vueltaPorConfirmar">
-            <div class="flex items-center gap-2">
-              <i class="ph ph-calendar text-neutral-400"></i>
-              <span class="font-mono font-bold text-neutral-700" x-text="selectedDayRetorno"></span>
-              <div class="w-px h-4 bg-neutral-300 mx-2"></div>
-              <i class="ph ph-clock text-neutral-400"></i>
-              <span class="font-mono font-bold text-neutral-700" x-text="selectedTimeRetorno"></span>
-            </div>
-          </template>
-          <input type="hidden" name="fecha_retorno" :value="vueltaPorConfirmar ? '' : (selectedDayRetorno + 'T' + selectedTimeRetorno)" />
-        </div>
-      </div>
-      {{ end }}
     </section>
 
     <!-- SECCIÓN C: DESTINO Y JUSTIFICACIÓN -->
     <section>
-      <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
         <!-- Hidden values for submission -->
         <input type="hidden" name="origen" value="{{ .Origen.IATA }}" />
         <input type="hidden" name="destino" value="{{ .Destino.IATA }}" />

@@ -22,11 +22,11 @@
         isSubmitting: false,
         isEdit: {{ .IsEdit }},
         tipoItinerario: 'IDA_VUELTA',
-        vueltaPorConfirmar: {{ if and .IsEdit (not .Solicitud.GetFechaVuelta) }}true{{ else }}false{{ end }},
+        vueltaPorConfirmar: {{ if and .IsEdit .Solicitud.GetItemVuelta (eq .Solicitud.GetItemVuelta.GetEstado `PENDIENTE`) }}true{{ else }}false{{ end }},
         editId: '{{ if .IsEdit }}{{ .Solicitud.ID }}{{ end }}',
         motivo: '{{ if .IsEdit }}{{ .Solicitud.Motivo }}{{ end }}',
         aerolinea: '{{ if .IsEdit }}{{ .Solicitud.AerolineaSugerida }}{{ end }}',
-        selectedWeekLabel: '{{ .Item.Semana }}: del {{ if .Item.FechaDesde }}{{ .Item.FechaDesde.Format "02/01/2006" }}{{ end }} al {{ if .Item.FechaHasta }}{{ .Item.FechaHasta.Format "02/01/2006" }}{{ end }}'
+        selectedWeekLabel: '{{ .Item.Semana }}: del {{ if .Item.FechaDesde }}{{ .Item.FechaDesde.Format `02/01/2006` }}{{ end }} al {{ if .Item.FechaHasta }}{{ .Item.FechaHasta.Format `02/01/2006` }}{{ end }}'
       }">
       <div class="flex items-center justify-between mb-4 border-b pb-3">
         <div class="flex items-center space-x-3">
@@ -35,7 +35,9 @@
           </div>
           <div>
             <h3 class="text-lg font-bold text-neutral-800">
-              {{ if .IsEdit }}{{ if not .Solicitud.GetFechaVuelta }}Agendar Retorno{{ else }}Editar Solicitud{{ end }}{{ else }}Nueva Solicitud{{ end }}: {{ .Itinerario.Nombre }}
+              {{ if .IsEdit }}{{ if not .Solicitud.GetFechaVuelta }}Agendar Retorno{{ else }}Editar Solicitud{{ end }}
+              <span class="text-primary-600">[{{ .Solicitud.Codigo }}]</span>
+              {{ else }}Nueva Solicitud{{ end }}: {{ .Itinerario.Nombre }}
             </h3>
             <p class="text-xs text-neutral-500 font-medium tracking-tighter">
               {{ .TargetUser.GetNombreCompleto }} • {{ .Item.Semana }} / {{ .Item.Mes | nombreMes }} {{ .Item.Gestion }}
@@ -60,7 +62,9 @@
       </div>
       {{ end }}
 
-      <div id="modal-form-container">{{ template "solicitud/components/form_pasaje" . }}</div>
+      <div id="modal-form-container">
+        {{ if .IsEdit }} {{ template "solicitud/components/form_pasaje_edit" . }} {{ else }} {{ template "solicitud/components/form_pasaje_create" . }} {{ end }}
+      </div>
     </div>
   </div>
 </div>

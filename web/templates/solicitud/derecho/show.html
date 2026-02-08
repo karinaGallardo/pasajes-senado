@@ -26,11 +26,13 @@
     </div>
     <div class="flex space-x-3">
       {{ if .Perms.CanEdit }}
-      <a
-        href="/solicitudes/derecho/{{ .Solicitud.ID }}/editar"
-        class="inline-flex items-center px-4 py-2 border border-primary-600 shadow-sm text-sm font-medium rounded-md text-primary-600 bg-white hover:bg-primary-50 focus:outline-none">
+      <button
+        type="button"
+        hx-get="/solicitudes/derecho/{{ .Solicitud.ID }}/modal-editar"
+        hx-target="#modal-container"
+        class="inline-flex items-center px-4 py-2 border border-primary-600 shadow-sm text-sm font-medium rounded-md text-primary-600 bg-white hover:bg-primary-50 focus:outline-none cursor-pointer">
         Editar
-      </a>
+      </button>
       {{ end }}
       <button
         type="button"
@@ -150,7 +152,7 @@
 
             <!-- Tramo Actions -->
             <div class="flex items-center gap-2">
-              {{ if and $.Perms.IsAdminOrResp (ne .GetEstado `REPROGRAMADO`) }} {{ if eq .GetEstado "SOLICITADO" }}
+              {{ if $.Perms.IsAdminOrResp }} {{ if eq .GetEstado "SOLICITADO" }}
               <button
                 type="button"
                 hx-post="/solicitudes/derecho/{{ $.Solicitud.ID }}/items/{{ .ID }}/aprobar"
@@ -238,7 +240,7 @@
                 </button>
                 {{ end }}
 
-                {{ if and $.Perms.IsAdminOrResp (ne $item.GetEstado "REPROGRAMADO") }}
+                {{ if and $.Perms.IsAdminOrResp (ne .GetEstado "ANULADO") }}
                  <!-- Dropdown (simplified) -->
                   <div class="relative">
                     <button

@@ -121,7 +121,7 @@ func (u *Usuario) CanMarkUsado(s Solicitud) bool {
 }
 
 func (u *Usuario) CanEditSolicitud(s Solicitud) bool {
-	if s.EstadoSolicitudCodigo != nil && *s.EstadoSolicitudCodigo != "SOLICITADO" {
+	if s.EstadoSolicitudCodigo != nil && *s.EstadoSolicitudCodigo != "SOLICITADO" && *s.EstadoSolicitudCodigo != "PENDIENTE" {
 		return false
 	}
 

@@ -137,7 +137,13 @@
           <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-right">
             <div class="flex flex-row justify-end items-center gap-4">
               {{ if and .EstadoSolicitud (eq .EstadoSolicitud.Codigo "SOLICITADO") }}
-              <a href="/solicitudes/derecho/{{ .ID }}/editar" class="text-primary hover:text-primary-700 font-medium text-xs uppercase tracking-tight">Editar</a>
+              <button
+                type="button"
+                hx-get="/solicitudes/derecho/{{ .ID }}/modal-editar"
+                hx-target="#modal-container"
+                class="text-primary hover:text-primary-700 font-medium text-xs uppercase tracking-tight cursor-pointer bg-transparent border-0 p-0">
+                Editar
+              </button>
               {{ end }}
               <a
                 href="/solicitudes/derecho/{{ .ID }}/detalle"

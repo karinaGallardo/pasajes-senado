@@ -153,3 +153,7 @@ func (r *CupoDerechoItemRepository) FindByCupoDerechoID(cupoDerechoID string) ([
 		Error
 	return list, err
 }
+
+func (r *CupoDerechoItemRepository) UpdateStatus(id string, status string) error {
+	return r.db.Model(&models.CupoDerechoItem{}).Where("id = ?", id).Update("estado_cupo_derecho_codigo", status).Error
+}

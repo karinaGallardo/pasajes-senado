@@ -683,49 +683,41 @@ func (s *SolicitudService) RejectItem(ctx context.Context, solicitudID, itemID s
 
 func (s *SolicitudService) RevertApprovalItem(ctx context.Context, solicitudID, itemID string) error {
 	return s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
-		solicitud, err := repoTx.FindByID(solicitudID)
+		// 1. Verificar si existe la solicitud
+		sol, err := repoTx.FindByID(solicitudID)
 		if err != nil {
 			return err
 		}
-		found := false
-		for i := range solicitud.Items {
-			it := &solicitud.Items[i]
-			if it.ID == itemID {
-				estado := it.GetEstado()
-				if estado != "APROBADO" && estado != "EMITIDO" {
-					return fmt.Errorf("el tramo no está en un estado que permita revertir la aprobación (%s)", estado)
-				}
-				if len(it.Pasajes) > 0 {
-					return fmt.Errorf("no se puede revertir la aprobación porque ya tiene pasajes asignados")
-				}
 
-				st := "SOLICITADO"
-				it.EstadoCodigo = &st
-				if err := tx.Save(it).Error; err != nil {
-					return err
-				}
-				found = true
+		// 2. Verificar si el tramo (item) existe en esta solicitud
+		var item *models.SolicitudItem
+		for i := range sol.Items {
+			if sol.Items[i].ID == itemID {
+				item = &sol.Items[i]
 				break
 			}
 		}
-		if !found {
-			return fmt.Errorf("item no encontrado")
+		if item == nil {
+			return fmt.Errorf("tramo no encontrado")
 		}
 
-		solicitud.UpdateStatusBasedOnItems()
-		if err := repoTx.Update(solicitud); err != nil {
+		// 3. Verificar si tiene pasajes activos o emitidos (distintos de ANULADO)
+		// Usamos el helper HasActivePasaje que ya ignora los anulados
+		if item.HasActivePasaje() {
+			return fmt.Errorf("no se puede revertir: tiene pasajes activos o emitidos. Debe anularlos primero.")
+		}
+
+		// 4. Revertir aprobación
+		nuevoEstado := "SOLICITADO"
+		item.EstadoCodigo = &nuevoEstado
+		if err := tx.Save(item).Error; err != nil {
 			return err
 		}
 
-		if solicitud.CupoDerechoItemID != nil {
-			itemRepoTx := s.itemRepo.WithTx(tx)
-			cupoItem, err := itemRepoTx.FindByID(*solicitud.CupoDerechoItemID)
-			if err == nil && cupoItem != nil {
-				if solicitud.GetEstado() == "SOLICITADO" {
-					cupoItem.EstadoCupoDerechoCodigo = "DISPONIBLE"
-					itemRepoTx.Update(cupoItem)
-				}
-			}
+		// Sincronización de estados
+		sol.UpdateStatusBasedOnItems()
+		if err := repoTx.Update(sol); err != nil {
+			return err
 		}
 
 		return nil

@@ -267,8 +267,13 @@ func (s *PasajeService) sendEmissionEmail(sol *models.Solicitud, pasaje *models.
 	subject := fmt.Sprintf("Pasaje Emitido - Solicitud %s", sol.Codigo)
 
 	ruta := pasaje.Ruta
-	fecha := utils.FormatDateShortES(pasaje.FechaVuelo)
+	fecha := utils.FormatDateTimeLongES(pasaje.FechaVuelo)
 	boleto := pasaje.NumeroBoleto
+	aerolinea := "N/A"
+	if pasaje.Aerolinea != nil {
+		aerolinea = pasaje.Aerolinea.Nombre
+	}
+	vuelo := pasaje.NumeroVuelo
 
 	baseURL := viper.GetString("APP_URL")
 	if baseURL == "" {
@@ -290,19 +295,23 @@ func (s *PasajeService) sendEmissionEmail(sol *models.Solicitud, pasaje *models.
 				<h3 style="color: #03738C; border-bottom: 1px solid #eee; padding-bottom: 5px;">Detalles del Vuelo</h3>
 				<table style="width: 100%%; border-collapse: collapse; margin-top: 10px;">
 					<tr>
-						<td style="padding: 8px 0; color: #666;"><strong>Ruta:</strong></td>
+						<td style="padding: 8px 0; color: #666; width: 35%%;"><strong>Ruta:</strong></td>
 						<td style="padding: 8px 0;">%s</td>
 					</tr>
 					<tr>
-						<td style="padding: 8px 0; color: #666;"><strong>Fecha:</strong></td>
+						<td style="padding: 8px 0; color: #666;"><strong>Fecha y Hora:</strong></td>
 						<td style="padding: 8px 0;">%s</td>
 					</tr>
 					<tr>
-						<td style="padding: 8px 0; color: #666;"><strong>Boleto:</strong></td>
+						<td style="padding: 8px 0; color: #666;"><strong>Empresa de Vuelo:</strong></td>
 						<td style="padding: 8px 0;">%s</td>
 					</tr>
 					<tr>
-						<td style="padding: 8px 0; color: #666;"><strong>Reserva (PNR):</strong></td>
+						<td style="padding: 8px 0; color: #666;"><strong>Número de Vuelo:</strong></td>
+						<td style="padding: 8px 0;">%s</td>
+					</tr>
+					<tr>
+						<td style="padding: 8px 0; color: #666;"><strong>Nº de Boleto:</strong></td>
 						<td style="padding: 8px 0;">%s</td>
 					</tr>
 				</table>
@@ -316,7 +325,7 @@ func (s *PasajeService) sendEmissionEmail(sol *models.Solicitud, pasaje *models.
 				</p>
 			</div>
 		</div>
-	`, usuario.GetNombreCompleto(), sol.Codigo, ruta, fecha, boleto, pasaje.CodigoReserva, fileURL, fileURL, fileURL)
+	`, usuario.GetNombreCompleto(), sol.Codigo, ruta, fecha, aerolinea, vuelo, boleto, fileURL, fileURL, fileURL)
 
 	_ = s.emailService.SendEmail(to, cc, nil, subject, body)
 }
