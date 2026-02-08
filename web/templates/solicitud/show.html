@@ -55,9 +55,11 @@
       </a>
       {{ end }}
       <button
+        type="button"
         hx-get="/solicitudes/{{ .Solicitud.ID }}/print"
         hx-target="#modal-container"
-        class="inline-flex items-center px-4 py-2 border border-neutral-300 shadow-sm text-sm font-medium rounded-md text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none">
+        class="inline-flex items-center px-4 py-2 border border-neutral-300 shadow-sm text-sm font-medium rounded-md text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none cursor-pointer">
+        <i class="ph ph-printer mr-2 text-lg"></i>
         Imprimir
       </button>
       <a
@@ -173,19 +175,21 @@
             {{ if eq .Solicitud.EstadoSolicitud.Codigo "SOLICITADO" }} {{ if .AuthUser.IsAdminOrResponsable }}
             <div class="flex space-x-2">
               <button
+                type="button"
                 hx-post="/solicitudes/{{ .Solicitud.ID }}/aprobar"
                 hx-confirm="¿Está seguro de que desea APROBAR esta solicitud?"
                 hx-target="body"
-                class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-success-600 hover:bg-success-700 focus:outline-none disabled:opacity-50 transition-colors">
+                class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-success-600 hover:bg-success-700 focus:outline-none disabled:opacity-50 transition-colors cursor-pointer">
                 <i class="ph ph-check-circle mr-2 text-lg"></i>
                 Aprobar
               </button>
 
               <button
+                type="button"
                 hx-post="/solicitudes/{{ .Solicitud.ID }}/rechazar"
                 hx-confirm="¿Está seguro de que desea RECHAZAR esta solicitud?"
                 hx-target="body"
-                class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-danger-600 hover:bg-danger-700 focus:outline-none disabled:opacity-50 transition-colors">
+                class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-danger-600 hover:bg-danger-700 focus:outline-none disabled:opacity-50 transition-colors cursor-pointer">
                 <i class="ph ph-x-circle mr-2 text-lg"></i>
                 Rechazar
               </button>
@@ -216,9 +220,10 @@
 
           {{ if .AuthUser.IsAdminOrResponsable }}
           <button
+            type="button"
             hx-get="/solicitudes/{{ .Solicitud.ID }}/pasajes/nuevo"
             hx-target="#modal-container"
-            class="inline-flex items-center px-2 py-1 border border-transparent text-xs leading-4 font-bold rounded-md text-white bg-secondary hover:bg-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary">
+            class="inline-flex items-center px-2 py-1 border border-transparent text-xs leading-4 font-bold rounded-md text-white bg-secondary hover:bg-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary cursor-pointer">
             <i class="ph ph-plus mr-1 text-lg"></i>
             Asignar Pasaje
           </button>
@@ -236,7 +241,16 @@
                   {{ if .Aerolinea }}{{ .Aerolinea.Nombre }}{{ else }}{{ .AerolineaID }}{{ end }} - Vuelo {{ .NumeroVuelo }}
                 </div>
                 <div class="ml-2 flex-shrink-0 flex">
-                  <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-success-100 text-success-800">{{ deref .EstadoPasajeCodigo }}</span>
+                  {{ if .EstadoPasaje }}
+                  <span
+                    style="background-color: {{.EstadoPasaje.Color}}15; color: {{.EstadoPasaje.Color}}; border-color: {{.EstadoPasaje.Color}}33;"
+                    class="px-2.5 py-1 inline-flex items-center gap-1.5 text-xs font-bold rounded-full border">
+                    <i class="{{ .EstadoPasaje.Icon }} text-xs"></i>
+                    {{ .EstadoPasaje.Nombre }}
+                  </span>
+                  {{ else }}
+                  <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-neutral-100 text-neutral-800">{{ deref .EstadoPasajeCodigo }}</span>
+                  {{ end }}
                 </div>
               </div>
               <div class="mt-2 sm:flex sm:justify-between">
@@ -256,9 +270,10 @@
                   <div class="flex space-x-2 ml-4">
                     {{ if $.AuthUser.IsAdminOrResponsable }} {{ if eq .Estado "EMITIDO" }}
                     <button
+                      type="button"
                       hx-get="/pasajes/{{ .ID }}/editar"
                       hx-target="#modal-container"
-                      class="text-xs font-bold text-primary-600 hover:text-primary-800 bg-primary-50 px-2 py-1 rounded border border-primary-200">
+                      class="text-xs font-bold text-primary-600 hover:text-primary-800 bg-primary-50 px-2 py-1 rounded border border-primary-200 cursor-pointer">
                       Editar
                     </button>
                     {{ end }}{{ end }}

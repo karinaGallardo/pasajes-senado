@@ -33,9 +33,11 @@
       </a>
       {{ end }}
       <button
+        type="button"
         hx-get="/solicitudes/derecho/{{ .Solicitud.ID }}/print"
         hx-target="#modal-container"
-        class="inline-flex items-center px-4 py-2 border border-neutral-300 shadow-sm text-sm font-medium rounded-md text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none">
+        class="inline-flex items-center px-4 py-2 border border-neutral-300 shadow-sm text-sm font-medium rounded-md text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none cursor-pointer">
+        <i class="ph ph-printer mr-2 text-lg"></i>
         Imprimir
       </button>
       <a
@@ -105,10 +107,11 @@
         <h3 class="text-sm font-bold text-neutral-800 uppercase tracking-wider">Itinerario y Pasajes</h3>
         {{ if .Perms.CanRevertApproval }}
         <button
+          type="button"
           hx-post="/solicitudes/derecho/{{ .Solicitud.ID }}/revertir-aprobacion"
           hx-confirm="¿Está seguro de que desea REVERTIR la aprobación? Volverá a estado SOLICITADO."
           hx-target="body"
-          class="inline-flex items-center px-3 py-1.5 border border-warning-300 rounded-md text-xs font-bold text-warning-700 bg-white hover:bg-warning-50 transition-colors shadow-sm">
+          class="inline-flex items-center px-3 py-1.5 border border-warning-300 rounded-md text-xs font-bold text-warning-700 bg-white hover:bg-warning-50 transition-colors shadow-sm cursor-pointer">
           <i class="ph ph-arrow-u-up-left mr-1.5"></i>
           Revertir Aprobación Global
         </button>
@@ -149,34 +152,38 @@
             <div class="flex items-center gap-2">
               {{ if and $.Perms.IsAdminOrResp (ne .GetEstado `REPROGRAMADO`) }} {{ if eq .GetEstado "SOLICITADO" }}
               <button
+                type="button"
                 hx-post="/solicitudes/derecho/{{ $.Solicitud.ID }}/items/{{ .ID }}/aprobar"
                 hx-confirm="¿Aprobar este tramo?"
                 hx-target="body"
-                class="inline-flex items-center px-3 py-1.5 border border-transparent rounded-lg shadow-sm text-xs font-bold text-white bg-success-600 hover:bg-success-700 transition-colors">
+                class="inline-flex items-center px-3 py-1.5 border border-transparent rounded-lg shadow-sm text-xs font-bold text-white bg-success-600 hover:bg-success-700 transition-colors cursor-pointer">
                 <i class="ph ph-check mr-1.5"></i>
                 Aprobar Tramo
               </button>
               <button
+                type="button"
                 hx-post="/solicitudes/derecho/{{ $.Solicitud.ID }}/items/{{ .ID }}/rechazar"
                 hx-confirm="¿Rechazar este tramo?"
                 hx-target="body"
-                class="inline-flex items-center px-3 py-1.5 border border-transparent rounded-lg shadow-sm text-xs font-bold text-white bg-danger-600 hover:bg-danger-700 transition-colors">
+                class="inline-flex items-center px-3 py-1.5 border border-transparent rounded-lg shadow-sm text-xs font-bold text-white bg-danger-600 hover:bg-danger-700 transition-colors cursor-pointer">
                 <i class="ph ph-x mr-1.5"></i>
                 Rechazar
               </button>
               {{ end }} {{ if and (or (eq .GetEstado "APROBADO") (eq .GetEstado "EMITIDO")) (not .HasActivePasaje) }}
               <button
+                type="button"
                 hx-post="/solicitudes/derecho/{{ $.Solicitud.ID }}/items/{{ .ID }}/revertir-aprobacion"
                 hx-confirm="¿Está seguro de revertir la aprobación de este tramo? Volverá a estado SOLICITADO."
                 hx-target="body"
-                class="inline-flex items-center px-3 py-1.5 border border-warning-600 rounded-lg shadow-sm text-xs font-bold text-warning-700 bg-white hover:bg-warning-50 transition-colors">
+                class="inline-flex items-center px-3 py-1.5 border border-warning-600 rounded-lg shadow-sm text-xs font-bold text-warning-700 bg-white hover:bg-warning-50 transition-colors cursor-pointer">
                 <i class="ph ph-arrow-u-up-left mr-1.5"></i>
                 Revertir
               </button>
               <button
+                type="button"
                 hx-get="/solicitudes/{{ $.Solicitud.ID }}/pasajes/nuevo?item_id={{ .ID }}"
                 hx-target="#modal-container"
-                class="inline-flex items-center px-3 py-1.5 border border-transparent rounded-lg shadow-sm text-xs font-bold text-white bg-secondary hover:bg-primary transition-colors">
+                class="inline-flex items-center px-3 py-1.5 border border-transparent rounded-lg shadow-sm text-xs font-bold text-white bg-secondary hover:bg-primary transition-colors cursor-pointer">
                 <i class="ph ph-plus mr-1.5"></i>
                 Asignar Pasaje
               </button>
@@ -222,9 +229,10 @@
               <div class="flex items-center gap-2">
                 {{ if .Archivo }}
                 <button
+                  type="button"
                   hx-get="/pasajes/{{ .ID }}/preview?tipo=boleto"
                   hx-target="#modal-container"
-                  class="p-1.5 rounded-md hover:bg-neutral-200 text-danger-600 transition-colors"
+                  class="p-1.5 rounded-md hover:bg-neutral-200 text-danger-600 transition-colors cursor-pointer"
                   title="Ver PDF">
                   <i class="ph ph-file-pdf text-xl"></i>
                 </button>
@@ -234,8 +242,9 @@
                  <!-- Dropdown (simplified) -->
                   <div class="relative">
                     <button
+                      type="button"
                       @click="openMenu = !openMenu"
-                      class="p-2 rounded-lg border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-600 transition-all shadow-sm flex items-center justify-center"
+                      class="p-2 rounded-lg border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-600 transition-all shadow-sm flex items-center justify-center cursor-pointer"
                       title="Acciones del Pasaje">
                       <i class="ph ph-dots-three-vertical text-lg font-bold"></i>
                     </button>
@@ -249,15 +258,15 @@
                       class="absolute right-0 mt-2 w-56 bg-white border border-neutral-200 rounded-xl shadow-[0_10px_25px_-5px_rgba(0,0,0,0.1),0_8px_10px_-6px_rgba(0,0,0,0.1)] z-50 py-2 divide-y divide-neutral-100" 
                       x-cloak>
                        {{ if eq .GetEstado "REGISTRADO" }}
-                       <button @click="$dispatch('pasaje-action', { action: 'emitir', id: '{{.ID}}' })" class="block w-full text-left px-4 py-2 text-xs text-secondary-600 hover:bg-secondary-50 font-bold">
+                       <button type="button" @click="$dispatch('pasaje-action', { action: 'emitir', id: '{{.ID}}' })" class="block w-full text-left px-4 py-2 text-xs text-secondary-600 hover:bg-secondary-50 font-bold cursor-pointer">
                         <i class="ph ph-airplane-tilt mr-2"></i>Emitir Pasaje
                        </button>
                        {{ end }}
                        {{ if eq .GetEstado "REGISTRADO" }}
-                       <button hx-get="/pasajes/{{ .ID }}/editar" hx-target="#modal-container" class="block w-full text-left px-4 py-2 text-xs hover:bg-neutral-50">Editar</button>
+                       <button type="button" hx-get="/pasajes/{{ .ID }}/editar" hx-target="#modal-container" class="block w-full text-left px-4 py-2 text-xs hover:bg-neutral-50 cursor-pointer">Editar</button>
                        {{ end }}
 
-                       <button @click="$dispatch('pasaje-action', { action: 'anular', id: '{{.ID}}' })" class="block w-full text-left px-4 py-2 text-xs text-danger-600 hover:bg-danger-50">Anular</button>
+                       <button type="button" @click="$dispatch('pasaje-action', { action: 'anular', id: '{{.ID}}' })" class="block w-full text-left px-4 py-2 text-xs text-danger-600 hover:bg-danger-50 cursor-pointer">Anular</button>
                     </div>
                  </div>
                 {{ end }}

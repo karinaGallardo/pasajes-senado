@@ -210,7 +210,13 @@
                 </span>
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                <button hx-get="/admin/rutas/modal-contrato?ruta_id={{ .ID }}" hx-target="#modal-container" class="text-primary-600 hover:text-primary-800">Agregar Tarifa</button>
+                <button
+                  type="button"
+                  hx-get="/admin/rutas/modal-contrato?ruta_id={{ .ID }}"
+                  hx-target="#modal-container"
+                  class="text-primary-600 hover:text-primary-800 font-bold px-2 py-1 rounded hover:bg-primary-50 transition-colors cursor-pointer">
+                  Agregar Tarifa
+                </button>
               </td>
             </tr>
             {{ else }}

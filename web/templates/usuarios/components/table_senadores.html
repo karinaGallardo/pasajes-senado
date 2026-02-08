@@ -47,14 +47,16 @@
             Ver Cupos
           </a>
           <button
-            class="text-[10px] text-primary hover:text-primary-900 font-bold bg-neutral-50 px-1.5 py-0.5 rounded border border-neutral-100 transition-colors"
+            type="button"
+            class="text-[10px] text-primary hover:text-primary-900 font-bold bg-neutral-50 px-1.5 py-0.5 rounded border border-neutral-100 transition-colors cursor-pointer"
             hx-get="/usuarios/{{ $user.ID }}/editar"
             hx-target="#modal-container">
             Editar Titular
           </button>
           {{ if $user.IsBlocked }}
           <button
-            class="text-[10px] text-red-600 hover:text-red-900 font-bold bg-red-50 px-1.5 py-0.5 rounded border border-red-100 transition-colors"
+            type="button"
+            class="text-[10px] text-red-600 hover:text-red-900 font-bold bg-red-50 px-1.5 py-0.5 rounded border border-red-100 transition-colors cursor-pointer"
             hx-post="/usuarios/{{ $user.ID }}/unblock"
             hx-confirm="¿Desbloquear titular?">
             Desbloquear
@@ -99,14 +101,16 @@
             Ver Cupos
           </a>
           <button
-            class="text-[10px] text-primary hover:text-primary-900 font-bold bg-neutral-50 px-1.5 py-0.5 rounded border border-neutral-100 transition-colors"
+            type="button"
+            class="text-[10px] text-primary hover:text-primary-900 font-bold bg-neutral-50 px-1.5 py-0.5 rounded border border-neutral-100 transition-colors cursor-pointer"
             hx-get="/usuarios/{{ $suplente.ID }}/editar"
             hx-target="#modal-container">
             Editar Suplente
           </button>
           {{ if $suplente.IsBlocked }}
           <button
-            class="text-[10px] text-red-600 hover:text-red-900 font-bold bg-red-50 px-1.5 py-0.5 rounded border border-red-100 transition-colors"
+            type="button"
+            class="text-[10px] text-red-600 hover:text-red-900 font-bold bg-red-50 px-1.5 py-0.5 rounded border border-red-100 transition-colors cursor-pointer"
             hx-post="/usuarios/{{ $suplente.ID }}/unblock"
             hx-confirm="¿Desbloquear suplente?">
             Desbloquear

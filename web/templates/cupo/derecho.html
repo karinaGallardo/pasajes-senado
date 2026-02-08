@@ -91,36 +91,43 @@
                 <!-- Estado -->
                 <td class="whitespace-nowrap px-3 py-4 text-sm">
                   <div class="flex flex-col">
+                    {{ if .EstadoCupoDerecho }}
                     <span
-                      class="inline-flex items-center rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase w-fit 
-                    {{ if eq .EstadoCupoDerechoCodigo `DISPONIBLE` }} bg-success-100 text-success-700 
-                    {{ else if eq .EstadoCupoDerechoCodigo `RESERVADO` }} bg-amber-100 text-amber-700 
-                    {{ else }} bg-primary-100 text-primary-700 {{ end }}">
+                      style="background-color: {{.EstadoCupoDerecho.Color}}15; color: {{.EstadoCupoDerecho.Color}}; border-color: {{.EstadoCupoDerecho.Color}}33;"
+                      class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase w-fit border">
+                      <i class="{{ .EstadoCupoDerecho.Icon }} text-xs"></i>
+                      {{ .EstadoCupoDerecho.Nombre }}
+                    </span>
+                    {{ else }}
+                    <span class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase w-fit border bg-neutral-100 text-neutral-600">
                       {{ .EstadoCupoDerechoCodigo }}
                     </span>
+                    {{ end }}
                   </div>
                 </td>
 
                 <!-- Acciones -->
-                <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6" onclick="event.stopPropagation()">
+                <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                   <div class="flex justify-end gap-2">
                     <!-- Admin Actions -->
                     {{ if .Permissions.CanRevert }}
                     <div class="flex flex-col items-end relative">
                       <button
+                        type="button"
                         hx-post="/admin/cupos/derechos/{{ .ID }}/revertir-transferencia?gestion={{ .Gestion }}&mes={{ .Mes }}"
                         hx-target="body"
                         hx-confirm="¿Está seguro de revertir la transferencia{{ if .SenAsignado }} a {{.SenAsignado.GetNombreCompleto}}{{ end }}? El cupo volverá al titular."
-                        class="text-danger-600 hover:text-danger-900 border border-danger-200 bg-white font-bold text-[10px] uppercase px-3 py-1.5 rounded hover:bg-danger-50 transition-colors inline-flex items-center gap-1">
+                        class="text-danger-600 hover:text-danger-900 border border-danger-200 bg-white font-bold text-[10px] uppercase px-3 py-1.5 rounded hover:bg-danger-50 transition-colors inline-flex items-center gap-1 cursor-pointer">
                         <span class="[.htmx-request_&]:hidden text-nowrap">Revertir Transferencia</span>
                         <i class="ph ph-spinner animate-spin hidden [.htmx-request_&]:block"></i>
                       </button>
                     </div>
                     {{ else if .Permissions.CanTransfer }}
                     <button
+                      type="button"
                       hx-get="/admin/cupos/derechos/{{ .ID }}/modal-transferir?gestion={{ .Gestion }}&mes={{ .Mes }}"
                       hx-target="#modal-container"
-                      class="text-primary-600 hover:text-primary-900 border border-primary-200 bg-white font-bold text-[10px] uppercase px-3 py-1.5 rounded hover:bg-primary-50 transition-colors inline-flex items-center gap-1">
+                      class="text-primary-600 hover:text-primary-900 border border-primary-200 bg-white font-bold text-[10px] uppercase px-3 py-1.5 rounded hover:bg-primary-50 transition-colors inline-flex items-center gap-1 cursor-pointer">
                       <span class="[.htmx-request_&]:hidden">Transferir</span>
                       <i class="ph ph-spinner animate-spin hidden [.htmx-request_&]:block"></i>
                     </button>
@@ -129,11 +136,12 @@
                     <!-- Suplente Actions (Auto-servicio) -->
                     {{ if .Permissions.CanTomarCupo }}
                     <button
+                      type="button"
                       hx-post="/admin/cupos/tomar"
                       hx-target="body"
                       hx-vals='{"item_id": "{{.ID}}", "gestion": "{{.Gestion}}", "mes": "{{.Mes}}", "return_url": "/cupos/derecho/{{$targetUserID}}/{{.Gestion}}"}'
                       hx-confirm="¿Desea TOMAR este cupo para su uso personal?"
-                      class="text-secondary-600 hover:text-secondary-900 border border-secondary-200 bg-white font-bold text-[10px] uppercase px-3 py-1.5 rounded hover:bg-secondary-50 transition-colors inline-flex items-center gap-1">
+                      class="text-secondary-600 hover:text-secondary-900 border border-secondary-200 bg-white font-bold text-[10px] uppercase px-3 py-1.5 rounded hover:bg-secondary-50 transition-colors inline-flex items-center gap-1 cursor-pointer">
                       <span class="[.htmx-request_&]:hidden">Tomar Cupo</span>
                       <i class="ph ph-spinner animate-spin hidden [.htmx-request_&]:block"></i>
                     </button>
@@ -142,11 +150,12 @@
                     <!-- Asignación por Terceros (Admin/Encargado) -->
                     {{ if .Permissions.CanAsignarCupo }}
                     <button
+                      type="button"
                       hx-post="/admin/cupos/asignar"
                       hx-target="body"
                       hx-vals='{"item_id": "{{.ID}}", "target_user_id": "{{$targetUserID}}", "gestion": "{{.Gestion}}", "mes": "{{.Mes}}", "return_url": "/cupos/derecho/{{$targetUserID}}/{{.Gestion}}"}'
                       hx-confirm="¿Desea ASIGNAR este cupo al suplente {{$.TargetUser.GetNombreCompleto}}?"
-                      class="text-primary-600 hover:text-primary-900 border border-primary-200 bg-white font-bold text-[10px] uppercase px-3 py-1.5 rounded hover:bg-primary-50 transition-colors inline-flex items-center gap-1">
+                      class="text-primary-600 hover:text-primary-900 border border-primary-200 bg-white font-bold text-[10px] uppercase px-3 py-1.5 rounded hover:bg-primary-50 transition-colors inline-flex items-center gap-1 cursor-pointer">
                       <span class="[.htmx-request_&]:hidden">Asignar Cupo</span>
                       <i class="ph ph-spinner animate-spin hidden [.htmx-request_&]:block"></i>
                     </button>
@@ -157,31 +166,38 @@
                     <!-- Solicitar Pasaje (Ida o Ida+Vuelta) -->
                     {{ if .Permissions.CanCreateIda }}
                     <button
+                      type="button"
                       hx-get="/solicitudes/derecho/modal-crear/{{ .ID }}/IDA_VUELTA"
                       hx-target="#modal-container"
                       class="text-white bg-primary hover:bg-primary-800 font-bold text-[10px] uppercase border border-primary rounded px-3 py-1.5 transition-colors cursor-pointer text-center inline-flex items-center justify-center shadow-sm">
+                      <i class="ph ph-paper-plane-tilt mr-1.5 text-xs"></i>
                       Solicitar Pasaje
                     </button>
                     {{ end }} {{ $solIda := .GetSolicitudIda }} {{ if and .Permissions.CanCreateVuelta $solIda }}
                     <button
+                      type="button"
                       hx-get="/solicitudes/derecho/{{ $solIda.ID }}/modal-editar"
                       hx-target="#modal-container"
                       class="text-amber-700 hover:bg-amber-100 font-bold text-[10px] uppercase border border-amber-100 bg-amber-50 rounded px-3 py-1.5 transition-colors cursor-pointer text-center inline-flex items-center justify-center">
+                      <i class="ph ph-calendar-plus mr-1.5 text-xs"></i>
                       Editar / Agendar Retorno
                     </button>
                     {{ end }} {{ if and .Permissions.CanEditIda $solIda }}
                     <button
+                      type="button"
                       hx-get="/solicitudes/derecho/{{ $solIda.ID }}/modal-editar"
                       hx-target="#modal-container"
                       class="text-amber-700 hover:bg-amber-100 font-bold text-[10px] uppercase border border-amber-100 bg-amber-50 rounded px-3 py-1.5 transition-colors cursor-pointer inline-flex items-center justify-center text-center">
+                      <i class="ph ph-pencil-simple mr-1.5 text-xs"></i>
                       Editar Solicitud
                     </button>
                     {{ end }} {{ if .Permissions.CanPrint }} {{ $printSol := .GetSolicitudIda }} {{ if not $printSol }}{{ $printSol = .GetSolicitudVuelta }}{{ end }} {{ if
                     $printSol }}
                     <button
+                      type="button"
                       hx-get="/solicitudes/derecho/{{ $printSol.ID }}/print"
                       hx-target="#modal-container"
-                      class="text-neutral-600 hover:text-neutral-900 border border-neutral-200 bg-white font-bold text-[10px] uppercase px-3 py-1.5 rounded hover:bg-neutral-50 transition-colors inline-flex items-center justify-center gap-1"
+                      class="text-neutral-600 hover:text-neutral-900 border border-neutral-200 bg-white font-bold text-[10px] uppercase px-3 py-1.5 rounded hover:bg-neutral-50 transition-colors inline-flex items-center justify-center gap-1 cursor-pointer"
                       title="Imprimir Solicitud">
                       <i class="ph ph-printer text-sm"></i>
                       <span class="sr-only sm:not-sr-only">Imprimir</span>

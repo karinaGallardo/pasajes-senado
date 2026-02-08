@@ -7,10 +7,11 @@
     </div>
     <div class="mt-4 sm:mt-0 sm:ml-16 sm:flex-none">
       <button
+        type="button"
         hx-get="/admin/aerolineas/nueva"
         hx-target="#modal-container"
         hx-disabled-elt="this"
-        class="inline-flex items-center justify-center rounded-md border border-transparent bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 sm:w-auto transition-colors disabled:opacity-50">
+        class="inline-flex items-center justify-center rounded-md border border-transparent bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 sm:w-auto transition-colors disabled:opacity-50 cursor-pointer">
         <i class="ph ph-plus-circle text-xl mr-2"></i>
         Nueva Aerolínea
       </button>
@@ -48,18 +49,20 @@
                 </td>
                 <td class="relative whitespace-nowrap py-4 pl-3 pr-4 text-right text-sm font-medium sm:pr-6">
                   <button
+                    type="button"
                     hx-get="/admin/aerolineas/{{ .ID }}/editar"
                     hx-target="#modal-container"
                     hx-disabled-elt="this"
-                    class="text-primary-600 hover:text-primary-900 font-bold transition-colors disabled:opacity-50 inline-flex items-center">
+                    class="text-primary-600 hover:text-primary-900 font-bold transition-colors disabled:opacity-50 inline-flex items-center cursor-pointer">
                     <i class="ph ph-pencil-simple mr-1 text-lg"></i>
                     Editar
                   </button>
                   <button
-                    hx-post="/admin/aerolineas/{{ .ID }}/delete"
-                    hx-confirm="¿Estás seguro de que deseas eliminar esta aerolínea?"
+                    type="button"
+                    hx-post="/admin/oficinas/{{ .ID }}/delete"
+                    hx-confirm="¿Está seguro de que desea eliminar la oficina '{{ .Detalle }}'?"
                     hx-target="body"
-                    class="ml-4 text-danger-600 hover:text-danger-900 transition-colors"
+                    class="ml-4 text-danger-600 hover:text-danger-900 transition-colors cursor-pointer"
                     title="Eliminar">
                     <i class="ph ph-trash text-xl"></i>
                   </button>

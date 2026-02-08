@@ -11,10 +11,11 @@
       <!-- Sync Button (HTMX Modal) -->
       {{ if .AuthUser.IsAdmin }}
       <button
+        type="button"
         hx-get="/usuarios/sync-modal"
         hx-include="[name='rol']"
         hx-target="#modal-container"
-        class="inline-flex items-center px-4 py-2 border border-transparent text-sm leading-5 font-bold rounded-lg text-white bg-primary hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary shadow-md transition-all transform active:scale-95">
+        class="inline-flex items-center px-4 py-2 border border-transparent text-sm leading-5 font-bold rounded-lg text-white bg-primary hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary shadow-md transition-all transform active:scale-95 cursor-pointer">
         <i class="ph ph-arrows-clockwise text-xl -ml-1 mr-2"></i>
         <span x-text="activeTab === 'SENADOR' ? 'Sincronizar Senadores' : 'Sincronizar Funcionarios'">Sincronizar</span>
       </button>
@@ -29,7 +30,7 @@
       <nav class="-mb-px flex space-x-8" aria-label="Tabs">
         <button
           type="button"
-          class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors focus:outline-none"
+          class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors focus:outline-none cursor-pointer"
           :class="activeTab === 'SENADOR' ? 'border-primary text-primary' : 'border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300'"
           @click="activeTab = 'SENADOR'"
           hx-get="/usuarios/table?rol=SENADOR"
@@ -41,7 +42,7 @@
         {{ if .AuthUser.IsAdmin }}
         <button
           type="button"
-          class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors focus:outline-none"
+          class="whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors focus:outline-none cursor-pointer"
           :class="activeTab === 'FUNCIONARIO' ? 'border-primary text-primary' : 'border-transparent text-neutral-500 hover:text-neutral-700 hover:border-neutral-300'"
           @click="activeTab = 'FUNCIONARIO'; $nextTick(function() { document.querySelector('input[name=q]').value = '' })"
           hx-get="/usuarios/table?rol=FUNCIONARIO"

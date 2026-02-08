@@ -33,11 +33,12 @@
       <input type="hidden" name="mes" value="{{ .Mes }}" />
     </form>
     <button
+      type="button"
       hx-post="/admin/cupos/reset"
       hx-include="#reset-form"
       hx-target="body"
       hx-confirm="Esta acción recalculará las semanas del período seleccionado. ¿Continuar con la sincronización?"
-      class="text-neutral-500 hover:text-primary-600 hover:bg-primary-50 p-2 rounded-lg transition-colors relative disabled:opacity-50"
+      class="text-neutral-500 hover:text-primary-600 hover:bg-primary-50 p-2 rounded-lg transition-colors relative disabled:opacity-50 cursor-pointer"
       title="Sincronizar y recalcular mes">
       <!-- Default Content -->
       <i class="ph ph-arrows-clockwise text-xl [.htmx-request_&]:hidden"></i>

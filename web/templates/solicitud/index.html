@@ -98,10 +98,41 @@
           </td>
           <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500 text-center">{{ dtl .GetFechaIda }}</td>
           <td class="px-6 py-4 whitespace-nowrap text-center">
-            <span
-              class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ if eq .EstadoSolicitud.Codigo `SOLICITADO` }}bg-warning-100 text-warning-800{{ else if eq .EstadoSolicitud.Codigo `APROBADO` }}bg-success-100 text-success-800{{ else }}bg-neutral-100 text-neutral-800{{ end }}">
-              {{ if .EstadoSolicitud }}{{ .EstadoSolicitud.Nombre }}{{ else }}SOLICITADO{{ end }}
-            </span>
+            <div class="flex flex-col items-center justify-center space-y-1.5">
+              <!-- Main Status Badge -->
+              {{ if .EstadoSolicitud }}
+              <span
+                style="background-color: {{.EstadoSolicitud.Color}}15; color: {{.EstadoSolicitud.Color}}; border-color: {{.EstadoSolicitud.Color}}33;"
+                class="px-2.5 py-1 inline-flex items-center gap-1.5 text-xs leading-4 font-bold rounded-full border">
+                <i class="{{ .EstadoSolicitud.Icon }} text-sm"></i>
+                {{ .EstadoSolicitud.Nombre }}
+              </span>
+              {{ else }}
+              <span class="px-2.5 py-1 inline-flex items-center gap-1.5 text-xs leading-4 font-bold rounded-full border bg-neutral-50 text-neutral-600 border-neutral-200">
+                <i class="ph ph-clock text-sm"></i>
+                SOLICITADO
+              </span>
+              {{ end }}
+
+              <!-- Detailed Segments -->
+              <div class="flex items-center gap-2 text-[10px]">
+                {{ $ida := .GetItemIda }} {{ if $ida }}
+                <div class="flex items-center gap-1" style="color: {{ if $ida.Estado }}{{ $ida.Estado.Color }}{{ else }}#737373{{ end }}" title="Ida: {{ $ida.GetEstado }}">
+                  <span class="font-bold uppercase tracking-wider text-[9px] opacity-70">Ida</span>
+                  <i class="{{ if $ida.Estado }}{{ $ida.Estado.Icon }}{{ else }}ph ph-circle{{ end }} text-[11px]"></i>
+                </div>
+                {{ end }} {{ $vuelta := .GetItemVuelta }} {{ if $vuelta }}
+                <div class="w-px h-3 bg-neutral-200"></div>
+                <div
+                  class="flex items-center gap-1"
+                  style="color: {{ if $vuelta.Estado }}{{ $vuelta.Estado.Color }}{{ else }}#737373{{ end }}"
+                  title="Vuelta: {{ $vuelta.GetEstado }}">
+                  <span class="font-bold uppercase tracking-wider text-[9px] opacity-70">Vta</span>
+                  <i class="{{ if $vuelta.Estado }}{{ $vuelta.Estado.Icon }}{{ else }}ph ph-circle{{ end }} text-[11px]"></i>
+                </div>
+                {{ end }}
+              </div>
+            </div>
           </td>
           <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-right">
             <div class="flex flex-row justify-end items-center gap-4">

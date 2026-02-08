@@ -187,15 +187,23 @@ func seedDepartamentos() {
 func seedEstadosSolicitud() {
 	fmt.Println("Sincronizando Estados de Solicitud...")
 	estados := []models.EstadoSolicitud{
-		{Codigo: "SOLICITADO", Nombre: "Solicitado", Color: "blue", Descripcion: "Solicitud creada, pendiente de aprobación"},
-		{Codigo: "PARCIALMENTE_APROBADO", Nombre: "Parcialmente Aprobado", Color: "orange", Descripcion: "Algunos tramos aprobados, otros pendientes"},
-		{Codigo: "APROBADO", Nombre: "Aprobado", Color: "green", Descripcion: "Solicitud aprobada, pasajes en emisión"},
-		{Codigo: "RECHAZADO", Nombre: "Rechazado", Color: "red", Descripcion: "Solicitud rechazada por autoridad"},
-		{Codigo: "FINALIZADO", Nombre: "Finalizado", Color: "gray", Descripcion: "Viaje completado y cerrado"},
+		{Codigo: "SOLICITADO", Nombre: "Solicitado", Color: "#F59E0B", Icon: "ph ph-paper-plane-tilt", Descripcion: "Solicitud creada, pendiente de aprobación"},         // Amber 500
+		{Codigo: "PARCIALMENTE_APROBADO", Nombre: "Parcialmente Aprobado", Color: "#8B5CF6", Icon: "ph ph-check-square-offset", Descripcion: "Algunos tramos aprobados"}, // Violet 500
+		{Codigo: "APROBADO", Nombre: "Aprobado", Color: "#10B981", Icon: "ph ph-check-circle", Descripcion: "Solicitud aprobada, pasajes en emisión"},                    // Emerald 500
+		{Codigo: "RECHAZADO", Nombre: "Rechazado", Color: "#F43F5E", Icon: "ph ph-x-circle", Descripcion: "Solicitud rechazada por autoridad"},                           // Rose 500
+		{Codigo: "FINALIZADO", Nombre: "Finalizado", Color: "#525252", Icon: "ph ph-archive", Descripcion: "Viaje completado y cerrado"},                                 // Neutral 700
 	}
 
 	for _, e := range estados {
-		configs.DB.Where("codigo = ?", e.Codigo).FirstOrCreate(&e)
+		var existing models.EstadoSolicitud
+		if err := configs.DB.Where("codigo = ?", e.Codigo).First(&existing).Error; err != nil {
+			configs.DB.Create(&e)
+		} else {
+			// Update color and icon if changed
+			if existing.Color != e.Color || existing.Icon != e.Icon {
+				configs.DB.Model(&existing).Updates(e)
+			}
+		}
 	}
 }
 
@@ -396,24 +404,29 @@ func seedRolesAndPermissions() {
 func seedEstadosCupoDerecho() {
 	fmt.Println("Sincronizando Estados de Derechos de Pasaje...")
 	estados := []models.EstadoCupoDerecho{
-		{Codigo: "DISPONIBLE", Nombre: "Disponible", Color: "green", Descripcion: "Derecho habilitado para uso"},
-		{Codigo: "USADO", Nombre: "Usado", Color: "gray", Descripcion: "Derecho ya utilizado en un viaje"},
-		{Codigo: "VENCIDO", Nombre: "Vencido", Color: "red", Descripcion: "Derecho expirado (fuera de fecha)"},
-		{Codigo: "RESERVADO", Nombre: "Reservado", Color: "yellow", Descripcion: "Derecho en proceso de asignación"},
+		{Codigo: "DISPONIBLE", Nombre: "Disponible", Color: "#10B981", Icon: "ph ph-check", Descripcion: "Derecho habilitado para uso"},
+		{Codigo: "USADO", Nombre: "Usado", Color: "#737373", Icon: "ph ph-ticket", Descripcion: "Derecho ya utilizado en un viaje"},
+		{Codigo: "VENCIDO", Nombre: "Vencido", Color: "#EF4444", Icon: "ph ph-calendar-x", Descripcion: "Derecho expirado (fuera de fecha)"},
+		{Codigo: "RESERVADO", Nombre: "Reservado", Color: "#F59E0B", Icon: "ph ph-lock", Descripcion: "Derecho en proceso de asignación"},
 	}
 
 	for _, e := range estados {
-		configs.DB.Where("codigo = ?", e.Codigo).FirstOrCreate(&e)
+		var existing models.EstadoCupoDerecho
+		if err := configs.DB.Where("codigo = ?", e.Codigo).First(&existing).Error; err != nil {
+			configs.DB.Create(&e)
+		} else {
+			configs.DB.Model(&existing).Updates(e)
+		}
 	}
 }
 
 func seedEstadosPasaje() {
 	fmt.Println("Sincronizando Estados de Pasaje...")
 	estados := []models.EstadoPasaje{
-		{Codigo: "REGISTRADO", Nombre: "Registrado", Color: "#6c757d", Descripcion: "Pasaje registrado en el sistema pero no emitido"},
-		{Codigo: "EMITIDO", Nombre: "Emitido", Color: "success", Descripcion: "Pasaje emitido correctamente"},
-		{Codigo: "USADO", Nombre: "Usado", Color: "primary", Descripcion: "Pasaje utilizado por el viajero"},
-		{Codigo: "ANULADO", Nombre: "Anulado", Color: "neutral", Descripcion: "Pasaje anulado por error u otros motivos"},
+		{Codigo: "REGISTRADO", Nombre: "Registrado", Color: "#6366f1", Icon: "ph ph-note", Descripcion: "Pasaje registrado en el sistema pero no emitido"},
+		{Codigo: "EMITIDO", Nombre: "Emitido", Color: "#10B981", Icon: "ph ph-ticket", Descripcion: "Pasaje emitido correctamente"},
+		{Codigo: "USADO", Nombre: "Usado", Color: "#3b82f6", Icon: "ph ph-airplane-landing", Descripcion: "Pasaje utilizado por el viajero"},
+		{Codigo: "ANULADO", Nombre: "Anulado", Color: "#ef4444", Icon: "ph ph-prohibit", Descripcion: "Pasaje anulado por error u otros motivos"},
 	}
 
 	for _, e := range estados {
@@ -441,14 +454,14 @@ func seedGeneros() {
 func seedEstadosSolicitudItem() {
 	fmt.Println("Sincronizando Estados de Solicitud Item...")
 	estados := []models.EstadoSolicitudItem{
-		{Codigo: "PENDIENTE", Nombre: "Pendiente", Color: "gray", Descripcion: "Item pendiente o no solicitado"},
-		{Codigo: "SOLICITADO", Nombre: "Solicitado", Color: "blue", Descripcion: "Item solicitado"},
-		{Codigo: "APROBADO", Nombre: "Aprobado", Color: "green", Descripcion: "Item aprobado por autoridad"},
-		{Codigo: "RECHAZADO", Nombre: "Rechazado", Color: "red", Descripcion: "Item rechazado"},
-		{Codigo: "EMITIDO", Nombre: "Emitido", Color: "teal", Descripcion: "Boleto emitido"},
-		{Codigo: "REPROGRAMADO", Nombre: "Reprogramado", Color: "warning", Descripcion: "Item reprogramado"},
-		{Codigo: "FINALIZADO", Nombre: "Finalizado", Color: "gray", Descripcion: "Item completado"},
-		{Codigo: "CANCELADO", Nombre: "Cancelado", Color: "red", Descripcion: "Item cancelado"},
+		{Codigo: "PENDIENTE", Nombre: "Pendiente", Color: "#A3A3A3", Icon: "ph ph-dots-three", Descripcion: "Item pendiente o no solicitado"}, // Neutral 400
+		{Codigo: "SOLICITADO", Nombre: "Solicitado", Color: "#F59E0B", Icon: "ph ph-clock", Descripcion: "Item solicitado"},                   // Amber 500
+		{Codigo: "APROBADO", Nombre: "Aprobado", Color: "#10B981", Icon: "ph ph-check", Descripcion: "Item aprobado por autoridad"},           // Emerald 500
+		{Codigo: "RECHAZADO", Nombre: "Rechazado", Color: "#F43F5E", Icon: "ph ph-x", Descripcion: "Item rechazado"},                          // Rose 500
+		{Codigo: "EMITIDO", Nombre: "Emitido", Color: "#0EA5E9", Icon: "ph ph-ticket", Descripcion: "Boleto emitido"},                         // Sky 500
+		{Codigo: "REPROGRAMADO", Nombre: "Reprogramado", Color: "#EAB308", Icon: "ph ph-arrows-clockwise", Descripcion: "Item reprogramado"},  // Yellow 500
+		{Codigo: "FINALIZADO", Nombre: "Finalizado", Color: "#525252", Icon: "ph ph-check-fat", Descripcion: "Item completado"},               // Neutral 700
+		{Codigo: "CANCELADO", Nombre: "Cancelado", Color: "#EF4444", Icon: "ph ph-trash", Descripcion: "Item cancelado"},                      // Red 500
 	}
 
 	for _, e := range estados {
@@ -456,7 +469,9 @@ func seedEstadosSolicitudItem() {
 		if err := configs.DB.Where("codigo = ?", e.Codigo).First(&existing).Error; err != nil {
 			configs.DB.Create(&e)
 		} else {
-			configs.DB.Model(&existing).Updates(e)
+			if existing.Color != e.Color || existing.Icon != e.Icon {
+				configs.DB.Model(&existing).Updates(e)
+			}
 		}
 	}
 }

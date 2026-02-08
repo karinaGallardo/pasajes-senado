@@ -5,6 +5,7 @@ type EstadoPasaje struct {
 	Nombre      string `gorm:"size:50;not null"`
 	Descripcion string `gorm:"size:255"`
 	Color       string `gorm:"size:20"`
+	Icon        string `gorm:"size:50;default:'ph ph-ticket'"`
 }
 
 func (EstadoPasaje) TableName() string {

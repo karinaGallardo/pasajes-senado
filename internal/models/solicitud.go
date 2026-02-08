@@ -192,3 +192,20 @@ func (s Solicitud) GetDestinoIATA() string {
 	}
 	return ""
 }
+func (s Solicitud) GetItemIda() *SolicitudItem {
+	for i := range s.Items {
+		if s.Items[i].Tipo == TipoSolicitudItemIda {
+			return &s.Items[i]
+		}
+	}
+	return nil
+}
+
+func (s Solicitud) GetItemVuelta() *SolicitudItem {
+	for i := range s.Items {
+		if s.Items[i].Tipo == TipoSolicitudItemVuelta {
+			return &s.Items[i]
+		}
+	}
+	return nil
+}
