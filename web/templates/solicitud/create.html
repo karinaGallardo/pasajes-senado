@@ -233,7 +233,7 @@
           }"
           @click="
             {{ if eq .EstadoCupoDerechoCodigo `DISPONIBLE` }}
-              selectItem('{{ .ID }}', '{{ if .FechaDesde }}{{ .FechaDesde.Format `2006-01-02` }}{{ end }}', '{{ if .FechaHasta }}{{ .FechaHasta.Format `2006-01-02` }}{{ end }}', 'IDA', '{{ .Semana }} / {{ .Mes | monthName }} {{ .Gestion }} {{ weekRange .FechaDesde .FechaHasta }}');
+              selectItem('{{ .ID }}', '{{ if .FechaDesde }}{{ .FechaDesde.Format `2006-01-02` }}{{ end }}', '{{ if .FechaHasta }}{{ .FechaHasta.Format `2006-01-02` }}{{ end }}', 'IDA', '{{ .Semana }} / {{ .Mes | nombreMes }} {{ .Gestion }} {{ rangoSemana .FechaDesde .FechaHasta }}');
             {{ end }}
           ">
           <div class="absolute top-2 right-2" x-show="itemSelected === '{{ .ID }}'">
@@ -269,7 +269,7 @@
             <button
               type="button"
               id="btn-IDA-{{ .ID }}"
-              @click.stop="selectItem('{{ .ID }}', '{{ if .FechaDesde }}{{ .FechaDesde.Format `2006-01-02` }}{{ end }}', '{{ if .FechaHasta }}{{ .FechaHasta.Format `2006-01-02` }}{{ end }}', 'IDA', '{{ .Semana }} / {{ .Mes | monthName }} {{ .Gestion }} {{ weekRange .FechaDesde .FechaHasta }}')"
+              @click.stop="selectItem('{{ .ID }}', '{{ if .FechaDesde }}{{ .FechaDesde.Format `2006-01-02` }}{{ end }}', '{{ if .FechaHasta }}{{ .FechaHasta.Format `2006-01-02` }}{{ end }}', 'IDA', '{{ .Semana }} / {{ .Mes | nombreMes }} {{ .Gestion }} {{ rangoSemana .FechaDesde .FechaHasta }}')"
               class="group/btn relative px-2.5 py-1 rounded text-[9px] font-bold uppercase border transition-all bg-white text-neutral-500 border-neutral-200 hover:border-secondary hover:text-secondary">
               Crear Ida
             </button>
@@ -291,7 +291,7 @@
                   $el.dataset.motivo,
                   '{{ $solIda.AerolineaSugerida }}',
                    '{{ $solIda.TipoItinerarioCodigo }}',
-                   '{{ .Semana }} / {{ .Mes | monthName }} {{ .Gestion }} {{ weekRange .FechaDesde .FechaHasta }}'
+                   '{{ .Semana }} / {{ .Mes | nombreMes }} {{ .Gestion }} {{ rangoSemana .FechaDesde .FechaHasta }}'
                 )"
               class="group/btn relative px-2.5 py-1 rounded text-[9px] font-bold uppercase border transition-all bg-amber-50 text-amber-700 border-amber-100 hover:bg-amber-100">
               Editar Ida
@@ -312,7 +312,7 @@
             <button
               type="button"
               id="btn-VUELTA-{{ .ID }}"
-              @click.stop="selectItem('{{ .ID }}', '{{ if .FechaDesde }}{{ .FechaDesde.Format `2006-01-02` }}{{ end }}', '{{ if .FechaHasta }}{{ .FechaHasta.Format `2006-01-02` }}{{ end }}', 'VUELTA', '{{ .Semana }} / {{ .Mes | monthName }} {{ .Gestion }} {{ weekRange .FechaDesde .FechaHasta }}')"
+              @click.stop="selectItem('{{ .ID }}', '{{ if .FechaDesde }}{{ .FechaDesde.Format `2006-01-02` }}{{ end }}', '{{ if .FechaHasta }}{{ .FechaHasta.Format `2006-01-02` }}{{ end }}', 'VUELTA', '{{ .Semana }} / {{ .Mes | nombreMes }} {{ .Gestion }} {{ rangoSemana .FechaDesde .FechaHasta }}')"
               class="group/btn relative px-2.5 py-1 rounded text-[9px] font-bold uppercase border transition-all bg-white text-neutral-500 border-neutral-200 hover:border-secondary hover:text-secondary">
               Crear Vuelta
             </button>
@@ -334,7 +334,7 @@
                   $el.dataset.motivo,
                   '{{ $solVuelta.AerolineaSugerida }}',
                   '{{ $solVuelta.TipoItinerarioCodigo }}',
-                  '{{ .Semana }} / {{ .Mes | monthName }} {{ .Gestion }} {{ weekRange .FechaDesde .FechaHasta }}'
+                  '{{ .Semana }} / {{ .Mes | nombreMes }} {{ .Gestion }} {{ rangoSemana .FechaDesde .FechaHasta }}'
                 )"
               class="group/btn relative px-2.5 py-1 rounded text-[9px] font-bold uppercase border transition-all bg-amber-50 text-amber-700 border-amber-100 hover:bg-amber-100">
               Editar Vuelta

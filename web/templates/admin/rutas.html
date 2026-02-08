@@ -198,24 +198,41 @@
           </thead>
           <tbody class="bg-white divide-y divide-gray-200">
             {{ range .Rutas }}
-            <tr>
-              <td class="px-6 py-4 whitespace-nowrap">
-                <div class="text-sm font-medium text-neutral-900">{{ .Tramo }}</div>
-                <div class="text-xs text-neutral-500">{{ .Sigla }}</div>
+            <tr class="hover:bg-neutral-50 transition-colors">
+              <td class="px-6 py-4">
+                <div class="text-sm font-bold text-neutral-900">{{ .Tramo }}</div>
+                <div class="text-[10px] text-neutral-400 font-mono tracking-tighter">{{ .Sigla }}</div>
               </td>
               <td class="px-6 py-4 whitespace-nowrap">
                 <span
-                  class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full {{ if eq .NacInter `NACIONAL` }}bg-success-100 text-success-800{{ else }}bg-secondary/20 text-primary{{ end }}">
+                  class="px-2 py-0.5 inline-flex text-[10px] leading-4 font-bold rounded-full {{ if eq .NacInter `NACIONAL` }}bg-success-100 text-success-800 border border-success-200{{ else }}bg-secondary/10 text-primary border border-primary/20{{ end }}">
                   {{ .NacInter }}
                 </span>
+              </td>
+              <td class="px-6 py-4">
+                {{ if .Contratos }}
+                <div class="flex flex-col gap-1">
+                  {{ range .Contratos }}
+                  <div class="flex items-center justify-end gap-2 group">
+                    <span class="text-[11px] text-neutral-500 font-medium">{{ if .Aerolinea }}{{ .Aerolinea.Sigla }}{{ else }}Aero{{ end }}:</span>
+                    <span class="text-xs font-bold text-secondary-600">Bs {{ printf "%.2f" .MontoReferencial }}</span>
+                  </div>
+                  {{ end }}
+                </div>
+                {{ else }}
+                <div class="text-right">
+                  <span class="text-xs text-neutral-400 italic">Sin tarifas</span>
+                </div>
+                {{ end }}
               </td>
               <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                 <button
                   type="button"
                   hx-get="/admin/rutas/modal-contrato?ruta_id={{ .ID }}"
                   hx-target="#modal-container"
-                  class="text-primary-600 hover:text-primary-800 font-bold px-2 py-1 rounded hover:bg-primary-50 transition-colors cursor-pointer">
-                  Agregar Tarifa
+                  class="inline-flex items-center px-3 py-1.5 border border-primary-600 rounded-md text-xs font-bold transition-all {{ if .Contratos }} text-primary-600 bg-white hover:bg-primary-50 {{ else }} text-white bg-primary-600 hover:bg-primary-700 shadow-sm {{ end }} cursor-pointer">
+                  <i class="ph {{ if .Contratos }}ph-pencil-simple{{ else }}ph-plus-circle{{ end }} mr-1.5 text-base"></i>
+                  {{ if .Contratos }}Gestionar Tarifas{{ else }}Agregar Tarifa{{ end }}
                 </button>
               </td>
             </tr>

@@ -111,3 +111,7 @@ func (s *RutaService) AssignContract(ctx context.Context, rutaID, aerolineaID st
 func (s *RutaService) GetContractsByRuta(ctx context.Context, rutaID string) ([]models.RutaContrato, error) {
 	return s.rutaRepo.WithContext(ctx).GetContractsByRuta(rutaID)
 }
+
+func (s *RutaService) RemoveContract(ctx context.Context, id string) error {
+	return s.rutaRepo.WithContext(ctx).DeleteContract(id)
+}

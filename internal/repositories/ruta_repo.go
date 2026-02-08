@@ -23,7 +23,7 @@ func (r *RutaRepository) WithContext(ctx context.Context) *RutaRepository {
 
 func (r *RutaRepository) FindAll() ([]models.Ruta, error) {
 	var rutas []models.Ruta
-	err := r.db.Preload("Origen").Preload("Destino").Find(&rutas).Error
+	err := r.db.Preload("Origen").Preload("Destino").Preload("Contratos.Aerolinea").Find(&rutas).Error
 	return rutas, err
 }
 
@@ -33,11 +33,17 @@ func (r *RutaRepository) Create(ruta *models.Ruta) error {
 
 func (r *RutaRepository) FindByID(id string) (*models.Ruta, error) {
 	var ruta models.Ruta
-	err := r.db.First(&ruta, "id = ?", id).Error
+	err := r.db.Preload("Contratos.Aerolinea").First(&ruta, "id = ?", id).Error
 	return &ruta, err
 }
 
 func (r *RutaRepository) AssignContract(contrato *models.RutaContrato) error {
+	var existing models.RutaContrato
+	err := r.db.Where("ruta_id = ? AND aerolinea_id = ?", contrato.RutaID, contrato.AerolineaID).First(&existing).Error
+	if err == nil {
+		// Update existing
+		return r.db.Model(&existing).Update("monto_referencial", contrato.MontoReferencial).Error
+	}
 	return r.db.Create(contrato).Error
 }
 
@@ -45,4 +51,8 @@ func (r *RutaRepository) GetContractsByRuta(rutaID string) ([]models.RutaContrat
 	var contratos []models.RutaContrato
 	err := r.db.Preload("Aerolinea").Where("ruta_id = ?", rutaID).Find(&contratos).Error
 	return contratos, err
+}
+
+func (r *RutaRepository) DeleteContract(id string) error {
+	return r.db.Delete(&models.RutaContrato{}, "id = ?", id).Error
 }

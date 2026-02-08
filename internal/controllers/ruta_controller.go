@@ -69,6 +69,18 @@ func (ctrl *RutaController) AddContract(c *gin.Context) {
 	if err != nil {
 		log.Printf("Error adding contract: %v", err)
 	}
+
+	// For HTMX requests, we might want to refresh the table.
+	// But the Redirect works too.
+	c.Redirect(http.StatusFound, "/admin/rutas")
+}
+
+func (ctrl *RutaController) DeleteContract(c *gin.Context) {
+	contractID := c.Param("id")
+	err := ctrl.rutaService.RemoveContract(c.Request.Context(), contractID)
+	if err != nil {
+		log.Printf("Error deleting contract: %v", err)
+	}
 	c.Redirect(http.StatusFound, "/admin/rutas")
 }
 

@@ -48,9 +48,10 @@ func GetMonthName(month interface{}) string {
 	switch v := month.(type) {
 	case int:
 		if v >= 1 && v <= 12 {
-			return time.Month(v).String()
+			mStr = time.Month(v).String()
+		} else {
+			return ""
 		}
-		return ""
 	case time.Month:
 		mStr = v.String()
 	case string:

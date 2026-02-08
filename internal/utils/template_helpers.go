@@ -11,20 +11,22 @@ import (
 // TemplateFuncs exporta el mapa de funciones para uso en plantillas HTML.
 func TemplateFuncs() template.FuncMap {
 	return template.FuncMap{
-		"add":         Add,
-		"sum":         Sum,
-		"sub":         Sub,
-		"mul":         Mul,
-		"inc":         Inc,
-		"dt":          FormatDate,
-		"df":          FormatDateRange,
-		"dtl":         FormatDateTimeES,
-		"deref":       DerefString,
-		"safe":        UnsafeHTML,
-		"json":        ToJSON,
-		"currentYear": CurrentYear,
-		"monthName":   GetMonthName,
-		"weekRange":   FormatWeekRange,
+		"add":              Add,
+		"sum":              Sum,
+		"sub":              Sub,
+		"mul":              Mul,
+		"inc":              Inc,
+		"fecha":            FormatDate,
+		"fechaRango":       FormatDateRange,
+		"fechaHora":        FormatDateTimeES,
+		"deref":            DerefString,
+		"safe":             UnsafeHTML,
+		"json":             ToJSON,
+		"currentYear":      CurrentYear,
+		"nombreMes":        GetMonthName,
+		"rangoSemana":      FormatWeekRange,
+		"nombreDiaCorto":   DayNameShort,
+		"rangoSemanaCorto": FormatWeekRangeShort,
 	}
 }
 
@@ -52,7 +54,8 @@ func FormatDate(t *time.Time) string {
 	return t.Format("02/01/2006")
 }
 
-// FormatDateTimeES formatea fechas a formato texto en español.
+// FormatDateTimeES formatea fechas a formato texto en español con AM/PM.
+// Ejemplo: "dom, 08 feb 2026, 12:56 PM"
 func FormatDateTimeES(val interface{}) string {
 	var t time.Time
 	switch v := val.(type) {
@@ -67,18 +70,20 @@ func FormatDateTimeES(val interface{}) string {
 		return "-"
 	}
 
-	str := t.Format("02 Jan 2006, 15:04")
-	meses := map[string]string{
-		"Jan": "Ene", "Feb": "Feb", "Mar": "Mar", "Apr": "Abr",
-		"May": "May", "Jun": "Jun", "Jul": "Jul", "Aug": "Ago",
-		"Sep": "Sep", "Oct": "Oct", "Nov": "Nov", "Dec": "Dic",
+	day := DayNameShort(&t)
+	month := strings.ToLower(GetMonthName(t.Month()))
+	if len(month) > 3 {
+		month = month[:3]
 	}
-	for en, es := range meses {
-		if strings.Contains(str, en) {
-			return strings.ReplaceAll(str, en, es)
-		}
-	}
-	return str
+
+	// Format: "dom, 08 feb 2026, 12:56 PM"
+	// La hora en Go con PM/AM se hace con "03:04 PM"
+	return fmt.Sprintf("%s, %s %s %d, %s",
+		day,
+		t.Format("02"),
+		month,
+		t.Year(),
+		t.Format("03:04 PM"))
 }
 
 // DerefString desreferencia un string pointer de forma segura. Retorna "" si es nil.
@@ -162,4 +167,38 @@ func FormatWeekRange(ini, fin *time.Time) string {
 	return fmt.Sprintf("(%s, %d de %s al %s, %d de %s)",
 		translateDay(ini.Weekday()), ini.Day(), translateMonth(ini.Month()),
 		translateDay(fin.Weekday()), fin.Day(), translateMonth(fin.Month()))
+}
+
+// DayNameShort retorna el nombre corto del día (lun, mar, etc.)
+func DayNameShort(t *time.Time) string {
+	if t == nil {
+		return ""
+	}
+	switch t.Weekday() {
+	case time.Monday:
+		return "lun"
+	case time.Tuesday:
+		return "mar"
+	case time.Wednesday:
+		return "mie"
+	case time.Thursday:
+		return "jue"
+	case time.Friday:
+		return "vie"
+	case time.Saturday:
+		return "sab"
+	case time.Sunday:
+		return "dom"
+	}
+	return ""
+}
+
+// FormatWeekRangeShort retorna un rango corto "( lun 3 - dom 9 )"
+func FormatWeekRangeShort(ini, fin *time.Time) string {
+	if ini == nil || fin == nil {
+		return ""
+	}
+	return fmt.Sprintf("( %s %d - %s %d )",
+		DayNameShort(ini), ini.Day(),
+		DayNameShort(fin), fin.Day())
 }

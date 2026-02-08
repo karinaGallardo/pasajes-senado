@@ -38,8 +38,8 @@
               {{ if .IsEdit }}{{ if not .Solicitud.GetFechaVuelta }}Agendar Retorno{{ else }}Editar Solicitud{{ end }}{{ else }}Nueva Solicitud{{ end }}: {{ .Itinerario.Nombre }}
             </h3>
             <p class="text-xs text-neutral-500 font-medium tracking-tighter">
-              {{ .TargetUser.GetNombreCompleto }} • {{ .Item.Semana }} / {{ .Item.Mes | monthName }} {{ .Item.Gestion }}
-              <span class="text-primary-600 font-bold ml-1">{{ weekRange .Item.FechaDesde .Item.FechaHasta }}</span>
+              {{ .TargetUser.GetNombreCompleto }} • {{ .Item.Semana }} / {{ .Item.Mes | nombreMes }} {{ .Item.Gestion }}
+              <span class="text-primary-600 font-bold ml-1">{{ rangoSemana .Item.FechaDesde .Item.FechaHasta }}</span>
             </p>
           </div>
         </div>

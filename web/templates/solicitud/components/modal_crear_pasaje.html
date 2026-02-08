@@ -1,5 +1,28 @@
 {{ define "solicitud/components/modal_crear_pasaje" }}
-<div x-data="{ open: true }" x-show="open" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true" style="display: none">
+<div
+  x-data="{
+      open: true,
+      ruta: '',
+      aerolinea_id: '',
+      agencia_id: '',
+      fares: {
+          {{ range .Rutas }}
+          '{{ .Tramo }}': {
+              {{ range .Contratos }}
+              '{{ .AerolineaID }}': {{ .MontoReferencial }},
+              {{ end }}
+          },
+          {{ end }}
+      },
+      get tarifaReferencial() {
+          if (this.ruta && this.aerolinea_id && this.fares[this.ruta]) {
+              return this.fares[this.ruta][this.aerolinea_id] || 0;
+          }
+          return 0;
+      }
+  }"
+  x-show="open"
+ class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true" style="display: none">
   <div
     x-show="open"
     x-transition:enter="ease-out duration-300"
@@ -20,51 +43,72 @@
         x-transition:leave="ease-in duration-200"
         x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
         x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-        class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-2xl">
+        class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-3xl">
         <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-          <h3 class="text-lg leading-6 font-medium text-neutral-900 mb-4" id="modal-title">Asignar Nuevo Pasaje</h3>
+          <div class="flex items-center justify-between mb-6 border-b pb-3">
+             <div class="flex items-center gap-3">
+               <div class="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                 <i class="ph ph-airplane text-2xl"></i>
+               </div>
+               <div>
+                 <h3 class="text-lg font-bold text-neutral-900" id="modal-title">Asignar Nuevo Pasaje</h3>
+                 <div class="flex items-center gap-2 mt-0.5 text-xs text-neutral-500">
+                   <span class="flex items-center gap-1">
+                     <i class="ph ph-calendar-blank shrink-0"></i>
+                     {{ $selectedItem := "" }}{{ range .Solicitud.Items }}{{ if eq .ID $.SolicitudItemID }}{{ $selectedItem = . }}{{ end }}{{ end }}
+                     Viaje: <b>{{ if $selectedItem }}{{ fechaHora $selectedItem.Fecha }}{{ else }}-{{ end }}</b>
+                   </span>
+                   {{ if .Solicitud.CupoDerechoItem }}
+                   <span class="text-neutral-300">•</span>
+                   <span class="flex items-center gap-1">
+                     <i class="ph ph-ticket shrink-0"></i>
+                     Cupo: <b>{{ .Solicitud.CupoDerechoItem.Mes | nombreMes }} {{ .Solicitud.CupoDerechoItem.Gestion }}, {{ .Solicitud.CupoDerechoItem.Semana }} {{ rangoSemanaCorto .Solicitud.CupoDerechoItem.FechaDesde .Solicitud.CupoDerechoItem.FechaHasta }}</b>
+                   </span>
+                   {{ end }}
+                 </div>
+               </div>
+             </div>
+             <button @click="open = false" type="button" class="text-neutral-400 hover:text-neutral-600 transition-colors cursor-pointer p-1">
+               <i class="ph ph-x text-2xl"></i>
+             </button>
+          </div>
 
           <form action="/solicitudes/{{ .Solicitud.ID }}/pasajes" method="POST" enctype="multipart/form-data" x-data="{ loading: false, fileName: '' }" @submit="loading = true">
             <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
             <div class="grid grid-cols-6 gap-6">
-              <div class="col-span-6 text-center bg-primary-50 p-2 rounded-md border border-primary-100">
-                <span class="block text-xs font-bold text-primary-600 uppercase tracking-widest">Asignando Pasaje a:</span>
-                <span class="block text-lg font-black text-neutral-800">{{ .Solicitud.Usuario.GetNombreCompleto }}</span>
-              </div>
+              <div class="col-span-6 flex items-stretch gap-3">
+                <!-- Pasajero -->
+                <div class="flex-1 bg-primary-50 p-2.5 rounded-lg border border-primary-100 flex flex-col justify-center min-w-0">
+                  <span class="text-[10px] font-bold text-primary-600 uppercase tracking-widest leading-none mb-1">Pasajero</span>
+                  <span class="text-sm font-black text-neutral-800 truncate">{{ .Solicitud.Usuario.GetNombreCompleto }}</span>
+                </div>
 
-              <div class="col-span-6">
-                {{ $selectedItem := "" }}
-                {{ range .Solicitud.Items }}
-                  {{ if eq .ID $.SolicitudItemID }}
-                    {{ $selectedItem = . }}
+                <!-- Segmento -->
+                <div class="flex-[1.5] bg-neutral-50 p-2.5 rounded-lg border border-neutral-200 shadow-sm flex items-center min-w-0">
+                  {{ $selectedItem := "" }}
+                  {{ range .Solicitud.Items }}
+                    {{ if eq .ID $.SolicitudItemID }}
+                      {{ $selectedItem = . }}
+                    {{ end }}
                   {{ end }}
-                {{ end }}
+                  <input type="hidden" name="solicitud_item_id" value="{{ $.SolicitudItemID }}" />
 
-                <label class="block text-sm font-medium text-neutral-500 uppercase text-[10px] font-bold tracking-wider">Tramo / Segmento Seleccionado</label>
-                <input type="hidden" name="solicitud_item_id" value="{{ $.SolicitudItemID }}" />
-                
-                <div class="mt-1 flex items-center justify-between p-3 bg-neutral-50 rounded-lg border border-neutral-200 shadow-sm">
                   {{ if $selectedItem }}
-                  <div class="flex items-center gap-3">
-                    <div class="h-8 w-8 rounded flex items-center justify-center {{ if eq $selectedItem.Tipo "IDA" }} bg-primary-50 text-primary-600 {{ else }} bg-secondary-50 text-secondary-600 {{ end }}">
+                  <div class="flex items-center gap-3 w-full">
+                    <div class="h-8 w-8 shrink-0 rounded flex items-center justify-center {{ if eq $selectedItem.Tipo "IDA" }} bg-white text-primary-600 shadow-sm {{ else }} bg-white text-secondary-600 shadow-sm {{ end }}">
                       <i class="ph {{ if eq $selectedItem.Tipo "IDA" }}ph-airplane-takeoff{{ else }}ph-airplane-landing{{ end }} text-lg"></i>
                     </div>
-                    <div>
-                      <div class="flex items-center gap-2">
-                        <span class="text-[10px] font-black uppercase text-neutral-400 tracking-tighter">{{ $selectedItem.Tipo }}</span>
-                        <h4 class="text-sm font-bold text-neutral-900">
-                          {{ if $selectedItem.Origen }}{{ $selectedItem.Origen.Ciudad }} ({{ $selectedItem.Origen.IATA }}){{ else }}{{ $selectedItem.OrigenIATA }}{{ end }}
-                          <i class="ph ph-arrow-right mx-1 text-neutral-300"></i>
-                          {{ if $selectedItem.Destino }}{{ $selectedItem.Destino.Ciudad }} ({{ $selectedItem.Destino.IATA }}){{ else }}{{ $selectedItem.DestinoIATA }}{{ end }}
-                        </h4>
-                      </div>
+                    <div class="min-w-0">
+                      <span class="text-[9px] font-black uppercase text-neutral-400 tracking-tighter block leading-none mb-0.5">{{ $selectedItem.Tipo }}</span>
+                      <h4 class="text-xs font-bold text-neutral-900 leading-tight truncate">
+                        {{ if $selectedItem.Origen }}{{ $selectedItem.Origen.Ciudad }} ({{ $selectedItem.Origen.IATA }}){{ else }}{{ $selectedItem.OrigenIATA }}{{ end }}
+                        <i class="ph ph-arrow-right mx-0.5 text-neutral-300"></i>
+                        {{ if $selectedItem.Destino }}{{ $selectedItem.Destino.Ciudad }} ({{ $selectedItem.Destino.IATA }}){{ else }}{{ $selectedItem.DestinoIATA }}{{ end }}
+                      </h4>
                     </div>
                   </div>
-                  <div class="text-right">
-                    <p class="text-[11px] font-bold text-neutral-600">{{ if $selectedItem.Fecha }}{{ $selectedItem.Fecha.Format "02/01/2006" }}{{ else }}Fecha N/A{{ end }}</p>
-                  </div>
                   {{ else }}
-                  <p class="text-xs text-danger-600 font-bold italic">Error: Tramo no identificado</p>
+                  <p class="text-[10px] text-danger-600 font-bold italic">Tramo no identificado</p>
                   {{ end }}
                 </div>
               </div>
@@ -79,8 +123,9 @@
                   ],
                   initialValue: '',
                   initialLabel: ''
-                })">
-                <label class="block text-sm font-medium text-neutral-700">Ruta / Itinerario (Incluyendo Escalas)</label>
+                })"
+              x-init="$watch('value', v => { ruta = v })">
+                <label class="block text-sm font-medium text-neutral-700">Ruta (Incluyendo Escalas)</label>
                 <div class="relative mt-1">
                   <input type="hidden" name="ruta" :value="value" required />
 
@@ -125,7 +170,7 @@
               </div>
 
               <div
-                class="col-span-2"
+                class="col-span-3"
                 x-data="searchableSelect({
                      items: [
                        {{ range .Agencias }}
@@ -133,7 +178,8 @@
                        {{ end }}
                      ],
                      placeholder: '-- Seleccionar --'
-                   })">
+                   })"
+                x-init="$watch('value', v => { agencia_id = v })">
                 <label class="block text-sm font-medium text-neutral-700">Agencia Emisora</label>
                 <div class="relative mt-1">
                   <input type="hidden" name="agencia_id" :value="value" required />
@@ -179,7 +225,7 @@
               </div>
 
               <div
-                class="col-span-2"
+                class="col-span-3"
                 x-data="searchableSelect({
                      items: [
                        {{ range .Aerolineas }}
@@ -187,7 +233,8 @@
                        {{ end }}
                      ],
                      placeholder: '-- Seleccionar --'
-                   })">
+                   })"
+                x-init="$watch('value', v => { aerolinea_id = v })">
                 <label class="block text-sm font-medium text-neutral-700">Aerolínea</label>
                 <div class="relative mt-1">
                   <input type="hidden" name="aerolinea_id" :value="value" required />
@@ -231,14 +278,24 @@
                   </div>
                 </div>
               </div>
-              <div class="col-span-2">
-                <label class="block text-sm font-medium text-neutral-700">Nº Vuelo</label>
+
+              <div class="col-span-3">
+                <label class="block text-sm font-medium text-neutral-700">Fecha Emisión Boleto</label>
+                <input
+                  type="date"
+                  name="fecha_emision"
+                  required
+                  class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md border p-2" />
+              </div>
+
+              <div class="col-span-3">
+                <label class="block text-sm font-medium text-neutral-700">Nº Boleto</label>
                 <input
                   type="text"
-                  name="numero_vuelo"
+                  name="numero_boleto"
                   required
                   class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md border p-2"
-                  placeholder="Ej: OB-123" />
+                  placeholder="Ej: 93021..." />
               </div>
 
               <div class="col-span-3">
@@ -250,29 +307,34 @@
                   class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md border p-2" />
               </div>
 
-              <input type="hidden" name="codigo_reserva" value="" />
-
-              <div class="col-span-2">
-                <label class="block text-sm font-medium text-neutral-700">Nº Boleto</label>
+              <div class="col-span-1">
+                <label class="block text-sm font-medium text-neutral-700">Nº Vuelo</label>
                 <input
                   type="text"
-                  name="numero_boleto"
+                  name="numero_vuelo"
                   required
                   class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md border p-2"
-                  placeholder="Ej: 93021..." />
+                  placeholder="Ej: OB-123" />
               </div>
 
+               <div class="col-span-2">
+                 <div class="flex items-center justify-between">
+                   <label class="block text-sm font-medium text-neutral-700">Costo (Bs)</label>
+                   <span x-show="tarifaReferencial > 0" class="text-[11px] font-bold text-primary-600 bg-primary-50 px-1.5 py-0.5 rounded border border-primary-100 flex items-center gap-1">
+                     <i class="ph ph-tag"></i>
+                     Ref: <span x-text="tarifaReferencial.toLocaleString('es-BO', {minimumFractionDigits: 2})"></span>
+                   </span>
+                 </div>
+                 <input
+                   type="number"
+                   step="0.01"
+                   name="costo"
+                   required
+                   class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md border p-2" />
+               </div>
+
+              <input type="hidden" name="codigo_reserva" value="" />
               <input type="hidden" name="numero_factura" value="" />
-
-              <div class="col-span-1">
-                <label class="block text-sm font-medium text-neutral-700">Costo (Bs)</label>
-                <input
-                  type="number"
-                  step="0.01"
-                  name="costo"
-                  required
-                  class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md border p-2" />
-              </div>
 
               <div class="col-span-6">
                 <label class="block text-sm font-medium text-neutral-700">Observaciones / Glosa (Opcional)</label>
@@ -291,6 +353,7 @@
                     type="file"
                     name="archivo"
                     accept=".pdf"
+                    required
                     class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                     @change="if($event.target.files.length > 0) { fileName = $event.target.files[0].name }" />
 
@@ -303,7 +366,7 @@
                         stroke-linejoin="round" />
                     </svg>
                     <div class="flex text-sm text-neutral-600 justify-center">
-                      <span class="font-bold text-secondary group-hover:underline">Cargar Ticket</span>
+                      <span class="font-bold text-secondary group-hover:underline">Cargar Pasaje</span>
                       <p class="pl-1">o arrastrar aquí</p>
                     </div>
                     <p class="text-xs text-neutral-500">Solo archivos PDF</p>
@@ -329,8 +392,9 @@
             <div class="bg-neutral-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
               <button
                 type="submit"
-                :disabled="loading"
-                class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary text-base font-medium text-white hover:bg-primary-800 focus:outline-none disabled:opacity-50 sm:ml-3 sm:w-auto sm:text-sm">
+                :disabled="loading || !fileName"
+                class="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary text-base font-medium text-white hover:bg-primary-800 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed sm:ml-3 sm:w-auto sm:text-sm"
+                :title="!fileName ? 'Debe cargar el pasaje en PDF para continuar' : ''">
                 <span x-show="!loading">Crear Pasaje</span>
                 <span x-show="loading">Guardando...</span>
               </button>

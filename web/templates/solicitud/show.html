@@ -30,7 +30,7 @@
       <div class="flex flex-col space-y-0.5 mt-1">
         <p class="text-xs text-neutral-400">
           <span class="font-bold uppercase tracking-tighter mr-1">Creado:</span>
-          {{ dtl .Solicitud.CreatedAt }} por
+          {{ fechaHora .Solicitud.CreatedAt }} por
           <span class="font-semibold text-neutral-600 tracking-tight">
             {{ $c := index .Usuarios (deref .Solicitud.CreatedBy) }} {{ if $c }} {{ $c.GetNombreCompleto }} {{ else }} {{ .Solicitud.Usuario.GetNombreCompleto }} {{ end }}
           </span>
@@ -38,7 +38,7 @@
         {{ if .Solicitud.UpdatedBy }}
         <p class="text-xs text-neutral-400">
           <span class="font-bold uppercase tracking-tighter mr-1">Actualizado:</span>
-          {{ dtl .Solicitud.UpdatedAt }} por
+          {{ fechaHora .Solicitud.UpdatedAt }} por
           <span class="font-semibold text-neutral-600 tracking-tight">
             {{ $u := index .Usuarios (deref .Solicitud.UpdatedBy) }} {{ if $u }} {{ $u.GetNombreCompleto }} {{ else }} Sistema {{ end }}
           </span>
@@ -133,12 +133,12 @@
           </div>
           <div class="sm:col-span-1">
             <dt class="text-sm font-medium text-neutral-500">Fecha Salida</dt>
-            <dd class="mt-1 text-sm text-neutral-900">{{ if .Solicitud.GetFechaIda }}{{ dtl .Solicitud.GetFechaIda }}{{ else }} - {{ end }}</dd>
+            <dd class="mt-1 text-sm text-neutral-900">{{ if .Solicitud.GetFechaIda }}{{ fechaHora .Solicitud.GetFechaIda }}{{ else }} - {{ end }}</dd>
           </div>
           <div class="sm:col-span-1">
             <dt class="text-sm font-medium text-neutral-500">Fecha Retorno</dt>
             <dd class="mt-1 text-sm text-neutral-900">
-              {{ if .Solicitud.GetFechaVuelta }} {{ dtl .Solicitud.GetFechaVuelta }} {{ else }}
+              {{ if .Solicitud.GetFechaVuelta }} {{ fechaHora .Solicitud.GetFechaVuelta }} {{ else }}
               <span class="text-neutral-400 italic">Sólo ida</span>
               {{ end }}
             </dd>
@@ -257,7 +257,7 @@
                 <div class="sm:flex">
                   <p class="flex items-center text-sm text-neutral-500 mr-6">
                     <i class="ph ph-calendar-blank flex-shrink-0 mr-1.5 text-lg text-neutral-400"></i>
-                    {{ dtl .FechaVuelo }}
+                    {{ fechaHora .FechaVuelo }}
                   </p>
                   <p class="flex items-center text-sm text-neutral-500">
                     <i class="ph ph-ticket flex-shrink-0 mr-1.5 text-lg text-neutral-400"></i>

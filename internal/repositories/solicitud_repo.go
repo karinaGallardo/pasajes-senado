@@ -126,6 +126,7 @@ func (r *SolicitudRepository) FindByID(id string) (*models.Solicitud, error) {
 		Preload("EstadoSolicitud").
 		Preload("TipoItinerario").
 		Preload("AmbitoViaje").
+		Preload("CupoDerechoItem").
 		First(&solicitud, "id = ?", id).Error
 	if err != nil {
 		return nil, err

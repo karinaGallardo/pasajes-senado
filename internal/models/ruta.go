@@ -14,7 +14,8 @@ type Ruta struct {
 	DestinoIATA string  `gorm:"size:5;not null"`
 	Destino     Destino `gorm:"foreignKey:DestinoIATA;references:IATA"`
 
-	Escalas []RutaEscala `gorm:"foreignKey:RutaID"`
+	Escalas   []RutaEscala   `gorm:"foreignKey:RutaID"`
+	Contratos []RutaContrato `gorm:"foreignKey:RutaID"`
 }
 
 type RutaEscala struct {

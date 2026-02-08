@@ -37,17 +37,18 @@
         <input type="hidden" name="status" value="VALIDANDO_USO" />
 
         <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-          <div class="sm:flex sm:items-start">
-            <div class="mx-auto flex-shrink-0 flex items-center justify-center h-12 w-12 rounded-full bg-success-100 sm:mx-0 sm:h-10 sm:w-10">
-              <svg class="h-6 w-6 text-success-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-              </svg>
-            </div>
-            <div class="mt-3 text-center sm:mt-0 sm:ml-4 sm:text-left w-full">
-              <h3 class="text-lg leading-6 font-medium text-neutral-900">Marcar como Usado</h3>
-              <div class="mt-2 text-sm text-neutral-500">
-                <p>Para marcar el pasaje como usado, por favor suba el pase a bordo escaneado.</p>
-              </div>
+          <div class="flex items-center justify-between mb-6 border-b pb-3">
+             <div class="flex items-center gap-3">
+               <div class="h-10 w-10 rounded-lg bg-success-100 flex items-center justify-center text-success-600">
+                 <i class="ph ph-check-circle text-2xl"></i>
+               </div>
+               <h3 class="text-lg font-bold text-neutral-900">Marcar como Usado</h3>
+             </div>
+             <button @click="open = false" type="button" class="text-neutral-400 hover:text-neutral-600 transition-colors cursor-pointer p-1">
+               <i class="ph ph-x text-2xl"></i>
+             </button>
+          </div>
+          <p class="text-sm text-neutral-500 mb-4 italic">Para marcar el pasaje como usado, por favor suba el pase a bordo escaneado.</p>
 
               <!-- Form Fields -->
               <div class="mt-4 grid grid-cols-1 gap-y-4">

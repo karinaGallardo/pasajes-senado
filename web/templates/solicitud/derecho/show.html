@@ -8,7 +8,7 @@
       <div class="flex flex-col space-y-0.5 mt-1">
         <p class="text-xs text-neutral-400">
           <span class="font-bold uppercase tracking-tighter mr-1">Creado:</span>
-          {{ dtl .Solicitud.CreatedAt }} por
+          {{ fechaHora .Solicitud.CreatedAt }} por
           <span class="font-semibold text-neutral-600 tracking-tight">
             {{ $c := index .Usuarios (deref .Solicitud.CreatedBy) }} {{ if $c }} {{ $c.GetNombreCompleto }} {{ else }} {{ .Solicitud.Usuario.GetNombreCompleto }} {{ end }}
           </span>
@@ -16,7 +16,7 @@
         {{ if .Solicitud.UpdatedBy }}
         <p class="text-xs text-neutral-400">
           <span class="font-bold uppercase tracking-tighter mr-1">Actualizado:</span>
-          {{ dtl .Solicitud.UpdatedAt }} por
+          {{ fechaHora .Solicitud.UpdatedAt }} por
           <span class="font-semibold text-neutral-600 tracking-tight">
             {{ $u := index .Usuarios (deref .Solicitud.UpdatedBy) }} {{ if $u }} {{ $u.GetNombreCompleto }} {{ else }} Sistema {{ end }}
           </span>
@@ -143,7 +143,7 @@
                   {{ if .Destino }}{{ .Destino.Ciudad }} ({{ .Destino.IATA }}){{ else }}{{ .DestinoIATA }}{{ end }}
                 </h4>
                 <p class="text-[11px] text-neutral-500 font-medium">
-                  {{ if .Fecha }}{{ dtl .Fecha }}{{ else }}Fecha no programada{{ end }}
+                  {{ if .Fecha }}{{ fechaHora .Fecha }}{{ else }}Fecha no programada{{ end }}
                 </p>
               </div>
             </div>
@@ -344,7 +344,7 @@
               </div>
               <div>
                 <p class="text-[10px] font-bold text-neutral-500 uppercase tracking-wide">Fecha Salida</p>
-                <p class="text-sm font-bold text-neutral-900 mt-0.5">{{ if .Solicitud.GetFechaIda }}{{ dtl .Solicitud.GetFechaIda }}{{ else }} - {{ end }}</p>
+                <p class="text-sm font-bold text-neutral-900 mt-0.5">{{ if .Solicitud.GetFechaIda }}{{ fechaHora .Solicitud.GetFechaIda }}{{ else }} - {{ end }}</p>
               </div>
             </div>
 
@@ -363,7 +363,7 @@
               <div>
                 <p class="text-[10px] font-bold text-neutral-500 uppercase tracking-wide">Fecha Retorno</p>
                 {{ if .Solicitud.GetFechaVuelta }}
-                <p class="text-sm font-bold text-neutral-900 mt-0.5">{{ dtl .Solicitud.GetFechaVuelta }}</p>
+                <p class="text-sm font-bold text-neutral-900 mt-0.5">{{ fechaHora .Solicitud.GetFechaVuelta }}</p>
                 {{ else }} {{ if and .Solicitud.TipoItinerario (eq .Solicitud.TipoItinerario.Codigo "SOLO_IDA") }}
                 <p class="text-sm font-bold text-neutral-400 mt-0.5">No aplica</p>
                 {{ else }}

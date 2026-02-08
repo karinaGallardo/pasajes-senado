@@ -149,6 +149,7 @@ func SetupRoutes(r *gin.Engine) {
 			sysAdmin.POST("/admin/rutas", rutaCtrl.Store)
 			sysAdmin.GET("/admin/rutas/modal-contrato", rutaCtrl.GetContractModal)
 			sysAdmin.POST("/admin/rutas/contrato", rutaCtrl.AddContract)
+			sysAdmin.POST("/admin/rutas/contrato/:id/delete", rutaCtrl.DeleteContract)
 
 			confCtrl := controllers.NewConfiguracionController()
 			sysAdmin.GET("/admin/configuracion", confCtrl.Index)

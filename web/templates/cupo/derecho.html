@@ -81,7 +81,7 @@
                 <!-- Vigencia -->
                 <td class="whitespace-nowrap px-3 py-4 text-sm text-neutral-500">
                   <div class="flex flex-col">
-                    <span class="font-bold text-neutral-900 uppercase">{{ .Mes | monthName }} {{ .Gestion }}</span>
+                    <span class="font-bold text-neutral-900 uppercase">{{ .Mes | nombreMes }} {{ .Gestion }}</span>
                     <span class="text-[10px] text-neutral-400 font-medium">
                       {{ if .FechaDesde }}{{ .FechaDesde.Format "02/01/2006" }}{{ end }} al {{ if .FechaHasta }}{{ .FechaHasta.Format "02/01/2006" }}{{ end }}
                     </span>

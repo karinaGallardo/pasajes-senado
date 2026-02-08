@@ -78,6 +78,11 @@ func (s *PasajeService) Create(ctx context.Context, solicitudID string, req dtos
 		Archivo:            filePath,
 	}
 
+	if req.FechaEmision != "" {
+		fe := utils.ParseDate("2006-01-02", req.FechaEmision)
+		pasaje.FechaEmision = &fe
+	}
+
 	err := s.repo.RunTransaction(func(repo *repositories.PasajeRepository, tx *gorm.DB) error {
 		if err := repo.Create(pasaje); err != nil {
 			return err
@@ -139,6 +144,13 @@ func (s *PasajeService) UpdateFromRequest(ctx context.Context, req dtos.UpdatePa
 	pasaje.Costo = utils.ParseFloat(req.Costo)
 
 	pasaje.FechaVuelo = utils.ParseDate("2006-01-02T15:04", req.FechaVuelo)
+
+	if req.FechaEmision != "" {
+		fe := utils.ParseDate("2006-01-02", req.FechaEmision)
+		pasaje.FechaEmision = &fe
+	} else {
+		pasaje.FechaEmision = nil
+	}
 
 	if archivo != "" {
 		pasaje.Archivo = archivo
