@@ -264,7 +264,22 @@ func (s *PasajeService) sendEmissionEmail(sol *models.Solicitud, pasaje *models.
 		cc = append(cc, usuario.Encargado.Email)
 	}
 
-	subject := fmt.Sprintf("Pasaje Emitido - Solicitud %s", sol.Codigo)
+	tipoTramo := ""
+	subject := ""
+	if pasaje.SolicitudItem != nil {
+		switch pasaje.SolicitudItem.Tipo {
+		case models.TipoSolicitudItemIda:
+			tipoTramo = "Ida"
+		case models.TipoSolicitudItemVuelta:
+			tipoTramo = "Retorno"
+		}
+	}
+
+	if tipoTramo != "" {
+		subject = fmt.Sprintf("Pasaje Emitido (%s) - Solicitud %s", tipoTramo, sol.Codigo)
+	} else {
+		subject = fmt.Sprintf("Pasaje Emitido - Solicitud %s", sol.Codigo)
+	}
 
 	ruta := pasaje.Ruta
 	fecha := utils.FormatDateTimeLongES(pasaje.FechaVuelo)
@@ -286,16 +301,20 @@ func (s *PasajeService) sendEmissionEmail(sol *models.Solicitud, pasaje *models.
 	body := fmt.Sprintf(`
 		<div style="font-family: Arial, sans-serif; color: #333; max-width: 600px;">
 			<div style="background-color: #03738C; color: white; padding: 15px; border-radius: 5px 5px 0 0;">
-				<h2 style="margin:0;">Pasaje Emitido</h2>
+				<h2 style="margin:0;">Pasaje Emitido - %s</h2>
 			</div>
 			<div style="padding: 20px; border: 1px solid #ddd; border-top: none; border-radius: 0 0 5px 5px;">
-				<p>Estimado/a <strong>%s</strong>,</p>
-				<p>Su pasaje correspondiente a la solicitud <strong>%s</strong> ha sido emitido exitosamente.</p>
+				<p>Se comunica a <strong>%s</strong>,</p>
+				<p>Su pasaje correspondiente a la solicitud <strong>%s</strong> (tramo <strong>%s</strong>) ha sido emitido exitosamente.</p>
 
 				<h3 style="color: #03738C; border-bottom: 1px solid #eee; padding-bottom: 5px;">Detalles del Vuelo</h3>
 				<table style="width: 100%%; border-collapse: collapse; margin-top: 10px;">
 					<tr>
-						<td style="padding: 8px 0; color: #666; width: 35%%;"><strong>Ruta:</strong></td>
+						<td style="padding: 8px 0; color: #666; width: 35%%;"><strong>Tramo:</strong></td>
+						<td style="padding: 8px 0;">%s</td>
+					</tr>
+					<tr>
+						<td style="padding: 8px 0; color: #666;"><strong>Ruta:</strong></td>
 						<td style="padding: 8px 0;">%s</td>
 					</tr>
 					<tr>
@@ -325,7 +344,7 @@ func (s *PasajeService) sendEmissionEmail(sol *models.Solicitud, pasaje *models.
 				</p>
 			</div>
 		</div>
-	`, usuario.GetNombreCompleto(), sol.Codigo, ruta, fecha, aerolinea, vuelo, boleto, fileURL, fileURL, fileURL)
+	`, tipoTramo, usuario.GetNombreCompleto(), sol.Codigo, tipoTramo, tipoTramo, ruta, fecha, aerolinea, vuelo, boleto, fileURL, fileURL, fileURL)
 
 	_ = s.emailService.SendEmail(to, cc, nil, subject, body)
 }
