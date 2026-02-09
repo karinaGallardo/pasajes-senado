@@ -528,7 +528,7 @@ func (ctrl *CupoController) DerechoByYear(c *gin.Context) {
 
 				// Ida
 				if solIda == nil {
-					if !isVencido && (isOwner || isViewerAdminOrResponsable) {
+					if isViewerAdminOrResponsable || (!isVencido && (isOwner || isEncargado)) {
 						perms.CanCreateIda = true
 					}
 				} else {
@@ -543,7 +543,7 @@ func (ctrl *CupoController) DerechoByYear(c *gin.Context) {
 
 				// Vuelta
 				if solVuelta == nil {
-					if !isVencido && solIda != nil && (isOwner || isViewerAdminOrResponsable) {
+					if solIda != nil && (isViewerAdminOrResponsable || (!isVencido && (isOwner || isEncargado))) {
 						perms.CanCreateVuelta = true
 					}
 				} else {
@@ -556,7 +556,7 @@ func (ctrl *CupoController) DerechoByYear(c *gin.Context) {
 				}
 
 				// Ida y Vuelta (Round Trip) in Single Request
-				if solIda == nil && solVuelta == nil && !isVencido && (isOwner || isViewerAdminOrResponsable) {
+				if solIda == nil && solVuelta == nil && (isViewerAdminOrResponsable || (!isVencido && (isOwner || isEncargado))) {
 					perms.CanCreateIdaVuelta = true
 				}
 			}
@@ -721,7 +721,7 @@ func (ctrl *CupoController) DerechoByMonth(c *gin.Context) {
 
 			// Ida
 			if solIda == nil {
-				if !isVencido && (isOwner || isViewerAdminOrResponsable) {
+				if isViewerAdminOrResponsable || (!isVencido && (isOwner || isEncargado)) {
 					perms.CanCreateIda = true
 				}
 			} else {
@@ -735,7 +735,7 @@ func (ctrl *CupoController) DerechoByMonth(c *gin.Context) {
 
 			// Vuelta
 			if solVuelta == nil {
-				if !isVencido && (isOwner || isViewerAdminOrResponsable) {
+				if isViewerAdminOrResponsable || (!isVencido && (isOwner || isEncargado)) {
 					perms.CanCreateVuelta = true
 				}
 			} else {
@@ -748,7 +748,7 @@ func (ctrl *CupoController) DerechoByMonth(c *gin.Context) {
 			}
 
 			// Ida y Vuelta (Round Trip) in Single Request
-			if solIda == nil && solVuelta == nil && !isVencido && (isOwner || isViewerAdminOrResponsable) {
+			if solIda == nil && solVuelta == nil && (isViewerAdminOrResponsable || (!isVencido && (isOwner || isEncargado))) {
 				perms.CanCreateIdaVuelta = true
 			}
 		}

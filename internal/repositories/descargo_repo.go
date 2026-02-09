@@ -27,19 +27,41 @@ func (r *DescargoRepository) Create(descargo *models.Descargo) error {
 
 func (r *DescargoRepository) FindBySolicitudID(solicitudID string) (*models.Descargo, error) {
 	var descargo models.Descargo
-	err := r.db.Preload("Documentos").Where("solicitud_id = ?", solicitudID).First(&descargo).Error
+	err := r.db.Preload("Documentos").
+		Preload("DetallesItinerario").
+		Preload("Solicitud").
+		Preload("Solicitud.Items").
+		Preload("Solicitud.Items.Origen").
+		Preload("Solicitud.Items.Destino").
+		Preload("Solicitud.Items.Pasajes").
+		Where("solicitud_id = ?", solicitudID).First(&descargo).Error
 	return &descargo, err
 }
 
 func (r *DescargoRepository) FindByID(id string) (*models.Descargo, error) {
 	var descargo models.Descargo
-	err := r.db.Preload("Documentos").Preload("Solicitud").Preload("Solicitud.Usuario").Preload("Solicitud.Origen").Preload("Solicitud.Destino").First(&descargo, "id = ?", id).Error
+	err := r.db.Preload("Documentos").
+		Preload("DetallesItinerario").
+		Preload("Solicitud").
+		Preload("Solicitud.Usuario").
+		Preload("Solicitud.Items").
+		Preload("Solicitud.Items.Origen").
+		Preload("Solicitud.Items.Destino").
+		Preload("Solicitud.Items.Pasajes").
+		First(&descargo, "id = ?", id).Error
 	return &descargo, err
 }
 
 func (r *DescargoRepository) FindAll() ([]models.Descargo, error) {
 	var descargos []models.Descargo
-	err := r.db.Preload("Solicitud").Preload("Solicitud.Usuario").Order("created_at desc").Find(&descargos).Error
+	err := r.db.Preload("Solicitud").
+		Preload("Solicitud.Usuario").
+		Preload("Solicitud.Items").
+		Preload("Solicitud.Items.Origen").
+		Preload("Solicitud.Items.Destino").
+		Preload("Solicitud.Items.Pasajes").
+		Preload("DetallesItinerario").
+		Order("created_at desc").Find(&descargos).Error
 	return descargos, err
 }
 func (r *DescargoRepository) Update(descargo *models.Descargo) error {

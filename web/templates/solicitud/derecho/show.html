@@ -306,7 +306,7 @@
         <div class="flex items-center gap-2">
           {{ if .Perms.CanMakeDescargo }}
           <a
-            href="/descargos/nuevo?solicitud_id={{ .Solicitud.ID }}"
+            href="/solicitudes/derecho/{{ .Solicitud.ID }}/descargo"
             class="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-xs font-bold text-white bg-accent hover:bg-danger-700 focus:outline-none">
             Descargo
           </a>

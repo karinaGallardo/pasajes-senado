@@ -1,8 +1,12 @@
 package services
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+
+	"os"
+	"os/exec"
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
 	"sistema-pasajes/internal/utils"
@@ -316,7 +320,8 @@ func (s *ReportService) GeneratePV01(ctx context.Context, solicitud *models.Soli
 	return pdf
 }
 
-func (s *ReportService) GeneratePV05(ctx context.Context, solicitud *models.Solicitud, personaView *models.MongoPersonaView) *gofpdf.Fpdf {
+func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Descargo, personaView *models.MongoPersonaView) *gofpdf.Fpdf {
+	solicitud := descargo.Solicitud
 	pdf := gofpdf.New("P", "mm", "Letter", "")
 	tr := pdf.UnicodeTranslatorFromDescriptor("")
 	pdf.AddPage()
@@ -436,81 +441,83 @@ func (s *ReportService) GeneratePV05(ctx context.Context, solicitud *models.Soli
 	pdf.CellFormat(190, 8, tr("DESCARGO DE PASAJES (ADJUNTAR PASES A BORDO)"), "B", 1, "C", false, 0, "")
 	pdf.Ln(2)
 
-	// Function to draw segment block
-	drawSegmentBlock := func(title string, item *models.SolicitudItem) {
-		pdf.SetFont("Arial", "B", 9)
-		pdf.CellFormat(190, 6, tr(" "+title), "B", 1, "L", false, 0, "")
-
-		yStart := pdf.GetY()
-		xStart := pdf.GetX() // Should be margin (10)
-
-		// Habilitar Fill Gray
-		pdf.SetFillColor(240, 240, 240)
-		pdf.SetFont("Arial", "B", 7)
+	// Function to draw a table for a set of rows
+	drawSubTable := func(subTitle string, headerBoleto string, rows []models.DetalleItinerarioDescargo) {
+		if subTitle != "" {
+			pdf.SetFillColor(240, 240, 240)
+			pdf.SetFont("Arial", "B", 8)
+			pdf.CellFormat(190, 5, tr(subTitle), "1", 1, "C", true, 0, "")
+		}
 
 		// Headers
-		// Col 1-3: Single Height (8 is too tall compared to split? Lets use 8 total)
-		// We use 5 for top/bottom split, so 10 total height
+		pdf.SetFillColor(255, 255, 255)
+		pdf.SetFont("Arial", "B", 7)
+		pdf.CellFormat(70, 5, tr("RUTA"), "1", 0, "C", false, 0, "")
+		pdf.CellFormat(30, 5, tr("FECHA DE VIAJE"), "1", 0, "C", false, 0, "")
+		pdf.CellFormat(50, 5, tr(headerBoleto), "1", 0, "C", false, 0, "")
+		pdf.CellFormat(40, 5, tr("N° PASE A BORDO"), "1", 1, "C", false, 0, "")
 
-		pdf.CellFormat(30, 10, tr("RUTA"), "1", 0, "C", true, 0, "")
-		pdf.CellFormat(30, 10, tr("FECHA DE VIAJE"), "1", 0, "C", true, 0, "")
-		pdf.CellFormat(35, 10, tr("N° BOLETO ORIGINAL"), "1", 0, "C", true, 0, "")
-
-		// Col 4: Group Header
-		xReprog := pdf.GetX()
-		pdf.CellFormat(95, 5, tr("REPROGRAMACIÓN"), "1", 2, "C", true, 0, "") // Line break: 2 (below)
-
-		// Sub Headers
-		pdf.SetX(xReprog)
-		pdf.CellFormat(31, 5, tr("RUTA"), "1", 0, "C", true, 0, "")
-		pdf.CellFormat(32, 5, tr("FECHA DE VIAJE"), "1", 0, "C", true, 0, "")
-		pdf.CellFormat(32, 5, tr("N° BOLETO"), "1", 0, "C", true, 0, "")
-
-		// Reset to Data Row
-		pdf.SetXY(xStart, yStart+10)
-
-		// Data Row
-		ruta := ""
-		fecha := ""
-		boleto := ""
-
-		if item != nil {
-			ruta = fmt.Sprintf("%s - %s", item.OrigenIATA, item.DestinoIATA)
-			if item.Fecha != nil {
-				fecha = item.Fecha.Format("02/01/2006")
-			}
-			if len(item.Pasajes) > 0 {
-				boleto = item.Pasajes[len(item.Pasajes)-1].NumeroBoleto
-			}
+		// Data Rows
+		if len(rows) == 0 {
+			// At least one empty row to match visual
+			pdf.SetFont("Arial", "", 8)
+			pdf.CellFormat(35, 6, "", "1", 0, "C", false, 0, "")
+			pdf.CellFormat(35, 6, "", "1", 0, "C", false, 0, "")
+			pdf.CellFormat(30, 6, "", "1", 0, "C", false, 0, "")
+			pdf.CellFormat(50, 6, "", "1", 0, "C", false, 0, "")
+			pdf.CellFormat(40, 6, "", "1", 1, "C", false, 0, "")
+			return
 		}
 
 		pdf.SetFont("Arial", "", 8)
-		// 10 height to match header block? or smaller? 8 is fine.
-		hRow := 8.0
-		pdf.CellFormat(30, hRow, tr(ruta), "1", 0, "C", false, 0, "")
-		pdf.CellFormat(30, hRow, tr(fecha), "1", 0, "C", false, 0, "")
-		pdf.CellFormat(35, hRow, tr(boleto), "1", 0, "C", false, 0, "")
+		for _, r := range rows {
+			orig, dest := "", ""
+			parts := strings.Split(r.Ruta, "-")
+			if len(parts) >= 2 {
+				orig = strings.TrimSpace(parts[0])
+				dest = strings.TrimSpace(parts[1])
+			} else {
+				orig = r.Ruta
+			}
 
-		// Reprogramación Data (Empty)
-		pdf.CellFormat(31, hRow, "", "1", 0, "C", false, 0, "")
-		pdf.CellFormat(32, hRow, "", "1", 0, "C", false, 0, "")
-		pdf.CellFormat(32, hRow, "", "1", 1, "C", false, 0, "") // End of row
-	}
+			pdf.CellFormat(35, 6, tr(orig), "1", 0, "C", false, 0, "")
+			pdf.CellFormat(35, 6, tr(dest), "1", 0, "C", false, 0, "")
 
-	var idaItem, vueltaItem *models.SolicitudItem
-	for i := range solicitud.Items {
-		item := &solicitud.Items[i]
-		switch item.Tipo {
-		case models.TipoSolicitudItemIda:
-			idaItem = item
-		case models.TipoSolicitudItemVuelta:
-			vueltaItem = item
+			fecha := ""
+			if r.Fecha != nil {
+				fecha = r.Fecha.Format("02/01/2006")
+			}
+			pdf.CellFormat(30, 6, tr(fecha), "1", 0, "C", false, 0, "")
+			pdf.CellFormat(50, 6, tr(r.Boleto), "1", 0, "C", false, 0, "")
+			pdf.CellFormat(40, 6, tr(r.NumeroPaseAbordo), "1", 1, "C", false, 0, "")
 		}
 	}
 
-	drawSegmentBlock("TRAMO DE IDA", idaItem)
+	drawSegmentBlock := func(title string, typeOrig, typeRepro models.TipoDetalleItinerario) {
+		pdf.SetFont("Arial", "B", 9)
+		pdf.CellFormat(190, 6, tr(" "+title), "B", 1, "L", false, 0, "")
+		pdf.Ln(1)
+
+		var origRows, reproRows []models.DetalleItinerarioDescargo
+		for _, d := range descargo.DetallesItinerario {
+			if d.Tipo == typeOrig {
+				origRows = append(origRows, d)
+			} else if d.Tipo == typeRepro {
+				reproRows = append(reproRows, d)
+			}
+		}
+
+		// Table 1: Original
+		drawSubTable("", "N° BOLETO ORIGINAL", origRows)
+
+		// Table 2: Reprogramación
+		pdf.Ln(1)
+		drawSubTable("REPROGRAMACIÓN", "N° BOLETO REPROGRAMADO", reproRows)
+	}
+
+	drawSegmentBlock("TRAMO DE IDA", models.TipoDetalleIdaOriginal, models.TipoDetalleIdaReprogramada)
 	pdf.Ln(4)
-	drawSegmentBlock("TRAMO DE VUELTA/RETORNO", vueltaItem)
+	drawSegmentBlock("TRAMO DE RETORNO", models.TipoDetalleVueltaOriginal, models.TipoDetalleVueltaReprogramada)
 	pdf.Ln(6)
 
 	// Devolucion
@@ -557,4 +564,69 @@ func (s *ReportService) GeneratePV05(ctx context.Context, solicitud *models.Soli
 	pdf.CellFormat(0, 5, tr(fmt.Sprintf("Generado electrónicamente por Sistema Pasajes Senado - %s", time.Now().Format("02/01/2006 15:04:05"))), "", 1, "C", false, 0, "")
 
 	return pdf
+}
+
+func (s *ReportService) GeneratePV05Complete(ctx context.Context, descargo *models.Descargo, personaView *models.MongoPersonaView) ([]byte, error) {
+	// 1. Generar el PDF Base PV-05
+	pdf := s.GeneratePV05(ctx, descargo, personaView)
+
+	// Crear archivos temporales para la unión
+	tmpBase, err := os.CreateTemp("", "pv05_base_*.pdf")
+	if err != nil {
+		return nil, err
+	}
+	defer os.Remove(tmpBase.Name())
+
+	if err := pdf.OutputFileAndClose(tmpBase.Name()); err != nil {
+		return nil, err
+	}
+
+	// 2. Recolectar rutas de archivos que existan (Billetes Electrónicos + Pases a Bordo)
+	var filesToMerge []string
+	filesToMerge = append(filesToMerge, tmpBase.Name())
+
+	// 2.1 Billetes Electrónicos (Pasajes emitidos)
+	if descargo.Solicitud != nil {
+		for _, item := range descargo.Solicitud.Items {
+			for _, pasaje := range item.Pasajes {
+				if pasaje.Archivo != "" {
+					if _, err := os.Stat(pasaje.Archivo); err == nil {
+						filesToMerge = append(filesToMerge, pasaje.Archivo)
+					}
+				}
+			}
+		}
+	}
+
+	// 2.2 Pases a Bordo (Cargados en el descargo)
+	for _, det := range descargo.DetallesItinerario {
+		if det.ArchivoPaseAbordo != "" {
+			if _, err := os.Stat(det.ArchivoPaseAbordo); err == nil {
+				filesToMerge = append(filesToMerge, det.ArchivoPaseAbordo)
+			}
+		}
+	}
+
+	// 3. Si solo hay un archivo (el base), retornarlo directamente
+	if len(filesToMerge) == 1 {
+		return os.ReadFile(tmpBase.Name())
+	}
+
+	// 4. Unir usando pdftk (que ya verificamos que existe)
+	tmpFinal, err := os.CreateTemp("", "pv05_final_*.pdf")
+	if err != nil {
+		return nil, err
+	}
+	defer os.Remove(tmpFinal.Name())
+
+	args := append(filesToMerge, "cat", "output", tmpFinal.Name())
+	cmd := exec.Command("pdftk", args...)
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+
+	if err := cmd.Run(); err != nil {
+		return nil, fmt.Errorf("error al unir PDFs con pdftk: %v - %s", err, stderr.String())
+	}
+
+	return os.ReadFile(tmpFinal.Name())
 }

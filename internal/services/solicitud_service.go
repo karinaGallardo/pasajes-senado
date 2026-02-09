@@ -184,6 +184,11 @@ func (s *SolicitudService) Create(ctx context.Context, req dtos.CreateSolicitudR
 		if solicitud.CupoDerechoItemID != nil {
 			item, err := itemRepoTx.FindByID(*solicitud.CupoDerechoItemID)
 			if err == nil && item != nil {
+				// Validación de periodo vencido: solo ADMIN o RESPONSABLE pueden registrar en periodos pasados
+				if item.IsVencido() && !currentUser.IsAdminOrResponsable() {
+					return errors.New("el periodo de este cupo ha vencido. Solo personal administrativo puede registrar solicitudes en periodos anteriores")
+				}
+
 				item.EstadoCupoDerechoCodigo = "RESERVADO"
 				if err := itemRepoTx.Update(item); err != nil {
 					return err

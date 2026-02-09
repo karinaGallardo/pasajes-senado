@@ -16,137 +16,339 @@
     </div>
   </div>
 
-  <form action="/descargos" method="POST" class="bg-white shadow rounded-lg overflow-hidden border border-neutral-200">
+  <form
+    id="descargo-form"
+    action="/descargos"
+    method="POST"
+    enctype="multipart/form-data"
+    x-data="{ canSubmit: false }"
+    x-init="canSubmit = $el.checkValidity()"
+    @input.debounce.50ms="canSubmit = $el.checkValidity()"
+    @change.debounce.50ms="canSubmit = $el.checkValidity()"
+    class="bg-white shadow rounded-lg overflow-hidden border border-neutral-200">
     <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
     <input type="hidden" name="solicitud_id" value="{{ .Solicitud.ID }}" />
 
     <div class="p-6 space-y-6">
       <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
         <div class="sm:col-span-6 bg-primary-50 p-4 rounded-md border border-primary-100">
-          <h4 class="text-sm font-bold text-primary mb-2">Resumen del Viaje</h4>
-          <p class="text-sm text-primary">
-            <strong>Motivo:</strong>
-            {{ .Solicitud.Motivo }}
-          </p>
-          <p class="text-sm text-primary">
-            <strong>Fechas:</strong>
-            {{ if .Solicitud.GetFechaIda }}{{ .Solicitud.GetFechaIda.Format "02/01/2006" }}{{ else }} - {{ end }} - {{ if .Solicitud.GetFechaVuelta }}{{
-            .Solicitud.GetFechaVuelta.Format "02/01/2006" }}{{ else }} - {{ end }}
-          </p>
-        </div>
-
-        <div class="sm:col-span-3">
-          <label class="block text-sm font-medium text-neutral-700">Fecha de Presentación</label>
-          <div class="mt-1">
-            <input
-              type="date"
-              name="fecha_presentacion"
-              required
-              class="shadow-sm focus:ring-secondary focus:border-secondary block w-full sm:text-sm border-neutral-300 rounded-md border p-2" />
+          <h4 class="text-xs font-black text-primary uppercase tracking-widest mb-3">Resumen del Viaje</h4>
+          <div class="grid grid-cols-2 gap-4">
+            <p class="text-sm text-primary">
+              <strong class="font-bold">Motivo:</strong>
+              {{ .Solicitud.Motivo }}
+            </p>
+            <p class="text-sm text-primary">
+              <strong class="font-bold">Fechas:</strong>
+              {{ if .Solicitud.GetFechaIda }}{{ .Solicitud.GetFechaIda.Format "02/01/2006" }}{{ else }} - {{ end }} - {{ if .Solicitud.GetFechaVuelta }}{{
+              .Solicitud.GetFechaVuelta.Format "02/01/2006" }}{{ else }} - {{ end }}
+            </p>
           </div>
         </div>
 
-        <div class="sm:col-span-3">
-          <label class="block text-sm font-medium text-neutral-700">Monto Devolución (Bs)</label>
-          <p class="text-xs text-neutral-500 mb-1">Si no utilizó algún pasaje o hubo saldo a favor.</p>
-          <div class="mt-1">
-            <input
-              type="number"
-              step="0.01"
-              name="monto_devolucion"
-              value="0.00"
-              class="shadow-sm focus:ring-secondary focus:border-secondary block w-full sm:text-sm border-neutral-300 rounded-md border p-2" />
-          </div>
-        </div>
+        <!-- Detalles de Itinerario (FV-05) -->
+        <div class="sm:col-span-6 space-y-6">
+          <h3 class="text-sm font-bold text-neutral-800 uppercase tracking-widest border-b border-neutral-200 pb-1">Detalles de Itinerario (FV-05)</h3>
 
-        <div class="sm:col-span-3">
-          <label class="block text-sm font-medium text-neutral-700">Nº de Cite de Remisión</label>
-          <div class="mt-1">
-            <input
-              type="text"
-              name="numero_cite"
-              class="shadow-sm focus:ring-secondary focus:border-secondary block w-full sm:text-sm border-neutral-300 rounded-md border p-2"
-              placeholder="Ej: CITE-001/2025" />
-          </div>
-        </div>
+          <!-- TRAMO DE IDA -->
+          <div class="border border-neutral-200 rounded-lg overflow-hidden shadow-sm">
+            <div class="bg-neutral-100 px-3 py-1.5 border-b border-neutral-200 flex justify-between items-center">
+              <span class="text-[11px] font-black text-neutral-600 uppercase tracking-tighter">Tramo de Ida</span>
+              <i class="ph ph-airplane-takeoff text-neutral-400"></i>
+            </div>
+            <div class="p-4 bg-white space-y-6">
+              <!-- Original Section -->
+              <div class="space-y-3">
+                <div class="flex items-center">
+                  <div class="h-px bg-neutral-200 flex-1"></div>
+                  <span class="px-2 text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Vuelo Original</span>
+                  <div class="h-px bg-neutral-200 flex-1"></div>
+                </div>
+                <div class="space-y-2">
+                  {{ range $i, $p := (index .PasajesOriginales "IDA") }}
+                  <div class="grid grid-cols-12 gap-2">
+                    <input type="hidden" name="itin_tipo[]" value="IDA_ORIGINAL" />
+                    <input type="hidden" name="itin_index[]" value="io_{{ $i }}" />
+                    <div class="col-span-3">
+                      <label class="block text-[9px] font-bold text-neutral-400 uppercase">Ruta / Tramo</label>
+                      <input
+                        type="text"
+                        name="itin_ruta[]"
+                        value="{{ .Ruta }}"
+                        required
+                        class="mt-0.5 block w-full text-[11px] border-neutral-200 rounded p-1.5 bg-neutral-50 px-2"
+                        readonly />
+                    </div>
+                    <div class="col-span-2">
+                      <label class="block text-[9px] font-bold text-neutral-400 uppercase">Fecha</label>
+                      <input
+                        type="date"
+                        name="itin_fecha[]"
+                        value="{{ .Fecha }}"
+                        required
+                        class="mt-0.5 block w-full text-[11px] border-neutral-200 rounded p-1.5 bg-neutral-50 px-1"
+                        readonly />
+                    </div>
+                    <div class="col-span-2">
+                      <label class="block text-[9px] font-bold text-neutral-400 uppercase">Boleto</label>
+                      <input type="text" name="itin_boleto[]" value="{{ .Boleto }}" required class="mt-0.5 block w-full text-[11px] border-neutral-300 rounded p-1.5 px-2" />
+                    </div>
+                    <div class="col-span-2">
+                      <label class="block text-[9px] font-bold text-neutral-400 uppercase">Nº Pase</label>
+                      <input type="text" name="itin_pase_numero[]" required class="mt-0.5 block w-full text-[11px] border-neutral-300 rounded p-1.5 px-2" placeholder="Pase" />
+                    </div>
+                    <div class="col-span-3">
+                      <label class="block text-[9px] font-bold text-neutral-400 uppercase">Boarding Pass PDF</label>
+                      <input
+                        type="file"
+                        required
+                        name="itin_archivo_io_{{ $i }}"
+                        class="mt-0.5 block w-full text-[9px] text-neutral-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-[9px] file:font-bold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100 cursor-pointer" />
+                    </div>
+                  </div>
+                  {{ end }}
+                </div>
+              </div>
 
-        <div class="sm:col-span-6 bg-white border border-neutral-200 rounded p-4">
-          <div class="flex justify-between items-center mb-4">
-            <h3 class="text-sm font-bold text-neutral-700">Documentos de Respaldo (Facturas / Pases a Bordo)</h3>
-            <button type="button" onclick="addDocRow()" class="text-xs bg-primary-50 text-primary-700 px-2 py-1 rounded border border-primary-200 hover:bg-primary-100">
-              + Agregar Documento
-            </button>
+              <!-- Reprogramación Section -->
+              <div class="space-y-3">
+                <div class="flex items-center justify-between">
+                  <div class="h-px bg-neutral-200 flex-1"></div>
+                  <span class="px-2 text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Reprogramación</span>
+                  <div class="h-px bg-neutral-200 flex-1"></div>
+                  <button
+                    type="button"
+                    onclick="addItinRow('IDA_REPRO')"
+                    class="ml-2 text-[10px] bg-neutral-50 text-neutral-600 px-2 py-0.5 rounded border border-neutral-200 hover:bg-neutral-100 transition-colors">
+                    + Tramo
+                  </button>
+                </div>
+                <div id="itin-ida-repro-container" class="space-y-3">
+                  {{ range $i, $p := (index .PasajesReprogramados "IDA") }}
+                  <div class="grid grid-cols-12 gap-2 items-center bg-neutral-50/50 p-3 rounded border border-neutral-100 relative">
+                    <input type="hidden" name="itin_tipo[]" value="IDA_REPRO" />
+                    <input type="hidden" name="itin_index[]" value="ir_{{ $i }}" />
+                    <div class="col-span-3">
+                      <label class="block text-[9px] font-bold text-neutral-400 uppercase">Ruta / Tramo</label>
+                      <input type="text" name="itin_ruta[]" value="{{ .Ruta }}" required class="mt-0.5 block w-full text-[11px] border-neutral-300 rounded p-1.5" />
+                    </div>
+                    <div class="col-span-2">
+                      <label class="block text-[9px] font-bold text-neutral-400 uppercase">Fecha</label>
+                      <input type="date" name="itin_fecha[]" value="{{ .Fecha }}" required class="mt-0.5 block w-full text-[11px] border-neutral-300 rounded p-1.5" />
+                    </div>
+                    <div class="col-span-2">
+                      <label class="block text-[9px] font-bold text-neutral-400 uppercase">Boleto</label>
+                      <input type="text" name="itin_boleto[]" value="{{ .Boleto }}" required class="mt-0.5 block w-full text-[11px] border-neutral-300 rounded p-1.5" />
+                    </div>
+                    <div class="col-span-2">
+                      <label class="block text-[9px] font-bold text-neutral-400 uppercase">Nº Pase</label>
+                      <input type="text" name="itin_pase_numero[]" required class="mt-0.5 block w-full text-[11px] border-neutral-300 rounded p-1.5" />
+                    </div>
+                    <div class="col-span-2">
+                      <label class="block text-[9px] font-bold text-neutral-400 uppercase">PDF</label>
+                      <input
+                        type="file"
+                        required
+                        name="itin_archivo_ir_{{ $i }}"
+                        class="mt-0.5 block w-full text-[9px] text-neutral-500 file:mr-2 file:py-1 file:px-1 file:rounded file:border-0 file:text-[9px] file:bg-primary-50 file:text-primary-700" />
+                    </div>
+                    <div class="col-span-1 text-right pt-4">
+                      <button
+                        type="button"
+                        onclick="this.closest('.grid').remove(); document.getElementById('descargo-form').dispatchEvent(new Event('input'))"
+                        class="text-neutral-400 hover:text-danger-600 transition-colors">
+                        <i class="ph ph-trash"></i>
+                      </button>
+                    </div>
+                  </div>
+                  {{ end }}
+                </div>
+              </div>
+            </div>
           </div>
-          <div id="docs-container" class="space-y-2">
-            <!-- Rows will be added here via JS -->
-          </div>
-        </div>
 
-        <div class="sm:col-span-6">
-          <label class="block text-sm font-medium text-neutral-700">Informe de Actividades</label>
-          <div class="mt-1">
-            <textarea
-              name="informe_actividades"
-              rows="5"
-              required
-              class="shadow-sm focus:ring-secondary focus:border-secondary block w-full sm:text-sm border border-neutral-300 rounded-md p-2"
-              placeholder="Detalle las actividades realizadas durante el viaje..."></textarea>
-          </div>
-        </div>
+          <!-- TRAMO DE RETORNO -->
+          {{ if .Solicitud.GetItemVuelta }}
+          <div class="border border-neutral-200 rounded-lg overflow-hidden shadow-sm">
+            <div class="bg-neutral-100 px-3 py-1.5 border-b border-neutral-200 flex justify-between items-center">
+              <span class="text-[11px] font-black text-neutral-600 uppercase tracking-tighter">Tramo de Retorno</span>
+              <i class="ph ph-airplane-landing text-neutral-400"></i>
+            </div>
+            <div class="p-4 bg-white space-y-6">
+              <!-- Original Section -->
+              <div class="space-y-3">
+                <div class="flex items-center">
+                  <div class="h-px bg-neutral-200 flex-1"></div>
+                  <span class="px-2 text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Vuelo Original</span>
+                  <div class="h-px bg-neutral-200 flex-1"></div>
+                </div>
+                <div class="space-y-2">
+                  {{ range $i, $p := (index .PasajesOriginales "VUELTA") }}
+                  <div class="grid grid-cols-12 gap-2">
+                    <input type="hidden" name="itin_tipo[]" value="VUELTA_ORIGINAL" />
+                    <input type="hidden" name="itin_index[]" value="vo_{{ $i }}" />
+                    <div class="col-span-3">
+                      <label class="block text-[9px] font-bold text-neutral-400 uppercase">Ruta / Tramo</label>
+                      <input
+                        type="text"
+                        name="itin_ruta[]"
+                        value="{{ .Ruta }}"
+                        required
+                        class="mt-0.5 block w-full text-[11px] border-neutral-200 rounded p-1.5 bg-neutral-50 px-2"
+                        readonly />
+                    </div>
+                    <div class="col-span-2">
+                      <label class="block text-[9px] font-bold text-neutral-400 uppercase">Fecha</label>
+                      <input
+                        type="date"
+                        name="itin_fecha[]"
+                        value="{{ .Fecha }}"
+                        required
+                        class="mt-0.5 block w-full text-[11px] border-neutral-200 rounded p-1.5 bg-neutral-50 px-1"
+                        readonly />
+                    </div>
+                    <div class="col-span-2">
+                      <label class="block text-[9px] font-bold text-neutral-400 uppercase">Boleto</label>
+                      <input type="text" name="itin_boleto[]" value="{{ .Boleto }}" required class="mt-0.5 block w-full text-[11px] border-neutral-300 rounded p-1.5 px-2" />
+                    </div>
+                    <div class="col-span-2">
+                      <label class="block text-[9px] font-bold text-neutral-400 uppercase">Nº Pase</label>
+                      <input type="text" name="itin_pase_numero[]" required class="mt-0.5 block w-full text-[11px] border-neutral-300 rounded p-1.5 px-2" placeholder="Pase" />
+                    </div>
+                    <div class="col-span-3">
+                      <label class="block text-[9px] font-bold text-neutral-400 uppercase">Boarding Pass PDF</label>
+                      <input
+                        type="file"
+                        required
+                        name="itin_archivo_vo_{{ $i }}"
+                        class="mt-0.5 block w-full text-[9px] text-neutral-500 file:mr-2 file:py-1 file:px-2 file:rounded file:border-0 file:text-[9px] file:font-bold file:bg-primary-50 file:text-primary-700 hover:file:bg-primary-100 cursor-pointer" />
+                    </div>
+                  </div>
+                  {{ end }}
+                </div>
+              </div>
 
-        <div class="sm:col-span-6">
-          <label class="block text-sm font-medium text-neutral-700">Observaciones</label>
-          <div class="mt-1">
-            <textarea
-              name="observaciones"
-              rows="2"
-              class="shadow-sm focus:ring-secondary focus:border-secondary block w-full sm:text-sm border border-neutral-300 rounded-md p-2"></textarea>
+              <!-- Reprogramación Section -->
+              <div class="space-y-3">
+                <div class="flex items-center justify-between">
+                  <div class="h-px bg-neutral-200 flex-1"></div>
+                  <span class="px-2 text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Reprogramación</span>
+                  <div class="h-px bg-neutral-200 flex-1"></div>
+                  <button
+                    type="button"
+                    onclick="addItinRow('VUELTA_REPRO')"
+                    class="ml-2 text-[10px] bg-neutral-50 text-neutral-600 px-2 py-0.5 rounded border border-neutral-200 hover:bg-neutral-100 transition-colors">
+                    + Tramo
+                  </button>
+                </div>
+                <div id="itin-vuelta-repro-container" class="space-y-3">
+                  {{ range $i, $p := (index .PasajesReprogramados "VUELTA") }}
+                  <div class="grid grid-cols-12 gap-2 items-center bg-neutral-50/50 p-3 rounded border border-neutral-100 relative">
+                    <input type="hidden" name="itin_tipo[]" value="VUELTA_REPRO" />
+                    <input type="hidden" name="itin_index[]" value="vr_{{ $i }}" />
+                    <div class="col-span-3">
+                      <label class="block text-[9px] font-bold text-neutral-400 uppercase">Ruta / Tramo</label>
+                      <input type="text" name="itin_ruta[]" value="{{ .Ruta }}" required class="mt-0.5 block w-full text-[11px] border-neutral-300 rounded p-1.5" />
+                    </div>
+                    <div class="col-span-2">
+                      <label class="block text-[9px] font-bold text-neutral-400 uppercase">Fecha</label>
+                      <input type="date" name="itin_fecha[]" value="{{ .Fecha }}" required class="mt-0.5 block w-full text-[11px] border-neutral-300 rounded p-1.5" />
+                    </div>
+                    <div class="col-span-2">
+                      <label class="block text-[9px] font-bold text-neutral-400 uppercase">Boleto</label>
+                      <input type="text" name="itin_boleto[]" value="{{ .Boleto }}" required class="mt-0.5 block w-full text-[11px] border-neutral-300 rounded p-1.5" />
+                    </div>
+                    <div class="col-span-2">
+                      <label class="block text-[9px] font-bold text-neutral-400 uppercase">Nº Pase</label>
+                      <input type="text" name="itin_pase_numero[]" required class="mt-0.5 block w-full text-[11px] border-neutral-300 rounded p-1.5" />
+                    </div>
+                    <div class="col-span-2">
+                      <label class="block text-[9px] font-bold text-neutral-400 uppercase">PDF</label>
+                      <input
+                        type="file"
+                        required
+                        name="itin_archivo_vr_{{ $i }}"
+                        class="mt-0.5 block w-full text-[9px] text-neutral-500 file:mr-2 file:py-1 file:px-1 file:rounded file:border-0 file:text-[9px] file:bg-primary-50 file:text-primary-700" />
+                    </div>
+                    <div class="col-span-1 text-right pt-4">
+                      <button
+                        type="button"
+                        onclick="this.closest('.grid').remove(); document.getElementById('descargo-form').dispatchEvent(new Event('input'))"
+                        class="text-neutral-400 hover:text-danger-600 transition-colors">
+                        <i class="ph ph-trash"></i>
+                      </button>
+                    </div>
+                  </div>
+                  {{ end }}
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
+          {{ end }}
       </div>
     </div>
 
     <div class="px-4 py-3 bg-neutral-50 text-right sm:px-6 flex justify-end">
       <button
         type="submit"
-        class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-800 focus:outline-none">
+        :disabled="!canSubmit"
+        :class="canSubmit ? 'bg-primary hover:bg-primary-800' : 'bg-neutral-300 cursor-not-allowed'"
+        class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white transition-all focus:outline-none">
         Registrar Descargo
       </button>
     </div>
   </form>
 </div>
 <script>
-  window.addDocRow = function () {
-    const container = document.getElementById("docs-container");
+  let itinCounter = 0;
+
+  window.addItinRow = function (type) {
+    const containerId = type === "IDA_REPRO" ? "itin-ida-repro-container" : "itin-vuelta-repro-container";
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const index = itinCounter++;
     const row = document.createElement("div");
-    row.className = "grid grid-cols-12 gap-2 items-center bg-neutral-50 p-2 rounded border border-neutral-100";
+    row.className = "grid grid-cols-12 gap-2 items-center bg-neutral-50/50 p-3 rounded border border-neutral-100 relative";
 
     row.innerHTML = `
-            <div class="col-span-2">
-                <select name="doc_tipo[]" class="w-full text-xs border-neutral-300 rounded">
-                    <option value="FACTURA">Factura</option>
-                    <option value="PASE_ABORDAJE">Pase Abordaje</option>
-                    <option value="OTRO">Otro</option>
-                </select>
-            </div>
-            <div class="col-span-2">
-                <input type="date" name="doc_fecha[]" required class="w-full text-xs border-neutral-300 rounded">
-            </div>
-            <div class="col-span-3">
-                <input type="text" name="doc_numero[]" required placeholder="Nº Doc" class="w-full text-xs border-neutral-300 rounded">
-            </div>
-            <div class="col-span-4">
-                <input type="text" name="doc_detalle[]" placeholder="Detalle (Ej: Transporte)" class="w-full text-xs border-neutral-300 rounded">
-            </div>
-            <div class="col-span-1 text-right">
-                <button type="button" onclick="this.closest('.grid').remove()" class="text-danger-500 hover:text-danger-700 font-bold">×</button>
-            </div>
-        `;
-
+      <input type="hidden" name="itin_tipo[]" value="${type}">
+      <input type="hidden" name="itin_index[]" value="${index}">
+      <div class="col-span-3">
+        <label class="block text-[9px] font-bold text-neutral-400 uppercase">Ruta / Tramo</label>
+        <input type="text" name="itin_ruta[]" placeholder="Origen - Destino" required class="mt-0.5 block w-full text-[11px] border-neutral-300 rounded p-1.5 focus:ring-secondary focus:border-secondary">
+      </div>
+      <div class="col-span-2">
+        <label class="block text-[9px] font-bold text-neutral-400 uppercase">Fecha</label>
+        <input type="date" name="itin_fecha[]" required class="mt-0.5 block w-full text-[11px] border-neutral-300 rounded p-1.5 focus:ring-secondary focus:border-secondary">
+      </div>
+      <div class="col-span-2">
+        <label class="block text-[9px] font-bold text-neutral-400 uppercase">Boleto Repro</label>
+        <input type="text" name="itin_boleto[]" placeholder="Boleto" required class="mt-0.5 block w-full text-[11px] border-neutral-300 rounded p-1.5 focus:ring-secondary focus:border-secondary">
+      </div>
+      <div class="col-span-2">
+        <label class="block text-[9px] font-bold text-neutral-400 uppercase">Nº Pase</label>
+        <input type="text" name="itin_pase_numero[]" placeholder="Pase" required class="mt-0.5 block w-full text-[11px] border-neutral-300 rounded p-1.5 focus:ring-secondary focus:border-secondary">
+      </div>
+      <div class="col-span-2">
+        <label class="block text-[9px] font-bold text-neutral-400 uppercase">PDF</label>
+        <input type="file" name="itin_archivo_${index}" required class="mt-0.5 block w-full text-[9px] text-neutral-500 file:mr-2 file:py-1 file:px-1 file:rounded file:border-0 file:text-[9px] file:bg-primary-50 file:text-primary-700">
+      </div>
+      <div class="col-span-1 text-right pt-4">
+        <button type="button" onclick="this.closest('.grid').remove(); document.getElementById('descargo-form').dispatchEvent(new Event('input'))" class="text-neutral-400 hover:text-danger-600 transition-colors">
+          <i class="ph ph-trash"></i>
+        </button>
+      </div>
+    `;
     container.appendChild(row);
   };
 
-  document.addEventListener("DOMContentLoaded", window.addDocRow);
+  // Initialize counter with existing rows if any (though usually it's empty on start)
+  document.addEventListener("DOMContentLoaded", () => {
+    // Count existing range iterations? Hard in template.
+    // I'll just use a large enough starting index or just count them in JS.
+    itinCounter = document.querySelectorAll('input[name="itin_tipo[]"]').length;
+  });
 </script>
 
 {{ template "layout_end" . }} {{ end }}

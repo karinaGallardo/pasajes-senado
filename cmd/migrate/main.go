@@ -60,6 +60,7 @@ func main() {
 		&models.Compensacion{},
 		&models.Descargo{},
 		&models.DocumentoDescargo{},
+		&models.DetalleItinerarioDescargo{},
 	)
 
 	if err != nil {

@@ -44,3 +44,19 @@ func GeneratePrefixedCode(prefix string, length int) string {
 	code, _ := gonanoid.Generate(alphabet, length)
 	return prefix + code
 }
+
+// SplitRoute toma una ruta como "TJA - CBB - LPB" y devuelve ["TJA - CBB", "CBB - LPB"]
+func SplitRoute(route string) []string {
+	if route == "" {
+		return []string{}
+	}
+	parts := strings.Split(route, " - ")
+	if len(parts) < 2 {
+		return []string{route}
+	}
+	var connections []string
+	for i := 0; i < len(parts)-1; i++ {
+		connections = append(connections, fmt.Sprintf("%s - %s", parts[i], parts[i+1]))
+	}
+	return connections
+}

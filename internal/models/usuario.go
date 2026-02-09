@@ -70,6 +70,33 @@ func (u *Usuario) GetNombreCompleto() string {
 	return strings.Join(clean, " ")
 }
 
+func (u *Usuario) GetInitials() string {
+	var initials string
+	if len(u.Firstname) > 0 {
+		initials += string([]rune(u.Firstname)[0])
+	}
+	if len(u.Lastname) > 0 {
+		initials += string([]rune(u.Lastname)[0])
+	}
+	return strings.ToUpper(initials)
+}
+
+func (u *Usuario) GetNombreResumido() string {
+	parts := []string{u.Firstname, u.Secondname, u.Lastname}
+	var clean []string
+	for _, p := range parts {
+		if strings.TrimSpace(p) != "" {
+			clean = append(clean, strings.TrimSpace(p))
+		}
+	}
+	base := strings.Join(clean, " ")
+	if strings.TrimSpace(u.Surname) != "" {
+		initial := string([]rune(strings.TrimSpace(u.Surname))[0])
+		return base + " " + strings.ToUpper(initial) + "."
+	}
+	return base
+}
+
 func (u *Usuario) GetOrigenIATA() string {
 	if u.OrigenIATA == nil {
 		return ""

@@ -13,9 +13,11 @@ type Descargo struct {
 
 	FechaPresentacion  time.Time `gorm:"not null;type:timestamp"`
 	InformeActividades string    `gorm:"type:text"`
+	MontoDevolucion    float64   `gorm:"type:decimal(10,2);default:0"`
+	Observaciones      string    `gorm:"type:text"`
 
-	MontoDevolucion float64 `gorm:"type:decimal(10,2);default:0"`
-	Observaciones   string  `gorm:"type:text"`
+	// Detalles de Itinerario (FV-05) - Relación granular por conexiones
+	DetallesItinerario []DetalleItinerarioDescargo `gorm:"foreignKey:DescargoID"`
 
 	Estado string `gorm:"size:50;default:'EN_REVISION'"`
 

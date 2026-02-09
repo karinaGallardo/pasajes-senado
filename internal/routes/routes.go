@@ -17,6 +17,7 @@ func SetupRoutes(r *gin.Engine) {
 	perfilCtrl := controllers.NewPerfilController()
 	usuarioCtrl := controllers.NewUsuarioController()
 	cupoCtrl := controllers.NewCupoController()
+	descargoCtrl := controllers.NewDescargoController()
 
 	r.GET("/auth/login", authCtrl.ShowLogin)
 	r.POST("/auth/login", authCtrl.Login)
@@ -51,10 +52,11 @@ func SetupRoutes(r *gin.Engine) {
 		// Solicitudes Derecho
 		protected.GET("/solicitudes/derecho/crear/:item_id/:itinerario_code", solicitudDerechoCtrl.Create)
 		protected.GET("/solicitudes/derecho/modal-crear/:item_id/:itinerario_code", solicitudDerechoCtrl.GetCreateModal)
-		protected.POST("/solicitudes/derecho", solicitudDerechoCtrl.Store)
 		protected.GET("/solicitudes/derecho/:id/detalle", solicitudDerechoCtrl.Show)
-		// protected.GET("/solicitudes/derecho/:id/editar", solicitudDerechoCtrl.Edit)
 		protected.GET("/solicitudes/derecho/:id/modal-editar", solicitudDerechoCtrl.GetEditModal)
+		protected.GET("/solicitudes/derecho/:id/print", solicitudDerechoCtrl.Print)
+		protected.GET("/solicitudes/derecho/:id/descargo", descargoCtrl.CreateDerecho)
+
 		protected.POST("/solicitudes/derecho/:id/actualizar", solicitudDerechoCtrl.Update)
 		protected.POST("/solicitudes/derecho/:id/aprobar", solicitudDerechoCtrl.Approve)
 		protected.POST("/solicitudes/derecho/:id/revertir-aprobacion", solicitudDerechoCtrl.RevertApproval)
@@ -62,7 +64,7 @@ func SetupRoutes(r *gin.Engine) {
 		protected.POST("/solicitudes/derecho/:id/items/:item_id/aprobar", solicitudDerechoCtrl.ApproveItem)
 		protected.POST("/solicitudes/derecho/:id/items/:item_id/revertir-aprobacion", solicitudDerechoCtrl.RevertApprovalItem)
 		protected.POST("/solicitudes/derecho/:id/items/:item_id/rechazar", solicitudDerechoCtrl.RejectItem)
-		protected.GET("/solicitudes/derecho/:id/print", solicitudDerechoCtrl.Print)
+		protected.POST("/solicitudes/derecho", solicitudDerechoCtrl.Store)
 		protected.DELETE("/solicitudes/derecho/:id", solicitudDerechoCtrl.Destroy)
 
 		protected.POST("/solicitudes/:id/pasajes", pasajeCtrl.Store)
@@ -82,10 +84,9 @@ func SetupRoutes(r *gin.Engine) {
 		protected.POST("/solicitudes/:id/viaticos", viaticoCtrl.Store)
 		protected.GET("/viaticos/:id/print", viaticoCtrl.Print)
 
-		descargoCtrl := controllers.NewDescargoController()
 		protected.GET("/descargos", descargoCtrl.Index)
-		protected.GET("/descargos/nuevo", descargoCtrl.Create)
-		protected.GET("/descargos/pv5", descargoCtrl.DownloadPV5)
+		protected.GET("/descargos/:id/imprimir-pv5", descargoCtrl.DownloadPV5ByID)
+		protected.GET("/descargos/:id/previsualizar-pv5", descargoCtrl.PreviewPV5)
 		protected.POST("/descargos", descargoCtrl.Store)
 		protected.GET("/descargos/:id", descargoCtrl.Show)
 		protected.POST("/descargos/:id/aprobar", descargoCtrl.Approve)

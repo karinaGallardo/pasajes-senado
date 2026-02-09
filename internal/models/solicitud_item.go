@@ -51,3 +51,35 @@ func (t SolicitudItem) HasActivePasaje() bool {
 	}
 	return false
 }
+
+func (t SolicitudItem) GetPasajeOriginal() *Pasaje {
+	if len(t.Pasajes) == 0 {
+		return nil
+	}
+	// The original is usually the first one or the one without PasajeAnteriorID
+	for i := range t.Pasajes {
+		if t.Pasajes[i].PasajeAnteriorID == nil {
+			return &t.Pasajes[i]
+		}
+	}
+	return &t.Pasajes[0]
+}
+
+func (t SolicitudItem) GetPasajeReprogramado() *Pasaje {
+	if len(t.Pasajes) < 2 {
+		return nil
+	}
+	// The reprogrammed is the latest active one that is not the original
+	var latest *Pasaje
+	original := t.GetPasajeOriginal()
+	for i := range t.Pasajes {
+		p := &t.Pasajes[i]
+		if original != nil && p.ID == original.ID {
+			continue
+		}
+		if p.EstadoPasajeCodigo != nil && *p.EstadoPasajeCodigo != "ANULADO" {
+			latest = p
+		}
+	}
+	return latest
+}

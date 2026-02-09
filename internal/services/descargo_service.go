@@ -19,47 +19,57 @@ func NewDescargoService() *DescargoService {
 	}
 }
 
-func (s *DescargoService) Create(ctx context.Context, req dtos.CreateDescargoRequest, userID string) (*models.Descargo, error) {
-	fechaPresentacion := utils.ParseDate("2006-01-02", req.FechaPresentacion)
-	monto := utils.ParseFloat(req.MontoDevolucion)
+func (s *DescargoService) Create(ctx context.Context, req dtos.CreateDescargoRequest, userID string, archivoPaths []string) (*models.Descargo, error) {
 	codigo := utils.GenerateYearlyCode("D", 6)
 
 	descargo := &models.Descargo{
 		SolicitudID:        req.SolicitudID,
 		UsuarioID:          userID,
 		Codigo:             codigo,
-		NumeroCite:         req.NumeroCite,
-		FechaPresentacion:  fechaPresentacion,
+		FechaPresentacion:  time.Now(),
 		InformeActividades: req.InformeActividades,
-		MontoDevolucion:    monto,
 		Observaciones:      req.Observaciones,
 		Estado:             "EN_REVISION",
 	}
 	descargo.CreatedBy = &userID
 
-	var docs []models.DocumentoDescargo
-	for i := range req.DocTipo {
-		// Verify consistency of parallel arrays
-		if i < len(req.DocNumero) && req.DocNumero[i] != "" {
-			var fecha time.Time
-			if i < len(req.DocFecha) {
-				fecha = utils.ParseDate("2006-01-02", req.DocFecha[i])
+	// Mapear Detalles de Itinerario
+	var itinDetalles []models.DetalleItinerarioDescargo
+	for i := range req.ItinTipo {
+		if i < len(req.ItinRuta) && req.ItinRuta[i] != "" {
+			var fecha *time.Time
+			if i < len(req.ItinFecha) && req.ItinFecha[i] != "" {
+				t := utils.ParseDate("2006-01-02", req.ItinFecha[i])
+				fecha = &t
 			}
 
-			detalle := ""
-			if i < len(req.DocDetalle) {
-				detalle = req.DocDetalle[i]
+			boleto := ""
+			if i < len(req.ItinBoleto) {
+				boleto = req.ItinBoleto[i]
 			}
 
-			docs = append(docs, models.DocumentoDescargo{
-				Tipo:    req.DocTipo[i],
-				Numero:  req.DocNumero[i],
-				Fecha:   fecha,
-				Detalle: detalle,
+			paseNumero := ""
+			if i < len(req.ItinPaseNumero) {
+				paseNumero = req.ItinPaseNumero[i]
+			}
+
+			archivoPath := ""
+			if i < len(archivoPaths) {
+				archivoPath = archivoPaths[i]
+			}
+
+			itinDetalles = append(itinDetalles, models.DetalleItinerarioDescargo{
+				Tipo:              models.TipoDetalleItinerario(req.ItinTipo[i]),
+				Ruta:              req.ItinRuta[i],
+				Fecha:             fecha,
+				Boleto:            boleto,
+				NumeroPaseAbordo:  paseNumero,
+				ArchivoPaseAbordo: archivoPath,
+				Orden:             i,
 			})
 		}
 	}
-	descargo.Documentos = docs
+	descargo.DetallesItinerario = itinDetalles
 
 	if err := s.repo.WithContext(ctx).Create(descargo); err != nil {
 		return nil, err
