@@ -505,10 +505,16 @@ func (ctrl *SolicitudDerechoController) Update(c *gin.Context) {
 
 		for i := range solicitud.Items {
 			it := &solicitud.Items[i]
+			st := it.GetEstado()
+
 			switch it.Tipo {
 			case models.TipoSolicitudItemIda:
 				it.Fecha = fechaIda
 				it.Hora = fechaIda.Format("15:04")
+				// Al editar la ida, si estaba rechazado vuelve a solicitado
+				if st == "RECHAZADO" {
+					it.EstadoCodigo = utils.Ptr("SOLICITADO")
+				}
 				if orig != nil {
 					it.OrigenIATA = orig.IATA
 					it.Origen = orig
@@ -521,13 +527,13 @@ func (ctrl *SolicitudDerechoController) Update(c *gin.Context) {
 				it.Fecha = fechaVuelta
 				if fechaVuelta != nil {
 					it.Hora = fechaVuelta.Format("15:04")
-					// If it was pending (no date) and now has a date, it returns to SOLICITADO
-					if it.GetEstado() == "PENDIENTE" {
+					// Si estaba pendiente (sin fecha) o rechazado y ahora tiene fecha, vuelve a SOLICITADO
+					if st == "PENDIENTE" || st == "RECHAZADO" {
 						it.EstadoCodigo = utils.Ptr("SOLICITADO")
 					}
 				} else {
-					// If it has no date (vuelta por confirmar) and was SOLICITADO, it becomes PENDIENTE
-					if it.GetEstado() == "SOLICITADO" {
+					// Si no tiene fecha (vuelta por confirmar) y estaba SOLICITADO o RECHAZADO, pasa a PENDIENTE
+					if st == "SOLICITADO" || st == "RECHAZADO" {
 						it.EstadoCodigo = utils.Ptr("PENDIENTE")
 					}
 				}
@@ -683,20 +689,23 @@ func (ctrl *SolicitudDerechoController) Show(c *gin.Context) {
 	// Step 1: Solicitado (Always active/completed) (Blue -> Primary)
 	steps["Solicitado"] = makeStep(true, true, "primary", "ph ph-file-text text-lg", "Solicitado")
 
-	// Step 2: Parcialmente Aprobado (Violet -> Violet)
-	isParcial := st == "PARCIALMENTE_APROBADO"
-	isAtLeastParcial := isParcial || st == "APROBADO" || st == "EMITIDO" || st == "FINALIZADO"
-	isPastParcial := st == "APROBADO" || st == "EMITIDO" || st == "FINALIZADO"
-	steps["Parcial"] = makeStep(isAtLeastParcial, isPastParcial, "violet", "ph ph-check-square-offset text-xl", "Parcial")
-
-	// Step 3: Aprobado / Rechazado
+	// Step 2: Aprobado / Parcial / Rechazado
 	rejected := st == "RECHAZADO"
+	parcial := st == "PARCIALMENTE_APROBADO"
+
 	if rejected {
 		steps["Aprobado"] = StepView{
 			Icon:         "ph ph-x text-xl font-bold",
 			Label:        "Rechazado",
 			WrapperClass: "bg-danger-500 text-white border-none",
 			LabelClass:   "text-danger-500",
+		}
+	} else if parcial {
+		steps["Aprobado"] = StepView{
+			Icon:         "ph ph-check-square-offset text-xl",
+			Label:        "Parcial",
+			WrapperClass: "bg-violet-500 text-white border-none",
+			LabelClass:   "text-violet-500",
 		}
 	} else {
 		// Aprobado is active if state is APROBADO, EMITIDO, or FINALIZADO

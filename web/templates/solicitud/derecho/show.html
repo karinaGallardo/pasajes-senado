@@ -67,20 +67,7 @@
         <!-- Connector 1 -->
         <div class="flex-auto h-1 transition duration-500 ease-in-out bg-neutral-200"></div>
 
-        <!-- Step 2: Parcialmente Aprobado -->
-        <div class="flex items-center relative z-10">
-          <div class="rounded-full transition duration-500 ease-in-out h-10 w-10 py-3 {{ .Steps.Parcial.WrapperClass }} flex items-center justify-center">
-            <i class="{{ .Steps.Parcial.Icon }}"></i>
-          </div>
-          <div class="hidden sm:block absolute top-0 -ml-10 text-center mt-12 w-32 text-xs font-medium uppercase {{ .Steps.Parcial.LabelClass }}">
-            {{ .Steps.Parcial.Label }}
-          </div>
-        </div>
-
-        <!-- Connector 2 -->
-        <div class="flex-auto h-1 transition duration-500 ease-in-out bg-neutral-200"></div>
-
-        <!-- Step 3: Aprobado / Rechazado -->
+        <!-- Step 2: Aprobado / Parcial / Rechazado -->
         <div class="flex items-center relative z-10">
           <div class="rounded-full transition duration-500 ease-in-out h-10 w-10 py-3 {{ .Steps.Aprobado.WrapperClass }} flex items-center justify-center">
             <i class="{{ .Steps.Aprobado.Icon }}"></i>
@@ -89,10 +76,10 @@
         </div>
 
         {{ if .ShowNextSteps }}
-        <!-- Connector 3 -->
+        <!-- Connector 2 -->
         <div class="flex-auto h-1 transition duration-500 ease-in-out bg-neutral-200"></div>
 
-        <!-- Step 4: Emitido -->
+        <!-- Step 3: Emitido -->
         <div class="flex items-center relative z-10">
           <div class="rounded-full transition duration-500 ease-in-out h-10 w-10 py-3 {{ .Steps.Emitido.WrapperClass }} flex items-center justify-center">
             <i class="{{ .Steps.Emitido.Icon }}"></i>
@@ -100,10 +87,10 @@
           <div class="hidden sm:block absolute top-0 -ml-10 text-center mt-12 w-32 text-xs font-medium uppercase {{ .Steps.Emitido.LabelClass }}">{{ .Steps.Emitido.Label }}</div>
         </div>
 
-        <!-- Connector 4 -->
+        <!-- Connector 3 -->
         <div class="flex-auto h-1 transition duration-500 ease-in-out bg-neutral-200"></div>
 
-        <!-- Step 5: Finalizado -->
+        <!-- Step 4: Finalizado -->
         <div class="flex items-center relative z-10">
           <div class="rounded-full transition duration-500 ease-in-out h-10 w-10 py-3 {{ .Steps.Finalizado.WrapperClass }} flex items-center justify-center">
             <i class="{{ .Steps.Finalizado.Icon }}"></i>

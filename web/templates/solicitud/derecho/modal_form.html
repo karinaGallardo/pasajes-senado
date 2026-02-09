@@ -15,13 +15,22 @@
     <div
       class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full sm:p-6"
       x-data="{
+        {{ $ida := .Solicitud.GetItemIda }}
+        {{ $vuelta := .Solicitud.GetItemVuelta }}
+        {{ $stIda := `` }}{{ if $ida }}{{ $stIda = $ida.GetEstado }}{{ end }}
+        {{ $stVuelta := `` }}{{ if $vuelta }}{{ $stVuelta = $vuelta.GetEstado }}{{ end }}
+        {{ $canEditIda := true }}{{ if .IsEdit }}{{ $canEditIda = or (eq $stIda `PENDIENTE`) (eq $stIda `SOLICITADO`) (eq $stIda `RECHAZADO`) }}{{ end }}
+        {{ $canEditVuelta := true }}{{ if .IsEdit }}{{ $canEditVuelta = or (eq $stVuelta `PENDIENTE`) (eq $stVuelta `SOLICITADO`) (eq $stVuelta `RECHAZADO`) }}{{ end }}
+
         selectedDaySalida: '{{ if .IsEdit }}{{ if eq .Itinerario.Codigo `SOLO_VUELTA` }}{{ if .Solicitud.GetFechaVuelta }}{{ .Solicitud.GetFechaVuelta.Format `2006-01-02` }}{{ end }}{{ else }}{{ if .Solicitud.GetFechaIda }}{{ .Solicitud.GetFechaIda.Format `2006-01-02` }}{{ end }}{{ end }}{{ else }}{{ .DefaultDateIda }}{{ end }}',
         selectedTimeSalida: '{{ if .IsEdit }}{{ if eq .Itinerario.Codigo `SOLO_VUELTA` }}{{ if .Solicitud.GetFechaVuelta }}{{ .Solicitud.GetFechaVuelta.Format `15:04` }}{{ end }}{{ else }}{{ if .Solicitud.GetFechaIda }}{{ .Solicitud.GetFechaIda.Format `15:04` }}{{ end }}{{ end }}{{ else }}08:00{{ end }}',
         selectedDayRetorno: '{{ if and .IsEdit .Solicitud.GetFechaVuelta }}{{ .Solicitud.GetFechaVuelta.Format `2006-01-02` }}{{ else }}{{ .DefaultDateVuelta }}{{ end }}',
         selectedTimeRetorno: '{{ if and .IsEdit .Solicitud.GetFechaVuelta }}{{ .Solicitud.GetFechaVuelta.Format `15:04` }}{{ else }}18:00{{ end }}',
         isSubmitting: false,
         isEdit: {{ .IsEdit }},
-        tipoItinerario: 'IDA_VUELTA',
+        canEditIda: {{ $canEditIda }},
+        canEditVuelta: {{ $canEditVuelta }},
+        tipoItinerario: '{{ if .IsEdit }}{{ .Solicitud.TipoItinerarioCodigo }}{{ else }}IDA_VUELTA{{ end }}',
         vueltaPorConfirmar: {{ if and .IsEdit .Solicitud.GetItemVuelta (eq .Solicitud.GetItemVuelta.GetEstado `PENDIENTE`) }}true{{ else }}false{{ end }},
         editId: '{{ if .IsEdit }}{{ .Solicitud.ID }}{{ end }}',
         motivo: '{{ if .IsEdit }}{{ .Solicitud.Motivo }}{{ end }}',

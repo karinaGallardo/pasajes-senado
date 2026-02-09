@@ -63,44 +63,41 @@ func (s *Solicitud) UpdateStatusBasedOnItems() {
 	allRejected := true
 	allFinalized := true
 	hasApproved := false
-	activeCount := 0
 
 	for _, item := range s.Items {
 		st := item.GetEstado()
-		// Ignoramos cancelados y pendientes (no solicitados aun) para determinar aprobación
-		if st == "CANCELADO" || st == "PENDIENTE" {
-			continue
-		}
-		activeCount++
 
-		if st != "APROBADO" && st != "EMITIDO" && st != "FINALIZADO" {
+		// Consideramos estados de aprobación (Aprobado, Emitido, Finalizado)
+		isApp := (st == "APROBADO" || st == "EMITIDO" || st == "FINALIZADO")
+
+		if !isApp {
 			allApproved = false
+		} else {
+			hasApproved = true
 		}
+
 		if st != "FINALIZADO" {
 			allFinalized = false
 		}
+
 		if st != "RECHAZADO" {
 			allRejected = false
-		}
-		if st == "APROBADO" || st == "EMITIDO" || st == "FINALIZADO" {
-			hasApproved = true
 		}
 	}
 
 	newState := "SOLICITADO"
 
-	if activeCount == 0 {
-		// Todos cancelados
-		newState = "RECHAZADO"
-	} else if allFinalized {
+	if allFinalized {
 		newState = "FINALIZADO"
-	} else if allRejected {
-		newState = "RECHAZADO"
 	} else if allApproved {
 		newState = "APROBADO"
 	} else if hasApproved {
 		newState = "PARCIALMENTE_APROBADO"
+	} else if allRejected {
+		newState = "RECHAZADO"
 	} else {
+		// Por defecto queda en SOLICITADO si hay una mezcla de pendientes, rechazados o cancelados
+		// sin ningún aprobado.
 		newState = "SOLICITADO"
 	}
 
