@@ -48,17 +48,18 @@ func main() {
 	r.SetFuncMap(utils.TemplateFuncs())
 
 	r.Use(secure.New(secure.Config{
-		IsDevelopment:         isDev,
-		SSLRedirect:           false,
-		STSSeconds:            315360000,
-		STSIncludeSubdomains:  true,
-		FrameDeny:             true,
-		ContentTypeNosniff:    true,
-		BrowserXssFilter:      true,
-		ContentSecurityPolicy: "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdn.tailwindcss.com https://cdnjs.cloudflare.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data:;",
-		IENoOpen:              true,
-		ReferrerPolicy:        "strict-origin-when-cross-origin",
-		SSLProxyHeaders:       map[string]string{"X-Forwarded-Proto": "https"},
+		IsDevelopment:           isDev,
+		SSLRedirect:             false,
+		STSSeconds:              315360000,
+		STSIncludeSubdomains:    true,
+		FrameDeny:               false,
+		CustomFrameOptionsValue: "SAMEORIGIN",
+		ContentTypeNosniff:      true,
+		BrowserXssFilter:        true,
+		ContentSecurityPolicy:   "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdn.tailwindcss.com https://cdnjs.cloudflare.com https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com https://unpkg.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: https://cdn.tailwindcss.com; connect-src 'self'; frame-src 'self'; object-src 'self';",
+		IENoOpen:                true,
+		ReferrerPolicy:          "strict-origin-when-cross-origin",
+		SSLProxyHeaders:         map[string]string{"X-Forwarded-Proto": "https"},
 	}))
 
 	sessionSecret := viper.GetString("SESSION_SECRET")
