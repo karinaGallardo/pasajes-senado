@@ -45,15 +45,15 @@
 
   <!-- Table -->
   <div class="bg-white rounded-lg shadow overflow-x-auto border border-neutral-200">
-    <table class="min-w-full lg:min-w-[1000px] divide-y divide-gray-200">
+    <table class="min-w-full divide-y divide-gray-200">
       <thead class="bg-neutral-50">
         <tr>
           <th scope="col" class="px-3 py-3 text-left text-xs font-bold text-neutral-500 uppercase tracking-wider hidden md:table-cell">CÓDIGO</th>
           <th scope="col" class="px-3 py-3 text-left text-xs font-bold text-neutral-500 uppercase tracking-wider">Solicitante</th>
-          <th scope="col" class="px-3 py-3 text-left text-xs font-bold text-neutral-500 uppercase tracking-wider hidden xl:table-cell">Registrado por</th>
-          <th scope="col" class="px-3 py-3 text-center text-xs font-bold text-neutral-500 uppercase tracking-wider">Tipo</th>
+          <th scope="col" class="px-3 py-3 text-left text-xs font-bold text-neutral-500 uppercase tracking-wider hidden xl:table-cell" title="Registrado Por">REG.</th>
+          <th scope="col" class="px-3 py-3 text-center text-xs font-bold text-neutral-500 uppercase tracking-wider hidden md:table-cell">Tipo</th>
           <th scope="col" class="px-3 py-3 text-left text-xs font-bold text-neutral-500 uppercase tracking-wider">Ruta</th>
-          <th scope="col" class="px-3 py-3 text-center text-xs font-bold text-neutral-500 uppercase tracking-wider">Fecha Salida</th>
+          <th scope="col" class="px-3 py-3 text-center text-xs font-bold text-neutral-500 uppercase tracking-wider hidden md:table-cell">Fecha Salida</th>
           <th scope="col" class="px-3 py-3 text-center text-xs font-bold text-neutral-500 uppercase tracking-wider">Estado</th>
           <th scope="col" class="px-3 py-3 text-right text-xs font-bold text-neutral-500 uppercase tracking-wider">Acciones</th>
         </tr>
@@ -69,8 +69,17 @@
             {{ end }}
           </td>
           <td class="px-3 py-3 text-xs text-neutral-700">
-            <div class="flex items-center">
-              <span class="line-clamp-2 leading-tight" title="{{ .Usuario.GetNombreCompleto }}">{{ .Usuario.GetNombreResumido }}</span>
+            <div class="flex flex-col">
+              <span class="font-bold line-clamp-1" title="{{ .Usuario.GetNombreCompleto }}">{{ .Usuario.GetNombreResumido }}</span>
+              <!-- Mobile Only Info -->
+              <div class="md:hidden mt-1 space-y-0.5">
+                {{ if and .TipoSolicitud .TipoSolicitud.ConceptoViaje (eq .TipoSolicitud.ConceptoViaje.Codigo "COMISION") }}
+                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-100 text-purple-800 border border-purple-200">Comisión</span>
+                {{ else }}
+                <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-primary-50 text-primary border border-primary-100">Derecho</span>
+                {{ end }}
+                <span class="text-[10px] text-neutral-500 block">{{ fechaHora .GetFechaIda }}</span>
+              </div>
             </div>
           </td>
           <td class="px-3 py-3 text-xs text-neutral-500 text-center hidden lg:table-cell">
@@ -84,7 +93,7 @@
             <span class="italic text-neutral-300">Sistema</span>
             {{ end }}
           </td>
-          <td class="px-3 py-3 whitespace-nowrap text-xs text-neutral-500 text-center">
+          <td class="px-3 py-3 whitespace-nowrap text-xs text-neutral-500 text-center hidden md:table-cell">
             {{ if and .TipoSolicitud .TipoSolicitud.ConceptoViaje (eq .TipoSolicitud.ConceptoViaje.Codigo "COMISION") }}
             <span class="inline-flex items-center px-2 py-0.5 rounded-full font-bold bg-purple-100 text-purple-800 border border-purple-200">Comisión</span>
             {{ else }}
@@ -99,7 +108,7 @@
               <span>{{ .GetDestinoCiudad }}</span>
             </div>
           </td>
-          <td class="px-3 py-3 whitespace-nowrap text-xs text-neutral-500 text-center uppercase">{{ fechaHora .GetFechaIda }}</td>
+          <td class="px-3 py-3 whitespace-nowrap text-xs text-neutral-500 text-center uppercase hidden md:table-cell">{{ fechaHora .GetFechaIda }}</td>
           <td class="px-3 py-3 whitespace-nowrap text-center">
             <div class="flex flex-col items-center justify-center space-y-1">
               <!-- Main Status Badge -->

@@ -27,6 +27,7 @@ func TemplateFuncs() template.FuncMap {
 		"rangoSemana":      FormatWeekRange,
 		"nombreDiaCorto":   DayNameShort,
 		"rangoSemanaCorto": FormatWeekRangeShort,
+		"contains":         strings.Contains,
 	}
 }
 

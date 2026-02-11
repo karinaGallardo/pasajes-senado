@@ -11,20 +11,17 @@
       </p>
     </div>
     <div class="flex space-x-3">
-      <button
-        onclick="window.print()"
-        class="inline-flex items-center px-4 py-2 border border-neutral-300 shadow-sm text-sm font-medium rounded-md text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary">
-        <svg class="h-5 w-5 mr-2 text-neutral-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path
-            stroke-linecap="round"
-            stroke-linejoin="round"
-            stroke-width="2"
-            d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2-4h6a2 2 0 012 2v6a2 2 0 01-2 2H9a2 2 0 01-2-2v-6a2 2 0 012-2zm9-2V3a2 2 0 00-2-2H8a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2z" />
-        </svg>
-        Imprimir Informe
-      </button>
+      {{ if eq .Descargo.Estado "EN_REVISION" }}
       <a
-        href="/descargos"
+        href="/descargos/{{ .Descargo.ID }}/editar"
+        class="inline-flex items-center px-4 py-2 border border-secondary shadow-sm text-sm font-bold rounded-md text-secondary bg-white hover:bg-secondary-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary transition-colors">
+        <i class="ph ph-note-pencil mr-2"></i>
+        Editar
+      </a>
+      {{ end }}
+
+      <a
+        href="/solicitudes/derecho/{{ .Descargo.SolicitudID }}/detalle"
         class="inline-flex items-center px-4 py-2 border border-neutral-300 shadow-sm text-sm font-medium rounded-md text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary">
         Volver
       </a>
@@ -74,7 +71,7 @@
           <div>
             <dt class="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Solicitud Base</dt>
             <dd class="text-sm text-neutral-900 font-bold mt-1">
-              <a href="/solicitudes/{{ .Descargo.Solicitud.ID }}" class="text-secondary hover:underline flex items-center">
+              <a href="/solicitudes/derecho/{{ .Descargo.Solicitud.ID }}/detalle" class="text-secondary hover:underline flex items-center">
                 <i class="ph ph-file-text mr-1.5"></i>
                 Solicitud #{{ .Descargo.Solicitud.Codigo }}
               </a>
@@ -119,7 +116,7 @@
       <!-- Detailed Itinerary (FV-05) -->
       <div class="bg-white shadow rounded-lg overflow-hidden border border-neutral-200">
         <div class="px-6 py-4 border-b border-neutral-100 bg-neutral-50 flex justify-between items-center">
-          <h3 class="text-lg font-bold text-neutral-900">Itinerario Realizado / Tramas</h3>
+          <h3 class="text-lg font-bold text-neutral-900">Itinerario Realizado / Tramos</h3>
           <i class="ph ph-airplane text-neutral-400 text-xl"></i>
         </div>
 
@@ -137,6 +134,7 @@
             </thead>
             <tbody class="bg-white divide-y divide-neutral-200">
               {{ range .Descargo.DetallesItinerario }}
+              {{ if not .EsDevolucion }}
               <tr class="hover:bg-neutral-50 transition-colors">
                 <td class="px-4 py-3 whitespace-nowrap">
                   <span
@@ -152,14 +150,20 @@
                 </td>
                 <td class="px-4 py-3 whitespace-nowrap text-center">
                   {{ if .ArchivoPaseAbordo }}
-                  <a href="/{{ .ArchivoPaseAbordo }}" target="_blank" class="text-primary hover:text-primary-800 transition-colors" title="Ver Pase a Bordo">
+                  <button
+                    type="button"
+                    hx-get="/preview-file?path={{ .ArchivoPaseAbordo }}"
+                    hx-target="#modal-container"
+                    class="text-primary hover:text-primary-800 transition-colors"
+                    title="Ver Pase a Bordo">
                     <i class="ph ph-file-pdf text-lg"></i>
-                  </a>
+                  </button>
                   {{ else }}
                   <span class="text-neutral-300"><i class="ph ph-x-circle text-lg"></i></span>
                   {{ end }}
                 </td>
               </tr>
+              {{ end }}
               {{ end }}
             </tbody>
           </table>
@@ -167,6 +171,52 @@
         {{ else }}
         <div class="p-8 text-center text-neutral-400 text-sm italic">No se registraron detalles de tramos en este descargo.</div>
         {{ end }}
+      </div>
+
+      <!-- Pasajes Devueltos -->
+      {{ $hasReturns := false }}
+      {{ range .Descargo.DetallesItinerario }}{{ if .EsDevolucion }}{{ $hasReturns = true }}{{ end }}{{ end }}
+      
+      {{ if $hasReturns }}
+      <div class="bg-white shadow rounded-lg overflow-hidden border border-danger-200">
+        <div class="px-6 py-4 border-b border-danger-100 bg-danger-50 flex justify-between items-center">
+          <h3 class="text-lg font-bold text-danger-900">Pasajes Devueltos</h3>
+          <i class="ph ph-ticket text-danger-400 text-xl"></i>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-danger-100">
+            <thead class="bg-danger-50/50">
+              <tr>
+                <th class="px-4 py-3 text-left text-[10px] font-bold text-danger-800 uppercase tracking-widest">Tipo</th>
+                <th class="px-4 py-3 text-left text-[10px] font-bold text-danger-800 uppercase tracking-widest">Ruta Original</th>
+                <th class="px-4 py-3 text-left text-[10px] font-bold text-danger-800 uppercase tracking-widest">Fecha Original</th>
+                <th class="px-4 py-3 text-left text-[10px] font-bold text-danger-800 uppercase tracking-widest">Estado</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-danger-100">
+              {{ range .Descargo.DetallesItinerario }}
+              {{ if .EsDevolucion }}
+              <tr class="hover:bg-danger-50/30 transition-colors">
+                <td class="px-4 py-3 whitespace-nowrap">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold leading-4 bg-neutral-100 text-neutral-600 border border-neutral-200">
+                    {{ .Tipo }}
+                  </span>
+                </td>
+                <td class="px-4 py-3 whitespace-nowrap text-xs font-medium text-neutral-700">{{ .Ruta }}</td>
+                <td class="px-4 py-3 whitespace-nowrap text-xs text-neutral-500">{{ if .Fecha }}{{ .Fecha.Format "02/01/2006" }}{{ else }} - {{ end }}</td>
+                <td class="px-4 py-3 whitespace-nowrap">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold leading-4 bg-danger-100 text-danger-800 border border-danger-200">
+                    DEVUELTO
+                  </span>
+                </td>
+              </tr>
+              {{ end }}
+              {{ end }}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {{ end }}
       </div>
     </div>
   </div>

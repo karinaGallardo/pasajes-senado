@@ -41,6 +41,7 @@ func (r *SolicitudRepository) FindAll(status string) ([]models.Solicitud, error)
 		Preload("Items").
 		Preload("Items.Origen").
 		Preload("Items.Destino").
+		Preload("Items.Estado").
 		Preload("TipoSolicitud.ConceptoViaje").
 		Preload("EstadoSolicitud").
 		Order("created_at desc")
@@ -59,6 +60,7 @@ func (r *SolicitudRepository) FindByUserID(userID string, status string) ([]mode
 		Preload("Items").
 		Preload("Items.Origen").
 		Preload("Items.Destino").
+		Preload("Items.Estado").
 		Preload("TipoSolicitud.ConceptoViaje").
 		Preload("EstadoSolicitud").
 		Order("created_at desc").Where("usuario_id = ?", userID)
@@ -96,6 +98,7 @@ func (r *SolicitudRepository) FindByUserIdOrAccesibleByEncargadoID(userID string
 		Preload("Items").
 		Preload("Items.Origen").
 		Preload("Items.Destino").
+		Preload("Items.Estado").
 		Preload("TipoSolicitud.ConceptoViaje").
 		Preload("EstadoSolicitud").
 		Order("created_at desc").

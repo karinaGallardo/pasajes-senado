@@ -20,6 +20,7 @@ type DetalleItinerarioDescargo struct {
 	Boleto            string                `gorm:"size:100"`
 	NumeroPaseAbordo  string                `gorm:"size:100"`
 	ArchivoPaseAbordo string                `gorm:"size:255"`
+	EsDevolucion      bool                  `gorm:"default:false"`
 	Orden             int                   `gorm:"default:0"`
 }
 

@@ -291,27 +291,31 @@ func (s *ReportService) GeneratePV01(ctx context.Context, solicitud *models.Soli
 
 	pdf.SetY(220)
 
-	pdf.SetFont("Arial", "B", 8)
-	pdf.SetXY(35, 230)
-	pdf.Cell(60, 0, "__________________________")
-	pdf.SetXY(35, 235)
-	pdf.CellFormat(60, 4, tr("ENCARGADO DE PASAJES"), "", 1, "C", false, 0, "")
-	pdf.SetX(35)
-	pdf.SetFont("Arial", "", 7)
-	encargadoName := ""
-	if solicitud.Usuario.Encargado != nil {
-		encargadoName = solicitud.Usuario.Encargado.GetNombreCompleto()
-	}
-	pdf.CellFormat(60, 4, tr(encargadoName), "", 1, "C", false, 0, "")
+	// Signatures
+	pdf.SetY(220)
+	pdf.SetFont("Arial", "B", 7)
 
-	pdf.SetFont("Arial", "B", 8)
-	pdf.SetXY(115, 230)
-	pdf.Cell(60, 0, "__________________________")
-	pdf.SetXY(115, 235)
+	// Left (Encargado)
+	pdf.Line(35, 230, 95, 230)
+	pdf.SetXY(35, 232)
+	pdf.CellFormat(60, 4, tr("ENCARGADO DE PASAJES"), "", 1, "C", false, 0, "")
+	if solicitud.Usuario.Encargado != nil {
+		pdf.SetX(35)
+		pdf.SetFont("Arial", "", 7)
+		pdf.CellFormat(60, 4, tr(solicitud.Usuario.Encargado.GetNombreCompleto()), "", 1, "C", false, 0, "")
+	}
+
+	// Right (Senador)
+	pdf.Line(115, 230, 175, 230)
+	pdf.SetXY(115, 232)
+	pdf.SetFont("Arial", "B", 7)
 	pdf.CellFormat(60, 4, tr("SENADORA / SENADOR"), "", 1, "C", false, 0, "")
 	pdf.SetX(115)
 	pdf.SetFont("Arial", "", 7)
 	pdf.CellFormat(60, 4, tr(solicitud.Usuario.GetNombreCompleto()), "", 1, "C", false, 0, "")
+	pdf.SetX(115)
+	pdf.SetFont("Arial", "I", 6)
+	pdf.CellFormat(60, 3, tr("(FIRMA Y SELLO)"), "", 1, "C", false, 0, "")
 
 	pdf.SetY(250)
 	pdf.SetFont("Arial", "I", 8)
@@ -495,14 +499,19 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 
 	drawSegmentBlock := func(title string, typeOrig, typeRepro models.TipoDetalleItinerario) {
 		pdf.SetFont("Arial", "B", 9)
-		pdf.CellFormat(190, 6, tr(" "+title), "B", 1, "L", false, 0, "")
+		pdf.CellFormat(190, 6, tr(" "+title), "", 1, "L", false, 0, "")
 		pdf.Ln(1)
 
 		var origRows, reproRows []models.DetalleItinerarioDescargo
 		for _, d := range descargo.DetallesItinerario {
-			if d.Tipo == typeOrig {
+			// Skip returns in main table
+			if d.EsDevolucion {
+				continue
+			}
+			switch d.Tipo {
+			case typeOrig:
 				origRows = append(origRows, d)
-			} else if d.Tipo == typeRepro {
+			case typeRepro:
 				reproRows = append(reproRows, d)
 			}
 		}
@@ -511,8 +520,10 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 		drawSubTable("", "N° BOLETO ORIGINAL", origRows)
 
 		// Table 2: Reprogramación
-		pdf.Ln(1)
-		drawSubTable("REPROGRAMACIÓN", "N° BOLETO REPROGRAMADO", reproRows)
+		if len(reproRows) > 0 {
+			pdf.Ln(1)
+			drawSubTable("REPROGRAMACIÓN", "N° BOLETO REPROGRAMADO", reproRows)
+		}
 	}
 
 	drawSegmentBlock("TRAMO DE IDA", models.TipoDetalleIdaOriginal, models.TipoDetalleIdaReprogramada)
@@ -526,14 +537,65 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 	pdf.SetFont("Arial", "", 8)
 	pdf.CellFormat(190, 5, tr(" (En caso de no haber utilizado el boleto emitido o un tramo informar en el siguiente cuadro)"), "", 1, "L", false, 0, "")
 
-	pdf.SetFillColor(240, 240, 240)
-	pdf.SetFont("Arial", "B", 8)
-	// Full width 190. 2 Cols -> 95 each.
-	pdf.CellFormat(95, 6, tr("RUTA"), "1", 0, "C", true, 0, "")
-	pdf.CellFormat(95, 6, tr("N° BOLETO"), "1", 1, "C", true, 0, "")
+	// Collect Returns grouped
+	var returnsIda, returnsVuelta []models.DetalleItinerarioDescargo
+	for _, d := range descargo.DetallesItinerario {
+		if d.EsDevolucion {
+			if strings.Contains(string(d.Tipo), "IDA") {
+				returnsIda = append(returnsIda, d)
+			} else if strings.Contains(string(d.Tipo), "VUELTA") {
+				returnsVuelta = append(returnsVuelta, d)
+			}
+		}
+	}
 
-	pdf.CellFormat(95, 8, "", "1", 0, "C", false, 0, "")
-	pdf.CellFormat(95, 8, "", "1", 1, "C", false, 0, "")
+	drawReturnTable := func(subTitle string, rows []models.DetalleItinerarioDescargo) {
+		if subTitle != "" {
+			pdf.SetFont("Arial", "B", 8)
+			pdf.CellFormat(190, 6, tr(subTitle), "", 1, "L", false, 0, "")
+		}
+
+		pdf.SetFillColor(240, 240, 240)
+		pdf.SetFont("Arial", "B", 8)
+		pdf.CellFormat(120, 6, tr("RUTA"), "1", 0, "C", true, 0, "")
+		pdf.CellFormat(70, 6, tr("N° BOLETO"), "1", 1, "C", true, 0, "")
+
+		if len(rows) > 0 {
+			pdf.SetFont("Arial", "", 8)
+			for _, r := range rows {
+				orig, dest := "", ""
+				parts := strings.Split(r.Ruta, "-")
+				if len(parts) >= 2 {
+					orig = strings.TrimSpace(parts[0])
+					dest = strings.TrimSpace(parts[1])
+				} else {
+					orig = r.Ruta
+				}
+
+				pdf.CellFormat(60, 6, tr(orig), "1", 0, "C", false, 0, "")
+				pdf.CellFormat(60, 6, tr(dest), "1", 0, "C", false, 0, "")
+				pdf.CellFormat(70, 6, tr(r.Boleto), "1", 1, "C", false, 0, "")
+			}
+		} else {
+			pdf.CellFormat(60, 8, "", "1", 0, "C", false, 0, "")
+			pdf.CellFormat(60, 8, "", "1", 0, "C", false, 0, "")
+			pdf.CellFormat(70, 8, "", "1", 1, "C", false, 0, "")
+		}
+	}
+
+	if len(returnsIda) > 0 || len(returnsVuelta) > 0 {
+		if len(returnsIda) > 0 {
+			drawReturnTable("TRAMO DE IDA", returnsIda)
+		}
+		if len(returnsVuelta) > 0 {
+			if len(returnsIda) > 0 {
+				pdf.Ln(2)
+			}
+			drawReturnTable("TRAMO DE RETORNO", returnsVuelta)
+		}
+	} else {
+		drawReturnTable("", nil)
+	}
 	pdf.Ln(10)
 
 	// Signatures
@@ -541,23 +603,23 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 	pdf.SetFont("Arial", "B", 8)
 
 	// Left (Senador)
-	pdf.SetXY(35, 230)
-	pdf.Cell(60, 0, "__________________________")
-	pdf.SetXY(35, 235)
+	pdf.Line(35, 230, 95, 230) // Line width 60 (35 to 95)
+	pdf.SetXY(35, 232)
+	pdf.SetFont("Arial", "B", 7)
 	pdf.CellFormat(60, 4, tr("SENADORA / SENADOR"), "", 1, "C", false, 0, "")
 	pdf.SetX(35)
 	pdf.SetFont("Arial", "", 7)
 	pdf.CellFormat(60, 4, tr(solicitud.Usuario.GetNombreCompleto()), "", 1, "C", false, 0, "")
 	pdf.SetX(35)
-	pdf.CellFormat(60, 4, tr("(FIRMA Y SELLO)"), "", 1, "C", false, 0, "")
+	pdf.SetFont("Arial", "I", 6)
+	pdf.CellFormat(60, 3, tr("(FIRMA Y SELLO)"), "", 1, "C", false, 0, "")
 
-	// Right (Responsable Presentacion - can be left blank or auto-filled)
-	pdf.SetXY(115, 230)
-	pdf.Cell(60, 0, "__________________________")
-	pdf.SetXY(115, 235)
-	pdf.CellFormat(60, 4, tr("RESPONSABLE PRESENTACION DEL DESCARGO"), "", 1, "C", false, 0, "")
-	pdf.SetX(115)
-	// pdf.CellFormat(60, 4, tr("(Firma)"), "", 1, "C", false, 0, "")
+	// Right (Responsable Presentacion)
+	pdf.Line(110, 230, 180, 230) // Line width 70 (110 to 180)
+	pdf.SetXY(110, 232)
+	pdf.SetFont("Arial", "B", 7)
+	pdf.CellFormat(70, 4, tr("RESPONSABLE PRESENTACION DEL DESCARGO"), "", 1, "C", false, 0, "")
+	pdf.SetX(110)
 
 	pdf.SetY(250)
 	pdf.SetFont("Arial", "I", 8)

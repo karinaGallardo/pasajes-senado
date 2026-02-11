@@ -67,3 +67,7 @@ func (r *DescargoRepository) FindAll() ([]models.Descargo, error) {
 func (r *DescargoRepository) Update(descargo *models.Descargo) error {
 	return r.db.Save(descargo).Error
 }
+
+func (r *DescargoRepository) ClearDetalles(descargoID string) error {
+	return r.db.Where("descargo_id = ?", descargoID).Delete(&models.DetalleItinerarioDescargo{}).Error
+}

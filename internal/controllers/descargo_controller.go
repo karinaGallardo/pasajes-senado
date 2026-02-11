@@ -6,8 +6,10 @@ import (
 	"net/http"
 	"sistema-pasajes/internal/appcontext"
 	"sistema-pasajes/internal/dtos"
+	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/services"
 	"sistema-pasajes/internal/utils"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -135,13 +137,14 @@ func (ctrl *DescargoController) Store(c *gin.Context) {
 		archivoPaths = append(archivoPaths, path)
 	}
 
-	if _, err := ctrl.descargoService.Create(c.Request.Context(), req, authUser.ID, archivoPaths); err != nil {
+	descargo, err := ctrl.descargoService.Create(c.Request.Context(), req, authUser.ID, archivoPaths)
+	if err != nil {
 		log.Printf("Error creando descargo: %v", err)
 		c.Redirect(http.StatusFound, "/solicitudes?error=ErrorCreacion")
 		return
 	}
 
-	c.Redirect(http.StatusFound, "/descargos")
+	c.Redirect(http.StatusFound, "/descargos/"+descargo.ID)
 }
 
 func (ctrl *DescargoController) Show(c *gin.Context) {
@@ -158,6 +161,69 @@ func (ctrl *DescargoController) Show(c *gin.Context) {
 		"Title":    "Detalle de Descargo",
 		"Descargo": descargo,
 	})
+}
+
+func (ctrl *DescargoController) Edit(c *gin.Context) {
+	id := c.Param("id")
+	descargo, err := ctrl.descargoService.GetByID(c.Request.Context(), id)
+	if err != nil {
+		c.Redirect(http.StatusFound, "/descargos")
+		return
+	}
+
+	if descargo.Estado != "EN_REVISION" {
+		c.Redirect(http.StatusFound, "/descargos/"+id)
+		return
+	}
+
+	// Categorizar items para la vista
+	itemsByType := make(map[string][]models.DetalleItinerarioDescargo)
+	for _, item := range descargo.DetallesItinerario {
+		itemsByType[string(item.Tipo)] = append(itemsByType[string(item.Tipo)], item)
+	}
+
+	utils.Render(c, "descargo/edit", gin.H{
+		"Title":       "Editar Descargo",
+		"Descargo":    descargo,
+		"ItemsByType": itemsByType,
+	})
+}
+
+func (ctrl *DescargoController) Update(c *gin.Context) {
+	id := c.Param("id")
+	var req dtos.CreateDescargoRequest // Can reuse the same DTO for basic fields
+	if err := c.ShouldBind(&req); err != nil {
+		c.Redirect(http.StatusFound, "/descargos/"+id+"/editar?error=DatosInvalidos")
+		return
+	}
+
+	authUser := appcontext.AuthUser(c)
+	if authUser == nil {
+		c.Redirect(http.StatusFound, "/auth/login")
+		return
+	}
+
+	// Procesar Archivos de Pases a Bordo (Solo los nuevos)
+	indices := c.PostFormArray("itin_index[]")
+	var archivoPaths []string
+	for _, idx := range indices {
+		path := c.PostForm("itin_archivo_existente_" + idx)
+		if file, err := c.FormFile("itin_archivo_" + idx); err == nil {
+			savedPath, err := utils.SaveUploadedFile(c, file, "uploads/pases_abordo", "pase_descargo_"+idx+"_")
+			if err == nil {
+				path = savedPath
+			}
+		}
+		archivoPaths = append(archivoPaths, path)
+	}
+
+	if err := ctrl.descargoService.UpdateFull(c.Request.Context(), id, req, authUser.ID, archivoPaths); err != nil {
+		log.Printf("Error actualizando descargo: %v", err)
+		c.Redirect(http.StatusFound, "/descargos/"+id+"/editar?error=ErrorActualizacion")
+		return
+	}
+
+	c.Redirect(http.StatusFound, "/descargos/"+id)
 }
 
 func (ctrl *DescargoController) Approve(c *gin.Context) {
@@ -235,5 +301,27 @@ func (ctrl *DescargoController) PreviewPV5(c *gin.Context) {
 		"Title":    "Previsualización Formulario PV-05",
 		"FilePath": fmt.Sprintf("/descargos/%s/imprimir-pv5", descargo.ID),
 		"IsPDF":    true,
+	})
+}
+
+func (ctrl *DescargoController) PreviewFile(c *gin.Context) {
+	path := c.Query("path")
+	if path == "" {
+		c.String(http.StatusBadRequest, "Ruta de archivo requerida")
+		return
+	}
+
+	// Asegurar que el path empiece con / para que el iframe lo cargue correctamente
+	fullPath := path
+	if !strings.HasPrefix(path, "http") && !strings.HasPrefix(path, "/") {
+		fullPath = "/" + path
+	}
+
+	isPDF := strings.HasSuffix(strings.ToLower(path), ".pdf")
+
+	c.HTML(http.StatusOK, "solicitud/components/modal_preview_archivo", gin.H{
+		"Title":    "Previsualización de Documento",
+		"FilePath": fullPath,
+		"IsPDF":    isPDF,
 	})
 }

@@ -87,8 +87,11 @@ func SetupRoutes(r *gin.Engine) {
 		protected.GET("/descargos", descargoCtrl.Index)
 		protected.GET("/descargos/:id/imprimir-pv5", descargoCtrl.DownloadPV5ByID)
 		protected.GET("/descargos/:id/previsualizar-pv5", descargoCtrl.PreviewPV5)
+		protected.GET("/preview-file", descargoCtrl.PreviewFile)
 		protected.POST("/descargos", descargoCtrl.Store)
 		protected.GET("/descargos/:id", descargoCtrl.Show)
+		protected.GET("/descargos/:id/editar", descargoCtrl.Edit)
+		protected.POST("/descargos/:id/actualizar", descargoCtrl.Update)
 		protected.POST("/descargos/:id/aprobar", descargoCtrl.Approve)
 
 		compCtrl := controllers.NewCompensacionController()

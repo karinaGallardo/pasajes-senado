@@ -121,21 +121,20 @@
       </div>
 
       <div class="divide-y divide-neutral-200 transition-all">
-        {{ range .Solicitud.Items }}
-        {{ $item := . }}
+        {{ range .Solicitud.Items }} {{ $item := . }}
         <div class="p-6">
           <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <!-- Tramo Info -->
             <div class="flex items-center gap-4">
               <div
-                class="h-10 w-10 rounded-lg flex items-center justify-center border {{ if eq .Tipo "IDA" }} bg-primary-50 border-primary-200 text-primary-600 {{ else }} bg-secondary-50 border-secondary-200 text-secondary-600 {{ end }}">
-                <i class="ph {{ if eq .Tipo "IDA" }}ph-airplane-takeoff{{ else }}ph-airplane-landing{{ end }} text-xl"></i>
+                class="h-10 w-10 rounded-lg flex items-center justify-center border {{ if eq .Tipo `IDA` }} bg-primary-50 border-primary-200 text-primary-600 {{ else }} bg-secondary-50 border-secondary-200 text-secondary-600 {{ end }}">
+                <i class="ph {{ if eq .Tipo `IDA` }}ph-airplane-takeoff{{ else }}ph-airplane-landing{{ end }} text-xl"></i>
               </div>
               <div>
                 <div class="flex items-center gap-2">
                   <span class="text-xs font-black uppercase text-neutral-400 tracking-widest">{{ .Tipo }}</span>
                   <span
-                    class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase {{ if eq .GetEstado "SOLICITADO" }} bg-primary-100 text-primary-700 {{ else if eq .GetEstado "APROBADO" }} bg-success-100 text-success-700 {{ else if eq .GetEstado "EMITIDO" }} bg-secondary-100 text-secondary-700 {{ else if eq .GetEstado "RECHAZADO" }} bg-danger-100 text-danger-700 {{ else }} bg-neutral-100 text-neutral-600 {{ end }}">
+                    class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase {{ if eq .GetEstado `SOLICITADO` }} bg-primary-100 text-primary-700 {{ else if eq .GetEstado `APROBADO` }} bg-success-100 text-success-700 {{ else if eq .GetEstado `EMITIDO` }} bg-secondary-100 text-secondary-700 {{ else if eq .GetEstado `RECHAZADO` }} bg-danger-100 text-danger-700 {{ else }} bg-neutral-100 text-neutral-600 {{ end }}">
                     {{ .GetEstado }}
                   </span>
                 </div>
@@ -144,9 +143,7 @@
                   <i class="ph ph-arrow-right mx-1 text-neutral-300"></i>
                   {{ if .Destino }}{{ .Destino.Ciudad }} ({{ .Destino.IATA }}){{ else }}{{ .DestinoIATA }}{{ end }}
                 </h4>
-                <p class="text-[11px] text-neutral-500 font-medium">
-                  {{ if .Fecha }}{{ fechaHora .Fecha }}{{ else }}Fecha no programada{{ end }}
-                </p>
+                <p class="text-[11px] text-neutral-500 font-medium">{{ if .Fecha }}{{ fechaHora .Fecha }}{{ else }}Fecha no programada{{ end }}</p>
               </div>
             </div>
 
@@ -207,10 +204,16 @@
                   <div class="h-1 w-1 rounded-full bg-neutral-300"></div>
                   <span class="text-[10px] text-neutral-500 font-bold uppercase tracking-widest">Detalle del Pasaje</span>
                 </div>
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 text-[11px] text-neutral-600">
+                <div class="grid grid-cols-2 sm:grid-cols-5 gap-4 text-[11px] text-neutral-600">
+                  <div>
+                    <span class="block text-neutral-400 uppercase font-bold tracking-tighter">Ruta</span>
+                    <span class="font-bold text-neutral-900">{{ .Ruta }}</span>
+                  </div>
                   <div>
                     <span class="block text-neutral-400 uppercase font-bold tracking-tighter">Aerolínea</span>
-                    <span class="font-bold text-neutral-900">{{ if .Aerolinea }}{{ .Aerolinea.Nombre }}{{ else }}N/A{{ end }}</span>
+                    <span class="font-bold text-neutral-900">
+                      {{ if .Aerolinea }}{{ if .Aerolinea.Sigla }}{{ .Aerolinea.Sigla }}{{ else }}{{ .Aerolinea.Nombre }}{{ end }}{{ else }}N/A{{ end }}
+                    </span>
                   </div>
                   <div>
                     <span class="block text-neutral-400 uppercase font-bold tracking-tighter">Nº Boleto</span>
@@ -238,39 +241,51 @@
                   title="Ver PDF">
                   <i class="ph ph-file-pdf text-xl"></i>
                 </button>
-                {{ end }}
-
-                {{ if and $.Perms.IsAdminOrResp (ne .GetEstado "ANULADO") }}
-                 <!-- Dropdown (simplified) -->
-                  <div class="relative">
+                {{ end }} {{ if and $.Perms.IsAdminOrResp (ne .GetEstado "ANULADO") }}
+                <!-- Dropdown (simplified) -->
+                <div class="relative">
+                  <button
+                    type="button"
+                    @click="openMenu = !openMenu"
+                    class="p-2 rounded-lg border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-600 transition-all shadow-sm flex items-center justify-center cursor-pointer"
+                    title="Acciones del Pasaje">
+                    <i class="ph ph-dots-three-vertical text-lg font-bold"></i>
+                  </button>
+                  <!-- Dropdown Menu -->
+                  <div
+                    x-show="openMenu"
+                    @click.away="openMenu = false"
+                    x-transition:enter="transition ease-out duration-100"
+                    x-transition:enter-start="transform opacity-0 scale-95"
+                    x-transition:enter-end="transform opacity-100 scale-100"
+                    class="absolute right-0 mt-2 w-56 bg-white border border-neutral-200 rounded-xl shadow-[0_10px_25px_-5px_rgba(0,0,0,0.1),0_8px_10px_-6px_rgba(0,0,0,0.1)] z-50 py-2 divide-y divide-neutral-100"
+                    x-cloak>
+                    {{ if eq .GetEstado "REGISTRADO" }}
                     <button
                       type="button"
-                      @click="openMenu = !openMenu"
-                      class="p-2 rounded-lg border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-600 transition-all shadow-sm flex items-center justify-center cursor-pointer"
-                      title="Acciones del Pasaje">
-                      <i class="ph ph-dots-three-vertical text-lg font-bold"></i>
+                      @click="$dispatch('pasaje-action', { action: 'emitir', id: '{{.ID}}' })"
+                      class="block w-full text-left px-4 py-2 text-xs text-secondary-600 hover:bg-secondary-50 font-bold cursor-pointer">
+                      <i class="ph ph-airplane-tilt mr-2"></i>
+                      Enviar Pasaje
                     </button>
-                    <!-- Dropdown Menu -->
-                    <div
-                      x-show="openMenu"
-                      @click.away="openMenu = false"
-                      x-transition:enter="transition ease-out duration-100"
-                      x-transition:enter-start="transform opacity-0 scale-95"
-                      x-transition:enter-end="transform opacity-100 scale-100"
-                      class="absolute right-0 mt-2 w-56 bg-white border border-neutral-200 rounded-xl shadow-[0_10px_25px_-5px_rgba(0,0,0,0.1),0_8px_10px_-6px_rgba(0,0,0,0.1)] z-50 py-2 divide-y divide-neutral-100" 
-                      x-cloak>
-                       {{ if eq .GetEstado "REGISTRADO" }}
-                       <button type="button" @click="$dispatch('pasaje-action', { action: 'emitir', id: '{{.ID}}' })" class="block w-full text-left px-4 py-2 text-xs text-secondary-600 hover:bg-secondary-50 font-bold cursor-pointer">
-                        <i class="ph ph-airplane-tilt mr-2"></i>Emitir Pasaje
-                       </button>
-                       {{ end }}
-                       {{ if eq .GetEstado "REGISTRADO" }}
-                       <button type="button" hx-get="/pasajes/{{ .ID }}/editar" hx-target="#modal-container" class="block w-full text-left px-4 py-2 text-xs hover:bg-neutral-50 cursor-pointer">Editar</button>
-                       {{ end }}
+                    {{ end }} {{ if eq .GetEstado "REGISTRADO" }}
+                    <button
+                      type="button"
+                      hx-get="/pasajes/{{ .ID }}/editar"
+                      hx-target="#modal-container"
+                      class="block w-full text-left px-4 py-2 text-xs hover:bg-neutral-50 cursor-pointer">
+                      Editar
+                    </button>
+                    {{ end }}
 
-                       <button type="button" @click="$dispatch('pasaje-action', { action: 'anular', id: '{{.ID}}' })" class="block w-full text-left px-4 py-2 text-xs text-danger-600 hover:bg-danger-50 cursor-pointer">Anular</button>
-                    </div>
-                 </div>
+                    <button
+                      type="button"
+                      @click="$dispatch('pasaje-action', { action: 'anular', id: '{{.ID}}' })"
+                      class="block w-full text-left px-4 py-2 text-xs text-danger-600 hover:bg-danger-50 cursor-pointer">
+                      Anular
+                    </button>
+                  </div>
+                </div>
                 {{ end }}
               </div>
             </div>
@@ -321,20 +336,21 @@
           <div class="lg:col-span-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
             {{ if .Solicitud.CupoDerechoItem }}
             <!-- Quota Info -->
-            <div class="flex items-start space-x-3 p-3 rounded-lg bg-amber-50 border border-amber-100 hover:border-amber-200 transition-colors sm:col-span-2">
-              <div class="text-amber-500 mt-0.5 bg-white p-1.5 rounded-md border border-amber-100 shadow-sm">
-                <i class="ph ph-calendar-check text-xl"></i>
+            <div class="flex items-center space-x-3 p-2 rounded-lg bg-amber-50 border border-amber-100 hover:border-amber-200 transition-colors sm:col-span-2">
+              <div class="text-amber-500 bg-white p-1 rounded-md border border-amber-100 shadow-sm flex items-center justify-center">
+                <i class="ph ph-calendar-check text-lg"></i>
               </div>
               <div>
-                <p class="text-[10px] font-bold text-amber-800 uppercase tracking-wide">Información del Cupo</p>
-                <p class="text-xs font-bold text-amber-900 mt-0.5">
-                  {{ .Solicitud.CupoDerechoItem.Semana }}: del {{ if .Solicitud.CupoDerechoItem.FechaDesde }}{{ .Solicitud.CupoDerechoItem.FechaDesde.Format "02/01/2006" }}{{ end }} al {{ if .Solicitud.CupoDerechoItem.FechaHasta }}{{ .Solicitud.CupoDerechoItem.FechaHasta.Format "02/01/2006" }}{{ end }}
+                <p class="text-[10px] font-bold text-amber-800 uppercase tracking-wide leading-none mb-0.5">Información del Cupo</p>
+                <p class="text-xs font-bold text-amber-900 leading-tight">
+                  {{ .Solicitud.CupoDerechoItem.Semana }}: del {{ if .Solicitud.CupoDerechoItem.FechaDesde }}{{ .Solicitud.CupoDerechoItem.FechaDesde.Format "02/01/2006" }}{{ end
+                  }} al {{ if .Solicitud.CupoDerechoItem.FechaHasta }}{{ .Solicitud.CupoDerechoItem.FechaHasta.Format "02/01/2006" }}{{ end }}
                 </p>
               </div>
             </div>
             {{ end }}
             <!-- Departure -->
-            <div class="flex items-start space-x-3 p-3 rounded-lg bg-neutral-50 border border-neutral-100 hover:border-neutral-200 transition-colors sm:col-span-2">
+            <div class="flex items-start space-x-3 p-3 rounded-lg bg-neutral-50 border border-neutral-100 hover:border-neutral-200 transition-colors sm:col-span-1">
               <div class="text-neutral-400 mt-0.5 bg-white p-1.5 rounded-md border border-neutral-100 shadow-sm">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path
@@ -352,7 +368,7 @@
 
             <!-- Return -->
             <div
-              class="flex items-start space-x-3 p-3 rounded-lg border hover:border-neutral-200 transition-colors {{ if .Solicitud.GetFechaVuelta }} bg-neutral-50 border-neutral-100 {{ else }} bg-warning-50 border-warning-200 {{ end }}">
+              class="flex items-start space-x-3 p-3 rounded-lg border hover:border-neutral-200 transition-colors sm:col-span-1 {{ if .Solicitud.GetFechaVuelta }} bg-neutral-50 border-neutral-100 {{ else }} bg-warning-50 border-warning-200 {{ end }}">
               <div class="text-neutral-400 mt-0.5 bg-white p-1.5 rounded-md border border-neutral-100 shadow-sm">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transform rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path
@@ -422,9 +438,7 @@
               <div class="bg-white p-2 rounded-full border border-neutral-200 relative z-10 text-neutral-400 transform rotate-90 md:rotate-0 shadow-sm">
                 <i class="ph ph-airplane-tilt text-xl"></i>
               </div>
-              <span class="text-[11px] font-bold text-primary uppercase mt-2 bg-neutral-50 px-2 rounded-full relative z-10">
-                {{ if .Solicitud.TipoItinerario }}{{ .Solicitud.TipoItinerario.Nombre }}{{ else }}Viaje{{ end }}
-              </span>
+              <span class="text-[11px] font-bold text-primary uppercase mt-2 bg-neutral-50 px-2 rounded-full relative z-10">Ida</span>
             </div>
 
             <!-- Destino -->
@@ -451,7 +465,7 @@
               </div>
               <span
                 class="text-[11px] font-bold {{ if .Solicitud.GetFechaVuelta }}text-primary{{ else }}text-neutral-400{{ end }} uppercase mt-2 bg-neutral-50 px-2 rounded-full relative z-10">
-                Retorno
+                Vuelta
               </span>
             </div>
 
