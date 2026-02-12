@@ -319,9 +319,28 @@ func (ctrl *DescargoController) PreviewFile(c *gin.Context) {
 
 	isPDF := strings.HasSuffix(strings.ToLower(path), ".pdf")
 
+	// Información extra para contraste (opcional)
+	ruta := c.Query("ruta")
+	fecha := c.Query("fecha")
+	boleto := c.Query("boleto")
+	vuelo := c.Query("vuelo")
+
+	tramoRegistrado := c.Query("info_tramo_registrado")
+	fechaRegistrada := c.Query("info_fecha_registrada")
+	boletoRegistrado := c.Query("info_boleto_registrado")
+	paseRegistrado := c.Query("info_pase_registrado")
+
 	c.HTML(http.StatusOK, "solicitud/components/modal_preview_archivo", gin.H{
-		"Title":    "Previsualización de Documento",
-		"FilePath": fullPath,
-		"IsPDF":    isPDF,
+		"Title":                "Previsualización de Documento",
+		"FilePath":             fullPath,
+		"IsPDF":                isPDF,
+		"InfoRuta":             ruta,
+		"InfoFecha":            fecha,
+		"InfoBoleto":           boleto,
+		"InfoVuelo":            vuelo,
+		"InfoTramoRegistrado":  tramoRegistrado,
+		"InfoFechaRegistrada":  fechaRegistrada,
+		"InfoBoletoRegistrado": boletoRegistrado,
+		"InfoPaseRegistrado":   paseRegistrado,
 	})
 }

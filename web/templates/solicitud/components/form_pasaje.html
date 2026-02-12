@@ -528,7 +528,9 @@
       x-effect="
        const now = new Date();
        const selectedDate = new Date(`${selectedDaySalida}T${selectedTimeSalida}`);
-       if (selectedDate < now) {
+       const isAdmin = {{ if .AuthUser.IsAdminOrResponsable }}true{{ else }}false{{ end }};
+
+       if (!isAdmin && selectedDate < now) {
          error = 'La fecha y hora de salida ya ha pasado.';
        } else {
          error = '';

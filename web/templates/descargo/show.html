@@ -1,6 +1,6 @@
 {{ define "descargo/show" }} {{ template "layout_start" . }}
 
-<div class="max-w-5xl mx-auto space-y-6">
+<div class="w-full space-y-6">
   <!-- Header -->
   <div class="flex items-center justify-between">
     <div>
@@ -122,44 +122,83 @@
 
         {{ if .Descargo.DetallesItinerario }}
         <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-neutral-200">
-            <thead class="bg-neutral-50">
+          <table class="min-w-full divide-y divide-neutral-200 border-separate border-spacing-0">
+            <thead class="bg-neutral-50/50">
               <tr>
-                <th class="px-4 py-3 text-left text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Tipo / Tramo</th>
-                <th class="px-4 py-3 text-left text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Ruta</th>
-                <th class="px-4 py-3 text-left text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Fecha</th>
-                <th class="px-4 py-3 text-left text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Boleto / Pase</th>
-                <th class="px-4 py-3 text-center text-[10px] font-bold text-neutral-500 uppercase tracking-widest">Doc.</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider">Tipo de Tramo</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider">Ruta & Fecha</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider">Documentación</th>
+                <th scope="col" class="relative px-6 py-3 text-right"><span class="sr-only">Acciones</span></th>
               </tr>
             </thead>
-            <tbody class="bg-white divide-y divide-neutral-200">
+            <tbody class="bg-white divide-y divide-neutral-100">
               {{ range .Descargo.DetallesItinerario }}
               {{ if not .EsDevolucion }}
-              <tr class="hover:bg-neutral-50 transition-colors">
-                <td class="px-4 py-3 whitespace-nowrap">
-                  <span
-                    class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold leading-4 {{ if or (eq .Tipo `IDA_ORIGINAL`) (eq .Tipo `VUELTA_ORIGINAL`) }}bg-neutral-100 text-neutral-800 border border-neutral-200{{ else }}bg-warning-50 text-warning-700 border border-warning-100{{ end }}">
-                    {{ .Tipo }}
-                  </span>
+              <tr class="group hover:bg-neutral-50/80 transition-all duration-200">
+                <!-- Tipo -->
+                <td class="px-6 py-4 whitespace-nowrap align-top">
+                  <div class="flex items-center">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-bold border 
+                      {{ if eq .Tipo `IDA_ORIGINAL` }} bg-blue-50 text-blue-700 border-blue-100 
+                      {{ else if eq .Tipo `VUELTA_ORIGINAL` }} bg-indigo-50 text-indigo-700 border-indigo-100 
+                      {{ else }} bg-amber-50 text-amber-700 border-amber-100 {{ end }}">
+                      {{ if eq .Tipo `IDA_ORIGINAL` }}IDA Original{{ else }}
+                      {{ if eq .Tipo `VUELTA_ORIGINAL` }}Vuelta Original{{ else }}
+                      {{ .Tipo }}{{ end }}{{ end }}
+                    </span>
+                  </div>
                 </td>
-                <td class="px-4 py-3 whitespace-nowrap text-xs font-medium text-neutral-700">{{ .Ruta }}</td>
-                <td class="px-4 py-3 whitespace-nowrap text-xs text-neutral-500">{{ if .Fecha }}{{ .Fecha.Format "02/01/2006" }}{{ else }} - {{ end }}</td>
-                <td class="px-4 py-3 whitespace-nowrap">
-                  <div class="text-[11px] text-neutral-900 font-medium">B: {{ if .Boleto }}{{ .Boleto }}{{ else }} - {{ end }}</div>
-                  <div class="text-[10px] text-neutral-400">P: {{ if .NumeroPaseAbordo }}{{ .NumeroPaseAbordo }}{{ else }} - {{ end }}</div>
+
+                <!-- Ruta & Fecha -->
+                <td class="px-6 py-4 whitespace-nowrap align-top">
+                  <div class="flex flex-col">
+                    <span class="text-sm font-bold text-neutral-900 flex items-center mb-1">
+                      <i class="ph ph-airplane-tilt text-neutral-400 mr-2"></i>
+                      {{ .Ruta }}
+                    </span>
+                    <span class="text-xs text-neutral-500 flex items-center">
+                      <i class="ph ph-calendar-blank text-neutral-400 mr-2"></i>
+                      {{ if .Fecha }}{{ .Fecha.Format "02 de Ene, 2006" }}{{ else }} - {{ end }}
+                    </span>
+                  </div>
                 </td>
-                <td class="px-4 py-3 whitespace-nowrap text-center">
+
+                <!-- Documentación -->
+                <td class="px-6 py-4 whitespace-nowrap align-top">
+                  <div class="flex flex-col space-y-1.5">
+                    <div class="flex items-center text-xs text-neutral-700">
+                      <span class="w-12 font-semibold text-neutral-400 uppercase text-[9px] tracking-wide">Boleto</span>
+                      <span class="font-mono text-neutral-900 font-medium ml-2">{{ if .Boleto }}{{ .Boleto }}{{ else }} - {{ end }}</span>
+                    </div>
+                    <div class="flex items-center text-xs text-neutral-700">
+                      <span class="w-12 font-semibold text-neutral-400 uppercase text-[9px] tracking-wide">Pase</span>
+                      <span class="font-mono text-neutral-900 font-medium ml-2">{{ if .NumeroPaseAbordo }}{{ .NumeroPaseAbordo }}{{ else }} - {{ end }}</span>
+                    </div>
+                  </div>
+                </td>
+
+                <!-- Acciones -->
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium align-middle">
                   {{ if .ArchivoPaseAbordo }}
+                  {{ $sol := $.Descargo.Solicitud }}
+                  {{ $p := "" }}
+                  {{ if eq .Tipo "IDA_ORIGINAL" }}{{ if $sol.GetItemIda }}{{ $p = $sol.GetItemIda.GetPasajeOriginal }}{{ end }}{{ end }}
+                  {{ if eq .Tipo "VUELTA_ORIGINAL" }}{{ if $sol.GetItemVuelta }}{{ $p = $sol.GetItemVuelta.GetPasajeOriginal }}{{ end }}{{ end }}
+                  {{ if eq .Tipo "IDA_REPRO" }}{{ if $sol.GetItemIda }}{{ $p = $sol.GetItemIda.GetPasajeReprogramado }}{{ end }}{{ end }}
+                  {{ if eq .Tipo "VUELTA_REPRO" }}{{ if $sol.GetItemVuelta }}{{ $p = $sol.GetItemVuelta.GetPasajeReprogramado }}{{ end }}{{ end }}
+
                   <button
                     type="button"
-                    hx-get="/preview-file?path={{ .ArchivoPaseAbordo }}"
+                    hx-get="/preview-file?path={{ .ArchivoPaseAbordo }}&info_tramo_registrado={{ .Ruta | urlquery }}&info_fecha_registrada={{ if .Fecha }}{{ .Fecha.Format "02/01/2006" | urlquery }}{{ end }}&info_boleto_registrado={{ .Boleto | urlquery }}&info_pase_registrado={{ .NumeroPaseAbordo | urlquery }}{{ if $p }}&ruta={{ $p.Ruta | urlquery }}&fecha={{ $p.FechaVuelo.Format "02/01/2006 15:04" | urlquery }}&boleto={{ $p.NumeroBoleto | urlquery }}&vuelo={{ $p.NumeroVuelo | urlquery }}{{ end }}"
                     hx-target="#modal-container"
-                    class="text-primary hover:text-primary-800 transition-colors"
-                    title="Ver Pase a Bordo">
-                    <i class="ph ph-file-pdf text-lg"></i>
+                    class="inline-flex items-center px-3 py-1.5 border border-neutral-200 rounded-lg text-xs font-bold text-neutral-600 bg-white hover:bg-primary-50 hover:text-primary hover:border-primary/30 transition-all shadow-sm group-hover:shadow-md">
+                    <i class="ph ph-file-search mr-2 text-lg text-primary-500"></i>
+                    Ver Documento
                   </button>
                   {{ else }}
-                  <span class="text-neutral-300"><i class="ph ph-x-circle text-lg"></i></span>
+                  <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-neutral-100 text-neutral-400 italic">
+                    <i class="ph ph-prohibit mr-1.5"></i> Sin archivo
+                  </span>
                   {{ end }}
                 </td>
               </tr>
@@ -176,7 +215,7 @@
       <!-- Pasajes Devueltos -->
       {{ $hasReturns := false }}
       {{ range .Descargo.DetallesItinerario }}{{ if .EsDevolucion }}{{ $hasReturns = true }}{{ end }}{{ end }}
-      
+
       {{ if $hasReturns }}
       <div class="bg-white shadow rounded-lg overflow-hidden border border-danger-200">
         <div class="px-6 py-4 border-b border-danger-100 bg-danger-50 flex justify-between items-center">

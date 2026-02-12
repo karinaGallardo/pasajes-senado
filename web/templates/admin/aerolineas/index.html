@@ -1,5 +1,5 @@
 {{ define "admin/aerolineas/index" }} {{ template "layout_start" . }}
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+<div class="w-full space-y-6">
   <div class="sm:flex sm:items-center">
     <div class="sm:flex-auto">
       <h1 class="text-2xl font-bold text-neutral-900">Gestión de Aerolíneas</h1>
@@ -59,8 +59,8 @@
                   </button>
                   <button
                     type="button"
-                    hx-post="/admin/oficinas/{{ .ID }}/delete"
-                    hx-confirm="¿Está seguro de que desea eliminar la oficina '{{ .Detalle }}'?"
+                    hx-post="/admin/aerolineas/{{ .ID }}/delete"
+                    hx-confirm="¿Está seguro de que desea eliminar la aerolínea '{{ .Nombre }}'?"
                     hx-target="body"
                     class="ml-4 text-danger-600 hover:text-danger-900 transition-colors cursor-pointer"
                     title="Eliminar">

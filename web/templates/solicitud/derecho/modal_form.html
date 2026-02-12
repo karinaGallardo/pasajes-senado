@@ -19,8 +19,8 @@
         {{ $vuelta := .Solicitud.GetItemVuelta }}
         {{ $stIda := `` }}{{ if $ida }}{{ $stIda = $ida.GetEstado }}{{ end }}
         {{ $stVuelta := `` }}{{ if $vuelta }}{{ $stVuelta = $vuelta.GetEstado }}{{ end }}
-        {{ $canEditIda := true }}{{ if .IsEdit }}{{ $canEditIda = or (eq $stIda `PENDIENTE`) (eq $stIda `SOLICITADO`) (eq $stIda `RECHAZADO`) }}{{ end }}
-        {{ $canEditVuelta := true }}{{ if .IsEdit }}{{ $canEditVuelta = or (eq $stVuelta `PENDIENTE`) (eq $stVuelta `SOLICITADO`) (eq $stVuelta `RECHAZADO`) }}{{ end }}
+        {{ $canEditIda := true }}{{ if .IsEdit }}{{ if .AuthUser.IsAdminOrResponsable }}{{ $canEditIda = true }}{{ else }}{{ $canEditIda = or (eq $stIda `PENDIENTE`) (eq $stIda `SOLICITADO`) (eq $stIda `RECHAZADO`) }}{{ end }}{{ end }}
+        {{ $canEditVuelta := true }}{{ if .IsEdit }}{{ if .AuthUser.IsAdminOrResponsable }}{{ $canEditVuelta = true }}{{ else }}{{ $canEditVuelta = or (eq $stVuelta `PENDIENTE`) (eq $stVuelta `SOLICITADO`) (eq $stVuelta `RECHAZADO`) }}{{ end }}{{ end }}
 
         selectedDaySalida: '{{ if .IsEdit }}{{ if eq .Itinerario.Codigo `SOLO_VUELTA` }}{{ if .Solicitud.GetFechaVuelta }}{{ .Solicitud.GetFechaVuelta.Format `2006-01-02` }}{{ end }}{{ else }}{{ if .Solicitud.GetFechaIda }}{{ .Solicitud.GetFechaIda.Format `2006-01-02` }}{{ end }}{{ end }}{{ else }}{{ .DefaultDateIda }}{{ end }}',
         selectedTimeSalida: '{{ if .IsEdit }}{{ if eq .Itinerario.Codigo `SOLO_VUELTA` }}{{ if .Solicitud.GetFechaVuelta }}{{ .Solicitud.GetFechaVuelta.Format `15:04` }}{{ end }}{{ else }}{{ if .Solicitud.GetFechaIda }}{{ .Solicitud.GetFechaIda.Format `15:04` }}{{ end }}{{ end }}{{ else }}08:00{{ end }}',

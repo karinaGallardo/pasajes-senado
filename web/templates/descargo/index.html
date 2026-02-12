@@ -14,7 +14,7 @@
     <table class="min-w-full divide-y divide-gray-200">
       <thead class="bg-neutral-50">
         <tr>
-          <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">ID</th>
+          <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Código</th>
           <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Solicitud</th>
           <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Fecha Presentación</th>
           <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Estado</th>
@@ -24,7 +24,7 @@
       <tbody class="bg-white divide-y divide-gray-200">
         {{ range .Descargos }}
         <tr class="hover:bg-neutral-50 transition-colors">
-          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">#{{ .ID }}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">{{ .Codigo }}</td>
           <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-700">
             {{ if .Solicitud }}
             <a href="/solicitudes/{{ .Solicitud.ID }}" class="text-primary-600 hover:underline">Solicitud #{{ .Solicitud.Codigo }}</a>

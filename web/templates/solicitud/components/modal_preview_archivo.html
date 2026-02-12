@@ -33,6 +33,74 @@
           </button>
         </div>
 
+        {{ if or .InfoRuta .InfoTramoRegistrado }}
+        <div class="mb-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+          <!-- Información Registrada por el Usuario -->
+          {{ if .InfoTramoRegistrado }}
+          <div class="bg-neutral-50 p-3 rounded border border-neutral-200">
+            <span class="block text-[10px] font-bold text-neutral-500 uppercase">Registrado en Descargo</span>
+            <div class="mt-1 text-neutral-900 font-medium space-y-1">
+              <div class="flex items-center">
+                <i class="ph ph-airplane text-neutral-400 mr-2"></i>
+                <span>{{ .InfoTramoRegistrado }}</span>
+              </div>
+              {{ if .InfoFechaRegistrada }}
+              <div class="flex items-center">
+                <i class="ph ph-calendar text-neutral-400 mr-2"></i>
+                <span>{{ .InfoFechaRegistrada }}</span>
+              </div>
+              {{ end }} {{ if .InfoBoletoRegistrado }}
+              <div class="flex items-center">
+                <i class="ph ph-ticket text-neutral-400 mr-2"></i>
+                <span class="text-xs">B: {{ .InfoBoletoRegistrado }}</span>
+              </div>
+              {{ end }} {{ if .InfoPaseRegistrado }}
+              <div class="flex items-center">
+                <i class="ph ph-qr-code text-neutral-400 mr-2"></i>
+                <span class="text-xs">P: {{ .InfoPaseRegistrado }}</span>
+              </div>
+              {{ end }}
+            </div>
+          </div>
+          {{ end }}
+
+          <!-- Información del Pasaje Emitido (Referencia) -->
+          {{ if .InfoRuta }}
+          <div class="bg-primary-50 p-3 rounded border border-primary-100">
+            <span class="block text-[10px] font-bold text-primary-700 uppercase">Referencia (Pasaje Emitido)</span>
+            <div class="mt-1 text-primary-900 font-medium space-y-1">
+              <div class="flex items-center space-x-4">
+                {{ if .InfoVuelo }}
+                <div class="flex items-center">
+                  <i class="ph ph-airplane-in-flight text-primary-400 mr-2"></i>
+                  <span>{{ .InfoVuelo }}</span>
+                </div>
+                {{ end }}
+                <div class="flex items-center">
+                  <i class="ph ph-airplane-tilt text-primary-400 mr-2"></i>
+                  <span>{{ .InfoRuta }}</span>
+                </div>
+              </div>
+
+              <div class="flex items-center space-x-4">
+                {{ if .InfoFecha }}
+                <div class="flex items-center">
+                  <i class="ph ph-calendar-blank text-primary-400 mr-2"></i>
+                  <span>{{ .InfoFecha }}</span>
+                </div>
+                {{ end }} {{ if .InfoBoleto }}
+                <div class="flex items-center">
+                  <i class="ph ph-ticket text-primary-400 mr-2"></i>
+                  <span>{{ .InfoBoleto }}</span>
+                </div>
+                {{ end }}
+              </div>
+            </div>
+          </div>
+          {{ end }}
+        </div>
+        {{ end }}
+
         <div class="mt-2 w-full h-[70vh] bg-neutral-100 rounded border border-neutral-200 overflow-hidden">
           {{ if .IsPDF }}
           <iframe src="{{ .FilePath }}" class="w-full h-full" frameborder="0"></iframe>

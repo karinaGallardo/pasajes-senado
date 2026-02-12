@@ -148,15 +148,15 @@ func (u *Usuario) CanMarkUsado(s Solicitud) bool {
 }
 
 func (u *Usuario) CanEditSolicitud(s Solicitud) bool {
+	if u.IsAdminOrResponsable() {
+		return true
+	}
+
 	if s.EstadoSolicitudCodigo != nil {
 		st := *s.EstadoSolicitudCodigo
 		if st != "SOLICITADO" && st != "PENDIENTE" && st != "PARCIALMENTE_APROBADO" && st != "RECHAZADO" {
 			return false
 		}
-	}
-
-	if u.IsAdminOrResponsable() {
-		return true
 	}
 
 	if u.ID == s.UsuarioID {
