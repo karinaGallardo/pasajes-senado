@@ -37,6 +37,15 @@
       <span x-show="!sidebarCollapsed" class="transition-opacity duration-300">Solicitudes</span>
     </a>
 
+    <a
+      href="/viaticos"
+      :title="sidebarCollapsed ? 'Viáticos' : ''"
+      class="group flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap
+     {{ if eq .Title `Gestión de Viáticos` }} bg-primary/10 text-primary {{ else }} text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 {{ end }}">
+      <i class="ph ph-coins text-xl mr-3 min-w-[20px] {{ if eq .Title `Gestión de Viáticos` }} text-primary {{ else }} text-neutral-400 group-hover:text-neutral-500 {{ end }}"></i>
+      <span x-show="!sidebarCollapsed" class="transition-opacity duration-300">Viáticos</span>
+    </a>
+
     <!-- <a
       href="/descargos"
       :title="sidebarCollapsed ? 'Descargos' : ''"
@@ -149,6 +158,16 @@
       <i
         class="ph ph-chart-bar text-xl mr-3 min-w-[20px] {{ if eq .Title `Gestión de Cupos` }} text-primary {{ else }} text-neutral-400 group-hover:text-neutral-500 {{ end }}"></i>
       <span x-show="!sidebarCollapsed" class="transition-opacity duration-300">Cupos Pasajes</span>
+    </a>
+
+    <a
+      href="/admin/viaticos/categorias"
+      :title="sidebarCollapsed ? 'Categorías de Viáticos' : ''"
+      class="group flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap
+     {{ if eq .Title `Categorías de Viáticos` }} bg-primary/10 text-primary {{ else }} text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 {{ end }}">
+      <i
+        class="ph ph-list-star text-xl mr-3 min-w-[20px] {{ if eq .Title `Categorías de Viáticos` }} text-primary {{ else }} text-neutral-400 group-hover:text-neutral-500 {{ end }}"></i>
+      <span x-show="!sidebarCollapsed" class="transition-opacity duration-300">Cat. Viáticos</span>
     </a>
     {{ end }}
   </nav>

@@ -12,6 +12,7 @@ func SetupRoutes(r *gin.Engine) {
 	authCtrl := controllers.NewAuthController()
 	solicitudCtrl := controllers.NewSolicitudController()
 	solicitudDerechoCtrl := controllers.NewSolicitudDerechoController()
+	solicitudOficialCtrl := controllers.NewSolicitudOficialController()
 	pasajeCtrl := controllers.NewPasajeController()
 	dashboardCtrl := controllers.NewDashboardController()
 	perfilCtrl := controllers.NewPerfilController()
@@ -67,6 +68,19 @@ func SetupRoutes(r *gin.Engine) {
 		protected.POST("/solicitudes/derecho", solicitudDerechoCtrl.Store)
 		protected.DELETE("/solicitudes/derecho/:id", solicitudDerechoCtrl.Destroy)
 
+		// Solicitudes Oficial
+		protected.GET("/solicitudes/oficial/modal-crear", solicitudOficialCtrl.GetCreateModal)
+		protected.GET("/solicitudes/oficial/:id/detalle", solicitudOficialCtrl.Show)
+		protected.GET("/solicitudes/oficial/:id/modal-editar", solicitudOficialCtrl.GetEditModal)
+		protected.POST("/solicitudes/oficial/:id/actualizar", solicitudOficialCtrl.Update)
+		protected.POST("/solicitudes/oficial", solicitudOficialCtrl.Store)
+		protected.POST("/solicitudes/oficial/:id/aprobar", solicitudOficialCtrl.Approve)
+		protected.POST("/solicitudes/oficial/:id/revertir-aprobacion", solicitudOficialCtrl.RevertApproval)
+		protected.POST("/solicitudes/oficial/:id/rechazar", solicitudOficialCtrl.Reject)
+		protected.POST("/solicitudes/oficial/:id/items/:item_id/aprobar", solicitudOficialCtrl.ApproveItem)
+		protected.POST("/solicitudes/oficial/:id/items/:item_id/revertir-aprobacion", solicitudOficialCtrl.RevertApprovalItem)
+		protected.POST("/solicitudes/oficial/:id/items/:item_id/rechazar", solicitudOficialCtrl.RejectItem)
+
 		protected.POST("/solicitudes/:id/pasajes", pasajeCtrl.Store)
 		protected.GET("/solicitudes/:id/pasajes/nuevo", pasajeCtrl.GetCreateModal)
 		protected.POST("/pasajes/update-status", pasajeCtrl.UpdateStatus)
@@ -80,6 +94,7 @@ func SetupRoutes(r *gin.Engine) {
 		protected.GET("/pasajes/:id/modal-usado", pasajeCtrl.GetUsadoModal)
 
 		viaticoCtrl := controllers.NewViaticoController()
+		protected.GET("/viaticos", viaticoCtrl.Index)
 		protected.GET("/solicitudes/:id/viaticos/nuevo", viaticoCtrl.Create)
 		protected.POST("/solicitudes/:id/viaticos", viaticoCtrl.Store)
 		protected.GET("/viaticos/:id/print", viaticoCtrl.Print)
@@ -173,6 +188,11 @@ func SetupRoutes(r *gin.Engine) {
 			sysAdmin.GET("/admin/oficinas", orgCtrl.IndexOficinas)
 			sysAdmin.POST("/admin/oficinas", orgCtrl.StoreOficina)
 			sysAdmin.POST("/admin/oficinas/:id/delete", orgCtrl.DeleteOficina)
+
+			catViaticoCtrl := controllers.NewCategoriaViaticoController()
+			sysAdmin.GET("/admin/viaticos/categorias", catViaticoCtrl.Index)
+			sysAdmin.POST("/admin/viaticos/categorias", catViaticoCtrl.Store)
+			sysAdmin.POST("/admin/viaticos/zonas", catViaticoCtrl.StoreZona)
 		}
 	}
 

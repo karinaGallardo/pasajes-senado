@@ -264,22 +264,17 @@ func (s *PasajeService) sendEmissionEmail(sol *models.Solicitud, pasaje *models.
 		cc = append(cc, usuario.Encargado.Email)
 	}
 
-	tipoTramo := ""
-	subject := ""
-	if pasaje.SolicitudItem != nil {
-		switch pasaje.SolicitudItem.Tipo {
-		case models.TipoSolicitudItemIda:
-			tipoTramo = "Ida"
-		case models.TipoSolicitudItemVuelta:
-			tipoTramo = "Retorno"
-		}
+	concepto := sol.GetConceptoNombre()
+	if concepto == "" {
+		concepto = "PASAJES"
 	}
 
-	if tipoTramo != "" {
-		subject = fmt.Sprintf("Pasaje Emitido (%s) - Solicitud %s", tipoTramo, sol.Codigo)
-	} else {
-		subject = fmt.Sprintf("Pasaje Emitido - Solicitud %s", sol.Codigo)
+	tipoTramoStr := "Tramo"
+	if pasaje.SolicitudItem != nil {
+		tipoTramoStr = string(pasaje.SolicitudItem.Tipo)
 	}
+
+	subject := fmt.Sprintf("[%s] Pasaje Emitido (%s) - Solicitud %s", strings.ToUpper(concepto), tipoTramoStr, sol.Codigo)
 
 	ruta := pasaje.Ruta
 	fecha := utils.FormatDateTimeLongES(pasaje.FechaVuelo)
@@ -294,7 +289,6 @@ func (s *PasajeService) sendEmissionEmail(sol *models.Solicitud, pasaje *models.
 	if baseURL == "" {
 		baseURL = "http://localhost:8284"
 	}
-	// Asegurar que las barras sean forward slashes para URL
 	cleanPath := strings.ReplaceAll(pasaje.Archivo, "\\", "/")
 	fileURL := fmt.Sprintf("%s/%s", baseURL, cleanPath)
 
@@ -302,10 +296,12 @@ func (s *PasajeService) sendEmissionEmail(sol *models.Solicitud, pasaje *models.
 		<div style="font-family: Arial, sans-serif; color: #333; max-width: 600px;">
 			<div style="background-color: #03738C; color: white; padding: 15px; border-radius: 5px 5px 0 0;">
 				<h2 style="margin:0;">Pasaje Emitido - %s</h2>
+				<p style="margin: 5px 0 0 0; opacity: 0.9;">Concepto: %s</p>
 			</div>
 			<div style="padding: 20px; border: 1px solid #ddd; border-top: none; border-radius: 0 0 5px 5px;">
 				<p>Se comunica a <strong>%s</strong>,</p>
 				<p>Su pasaje correspondiente a la solicitud <strong>%s</strong> (tramo <strong>%s</strong>) ha sido emitido exitosamente.</p>
+				<p>Concepto de la solicitud: <strong>%s</strong></p>
 
 				<h3 style="color: #03738C; border-bottom: 1px solid #eee; padding-bottom: 5px;">Detalles del Vuelo</h3>
 				<table style="width: 100%%; border-collapse: collapse; margin-top: 10px;">
@@ -344,7 +340,7 @@ func (s *PasajeService) sendEmissionEmail(sol *models.Solicitud, pasaje *models.
 				</p>
 			</div>
 		</div>
-	`, tipoTramo, usuario.GetNombreCompleto(), sol.Codigo, tipoTramo, tipoTramo, ruta, fecha, aerolinea, vuelo, boleto, fileURL, fileURL, fileURL)
+	`, concepto, strings.ToUpper(concepto), usuario.GetNombreCompleto(), sol.Codigo, tipoTramoStr, concepto, tipoTramoStr, ruta, fecha, aerolinea, vuelo, boleto, fileURL, fileURL, fileURL)
 
 	_ = s.emailService.SendEmail(to, cc, nil, subject, body)
 }

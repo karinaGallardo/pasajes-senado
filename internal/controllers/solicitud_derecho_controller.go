@@ -247,7 +247,7 @@ func (ctrl *SolicitudDerechoController) Store(c *gin.Context) {
 
 	authUser := appcontext.AuthUser(c)
 
-	solicitud, err := ctrl.solicitudService.Create(c.Request.Context(), req, authUser)
+	solicitud, err := ctrl.solicitudService.CreateDerecho(c.Request.Context(), req, authUser)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Error creando solicitud: "+err.Error())
 		return
@@ -588,6 +588,7 @@ type SolicitudPermissions struct {
 	CanRevertApproval bool
 	CanMakeDescargo   bool
 	CanAssignPasaje   bool
+	CanAssignViatico  bool
 	IsAdminOrResp     bool
 }
 

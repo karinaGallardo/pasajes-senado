@@ -41,7 +41,7 @@ type SolicitudService struct {
 	emailService        *EmailService
 }
 
-func (s *SolicitudService) Create(ctx context.Context, req dtos.CreateSolicitudRequest, currentUser *models.Usuario) (*models.Solicitud, error) {
+func (s *SolicitudService) CreateDerecho(ctx context.Context, req dtos.CreateSolicitudRequest, currentUser *models.Usuario) (*models.Solicitud, error) {
 	layout := "2006-01-02T15:04"
 	var fechaIda *time.Time
 	if t, err := time.Parse(layout, req.FechaIda); err == nil {
@@ -207,6 +207,128 @@ func (s *SolicitudService) Create(ctx context.Context, req dtos.CreateSolicitudR
 	return solicitud, nil
 }
 
+func (s *SolicitudService) CreateOficial(ctx context.Context, req dtos.CreateSolicitudRequest, currentUser *models.Usuario) (*models.Solicitud, error) {
+	layout := "2006-01-02T15:04"
+	var fechaIda *time.Time
+	if t, err := time.Parse(layout, req.FechaIda); err == nil {
+		fechaIda = &t
+	}
+
+	var fechaVuelta *time.Time
+	if req.FechaVuelta != "" && req.TipoItinerarioCodigo != "SOLO_IDA" {
+		if t, err := time.Parse(layout, req.FechaVuelta); err == nil {
+			fechaVuelta = &t
+		}
+	}
+
+	realSolicitanteID := req.TargetUserID
+	if realSolicitanteID == "" {
+		realSolicitanteID = currentUser.ID
+	}
+
+	// Resolve TipoItinerario
+	var tipoItin *models.TipoItinerario
+	if req.TipoItinerarioCodigo != "" {
+		tipoItin, _ = s.tipoItinRepo.WithContext(ctx).FindByCodigo(req.TipoItinerarioCodigo)
+	}
+	if tipoItin == nil && req.TipoItinerario != "" {
+		tipoItin, _ = s.tipoItinRepo.WithContext(ctx).FindByCodigo(req.TipoItinerario)
+	}
+	if tipoItin == nil {
+		tipoItin, _ = s.tipoItinRepo.WithContext(ctx).FindByCodigo("IDA_VUELTA")
+	}
+
+	if tipoItin == nil {
+		return nil, errors.New("tipo de itinerario no válido")
+	}
+
+	// Force TipoSolicitudCodigo to COMISION for official requests
+	tipoSolicitudCode := "COMISION"
+	if req.TipoSolicitudCodigo != "" {
+		tipoSolicitudCode = req.TipoSolicitudCodigo
+	}
+
+	solicitud := &models.Solicitud{
+		BaseModel:             models.BaseModel{CreatedBy: &currentUser.ID},
+		UsuarioID:             realSolicitanteID,
+		TipoSolicitudCodigo:   tipoSolicitudCode,
+		AmbitoViajeCodigo:     req.AmbitoViajeCodigo,
+		TipoItinerarioCodigo:  tipoItin.Codigo,
+		Motivo:                req.Motivo,
+		Autorizacion:          req.Autorizacion,
+		AerolineaSugerida:     req.AerolineaSugerida,
+		EstadoSolicitudCodigo: utils.Ptr("SOLICITADO"),
+	}
+
+	// Build Items
+	var items []models.SolicitudItem
+	itinCode := tipoItin.Codigo
+
+	switch itinCode {
+	case "SOLO_IDA", "IDA_VUELTA":
+		items = append(items, models.SolicitudItem{
+			Tipo:         models.TipoSolicitudItemIda,
+			OrigenIATA:   req.OrigenIATA,
+			DestinoIATA:  req.DestinoIATA,
+			Fecha:        fechaIda,
+			Hora:         s.formatTime(fechaIda),
+			EstadoCodigo: utils.Ptr("SOLICITADO"),
+		})
+	case "SOLO_VUELTA":
+		items = append(items, models.SolicitudItem{
+			Tipo:         models.TipoSolicitudItemVuelta,
+			OrigenIATA:   req.OrigenIATA,
+			DestinoIATA:  req.DestinoIATA,
+			Fecha:        fechaIda,
+			Hora:         s.formatTime(fechaIda),
+			EstadoCodigo: utils.Ptr("SOLICITADO"),
+		})
+	}
+
+	if itinCode == "IDA_VUELTA" {
+		st := "SOLICITADO"
+		if fechaVuelta == nil {
+			st = "PENDIENTE"
+		}
+		items = append(items, models.SolicitudItem{
+			Tipo:         models.TipoSolicitudItemVuelta,
+			OrigenIATA:   req.DestinoIATA,
+			DestinoIATA:  req.OrigenIATA,
+			Fecha:        fechaVuelta,
+			Hora:         s.formatTime(fechaVuelta),
+			EstadoCodigo: utils.Ptr(st),
+		})
+	}
+
+	solicitud.Items = items
+
+	err := s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
+		secuenciaRepoTx := s.codigoSecuenciaRepo.WithTx(tx)
+
+		currentYear := time.Now().Year()
+		// USE SOF for Official Solicitudes
+		nextVal, err := secuenciaRepoTx.GetNext(currentYear, "SOF")
+		if err != nil {
+			return errors.New("error generando codigo de secuencia de solicitud oficial")
+		}
+
+		solicitud.Codigo = fmt.Sprintf("SOF-%d%04d", currentYear%100, nextVal)
+
+		if err := repoTx.Create(solicitud); err != nil {
+			return err
+		}
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	go s.sendCreationEmail(solicitud)
+
+	return solicitud, nil
+}
+
 // Helper locally if not in utils
 func (SolicitudService) formatTime(t *time.Time) string {
 	if t == nil {
@@ -228,65 +350,62 @@ func (s *SolicitudService) sendCreationEmail(solicitud *models.Solicitud) {
 		return
 	}
 
-	subject := fmt.Sprintf("Solicitud de Pasaje Creada - %s", fullSol.Codigo)
-
-	rut := "-"
-	fecha := "-"
-	var mainItem *models.SolicitudItem
-
-	for i := range fullSol.Items {
-		it := &fullSol.Items[i]
-		if it.Tipo == models.TipoSolicitudItemIda {
-			mainItem = it
-			break
-		}
-	}
-	if mainItem == nil && len(fullSol.Items) > 0 {
-		mainItem = &fullSol.Items[0]
+	concepto := fullSol.GetConceptoNombre()
+	if concepto == "" {
+		concepto = "PASAJES"
 	}
 
-	if mainItem != nil {
-		origen := "-"
-		if mainItem.Origen != nil {
-			origen = mainItem.Origen.Ciudad
-		}
-		destino := "-"
-		if mainItem.Destino != nil {
-			destino = mainItem.Destino.Ciudad
-		}
+	subject := fmt.Sprintf("[%s] Solicitud de Pasaje Creada - %s", strings.ToUpper(concepto), fullSol.Codigo)
 
-		rut = fmt.Sprintf("%s -> %s", origen, destino)
-
-		if mainItem.Fecha != nil {
-			fecha = utils.FormatDateShortES(*mainItem.Fecha)
+	tramosHTML := ""
+	for _, it := range fullSol.Items {
+		origen := it.OrigenIATA
+		if it.Origen != nil {
+			origen = it.Origen.Ciudad
 		}
+		destino := it.DestinoIATA
+		if it.Destino != nil {
+			destino = it.Destino.Ciudad
+		}
+		fechaIt := "-"
+		if it.Fecha != nil {
+			fechaIt = utils.FormatDateShortES(*it.Fecha)
+		}
+		tramosHTML += fmt.Sprintf(`
+			<tr>
+				<td style="padding: 8px; border-bottom: 1px solid #eee; width: 30%%;"><strong>Tramo %s:</strong></td>
+				<td style="padding: 8px; border-bottom: 1px solid #eee;">%s &rarr; %s (%s)</td>
+			</tr>`, it.Tipo, origen, destino, fechaIt)
 	}
 
 	baseURL := viper.GetString("APP_URL")
 	if baseURL == "" {
 		baseURL = "http://localhost:8284"
 	}
-	solURL := fmt.Sprintf("%s/solicitudes/derecho/%s/detalle", baseURL, fullSol.ID)
+	solPath := "derecho"
+	if fullSol.GetConceptoCodigo() == "OFICIAL" {
+		solPath = "oficial"
+	}
+	solURL := fmt.Sprintf("%s/solicitudes/%s/%s/detalle", baseURL, solPath, fullSol.ID)
 
 	body := fmt.Sprintf(`
 		<div style="font-family: Arial, sans-serif; color: #333; max-width: 600px;">
 			<div style="background-color: #03738C; color: white; padding: 15px; border-radius: 5px 5px 0 0;">
 				<h2 style="margin:0;">Solicitud de Pasaje Registrada</h2>
+				<p style="margin: 5px 0 0 0; opacity: 0.9;">Concepto: %s</p>
 			</div>
 			<div style="padding: 20px; border: 1px solid #ddd; border-top: none; border-radius: 0 0 5px 5px;">
 				<p>Hola <strong>%s</strong>,</p>
-				<p>Se ha registrado una nueva solicitud de pasaje a su nombre con los siguientes detalles:</p>
+				<p>Se ha registrado una nueva solicitud de pasaje a su nombre.</p>
+
+				<h3 style="color: #03738C; margin-bottom: 10px;">Información General</h3>
 				<table style="border-collapse: collapse; width: 100%%; margin-bottom: 20px;">
 					<tr>
-						<td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Código:</strong></td>
+						<td style="padding: 8px; border-bottom: 1px solid #eee; width: 30%%;"><strong>Código:</strong></td>
 						<td style="padding: 8px; border-bottom: 1px solid #eee;">%s</td>
 					</tr>
 					<tr>
-						<td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Ruta:</strong></td>
-						<td style="padding: 8px; border-bottom: 1px solid #eee;">%s</td>
-					</tr>
-					<tr>
-						<td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Fecha Ida:</strong></td>
+						<td style="padding: 8px; border-bottom: 1px solid #eee;"><strong>Concepto:</strong></td>
 						<td style="padding: 8px; border-bottom: 1px solid #eee;">%s</td>
 					</tr>
 					<tr>
@@ -295,16 +414,21 @@ func (s *SolicitudService) sendCreationEmail(solicitud *models.Solicitud) {
 					</tr>
 				</table>
 
+				<h3 style="color: #03738C; margin-bottom: 10px;">Itinerario Solicitado</h3>
+				<table style="border-collapse: collapse; width: 100%%; margin-bottom: 20px;">
+					%s
+				</table>
+
 				<div style="margin-top: 25px; text-align: center;">
 					<a href="%s" target="_blank" style="background-color: #03738C; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">Ver Detalles en el Sistema</a>
 				</div>
 				<p style="font-size: 11px; color: #999; margin-top: 20px; text-align: center;">
-					Si el botón no funciona, copie y pegue esta URL:<br>
+					Si el botón no funciona/no se ve, copie esta URL:<br>
 					%s
 				</p>
 			</div>
 		</div>
-	`, beneficiary.GetNombreCompleto(), fullSol.Codigo, rut, fecha, fullSol.GetEstado(), solURL, solURL)
+	`, strings.ToUpper(concepto), beneficiary.GetNombreCompleto(), fullSol.Codigo, concepto, fullSol.GetEstado(), tramosHTML, solURL, solURL)
 
 	err = s.emailService.SendEmail([]string{beneficiary.Email}, nil, nil, subject, body)
 	if err != nil {
@@ -324,22 +448,33 @@ func (s *SolicitudService) sendRevertApprovalEmail(solicitud *models.Solicitud) 
 		return
 	}
 
-	subject := fmt.Sprintf("Solicitud de Pasaje Revertida - %s", fullSol.Codigo)
+	concepto := fullSol.GetConceptoNombre()
+	if concepto == "" {
+		concepto = "PASAJES"
+	}
+
+	subject := fmt.Sprintf("[%s] Solicitud de Pasaje Revertida - %s", strings.ToUpper(concepto), fullSol.Codigo)
 
 	baseURL := viper.GetString("APP_URL")
 	if baseURL == "" {
 		baseURL = "http://localhost:8284"
 	}
-	solURL := fmt.Sprintf("%s/solicitudes/derecho/%s/detalle", baseURL, fullSol.ID)
+	solPath := "derecho"
+	if fullSol.GetConceptoCodigo() == "OFICIAL" {
+		solPath = "oficial"
+	}
+	solURL := fmt.Sprintf("%s/solicitudes/%s/%s/detalle", baseURL, solPath, fullSol.ID)
 
 	body := fmt.Sprintf(`
 		<div style="font-family: Arial, sans-serif; color: #333; max-width: 600px;">
 			<div style="background-color: #d97706; color: white; padding: 15px; border-radius: 5px 5px 0 0;">
 				<h2 style="margin:0;">Aprobación Revertida</h2>
+				<p style="margin: 5px 0 0 0; opacity: 0.9;">Concepto: %s</p>
 			</div>
 			<div style="padding: 20px; border: 1px solid #ddd; border-top: none; border-radius: 0 0 5px 5px;">
 				<p>Hola <strong>%s</strong>,</p>
 				<p>La aprobación de su solicitud <strong>%s</strong> ha sido revertida al estado <strong>SOLICITADO</strong>.</p>
+				<p>Concepto de la solicitud: <strong>%s</strong></p>
 				<p>Esto puede deberse a ajustes necesarios en el itinerario o cambios de último momento.</p>
 
 				<div style="margin-top: 25px; text-align: center;">
@@ -351,7 +486,7 @@ func (s *SolicitudService) sendRevertApprovalEmail(solicitud *models.Solicitud) 
 				</p>
 			</div>
 		</div>
-	`, beneficiary.GetNombreCompleto(), fullSol.Codigo, solURL, solURL)
+	`, strings.ToUpper(concepto), beneficiary.GetNombreCompleto(), fullSol.Codigo, concepto, solURL, solURL)
 
 	_ = s.emailService.SendEmail([]string{beneficiary.Email}, nil, nil, subject, body)
 }
@@ -774,6 +909,56 @@ func (s *SolicitudService) ReprogramarItem(ctx context.Context, req dtos.Reprogr
 
 		if err := tx.Create(&newItem).Error; err != nil {
 			return fmt.Errorf("error creando nuevo item de solicitud: %v", err)
+		}
+
+		return nil
+	})
+}
+func (s *SolicitudService) UpdateOficial(ctx context.Context, id string, req dtos.CreateSolicitudRequest) error {
+	return s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
+		solicitud, err := repoTx.FindByID(id)
+		if err != nil {
+			return err
+		}
+
+		solicitud.Motivo = req.Motivo
+		solicitud.Autorizacion = req.Autorizacion
+		solicitud.AmbitoViajeCodigo = req.AmbitoViajeCodigo
+		solicitud.AerolineaSugerida = req.AerolineaSugerida
+		solicitud.TipoItinerarioCodigo = req.TipoItinerarioCodigo
+
+		if err := repoTx.Update(solicitud); err != nil {
+			return err
+		}
+
+		layout := "2006-01-02T15:04"
+		var fechaIda *time.Time
+		if t, err := time.Parse(layout, req.FechaIda); err == nil {
+			fechaIda = &t
+		}
+		var fechaVuelta *time.Time
+		if req.FechaVuelta != "" {
+			if t, err := time.Parse(layout, req.FechaVuelta); err == nil {
+				fechaVuelta = &t
+			}
+		}
+
+		for i := range solicitud.Items {
+			item := &solicitud.Items[i]
+			switch item.Tipo {
+			case models.TipoSolicitudItemIda:
+				item.OrigenIATA = req.OrigenIATA
+				item.DestinoIATA = req.DestinoIATA
+				item.Fecha = fechaIda
+				item.Hora = s.formatTime(fechaIda)
+				tx.Save(item)
+			case models.TipoSolicitudItemVuelta:
+				item.OrigenIATA = req.DestinoIATA
+				item.DestinoIATA = req.OrigenIATA
+				item.Fecha = fechaVuelta
+				item.Hora = s.formatTime(fechaVuelta)
+				tx.Save(item)
+			}
 		}
 
 		return nil

@@ -14,6 +14,7 @@ type ViaticoService struct {
 	repo          *repositories.ViaticoRepository
 	solicitudRepo *repositories.SolicitudRepository
 	catRepo       *repositories.CategoriaViaticoRepository
+	zonaRepo      *repositories.ZonaViaticoRepository
 	configService *ConfiguracionService
 }
 
@@ -22,6 +23,7 @@ func NewViaticoService() *ViaticoService {
 		repo:          repositories.NewViaticoRepository(),
 		solicitudRepo: repositories.NewSolicitudRepository(),
 		catRepo:       repositories.NewCategoriaViaticoRepository(),
+		zonaRepo:      repositories.NewZonaViaticoRepository(),
 		configService: NewConfiguracionService(),
 	}
 }
@@ -106,6 +108,10 @@ func (s *ViaticoService) RegistrarViatico(ctx context.Context, solicitudID strin
 	return viatico, nil
 }
 
+func (s *ViaticoService) GetByContext(ctx context.Context) ([]models.Viatico, error) {
+	return s.repo.WithContext(ctx).FindAll()
+}
+
 func (s *ViaticoService) GetBySolicitud(ctx context.Context, solicitudID string) ([]models.Viatico, error) {
 	return s.repo.WithContext(ctx).FindBySolicitudID(solicitudID)
 }
@@ -116,4 +122,15 @@ func (s *ViaticoService) GetByID(ctx context.Context, id string) (*models.Viatic
 
 func (s *ViaticoService) GetCategorias(ctx context.Context) ([]models.CategoriaViatico, error) {
 	return s.catRepo.WithContext(ctx).FindAll()
+}
+
+func (s *ViaticoService) GetZonas(ctx context.Context) ([]models.ZonaViatico, error) {
+	return s.zonaRepo.WithContext(ctx).FindAll()
+}
+
+func (s *ViaticoService) CreateZona(ctx context.Context, nombre string) error {
+	zona := &models.ZonaViatico{
+		Nombre: nombre,
+	}
+	return s.zonaRepo.WithContext(ctx).Create(zona)
 }

@@ -54,6 +54,21 @@ func (s Solicitud) GetEstadoCodigo() string {
 	}
 	return *s.EstadoSolicitudCodigo
 }
+
+func (s Solicitud) GetConceptoNombre() string {
+	if s.TipoSolicitud != nil && s.TipoSolicitud.ConceptoViaje != nil {
+		return s.TipoSolicitud.ConceptoViaje.Nombre
+	}
+	return ""
+}
+
+func (s Solicitud) GetConceptoCodigo() string {
+	if s.TipoSolicitud != nil && s.TipoSolicitud.ConceptoViaje != nil {
+		return s.TipoSolicitud.ConceptoViaje.Codigo
+	}
+	return ""
+}
+
 func (s *Solicitud) UpdateStatusBasedOnItems() {
 	if len(s.Items) == 0 {
 		return

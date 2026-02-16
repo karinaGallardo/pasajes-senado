@@ -13,15 +13,30 @@ import (
 )
 
 type ViaticoController struct {
-	viaticoService *services.ViaticoService
-	solService     *services.SolicitudService
+	viaticoService   *services.ViaticoService
+	solService       *services.SolicitudService
+	categoriaService *services.CategoriaViaticoService
 }
 
 func NewViaticoController() *ViaticoController {
 	return &ViaticoController{
-		viaticoService: services.NewViaticoService(),
-		solService:     services.NewSolicitudService(),
+		viaticoService:   services.NewViaticoService(),
+		solService:       services.NewSolicitudService(),
+		categoriaService: services.NewCategoriaViaticoService(),
 	}
+}
+
+func (ctrl *ViaticoController) Index(c *gin.Context) {
+	viaticos, err := ctrl.viaticoService.GetByContext(c.Request.Context())
+	if err != nil {
+		c.String(500, "Error listando viáticos: "+err.Error())
+		return
+	}
+
+	utils.Render(c, "viatico/index", gin.H{
+		"Title":    "Gestión de Viáticos",
+		"Viaticos": viaticos,
+	})
 }
 
 func (ctrl *ViaticoController) Create(c *gin.Context) {
@@ -47,12 +62,14 @@ func (ctrl *ViaticoController) Create(c *gin.Context) {
 	}
 
 	categorias, _ := ctrl.viaticoService.GetCategorias(c.Request.Context())
+	zonas, _ := ctrl.viaticoService.GetZonas(c.Request.Context())
 
 	utils.Render(c, "viatico/create", gin.H{
 		"Title":       "Asignación de Viáticos",
 		"Solicitud":   solicitud,
 		"DefaultDias": fmt.Sprintf("%.1f", dias),
 		"Categorias":  categorias,
+		"Zonas":       zonas,
 	})
 }
 
@@ -78,7 +95,12 @@ func (ctrl *ViaticoController) Store(c *gin.Context) {
 		return
 	}
 
-	c.Redirect(http.StatusFound, "/solicitudes/"+solicitudID)
+	sol, _ := ctrl.solService.GetByID(c.Request.Context(), solicitudID)
+	path := "derecho"
+	if sol != nil && sol.GetConceptoCodigo() == "OFICIAL" {
+		path = "oficial"
+	}
+	c.Redirect(http.StatusFound, "/solicitudes/"+path+"/"+solicitudID+"/detalle")
 }
 
 func (ctrl *ViaticoController) Print(c *gin.Context) {

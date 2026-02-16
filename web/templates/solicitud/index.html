@@ -7,6 +7,14 @@
       <h2 class="text-xl font-bold text-neutral-800">Solicitudes de Pasajes</h2>
       <p class="text-sm text-neutral-500">Gestione las solicitudes de viaje</p>
     </div>
+    <button
+      type="button"
+      hx-get="/solicitudes/oficial/modal-crear"
+      hx-target="#modal-container"
+      class="px-4 py-2 bg-secondary text-white rounded-md text-sm font-bold shadow hover:bg-secondary-600 transition-colors flex items-center gap-2">
+      <i class="ph ph-plus-circle text-lg"></i>
+      <span>Nueva Comisión</span>
+    </button>
   </div>
 
   <!-- Filters -->
@@ -73,7 +81,7 @@
               <span class="font-bold line-clamp-1" title="{{ .Usuario.GetNombreCompleto }}">{{ .Usuario.GetNombreResumido }}</span>
               <!-- Mobile Only Info -->
               <div class="md:hidden mt-1 space-y-0.5">
-                {{ if and .TipoSolicitud .TipoSolicitud.ConceptoViaje (eq .TipoSolicitud.ConceptoViaje.Codigo "COMISION") }}
+                {{ if eq .GetConceptoCodigo "OFICIAL" }}
                 <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-100 text-purple-800 border border-purple-200">Comisión</span>
                 {{ else }}
                 <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-primary-50 text-primary border border-primary-100">Derecho</span>
@@ -94,10 +102,10 @@
             {{ end }}
           </td>
           <td class="px-3 py-3 whitespace-nowrap text-xs text-neutral-500 text-center hidden md:table-cell">
-            {{ if and .TipoSolicitud .TipoSolicitud.ConceptoViaje (eq .TipoSolicitud.ConceptoViaje.Codigo "COMISION") }}
-            <span class="inline-flex items-center px-2 py-0.5 rounded-full font-bold bg-purple-100 text-purple-800 border border-purple-200">Comisión</span>
+            {{ if eq .GetConceptoCodigo "OFICIAL" }}
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full font-bold bg-purple-100 text-purple-800 border border-purple-200">{{ .GetConceptoNombre }}</span>
             {{ else }}
-            <span class="inline-flex items-center px-2 py-0.5 rounded-full font-bold bg-primary-50 text-primary border border-primary-100">Derecho</span>
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full font-bold bg-primary-50 text-primary border border-primary-100">{{ .GetConceptoNombre }}</span>
             {{ end }}
           </td>
           <td class="px-3 py-3 text-xs text-neutral-700 font-medium">
@@ -113,9 +121,7 @@
             <div class="flex flex-col items-center justify-center space-y-1">
               <!-- Main Status Badge -->
               {{ if .EstadoSolicitud }}
-              <span
-                style="background-color: {{.EstadoSolicitud.Color}}15; color: {{.EstadoSolicitud.Color}}; border-color: {{.EstadoSolicitud.Color}}33;"
-                class="px-2.5 py-0.5 inline-flex items-center gap-1 text-xs leading-4 font-bold rounded-full border">
+              <span class="px-2.5 py-0.5 inline-flex items-center gap-1 text-xs leading-4 font-bold rounded-full border status-badge-{{ .EstadoSolicitud.Codigo }}">
                 <i class="{{ .EstadoSolicitud.Icon }} text-sm"></i>
                 {{ .EstadoSolicitud.Nombre }}
               </span>
@@ -128,16 +134,17 @@
 
               <!-- Detailed Segments -->
               <div class="flex items-center gap-2 text-[10px]">
-                {{ $ida := .GetItemIda }} {{ if $ida }}
-                <div class="flex items-center gap-1" style="color: {{ if $ida.Estado }}{{ $ida.Estado.Color }}{{ else }}#737373{{ end }}" title="Ida: {{ $ida.GetEstado }}">
+                {{ $ida := .GetItemIda }}{{ if $ida }}
+                <div
+                  class="flex items-center gap-1 {{ if $ida.Estado }}status-item-text-{{ $ida.Estado.Codigo }}{{ else }}status-item-text-default{{ end }}"
+                  title="Ida: {{ $ida.GetEstado }}">
                   <span class="font-bold uppercase tracking-wider text-[9px] opacity-70">Ida</span>
                   <i class="{{ if $ida.Estado }}{{ $ida.Estado.Icon }}{{ else }}ph ph-circle{{ end }} text-[11px]"></i>
                 </div>
-                {{ end }} {{ $vuelta := .GetItemVuelta }} {{ if $vuelta }}
+                {{ end }} {{ $vuelta := .GetItemVuelta }}{{ if $vuelta }}
                 <div class="w-px h-3 bg-neutral-200"></div>
                 <div
-                  class="flex items-center gap-1"
-                  style="color: {{ if $vuelta.Estado }}{{ $vuelta.Estado.Color }}{{ else }}#737373{{ end }}"
+                  class="flex items-center gap-1 {{ if $vuelta.Estado }}status-item-text-{{ $vuelta.Estado.Codigo }}{{ else }}status-item-text-default{{ end }}"
                   title="Vuelta: {{ $vuelta.GetEstado }}">
                   <span class="font-bold uppercase tracking-wider text-[9px] opacity-70">Vta</span>
                   <i class="{{ if $vuelta.Estado }}{{ $vuelta.Estado.Icon }}{{ else }}ph ph-circle{{ end }} text-[11px]"></i>
@@ -149,7 +156,7 @@
           <td class="px-3 py-3 whitespace-nowrap text-xs font-medium text-right">
             <div class="flex flex-row justify-end items-center gap-3">
               {{ if and .EstadoSolicitud (or (eq .EstadoSolicitud.Codigo "SOLICITADO") (eq .EstadoSolicitud.Codigo "PARCIALMENTE_APROBADO") (eq .EstadoSolicitud.Codigo
-              "RECHAZADO")) }}
+              "RECHAZADO")) }} {{ if ne .GetConceptoCodigo "OFICIAL" }}
               <button
                 type="button"
                 hx-get="/solicitudes/derecho/{{ .ID }}/modal-editar"
@@ -157,10 +164,15 @@
                 class="text-primary hover:text-primary-700 font-bold uppercase tracking-tight cursor-pointer bg-transparent border-0 p-0 transition-colors">
                 Editar
               </button>
-              {{ end }}
+              {{ end }} {{ end }} {{ if eq .GetConceptoCodigo "OFICIAL" }}
+              <a href="/solicitudes/oficial/{{ .ID }}/detalle" class="text-white bg-secondary hover:bg-primary px-3 py-1 rounded shadow-sm font-bold uppercase transition-colors">
+                Ver
+              </a>
+              {{ else }}
               <a href="/solicitudes/derecho/{{ .ID }}/detalle" class="text-white bg-secondary hover:bg-primary px-3 py-1 rounded shadow-sm font-bold uppercase transition-colors">
                 Ver
               </a>
+              {{ end }}
             </div>
           </td>
         </tr>

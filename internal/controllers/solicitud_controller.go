@@ -73,13 +73,3 @@ func (ctrl *SolicitudController) Index(c *gin.Context) {
 		"Status":      status,
 	})
 }
-
-func (ctrl *SolicitudController) Create(c *gin.Context)    {}
-func (ctrl *SolicitudController) Store(c *gin.Context)     {}
-func (ctrl *SolicitudController) Show(c *gin.Context)      {}
-func (ctrl *SolicitudController) Edit(c *gin.Context)      {}
-func (ctrl *SolicitudController) Update(c *gin.Context)    {}
-func (ctrl *SolicitudController) CheckCupo(c *gin.Context) {}
-func (ctrl *SolicitudController) Approve(c *gin.Context)   {}
-func (ctrl *SolicitudController) Reject(c *gin.Context)    {}
-func (ctrl *SolicitudController) PrintPV01(c *gin.Context) {}

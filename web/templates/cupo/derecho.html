@@ -93,8 +93,7 @@
                   <div class="flex flex-col">
                     {{ if .EstadoCupoDerecho }}
                     <span
-                      style="background-color: {{.EstadoCupoDerecho.Color}}15; color: {{.EstadoCupoDerecho.Color}}; border-color: {{.EstadoCupoDerecho.Color}}33;"
-                      class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase w-fit border">
+                      class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase w-fit border status-badge-{{ .EstadoCupoDerecho.Codigo }}">
                       <i class="{{ .EstadoCupoDerecho.Icon }} text-xs"></i>
                       {{ .EstadoCupoDerecho.Nombre }}
                     </span>

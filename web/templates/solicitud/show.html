@@ -242,9 +242,7 @@
                 </div>
                 <div class="ml-2 flex-shrink-0 flex">
                   {{ if .EstadoPasaje }}
-                  <span
-                    style="background-color: {{.EstadoPasaje.Color}}15; color: {{.EstadoPasaje.Color}}; border-color: {{.EstadoPasaje.Color}}33;"
-                    class="px-2.5 py-1 inline-flex items-center gap-1.5 text-xs font-bold rounded-full border">
+                  <span class="px-2.5 py-1 inline-flex items-center gap-1.5 text-xs font-bold rounded-full border status-badge-{{ .EstadoPasaje.Codigo }}">
                     <i class="{{ .EstadoPasaje.Icon }} text-xs"></i>
                     {{ .EstadoPasaje.Nombre }}
                   </span>

@@ -28,7 +28,26 @@ func TemplateFuncs() template.FuncMap {
 		"nombreDiaCorto":   DayNameShort,
 		"rangoSemanaCorto": FormatWeekRangeShort,
 		"contains":         strings.Contains,
+		"formatCurrency":   FormatCurrency,
 	}
+}
+
+// FormatCurrency formatea un float64 a string con miles y 2 decimales.
+func FormatCurrency(val interface{}) string {
+	var f float64
+	switch v := val.(type) {
+	case float64:
+		f = v
+	case float32:
+		f = float64(v)
+	case int:
+		f = float64(v)
+	case int64:
+		f = float64(v)
+	default:
+		return "0.00"
+	}
+	return fmt.Sprintf("%.2f", f)
 }
 
 func CurrentYear() int {

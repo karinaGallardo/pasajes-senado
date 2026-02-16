@@ -35,7 +35,12 @@ func (ctrl *PasajeController) Store(c *gin.Context) {
 	var req dtos.CreatePasajeRequest
 	if err := c.ShouldBind(&req); err != nil {
 		utils.SetErrorMessage(c, "Datos inválidos")
-		c.Redirect(http.StatusFound, fmt.Sprintf("/solicitudes/derecho/%s/detalle", solicitudID))
+		solicitud, _ := ctrl.solicitudService.GetByID(c.Request.Context(), solicitudID)
+		if solicitud != nil && solicitud.GetConceptoCodigo() == "OFICIAL" {
+			c.Redirect(http.StatusFound, fmt.Sprintf("/solicitudes/oficial/%s/detalle", solicitudID))
+		} else {
+			c.Redirect(http.StatusFound, fmt.Sprintf("/solicitudes/derecho/%s/detalle", solicitudID))
+		}
 		return
 	}
 
@@ -49,8 +54,14 @@ func (ctrl *PasajeController) Store(c *gin.Context) {
 	} else {
 		utils.SetSuccessMessage(c, "Pasaje registrado correctamente")
 	}
-	c.Redirect(http.StatusFound, fmt.Sprintf("/solicitudes/derecho/%s/detalle", solicitudID))
+	solicitud, _ := ctrl.solicitudService.GetByID(c.Request.Context(), solicitudID)
+	if solicitud != nil && solicitud.GetConceptoCodigo() == "OFICIAL" {
+		c.Redirect(http.StatusFound, fmt.Sprintf("/solicitudes/oficial/%s/detalle", solicitudID))
+	} else {
+		c.Redirect(http.StatusFound, fmt.Sprintf("/solicitudes/derecho/%s/detalle", solicitudID))
+	}
 }
+
 func (ctrl *PasajeController) UpdateStatus(c *gin.Context) {
 	var req dtos.UpdatePasajeStatusRequest
 	if err := c.ShouldBind(&req); err != nil {

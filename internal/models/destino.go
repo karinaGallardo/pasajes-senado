@@ -36,3 +36,11 @@ func (d Destino) GetNombreDisplay() string {
 	}
 	return d.Ciudad + " (" + d.IATA + ")"
 }
+
+func (d Destino) GetLabel() string {
+	lbl := d.Ciudad + " (" + d.IATA + ")"
+	if d.AmbitoCodigo != "NACIONAL" && d.Pais != nil {
+		lbl += ", " + *d.Pais
+	}
+	return lbl
+}

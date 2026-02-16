@@ -210,26 +210,47 @@ func seedEstadosSolicitud() {
 func seedViaticosAndConfig() {
 	fmt.Println("Sincronizando Categorías de Viáticos y Configuración...")
 
+	zonas := []string{
+		"INTERIOR",
+		"EXTERIOR",
+		"NORTE AMERICA, EUROPA, ASIA, AFRICA U OCEANIA",
+		"CENTRO AMERICA, SUD AMERICA O EL CARIBE",
+		"INTERDEPARTAMENTAL",
+		"INTRADEPARTAMENTAL",
+		"FRANJA DE FRONTERA",
+	}
+
+	zonaMap := make(map[string]string)
+	for _, zName := range zonas {
+		var zona models.ZonaViatico
+		configs.DB.Where("nombre = ?", zName).FirstOrCreate(&zona, models.ZonaViatico{Nombre: zName})
+		zonaMap[zName] = zona.ID
+	}
+
 	categorias := []models.CategoriaViatico{
-		{Nombre: "CATEGORIA 1", Codigo: 1, Monto: 360.00, Moneda: "USD", Ubicacion: "NORTE AMERICA, EUROPA, ASIA, AFRICA U OCEANIA"},
-		{Nombre: "CATEGORIA 2", Codigo: 2, Monto: 300.00, Moneda: "USD", Ubicacion: "NORTE AMERICA, EUROPA, ASIA, AFRICA U OCEANIA"},
-		{Nombre: "CATEGORIA 3", Codigo: 3, Monto: 276.00, Moneda: "USD", Ubicacion: "NORTE AMERICA, EUROPA, ASIA, AFRICA U OCEANIA"},
-		{Nombre: "CATEGORIA 1", Codigo: 1, Monto: 300.00, Moneda: "USD", Ubicacion: "CENTRO AMERICA, SUD AMERICA O EL CARIBE"},
-		{Nombre: "CATEGORIA 2", Codigo: 2, Monto: 240.00, Moneda: "USD", Ubicacion: "CENTRO AMERICA, SUD AMERICA O EL CARIBE"},
-		{Nombre: "CATEGORIA 3", Codigo: 3, Monto: 207.00, Moneda: "USD", Ubicacion: "CENTRO AMERICA, SUD AMERICA O EL CARIBE"},
-		{Nombre: "CATEGORIA 1", Codigo: 1, Monto: 553.00, Moneda: "Bs", Ubicacion: "INTERDEPARTAMENTAL"},
-		{Nombre: "CATEGORIA 2", Codigo: 2, Monto: 465.00, Moneda: "Bs", Ubicacion: "INTERDEPARTAMENTAL"},
-		{Nombre: "CATEGORIA 3", Codigo: 3, Monto: 371.00, Moneda: "Bs", Ubicacion: "INTERDEPARTAMENTAL"},
-		{Nombre: "CATEGORIA 1", Codigo: 1, Monto: 332.00, Moneda: "Bs", Ubicacion: "INTRADEPARTAMENTAL"},
-		{Nombre: "CATEGORIA 2", Codigo: 2, Monto: 277.00, Moneda: "Bs", Ubicacion: "INTRADEPARTAMENTAL"},
-		{Nombre: "CATEGORIA 3", Codigo: 3, Monto: 222.00, Moneda: "Bs", Ubicacion: "INTRADEPARTAMENTAL"},
-		{Nombre: "CATEGORIA 1", Codigo: 1, Monto: 583.00, Moneda: "Bs", Ubicacion: "FRANJA DE FRONTERA"},
-		{Nombre: "CATEGORIA 2", Codigo: 2, Monto: 491.00, Moneda: "Bs", Ubicacion: "FRANJA DE FRONTERA"},
-		{Nombre: "CATEGORIA 3", Codigo: 3, Monto: 391.00, Moneda: "Bs", Ubicacion: "FRANJA DE FRONTERA"},
+		{Nombre: "CATEGORIA 1", Codigo: 1, Monto: 360.00, Moneda: "USD", Ubicacion: "EXTERIOR", ZonaViaticoID: utils.Ptr(zonaMap["NORTE AMERICA, EUROPA, ASIA, AFRICA U OCEANIA"])},
+		{Nombre: "CATEGORIA 2", Codigo: 2, Monto: 300.00, Moneda: "USD", Ubicacion: "EXTERIOR", ZonaViaticoID: utils.Ptr(zonaMap["NORTE AMERICA, EUROPA, ASIA, AFRICA U OCEANIA"])},
+		{Nombre: "CATEGORIA 3", Codigo: 3, Monto: 276.00, Moneda: "USD", Ubicacion: "EXTERIOR", ZonaViaticoID: utils.Ptr(zonaMap["NORTE AMERICA, EUROPA, ASIA, AFRICA U OCEANIA"])},
+
+		{Nombre: "CATEGORIA 1", Codigo: 1, Monto: 300.00, Moneda: "USD", Ubicacion: "EXTERIOR", ZonaViaticoID: utils.Ptr(zonaMap["CENTRO AMERICA, SUD AMERICA O EL CARIBE"])},
+		{Nombre: "CATEGORIA 2", Codigo: 2, Monto: 240.00, Moneda: "USD", Ubicacion: "EXTERIOR", ZonaViaticoID: utils.Ptr(zonaMap["CENTRO AMERICA, SUD AMERICA O EL CARIBE"])},
+		{Nombre: "CATEGORIA 3", Codigo: 3, Monto: 207.00, Moneda: "USD", Ubicacion: "EXTERIOR", ZonaViaticoID: utils.Ptr(zonaMap["CENTRO AMERICA, SUD AMERICA O EL CARIBE"])},
+
+		{Nombre: "CATEGORIA 1", Codigo: 1, Monto: 553.00, Moneda: "Bs", Ubicacion: "INTERIOR", ZonaViaticoID: utils.Ptr(zonaMap["INTERDEPARTAMENTAL"])},
+		{Nombre: "CATEGORIA 2", Codigo: 2, Monto: 465.00, Moneda: "Bs", Ubicacion: "INTERIOR", ZonaViaticoID: utils.Ptr(zonaMap["INTERDEPARTAMENTAL"])},
+		{Nombre: "CATEGORIA 3", Codigo: 3, Monto: 371.00, Moneda: "Bs", Ubicacion: "INTERIOR", ZonaViaticoID: utils.Ptr(zonaMap["INTERDEPARTAMENTAL"])},
+
+		{Nombre: "CATEGORIA 1", Codigo: 1, Monto: 332.00, Moneda: "Bs", Ubicacion: "INTERIOR", ZonaViaticoID: utils.Ptr(zonaMap["INTRADEPARTAMENTAL"])},
+		{Nombre: "CATEGORIA 2", Codigo: 2, Monto: 277.00, Moneda: "Bs", Ubicacion: "INTERIOR", ZonaViaticoID: utils.Ptr(zonaMap["INTRADEPARTAMENTAL"])},
+		{Nombre: "CATEGORIA 3", Codigo: 3, Monto: 222.00, Moneda: "Bs", Ubicacion: "INTERIOR", ZonaViaticoID: utils.Ptr(zonaMap["INTRADEPARTAMENTAL"])},
+
+		{Nombre: "CATEGORIA 1", Codigo: 1, Monto: 583.00, Moneda: "Bs", Ubicacion: "INTERIOR", ZonaViaticoID: utils.Ptr(zonaMap["FRANJA DE FRONTERA"])},
+		{Nombre: "CATEGORIA 2", Codigo: 2, Monto: 491.00, Moneda: "Bs", Ubicacion: "INTERIOR", ZonaViaticoID: utils.Ptr(zonaMap["FRANJA DE FRONTERA"])},
+		{Nombre: "CATEGORIA 3", Codigo: 3, Monto: 391.00, Moneda: "Bs", Ubicacion: "INTERIOR", ZonaViaticoID: utils.Ptr(zonaMap["FRANJA DE FRONTERA"])},
 	}
 
 	for _, c := range categorias {
-		configs.DB.Where("nombre = ? AND ubicacion = ?", c.Nombre, c.Ubicacion).FirstOrCreate(&c)
+		configs.DB.Where("nombre = ? AND zona_viatico_id = ?", c.Nombre, c.ZonaViaticoID).FirstOrCreate(&c)
 	}
 
 	confList := []models.Configuracion{

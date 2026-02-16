@@ -1,0 +1,75 @@
+{{ define "viatico/index" }} {{ template "layout_start" . }}
+
+<div class="max-w-7xl mx-auto mt-8 px-4 pb-12">
+  <div class="mb-8 flex justify-between items-center">
+    <div>
+      <h1 class="text-2xl font-black text-neutral-800 uppercase tracking-tight">Gestión de Viáticos</h1>
+      <p class="text-sm text-neutral-400 font-bold uppercase tracking-widest mt-1">Listado General de Asignaciones</p>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-2xl shadow-sm border border-neutral-200 overflow-hidden">
+    <table class="w-full text-left border-collapse">
+      <thead>
+        <tr class="bg-neutral-50 border-b border-neutral-200">
+          <th class="px-6 py-4 text-[10px] font-black text-neutral-500 uppercase tracking-widest">Código</th>
+          <th class="px-6 py-4 text-[10px] font-black text-neutral-500 uppercase tracking-widest">Funcionario</th>
+          <th class="px-6 py-4 text-[10px] font-black text-neutral-500 uppercase tracking-widest">Solicitud</th>
+          <th class="px-6 py-4 text-[10px] font-black text-neutral-500 uppercase tracking-widest">Fecha Asig.</th>
+          <th class="px-6 py-4 text-[10px] font-black text-neutral-500 uppercase tracking-widest text-right">Monto Total</th>
+          <th class="px-6 py-4 text-[10px] font-black text-neutral-500 uppercase tracking-widest text-center">Estado</th>
+          <th class="px-6 py-4 text-[10px] font-black text-neutral-500 uppercase tracking-widest text-center">Acciones</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-neutral-100">
+        {{ range .Viaticos }}
+        <tr class="hover:bg-neutral-50/50 transition-colors group">
+          <td class="px-6 py-4">
+            <span class="font-black text-neutral-800 text-xs tracking-tight">{{ .Codigo }}</span>
+          </td>
+          <td class="px-6 py-4">
+            <div class="flex items-center gap-3">
+              <div class="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-black text-[10px]">
+                {{ slice .Usuario.Nombre 0 1 }}{{ slice .Usuario.ApellidoPaterno 0 1 }}
+              </div>
+              <span class="text-sm font-bold text-neutral-700">{{ .Usuario.GetNombreCompleto }}</span>
+            </div>
+          </td>
+          <td class="px-6 py-4">
+            <a href="/solicitudes/oficial/{{ .Solicitud.ID }}/detalle" class="text-xs font-black text-primary hover:underline uppercase tracking-tight">#{{ .Solicitud.Codigo }}</a>
+          </td>
+          <td class="px-6 py-4">
+            <span class="text-xs font-bold text-neutral-500">{{ .FechaAsignacion.Format "02/01/2006" }}</span>
+          </td>
+          <td class="px-6 py-4 text-right">
+            <span class="text-sm font-black text-neutral-800">Bs {{ formatCurrency .MontoTotal }}</span>
+          </td>
+          <td class="px-6 py-4 text-center">
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-widest bg-success-100 text-success-700">{{ .Estado }}</span>
+          </td>
+          <td class="px-6 py-4">
+            <div class="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <a href="/viaticos/{{ .ID }}/print" target="_blank" class="p-2 text-neutral-400 hover:text-primary transition-colors" title="Imprimir PV-5">
+                <i class="ph ph-printer text-xl"></i>
+              </a>
+            </div>
+          </td>
+        </tr>
+        {{ else }}
+        <tr>
+          <td colspan="7" class="px-6 py-20 text-center">
+            <div class="flex flex-col items-center justify-center gap-4">
+              <div class="h-16 w-16 rounded-full bg-neutral-50 flex items-center justify-center">
+                <i class="ph ph-coins text-3xl text-neutral-300"></i>
+              </div>
+              <p class="text-sm font-bold text-neutral-400 uppercase tracking-widest">No se encontraron viáticos registrados</p>
+            </div>
+          </td>
+        </tr>
+        {{ end }}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{{ template "layout_end" . }} {{ end }}

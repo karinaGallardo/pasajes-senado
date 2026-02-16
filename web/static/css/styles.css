@@ -105,3 +105,56 @@ button.htmx-request .button-text {
 button.htmx-request .button-loading {
   display: inline-flex;
 }
+
+/* =========================================
+   4. ESTADOS DE SOLICITUD / ITEMS
+   ========================================= */
+.status-item-text-PENDIENTE {
+  color: #a3a3a3;
+}
+.status-item-text-SOLICITADO {
+  color: #f59e0b;
+}
+.status-item-text-APROBADO {
+  color: #10b981;
+}
+.status-item-text-RECHAZADO {
+  color: #f43f5e;
+}
+.status-item-text-EMITIDO {
+  color: #0ea5e9;
+}
+.status-item-text-REPROGRAMADO {
+  color: #eab308;
+}
+.status-item-text-FINALIZADO {
+  color: #525252;
+}
+.status-item-text-CANCELADO {
+  color: #ef4444;
+}
+
+/* Default / Fallback */
+.status-item-text-default {
+  color: #737373;
+}
+
+/* Main Status Badges */
+.status-badge-SOLICITADO { background-color: #f59e0b15; color: #f59e0b; border-color: #f59e0b33; }
+.status-badge-PARCIALMENTE_APROBADO { background-color: #8b5cf615; color: #8b5cf6; border-color: #8b5cf633; }
+.status-badge-APROBADO { background-color: #10b98115; color: #10b981; border-color: #10b98133; }
+.status-badge-RECHAZADO { background-color: #f43f5e15; color: #f43f5e; border-color: #f43f5e33; }
+.status-badge-FINALIZADO { background-color: #52525215; color: #525252; border-color: #52525233; }
+.status-badge-default { background-color: #73737315; color: #737373; border-color: #73737333; }
+
+/* Ticket Status Badges */
+.status-badge-REGISTRADO { background-color: #6366f115; color: #6366f1; border-color: #6366f133; }
+.status-badge-EMITIDO { background-color: #10b98115; color: #10b981; border-color: #10b98133; }
+.status-badge-USADO { background-color: #3b82f615; color: #3b82f6; border-color: #3b82f633; }
+.status-badge-ANULADO { background-color: #ef444415; color: #ef4444; border-color: #ef444433; }
+
+/* Quota / Right Status Badges */
+.status-badge-DISPONIBLE { background-color: #10b98115; color: #10b981; border-color: #10b98133; }
+.status-badge-USADO { background-color: #73737315; color: #737373; border-color: #73737333; }
+.status-badge-VENCIDO { background-color: #ef444415; color: #ef4444; border-color: #ef444433; }
+.status-badge-RESERVADO { background-color: #f59e0b15; color: #f59e0b; border-color: #f59e0b33; }

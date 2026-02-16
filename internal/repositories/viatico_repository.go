@@ -48,3 +48,9 @@ func (r *ViaticoRepository) FindBySolicitudID(solicitudID string) ([]models.Viat
 	err := r.db.Preload("Detalles").Where("solicitud_id = ?", solicitudID).Find(&viaticos).Error
 	return viaticos, err
 }
+
+func (r *ViaticoRepository) FindAll() ([]models.Viatico, error) {
+	var list []models.Viatico
+	err := r.db.Preload("Usuario").Preload("Solicitud").Order("fecha_asignacion desc").Find(&list).Error
+	return list, err
+}

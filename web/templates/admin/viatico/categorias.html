@@ -1,0 +1,259 @@
+{{ define "admin/viatico/categorias" }} {{ template "layout_start" . }}
+
+<div class="max-w-7xl mx-auto mt-8 px-4 pb-12" x-data="{ showCatModal: false, showZonaModal: false }">
+  <div class="mb-8 flex justify-between items-center">
+    <div>
+      <h1 class="text-2xl font-black text-neutral-800 uppercase tracking-tight">Administración de Viáticos</h1>
+      <p class="text-sm text-neutral-400 font-bold uppercase tracking-widest mt-1">Configuración de Escalas y Zonas</p>
+    </div>
+    <button
+      @click="showCatModal = true"
+      class="bg-primary text-white px-4 py-2 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-primary/90 transition-colors flex items-center gap-2">
+      <i class="ph ph-plus-circle text-lg"></i>
+      Nueva Categoría
+    </button>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <div class="lg:col-span-2 space-y-6">
+      <div class="bg-white rounded-2xl shadow-sm border border-neutral-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-neutral-100 flex justify-between items-center bg-neutral-50/50">
+          <h2 class="text-xs font-black text-neutral-600 uppercase tracking-widest">Escalas Diarias Definidas</h2>
+        </div>
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-neutral-50 border-b border-neutral-200">
+              <th class="px-6 py-3 text-[10px] font-black text-neutral-400 uppercase tracking-widest">Zona / Grupo</th>
+              <th class="px-6 py-3 text-[10px] font-black text-neutral-400 uppercase tracking-widest">Nombre / Categoría</th>
+              <th class="px-6 py-3 text-[10px] font-black text-neutral-400 uppercase tracking-widest text-right">Monto</th>
+              <th class="px-6 py-3 text-[10px] font-black text-neutral-400 uppercase tracking-widest text-center">Acciones</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-neutral-100">
+            {{ range .Categorias }}
+            <tr class="hover:bg-neutral-50/50 transition-colors">
+              <td class="px-6 py-4">
+                <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-tighter bg-neutral-100 text-neutral-600">
+                  {{ if .ZonaViatico }}{{ .ZonaViatico.Nombre }}{{ else }}{{ .Ubicacion }}{{ end }}
+                </span>
+              </td>
+              <td class="px-6 py-4">
+                <div class="flex flex-col">
+                  <span class="text-xs font-bold text-neutral-700 uppercase tracking-tight">{{ .Nombre }}</span>
+                  <span class="text-[10px] text-neutral-400 font-black uppercase tracking-widest">CÓDIGO: {{ .Codigo }}</span>
+                </div>
+              </td>
+              <td class="px-6 py-4 text-right">
+                <span class="text-sm font-black text-neutral-800 tracking-tight">{{ .Moneda }} {{ formatCurrency .Monto }}</span>
+              </td>
+              <td class="px-6 py-4">
+                <div class="flex items-center justify-center gap-2">
+                  <button class="p-2 text-neutral-400 hover:text-primary transition-colors">
+                    <i class="ph ph-pencil-simple text-lg"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            {{ end }}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div class="space-y-6">
+      <div class="bg-white rounded-2xl shadow-sm border border-neutral-200 overflow-hidden">
+        <div class="px-6 py-4 border-b border-neutral-100 flex justify-between items-center bg-neutral-50/50">
+          <h2 class="text-xs font-black text-neutral-600 uppercase tracking-widest">Zonas de Clasificación</h2>
+          <button @click="showZonaModal = true" class="text-primary hover:text-primary/80 transition-colors">
+            <i class="ph ph-plus-circle text-lg"></i>
+          </button>
+        </div>
+        <div class="p-6 space-y-4">
+          {{ range .Zonas }}
+          <div class="flex items-center justify-between p-3 rounded-xl border border-neutral-100 hover:border-primary/20 hover:bg-primary/5 transition-all group cursor-default">
+            <div class="flex items-center gap-3">
+              <div class="h-8 w-8 rounded-lg bg-neutral-100 group-hover:bg-primary/10 flex items-center justify-center text-neutral-400 group-hover:text-primary transition-colors">
+                <i class="ph ph-map-pin text-lg"></i>
+              </div>
+              <span class="text-xs font-bold text-neutral-600 group-hover:text-neutral-900 transition-colors uppercase tracking-tight">{{ .Nombre }}</span>
+            </div>
+            <button class="text-neutral-300 hover:text-danger-500 transition-colors opacity-0 group-hover:opacity-100">
+              <i class="ph ph-trash text-lg"></i>
+            </button>
+          </div>
+          {{ end }}
+        </div>
+      </div>
+
+      <div class="bg-primary/5 rounded-2xl border border-primary/10 p-6">
+        <h3 class="text-[10px] font-black text-primary uppercase tracking-widest mb-2 text-center">Sugerencia del Sistema</h3>
+        <p class="text-xs text-primary/70 font-bold leading-relaxed text-center italic">
+          Las zonas permiten agrupar las escalas para facilitar la selección de los funcionarios durante la asignación de viáticos.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Nueva Categoría -->
+  <div x-show="showCatModal" class="fixed inset-0 z-50 overflow-y-auto" x-cloak>
+    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+      <div
+        x-show="showCatModal"
+        x-transition:enter="ease-out duration-300"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        x-transition:leave="ease-in duration-200"
+        x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0"
+        class="fixed inset-0 transition-opacity"
+        aria-hidden="true">
+        <div class="absolute inset-0 bg-neutral-900/60 backdrop-blur-sm"></div>
+      </div>
+      <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+      <div
+        x-show="showCatModal"
+        x-transition:enter="ease-out duration-300"
+        x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+        x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+        x-transition:leave="ease-in duration-200"
+        x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+        x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+        class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-neutral-200">
+        <form action="/admin/viaticos/categorias" method="POST">
+          <div class="px-6 pt-6 pb-4">
+            <h3 class="text-lg font-black text-neutral-800 uppercase tracking-tight">Nueva Categoría de Viático</h3>
+            <p class="text-xs text-neutral-400 font-bold uppercase tracking-widest mt-1">Definir escala y zona</p>
+          </div>
+          <div class="px-6 py-4 space-y-4">
+            <div>
+              <label class="block text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-1">Nombre de la Categoría</label>
+              <input
+                type="text"
+                name="nombre"
+                required
+                placeholder="Ej: CATEGORIA 1"
+                class="w-full px-4 py-2 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-bold text-neutral-700" />
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-1">Código</label>
+                <input
+                  type="number"
+                  name="codigo"
+                  required
+                  placeholder="1, 2, 3..."
+                  class="w-full px-4 py-2 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-bold text-neutral-700" />
+              </div>
+              <div>
+                <label class="block text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-1">Monto Diario</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  name="monto"
+                  required
+                  placeholder="0.00"
+                  class="w-full px-4 py-2 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-bold text-neutral-700" />
+              </div>
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-1">Moneda</label>
+                <select
+                  name="moneda"
+                  required
+                  class="w-full px-4 py-2 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-bold text-neutral-700">
+                  <option value="Bs">Bolivianos (Bs)</option>
+                  <option value="$us">Dólares ($us)</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-1">Zona / Grupo</label>
+                <select
+                  name="zona_viatico_id"
+                  required
+                  class="w-full px-4 py-2 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-bold text-neutral-700">
+                  <option value="">Seleccione zona...</option>
+                  {{ range .Zonas }}
+                  <option value="{{ .ID }}">{{ .Nombre }}</option>
+                  {{ end }}
+                </select>
+              </div>
+            </div>
+          </div>
+          <div class="px-6 py-4 bg-neutral-50 flex justify-end gap-3">
+            <button
+              type="button"
+              @click="showCatModal = false"
+              class="px-4 py-2 text-xs font-black text-neutral-400 uppercase tracking-widest hover:text-neutral-600 transition-colors">
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              class="bg-primary text-white px-6 py-2 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20">
+              Guardar Categoría
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Nueva Zona -->
+  <div x-show="showZonaModal" class="fixed inset-0 z-50 overflow-y-auto" x-cloak>
+    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+      <div
+        x-show="showZonaModal"
+        x-transition:enter="ease-out duration-300"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        x-transition:leave="ease-in duration-200"
+        x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0"
+        class="fixed inset-0 transition-opacity"
+        aria-hidden="true">
+        <div class="absolute inset-0 bg-neutral-900/60 backdrop-blur-sm"></div>
+      </div>
+      <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+      <div
+        x-show="showZonaModal"
+        x-transition:enter="ease-out duration-300"
+        x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+        x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+        x-transition:leave="ease-in duration-200"
+        x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+        x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+        class="inline-block align-bottom bg-white rounded-2xl text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-sm sm:w-full border border-neutral-200">
+        <form action="/admin/viaticos/zonas" method="POST">
+          <div class="px-6 pt-6 pb-4">
+            <h3 class="text-lg font-black text-neutral-800 uppercase tracking-tight">Nueva Zona</h3>
+            <p class="text-xs text-neutral-400 font-bold uppercase tracking-widest mt-1">Clasificación regional</p>
+          </div>
+          <div class="px-6 py-4">
+            <label class="block text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-1">Nombre de la Zona</label>
+            <input
+              type="text"
+              name="nombre"
+              required
+              placeholder="Ej: SUDAMERICA"
+              class="w-full px-4 py-2 bg-neutral-50 border border-neutral-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all text-sm font-bold text-neutral-700 uppercase" />
+          </div>
+          <div class="px-6 py-4 bg-neutral-50 flex justify-end gap-3">
+            <button
+              type="button"
+              @click="showZonaModal = false"
+              class="px-4 py-2 text-xs font-black text-neutral-400 uppercase tracking-widest hover:text-neutral-600 transition-colors">
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              class="bg-primary text-white px-6 py-2 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-primary/90 transition-colors shadow-lg shadow-primary/20">
+              Guardar Zona
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+{{ template "layout_end" . }} {{ end }}
