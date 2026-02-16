@@ -14,7 +14,7 @@
     editId: '',
     motivo: '',
     aerolinea: '',
-    selectedWeekLabel: '{{ .Item.Semana }}: del {{ if .Item.FechaDesde }}{{ .Item.FechaDesde.Format "02/01/2006" }}{{ end }} al {{ if .Item.FechaHasta }}{{ .Item.FechaHasta.Format "02/01/2006" }}{{ end }}'
+    selectedWeekLabel: '{{ .Item.Semana }}: del {{ if .Item.FechaDesde }}{{ .Item.FechaDesde.Format `02/01/2006` }}{{ end }} al {{ if .Item.FechaHasta }}{{ .Item.FechaHasta.Format `02/01/2006` }}{{ end }}'
 }">
   <!-- HEADER -->
   <div class="bg-neutral-50 border border-neutral-200 p-3 flex items-center justify-between rounded-lg shadow-sm">
