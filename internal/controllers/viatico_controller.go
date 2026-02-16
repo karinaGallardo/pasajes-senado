@@ -64,10 +64,10 @@ func (ctrl *ViaticoController) Create(c *gin.Context) {
 	categorias, _ := ctrl.viaticoService.GetCategorias(c.Request.Context())
 	zonas, _ := ctrl.viaticoService.GetZonas(c.Request.Context())
 
-	utils.Render(c, "viatico/create", gin.H{
+	utils.Render(c, "viatico/modal_create", gin.H{
 		"Title":       "Asignación de Viáticos",
 		"Solicitud":   solicitud,
-		"DefaultDias": fmt.Sprintf("%.1f", dias),
+		"DefaultDias": dias,
 		"Categorias":  categorias,
 		"Zonas":       zonas,
 	})

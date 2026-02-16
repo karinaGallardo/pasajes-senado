@@ -423,14 +423,15 @@ func (ctrl *SolicitudOficialController) GetEditModal(c *gin.Context) {
 	var origenIATA, destinoIATA string
 
 	for _, item := range solicitud.Items {
-		if item.Tipo == models.TipoSolicitudItemIda {
+		switch item.Tipo {
+		case models.TipoSolicitudItemIda:
 			itemID = item.ID
 			origenIATA = item.OrigenIATA
 			destinoIATA = item.DestinoIATA
 			if item.Fecha != nil {
 				fechaIda = item.Fecha.Format("2006-01-02T15:04")
 			}
-		} else if item.Tipo == models.TipoSolicitudItemVuelta {
+		case models.TipoSolicitudItemVuelta:
 			itemVueltaID = item.ID
 			if item.Fecha != nil {
 				fechaVuelta = item.Fecha.Format("2006-01-02T15:04")

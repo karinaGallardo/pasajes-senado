@@ -50,8 +50,8 @@
                 <i class="ph ph-airplane-tilt text-2xl text-primary-600"></i>
               </div>
               <div class="ml-4 text-left">
-                <h3 class="text-lg font-medium leading-6 text-neutral-900" id="modal-title">Nueva Comisión Oficial</h3>
-                <p class="text-sm text-neutral-500">Comisión para {{ .TargetUser.GetNombreCompleto }}</p>
+                <h3 class="text-lg font-medium leading-6 text-neutral-900" id="modal-title">Nueva Solicitud Oficial</h3>
+                <p class="text-sm text-neutral-500">Solicitud para {{ .TargetUser.GetNombreCompleto }}</p>
               </div>
             </div>
 
@@ -61,7 +61,7 @@
                 type="submit"
                 :disabled="loading"
                 class="inline-flex justify-center rounded-md border border-transparent bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50">
-                <span x-show="!loading">Crear Solicitud</span>
+                <span x-show="!loading">Guardar</span>
                 <span x-show="loading" style="display: none">Guardando...</span>
               </button>
               <button
@@ -138,7 +138,7 @@
                     ],
                     get filteredItems() {
                         let res = this.items;
-                        if (this.currentAmbito) {
+                        if (this.currentAmbito === 'NACIONAL') {
                             res = res.filter(i => i.ambito === this.currentAmbito);
                         }
                         if (this.search === '') return res;
@@ -210,7 +210,7 @@
                     ],
                     get filteredItems() {
                         let res = this.items;
-                        if (this.currentAmbito) {
+                        if (this.currentAmbito === 'NACIONAL') {
                             res = res.filter(i => i.ambito === this.currentAmbito);
                         }
                         if (this.search === '') return res;
