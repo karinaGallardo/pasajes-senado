@@ -380,13 +380,27 @@
                   <p class="text-[10px] font-bold text-neutral-400 uppercase tracking-tight">Líquido Pagable</p>
                   <p class="text-lg font-black text-success-700">Bs {{ printf "%.2f" (add .MontoLiquido .MontoLiquidoGastos) }}</p>
                 </div>
-                <a
-                  href="/viaticos/{{ .ID }}/print"
-                  target="_blank"
-                  class="p-2 rounded-lg bg-white border border-neutral-200 text-neutral-600 hover:text-primary hover:border-primary transition-all shadow-sm"
-                  title="Imprimir Formulario">
-                  <i class="ph ph-printer text-xl"></i>
-                </a>
+                <div class="flex items-center gap-2">
+                  <button
+                    type="button"
+                    hx-get="/viaticos/{{ .ID }}/print"
+                    hx-target="#modal-container"
+                    hx-swap="innerHTML"
+                    class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-white border border-neutral-200 text-neutral-600 hover:text-primary hover:border-primary transition-all shadow-sm text-sm font-medium cursor-pointer"
+                    title="Ver PDF en modal">
+                    <i class="ph ph-file-pdf text-lg"></i>
+                    Ver PDF
+                  </button>
+                  <button
+                    type="button"
+                    hx-get="/viaticos/{{ .ID }}/print?download=1"
+                    hx-swap="none"
+                    class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-primary-50 border border-primary-200 text-primary-700 hover:bg-primary-100 transition-all shadow-sm text-sm font-medium cursor-pointer"
+                    title="Descargar formulario de viáticos">
+                    <i class="ph ph-download-simple text-lg"></i>
+                    Descargar PDF
+                  </button>
+                </div>
               </div>
             </div>
             {{ end }}
@@ -435,13 +449,40 @@
         <div class="space-y-6">
           <div class="bg-white shadow-sm rounded-xl border border-neutral-200 p-6">
             <h3 class="text-xs font-bold text-neutral-500 uppercase tracking-widest mb-4 border-b pb-2">Beneficiario</h3>
-            <div class="flex items-center space-x-3 mb-4">
-              <div class="h-12 w-12 rounded-full bg-primary-50 border border-primary-100 flex items-center justify-center text-primary-600 font-bold">
-                {{ printf "%.2s" .Solicitud.Usuario.GetNombreCompleto }}
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
+              <div class="flex items-center space-x-3">
+                <div class="h-12 w-12 rounded-full bg-primary-50 border border-primary-100 flex items-center justify-center text-primary-600 font-bold">
+                  {{ printf "%.2s" .Solicitud.Usuario.GetNombreCompleto }}
+                </div>
+                <div>
+                  <p class="text-sm font-bold text-neutral-900">{{ .Solicitud.Usuario.GetNombreCompleto }}</p>
+                  <p class="text-[10px] text-neutral-500 uppercase font-bold">{{ .Solicitud.Usuario.CI }}</p>
+                </div>
               </div>
-              <div>
-                <p class="text-sm font-bold text-neutral-900">{{ .Solicitud.Usuario.GetNombreCompleto }}</p>
-                <p class="text-[10px] text-neutral-500 uppercase font-bold">{{ .Solicitud.Usuario.CI }}</p>
+              <div class="flex items-center gap-2">
+                {{ if .DescargoID }}
+                <a
+                  href="/descargos/{{ .DescargoID }}"
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 border border-neutral-300 rounded-md shadow-sm text-xs font-bold text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none">
+                  <i class="ph ph-file-text text-base"></i>
+                  Ver descargo (PV-05)
+                </a>
+                <button
+                  type="button"
+                  hx-get="/descargos/{{ .DescargoID }}/previsualizar-pv5"
+                  hx-target="#modal-container"
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 border border-neutral-300 rounded-md shadow-sm text-xs font-bold text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none cursor-pointer">
+                  <i class="ph ph-file-pdf text-base"></i>
+                  Imprimir PV-05
+                </button>
+                {{ else if .Perms.CanMakeDescargo }}
+                <a
+                  href="/solicitudes/oficial/{{ .Solicitud.ID }}/descargo"
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 border border-transparent rounded-md shadow-sm text-xs font-bold text-white bg-primary hover:bg-primary-600 focus:outline-none">
+                  <i class="ph ph-file-plus text-base"></i>
+                  Realizar descargo (PV-05)
+                </a>
+                {{ end }}
               </div>
             </div>
             <div class="space-y-3 pt-3 border-t border-neutral-100">

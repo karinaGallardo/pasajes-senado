@@ -112,6 +112,12 @@ func (ctrl *ViaticoController) Print(c *gin.Context) {
 	}
 
 	if c.GetHeader("HX-Request") == "true" {
+		if c.Query("download") == "1" {
+			// HTMX descarga: redirigir al mismo endpoint sin HX-Request para que el navegador reciba el PDF y lo descargue
+			c.Header("HX-Redirect", fmt.Sprintf("/viaticos/%s/print?download=1", id))
+			c.Status(http.StatusOK)
+			return
+		}
 		utils.Render(c, "viatico/modal_print", gin.H{
 			"Viatico": viatico,
 		})
@@ -166,10 +172,14 @@ func (ctrl *ViaticoController) Print(c *gin.Context) {
 	}
 
 	user := viatico.Usuario
-	drawLabelBox("A FAVOR DE :", user.GetNombreCompleto(), 40, 150, false)
-	drawLabelBox("C.I. :", user.CI, 40, 60, true)
-	drawLabelBox("CARGO/ROL :", user.Rol.Nombre, 30, 60, false)
-	drawLabelBox("UNIDAD :", "Senado Plurinacional", 40, 150, false)
+	rolNombre := ""
+	if user.Rol != nil {
+		rolNombre = user.Rol.Nombre
+	}
+	drawLabelBox(tr("A FAVOR DE :"), tr(user.GetNombreCompleto()), 40, 150, false)
+	drawLabelBox(tr("C.I. :"), tr(user.CI), 40, 60, true)
+	drawLabelBox(tr("CARGO/ROL :"), tr(rolNombre), 30, 60, false)
+	drawLabelBox(tr("UNIDAD :"), tr("Senado Plurinacional"), 40, 150, false)
 
 	pdf.Ln(2)
 
@@ -180,14 +190,14 @@ func (ctrl *ViaticoController) Print(c *gin.Context) {
 		pdf.CellFormat(0, 8, tr("DATOS DE LA COMISIÓN"), "B", 1, "L", false, 0, "")
 		pdf.Ln(2)
 
-		drawLabelBox("SOLICITUD :", sol.Codigo, 40, 60, true)
+		drawLabelBox(tr("SOLICITUD :"), tr(sol.Codigo), 40, 60, true)
 		fechaSol := "-"
 		if fIda := sol.GetFechaIda(); fIda != nil {
 			fechaSol = fIda.Format("02/01/2006")
 		}
-		drawLabelBox("FECHA VIAJE :", fechaSol, 30, 60, false)
-		drawLabelBox("MOTIVO :", sol.Motivo, 40, 150, false)
-		drawLabelBox("LUGAR :", fmt.Sprintf("%s - %s", sol.GetOrigenCiudad(), sol.GetDestinoCiudad()), 40, 150, false)
+		drawLabelBox(tr("FECHA VIAJE :"), tr(fechaSol), 30, 60, false)
+		drawLabelBox(tr("MOTIVO :"), tr(sol.Motivo), 40, 150, false)
+		drawLabelBox(tr("LUGAR :"), tr(fmt.Sprintf("%s - %s", sol.GetOrigenCiudad(), sol.GetDestinoCiudad())), 40, 150, false)
 	}
 
 	pdf.Ln(5)
@@ -197,13 +207,13 @@ func (ctrl *ViaticoController) Print(c *gin.Context) {
 
 	pdf.SetFillColor(240, 240, 240)
 	pdf.SetFont("Arial", "B", 8)
-	pdf.CellFormat(30, 6, "Desde", "1", 0, "C", true, 0, "")
-	pdf.CellFormat(30, 6, "Hasta", "1", 0, "C", true, 0, "")
+	pdf.CellFormat(30, 6, tr("Desde"), "1", 0, "C", true, 0, "")
+	pdf.CellFormat(30, 6, tr("Hasta"), "1", 0, "C", true, 0, "")
 	pdf.CellFormat(20, 6, tr("Días"), "1", 0, "C", true, 0, "")
-	pdf.CellFormat(30, 6, "Lugar", "1", 0, "C", true, 0, "")
-	pdf.CellFormat(25, 6, "Haber/Día (Bs)", "1", 0, "C", true, 0, "")
+	pdf.CellFormat(30, 6, tr("Lugar"), "1", 0, "C", true, 0, "")
+	pdf.CellFormat(25, 6, tr("Haber/Día (Bs)"), "1", 0, "C", true, 0, "")
 	pdf.CellFormat(15, 6, "%", "1", 0, "C", true, 0, "")
-	pdf.CellFormat(30, 6, "SubTotal (Bs)", "1", 0, "C", true, 0, "")
+	pdf.CellFormat(30, 6, tr("SubTotal (Bs)"), "1", 0, "C", true, 0, "")
 	pdf.Ln(6)
 
 	pdf.SetFont("Arial", "", 8)
@@ -226,28 +236,28 @@ func (ctrl *ViaticoController) Print(c *gin.Context) {
 
 	pdf.SetX(xTotals)
 	pdf.SetFont("Arial", "B", 9)
-	pdf.CellFormat(wLabel, 6, "TOTAL VIATICO :", "1", 0, "R", true, 0, "")
+	pdf.CellFormat(wLabel, 6, tr("TOTAL VIATICO :"), "1", 0, "R", true, 0, "")
 	pdf.SetFont("Arial", "", 9)
 	pdf.CellFormat(wValue, 6, fmt.Sprintf("%.2f", viatico.MontoTotal), "1", 1, "R", false, 0, "")
 
 	if viatico.TieneGastosRep {
 		pdf.SetX(xTotals)
 		pdf.SetFont("Arial", "B", 9)
-		pdf.CellFormat(wLabel, 6, "GASTOS REP. :", "1", 0, "R", true, 0, "")
+		pdf.CellFormat(wLabel, 6, tr("GASTOS REP. :"), "1", 0, "R", true, 0, "")
 		pdf.SetFont("Arial", "", 9)
 		pdf.CellFormat(wValue, 6, fmt.Sprintf("%.2f", viatico.MontoGastosRep), "1", 1, "R", false, 0, "")
 	}
 
 	pdf.SetX(xTotals)
 	pdf.SetFont("Arial", "B", 9)
-	pdf.CellFormat(wLabel, 6, "RETENCION (13%) :", "1", 0, "R", true, 0, "")
+	pdf.CellFormat(wLabel, 6, tr("RETENCION (13%) :"), "1", 0, "R", true, 0, "")
 	pdf.SetFont("Arial", "", 9)
 	totalRet := viatico.MontoRC_IVA + viatico.MontoRetencionGastos
 	pdf.CellFormat(wValue, 6, fmt.Sprintf("%.2f", totalRet), "1", 1, "R", false, 0, "")
 
 	pdf.SetX(xTotals)
 	pdf.SetFont("Arial", "B", 10)
-	pdf.CellFormat(wLabel, 8, "LIQUIDO PAGABLE :", "1", 0, "R", true, 0, "")
+	pdf.CellFormat(wLabel, 8, tr("LIQUIDO PAGABLE :"), "1", 0, "R", true, 0, "")
 	pdf.SetFont("Arial", "B", 10)
 	totalLiq := viatico.MontoLiquido + viatico.MontoLiquidoGastos
 	pdf.CellFormat(wValue, 8, fmt.Sprintf("%.2f", totalLiq), "1", 1, "R", false, 0, "")
@@ -294,6 +304,11 @@ func (ctrl *ViaticoController) Print(c *gin.Context) {
 	pdf.CellFormat(50, 4, tr("AUTORIZADO"), "", 1, "C", false, 0, "")
 
 	c.Header("Content-Type", "application/pdf")
-	c.Header("Content-Disposition", fmt.Sprintf("inline; filename=VIATICO-%s.pdf", viatico.Codigo))
+	filename := fmt.Sprintf("VIATICO-%s.pdf", viatico.Codigo)
+	if c.Query("download") == "1" {
+		c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=%s", filename))
+	} else {
+		c.Header("Content-Disposition", fmt.Sprintf("inline; filename=%s", filename))
+	}
 	pdf.Output(c.Writer)
 }

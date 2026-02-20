@@ -125,6 +125,7 @@ func (r *SolicitudRepository) FindByID(id string) (*models.Solicitud, error) {
 		Preload("Items.Pasajes.EstadoPasaje").
 		Preload("Items.Pasajes").
 		Preload("Viaticos").
+		Preload("Viaticos.Detalles").
 		Preload("TipoSolicitud.ConceptoViaje").
 		Preload("EstadoSolicitud").
 		Preload("TipoItinerario").

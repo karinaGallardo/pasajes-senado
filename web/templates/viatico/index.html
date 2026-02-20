@@ -49,8 +49,11 @@
           </td>
           <td class="px-6 py-4">
             <div class="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-              <a href="/viaticos/{{ .ID }}/print" target="_blank" class="p-2 text-neutral-400 hover:text-primary transition-colors" title="Imprimir PV-5">
-                <i class="ph ph-printer text-xl"></i>
+              <a href="/viaticos/{{ .ID }}/print" target="_blank" class="p-2 text-neutral-400 hover:text-primary transition-colors" title="Ver PDF">
+                <i class="ph ph-file-pdf text-xl"></i>
+              </a>
+              <a href="/viaticos/{{ .ID }}/print?download=1" target="_blank" class="p-2 text-neutral-400 hover:text-primary transition-colors" title="Descargar PDF">
+                <i class="ph ph-download-simple text-xl"></i>
               </a>
             </div>
           </td>

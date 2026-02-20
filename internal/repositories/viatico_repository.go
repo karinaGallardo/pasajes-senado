@@ -39,7 +39,15 @@ func (r *ViaticoRepository) Delete(id string) error {
 
 func (r *ViaticoRepository) FindByID(id string) (*models.Viatico, error) {
 	var viatico models.Viatico
-	err := r.db.Preload("Detalles").Preload("Usuario").Preload("Solicitud").First(&viatico, "id = ?", id).Error
+	err := r.db.
+		Preload("Detalles").
+		Preload("Usuario").
+		Preload("Usuario.Rol").
+		Preload("Solicitud").
+		Preload("Solicitud.Items").
+		Preload("Solicitud.Items.Origen").
+		Preload("Solicitud.Items.Destino").
+		First(&viatico, "id = ?", id).Error
 	return &viatico, err
 }
 

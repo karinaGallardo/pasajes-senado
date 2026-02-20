@@ -179,12 +179,21 @@ func (ctrl *DescargoController) CreateOficial(c *gin.Context) {
 		}
 	}
 
-	utils.Render(c, "descargo/create", gin.H{
-		"Title":                "Nuevo Descargo (PV-05) - Solicitud Oficial",
+	hasGastosRep := false
+	for _, v := range solicitud.Viaticos {
+		if v.TieneGastosRep && (v.MontoGastosRep > 0 || v.MontoLiquidoGastos > 0) {
+			hasGastosRep = true
+			break
+		}
+	}
+
+	utils.Render(c, "descargo/create_oficial", gin.H{
+		"Title":                "Formulario de Descargo PV-05 - Pasajes, Viáticos y Gastos de Representación",
 		"Solicitud":            solicitud,
 		"PasajesOriginales":    pasajesOriginales,
 		"PasajesReprogramados": pasajesReprogramados,
-		"EsOficial":            true,
+		"HasGastosRep":         hasGastosRep,
+		"ZeroFloat":            float64(0),
 	})
 }
 

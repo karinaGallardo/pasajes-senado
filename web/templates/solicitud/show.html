@@ -48,23 +48,15 @@
     </div>
     <div class="flex space-x-3">
       {{ if eq .Solicitud.EstadoSolicitud.Codigo "SOLICITADO" }}
-      <a
-        href="/solicitudes/{{ .Solicitud.ID }}/editar"
-        class="inline-flex items-center px-4 py-2 border border-primary shadow-sm text-sm font-medium rounded-md text-primary bg-white hover:bg-primary-50 focus:outline-none">
+      <a href="/solicitudes/{{ .Solicitud.ID }}/editar" class="inline-flex items-center px-4 py-2 border border-primary shadow-sm text-sm font-medium rounded-md text-primary bg-white hover:bg-primary-50 focus:outline-none">
         Editar
       </a>
       {{ end }}
-      <button
-        type="button"
-        hx-get="/solicitudes/{{ .Solicitud.ID }}/print"
-        hx-target="#modal-container"
-        class="inline-flex items-center px-4 py-2 border border-neutral-300 shadow-sm text-sm font-medium rounded-md text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none cursor-pointer">
+      <button type="button" hx-get="/solicitudes/{{ .Solicitud.ID }}/print" hx-target="#modal-container" class="inline-flex items-center px-4 py-2 border border-neutral-300 shadow-sm text-sm font-medium rounded-md text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none cursor-pointer">
         <i class="ph ph-printer mr-2 text-lg"></i>
         Imprimir
       </button>
-      <a
-        href="/solicitudes"
-        class="inline-flex items-center px-4 py-2 border border-neutral-300 shadow-sm text-sm font-medium rounded-md text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none">
+      <a href="/solicitudes" class="inline-flex items-center px-4 py-2 border border-neutral-300 shadow-sm text-sm font-medium rounded-md text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none">
         Volver
       </a>
     </div>
@@ -79,12 +71,10 @@
         <div class="flex items-center">
           <!-- Step 1: Solicitado -->
           <div class="flex items-center relative">
-            <div
-              class="rounded-full transition duration-500 ease-in-out h-10 w-10 py-3 border-2 {{ if .Step1 }}bg-primary border-primary text-white{{ else }}border-neutral-300 text-neutral-500{{ end }} flex items-center justify-center">
+            <div class="rounded-full transition duration-500 ease-in-out h-10 w-10 py-3 border-2 {{ if .Step1 }}bg-primary border-primary text-white{{ else }}border-neutral-300 text-neutral-500{{ end }} flex items-center justify-center">
               <i class="ph ph-file-text text-lg"></i>
             </div>
-            <div
-              class="hidden sm:block absolute top-0 -ml-10 text-center mt-12 w-32 text-xs font-medium uppercase {{ if eq .Solicitud.EstadoSolicitud.Codigo `SOLICITADO`}}text-primary{{ else }}text-neutral-500{{ end }}">
+            <div class="hidden sm:block absolute top-0 -ml-10 text-center mt-12 w-32 text-xs font-medium uppercase {{ if eq .Solicitud.EstadoSolicitud.Codigo `SOLICITADO`}}text-primary{{ else }}text-neutral-500{{ end }}">
               Solicitado
             </div>
           </div>
@@ -93,12 +83,10 @@
 
           <!-- Step 2: Aprobado -->
           <div class="flex items-center relative">
-            <div
-              class="rounded-full transition duration-500 ease-in-out h-10 w-10 py-3 border-2 {{ if .Step2 }}bg-primary border-primary text-white{{ else }}border-neutral-300 text-neutral-500{{ end }} flex items-center justify-center">
+            <div class="rounded-full transition duration-500 ease-in-out h-10 w-10 py-3 border-2 {{ if .Step2 }}bg-primary border-primary text-white{{ else }}border-neutral-300 text-neutral-500{{ end }} flex items-center justify-center">
               <i class="ph ph-check text-xl font-bold"></i>
             </div>
-            <div
-              class="hidden sm:block absolute top-0 -ml-10 text-center mt-12 w-32 text-xs font-medium uppercase {{ if eq .Solicitud.EstadoSolicitud.Codigo `APROBADO` }}text-primary{{ else }}text-neutral-500{{ end }}">
+            <div class="hidden sm:block absolute top-0 -ml-10 text-center mt-12 w-32 text-xs font-medium uppercase {{ if eq .Solicitud.EstadoSolicitud.Codigo `APROBADO` }}text-primary{{ else }}text-neutral-500{{ end }}">
               Aprobado
             </div>
           </div>
@@ -107,12 +95,10 @@
 
           <!-- Step 3: Finalizado -->
           <div class="flex items-center relative">
-            <div
-              class="rounded-full transition duration-500 ease-in-out h-10 w-10 py-3 border-2 {{ if .Step3 }}bg-primary border-primary text-white{{ else }}border-neutral-300 text-neutral-500{{ end }} flex items-center justify-center">
+            <div class="rounded-full transition duration-500 ease-in-out h-10 w-10 py-3 border-2 {{ if .Step3 }}bg-primary border-primary text-white{{ else }}border-neutral-300 text-neutral-500{{ end }} flex items-center justify-center">
               <i class="ph ph-flag-checkered text-xl"></i>
             </div>
-            <div
-              class="hidden sm:block absolute top-0 -ml-10 text-center mt-12 w-32 text-xs font-medium uppercase {{ if eq .Solicitud.EstadoSolicitud.Codigo `FINALIZADO` }}text-primary{{ else }}text-neutral-500{{ end }}">
+            <div class="hidden sm:block absolute top-0 -ml-10 text-center mt-12 w-32 text-xs font-medium uppercase {{ if eq .Solicitud.EstadoSolicitud.Codigo `FINALIZADO` }}text-primary{{ else }}text-neutral-500{{ end }}">
               Finalizado
             </div>
           </div>
@@ -174,40 +160,24 @@
             <!-- Workflow Actions -->
             {{ if eq .Solicitud.EstadoSolicitud.Codigo "SOLICITADO" }} {{ if .AuthUser.IsAdminOrResponsable }}
             <div class="flex space-x-2">
-              <button
-                type="button"
-                hx-post="/solicitudes/{{ .Solicitud.ID }}/aprobar"
-                hx-confirm="¿Está seguro de que desea APROBAR esta solicitud?"
-                hx-target="body"
-                class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-success-600 hover:bg-success-700 focus:outline-none disabled:opacity-50 transition-colors cursor-pointer">
+              <button type="button" hx-post="/solicitudes/{{ .Solicitud.ID }}/aprobar" hx-confirm="¿Está seguro de que desea APROBAR esta solicitud?" hx-target="body" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-success-600 hover:bg-success-700 focus:outline-none disabled:opacity-50 transition-colors cursor-pointer">
                 <i class="ph ph-check-circle mr-2 text-lg"></i>
                 Aprobar
               </button>
 
-              <button
-                type="button"
-                hx-post="/solicitudes/{{ .Solicitud.ID }}/rechazar"
-                hx-confirm="¿Está seguro de que desea RECHAZAR esta solicitud?"
-                hx-target="body"
-                class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-danger-600 hover:bg-danger-700 focus:outline-none disabled:opacity-50 transition-colors cursor-pointer">
+              <button type="button" hx-post="/solicitudes/{{ .Solicitud.ID }}/rechazar" hx-confirm="¿Está seguro de que desea RECHAZAR esta solicitud?" hx-target="body" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-danger-600 hover:bg-danger-700 focus:outline-none disabled:opacity-50 transition-colors cursor-pointer">
                 <i class="ph ph-x-circle mr-2 text-lg"></i>
                 Rechazar
               </button>
             </div>
             {{ end }} {{ end }}
 
-            <a
-              href="/descargos/nuevo?solicitud_id={{ .Solicitud.ID }}"
-              class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-accent hover:bg-danger-700 focus:outline-none">
+            <a href="/descargos/nuevo?solicitud_id={{ .Solicitud.ID }}" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-accent hover:bg-danger-700 focus:outline-none">
               Realizar Descargo
             </a>
 
             {{ if .Step2 }}
-            <button
-              type="button"
-              hx-get="/solicitudes/{{ .Solicitud.ID }}/viaticos/nuevo"
-              hx-target="#modal-container"
-              class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-600 focus:outline-none ml-2 cursor-pointer">
+            <button type="button" hx-get="/solicitudes/{{ .Solicitud.ID }}/viaticos/nuevo" hx-target="#modal-container" class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-primary-600 focus:outline-none ml-2 cursor-pointer">
               Asignar Viáticos
             </button>
             {{ end }}
@@ -221,11 +191,7 @@
           <h3 class="text-lg leading-6 font-medium text-neutral-900">Pasajes Asignados</h3>
 
           {{ if .AuthUser.IsAdminOrResponsable }}
-          <button
-            type="button"
-            hx-get="/solicitudes/{{ .Solicitud.ID }}/pasajes/nuevo"
-            hx-target="#modal-container"
-            class="inline-flex items-center px-2 py-1 border border-transparent text-xs leading-4 font-bold rounded-md text-white bg-secondary hover:bg-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary cursor-pointer">
+          <button type="button" hx-get="/solicitudes/{{ .Solicitud.ID }}/pasajes/nuevo" hx-target="#modal-container" class="inline-flex items-center px-2 py-1 border border-transparent text-xs leading-4 font-bold rounded-md text-white bg-secondary hover:bg-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary cursor-pointer">
             <i class="ph ph-plus mr-1 text-lg"></i>
             Asignar Pasaje
           </button>
@@ -269,11 +235,7 @@
 
                   <div class="flex space-x-2 ml-4">
                     {{ if $.AuthUser.IsAdminOrResponsable }} {{ if eq .Estado "EMITIDO" }}
-                    <button
-                      type="button"
-                      hx-get="/pasajes/{{ .ID }}/editar"
-                      hx-target="#modal-container"
-                      class="text-xs font-bold text-primary-600 hover:text-primary-800 bg-primary-50 px-2 py-1 rounded border border-primary-200 cursor-pointer">
+                    <button type="button" hx-get="/pasajes/{{ .ID }}/editar" hx-target="#modal-container" class="text-xs font-bold text-primary-600 hover:text-primary-800 bg-primary-50 px-2 py-1 rounded border border-primary-200 cursor-pointer">
                       Editar
                     </button>
                     {{ end }}{{ end }}
@@ -310,13 +272,16 @@
                       {{ if .TieneGastosRep }} Bs {{ printf "%.2f" (add .MontoLiquido .MontoLiquidoGastos) }} {{ else }} Bs {{ printf "%.2f" .MontoLiquido }} {{ end }}
                     </span>
                   </div>
-                  <a
-                    href="/viaticos/{{ .ID }}/print"
-                    target="_blank"
-                    class="inline-flex items-center px-3 py-2 border border-primary-200 shadow-sm text-sm font-medium rounded-md text-primary-700 bg-primary-50 hover:bg-primary-100">
-                    <i class="ph ph-printer text-lg mr-1"></i>
-                    Imprimir Formulario
-                  </a>
+                  <div class="flex items-center gap-2">
+                    <a href="/viaticos/{{ .ID }}/print" target="_blank" class="inline-flex items-center px-3 py-2 border border-neutral-200 shadow-sm text-sm font-medium rounded-md text-neutral-700 bg-white hover:bg-neutral-50">
+                      <i class="ph ph-file-pdf text-lg mr-1"></i>
+                      Ver PDF
+                    </a>
+                    <a href="/viaticos/{{ .ID }}/print?download=1" target="_blank" class="inline-flex items-center px-3 py-2 border border-primary-200 shadow-sm text-sm font-medium rounded-md text-primary-700 bg-primary-50 hover:bg-primary-100">
+                      <i class="ph ph-download-simple text-lg mr-1"></i>
+                      Descargar PDF
+                    </a>
+                  </div>
                 </div>
               </div>
             </li>
