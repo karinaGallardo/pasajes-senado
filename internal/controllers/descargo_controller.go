@@ -110,6 +110,84 @@ func (ctrl *DescargoController) CreateDerecho(c *gin.Context) {
 	})
 }
 
+// CreateOficial muestra el formulario para crear descargo de una solicitud oficial (pasajes, viáticos, gastos de representación).
+func (ctrl *DescargoController) CreateOficial(c *gin.Context) {
+	solicitudID := c.Param("id")
+	if solicitudID == "" {
+		c.Redirect(http.StatusFound, "/solicitudes")
+		return
+	}
+
+	solicitud, err := ctrl.solicitudService.GetByID(c.Request.Context(), solicitudID)
+	if err != nil {
+		c.Redirect(http.StatusFound, "/solicitudes")
+		return
+	}
+
+	// Solo permitir descargo para solicitudes oficiales (sin cupo por derecho)
+	if solicitud.CupoDerechoItemID != nil && *solicitud.CupoDerechoItemID != "" {
+		c.Redirect(http.StatusFound, "/solicitudes/derecho/"+solicitudID+"/detalle")
+		return
+	}
+
+	existe, _ := ctrl.descargoService.GetBySolicitudID(c.Request.Context(), solicitudID)
+	if existe != nil && existe.ID != "" {
+		c.Redirect(http.StatusFound, "/descargos/"+existe.ID)
+		return
+	}
+
+	type ConnectionView struct {
+		Ruta   string
+		Fecha  string
+		Boleto string
+	}
+
+	pasajesOriginales := make(map[string][]ConnectionView)
+	pasajesReprogramados := make(map[string][]ConnectionView)
+
+	for _, item := range solicitud.Items {
+		tipo := string(item.Tipo)
+		orig := item.GetPasajeOriginal()
+		if orig != nil {
+			routes := utils.SplitRoute(orig.Ruta)
+			for _, r := range routes {
+				pasajesOriginales[tipo] = append(pasajesOriginales[tipo], ConnectionView{
+					Ruta:   r,
+					Fecha:  orig.FechaVuelo.Format("2006-01-02"),
+					Boleto: orig.NumeroBoleto,
+				})
+			}
+		} else {
+			rut := item.OrigenIATA + " - " + item.DestinoIATA
+			fecha := ""
+			if item.Fecha != nil {
+				fecha = item.Fecha.Format("2006-01-02")
+			}
+			pasajesOriginales[tipo] = append(pasajesOriginales[tipo], ConnectionView{Ruta: rut, Fecha: fecha})
+		}
+
+		repro := item.GetPasajeReprogramado()
+		if repro != nil {
+			routes := utils.SplitRoute(repro.Ruta)
+			for _, r := range routes {
+				pasajesReprogramados[tipo] = append(pasajesReprogramados[tipo], ConnectionView{
+					Ruta:   r,
+					Fecha:  repro.FechaVuelo.Format("2006-01-02"),
+					Boleto: repro.NumeroBoleto,
+				})
+			}
+		}
+	}
+
+	utils.Render(c, "descargo/create", gin.H{
+		"Title":                "Nuevo Descargo (PV-05) - Solicitud Oficial",
+		"Solicitud":            solicitud,
+		"PasajesOriginales":    pasajesOriginales,
+		"PasajesReprogramados": pasajesReprogramados,
+		"EsOficial":            true,
+	})
+}
+
 func (ctrl *DescargoController) Store(c *gin.Context) {
 	var req dtos.CreateDescargoRequest
 	if err := c.ShouldBind(&req); err != nil {

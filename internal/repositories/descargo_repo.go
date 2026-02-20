@@ -44,10 +44,14 @@ func (r *DescargoRepository) FindByID(id string) (*models.Descargo, error) {
 		Preload("DetallesItinerario").
 		Preload("Solicitud").
 		Preload("Solicitud.Usuario").
+		Preload("Solicitud.Usuario.Cargo").
+		Preload("Solicitud.Usuario.Oficina").
 		Preload("Solicitud.Items").
 		Preload("Solicitud.Items.Origen").
 		Preload("Solicitud.Items.Destino").
 		Preload("Solicitud.Items.Pasajes").
+		Preload("Solicitud.Viaticos").
+		Preload("Solicitud.Viaticos.Detalles").
 		First(&descargo, "id = ?", id).Error
 	return &descargo, err
 }

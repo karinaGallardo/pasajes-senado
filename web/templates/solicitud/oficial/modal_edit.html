@@ -1,34 +1,18 @@
 {{ define "solicitud/oficial/modal_edit" }}
+<script type="application/json" id="tramos-edit-inicial">{{ .TramosJSON }}</script>
+<script type="application/json" id="edit-form-data">{{ .EditFormData }}</script>
+<script type="application/json" id="destinos-edit-data">{{ .DestinosJSON }}</script>
 <div
-  x-data="{
-      open: true,
-      loading: false,
-      tipo: '{{ .Solicitud.TipoItinerarioCodigo }}',
-      origen: '{{ .OrigenIATA }}',
-      destino: '{{ .DestinoIATA }}',
-      fechaIda: '{{ .FechaIda }}',
-      fechaVuelta: '{{ .FechaVuelta }}',
-      motivo: '{{ .Solicitud.Motivo }}',
-      autorizacion: '{{ .Solicitud.Autorizacion }}',
-      aerolinea: '{{ .Solicitud.AerolineaSugerida }}',
-      ambito: '{{ .Solicitud.AmbitoViajeCodigo }}'
-  }"
+  x-data="oficialFormHandlerEdit()"
+  x-init="init()"
+  @oficial-sync-chain.window="syncChain()"
   x-show="open"
   class="fixed inset-0 z-50 overflow-y-auto"
   aria-labelledby="modal-title"
   role="dialog"
   aria-modal="true"
   style="display: none">
-  <!-- Backdrop -->
-  <div
-    x-show="open"
-    x-transition:enter="ease-out duration-300"
-    x-transition:enter-start="opacity-0"
-    x-transition:enter-end="opacity-100"
-    x-transition:leave="ease-in duration-200"
-    x-transition:leave-start="opacity-100"
-    x-transition:leave-end="opacity-0"
-    class="fixed inset-0 bg-neutral-500 bg-opacity-75 transition-opacity"></div>
+  <div x-show="open" class="fixed inset-0 bg-neutral-500 bg-opacity-75 transition-opacity"></div>
 
   <div class="fixed inset-0 z-10 overflow-y-auto">
     <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
@@ -40,279 +24,330 @@
         x-transition:leave="ease-in duration-200"
         x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
         x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-        class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-4xl">
-        <!-- Form -->
-        <form @submit.prevent="loading = true; $el.submit()" action="/solicitudes/oficial/{{ .Solicitud.ID }}/actualizar" method="POST">
-          <!-- Header with Actions -->
-          <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4 border-b border-neutral-200 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+        class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-5xl">
+        <form x-ref="form" @submit.prevent="submitForm" action="/solicitudes/oficial/{{ .Solicitud.ID }}/actualizar" method="POST" autocomplete="off">
+          <input type="hidden" name="tramos_json" id="tramos_json_input_edit" value="" />
+
+          <div class="bg-white px-4 pt-5 pb-4 sm:p-6 border-b border-neutral-200 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
             <div class="flex items-center">
-              <div class="mx-auto flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-full bg-primary-100 sm:mx-0 sm:h-10 sm:w-10">
-                <i class="ph ph-note-pencil text-2xl text-primary-600"></i>
+              <div class="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-600">
+                <i class="ph ph-note-pencil text-2xl"></i>
               </div>
               <div class="ml-4 text-left">
-                <h3 class="text-lg font-medium leading-6 text-neutral-900" id="modal-title">Editar Comisión Oficial</h3>
+                <h3 class="text-lg font-bold text-neutral-900">Editar Solicitud Oficial</h3>
                 <p class="text-sm text-neutral-500">Solicitud {{ .Solicitud.Codigo }}</p>
               </div>
             </div>
-
-            <!-- Actions -->
-            <div class="flex flex-row gap-2">
+            <div class="flex gap-2">
               <button
                 type="submit"
                 :disabled="loading"
-                class="inline-flex justify-center rounded-md border border-transparent bg-primary px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:opacity-50">
+                class="bg-primary text-white px-4 py-2 rounded-md font-bold text-sm shadow-sm hover:bg-primary-700 disabled:opacity-50 transition-colors">
                 <span x-show="!loading">Guardar Cambios</span>
-                <span x-show="loading" style="display: none">Guardando...</span>
+                <span x-show="loading">Guardando...</span>
               </button>
-              <button
-                type="button"
-                class="inline-flex justify-center rounded-md border border-neutral-300 bg-white px-4 py-2 text-sm font-medium text-neutral-700 shadow-sm hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-                @click="open = false">
+              <button @click="open = false" type="button" class="bg-white border border-neutral-300 text-neutral-700 px-4 py-2 rounded-md font-bold text-sm hover:bg-neutral-50">
                 Cancelar
               </button>
             </div>
           </div>
 
-          <div class="p-6 space-y-6">
-            <!-- Ambito y Tipo -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label class="block text-sm font-medium text-neutral-700 mb-1">Ámbito del Viaje</label>
-                <select
-                  name="ambito_viaje_codigo"
-                  x-model="ambito"
-                  required
-                  class="block w-full rounded-md border-neutral-300 shadow-sm focus:border-primary focus:ring focus:ring-primary/20 sm:text-sm">
-                  <option value="">Seleccione...</option>
-                  {{ range .Ambitos }}
-                  <option value="{{ .Codigo }}">{{ .Nombre }}</option>
-                  {{ end }}
-                </select>
-              </div>
-              <div>
-                <label class="block text-sm font-medium text-neutral-700 mb-1">Tipo de Itinerario</label>
-                <div class="flex items-center space-x-4 mt-2">
-                  <label class="inline-flex items-center">
-                    <input type="radio" name="tipo_itinerario_codigo" value="IDA_VUELTA" x-model="tipo" class="form-radio text-primary focus:ring-primary" />
-                    <span class="ml-2 text-sm text-neutral-700">Ida y Vuelta</span>
-                  </label>
-                  <label class="inline-flex items-center">
-                    <input type="radio" name="tipo_itinerario_codigo" value="SOLO_IDA" x-model="tipo" class="form-radio text-primary focus:ring-primary" />
-                    <span class="ml-2 text-sm text-neutral-700">Solo Ida</span>
-                  </label>
-                </div>
-              </div>
-            </div>
-
-            <!-- Ruta -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <!-- Origen -->
-              <div
-                x-data="{
-                    open: false,
-                    search: '',
-                    value: '{{ .OrigenIATA }}',
-                    currentAmbito: '{{ .Solicitud.AmbitoViajeCodigo }}',
-                    label: '{{ range .Destinos }}{{ if eq .IATA $.OrigenIATA }}{{ .GetLabel }}{{ end }}{{ end }}',
-                    placeholder: 'Buscar origen...',
-                    items: [
-                        {{ range .Destinos }}
-                        { value: &#34;{{ .IATA }}&#34;, label: &#34;{{ .GetLabel }}&#34;, ambito: &#34;{{ .AmbitoCodigo }}&#34; },
-                        {{ end }}
-                    ],
-                    get filteredItems() {
-                        let res = this.items;
-                        if (this.currentAmbito) {
-                            res = res.filter(i => i.ambito === this.currentAmbito);
-                        }
-                        if (this.search === '') return res;
-                        const q = this.search.toLowerCase();
-                        return res.filter(i => 
-                            (i.label && i.label.toLowerCase().includes(q)) || 
-                            (i.value && i.value.toLowerCase().includes(q))
-                        );
-                    },
-                    select(item) {
-                        this.value = item ? item.value : '';
-                        this.label = item ? item.label : this.placeholder;
-                        this.open = false;
-                        this.search = '';
-                    }
-                }"
-                x-init="if(!label) label = placeholder; $watch('ambito', (val) => { currentAmbito = val; select(null); })">
-                <label class="block text-sm font-medium text-neutral-700 mb-1">Origen (IATA)</label>
-                <div class="relative">
-                  <input type="hidden" name="origen" :value="value" required />
-                  <div class="relative">
-                    <div
-                      @click="open = true; $nextTick(() => $refs.searchInput.focus())"
-                      x-show="!open"
-                      class="w-full rounded-md border border-neutral-300 bg-white py-2 pl-3 pr-10 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary sm:text-sm cursor-pointer flex items-center justify-between min-h-[38px] cursor-text">
-                      <span x-text="label" :class="{'text-neutral-500': label === placeholder, 'text-neutral-900': label !== placeholder}"></span>
-                      <i class="ph ph-caret-down text-neutral-400"></i>
-                    </div>
-
-                    <input
-                      x-ref="searchInput"
-                      type="text"
-                      x-model="search"
-                      x-show="open"
-                      @click.away="open = false"
-                      @keydown.escape="open = false"
-                      @keydown.enter.prevent="if (filteredItems.length > 0) select(filteredItems[0])"
-                      :placeholder="placeholder"
-                      class="w-full rounded-md border border-primary bg-white py-2 pl-3 pr-10 shadow-sm focus:outline-none focus:ring-1 focus:ring-primary sm:text-sm" />
-
-                    <ul
-                      x-show="open"
-                      class="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
-                      style="display: none">
-                      <template x-for="item in filteredItems" :key="item.value">
-                        <li class="relative cursor-default select-none py-2 pl-3 pr-9 text-neutral-900 hover:bg-primary hover:text-white" @click="select(item)">
-                          <span class="block truncate" x-text="item.label"></span>
-                        </li>
-                      </template>
-                      <li x-show="filteredItems.length === 0" class="relative cursor-default select-none py-2 pl-3 pr-9 text-neutral-500">Sin resultados.</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Destino -->
-              <div
-                x-data="{
-                    open: false,
-                    search: '',
-                    value: '{{ .DestinoIATA }}',
-                    currentAmbito: '{{ .Solicitud.AmbitoViajeCodigo }}',
-                    label: '{{ range .Destinos }}{{ if eq .IATA $.DestinoIATA }}{{ .GetLabel }}{{ end }}{{ end }}',
-                    placeholder: 'Buscar destino...',
-                    items: [
-                        {{ range .Destinos }}
-                        { value: &#34;{{ .IATA }}&#34;, label: &#34;{{ .GetLabel }}&#34;, ambito: &#34;{{ .AmbitoCodigo }}&#34; },
-                        {{ end }}
-                    ],
-                    get filteredItems() {
-                        let res = this.items;
-                        if (this.currentAmbito) {
-                            res = res.filter(i => i.ambito === this.currentAmbito);
-                        }
-                        if (this.search === '') return res;
-                        const q = this.search.toLowerCase();
-                        return res.filter(i => 
-                            (i.label && i.label.toLowerCase().includes(q)) || 
-                            (i.value && i.value.toLowerCase().includes(q))
-                        );
-                    },
-                    select(item) {
-                        this.value = item ? item.value : '';
-                        this.label = item ? item.label : this.placeholder;
-                        this.open = false;
-                        this.search = '';
-                    }
-                }"
-                x-init="if(!label) label = placeholder; $watch('ambito', (val) => { currentAmbito = val; select(null); })">
-                <label class="block text-sm font-medium text-neutral-700 mb-1">Destino (IATA)</label>
-                <div class="relative">
-                  <input type="hidden" name="destino" :value="value" required />
-                  <div class="relative">
-                    <div
-                      @click="open = true; $nextTick(() => $refs.searchInput.focus())"
-                      x-show="!open"
-                      class="w-full rounded-md border border-neutral-300 bg-white py-2 pl-3 pr-10 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary sm:text-sm cursor-pointer flex items-center justify-between min-h-[38px] cursor-text">
-                      <span x-text="label" :class="{'text-neutral-500': label === placeholder, 'text-neutral-900': label !== placeholder}"></span>
-                      <i class="ph ph-caret-down text-neutral-400"></i>
-                    </div>
-
-                    <input
-                      x-ref="searchInput"
-                      type="text"
-                      x-model="search"
-                      x-show="open"
-                      @click.away="open = false"
-                      @keydown.escape="open = false"
-                      @keydown.enter.prevent="if (filteredItems.length > 0) select(filteredItems[0])"
-                      :placeholder="placeholder"
-                      class="w-full rounded-md border border-primary bg-white py-2 pl-3 pr-10 shadow-sm focus:outline-none focus:ring-1 focus:ring-primary sm:text-sm" />
-
-                    <ul
-                      x-show="open"
-                      class="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
-                      style="display: none">
-                      <template x-for="item in filteredItems" :key="item.value">
-                        <li class="relative cursor-default select-none py-2 pl-3 pr-9 text-neutral-900 hover:bg-primary hover:text-white" @click="select(item)">
-                          <span class="block truncate" x-text="item.label"></span>
-                        </li>
-                      </template>
-                      <li x-show="filteredItems.length === 0" class="relative cursor-default select-none py-2 pl-3 pr-9 text-neutral-500">Sin resultados.</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <!-- Fechas -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label class="block text-sm font-medium text-neutral-700 mb-1">Fecha y Hora Salida</label>
-                <input
-                  type="datetime-local"
-                  name="fecha_salida"
-                  x-model="fechaIda"
-                  required
-                  class="block w-full rounded-md border-neutral-300 shadow-sm focus:border-primary focus:ring focus:ring-primary/20 sm:text-sm" />
-              </div>
-              <div x-show="tipo === 'IDA_VUELTA'">
-                <label class="block text-sm font-medium text-neutral-700 mb-1">Fecha y Hora Retorno</label>
-                <input
-                  type="datetime-local"
-                  name="fecha_retorno"
-                  x-model="fechaVuelta"
-                  :required="tipo === 'IDA_VUELTA'"
-                  class="block w-full rounded-md border-neutral-300 shadow-sm focus:border-primary focus:ring focus:ring-primary/20 sm:text-sm" />
-              </div>
-            </div>
-
-            <!-- Detalles -->
-            <div>
-              <label class="block text-sm font-medium text-neutral-700 mb-1">Motivo del Viaje (Comisión)</label>
-              <textarea
-                name="motivo"
-                x-model="motivo"
-                rows="2"
-                required
-                class="block w-full rounded-md border-neutral-300 shadow-sm focus:border-primary focus:ring focus:ring-primary/20 sm:text-sm"
-                placeholder="Describa el motivo de la comisión oficial..."></textarea>
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-neutral-700 mb-1">Documento de Autorización / Referencia</label>
-              <input
-                type="text"
-                name="autorizacion"
-                x-model="autorizacion"
-                class="block w-full rounded-md border-neutral-300 shadow-sm focus:border-primary focus:ring focus:ring-primary/20 sm:text-sm"
-                placeholder="Ej: Resolución Nº 123/2024" />
-            </div>
-
-            <div>
-              <label class="block text-sm font-medium text-neutral-700 mb-1">Aerolínea Sugerida (Opcional)</label>
-              <select
-                name="aerolinea_sugerida"
-                x-model="aerolinea"
-                class="block w-full rounded-md border-neutral-300 shadow-sm focus:border-primary focus:ring focus:ring-primary/20 sm:text-sm">
-                <option value="">Cualquiera</option>
-                {{ range .Aerolineas }}
-                <option value="{{ .Nombre }}">{{ .Nombre }}</option>
+          <div class="p-6 space-y-8 max-h-[75vh] overflow-y-auto">
+            <div class="w-full md:w-1/3">
+              <label class="block text-xs font-black text-neutral-500 uppercase tracking-widest mb-1">Ámbito del Viaje</label>
+              <select name="ambito_viaje_codigo" x-model="ambito" required class="w-full rounded-md border-neutral-300 text-sm focus:ring-primary focus:border-primary">
+                <option value="">Seleccione...</option>
+                {{ range .Ambitos }}
+                <option value="{{ .Codigo }}">{{ .Nombre }}</option>
                 {{ end }}
               </select>
             </div>
 
-            <input type="hidden" name="tipo_solicitud_codigo" value="COMISION" />
+            <!-- Ruta de Ida -->
+            <div class="space-y-4">
+              <div class="flex items-center justify-between border-b border-neutral-100 pb-2">
+                <div class="flex items-center gap-2 text-primary-600">
+                  <i class="ph ph-airplane-takeoff text-xl"></i>
+                  <h4 class="text-sm font-black uppercase tracking-widest">Ruta de Ida</h4>
+                </div>
+                <button type="button" @click="addTramo('IDA')" class="text-primary-600 text-xs font-bold flex items-center gap-1 hover:text-primary-800 bg-primary-50 px-3 py-1.5 rounded-full transition-colors">
+                  <i class="ph ph-plus-circle"></i>
+                  Agregar Escala de Ida
+                </button>
+              </div>
+              <div class="space-y-4">
+                <template x-for="(entry, i) in tramosIda()" :key="'ida-'+entry.index">
+                  <div class="bg-neutral-50 border border-neutral-200 rounded-xl p-4 relative group">
+                    <input type="hidden" :name="'tramos['+entry.index+'].tipo'" value="IDA" />
+                    <button type="button" x-show="canRemoveTramo(entry.index)" @click="removeTramo(entry.index)" class="absolute -top-2 -right-2 h-6 w-6 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-red-600 transition-all z-10">
+                      <i class="ph ph-x text-xs"></i>
+                    </button>
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+                      <div class="md:col-span-4 space-y-1">
+                        <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">Origen</label>
+                        <input type="hidden" :name="'tramos['+entry.index+'].origen'" x-model="entry.tramo.origen" required />
+                        <div x-show="!canEditOrigin(entry.index)" class="w-full rounded-md border border-neutral-200 bg-neutral-100 py-2 pl-3 pr-10 shadow-sm sm:text-sm flex items-center min-h-[38px]">
+                          <span x-text="entry.tramo.origenLabel || '-'" class="text-neutral-700"></span>
+                          <i class="ph ph-lock-simple text-neutral-400 ml-auto"></i>
+                        </div>
+                        <div x-show="canEditOrigin(entry.index)" x-data="searchableSelect({ items: allDestinos, initialValue: entry.tramo.origen, initialLabel: entry.tramo.origenLabel, placeholder: 'Buscar origen...' })" x-init="value = entry.tramo.origen; label = entry.tramo.origenLabel || placeholder; $watch('value', function(v) { entry.tramo.origen = v; var it = allDestinos.find(function(d) { return d.value === v; }); if (it) entry.tramo.origenLabel = it.value + ' - ' + it.label; setTimeout(function() { window.dispatchEvent(new CustomEvent('oficial-sync-chain')); }, 0); })" class="relative">
+                          <button type="button" @click="open = !open; if(open) $nextTick(function() { $refs.searchInput.focus() })" class="relative w-full bg-white border border-neutral-300 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm min-h-[38px] flex items-center justify-between">
+                            <span class="block truncate" :class="label ? 'text-neutral-900' : 'text-neutral-400'" x-text="label || placeholder"></span>
+                            <i class="ph ph-magnifying-glass text-neutral-400"></i>
+                          </button>
+                          <div x-show="open" @click.away="open = false" class="absolute z-50 mt-1 w-full bg-white shadow-xl max-h-48 rounded-md border border-neutral-200 overflow-hidden" style="display: none">
+                            <div class="sticky top-0 bg-white p-2 border-b border-neutral-100">
+                              <input x-ref="searchInput" x-model="search" type="text" autocomplete="off" class="w-full border-neutral-300 rounded text-sm focus:ring-primary focus:border-primary" placeholder="Buscar ciudad..." />
+                            </div>
+                            <div class="max-h-36 overflow-y-auto">
+                              <template x-for="item in filteredItems" :key="item.value">
+                                <div @click="select(item)" class="px-3 py-2 hover:bg-primary hover:text-white cursor-pointer text-xs font-bold border-b border-neutral-50">
+                                  <span x-text="item.value + ' - ' + item.label"></span>
+                                </div>
+                              </template>
+                              <div x-show="filteredItems.length === 0" class="px-3 py-2 text-neutral-500 text-xs italic">Sin resultados</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="hidden md:flex md:col-span-1 justify-center pb-3"><i class="ph ph-arrow-right text-neutral-300 text-xl font-bold"></i></div>
+                      <div class="md:col-span-4 space-y-1">
+                        <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">Destino</label>
+                        <div x-data="searchableSelect({ items: allDestinos, initialValue: entry.tramo.destino, initialLabel: entry.tramo.destinoLabel, placeholder: 'Buscar destino...' })" x-init="value = entry.tramo.destino; label = entry.tramo.destinoLabel || placeholder; $watch('value', function(v) { entry.tramo.destino = v; var it = allDestinos.find(function(d) { return d.value === v; }); if (it) entry.tramo.destinoLabel = it.value + ' - ' + it.label; setTimeout(function() { window.dispatchEvent(new CustomEvent('oficial-sync-chain')); }, 0); })" class="relative">
+                          <input type="hidden" :name="'tramos['+entry.index+'].destino'" x-model="entry.tramo.destino" required />
+                          <button type="button" @click="open = !open; if(open) $nextTick(function() { $refs.searchInput.focus() })" class="relative w-full bg-white border border-neutral-300 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm min-h-[38px] flex items-center justify-between">
+                            <span class="block truncate" :class="label ? 'text-neutral-900' : 'text-neutral-400'" x-text="label || placeholder"></span>
+                            <i class="ph ph-magnifying-glass text-neutral-400"></i>
+                          </button>
+                          <div x-show="open" @click.away="open = false" class="absolute z-50 mt-1 w-full bg-white shadow-xl max-h-48 rounded-md border border-neutral-200 overflow-hidden" style="display: none">
+                            <div class="sticky top-0 bg-white p-2 border-b border-neutral-100">
+                              <input x-ref="searchInput" x-model="search" type="text" autocomplete="off" class="w-full border-neutral-300 rounded text-sm focus:ring-primary focus:border-primary" placeholder="Buscar ciudad..." />
+                            </div>
+                            <div class="max-h-36 overflow-y-auto">
+                              <template x-for="item in filteredItems" :key="item.value">
+                                <div @click="select(item)" class="px-3 py-2 hover:bg-primary hover:text-white cursor-pointer text-xs font-bold border-b border-neutral-50">
+                                  <span x-text="item.value + ' - ' + item.label"></span>
+                                </div>
+                              </template>
+                              <div x-show="filteredItems.length === 0" class="px-3 py-2 text-neutral-500 text-xs italic">Sin resultados</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="md:col-span-3 space-y-1">
+                        <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">Fecha Salida</label>
+                        <input type="datetime-local" :name="'tramos['+entry.index+'].fecha_salida'" x-model="entry.tramo.fechaSalida" required class="w-full rounded-md border-neutral-300 shadow-sm text-sm focus:ring-primary focus:border-primary" />
+                      </div>
+                    </div>
+                  </div>
+                </template>
+              </div>
+            </div>
+
+            <!-- Ruta de Vuelta -->
+            <div class="space-y-4 pt-4">
+              <div class="flex items-center justify-between border-b border-neutral-100 pb-2">
+                <div class="flex items-center gap-2 text-secondary-600">
+                  <i class="ph ph-airplane-landing text-xl"></i>
+                  <h4 class="text-sm font-black uppercase tracking-widest">Ruta de Vuelta (Opcional)</h4>
+                </div>
+                <button type="button" @click="addTramo('VUELTA')" class="text-secondary-600 text-xs font-bold flex items-center gap-1 hover:text-secondary-800 bg-secondary-50 px-3 py-1.5 rounded-full transition-colors">
+                  <i class="ph ph-plus-circle"></i>
+                  Agregar Escala de Vuelta
+                </button>
+              </div>
+              <div class="space-y-4">
+                <template x-for="(entry, i) in tramosVuelta()" :key="'vuelta-'+entry.index">
+                  <div class="bg-neutral-50 border border-neutral-200 rounded-xl p-4 relative group border-l-4 border-l-secondary-400">
+                    <input type="hidden" :name="'tramos['+entry.index+'].tipo'" value="VUELTA" />
+                    <button type="button" @click="removeTramo(entry.index)" class="absolute -top-2 -right-2 h-6 w-6 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg hover:bg-red-600 transition-all z-10">
+                      <i class="ph ph-x text-xs"></i>
+                    </button>
+                    <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-end">
+                      <div class="md:col-span-4 space-y-1">
+                        <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">Origen</label>
+                        <input type="hidden" :name="'tramos['+entry.index+'].origen'" x-model="entry.tramo.origen" required />
+                        <div x-show="!canEditOrigin(entry.index)" class="w-full rounded-md border border-neutral-200 bg-neutral-100 py-2 pl-3 pr-10 shadow-sm sm:text-sm flex items-center min-h-[38px]">
+                          <span x-text="entry.tramo.origenLabel || '-'" class="text-neutral-700"></span>
+                          <i class="ph ph-lock-simple text-neutral-400 ml-auto"></i>
+                        </div>
+                        <div x-show="canEditOrigin(entry.index)" x-data="searchableSelect({ items: allDestinos, initialValue: entry.tramo.origen, initialLabel: entry.tramo.origenLabel, placeholder: 'Buscar origen...' })" x-init="value = entry.tramo.origen; label = entry.tramo.origenLabel || placeholder; $watch('value', function(v) { entry.tramo.origen = v; var it = allDestinos.find(function(d) { return d.value === v; }); if (it) entry.tramo.origenLabel = it.value + ' - ' + it.label; setTimeout(function() { window.dispatchEvent(new CustomEvent('oficial-sync-chain')); }, 0); })" class="relative">
+                          <button type="button" @click="open = !open; if(open) $nextTick(function() { $refs.searchInput.focus() })" class="relative w-full bg-white border border-neutral-300 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm min-h-[38px] flex items-center justify-between">
+                            <span class="block truncate" :class="label ? 'text-neutral-900' : 'text-neutral-400'" x-text="label || placeholder"></span>
+                            <i class="ph ph-magnifying-glass text-neutral-400"></i>
+                          </button>
+                          <div x-show="open" @click.away="open = false" class="absolute z-50 mt-1 w-full bg-white shadow-xl max-h-48 rounded-md border border-neutral-200 overflow-hidden" style="display: none">
+                            <div class="sticky top-0 bg-white p-2 border-b border-neutral-100">
+                              <input x-ref="searchInput" x-model="search" type="text" autocomplete="off" class="w-full border-neutral-300 rounded text-sm focus:ring-primary focus:border-primary" placeholder="Buscar ciudad..." />
+                            </div>
+                            <div class="max-h-36 overflow-y-auto">
+                              <template x-for="item in filteredItems" :key="item.value">
+                                <div @click="select(item)" class="px-3 py-2 hover:bg-primary hover:text-white cursor-pointer text-xs font-bold border-b border-neutral-50">
+                                  <span x-text="item.value + ' - ' + item.label"></span>
+                                </div>
+                              </template>
+                              <div x-show="filteredItems.length === 0" class="px-3 py-2 text-neutral-500 text-xs italic">Sin resultados</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="hidden md:flex md:col-span-1 justify-center pb-3"><i class="ph ph-arrow-right text-neutral-300 text-xl font-bold"></i></div>
+                      <div class="md:col-span-4 space-y-1">
+                        <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">Destino</label>
+                        <div x-data="searchableSelect({ items: allDestinos, initialValue: entry.tramo.destino, initialLabel: entry.tramo.destinoLabel, placeholder: 'Buscar destino...' })" x-init="value = entry.tramo.destino; label = entry.tramo.destinoLabel || placeholder; $watch('value', function(v) { entry.tramo.destino = v; var it = allDestinos.find(function(d) { return d.value === v; }); if (it) entry.tramo.destinoLabel = it.value + ' - ' + it.label; setTimeout(function() { window.dispatchEvent(new CustomEvent('oficial-sync-chain')); }, 0); })" class="relative">
+                          <input type="hidden" :name="'tramos['+entry.index+'].destino'" x-model="entry.tramo.destino" required />
+                          <button type="button" @click="open = !open; if(open) $nextTick(function() { $refs.searchInput.focus() })" class="relative w-full bg-white border border-neutral-300 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm min-h-[38px] flex items-center justify-between">
+                            <span class="block truncate" :class="label ? 'text-neutral-900' : 'text-neutral-400'" x-text="label || placeholder"></span>
+                            <i class="ph ph-magnifying-glass text-neutral-400"></i>
+                          </button>
+                          <div x-show="open" @click.away="open = false" class="absolute z-50 mt-1 w-full bg-white shadow-xl max-h-48 rounded-md border border-neutral-200 overflow-hidden" style="display: none">
+                            <div class="sticky top-0 bg-white p-2 border-b border-neutral-100">
+                              <input x-ref="searchInput" x-model="search" type="text" autocomplete="off" class="w-full border-neutral-300 rounded text-sm focus:ring-primary focus:border-primary" placeholder="Buscar ciudad..." />
+                            </div>
+                            <div class="max-h-36 overflow-y-auto">
+                              <template x-for="item in filteredItems" :key="item.value">
+                                <div @click="select(item)" class="px-3 py-2 hover:bg-primary hover:text-white cursor-pointer text-xs font-bold border-b border-neutral-50">
+                                  <span x-text="item.value + ' - ' + item.label"></span>
+                                </div>
+                              </template>
+                              <div x-show="filteredItems.length === 0" class="px-3 py-2 text-neutral-500 text-xs italic">Sin resultados</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div class="md:col-span-3 space-y-1">
+                        <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">Fecha Salida</label>
+                        <input type="datetime-local" :name="'tramos['+entry.index+'].fecha_salida'" x-model="entry.tramo.fechaSalida" class="w-full rounded-md border-neutral-300 shadow-sm text-sm focus:ring-primary focus:border-primary" />
+                      </div>
+                    </div>
+                  </div>
+                </template>
+              </div>
+            </div>
+
+            <div class="pt-6 border-t border-neutral-100 grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="md:col-span-2">
+                <label class="block text-xs font-black text-neutral-500 uppercase mb-1">Motivo de la Comisión</label>
+                <textarea name="motivo" x-model="motivo" rows="2" required class="w-full rounded-md border-neutral-300 text-sm" placeholder="Describa el propósito del viaje oficial completo..."></textarea>
+              </div>
+              <div>
+                <label class="block text-xs font-black text-neutral-500 uppercase mb-1">Autorización / Referencia</label>
+                <input type="text" name="autorizacion" x-model="autorizacion" class="w-full rounded-md border-neutral-300 text-sm" placeholder="Ej: Resolución 001/2024" />
+              </div>
+              <div>
+                <label class="block text-xs font-black text-neutral-500 uppercase mb-1">Aerolínea Sugerida</label>
+                <select name="aerolinea" x-model="aerolinea" class="w-full rounded-md border-neutral-300 text-sm">
+                  <option value="">Cualquiera</option>
+                  {{ range .Aerolineas }}
+                  <option value="{{ .Nombre }}">{{ .Nombre }}</option>
+                  {{ end }}
+                </select>
+              </div>
+            </div>
           </div>
         </form>
       </div>
     </div>
   </div>
+
+  <script>
+    function oficialFormHandlerEdit() {
+      return {
+        open: true,
+        loading: false,
+        ambito: '',
+        motivo: '',
+        autorizacion: '',
+        aerolinea: '',
+        allDestinos: [],
+        tramos: [],
+
+        init() {
+          var destinosEl = document.getElementById('destinos-edit-data');
+          if (destinosEl && destinosEl.textContent) {
+            try {
+              this.allDestinos = JSON.parse(destinosEl.textContent);
+            } catch (e) {}
+          }
+          var formEl = document.getElementById('edit-form-data');
+          if (formEl && formEl.textContent) {
+            try {
+              var d = JSON.parse(formEl.textContent);
+              this.ambito = d.ambito || '';
+              this.motivo = d.motivo || '';
+              this.autorizacion = d.autorizacion || '';
+              this.aerolinea = d.aerolinea || '';
+            } catch (e) {}
+          }
+          var el = document.getElementById('tramos-edit-inicial');
+          try {
+            var arr = el && el.textContent ? JSON.parse(el.textContent) : [];
+            if (Array.isArray(arr) && arr.length > 0) {
+              this.tramos = arr.map(function(t) {
+                return {
+                  tipo: t.tipo || 'IDA',
+                  origen: t.origen || '',
+                  origenLabel: t.origenLabel || t.origen || '',
+                  destino: t.destino || '',
+                  destinoLabel: t.destinoLabel || t.destino || '',
+                  fechaSalida: t.fechaSalida || ''
+                };
+              });
+              return;
+            }
+          } catch (e) {}
+          this.tramos = [{ tipo: 'IDA', origen: '', origenLabel: '', destino: '', destinoLabel: '', fechaSalida: '' }];
+        },
+
+        addTramo(tipo) {
+          var lastOrigin = '', lastLabel = '';
+          if (this.tramos.length > 0) {
+            var last = this.tramos[this.tramos.length - 1];
+            lastOrigin = last.destino;
+            lastLabel = last.destinoLabel;
+          }
+          this.tramos.push({ tipo: tipo, origen: lastOrigin, origenLabel: lastLabel, destino: '', destinoLabel: '', fechaSalida: '' });
+        },
+
+        canRemoveTramo(index) {
+          var tramo = this.tramos[index];
+          if (tramo.tipo === 'IDA') return this.tramos.filter(function(t) { return t.tipo === 'IDA'; }).length > 1;
+          return true;
+        },
+
+        removeTramo(index) {
+          this.tramos.splice(index, 1);
+          this.syncChain();
+        },
+
+        canEditOrigin(index) {
+          return index === 0;
+        },
+
+        syncChain() {
+          for (var i = 1; i < this.tramos.length; i++) {
+            this.tramos[i].origen = this.tramos[i-1].destino;
+            this.tramos[i].origenLabel = this.tramos[i-1].destinoLabel;
+          }
+        },
+
+        tramosIda() {
+          return this.tramos.map(function(t, i) { return { tramo: t, index: i }; }).filter(function(x) { return x.tramo.tipo === 'IDA'; });
+        },
+        tramosVuelta() {
+          return this.tramos.map(function(t, i) { return { tramo: t, index: i }; }).filter(function(x) { return x.tramo.tipo === 'VUELTA'; });
+        },
+
+        submitForm() {
+          var el = document.getElementById('tramos_json_input_edit');
+          if (el) el.value = JSON.stringify(this.tramos.map(function(t) {
+            return { origen: t.origen || '', destino: t.destino || '', fecha_salida: t.fechaSalida || '', tipo: t.tipo || 'IDA' };
+          }));
+          this.loading = true;
+          this.$refs.form.submit();
+        }
+      };
+    }
+  </script>
 </div>
 {{ end }}

@@ -56,7 +56,7 @@
         <i class="ph ph-currency-circle-dollar mr-2 text-lg"></i>
         Asignar Viáticos
       </button>
-      {{ end }} {{ if .Perms.CanEdit }}
+      {{ end }}       {{ if .Perms.CanEdit }}
       <button
         type="button"
         hx-get="/solicitudes/oficial/{{ .Solicitud.ID }}/modal-editar"
@@ -64,6 +64,37 @@
         class="inline-flex items-center px-4 py-2 border border-primary-600 shadow-sm text-sm font-medium rounded-md text-primary-600 bg-white hover:bg-primary-50 focus:outline-none cursor-pointer">
         Editar
       </button>
+      {{ end }}
+      <button
+        type="button"
+        hx-get="/solicitudes/oficial/{{ .Solicitud.ID }}/print"
+        hx-target="#modal-container"
+        class="inline-flex items-center px-4 py-2 border border-neutral-300 shadow-sm text-sm font-medium rounded-md text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none cursor-pointer">
+        <i class="ph ph-file-pdf mr-2 text-lg"></i>
+        Imprimir PV-02
+      </button>
+      {{ if .DescargoID }}
+      <a
+        href="/descargos/{{ .DescargoID }}"
+        class="inline-flex items-center px-4 py-2 border border-neutral-300 shadow-sm text-sm font-medium rounded-md text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none">
+        <i class="ph ph-file-text mr-2 text-lg"></i>
+        Ver descargo (PV-05)
+      </a>
+      <button
+        type="button"
+        hx-get="/descargos/{{ .DescargoID }}/previsualizar-pv5"
+        hx-target="#modal-container"
+        class="inline-flex items-center px-4 py-2 border border-neutral-300 shadow-sm text-sm font-medium rounded-md text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none cursor-pointer">
+        <i class="ph ph-file-pdf mr-2 text-lg"></i>
+        Imprimir PV-05
+      </button>
+      {{ else if .Perms.CanMakeDescargo }}
+      <a
+        href="/solicitudes/oficial/{{ .Solicitud.ID }}/descargo"
+        class="inline-flex items-center px-4 py-2 border border-primary-600 shadow-sm text-sm font-medium rounded-md text-primary-600 bg-white hover:bg-primary-50 focus:outline-none">
+        <i class="ph ph-file-plus mr-2 text-lg"></i>
+        Realizar descargo (PV-05)
+      </a>
       {{ end }}
       <a
         href="/solicitudes"

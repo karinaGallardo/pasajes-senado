@@ -1,0 +1,31 @@
+{{ define "errors/403" }} {{ template "layout_start" . }}
+
+<div class="min-h-[calc(100vh-200px)] flex flex-col items-center justify-center p-4">
+  <div class="text-center max-w-lg">
+    <div class="inline-flex items-center justify-center w-24 h-24 rounded-full bg-danger-50 mb-6 border border-danger-200">
+      <i class="ph ph-lock-simple text-5xl text-danger-500"></i>
+    </div>
+
+    <h1 class="text-4xl font-extrabold text-neutral-900 mb-2 font-brand tracking-tight">Acceso no autorizado</h1>
+
+    <p class="text-lg text-neutral-500 mb-8 font-light">No tiene permisos para acceder a este recurso.</p>
+
+    <div class="flex flex-col sm:flex-row gap-4 justify-center">
+      <a
+        href="/dashboard"
+        class="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-lg text-white bg-primary hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary shadow-lg hover:shadow-xl transition-all duration-200 transform hover:-translate-y-0.5">
+        <i class="ph ph-house mr-2 text-xl"></i>
+        Ir al Dashboard
+      </a>
+
+      <button
+        onclick="history.back()"
+        class="inline-flex items-center justify-center px-6 py-3 border border-neutral-300 text-base font-medium rounded-lg text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-500 shadow-sm transition-all duration-200">
+        <i class="ph ph-arrow-left mr-2 text-xl"></i>
+        Volver Atrás
+      </button>
+    </div>
+  </div>
+</div>
+
+{{ template "layout_end" . }} {{ end }}

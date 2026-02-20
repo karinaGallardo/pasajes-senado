@@ -7,7 +7,7 @@ type CreateSolicitudRequest struct {
 	TargetUserID        string `form:"target_user_id"`
 
 	TipoItinerarioCodigo string `form:"tipo_itinerario_codigo"`
-	TipoItinerario       string `form:"tipo_itinerario"` // Mantener por compatibilidad con algunos switches en frontend si fuera necesario
+	TipoItinerario       string `form:"tipo_itinerario"`
 
 	OrigenIATA        string `form:"origen" binding:"required"`
 	DestinoIATA       string `form:"destino" binding:"required"`

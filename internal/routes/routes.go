@@ -72,6 +72,8 @@ func SetupRoutes(r *gin.Engine) {
 		protected.GET("/solicitudes/oficial/modal-crear", solicitudOficialCtrl.GetCreateModal)
 		protected.GET("/solicitudes/oficial/:id/detalle", solicitudOficialCtrl.Show)
 		protected.GET("/solicitudes/oficial/:id/modal-editar", solicitudOficialCtrl.GetEditModal)
+		protected.GET("/solicitudes/oficial/:id/print", solicitudOficialCtrl.Print)
+		protected.GET("/solicitudes/oficial/:id/descargo", descargoCtrl.CreateOficial)
 		protected.POST("/solicitudes/oficial/:id/actualizar", solicitudOficialCtrl.Update)
 		protected.POST("/solicitudes/oficial", solicitudOficialCtrl.Store)
 		protected.POST("/solicitudes/oficial/:id/aprobar", solicitudOficialCtrl.Approve)

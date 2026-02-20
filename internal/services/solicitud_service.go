@@ -207,46 +207,20 @@ func (s *SolicitudService) CreateDerecho(ctx context.Context, req dtos.CreateSol
 	return solicitud, nil
 }
 
-func (s *SolicitudService) CreateOficial(ctx context.Context, req dtos.CreateSolicitudRequest, currentUser *models.Usuario) (*models.Solicitud, error) {
+func (s *SolicitudService) CreateOficial(ctx context.Context, req dtos.CreateSolicitudOficialRequest, currentUser *models.Usuario) (*models.Solicitud, error) {
 	layout := "2006-01-02T15:04"
-	var fechaIda *time.Time
-	if t, err := time.Parse(layout, req.FechaIda); err == nil {
-		fechaIda = &t
-	}
-
-	var fechaVuelta *time.Time
-	if req.FechaVuelta != "" && req.TipoItinerarioCodigo != "SOLO_IDA" {
-		if t, err := time.Parse(layout, req.FechaVuelta); err == nil {
-			fechaVuelta = &t
-		}
-	}
 
 	realSolicitanteID := req.TargetUserID
 	if realSolicitanteID == "" {
 		realSolicitanteID = currentUser.ID
 	}
 
-	// Resolve TipoItinerario
-	var tipoItin *models.TipoItinerario
-	if req.TipoItinerarioCodigo != "" {
-		tipoItin, _ = s.tipoItinRepo.WithContext(ctx).FindByCodigo(req.TipoItinerarioCodigo)
-	}
-	if tipoItin == nil && req.TipoItinerario != "" {
-		tipoItin, _ = s.tipoItinRepo.WithContext(ctx).FindByCodigo(req.TipoItinerario)
-	}
-	if tipoItin == nil {
-		tipoItin, _ = s.tipoItinRepo.WithContext(ctx).FindByCodigo("IDA_VUELTA")
-	}
-
-	if tipoItin == nil {
+	tipoItin, err := s.tipoItinRepo.WithContext(ctx).FindByCodigo("IDA_VUELTA")
+	if err != nil || tipoItin == nil {
 		return nil, errors.New("tipo de itinerario no válido")
 	}
 
-	// Force TipoSolicitudCodigo to COMISION for official requests
 	tipoSolicitudCode := "COMISION"
-	if req.TipoSolicitudCodigo != "" {
-		tipoSolicitudCode = req.TipoSolicitudCodigo
-	}
 
 	solicitud := &models.Solicitud{
 		BaseModel:             models.BaseModel{CreatedBy: &currentUser.ID},
@@ -262,47 +236,49 @@ func (s *SolicitudService) CreateOficial(ctx context.Context, req dtos.CreateSol
 
 	// Build Items
 	var items []models.SolicitudItem
-	itinCode := tipoItin.Codigo
 
-	switch itinCode {
-	case "SOLO_IDA", "IDA_VUELTA":
-		items = append(items, models.SolicitudItem{
-			Tipo:         models.TipoSolicitudItemIda,
-			OrigenIATA:   req.OrigenIATA,
-			DestinoIATA:  req.DestinoIATA,
-			Fecha:        fechaIda,
-			Hora:         s.formatTime(fechaIda),
-			EstadoCodigo: utils.Ptr("SOLICITADO"),
-		})
-	case "SOLO_VUELTA":
-		items = append(items, models.SolicitudItem{
-			Tipo:         models.TipoSolicitudItemVuelta,
-			OrigenIATA:   req.OrigenIATA,
-			DestinoIATA:  req.DestinoIATA,
-			Fecha:        fechaIda,
-			Hora:         s.formatTime(fechaIda),
-			EstadoCodigo: utils.Ptr("SOLICITADO"),
-		})
-	}
+	// Multi-tramo process
+	for _, t := range req.Tramos {
+		orig := strings.TrimSpace(t.OrigenIATA)
+		dest := strings.TrimSpace(t.DestinoIATA)
+		if orig == "" || dest == "" {
+			continue
+		}
 
-	if itinCode == "IDA_VUELTA" {
+		var fSalida *time.Time
+		if t.FechaSalida != "" {
+			if parsed, err := time.Parse(layout, t.FechaSalida); err == nil {
+				fSalida = &parsed
+			}
+		}
+
+		tipoItem := models.TipoSolicitudItemIda
+		if t.Tipo == "VUELTA" {
+			tipoItem = models.TipoSolicitudItemVuelta
+		}
+
 		st := "SOLICITADO"
-		if fechaVuelta == nil {
+		if tipoItem == models.TipoSolicitudItemVuelta && fSalida == nil {
 			st = "PENDIENTE"
 		}
+
 		items = append(items, models.SolicitudItem{
-			Tipo:         models.TipoSolicitudItemVuelta,
-			OrigenIATA:   req.DestinoIATA,
-			DestinoIATA:  req.OrigenIATA,
-			Fecha:        fechaVuelta,
-			Hora:         s.formatTime(fechaVuelta),
+			Tipo:         tipoItem,
+			OrigenIATA:   orig,
+			DestinoIATA:  dest,
+			Fecha:        fSalida,
+			Hora:         s.formatTime(fSalida),
 			EstadoCodigo: utils.Ptr(st),
 		})
 	}
 
+	if len(items) == 0 {
+		return nil, errors.New("debe agregar al menos un tramo de viaje válido")
+	}
+
 	solicitud.Items = items
 
-	err := s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
+	err = s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
 		secuenciaRepoTx := s.codigoSecuenciaRepo.WithTx(tx)
 
 		currentYear := time.Now().Year()
@@ -914,7 +890,45 @@ func (s *SolicitudService) ReprogramarItem(ctx context.Context, req dtos.Reprogr
 		return nil
 	})
 }
-func (s *SolicitudService) UpdateOficial(ctx context.Context, id string, req dtos.CreateSolicitudRequest) error {
+func (s *SolicitudService) UpdateOficial(ctx context.Context, id string, req dtos.CreateSolicitudOficialRequest) error {
+	layout := "2006-01-02T15:04"
+
+	var items []models.SolicitudItem
+	for _, t := range req.Tramos {
+		orig := strings.TrimSpace(t.OrigenIATA)
+		dest := strings.TrimSpace(t.DestinoIATA)
+		if orig == "" || dest == "" {
+			continue
+		}
+		var fSalida *time.Time
+		if t.FechaSalida != "" {
+			if parsed, err := time.Parse(layout, t.FechaSalida); err == nil {
+				fSalida = &parsed
+			}
+		}
+		tipoItem := models.TipoSolicitudItemIda
+		if t.Tipo == "VUELTA" {
+			tipoItem = models.TipoSolicitudItemVuelta
+		}
+		st := "SOLICITADO"
+		if tipoItem == models.TipoSolicitudItemVuelta && fSalida == nil {
+			st = "PENDIENTE"
+		}
+		items = append(items, models.SolicitudItem{
+			SolicitudID: id,
+			Tipo:        tipoItem,
+			OrigenIATA:  orig,
+			DestinoIATA: dest,
+			Fecha:       fSalida,
+			Hora:        s.formatTime(fSalida),
+			EstadoCodigo: utils.Ptr(st),
+		})
+	}
+
+	if len(items) == 0 {
+		return errors.New("debe agregar al menos un tramo de viaje válido")
+	}
+
 	return s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
 		solicitud, err := repoTx.FindByID(id)
 		if err != nil {
@@ -925,39 +939,18 @@ func (s *SolicitudService) UpdateOficial(ctx context.Context, id string, req dto
 		solicitud.Autorizacion = req.Autorizacion
 		solicitud.AmbitoViajeCodigo = req.AmbitoViajeCodigo
 		solicitud.AerolineaSugerida = req.AerolineaSugerida
-		solicitud.TipoItinerarioCodigo = req.TipoItinerarioCodigo
 
 		if err := repoTx.Update(solicitud); err != nil {
 			return err
 		}
 
-		layout := "2006-01-02T15:04"
-		var fechaIda *time.Time
-		if t, err := time.Parse(layout, req.FechaIda); err == nil {
-			fechaIda = &t
-		}
-		var fechaVuelta *time.Time
-		if req.FechaVuelta != "" {
-			if t, err := time.Parse(layout, req.FechaVuelta); err == nil {
-				fechaVuelta = &t
-			}
+		if err := tx.Where("solicitud_id = ?", id).Delete(&models.SolicitudItem{}).Error; err != nil {
+			return err
 		}
 
-		for i := range solicitud.Items {
-			item := &solicitud.Items[i]
-			switch item.Tipo {
-			case models.TipoSolicitudItemIda:
-				item.OrigenIATA = req.OrigenIATA
-				item.DestinoIATA = req.DestinoIATA
-				item.Fecha = fechaIda
-				item.Hora = s.formatTime(fechaIda)
-				tx.Save(item)
-			case models.TipoSolicitudItemVuelta:
-				item.OrigenIATA = req.DestinoIATA
-				item.DestinoIATA = req.OrigenIATA
-				item.Fecha = fechaVuelta
-				item.Hora = s.formatTime(fechaVuelta)
-				tx.Save(item)
+		for i := range items {
+			if err := tx.Create(&items[i]).Error; err != nil {
+				return err
 			}
 		}
 

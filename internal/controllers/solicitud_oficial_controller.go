@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"sistema-pasajes/internal/appcontext"
@@ -9,6 +10,8 @@ import (
 	"sistema-pasajes/internal/services"
 	"sistema-pasajes/internal/utils"
 	"sort"
+
+	"html/template"
 
 	"github.com/gin-gonic/gin"
 )
@@ -21,6 +24,9 @@ type SolicitudOficialController struct {
 	userService           *services.UsuarioService
 	tipoItinerarioService *services.TipoItinerarioService
 	aerolineaService      *services.AerolineaService
+	reportService         *services.ReportService
+	peopleService         *services.PeopleService
+	descargoService       *services.DescargoService
 }
 
 func NewSolicitudOficialController() *SolicitudOficialController {
@@ -32,6 +38,9 @@ func NewSolicitudOficialController() *SolicitudOficialController {
 		userService:           services.NewUsuarioService(),
 		tipoItinerarioService: services.NewTipoItinerarioService(),
 		aerolineaService:      services.NewAerolineaService(),
+		reportService:         services.NewReportService(),
+		peopleService:         services.NewPeopleService(),
+		descargoService:       services.NewDescargoService(),
 	}
 }
 
@@ -75,20 +84,23 @@ func (ctrl *SolicitudOficialController) GetCreateModal(c *gin.Context) {
 func (ctrl *SolicitudOficialController) Store(c *gin.Context) {
 	authUser := appcontext.AuthUser(c)
 
-	var req dtos.CreateSolicitudRequest
+	var req dtos.CreateSolicitudOficialRequest
 	if err := c.ShouldBind(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	// Validate "Oficial" type
-	req.TipoSolicitudCodigo = "COMISION" // Enforce Commission type
-	// req.ConceptoCodigo = "COMISION"
+	if js := c.PostForm("tramos_json"); js != "" {
+		var tramos []dtos.TramoOficialRequest
+		if err := json.Unmarshal([]byte(js), &tramos); err == nil {
+			req.Tramos = tramos
+		}
+	}
 
 	_, err := ctrl.solicitudService.CreateOficial(c.Request.Context(), req, authUser)
 	if err != nil {
 		utils.SetErrorMessage(c, "Error al crear la solicitud: "+err.Error())
-		c.Redirect(http.StatusFound, "/solicitudes/oficial/crear")
+		c.Redirect(http.StatusFound, "/solicitudes")
 		return
 	}
 
@@ -287,6 +299,12 @@ func (ctrl *SolicitudOficialController) Show(c *gin.Context) {
 
 	aerolineas, _ := ctrl.aerolineaService.GetAllActive(c.Request.Context())
 
+	// Descargo PV-05: si ya existe, pasamos ID para enlace "Ver descargo / Imprimir PV-05"
+	var descargoID string
+	if descargo, _ := ctrl.descargoService.GetBySolicitudID(c.Request.Context(), id); descargo != nil && descargo.ID != "" {
+		descargoID = descargo.ID
+	}
+
 	utils.Render(c, "solicitud/oficial/show", gin.H{
 		"Title":         "Solicitud Oficial " + solicitud.Codigo,
 		"Solicitud":     solicitud,
@@ -298,6 +316,7 @@ func (ctrl *SolicitudOficialController) Show(c *gin.Context) {
 		"PasajesView":   pasajesViews,
 		"ApprovalLabel": approvalLabel,
 		"Aerolineas":    aerolineas,
+		"DescargoID":    descargoID,
 	})
 }
 
@@ -405,6 +424,29 @@ func (ctrl *SolicitudOficialController) RevertApprovalItem(c *gin.Context) {
 	utils.SetSuccessMessage(c, "Aprobación de tramo REVERTIDA")
 	c.Redirect(http.StatusFound, "/solicitudes/oficial/"+id+"/detalle")
 }
+
+func (ctrl *SolicitudOficialController) Print(c *gin.Context) {
+	id := c.Param("id")
+	solicitud, err := ctrl.solicitudService.GetByID(c.Request.Context(), id)
+	if err != nil {
+		c.String(http.StatusInternalServerError, "Error al obtener la solicitud: "+err.Error())
+		return
+	}
+
+	if c.GetHeader("HX-Request") == "true" {
+		utils.Render(c, "solicitud/oficial/modal_print", gin.H{
+			"Solicitud": solicitud,
+		})
+		return
+	}
+
+	personaView, _ := ctrl.peopleService.GetSenatorDataByCI(c.Request.Context(), solicitud.Usuario.CI)
+	pdf := ctrl.reportService.GeneratePV02(c.Request.Context(), solicitud, personaView)
+	c.Header("Content-Type", "application/pdf")
+	c.Header("Content-Disposition", fmt.Sprintf("inline; filename=FORM-PV02-%s.pdf", solicitud.Codigo))
+	pdf.Output(c.Writer)
+}
+
 func (ctrl *SolicitudOficialController) GetEditModal(c *gin.Context) {
 	id := c.Param("id")
 	solicitud, err := ctrl.solicitudService.GetByID(c.Request.Context(), id)
@@ -417,49 +459,97 @@ func (ctrl *SolicitudOficialController) GetEditModal(c *gin.Context) {
 	ambitos, _ := ctrl.ambitoService.GetAll(c.Request.Context())
 	destinos, _ := ctrl.destinoService.GetAll(c.Request.Context())
 
-	// Basic item info (ida/vuelta)
-	var itemID, itemVueltaID string
-	var fechaIda, fechaVuelta string
-	var origenIATA, destinoIATA string
-
-	for _, item := range solicitud.Items {
-		switch item.Tipo {
-		case models.TipoSolicitudItemIda:
-			itemID = item.ID
-			origenIATA = item.OrigenIATA
-			destinoIATA = item.DestinoIATA
-			if item.Fecha != nil {
-				fechaIda = item.Fecha.Format("2006-01-02T15:04")
-			}
-		case models.TipoSolicitudItemVuelta:
-			itemVueltaID = item.ID
-			if item.Fecha != nil {
-				fechaVuelta = item.Fecha.Format("2006-01-02T15:04")
-			}
+	// Ordenar ítems: IDA primero, luego VUELTA, por fecha
+	sort.Slice(solicitud.Items, func(i, j int) bool {
+		if solicitud.Items[i].Tipo != solicitud.Items[j].Tipo {
+			return solicitud.Items[i].Tipo == models.TipoSolicitudItemIda
 		}
+		if solicitud.Items[i].Fecha != nil && solicitud.Items[j].Fecha != nil {
+			return solicitud.Items[i].Fecha.Before(*solicitud.Items[j].Fecha)
+		}
+		return i < j
+	})
+
+	type tramoInicial struct {
+		Tipo         string `json:"tipo"`
+		OrigenIATA   string `json:"origen"`
+		OrigenLabel  string `json:"origenLabel"`
+		DestinoIATA  string `json:"destino"`
+		DestinoLabel string `json:"destinoLabel"`
+		FechaSalida  string `json:"fechaSalida"`
 	}
+
+	var tramosIniciales []tramoInicial
+	for _, item := range solicitud.Items {
+		tipo := "IDA"
+		if item.Tipo == models.TipoSolicitudItemVuelta {
+			tipo = "VUELTA"
+		}
+		origenLabel := item.OrigenIATA
+		if item.Origen != nil {
+			origenLabel = item.OrigenIATA + " - " + item.Origen.GetLabel()
+		}
+		destinoLabel := item.DestinoIATA
+		if item.Destino != nil {
+			destinoLabel = item.DestinoIATA + " - " + item.Destino.GetLabel()
+		}
+		fechaSalida := ""
+		if item.Fecha != nil {
+			fechaSalida = item.Fecha.Format("2006-01-02T15:04")
+		}
+		tramosIniciales = append(tramosIniciales, tramoInicial{
+			Tipo:         tipo,
+			OrigenIATA:   item.OrigenIATA,
+			OrigenLabel:  origenLabel,
+			DestinoIATA:  item.DestinoIATA,
+			DestinoLabel: destinoLabel,
+			FechaSalida:  fechaSalida,
+		})
+	}
+
+	tramosJSON, _ := json.Marshal(tramosIniciales)
+	editFormData, _ := json.Marshal(map[string]string{
+		"ambito":       solicitud.AmbitoViajeCodigo,
+		"motivo":       solicitud.Motivo,
+		"autorizacion": solicitud.Autorizacion,
+		"aerolinea":    solicitud.AerolineaSugerida,
+	})
+
+	destinosPayload := make([]map[string]string, 0, len(destinos))
+	for _, d := range destinos {
+		destinosPayload = append(destinosPayload, map[string]string{
+			"value":  d.IATA,
+			"label":  d.GetLabel(),
+			"ambito": d.AmbitoCodigo,
+		})
+	}
+	destinosJSON, _ := json.Marshal(destinosPayload)
 
 	utils.Render(c, "solicitud/oficial/modal_edit", gin.H{
 		"Solicitud":    solicitud,
 		"Aerolineas":   aerolineas,
 		"Ambitos":      ambitos,
 		"Destinos":     destinos,
-		"FechaIda":     fechaIda,
-		"FechaVuelta":  fechaVuelta,
-		"OrigenIATA":   origenIATA,
-		"DestinoIATA":  destinoIATA,
-		"ItemID":       itemID,
-		"ItemVueltaID": itemVueltaID,
+		"TramosJSON":   template.JS(tramosJSON),
+		"EditFormData": template.JS(editFormData),
+		"DestinosJSON": template.JS(destinosJSON),
 	})
 }
 
 func (ctrl *SolicitudOficialController) Update(c *gin.Context) {
 	id := c.Param("id")
-	var req dtos.CreateSolicitudRequest
+	var req dtos.CreateSolicitudOficialRequest
 	if err := c.ShouldBind(&req); err != nil {
 		utils.SetErrorMessage(c, "Datos inválidos")
 		c.Redirect(http.StatusFound, "/solicitudes/oficial/"+id+"/detalle")
 		return
+	}
+
+	if js := c.PostForm("tramos_json"); js != "" {
+		var tramos []dtos.TramoOficialRequest
+		if err := json.Unmarshal([]byte(js), &tramos); err == nil {
+			req.Tramos = tramos
+		}
 	}
 
 	if err := ctrl.solicitudService.UpdateOficial(c.Request.Context(), id, req); err != nil {
