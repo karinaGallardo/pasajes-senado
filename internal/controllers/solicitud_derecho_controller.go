@@ -631,7 +631,6 @@ func (ctrl *SolicitudDerechoController) Show(c *gin.Context) {
 			return false
 		}
 
-		// Chronological fallback if same type or unknown
 		if solicitud.Items[i].Fecha != nil && solicitud.Items[j].Fecha != nil {
 			return solicitud.Items[i].Fecha.Before(*solicitud.Items[j].Fecha)
 		}
@@ -643,7 +642,18 @@ func (ctrl *SolicitudDerechoController) Show(c *gin.Context) {
 		st = *solicitud.EstadoSolicitudCodigo
 	}
 
-	// --- 1. Permissions Logic ---
+	canView := false
+	if authUser.IsAdminOrResponsable() || solicitud.UsuarioID == authUser.ID || (solicitud.CreatedBy != nil && *solicitud.CreatedBy == authUser.ID) {
+		canView = true
+	} else if solicitud.Usuario.EncargadoID != nil && *solicitud.Usuario.EncargadoID == authUser.ID {
+		canView = true
+	}
+
+	if !canView {
+		c.String(http.StatusForbidden, "No tiene permiso para ver esta solicitud")
+		return
+	}
+
 	hasEmitted := false
 	for _, item := range solicitud.Items {
 		for _, p := range item.Pasajes {

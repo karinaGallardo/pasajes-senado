@@ -102,7 +102,12 @@ func (r *SolicitudRepository) FindByUserIdOrAccesibleByEncargadoID(userID string
 		Preload("TipoSolicitud.ConceptoViaje").
 		Preload("EstadoSolicitud").
 		Order("created_at desc").
-		Where("usuario_id = ? OR usuario_id IN (?)", userID, r.db.Table("usuarios").Select("id").Where("encargado_id = ?", userID))
+		Where(
+			"usuario_id = ? OR created_by = ? OR usuario_id IN (?)",
+			userID,
+			userID,
+			r.db.Table("usuarios").Select("id").Where("encargado_id = ?", userID),
+		)
 
 	if status != "" {
 		query = query.Where("estado_solicitud_codigo = ?", status)

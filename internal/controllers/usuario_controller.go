@@ -62,6 +62,7 @@ func (ctrl *UsuarioController) Index(c *gin.Context) {
 		result = gin.H{
 			"Usuarios":    usuarios,
 			"CurrentYear": time.Now().Year(),
+			"AuthUser":    authUser,
 		}
 	}
 
@@ -134,6 +135,7 @@ func (ctrl *UsuarioController) Table(c *gin.Context) {
 		result = gin.H{
 			"Usuarios":    usuarios,
 			"CurrentYear": time.Now().Year(),
+			"AuthUser":    authUser,
 		}
 
 	}

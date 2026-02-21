@@ -144,6 +144,10 @@ func (u *Usuario) CanMarkUsado(s Solicitud) bool {
 		return true
 	}
 
+	if s.CreatedBy != nil && *s.CreatedBy == u.ID {
+		return true
+	}
+
 	return false
 }
 
@@ -164,6 +168,10 @@ func (u *Usuario) CanEditSolicitud(s Solicitud) bool {
 	}
 
 	if s.Usuario.EncargadoID != nil && *s.Usuario.EncargadoID == u.ID {
+		return true
+	}
+
+	if s.CreatedBy != nil && *s.CreatedBy == u.ID {
 		return true
 	}
 

@@ -55,20 +55,18 @@ func (ctrl *SolicitudOficialController) GetCreateModal(c *gin.Context) {
 	// Default target user is the logged in user
 	targetUser := authUser
 
-	// check if "target_user_id" is passed (for admins creating for others)
+	// check if "target_user_id" is passed
 	targetID := c.Query("target_user_id")
-	if targetID != "" && authUser.IsAdminOrResponsable() {
+	if targetID != "" {
 		u, err := ctrl.userService.GetByID(c.Request.Context(), targetID)
 		if err == nil {
 			targetUser = u
 		}
 	}
 
-	dateIda := c.Query("fecha") // optional pre-fill
+	dateIda := c.Query("fecha")
 
 	render := "solicitud/oficial/modal_create"
-	// Check if it's a full page request or htmx?
-	// For now we assume this is called for modal purposes.
 
 	utils.Render(c, render, gin.H{
 		"AuthUser":    authUser,
@@ -76,7 +74,7 @@ func (ctrl *SolicitudOficialController) GetCreateModal(c *gin.Context) {
 		"Aerolineas":  aerolineas,
 		"Ambitos":     ambitos,
 		"Destinos":    destinos,
-		"IsAdmin":     authUser.IsAdminOrResponsable(),
+		"IsAdmin":     authUser.IsAdminOrResponsable() || (targetUser != nil && authUser.ID != targetUser.ID),
 		"DefaultDate": dateIda,
 	})
 }
@@ -122,6 +120,8 @@ func (ctrl *SolicitudOficialController) Show(c *gin.Context) {
 	if authUser.IsAdminOrResponsable() || solicitud.UsuarioID == authUser.ID {
 		canView = true
 	} else if solicitud.Usuario.EncargadoID != nil && *solicitud.Usuario.EncargadoID == authUser.ID {
+		canView = true
+	} else if solicitud.CreatedBy != nil && *solicitud.CreatedBy == authUser.ID {
 		canView = true
 	}
 

@@ -40,7 +40,17 @@
           {{ end }}
         </div>
 
-        <div class="flex space-x-2 mt-2">
+        <div class="flex flex-wrap gap-2 mt-2">
+          {{ if $.AuthUser.CanCreateSolicitudFor $user }}
+          <button
+            type="button"
+            class="text-[10px] text-white font-bold bg-primary hover:bg-primary-600 px-1.5 py-0.5 rounded shadow-sm transition-colors cursor-pointer flex items-center gap-1"
+            hx-get="/solicitudes/oficial/modal-crear?target_user_id={{ $user.ID }}"
+            hx-target="#modal-container">
+            <i class="ph ph-airplane-tilt text-xs"></i>
+            Solicitud Oficial
+          </button>
+          {{ end }}
           <a
             href="/cupos/derecho/{{ $user.ID }}/{{ $.CurrentYear }}"
             class="text-[10px] text-primary-600 hover:text-primary-900 font-bold bg-primary-50 px-1.5 py-0.5 rounded border border-primary-100 transition-colors">
@@ -94,7 +104,17 @@
           {{ end }}
         </div>
 
-        <div class="flex space-x-2 mt-2">
+        <div class="flex flex-wrap gap-2 mt-2">
+          {{ if $.AuthUser.CanCreateSolicitudFor $suplente }}
+          <button
+            type="button"
+            class="text-[10px] text-white font-bold bg-primary hover:bg-primary-600 px-1.5 py-0.5 rounded shadow-sm transition-colors cursor-pointer flex items-center gap-1"
+            hx-get="/solicitudes/oficial/modal-crear?target_user_id={{ $suplente.ID }}"
+            hx-target="#modal-container">
+            <i class="ph ph-airplane-tilt text-xs"></i>
+            Solicitud Oficial
+          </button>
+          {{ end }}
           <a
             href="/cupos/derecho/{{ $suplente.ID }}/{{ $.CurrentYear }}"
             class="text-[10px] text-primary-600 hover:text-primary-900 font-bold bg-primary-50 px-1.5 py-0.5 rounded border border-primary-100 transition-colors">

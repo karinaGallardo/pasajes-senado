@@ -101,12 +101,20 @@
             {{ if .Origen }}{{ .Origen.Ciudad }}{{ else }}Sin Origen{{ end }}
           </div>
         </div>
-        <div>
+        <div class="flex flex-col gap-2 flex-shrink-0">
+          <button
+            type="button"
+            hx-get="/solicitudes/oficial/modal-crear?target_user_id={{ .ID }}"
+            hx-target="#modal-container"
+            class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 border border-transparent rounded-lg shadow-sm text-[10px] font-black uppercase tracking-wider text-white bg-primary hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500 cursor-pointer transition-all active:scale-95">
+            <i class="ph ph-airplane-tilt text-sm"></i>
+            <span>Oficial</span>
+          </button>
           <a
             href="/cupos/derecho/{{ .ID }}/{{ $.Gestion }}"
-            title="Ver Cupos"
-            class="inline-flex items-center p-2 border border-transparent rounded-full shadow-sm text-white bg-secondary hover:bg-primary focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500">
-            <i class="ph ph-plus text-base font-bold"></i>
+            class="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 border border-transparent rounded-lg shadow-sm text-[10px] font-black uppercase tracking-wider text-white bg-secondary hover:bg-secondary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary-500 transition-all active:scale-95">
+            <i class="ph ph-calendar-plus text-sm"></i>
+            <span>Derecho</span>
           </a>
         </div>
       </div>

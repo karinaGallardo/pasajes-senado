@@ -39,7 +39,7 @@ func (ctrl *DashboardController) Index(c *gin.Context) {
 	if authUser != nil && authUser.IsAdminOrResponsable() {
 		solicitudes, _ = ctrl.solicitudService.GetAll(c.Request.Context(), "")
 	} else if authUser != nil {
-		solicitudes, _ = ctrl.solicitudService.GetByUserID(c.Request.Context(), authUser.ID, "")
+		solicitudes, _ = ctrl.solicitudService.GetByUserIdOrAccesibleByEncargadoID(c.Request.Context(), authUser.ID, "")
 	}
 
 	descargos, _ := ctrl.descargoService.GetAll(c.Request.Context())
