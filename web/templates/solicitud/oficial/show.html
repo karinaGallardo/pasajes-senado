@@ -2,13 +2,13 @@
 
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
   <!-- Header -->
-  <div class="mb-6 flex items-center justify-between">
+  <div class="mb-4 flex items-center justify-between">
     <div>
-      <div class="flex items-center gap-4">
-        <h2 class="text-3xl font-bold text-neutral-900">{{ .Solicitud.Codigo }}</h2>
+      <div class="flex items-center gap-3">
+        <h2 class="text-2xl font-black text-neutral-900 tracking-tight">{{ .Solicitud.Codigo }}</h2>
         {{ if .Solicitud.EstadoSolicitud }}
-        <span class="px-3 py-1 inline-flex items-center gap-1.5 text-xs font-black rounded-full border status-badge-{{ .Solicitud.EstadoSolicitud.Codigo }}">
-          <i class="{{ .Solicitud.EstadoSolicitud.Icon }} text-sm"></i>
+        <span class="px-2 py-0.5 inline-flex items-center gap-1 text-[10px] font-black rounded-full border status-badge-{{ .Solicitud.EstadoSolicitud.Codigo }}">
+          <i class="{{ .Solicitud.EstadoSolicitud.Icon }}"></i>
           {{ .Solicitud.EstadoSolicitud.Nombre }}
         </span>
         {{ end }}
@@ -27,15 +27,15 @@
         {{ end }}
       </div>
     </div>
-    <div class="flex space-x-3">
+    <div class="flex flex-wrap items-center gap-2">
       {{ if .Perms.CanApproveReject }} {{ if eq .Solicitud.GetEstado "SOLICITADO" }}
       <button
         type="button"
         hx-post="/solicitudes/oficial/{{ .Solicitud.ID }}/aprobar"
         hx-confirm="¿Está seguro de aprobar GLOBALMENTE esta solicitud?"
         hx-target="body"
-        class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-bold rounded-md text-white bg-success-600 hover:bg-success-700 focus:outline-none cursor-pointer">
-        <i class="ph ph-check mr-2 text-lg"></i>
+        class="inline-flex items-center px-1.5 py-0.5 border border-transparent shadow-sm text-xs font-bold rounded-sm text-white bg-success-600 hover:bg-success-700 focus:outline-none cursor-pointer transition-all active:scale-95">
+        <i class="ph ph-check mr-1.5 text-base"></i>
         Aprobar Todo
       </button>
       <button
@@ -43,8 +43,8 @@
         hx-post="/solicitudes/oficial/{{ .Solicitud.ID }}/rechazar"
         hx-confirm="¿Rechazar GLOBALMENTE esta solicitud?"
         hx-target="body"
-        class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-bold rounded-md text-white bg-danger-600 hover:bg-danger-700 focus:outline-none cursor-pointer">
-        <i class="ph ph-x mr-2 text-lg"></i>
+        class="inline-flex items-center px-1.5 py-0.5 border border-transparent shadow-sm text-xs font-bold rounded-sm text-white bg-danger-600 hover:bg-danger-700 focus:outline-none cursor-pointer transition-all active:scale-95">
+        <i class="ph ph-x mr-1.5 text-base"></i>
         Rechazar Todo
       </button>
       {{ end }} {{ end }} {{ if .Perms.CanAssignViatico }}
@@ -52,16 +52,17 @@
         type="button"
         hx-get="/solicitudes/{{ .Solicitud.ID }}/viaticos/nuevo"
         hx-target="#modal-container"
-        class="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-bold rounded-md text-white bg-primary hover:bg-primary-600 focus:outline-none transition-colors cursor-pointer">
-        <i class="ph ph-currency-circle-dollar mr-2 text-lg"></i>
+        class="inline-flex items-center px-1.5 py-0.5 border border-transparent shadow-sm text-xs font-bold rounded-sm text-white bg-primary hover:bg-primary-600 focus:outline-none transition-all cursor-pointer active:scale-95">
+        <i class="ph ph-currency-circle-dollar mr-1.5 text-base"></i>
         Asignar Viáticos
       </button>
-      {{ end }}       {{ if .Perms.CanEdit }}
+      {{ end }} {{ if and .Perms.CanEdit (eq .Solicitud.GetEstado "SOLICITADO") }}
       <button
         type="button"
         hx-get="/solicitudes/oficial/{{ .Solicitud.ID }}/modal-editar"
         hx-target="#modal-container"
-        class="inline-flex items-center px-4 py-2 border border-primary-600 shadow-sm text-sm font-medium rounded-md text-primary-600 bg-white hover:bg-primary-50 focus:outline-none cursor-pointer">
+        class="inline-flex items-center px-1.5 py-0.5 border border-primary-200 shadow-sm text-xs font-bold rounded-sm text-primary-700 bg-primary-50 hover:bg-primary-100 focus:outline-none cursor-pointer transition-all active:scale-95">
+        <i class="ph ph-pencil-simple mr-1.5 text-base"></i>
         Editar
       </button>
       {{ end }}
@@ -69,51 +70,46 @@
         type="button"
         hx-get="/solicitudes/oficial/{{ .Solicitud.ID }}/print"
         hx-target="#modal-container"
-        class="inline-flex items-center px-4 py-2 border border-neutral-300 shadow-sm text-sm font-medium rounded-md text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none cursor-pointer">
-        <i class="ph ph-file-pdf mr-2 text-lg"></i>
+        class="inline-flex items-center px-1.5 py-0.5 border border-neutral-300 shadow-sm text-xs font-bold rounded-sm text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none cursor-pointer transition-all active:scale-95">
+        <i class="ph ph-file-pdf mr-1.5 text-base"></i>
         Imprimir PV-02
       </button>
       {{ if .DescargoID }}
-      <a
-        href="/descargos/{{ .DescargoID }}"
-        class="inline-flex items-center px-4 py-2 border border-neutral-300 shadow-sm text-sm font-medium rounded-md text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none">
-        <i class="ph ph-file-text mr-2 text-lg"></i>
-        Ver descargo (PV-05)
-      </a>
       <button
         type="button"
         hx-get="/descargos/{{ .DescargoID }}/previsualizar-pv5"
         hx-target="#modal-container"
-        class="inline-flex items-center px-4 py-2 border border-neutral-300 shadow-sm text-sm font-medium rounded-md text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none cursor-pointer">
-        <i class="ph ph-file-pdf mr-2 text-lg"></i>
+        class="inline-flex items-center px-1.5 py-0.5 border border-neutral-300 shadow-sm text-xs font-bold rounded-sm text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none cursor-pointer transition-all active:scale-95">
+        <i class="ph ph-file-pdf mr-1.5 text-base"></i>
         Imprimir PV-05
       </button>
       {{ else if .Perms.CanMakeDescargo }}
       <a
         href="/solicitudes/oficial/{{ .Solicitud.ID }}/descargo"
-        class="inline-flex items-center px-4 py-2 border border-primary-600 shadow-sm text-sm font-medium rounded-md text-primary-600 bg-white hover:bg-primary-50 focus:outline-none">
-        <i class="ph ph-file-plus mr-2 text-lg"></i>
-        Realizar descargo (PV-05)
+        class="inline-flex items-center px-1.5 py-0.5 border border-primary-600 shadow-sm text-xs font-bold rounded-sm text-primary-600 bg-white hover:bg-primary-50 focus:outline-none transition-all active:scale-95">
+        <i class="ph ph-file-plus mr-1.5 text-base"></i>
+        Descargo
       </a>
       {{ end }}
       <a
         href="/solicitudes"
-        class="inline-flex items-center px-4 py-2 border border-neutral-300 shadow-sm text-sm font-medium rounded-md text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none">
-        Volver a Solicitudes
+        class="inline-flex items-center px-1.5 py-0.5 border border-neutral-300 shadow-sm text-xs font-bold rounded-sm text-neutral-500 bg-neutral-50 hover:bg-neutral-100 focus:outline-none transition-all active:scale-95">
+        <i class="ph ph-arrow-left mr-1.5 text-base"></i>
+        Volver
       </a>
     </div>
   </div>
 
   <div class="space-y-4">
     <!-- Workflow Stepper Card -->
-    <div class="bg-white shadow rounded-lg pl-7 pr-7 pt-3 pb-8 border border-neutral-200">
-      <div class="flex items-center w-full">
+    <div class="bg-white shadow rounded-lg px-8 py-6 border border-neutral-200">
+      <div class="flex items-center w-full mt-[-15px] mb-[5px]">
         <!-- Step 1: Solicitado -->
         <div class="flex items-center relative z-10">
-          <div class="rounded-full transition duration-500 ease-in-out h-10 w-10 py-3 {{ .Steps.Solicitado.WrapperClass }} flex items-center justify-center">
-            <i class="{{ .Steps.Solicitado.Icon }}"></i>
+          <div class="rounded-full transition duration-500 ease-in-out h-8 w-8 {{ .Steps.Solicitado.WrapperClass }} flex items-center justify-center">
+            <i class="{{ .Steps.Solicitado.Icon }} text-sm"></i>
           </div>
-          <div class="hidden sm:block absolute top-0 -ml-10 text-center mt-12 w-32 text-xs font-medium uppercase {{ .Steps.Solicitado.LabelClass }}">
+          <div class="hidden sm:block absolute top-0 -ml-12 text-center mt-10 w-32 text-[10px] font-black uppercase tracking-tighter {{ .Steps.Solicitado.LabelClass }}">
             {{ .Steps.Solicitado.Label }}
           </div>
         </div>
@@ -123,10 +119,12 @@
 
         <!-- Step 2: Aprobado / Parcial / Rechazado -->
         <div class="flex items-center relative z-10">
-          <div class="rounded-full transition duration-500 ease-in-out h-10 w-10 py-3 {{ .Steps.Aprobado.WrapperClass }} flex items-center justify-center">
-            <i class="{{ .Steps.Aprobado.Icon }}"></i>
+          <div class="rounded-full transition duration-500 ease-in-out h-8 w-8 {{ .Steps.Aprobado.WrapperClass }} flex items-center justify-center">
+            <i class="{{ .Steps.Aprobado.Icon }} text-sm"></i>
           </div>
-          <div class="hidden sm:block absolute top-0 -ml-10 text-center mt-12 w-32 text-xs font-medium uppercase {{ .Steps.Aprobado.LabelClass }}">{{ .Steps.Aprobado.Label }}</div>
+          <div class="hidden sm:block absolute top-0 -ml-12 text-center mt-10 w-32 text-[10px] font-black uppercase tracking-tighter {{ .Steps.Aprobado.LabelClass }}">
+            {{ .Steps.Aprobado.Label }}
+          </div>
         </div>
 
         {{ if .ShowNextSteps }}
@@ -135,10 +133,12 @@
 
         <!-- Step 3: Emitido -->
         <div class="flex items-center relative z-10">
-          <div class="rounded-full transition duration-500 ease-in-out h-10 w-10 py-3 {{ .Steps.Emitido.WrapperClass }} flex items-center justify-center">
-            <i class="{{ .Steps.Emitido.Icon }}"></i>
+          <div class="rounded-full transition duration-500 ease-in-out h-8 w-8 {{ .Steps.Emitido.WrapperClass }} flex items-center justify-center">
+            <i class="{{ .Steps.Emitido.Icon }} text-sm"></i>
           </div>
-          <div class="hidden sm:block absolute top-0 -ml-10 text-center mt-12 w-32 text-xs font-medium uppercase {{ .Steps.Emitido.LabelClass }}">{{ .Steps.Emitido.Label }}</div>
+          <div class="hidden sm:block absolute top-0 -ml-12 text-center mt-10 w-32 text-[10px] font-black uppercase tracking-tighter {{ .Steps.Emitido.LabelClass }}">
+            {{ .Steps.Emitido.Label }}
+          </div>
         </div>
 
         <!-- Connector 3 -->
@@ -146,10 +146,10 @@
 
         <!-- Step 4: Finalizado -->
         <div class="flex items-center relative z-10">
-          <div class="rounded-full transition duration-500 ease-in-out h-10 w-10 py-3 {{ .Steps.Finalizado.WrapperClass }} flex items-center justify-center">
-            <i class="{{ .Steps.Finalizado.Icon }}"></i>
+          <div class="rounded-full transition duration-500 ease-in-out h-8 w-8 {{ .Steps.Finalizado.WrapperClass }} flex items-center justify-center">
+            <i class="{{ .Steps.Finalizado.Icon }} text-sm"></i>
           </div>
-          <div class="hidden sm:block absolute top-0 -ml-10 text-center mt-12 w-32 text-xs font-medium uppercase {{ .Steps.Finalizado.LabelClass }}">
+          <div class="hidden sm:block absolute top-0 -ml-12 text-center mt-10 w-32 text-[10px] font-black uppercase tracking-tighter {{ .Steps.Finalizado.LabelClass }}">
             {{ .Steps.Finalizado.Label }}
           </div>
         </div>
@@ -176,13 +176,13 @@
 
       <div class="divide-y divide-neutral-200 transition-all">
         {{ range .Solicitud.Items }} {{ $item := . }}
-        <div class="p-6">
+        <div class="p-4">
           <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
             <!-- Tramo Info -->
             <div class="flex items-center gap-4">
               <div
-                class="h-10 w-10 rounded-lg flex items-center justify-center border {{ if eq .Tipo `IDA` }} bg-primary-50 border-primary-200 text-primary-600 {{ else }} bg-secondary-50 border-secondary-200 text-secondary-600 {{ end }}">
-                <i class="ph {{ if eq .Tipo `IDA` }}ph-airplane-takeoff{{ else }}ph-airplane-landing{{ end }} text-xl"></i>
+                class="h-8 w-8 rounded-lg flex items-center justify-center border {{ if eq .Tipo `IDA` }} bg-primary-50 border-primary-200 text-primary-600 {{ else }} bg-secondary-50 border-secondary-200 text-secondary-600 {{ end }}">
+                <i class="ph {{ if eq .Tipo `IDA` }}ph-airplane-takeoff{{ else }}ph-airplane-landing{{ end }} text-lg"></i>
               </div>
               <div>
                 <div class="flex items-center gap-2">
@@ -209,7 +209,7 @@
                 hx-post="/solicitudes/oficial/{{ $.Solicitud.ID }}/items/{{ .ID }}/aprobar"
                 hx-confirm="¿Aprobar este tramo?"
                 hx-target="body"
-                class="inline-flex items-center px-3 py-1.5 border border-transparent rounded-lg shadow-sm text-xs font-bold text-white bg-success-600 hover:bg-success-700 transition-colors cursor-pointer">
+                class="inline-flex items-center px-1.5 py-0.5 border border-transparent rounded-sm shadow-sm text-xs font-bold text-white bg-success-600 hover:bg-success-700 transition-colors cursor-pointer">
                 <i class="ph ph-check mr-1.5"></i>
                 Aprobar
               </button>
@@ -218,7 +218,7 @@
                 hx-post="/solicitudes/oficial/{{ $.Solicitud.ID }}/items/{{ .ID }}/rechazar"
                 hx-confirm="¿Rechazar este tramo?"
                 hx-target="body"
-                class="inline-flex items-center px-3 py-1.5 border border-transparent rounded-lg shadow-sm text-xs font-bold text-white bg-danger-600 hover:bg-danger-700 transition-colors cursor-pointer">
+                class="inline-flex items-center px-1.5 py-0.5 border border-transparent rounded-sm shadow-sm text-xs font-bold text-white bg-danger-600 hover:bg-danger-700 transition-colors cursor-pointer">
                 <i class="ph ph-x mr-1.5"></i>
                 Rechazar
               </button>
@@ -249,7 +249,7 @@
           {{ if .Pasajes }}
           <div class="mt-4 ml-14 space-y-3">
             {{ range .Pasajes }}
-            <div class="bg-neutral-50 border border-neutral-200 rounded-xl p-4 flex flex-col sm:flex-row justify-between gap-4 relative" x-data="{ openMenu: false }">
+            <div class="bg-neutral-50 border border-neutral-200 rounded-xl p-3 flex flex-col sm:flex-row justify-between gap-4 relative" x-data="{ openMenu: false }">
               <div class="flex-1">
                 <div class="flex items-center gap-3 mb-3">
                   <span
@@ -357,14 +357,14 @@
       </div>
       <!-- Viáticos Asignados -->
       <div class="bg-white shadow sm:rounded-lg border border-neutral-200">
-        <div class="px-6 py-4 border-b border-neutral-200 bg-neutral-50">
-          <h3 class="text-sm font-bold text-neutral-800 uppercase tracking-wider">Viáticos Asignados</h3>
+        <div class="px-6 py-3 border-b border-neutral-200 bg-neutral-50">
+          <h3 class="text-[10px] font-black text-neutral-800 uppercase tracking-widest">Viáticos Asignados</h3>
         </div>
-        <div class="p-6">
+        <div class="p-4">
           {{ if .Solicitud.Viaticos }}
           <div class="grid grid-cols-1 gap-4">
             {{ range .Solicitud.Viaticos }}
-            <div class="flex items-center justify-between p-4 bg-neutral-50 rounded-xl border border-neutral-200 hover:border-primary-200 transition-colors">
+            <div class="flex items-center justify-between p-3 bg-neutral-50 rounded-xl border border-neutral-200 hover:border-primary-200 transition-colors">
               <div class="flex items-center gap-4">
                 <div class="h-10 w-10 rounded-full bg-primary-50 flex items-center justify-center text-primary-600">
                   <i class="ph ph-hand-coins text-xl"></i>
@@ -416,15 +416,15 @@
 
       <!-- Request Details Card (Beneficiary & Justification) -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div class="md:col-span-2 space-y-6">
+        <div class="md:col-span-2 space-y-4">
           <!-- Motivo y Autorización -->
           <div class="bg-white shadow-sm rounded-xl border border-neutral-200 overflow-hidden">
-            <div class="bg-neutral-50 px-6 py-4 border-b border-neutral-200">
-              <h3 class="text-sm font-bold text-neutral-800 uppercase tracking-wider">Detalles de la Comisión</h3>
+            <div class="bg-neutral-50 px-6 py-3 border-b border-neutral-200">
+              <h3 class="text-[10px] font-black text-neutral-800 uppercase tracking-widest">Detalles de la Comisión</h3>
             </div>
-            <div class="p-6 space-y-6">
+            <div class="p-4 space-y-4">
               <div>
-                <dt class="text-xs font-bold text-neutral-500 uppercase tracking-widest mb-2 flex items-center gap-2">
+                <dt class="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-2 flex items-center gap-2">
                   <i class="ph ph-file-text"></i>
                   Motivo / Justificación
                 </dt>
@@ -446,8 +446,8 @@
         </div>
 
         <!-- Beneficiary Sidebar -->
-        <div class="space-y-6">
-          <div class="bg-white shadow-sm rounded-xl border border-neutral-200 p-6">
+        <div class="space-y-4">
+          <div class="bg-white shadow-sm rounded-xl border border-neutral-200 p-4">
             <h3 class="text-xs font-bold text-neutral-500 uppercase tracking-widest mb-4 border-b pb-2">Beneficiario</h3>
             <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
               <div class="flex items-center space-x-3">
@@ -504,73 +504,72 @@
       </div>
     </div>
   </div>
+</div>
+{{ template "layout_end" . }} {{ end }} {{ define "footer_scripts" }}
+<!-- Copying standard pasaje scripts -->
+<script>
+  (function () {
+    document.addEventListener("pasaje-action", function (e) {
+      const { action, id } = e.detail;
+      let title, text, confirmButtonText, confirmButtonColor, newStatus;
 
-  {{ template "layout_end" . }} {{ end }} {{ define "footer_scripts" }}
-  <!-- Copying standard pasaje scripts -->
-  <script>
-    (function () {
-      document.addEventListener("pasaje-action", function (e) {
-        const { action, id } = e.detail;
-        let title, text, confirmButtonText, confirmButtonColor, newStatus;
-
-        if (action === "emitir") {
-          Swal.fire({
-            title: "¿Emitir Pasaje?",
-            text: "Se enviará el boleto al beneficiario.",
-            icon: "info",
-            showCancelButton: true,
-            confirmButtonColor: "#0396A6",
-            confirmButtonText: "Sí, emitir",
-            cancelButtonText: "Cancelar",
-          }).then(function (result) {
-            if (result.isConfirmed) {
-              updatePasajeStatus(id, "EMITIDO");
-            }
-          });
-          return;
-        }
-
-        if (action === "anular") {
-          title = "¿Anular Pasaje?";
-          text = "Esta acción no se puede deshacer.";
-          confirmButtonText = "Sí, anular";
-          confirmButtonColor = "#ef4444";
-          newStatus = "ANULADO";
-        }
-
+      if (action === "emitir") {
         Swal.fire({
-          title: title,
-          text: text,
-          icon: "warning",
+          title: "¿Emitir Pasaje?",
+          text: "Se enviará el boleto al beneficiario.",
+          icon: "info",
           showCancelButton: true,
-          confirmButtonColor: confirmButtonColor,
-          confirmButtonText: confirmButtonText,
+          confirmButtonColor: "#0396A6",
+          confirmButtonText: "Sí, emitir",
           cancelButtonText: "Cancelar",
         }).then(function (result) {
           if (result.isConfirmed) {
-            updatePasajeStatus(id, newStatus);
+            updatePasajeStatus(id, "EMITIDO");
           }
         });
-      });
-
-      function updatePasajeStatus(id, status) {
-        const formData = new FormData();
-        formData.append("id", id);
-        formData.append("status", status);
-
-        fetch("/pasajes/update-status", {
-          method: "POST",
-          body: formData,
-          headers: { "X-Requested-With": "XMLHttpRequest" },
-        }).then(function (response) {
-          if (response.ok) {
-            window.location.reload();
-          } else {
-            Swal.fire("Error", "No se pudo actualizar el pasaje", "error");
-          }
-        });
+        return;
       }
-    })();
-  </script>
-  {{ end }}
-</div>
+
+      if (action === "anular") {
+        title = "¿Anular Pasaje?";
+        text = "Esta acción no se puede deshacer.";
+        confirmButtonText = "Sí, anular";
+        confirmButtonColor = "#ef4444";
+        newStatus = "ANULADO";
+      }
+
+      Swal.fire({
+        title: title,
+        text: text,
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: confirmButtonColor,
+        confirmButtonText: confirmButtonText,
+        cancelButtonText: "Cancelar",
+      }).then(function (result) {
+        if (result.isConfirmed) {
+          updatePasajeStatus(id, newStatus);
+        }
+      });
+    });
+
+    function updatePasajeStatus(id, status) {
+      const formData = new FormData();
+      formData.append("id", id);
+      formData.append("status", status);
+
+      fetch("/pasajes/update-status", {
+        method: "POST",
+        body: formData,
+        headers: { "X-Requested-With": "XMLHttpRequest" },
+      }).then(function (response) {
+        if (response.ok) {
+          window.location.reload();
+        } else {
+          Swal.fire("Error", "No se pudo actualizar el pasaje", "error");
+        }
+      });
+    }
+  })();
+</script>
+{{ end }}

@@ -212,6 +212,13 @@ func (s *PasajeService) UpdateStatus(ctx context.Context, id string, status stri
 	// If Pasaje is EMITIDO, also update Request Item state to EMITIDO
 	if status == "EMITIDO" && pasaje.SolicitudItemID != nil {
 		s.solicitudItemRepo.UpdateStatus(*pasaje.SolicitudItemID, "EMITIDO")
+
+		// Recalculate Solicitud global status
+		sol, err := s.solicitudRepo.WithContext(ctx).FindByID(pasaje.SolicitudID)
+		if err == nil && sol != nil {
+			sol.UpdateStatusBasedOnItems()
+			s.solicitudRepo.WithContext(ctx).Update(sol)
+		}
 	}
 
 	// Trigger email if emitted

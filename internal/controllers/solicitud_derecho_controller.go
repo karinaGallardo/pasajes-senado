@@ -670,7 +670,7 @@ func (ctrl *SolicitudDerechoController) Show(c *gin.Context) {
 	perms := SolicitudPermissions{
 		CanEdit:           authUser.CanEditSolicitud(*solicitud),
 		CanApproveReject:  authUser.CanApproveReject(),
-		CanRevertApproval: authUser.IsAdminOrResponsable() && (st == "APROBADO" || st == "PARCIALMENTE_APROBADO" || st == "EMITIDO"),
+		CanRevertApproval: authUser.IsAdminOrResponsable() && (st == "APROBADO" || st == "PARCIALMENTE_APROBADO" || st == "EMITIDO") && !hasEmitted,
 		CanAssignPasaje:   authUser.IsAdminOrResponsable(),
 		CanMakeDescargo:   hasEmitted,
 		IsAdminOrResp:     authUser.IsAdminOrResponsable(),

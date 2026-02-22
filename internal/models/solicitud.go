@@ -77,6 +77,7 @@ func (s *Solicitud) UpdateStatusBasedOnItems() {
 	allApproved := true
 	allRejected := true
 	allFinalized := true
+	allEmitidos := true
 	hasApproved := false
 
 	for _, item := range s.Items {
@@ -95,6 +96,10 @@ func (s *Solicitud) UpdateStatusBasedOnItems() {
 			allFinalized = false
 		}
 
+		if st != "EMITIDO" && st != "FINALIZADO" {
+			allEmitidos = false
+		}
+
 		if st != "RECHAZADO" {
 			allRejected = false
 		}
@@ -104,6 +109,8 @@ func (s *Solicitud) UpdateStatusBasedOnItems() {
 
 	if allFinalized {
 		newState = "FINALIZADO"
+	} else if allEmitidos {
+		newState = "EMITIDO"
 	} else if allApproved {
 		newState = "APROBADO"
 	} else if hasApproved {
@@ -111,8 +118,6 @@ func (s *Solicitud) UpdateStatusBasedOnItems() {
 	} else if allRejected {
 		newState = "RECHAZADO"
 	} else {
-		// Por defecto queda en SOLICITADO si hay una mezcla de pendientes, rechazados o cancelados
-		// sin ningún aprobado.
 		newState = "SOLICITADO"
 	}
 

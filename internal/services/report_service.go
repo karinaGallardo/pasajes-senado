@@ -275,7 +275,7 @@ func (s *ReportService) GeneratePV01(ctx context.Context, solicitud *models.Soli
 		authVal = "PD"
 	}
 	pdf.SetFont("Arial", "B", 8)
-	pdf.CellFormat(40, 6, tr("AUTORIZACIÓN :"), "", 0, "R", false, 0, "")
+	pdf.CellFormat(40, 6, tr("Nro(Memo/RD/Nota JG/RC) :"), "", 0, "R", false, 0, "")
 	pdf.SetFont("Arial", "", 9)
 	pdf.CellFormat(150, 6, "  "+tr(authVal), "1", 1, "L", false, 0, "")
 
@@ -387,7 +387,7 @@ func (s *ReportService) GeneratePV02(ctx context.Context, solicitud *models.Soli
 	} else if solicitud.Usuario.Cargo != nil {
 		cargoStr = solicitud.Usuario.Cargo.Descripcion
 	}
-	drawLabelBox("CARGO :", cargoStr, 45, 100, false)
+	drawLabelBox("CARGO :", cargoStr, 45, 145, false)
 
 	unidadStr := ""
 	if personaView != nil && personaView.Dependencia != "" {
@@ -395,7 +395,7 @@ func (s *ReportService) GeneratePV02(ctx context.Context, solicitud *models.Soli
 	} else if solicitud.Usuario.Oficina != nil {
 		unidadStr = solicitud.Usuario.Oficina.Detalle
 	}
-	drawLabelBox("UNIDAD FUNCIONAL :", unidadStr, 45, 100, false)
+	drawLabelBox("UNIDAD FUNCIONAL :", unidadStr, 45, 145, false)
 
 	fechaSol := solicitud.CreatedAt.Format("02/01/2006")
 	horaSol := solicitud.CreatedAt.Format("15:04")
@@ -406,9 +406,9 @@ func (s *ReportService) GeneratePV02(ctx context.Context, solicitud *models.Soli
 	if authVal == "" {
 		authVal = "PD"
 	}
-	drawLabelBox("N° DE RESOLUCIÓN O MEMO :", authVal, 45, 80, false)
+	drawLabelBox("Nro(Memo/RD/Nota JG/RC) :", authVal, 45, 55, false)
 
-	drawLabelBox("CONCEPTO DE VIAJE :", "OFICIAL", 45, 60, false)
+	drawLabelBox("CONCEPTO DE VIAJE :", "OFICIAL", 45, 55, false)
 
 	pdf.Ln(4)
 
