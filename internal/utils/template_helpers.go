@@ -24,6 +24,7 @@ func TemplateFuncs() template.FuncMap {
 		"json":             ToJSON,
 		"currentYear":      CurrentYear,
 		"nombreMes":        GetMonthName,
+		"monthName":        GetMonthName,
 		"rangoSemana":      FormatWeekRange,
 		"nombreDiaCorto":   DayNameShort,
 		"rangoSemanaCorto": FormatWeekRangeShort,
