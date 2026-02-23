@@ -35,7 +35,7 @@ func (r *SolicitudRepository) Create(solicitud *models.Solicitud) error {
 	return r.db.Create(solicitud).Error
 }
 
-func (r *SolicitudRepository) FindAll(status string) ([]models.Solicitud, error) {
+func (r *SolicitudRepository) FindAll(status string, concepto string) ([]models.Solicitud, error) {
 	var solicitudes []models.Solicitud
 	query := r.db.Preload("Usuario").
 		Preload("Items").
@@ -50,11 +50,16 @@ func (r *SolicitudRepository) FindAll(status string) ([]models.Solicitud, error)
 		query = query.Where("estado_solicitud_codigo = ?", status)
 	}
 
+	if concepto != "" {
+		query = query.Joins("JOIN tipo_solicitudes ON solicitudes.tipo_solicitud_codigo = tipo_solicitudes.codigo").
+			Where("tipo_solicitudes.concepto_viaje_codigo = ?", concepto)
+	}
+
 	err := query.Find(&solicitudes).Error
 	return solicitudes, err
 }
 
-func (r *SolicitudRepository) FindByUserID(userID string, status string) ([]models.Solicitud, error) {
+func (r *SolicitudRepository) FindByUserID(userID string, status string, concepto string) ([]models.Solicitud, error) {
 	var solicitudes []models.Solicitud
 	query := r.db.Preload("Usuario").
 		Preload("Items").
@@ -67,6 +72,11 @@ func (r *SolicitudRepository) FindByUserID(userID string, status string) ([]mode
 
 	if status != "" {
 		query = query.Where("estado_solicitud_codigo = ?", status)
+	}
+
+	if concepto != "" {
+		query = query.Joins("JOIN tipo_solicitudes ON solicitudes.tipo_solicitud_codigo = tipo_solicitudes.codigo").
+			Where("tipo_solicitudes.concepto_viaje_codigo = ?", concepto)
 	}
 
 	err := query.Find(&solicitudes).Error
@@ -92,7 +102,7 @@ func (r *SolicitudRepository) FindByCupoDerechoItemID(itemID string) ([]models.S
 	return solicitudes, err
 }
 
-func (r *SolicitudRepository) FindByUserIdOrAccesibleByEncargadoID(userID string, status string) ([]models.Solicitud, error) {
+func (r *SolicitudRepository) FindByUserIdOrAccesibleByEncargadoID(userID string, status string, concepto string) ([]models.Solicitud, error) {
 	var solicitudes []models.Solicitud
 	query := r.db.Preload("Usuario").
 		Preload("Items").
@@ -103,7 +113,7 @@ func (r *SolicitudRepository) FindByUserIdOrAccesibleByEncargadoID(userID string
 		Preload("EstadoSolicitud").
 		Order("created_at desc").
 		Where(
-			"usuario_id = ? OR created_by = ? OR usuario_id IN (?)",
+			"solicitudes.usuario_id = ? OR solicitudes.created_by = ? OR solicitudes.usuario_id IN (?)",
 			userID,
 			userID,
 			r.db.Table("usuarios").Select("id").Where("encargado_id = ?", userID),
@@ -111,6 +121,11 @@ func (r *SolicitudRepository) FindByUserIdOrAccesibleByEncargadoID(userID string
 
 	if status != "" {
 		query = query.Where("estado_solicitud_codigo = ?", status)
+	}
+
+	if concepto != "" {
+		query = query.Joins("JOIN tipo_solicitudes ON solicitudes.tipo_solicitud_codigo = tipo_solicitudes.codigo").
+			Where("tipo_solicitudes.concepto_viaje_codigo = ?", concepto)
 	}
 
 	err := query.Find(&solicitudes).Error

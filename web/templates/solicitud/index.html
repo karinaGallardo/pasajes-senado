@@ -4,9 +4,10 @@
   <!-- Header Actions -->
   <div class="flex justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-neutral-200">
     <div>
-      <h2 class="text-xl font-bold text-neutral-800">Solicitudes de Pasajes</h2>
+      <h2 class="text-xl font-bold text-neutral-800">{{ .Title }}</h2>
       <p class="text-sm text-neutral-500">Gestione las solicitudes de viaje</p>
     </div>
+    {{ if eq .Concepto "OFICIAL" }}
     <button
       type="button"
       hx-get="/solicitudes/oficial/modal-crear"
@@ -15,37 +16,38 @@
       <i class="ph ph-plus-circle text-lg"></i>
       <span>Solicitud Oficial</span>
     </button>
+    {{ end }}
   </div>
 
   <!-- Filters -->
   <div class="flex flex-wrap gap-2 pb-2 border-b border-neutral-100">
     <a
-      href="/solicitudes"
+      href="{{ .LinkBase }}"
       class="px-3 py-1.5 text-xs font-medium rounded-full {{ if eq .Status `` }}bg-neutral-800 text-white{{ else }}bg-white text-neutral-600 border border-neutral-200 hover:bg-neutral-50{{ end }}">
       Todos
     </a>
     <a
-      href="/solicitudes?estado=SOLICITADO"
+      href="{{ .LinkBase }}?estado=SOLICITADO"
       class="px-3 py-1.5 text-xs font-medium rounded-full {{ if eq .Status `SOLICITADO` }}bg-primary text-white{{ else }}bg-white text-neutral-600 border border-neutral-200 hover:bg-neutral-50{{ end }}">
       Solicitados
     </a>
     <a
-      href="/solicitudes?estado=APROBADO"
+      href="{{ .LinkBase }}?estado=APROBADO"
       class="px-3 py-1.5 text-xs font-medium rounded-full {{ if eq .Status `APROBADO` }}bg-success-600 text-white{{ else }}bg-white text-neutral-600 border border-neutral-200 hover:bg-neutral-50{{ end }}">
       Aprobados
     </a>
     <a
-      href="/solicitudes?estado=EMITIDO"
+      href="{{ .LinkBase }}?estado=EMITIDO"
       class="px-3 py-1.5 text-xs font-medium rounded-full {{ if eq .Status `EMITIDO` }}bg-secondary text-white{{ else }}bg-white text-neutral-600 border border-neutral-200 hover:bg-neutral-50{{ end }}">
       Emitidos
     </a>
     <a
-      href="/solicitudes?estado=RECHAZADO"
+      href="{{ .LinkBase }}?estado=RECHAZADO"
       class="px-3 py-1.5 text-xs font-medium rounded-full {{ if eq .Status `RECHAZADO` }}bg-danger-600 text-white{{ else }}bg-white text-neutral-600 border border-neutral-200 hover:bg-neutral-50{{ end }}">
       Rechazados
     </a>
     <a
-      href="/solicitudes?estado=FINALIZADO"
+      href="{{ .LinkBase }}?estado=FINALIZADO"
       class="px-3 py-1.5 text-xs font-medium rounded-full {{ if eq .Status `FINALIZADO` }}bg-neutral-600 text-white{{ else }}bg-white text-neutral-600 border border-neutral-200 hover:bg-neutral-50{{ end }}">
       Finalizados
     </a>

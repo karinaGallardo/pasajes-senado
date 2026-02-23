@@ -56,7 +56,7 @@
         <i class="ph ph-currency-circle-dollar mr-1.5 text-base"></i>
         Asignar Viáticos
       </button>
-      {{ end }} {{ if and .Perms.CanEdit (eq .Solicitud.GetEstado "SOLICITADO") }}
+      {{ end }} {{ if and .Perms.CanEdit (or (eq .Solicitud.GetEstado "SOLICITADO") (eq .Solicitud.GetEstado "PARCIALMENTE_APROBADO")) }}
       <button
         type="button"
         hx-get="/solicitudes/oficial/{{ .Solicitud.ID }}/modal-editar"
@@ -75,14 +75,12 @@
         Imprimir PV-02
       </button>
       {{ if .DescargoID }}
-      <button
-        type="button"
-        hx-get="/descargos/{{ .DescargoID }}/previsualizar-pv5"
-        hx-target="#modal-container"
-        class="inline-flex items-center px-1.5 py-0.5 border border-neutral-300 shadow-sm text-xs font-bold rounded-sm text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none cursor-pointer transition-all active:scale-95">
-        <i class="ph ph-file-pdf mr-1.5 text-base"></i>
-        Imprimir PV-05
-      </button>
+      <a
+        href="/descargos/{{ .DescargoID }}"
+        class="inline-flex items-center px-1.5 py-0.5 border border-primary-600 shadow-sm text-xs font-bold rounded-sm text-primary-600 bg-white hover:bg-primary-50 focus:outline-none transition-all active:scale-95">
+        <i class="ph ph-eye mr-1.5 text-base"></i>
+        Ver Descargo
+      </a>
       {{ else if .Perms.CanMakeDescargo }}
       <a
         href="/solicitudes/oficial/{{ .Solicitud.ID }}/descargo"
@@ -167,7 +165,7 @@
           hx-post="/solicitudes/oficial/{{ .Solicitud.ID }}/revertir-aprobacion"
           hx-confirm="¿Está seguro de que desea REVERTIR la aprobación? Volverá a estado SOLICITADO."
           hx-target="body"
-          class="inline-flex items-center px-3 py-1.5 border border-warning-300 rounded-md text-xs font-bold text-warning-700 bg-white hover:bg-warning-50 transition-colors shadow-sm cursor-pointer">
+          class="inline-flex items-center px-1.5 py-0.5 border border-warning-300 rounded-sm text-xs font-bold text-warning-700 bg-white hover:bg-warning-50 transition-colors shadow-sm cursor-pointer">
           <i class="ph ph-arrow-u-up-left mr-1.5"></i>
           Revertir Aprobación Global
         </button>
@@ -228,7 +226,7 @@
                 hx-post="/solicitudes/oficial/{{ $.Solicitud.ID }}/items/{{ .ID }}/revertir-aprobacion"
                 hx-confirm="¿Está seguro de revertir la aprobación de este tramo? Volverá a estado SOLICITADO."
                 hx-target="body"
-                class="inline-flex items-center px-3 py-1.5 border border-warning-600 rounded-lg shadow-sm text-xs font-bold text-warning-700 bg-white hover:bg-warning-50 transition-colors cursor-pointer">
+                class="inline-flex items-center px-1.5 py-0.5 border border-warning-600 rounded-sm shadow-sm text-xs font-bold text-warning-700 bg-white hover:bg-warning-50 transition-colors cursor-pointer">
                 <i class="ph ph-arrow-u-up-left mr-1.5"></i>
                 Revertir
               </button>
@@ -237,7 +235,7 @@
                 type="button"
                 hx-get="/solicitudes/{{ $.Solicitud.ID }}/pasajes/nuevo?item_id={{ .ID }}"
                 hx-target="#modal-container"
-                class="inline-flex items-center px-3 py-1.5 border border-transparent rounded-lg shadow-sm text-xs font-bold text-white bg-secondary hover:bg-primary transition-colors cursor-pointer">
+                class="inline-flex items-center px-1.5 py-0.5 border border-transparent rounded-sm shadow-sm text-xs font-bold text-white bg-secondary hover:bg-primary transition-colors cursor-pointer">
                 <i class="ph ph-plus mr-1.5"></i>
                 Asignar Pasaje
               </button>
@@ -355,7 +353,7 @@
         </div>
         {{ end }}
       </div>
-      <!-- Viáticos Asignados -->
+      <!-- Viáticos Asignados (Módulo separado)
       <div class="bg-white shadow sm:rounded-lg border border-neutral-200">
         <div class="px-6 py-3 border-b border-neutral-200 bg-neutral-50">
           <h3 class="text-[10px] font-black text-neutral-800 uppercase tracking-widest">Viáticos Asignados</h3>
@@ -413,6 +411,7 @@
           {{ end }}
         </div>
       </div>
+      -->
 
       <!-- Request Details Card (Beneficiary & Justification) -->
       <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -463,24 +462,16 @@
                 {{ if .DescargoID }}
                 <a
                   href="/descargos/{{ .DescargoID }}"
-                  class="inline-flex items-center gap-1.5 px-3 py-1.5 border border-neutral-300 rounded-md shadow-sm text-xs font-bold text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none">
-                  <i class="ph ph-file-text text-base"></i>
-                  Ver descargo (PV-05)
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 border border-primary-600 rounded-md shadow-sm text-xs font-bold text-primary-600 bg-white hover:bg-primary-50 focus:outline-none transition-all">
+                  <i class="ph ph-eye text-base"></i>
+                  Ver descargo (PV-06)
                 </a>
-                <button
-                  type="button"
-                  hx-get="/descargos/{{ .DescargoID }}/previsualizar-pv5"
-                  hx-target="#modal-container"
-                  class="inline-flex items-center gap-1.5 px-3 py-1.5 border border-neutral-300 rounded-md shadow-sm text-xs font-bold text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none cursor-pointer">
-                  <i class="ph ph-file-pdf text-base"></i>
-                  Imprimir PV-05
-                </button>
                 {{ else if .Perms.CanMakeDescargo }}
                 <a
                   href="/solicitudes/oficial/{{ .Solicitud.ID }}/descargo"
-                  class="inline-flex items-center gap-1.5 px-3 py-1.5 border border-transparent rounded-md shadow-sm text-xs font-bold text-white bg-primary hover:bg-primary-600 focus:outline-none">
+                  class="inline-flex items-center gap-1.5 px-3 py-1.5 border border-transparent rounded-md shadow-sm text-xs font-bold text-white bg-primary hover:bg-primary-600 focus:outline-none transition-colors">
                   <i class="ph ph-file-plus text-base"></i>
-                  Realizar descargo (PV-05)
+                  Realizar descargo (PV-06)
                 </a>
                 {{ end }}
               </div>

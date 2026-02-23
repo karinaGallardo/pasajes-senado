@@ -11,7 +11,6 @@
 <div
   x-data="oficialFormHandlerEdit()"
   x-init="init()"
-  @oficial-sync-chain.window="syncChain()"
   x-show="open"
   class="fixed inset-0 z-50 overflow-y-auto"
   aria-labelledby="modal-title"
@@ -108,7 +107,7 @@
                         <div
                           x-show="canEditOrigin(entry.index)"
                           x-data="searchableSelect({ items: allDestinos, initialValue: entry.tramo.origen, initialLabel: entry.tramo.origenLabel, placeholder: 'Buscar origen...' })"
-                          x-init="value = entry.tramo.origen; label = entry.tramo.origenLabel || placeholder; $watch('value', function(v) { entry.tramo.origen = v; var it = allDestinos.find(function(d) { return d.value === v; }); if (it) entry.tramo.origenLabel = it.value + ' - ' + it.label; setTimeout(function() { window.dispatchEvent(new CustomEvent('oficial-sync-chain')); }, 0); })"
+                          x-init="value = entry.tramo.origen; label = entry.tramo.origenLabel || placeholder; $watch('value', function(v) { entry.tramo.origen = v; var it = allDestinos.find(function(d) { return d.value === v; }); if (it) entry.tramo.origenLabel = it.value + ' - ' + it.label; })"
                           class="relative">
                           <button
                             type="button"
@@ -146,10 +145,17 @@
                       <div class="md:col-span-4 space-y-1">
                         <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">Destino</label>
                         <div
+                          x-show="entry.tramo.estado !== 'SOLICITADO'"
+                          class="w-full rounded-md border border-neutral-200 bg-neutral-100 py-2 pl-3 pr-10 shadow-sm sm:text-sm flex items-center min-h-[38px]">
+                          <span x-text="entry.tramo.destinoLabel || '-'" class="text-neutral-700"></span>
+                          <i class="ph ph-lock-simple text-neutral-400 ml-auto"></i>
+                        </div>
+                        <div
+                          x-show="entry.tramo.estado === 'SOLICITADO'"
                           x-data="searchableSelect({ items: allDestinos, initialValue: entry.tramo.destino, initialLabel: entry.tramo.destinoLabel, placeholder: 'Buscar destino...' })"
-                          x-init="value = entry.tramo.destino; label = entry.tramo.destinoLabel || placeholder; $watch('value', function(v) { entry.tramo.destino = v; var it = allDestinos.find(function(d) { return d.value === v; }); if (it) entry.tramo.destinoLabel = it.value + ' - ' + it.label; setTimeout(function() { window.dispatchEvent(new CustomEvent('oficial-sync-chain')); }, 0); })"
+                          x-init="value = entry.tramo.destino; label = entry.tramo.destinoLabel || placeholder; $watch('value', function(v) { entry.tramo.destino = v; var it = allDestinos.find(function(d) { return d.value === v; }); if (it) entry.tramo.destinoLabel = it.value + ' - ' + it.label; })"
                           class="relative">
-                          <input type="hidden" :name="'tramos['+entry.index+'].destino'" x-model="entry.tramo.destino" required />
+                          <input type="hidden" :name="'tramos['+entry.index+'].destino'" x-model="entry.tramo.destino" :required="entry.tramo.estado === 'SOLICITADO'" />
                           <button
                             type="button"
                             @click="open = !open; if(open) $nextTick(function() { $refs.searchInput.focus() })"
@@ -157,6 +163,7 @@
                             <span class="block truncate" :class="label ? 'text-neutral-900' : 'text-neutral-400'" x-text="label || placeholder"></span>
                             <i class="ph ph-magnifying-glass text-neutral-400"></i>
                           </button>
+
                           <div
                             x-show="open"
                             @click.away="open = false"
@@ -188,7 +195,9 @@
                           type="datetime-local"
                           :name="'tramos['+entry.index+'].fecha_salida'"
                           x-model="entry.tramo.fechaSalida"
-                          required
+                          :required="entry.tramo.estado === 'SOLICITADO'"
+                          :readonly="entry.tramo.estado !== 'SOLICITADO'"
+                          :class="entry.tramo.estado !== 'SOLICITADO' ? 'bg-neutral-100 text-neutral-500 cursor-not-allowed' : ''"
                           class="w-full rounded-md border-neutral-300 shadow-sm text-sm focus:ring-primary focus:border-primary" />
                       </div>
                     </div>
@@ -235,7 +244,7 @@
                         <div
                           x-show="canEditOrigin(entry.index)"
                           x-data="searchableSelect({ items: allDestinos, initialValue: entry.tramo.origen, initialLabel: entry.tramo.origenLabel, placeholder: 'Buscar origen...' })"
-                          x-init="value = entry.tramo.origen; label = entry.tramo.origenLabel || placeholder; $watch('value', function(v) { entry.tramo.origen = v; var it = allDestinos.find(function(d) { return d.value === v; }); if (it) entry.tramo.origenLabel = it.value + ' - ' + it.label; setTimeout(function() { window.dispatchEvent(new CustomEvent('oficial-sync-chain')); }, 0); })"
+                          x-init="value = entry.tramo.origen; label = entry.tramo.origenLabel || placeholder; $watch('value', function(v) { entry.tramo.origen = v; var it = allDestinos.find(function(d) { return d.value === v; }); if (it) entry.tramo.origenLabel = it.value + ' - ' + it.label; })"
                           class="relative">
                           <button
                             type="button"
@@ -273,10 +282,17 @@
                       <div class="md:col-span-4 space-y-1">
                         <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">Destino</label>
                         <div
+                          x-show="entry.tramo.estado !== 'SOLICITADO'"
+                          class="w-full rounded-md border border-neutral-200 bg-neutral-100 py-2 pl-3 pr-10 shadow-sm sm:text-sm flex items-center min-h-[38px]">
+                          <span x-text="entry.tramo.destinoLabel || '-'" class="text-neutral-700"></span>
+                          <i class="ph ph-lock-simple text-neutral-400 ml-auto"></i>
+                        </div>
+                        <div
+                          x-show="entry.tramo.estado === 'SOLICITADO'"
                           x-data="searchableSelect({ items: allDestinos, initialValue: entry.tramo.destino, initialLabel: entry.tramo.destinoLabel, placeholder: 'Buscar destino...' })"
-                          x-init="value = entry.tramo.destino; label = entry.tramo.destinoLabel || placeholder; $watch('value', function(v) { entry.tramo.destino = v; var it = allDestinos.find(function(d) { return d.value === v; }); if (it) entry.tramo.destinoLabel = it.value + ' - ' + it.label; setTimeout(function() { window.dispatchEvent(new CustomEvent('oficial-sync-chain')); }, 0); })"
+                          x-init="value = entry.tramo.destino; label = entry.tramo.destinoLabel || placeholder; $watch('value', function(v) { entry.tramo.destino = v; var it = allDestinos.find(function(d) { return d.value === v; }); if (it) entry.tramo.destinoLabel = it.value + ' - ' + it.label; })"
                           class="relative">
-                          <input type="hidden" :name="'tramos['+entry.index+'].destino'" x-model="entry.tramo.destino" required />
+                          <input type="hidden" :name="'tramos['+entry.index+'].destino'" x-model="entry.tramo.destino" :required="entry.tramo.estado === 'SOLICITADO'" />
                           <button
                             type="button"
                             @click="open = !open; if(open) $nextTick(function() { $refs.searchInput.focus() })"
@@ -315,6 +331,9 @@
                           type="datetime-local"
                           :name="'tramos['+entry.index+'].fecha_salida'"
                           x-model="entry.tramo.fechaSalida"
+                          :required="entry.tramo.estado === 'SOLICITADO'"
+                          :readonly="entry.tramo.estado !== 'SOLICITADO'"
+                          :class="entry.tramo.estado !== 'SOLICITADO' ? 'bg-neutral-100 text-neutral-500 cursor-not-allowed' : ''"
                           class="w-full rounded-md border-neutral-300 shadow-sm text-sm focus:ring-primary focus:border-primary" />
                       </div>
                     </div>
@@ -389,18 +408,20 @@
             if (Array.isArray(arr) && arr.length > 0) {
               this.tramos = arr.map(function (t) {
                 return {
+                  id: t.id || "",
                   tipo: t.tipo || "IDA",
                   origen: t.origen || "",
                   origenLabel: t.origenLabel || t.origen || "",
                   destino: t.destino || "",
                   destinoLabel: t.destinoLabel || t.destino || "",
                   fechaSalida: t.fechaSalida || "",
+                  estado: t.estado || "SOLICITADO",
                 };
               });
               return;
             }
           } catch (e) {}
-          this.tramos = [{ tipo: "IDA", origen: "", origenLabel: "", destino: "", destinoLabel: "", fechaSalida: "" }];
+          this.tramos = [{ id: "", tipo: "IDA", origen: "", origenLabel: "", destino: "", destinoLabel: "", fechaSalida: "", estado: "SOLICITADO" }];
         },
 
         addTramo(tipo) {
@@ -411,11 +432,14 @@
             lastOrigin = last.destino;
             lastLabel = last.destinoLabel;
           }
-          this.tramos.push({ tipo: tipo, origen: lastOrigin, origenLabel: lastLabel, destino: "", destinoLabel: "", fechaSalida: "" });
+          this.tramos.push({ id: "", tipo: tipo, origen: lastOrigin, origenLabel: lastLabel, destino: "", destinoLabel: "", fechaSalida: "", estado: "SOLICITADO" });
         },
 
         canRemoveTramo(index) {
           var tramo = this.tramos[index];
+          // Si el tramo ya no está en SOLICITADO, no se puede eliminar
+          if (tramo.estado && tramo.estado !== "SOLICITADO") return false;
+
           if (tramo.tipo === "IDA")
             return (
               this.tramos.filter(function (t) {
@@ -427,18 +451,10 @@
 
         removeTramo(index) {
           this.tramos.splice(index, 1);
-          this.syncChain();
         },
 
         canEditOrigin(index) {
-          return index === 0;
-        },
-
-        syncChain() {
-          for (var i = 1; i < this.tramos.length; i++) {
-            this.tramos[i].origen = this.tramos[i - 1].destino;
-            this.tramos[i].origenLabel = this.tramos[i - 1].destinoLabel;
-          }
+          return this.tramos[index].estado === "SOLICITADO";
         },
 
         tramosIda() {
@@ -465,7 +481,14 @@
           if (el)
             el.value = JSON.stringify(
               this.tramos.map(function (t) {
-                return { origen: t.origen || "", destino: t.destino || "", fecha_salida: t.fechaSalida || "", tipo: t.tipo || "IDA" };
+                return {
+                  id: t.id || "",
+                  origen: t.origen || "",
+                  destino: t.destino || "",
+                  fecha_salida: t.fechaSalida || "",
+                  tipo: t.tipo || "IDA",
+                  estado: t.estado || "SOLICITADO",
+                };
               }),
             );
           this.loading = true;

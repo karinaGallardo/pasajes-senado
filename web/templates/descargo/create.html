@@ -3,7 +3,7 @@
 <div class="max-w-4xl mx-auto">
   <div class="md:flex md:items-center md:justify-between mb-6">
     <div class="flex-1 min-w-0">
-      <h2 class="text-2xl font-bold leading-7 text-neutral-900 sm:text-3xl sm:truncate">{{ if .EsOficial }}Realizar Descargo (PV-05) - Solicitud Oficial{{ else }}Realizar Descargo (FV-05){{ end }}</h2>
+      <h2 class="text-2xl font-bold leading-7 text-neutral-900 sm:text-3xl sm:truncate">{{ if .EsOficial }}Realizar Descargo (PV-06) - Solicitud Oficial{{ else }}Realizar Descargo (FV-05){{ end }}</h2>
       <p class="text-sm text-neutral-500 mt-1">Para Solicitud #{{ .Solicitud.Codigo }}</p>
       {{ if .EsOficial }}
       <a href="/solicitudes/oficial/{{ .Solicitud.ID }}/detalle" class="text-sm text-primary-600 hover:text-primary-800 mt-1 inline-block">← Volver a solicitud oficial</a>

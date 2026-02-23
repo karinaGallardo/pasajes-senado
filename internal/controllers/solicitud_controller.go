@@ -22,6 +22,18 @@ func NewSolicitudController() *SolicitudController {
 }
 
 func (ctrl *SolicitudController) Index(c *gin.Context) {
+	ctrl.renderIndex(c, "", "Bandeja de Solicitudes")
+}
+
+func (ctrl *SolicitudController) IndexDerecho(c *gin.Context) {
+	ctrl.renderIndex(c, "DERECHO", "Bandeja de Pasajes por Derecho")
+}
+
+func (ctrl *SolicitudController) IndexOficial(c *gin.Context) {
+	ctrl.renderIndex(c, "OFICIAL", "Bandeja de Misiones Oficiales")
+}
+
+func (ctrl *SolicitudController) renderIndex(c *gin.Context, concepto string, title string) {
 	authUser := appcontext.AuthUser(c)
 	if authUser == nil {
 		c.Redirect(302, "/auth/login")
@@ -34,9 +46,9 @@ func (ctrl *SolicitudController) Index(c *gin.Context) {
 	var err error
 
 	if authUser.IsAdminOrResponsable() {
-		solicitudes, err = ctrl.service.GetAll(c.Request.Context(), status)
+		solicitudes, err = ctrl.service.GetAll(c.Request.Context(), status, concepto)
 	} else {
-		solicitudes, err = ctrl.service.GetByUserIdOrAccesibleByEncargadoID(c.Request.Context(), authUser.ID, status)
+		solicitudes, err = ctrl.service.GetByUserIdOrAccesibleByEncargadoID(c.Request.Context(), authUser.ID, status, concepto)
 	}
 
 	if err != nil {
@@ -66,10 +78,19 @@ func (ctrl *SolicitudController) Index(c *gin.Context) {
 		}
 	}
 
+	linkBase := "/solicitudes"
+	if concepto == "DERECHO" {
+		linkBase = "/solicitudes/derecho"
+	} else if concepto == "OFICIAL" {
+		linkBase = "/solicitudes/oficial"
+	}
+
 	utils.Render(c, "solicitud/index", gin.H{
-		"Title":       "Bandeja de Solicitudes",
+		"Title":       title,
 		"Solicitudes": solicitudes,
 		"Usuarios":    usuariosMap,
 		"Status":      status,
+		"Concepto":    concepto,
+		"LinkBase":    linkBase,
 	})
 }

@@ -40,6 +40,8 @@ func SetupRoutes(r *gin.Engine) {
 		protected.GET("/cupos/derecho/:senador_user_id/:gestion/:mes", cupoCtrl.DerechoByMonth)
 
 		protected.GET("/solicitudes", solicitudCtrl.Index)
+		protected.GET("/solicitudes/derecho", solicitudCtrl.IndexDerecho)
+		protected.GET("/solicitudes/oficial", solicitudCtrl.IndexOficial)
 		// protected.GET("/solicitudes/nueva", solicitudCtrl.Create)
 		// protected.GET("/solicitudes/:id", solicitudCtrl.Show)
 		// protected.POST("/solicitudes", solicitudCtrl.Store) // Generic Store

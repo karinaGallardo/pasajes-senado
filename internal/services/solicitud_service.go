@@ -467,16 +467,16 @@ func (s *SolicitudService) sendRevertApprovalEmail(solicitud *models.Solicitud) 
 	_ = s.emailService.SendEmail([]string{beneficiary.Email}, nil, nil, subject, body)
 }
 
-func (s *SolicitudService) GetAll(ctx context.Context, status string) ([]models.Solicitud, error) {
-	return s.repo.WithContext(ctx).FindAll(status)
+func (s *SolicitudService) GetAll(ctx context.Context, status string, concepto string) ([]models.Solicitud, error) {
+	return s.repo.WithContext(ctx).FindAll(status, concepto)
 }
 
-func (s *SolicitudService) GetByUserID(ctx context.Context, userID string, status string) ([]models.Solicitud, error) {
-	return s.repo.WithContext(ctx).FindByUserID(userID, status)
+func (s *SolicitudService) GetByUserID(ctx context.Context, userID string, status string, concepto string) ([]models.Solicitud, error) {
+	return s.repo.WithContext(ctx).FindByUserID(userID, status, concepto)
 }
 
-func (s *SolicitudService) GetByUserIdOrAccesibleByEncargadoID(ctx context.Context, userID string, status string) ([]models.Solicitud, error) {
-	return s.repo.WithContext(ctx).FindByUserIdOrAccesibleByEncargadoID(userID, status)
+func (s *SolicitudService) GetByUserIdOrAccesibleByEncargadoID(ctx context.Context, userID string, status string, concepto string) ([]models.Solicitud, error) {
+	return s.repo.WithContext(ctx).FindByUserIdOrAccesibleByEncargadoID(userID, status, concepto)
 }
 
 func (s *SolicitudService) GetByCupoDerechoItemID(ctx context.Context, itemID string) ([]models.Solicitud, error) {
@@ -622,6 +622,13 @@ func (s *SolicitudService) Finalize(ctx context.Context, id string) error {
 
 		if err := repoTx.UpdateStatus(id, "FINALIZADO"); err != nil {
 			return err
+		}
+
+		// Mark all items as FINALIZADO
+		for _, item := range solicitud.Items {
+			if err := tx.Model(&item).Update("estado_item_codigo", "FINALIZADO").Error; err != nil {
+				return err
+			}
 		}
 
 		if solicitud.CupoDerechoItemID != nil {
@@ -893,63 +900,118 @@ func (s *SolicitudService) ReprogramarItem(ctx context.Context, req dtos.Reprogr
 func (s *SolicitudService) UpdateOficial(ctx context.Context, id string, req dtos.CreateSolicitudOficialRequest) error {
 	layout := "2006-01-02T15:04"
 
-	var items []models.SolicitudItem
-	for _, t := range req.Tramos {
-		orig := strings.TrimSpace(t.OrigenIATA)
-		dest := strings.TrimSpace(t.DestinoIATA)
-		if orig == "" || dest == "" {
-			continue
-		}
-		var fSalida *time.Time
-		if t.FechaSalida != "" {
-			if parsed, err := time.Parse(layout, t.FechaSalida); err == nil {
-				fSalida = &parsed
-			}
-		}
-		tipoItem := models.TipoSolicitudItemIda
-		if t.Tipo == "VUELTA" {
-			tipoItem = models.TipoSolicitudItemVuelta
-		}
-		st := "SOLICITADO"
-		if tipoItem == models.TipoSolicitudItemVuelta && fSalida == nil {
-			st = "PENDIENTE"
-		}
-		items = append(items, models.SolicitudItem{
-			SolicitudID: id,
-			Tipo:        tipoItem,
-			OrigenIATA:  orig,
-			DestinoIATA: dest,
-			Fecha:       fSalida,
-			Hora:        s.formatTime(fSalida),
-			EstadoCodigo: utils.Ptr(st),
-		})
-	}
-
-	if len(items) == 0 {
+	// Minimal validation: at least one tramo
+	if len(req.Tramos) == 0 {
 		return errors.New("debe agregar al menos un tramo de viaje válido")
 	}
 
 	return s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
+		// 1. Load the existing solicitation
 		solicitud, err := repoTx.FindByID(id)
 		if err != nil {
 			return err
 		}
 
-		solicitud.Motivo = req.Motivo
-		solicitud.Autorizacion = req.Autorizacion
-		solicitud.AmbitoViajeCodigo = req.AmbitoViajeCodigo
-		solicitud.AerolineaSugerida = req.AerolineaSugerida
-
-		if err := repoTx.Update(solicitud); err != nil {
+		// 2. Update parent fields using Updates to avoid side effects on associations
+		if err := tx.Model(solicitud).Updates(map[string]interface{}{
+			"motivo":              req.Motivo,
+			"autorizacion":        req.Autorizacion,
+			"ambito_viaje_codigo": req.AmbitoViajeCodigo,
+			"aerolinea_sugerida":  req.AerolineaSugerida,
+		}).Error; err != nil {
 			return err
 		}
 
-		if err := tx.Where("solicitud_id = ?", id).Delete(&models.SolicitudItem{}).Error; err != nil {
+		// 3. Map existing items by ID for quick lookup
+		existingItemsMap := make(map[string]*models.SolicitudItem)
+		for i := range solicitud.Items {
+			existingItemsMap[solicitud.Items[i].ID] = &solicitud.Items[i]
+		}
+
+		var itemsToKeepIDs []string
+
+		// 4. Process tramos from request
+		for _, t := range req.Tramos {
+			orig := strings.TrimSpace(t.OrigenIATA)
+			dest := strings.TrimSpace(t.DestinoIATA)
+			if orig == "" || dest == "" {
+				continue
+			}
+
+			var fSalida *time.Time
+			if t.FechaSalida != "" {
+				if parsed, err := time.Parse(layout, t.FechaSalida); err == nil {
+					fSalida = &parsed
+				}
+			}
+
+			if t.ID != "" {
+				// Updating an existing item
+				if existing, ok := existingItemsMap[t.ID]; ok {
+					itemsToKeepIDs = append(itemsToKeepIDs, t.ID)
+
+					// Only allow updates if current status is "SOLICITADO"
+					if existing.GetEstado() == "SOLICITADO" {
+						existing.OrigenIATA = orig
+						existing.DestinoIATA = dest
+						existing.Fecha = fSalida
+						existing.Hora = s.formatTime(fSalida)
+
+						// Clear relations to force GORM to use the new IATA codes
+						existing.Origen = nil
+						existing.Destino = nil
+
+						if t.Tipo == "VUELTA" {
+							existing.Tipo = models.TipoSolicitudItemVuelta
+						} else {
+							existing.Tipo = models.TipoSolicitudItemIda
+						}
+
+						if err := tx.Save(existing).Error; err != nil {
+							return err
+						}
+					}
+				}
+			} else {
+				// Creating a new item
+				st := "SOLICITADO"
+				tipoItem := models.TipoSolicitudItemIda
+				if t.Tipo == "VUELTA" {
+					tipoItem = models.TipoSolicitudItemVuelta
+					if fSalida == nil {
+						st = "PENDIENTE"
+					}
+				}
+
+				newItem := models.SolicitudItem{
+					SolicitudID:  id,
+					Tipo:         tipoItem,
+					OrigenIATA:   orig,
+					DestinoIATA:  dest,
+					Fecha:        fSalida,
+					Hora:         s.formatTime(fSalida),
+					EstadoCodigo: utils.Ptr(st),
+				}
+				if err := tx.Create(&newItem).Error; err != nil {
+					return err
+				}
+			}
+		}
+
+		// 5. Delete "SOLICITADO" items that were removed in the UI
+		deleteQuery := tx.Where("solicitud_id = ? AND estado_codigo = ?", id, "SOLICITADO")
+		if len(itemsToKeepIDs) > 0 {
+			deleteQuery = deleteQuery.Where("id NOT IN ?", itemsToKeepIDs)
+		}
+		if err := deleteQuery.Delete(&models.SolicitudItem{}).Error; err != nil {
 			return err
 		}
 
-		for i := range items {
-			if err := tx.Create(&items[i]).Error; err != nil {
+		// 6. Refresh the solicitation to recalculate its global status
+		var finalizedSol models.Solicitud
+		if err := tx.Preload("Items").Preload("Items.Pasajes").First(&finalizedSol, "id = ?", id).Error; err == nil {
+			finalizedSol.UpdateStatusBasedOnItems()
+			if err := tx.Model(&finalizedSol).Update("estado_solicitud_codigo", finalizedSol.EstadoSolicitudCodigo).Error; err != nil {
 				return err
 			}
 		}

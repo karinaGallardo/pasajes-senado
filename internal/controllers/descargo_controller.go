@@ -33,7 +33,7 @@ func NewDescargoController() *DescargoController {
 func (ctrl *DescargoController) Index(c *gin.Context) {
 	descargos, _ := ctrl.descargoService.GetAll(c.Request.Context())
 	utils.Render(c, "descargo/index", gin.H{
-		"Title":     "Bandeja de Descargos (FV-05)",
+		"Title":     "Bandeja de Descargos",
 		"Descargos": descargos,
 	})
 }
@@ -77,15 +77,6 @@ func (ctrl *DescargoController) CreateDerecho(c *gin.Context) {
 					Fecha:  orig.FechaVuelo.Format("2006-01-02"),
 					Boleto: orig.NumeroBoleto,
 				})
-			}
-		} else {
-			// Fallback to item route if no pasaje yet (unlikely for descargo)
-			pasajesOriginales[tipo] = append(pasajesOriginales[tipo], ConnectionView{
-				Ruta:  item.OrigenIATA + " - " + item.DestinoIATA,
-				Fecha: "",
-			})
-			if item.Fecha != nil {
-				pasajesOriginales[tipo][0].Fecha = item.Fecha.Format("2006-01-02")
 			}
 		}
 
@@ -157,13 +148,6 @@ func (ctrl *DescargoController) CreateOficial(c *gin.Context) {
 					Boleto: orig.NumeroBoleto,
 				})
 			}
-		} else {
-			rut := item.OrigenIATA + " - " + item.DestinoIATA
-			fecha := ""
-			if item.Fecha != nil {
-				fecha = item.Fecha.Format("2006-01-02")
-			}
-			pasajesOriginales[tipo] = append(pasajesOriginales[tipo], ConnectionView{Ruta: rut, Fecha: fecha})
 		}
 
 		repro := item.GetPasajeReprogramado()
@@ -188,7 +172,7 @@ func (ctrl *DescargoController) CreateOficial(c *gin.Context) {
 	}
 
 	utils.Render(c, "descargo/create_oficial", gin.H{
-		"Title":                "Formulario de Descargo PV-05 - Pasajes, Viáticos y Gastos de Representación",
+		"Title":                "Formulario de Descargo PV-06 - Pasajes, Viáticos y Gastos de Representación",
 		"Solicitud":            solicitud,
 		"PasajesOriginales":    pasajesOriginales,
 		"PasajesReprogramados": pasajesReprogramados,
@@ -360,8 +344,13 @@ func (ctrl *DescargoController) DownloadPV5ByID(c *gin.Context) {
 
 	personaView, _ := ctrl.peopleService.GetSenatorDataByCI(c.Request.Context(), descargo.Solicitud.Usuario.CI)
 
-	// Generar PV5 con Boarding Passes unidos
-	pdfReader, err := ctrl.reportService.GeneratePV05Complete(c.Request.Context(), descargo, personaView)
+	var pdfReader []byte
+	if strings.HasPrefix(descargo.Codigo, "SOF") {
+		pdfReader, err = ctrl.reportService.GeneratePV06Complete(c.Request.Context(), descargo, personaView)
+	} else {
+		pdfReader, err = ctrl.reportService.GeneratePV05Complete(c.Request.Context(), descargo, personaView)
+	}
+
 	if err != nil {
 		log.Printf("Error generating complete PDF: %v", err)
 		c.String(http.StatusInternalServerError, "Error generando PDF")
@@ -369,6 +358,9 @@ func (ctrl *DescargoController) DownloadPV5ByID(c *gin.Context) {
 	}
 
 	filename := "PV5_Descargo_" + descargo.Codigo + ".pdf"
+	if strings.HasPrefix(descargo.Codigo, "SOF") {
+		filename = "PV6_Descargo_" + descargo.Codigo + ".pdf"
+	}
 	c.Header("Content-Disposition", "inline; filename="+filename)
 	c.Header("Content-Type", "application/pdf")
 
@@ -384,8 +376,13 @@ func (ctrl *DescargoController) PreviewPV5(c *gin.Context) {
 		return
 	}
 
+	title := "Previsualización Formulario PV-05"
+	if strings.HasPrefix(descargo.Codigo, "SOF") {
+		title = "Previsualización Formulario PV-06"
+	}
+
 	c.HTML(http.StatusOK, "solicitud/components/modal_preview_archivo", gin.H{
-		"Title":    "Previsualización Formulario PV-05",
+		"Title":    title,
 		"FilePath": fmt.Sprintf("/descargos/%s/imprimir-pv5", descargo.ID),
 		"IsPDF":    true,
 	})
@@ -398,7 +395,6 @@ func (ctrl *DescargoController) PreviewFile(c *gin.Context) {
 		return
 	}
 
-	// Asegurar que el path empiece con / para que el iframe lo cargue correctamente
 	fullPath := path
 	if !strings.HasPrefix(path, "http") && !strings.HasPrefix(path, "/") {
 		fullPath = "/" + path
@@ -406,7 +402,6 @@ func (ctrl *DescargoController) PreviewFile(c *gin.Context) {
 
 	isPDF := strings.HasSuffix(strings.ToLower(path), ".pdf")
 
-	// Información extra para contraste (opcional)
 	ruta := c.Query("ruta")
 	fecha := c.Query("fecha")
 	boleto := c.Query("boleto")

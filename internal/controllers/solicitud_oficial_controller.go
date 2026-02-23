@@ -299,24 +299,27 @@ func (ctrl *SolicitudOficialController) Show(c *gin.Context) {
 
 	aerolineas, _ := ctrl.aerolineaService.GetAllActive(c.Request.Context())
 
-	// Descargo PV-05: si ya existe, pasamos ID para enlace "Ver descargo / Imprimir PV-05"
+	// Descargo PV-05/06: si ya existe, pasamos ID y Estado para enlaces directos
 	var descargoID string
+	var descargoEstado string
 	if descargo, _ := ctrl.descargoService.GetBySolicitudID(c.Request.Context(), id); descargo != nil && descargo.ID != "" {
 		descargoID = descargo.ID
+		descargoEstado = descargo.Estado
 	}
 
 	utils.Render(c, "solicitud/oficial/show", gin.H{
-		"Title":         "Solicitud Oficial " + solicitud.Codigo,
-		"Solicitud":     solicitud,
-		"AuthUser":      authUser,
-		"Perms":         perms,
-		"Steps":         steps,
-		"ShowNextSteps": showNextSteps,
-		"StatusCard":    statusCard,
-		"PasajesView":   pasajesViews,
-		"ApprovalLabel": approvalLabel,
-		"Aerolineas":    aerolineas,
-		"DescargoID":    descargoID,
+		"Title":          "Solicitud Oficial " + solicitud.Codigo,
+		"Solicitud":      solicitud,
+		"AuthUser":       authUser,
+		"Perms":          perms,
+		"Steps":          steps,
+		"ShowNextSteps":  showNextSteps,
+		"StatusCard":     statusCard,
+		"PasajesView":    pasajesViews,
+		"ApprovalLabel":  approvalLabel,
+		"Aerolineas":     aerolineas,
+		"DescargoID":     descargoID,
+		"DescargoEstado": descargoEstado,
 	})
 }
 
@@ -471,12 +474,14 @@ func (ctrl *SolicitudOficialController) GetEditModal(c *gin.Context) {
 	})
 
 	type tramoInicial struct {
+		ID           string `json:"id"`
 		Tipo         string `json:"tipo"`
 		OrigenIATA   string `json:"origen"`
 		OrigenLabel  string `json:"origenLabel"`
 		DestinoIATA  string `json:"destino"`
 		DestinoLabel string `json:"destinoLabel"`
 		FechaSalida  string `json:"fechaSalida"`
+		Estado       string `json:"estado"`
 	}
 
 	var tramosIniciales []tramoInicial
@@ -498,12 +503,14 @@ func (ctrl *SolicitudOficialController) GetEditModal(c *gin.Context) {
 			fechaSalida = item.Fecha.Format("2006-01-02T15:04")
 		}
 		tramosIniciales = append(tramosIniciales, tramoInicial{
+			ID:           item.ID,
 			Tipo:         tipo,
 			OrigenIATA:   item.OrigenIATA,
 			OrigenLabel:  origenLabel,
 			DestinoIATA:  item.DestinoIATA,
 			DestinoLabel: destinoLabel,
 			FechaSalida:  fechaSalida,
+			Estado:       item.GetEstado(),
 		})
 	}
 

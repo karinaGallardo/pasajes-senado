@@ -106,7 +106,7 @@
           hx-target="#modal-container"
           class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-800 transition-colors">
           <i class="ph ph-file-pdf mr-2"></i>
-          Ver / Imprimir PV-05
+          Ver / Imprimir {{ if .Descargo.Solicitud.GetConceptoCodigo | eq "OFICIAL" }}PV-06{{ else }}PV-05{{ end }}
         </button>
       </div>
     </div>

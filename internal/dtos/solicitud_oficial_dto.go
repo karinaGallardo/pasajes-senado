@@ -1,10 +1,12 @@
 package dtos
 
 type TramoOficialRequest struct {
+	ID          string `json:"id"`
 	OrigenIATA  string `json:"origen"`
 	DestinoIATA string `json:"destino"`
 	FechaSalida string `json:"fecha_salida"`
 	Tipo        string `json:"tipo"` // IDA o VUELTA
+	Estado      string `json:"estado"`
 }
 
 type CreateSolicitudOficialRequest struct {

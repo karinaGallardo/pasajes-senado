@@ -167,7 +167,9 @@
               </span>
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-              <a href="/solicitudes/derecho/{{ .ID }}/detalle" class="text-secondary hover:text-primary-900">Detalles</a>
+              <a href="/solicitudes/{{ if eq .GetConceptoCodigo `OFICIAL` }}oficial{{ else }}derecho{{ end }}/{{ .ID }}/detalle" class="text-secondary hover:text-primary-900">
+                Detalles
+              </a>
             </td>
           </tr>
           {{ end }}
