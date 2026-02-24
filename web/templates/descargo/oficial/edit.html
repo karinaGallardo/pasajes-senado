@@ -1,22 +1,53 @@
 {{ define "descargo/oficial/edit" }} {{ template "layout_start" . }}
 
-<div class="max-w-4xl mx-auto">
+<div class="max-w-4xl mx-auto" x-data="{ canSubmit: false, submitting: false }" x-init="canSubmit = $refs.form.checkValidity()">
   <div class="md:flex md:items-center md:justify-between mb-6">
     <div class="flex-1 min-w-0">
-      <h2 class="text-2xl font-bold leading-7 text-neutral-900 sm:text-3xl sm:truncate">Editar Descargo #{{ .Descargo.Codigo }}</h2>
-      <p class="text-sm text-neutral-500 mt-1">Para Solicitud #{{ .Descargo.Solicitud.Codigo }} - {{ .Descargo.Solicitud.GetDestinoCiudad }}</p>
+      <h2 class="text-2xl font-black text-neutral-900 tracking-tight">Editar Descargo #{{ .Descargo.Codigo }}</h2>
+      <p class="text-xs text-neutral-400 mt-1 uppercase tracking-tighter">
+        <span class="font-bold">Para Solicitud:</span> #{{ .Descargo.Solicitud.Codigo }} - {{ .Descargo.Solicitud.GetDestinoCiudad }}
+      </p>
+    </div>
+    <div class="mt-4 flex flex-wrap items-center gap-3">
+      <!-- Volver -->
+      <a
+        href="/descargos/{{ .Descargo.ID }}"
+        class="inline-flex items-center px-5 py-2 border border-neutral-300 shadow-sm text-xs font-bold rounded-lg text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none transition-all active:scale-95 uppercase tracking-wider">
+        <i class="ph ph-arrow-left mr-1.5 text-base text-neutral-400"></i>
+        Volver
+      </a>
+
+      <!-- Botón Actualizar (Submit) -->
+      <button
+        type="submit"
+        form="descargo-form"
+        :disabled="submitting"
+        :class="(!submitting) ? 'bg-success-600 hover:bg-success-700 shadow-lg scale-100' : 'bg-neutral-100 text-neutral-400 cursor-not-allowed'"
+        class="inline-flex items-center px-8 py-2.5 border border-transparent shadow-sm text-xs font-black rounded-lg text-white focus:outline-none transition-all active:scale-95 uppercase tracking-widest min-w-[180px] justify-center">
+        <span x-show="!submitting" class="flex items-center">
+          <i class="ph ph-check-circle mr-2 text-lg"></i>
+          Actualizar Descargo
+        </span>
+        <span x-show="submitting" x-cloak class="flex items-center text-white">
+          <svg class="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          Guardando...
+        </span>
+      </button>
     </div>
   </div>
 
   <form
     id="descargo-form"
+    x-ref="form"
     action="/descargos/{{ .Descargo.ID }}/actualizar"
     method="POST"
     enctype="multipart/form-data"
-    x-data="{ canSubmit: false }"
-    x-init="canSubmit = $el.checkValidity()"
-    @input.debounce.50ms="canSubmit = $el.checkValidity()"
-    @change.debounce.50ms="canSubmit = $el.checkValidity()"
+    @input.debounce.50ms="canSubmit = $refs.form.checkValidity()"
+    @change.debounce.50ms="canSubmit = $refs.form.checkValidity()"
+    @submit="submitting = true"
     class="bg-white shadow rounded-lg overflow-visible border border-neutral-200">
     <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
     <input type="hidden" name="solicitud_id" value="{{ .Descargo.SolicitudID }}" />
@@ -84,10 +115,10 @@
                           <input type="date" name="itin_fecha[]" value="{{ if .Fecha }}{{ .Fecha.Format "2006-01-02" }}{{ end }}" required class="block w-full text-[11px] border-neutral-200 rounded py-0.5 px-1 bg-neutral-50" readonly />
                         </td>
                         <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
-                          <input type="text" name="itin_boleto[]" value="{{ .Boleto }}" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto }" />
+                          <input type="text" name="itin_boleto[]" value="{{ .Boleto }}" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto }" />
                         </td>
                         <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
-                          <input type="text" name="itin_pase_numero[]" value="{{ .NumeroPaseAbordo }}" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto }" />
+                          <input type="text" name="itin_pase_numero[]" value="{{ .NumeroPaseAbordo }}" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto }" />
                         </td>
                         <td class="px-2 py-1 text-center" :class="{ 'opacity-50': devuelto }" x-data="{ fileName: '' }">
                           <input type="hidden" name="itin_archivo_existente_io_{{ $i }}" value="{{ .ArchivoPaseAbordo }}" />
@@ -150,10 +181,10 @@
                           <input type="date" name="itin_fecha[]" value="{{ if .Fecha }}{{ .Fecha.Format "2006-01-02" }}{{ end }}" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto }" />
                         </td>
                         <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
-                          <input type="text" name="itin_boleto[]" value="{{ .Boleto }}" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto }" />
+                          <input type="text" name="itin_boleto[]" value="{{ .Boleto }}" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto }" />
                         </td>
                         <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
-                          <input type="text" name="itin_pase_numero[]" value="{{ .NumeroPaseAbordo }}" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto }" />
+                          <input type="text" name="itin_pase_numero[]" value="{{ .NumeroPaseAbordo }}" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto }" />
                         </td>
                         <td class="px-2 py-1 text-center" :class="{ 'opacity-50': devuelto }" x-data="{ fileName: '' }">
                           <input type="hidden" name="itin_archivo_existente_ir_{{ $i }}" value="{{ .ArchivoPaseAbordo }}" />
@@ -228,10 +259,10 @@
                         <input type="date" name="itin_fecha[]" value="{{ if .Fecha }}{{ .Fecha.Format "2006-01-02" }}{{ end }}" required class="block w-full text-[11px] border-neutral-200 rounded py-0.5 px-1 bg-neutral-50" readonly />
                       </td>
                       <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
-                        <input type="text" name="itin_boleto[]" value="{{ .Boleto }}" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto }" />
+                        <input type="text" name="itin_boleto[]" value="{{ .Boleto }}" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto }" />
                       </td>
                       <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
-                        <input type="text" name="itin_pase_numero[]" value="{{ .NumeroPaseAbordo }}" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto }" />
+                        <input type="text" name="itin_pase_numero[]" value="{{ .NumeroPaseAbordo }}" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto }" />
                       </td>
                       <td class="px-2 py-1 text-center" :class="{ 'opacity-50': devuelto }" x-data="{ fileName: '' }">
                         <input type="hidden" name="itin_archivo_existente_vo_{{ $i }}" value="{{ .ArchivoPaseAbordo }}" />
@@ -294,10 +325,10 @@
                         <input type="date" name="itin_fecha[]" value="{{ if .Fecha }}{{ .Fecha.Format "2006-01-02" }}{{ end }}" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto }" />
                       </td>
                       <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
-                        <input type="text" name="itin_boleto[]" value="{{ .Boleto }}" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto }" />
+                        <input type="text" name="itin_boleto[]" value="{{ .Boleto }}" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto }" />
                       </td>
                       <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
-                        <input type="text" name="itin_pase_numero[]" value="{{ .NumeroPaseAbordo }}" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto }" />
+                        <input type="text" name="itin_pase_numero[]" value="{{ .NumeroPaseAbordo }}" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto }" />
                       </td>
                       <td class="px-2 py-1 text-center" :class="{ 'opacity-50': devuelto }" x-data="{ fileName: '' }">
                         <input type="hidden" name="itin_archivo_existente_vr_{{ $i }}" value="{{ .ArchivoPaseAbordo }}" />
@@ -525,14 +556,6 @@
           </div>
         </div>
 
-        <div class="px-4 py-3 bg-neutral-50 text-right sm:px-6 flex justify-end">
-          <button
-            type="submit"
-            :disabled="!canSubmit"
-            :class="canSubmit ? 'bg-primary hover:bg-primary-800' : 'bg-neutral-300 cursor-not-allowed'"
-            class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white transition-all focus:outline-none">
-            Actualizar Descargo
-          </button>
         </div>
       </div>
   </form>
@@ -548,6 +571,7 @@
   // Prepare items for searchable select
   const selectItems = destinos.map(d => ({
     value: d.iata,
+    cityName: d.nombre,
     label: d.iata + " - " + d.nombre
   }));
 
@@ -577,10 +601,10 @@
         <div class="flex items-center gap-1">
           <!-- SEARCHABLE SELECT ORIGEN -->
           <div class="relative flex-1" x-data="searchableSelect({ items: selectItems, placeholder: 'Origen' })" 
-               x-init="$watch('value', v => { $dispatch('update-orig', v) }); $watch('open', o => { $dispatch('update-open', o) })">
+               x-init="$watch('value', v => { const item = items.find(i => i.value === v); $dispatch('update-orig', item ? item.cityName : '') }); $watch('open', o => { $dispatch('update-open', o) })">
             <button
               x-ref="button"
-              @click="open = !open; if(open) $nextTick(function() { $refs.searchInput.focus() })"
+              @click="open = !open"
               type="button"
               :disabled="devuelto"
               class="relative w-full bg-white border border-neutral-300 rounded pl-2 pr-6 py-1 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-secondary focus:border-secondary text-[10px]">
@@ -594,25 +618,29 @@
               @click.away="open = false"
               class="absolute z-[100] mt-1 w-64 bg-white shadow-xl max-h-60 rounded-md py-1 text-xs ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none"
               style="display: none">
-              <div class="sticky top-0 bg-white p-2 border-b z-10">
-                <input
-                  x-ref="searchInput"
-                  x-model="search"
-                  type="text"
-                  class="w-full border-neutral-300 rounded text-xs p-1 focus:ring-secondary focus:border-secondary"
-                  placeholder="Buscar..." />
-              </div>
-              <ul class="pt-1">
-                <template x-for="item in filteredItems" :key="item.value">
-                  <li @click="select(item)" class="cursor-pointer select-none relative py-1.5 pl-3 pr-9 hover:bg-secondary-50 text-neutral-900">
-                    <span class="block truncate" x-text="item.label" :class="{'font-bold text-secondary-700': value === item.value, 'font-normal': value !== item.value}"></span>
-                    <span x-show="value === item.value" class="absolute inset-y-0 right-0 flex items-center pr-3 text-secondary-600">
-                      <i class="ph ph-check text-xs"></i>
-                    </span>
-                  </li>
-                </template>
-                <li x-show="filteredItems.length === 0" class="cursor-default select-none relative py-2 pl-3 pr-9 text-neutral-500 italic">No hay resultados</li>
-              </ul>
+              <template x-if="open">
+                <div>
+                  <div class="sticky top-0 bg-white p-2 border-b z-10">
+                    <input
+                      x-init="$nextTick(() => $el.focus())"
+                      x-model="search"
+                      type="text"
+                      class="w-full border-neutral-300 rounded text-xs p-1 focus:ring-secondary focus:border-secondary"
+                      placeholder="Buscar..." />
+                  </div>
+                  <ul class="pt-1">
+                    <template x-for="item in filteredItems" :key="item.value">
+                      <li @click="select(item)" class="cursor-pointer select-none relative py-1.5 pl-3 pr-9 hover:bg-secondary-50 text-neutral-900">
+                        <span class="block truncate" x-text="item.label" :class="{'font-bold text-secondary-700': value === item.value, 'font-normal': value !== item.value}"></span>
+                        <span x-show="value === item.value" class="absolute inset-y-0 right-0 flex items-center pr-3 text-secondary-600">
+                          <i class="ph ph-check text-xs"></i>
+                        </span>
+                      </li>
+                    </template>
+                    <li x-show="filteredItems.length === 0" class="cursor-default select-none relative py-2 pl-3 pr-9 text-neutral-500 italic">No hay resultados</li>
+                  </ul>
+                </div>
+              </template>
             </div>
           </div>
 
@@ -620,10 +648,10 @@
 
           <!-- SEARCHABLE SELECT DESTINO -->
           <div class="relative flex-1" x-data="searchableSelect({ items: selectItems, placeholder: 'Destino' })" 
-               x-init="$watch('value', v => { $dispatch('update-dest', v) }); $watch('open', o => { $dispatch('update-open', o) })">
+               x-init="$watch('value', v => { const item = items.find(i => i.value === v); $dispatch('update-dest', item ? item.cityName : '') }); $watch('open', o => { $dispatch('update-open', o) })">
             <button
               x-ref="button"
-              @click="open = !open; if(open) $nextTick(function() { $refs.searchInput.focus() })"
+              @click="open = !open"
               type="button"
               :disabled="devuelto"
               class="relative w-full bg-white border border-neutral-300 rounded pl-2 pr-6 py-1 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-secondary focus:border-secondary text-[10px]">
@@ -637,25 +665,29 @@
               @click.away="open = false"
               class="absolute z-[100] mt-1 w-64 bg-white shadow-xl max-h-60 rounded-md py-1 text-xs ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none"
               style="display: none">
-              <div class="sticky top-0 bg-white p-2 border-b z-10">
-                <input
-                  x-ref="searchInput"
-                  x-model="search"
-                  type="text"
-                  class="w-full border-neutral-300 rounded text-xs p-1 focus:ring-secondary focus:border-secondary"
-                  placeholder="Buscar..." />
-              </div>
-              <ul class="pt-1">
-                <template x-for="item in filteredItems" :key="item.value">
-                  <li @click="select(item)" class="cursor-pointer select-none relative py-1.5 pl-3 pr-9 hover:bg-secondary-50 text-neutral-900">
-                    <span class="block truncate" x-text="item.label" :class="{'font-bold text-secondary-700': value === item.value, 'font-normal': value !== item.value}"></span>
-                    <span x-show="value === item.value" class="absolute inset-y-0 right-0 flex items-center pr-3 text-secondary-600">
-                      <i class="ph ph-check text-xs"></i>
-                    </span>
-                  </li>
-                </template>
-                <li x-show="filteredItems.length === 0" class="cursor-default select-none relative py-2 pl-3 pr-9 text-neutral-500 italic">No hay resultados</li>
-              </ul>
+              <template x-if="open">
+                <div>
+                  <div class="sticky top-0 bg-white p-2 border-b z-10">
+                    <input
+                      x-init="$nextTick(() => $el.focus())"
+                      x-model="search"
+                      type="text"
+                      class="w-full border-neutral-300 rounded text-xs p-1 focus:ring-secondary focus:border-secondary"
+                      placeholder="Buscar..." />
+                  </div>
+                  <ul class="pt-1">
+                    <template x-for="item in filteredItems" :key="item.value">
+                      <li @click="select(item)" class="cursor-pointer select-none relative py-1.5 pl-3 pr-9 hover:bg-secondary-50 text-neutral-900">
+                        <span class="block truncate" x-text="item.label" :class="{'font-bold text-secondary-700': value === item.value, 'font-normal': value !== item.value}"></span>
+                        <span x-show="value === item.value" class="absolute inset-y-0 right-0 flex items-center pr-3 text-secondary-600">
+                          <i class="ph ph-check text-xs"></i>
+                        </span>
+                      </li>
+                    </template>
+                    <li x-show="filteredItems.length === 0" class="cursor-default select-none relative py-2 pl-3 pr-9 text-neutral-500 italic">No hay resultados</li>
+                  </ul>
+                </div>
+              </template>
             </div>
           </div>
           <input type="hidden" name="itin_ruta[]" :value="orig && dest ? orig + ' - ' + dest : (orig || dest || '')" :required="!devuelto" />
@@ -665,10 +697,10 @@
         <input type="date" name="itin_fecha[]" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-200 rounded py-0.5 px-2 focus:ring-secondary focus:border-secondary">
       </td>
       <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
-        <input type="text" name="itin_boleto[]" placeholder="Boleto" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2 focus:ring-secondary focus:border-secondary">
+        <input type="text" name="itin_boleto[]" placeholder="Boleto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2 focus:ring-secondary focus:border-secondary">
       </td>
       <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
-        <input type="text" name="itin_pase_numero[]" placeholder="Pase" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2 focus:ring-secondary focus:border-secondary">
+        <input type="text" name="itin_pase_numero[]" placeholder="Pase" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2 focus:ring-secondary focus:border-secondary">
       </td>
       <td class="px-2 py-1 text-center" :class="{ 'opacity-50': devuelto }" x-data="{ fileName: '' }">
         <label class="cursor-pointer flex items-center justify-center py-0.5 px-1.5 rounded border transition-colors hover:bg-neutral-100 border-neutral-200 bg-neutral-50 text-neutral-500" 
