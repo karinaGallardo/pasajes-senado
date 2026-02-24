@@ -74,7 +74,7 @@
         </h3>
 
         <!-- TRAMO DE IDA -->
-        <div class="border border-neutral-200 rounded-lg overflow-hidden shadow-sm">
+        <div class="border border-neutral-200 rounded-lg overflow-visible shadow-sm">
           <div class="bg-neutral-100 px-3 py-1.5 border-b border-neutral-200 flex justify-between items-center">
             <span class="text-[11px] font-black text-neutral-600 uppercase tracking-tighter">Tramo de Ida</span>
             <i class="ph ph-airplane-takeoff text-neutral-400"></i>
@@ -87,7 +87,7 @@
                 <span class="px-2 text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Vuelo Original</span>
                 <div class="h-px bg-neutral-200 flex-1"></div>
               </div>
-              <div class="overflow-x-auto">
+              <div class="overflow-visible">
                 <table class="min-w-full divide-y divide-neutral-200">
                   <thead class="bg-neutral-50">
                     <tr>
@@ -177,12 +177,12 @@
                 <div class="h-px bg-neutral-200 flex-1"></div>
                 <button
                   type="button"
-                  onclick="addItinRow('IDA_REPRO')"
+                  @click="addItinRow('IDA_REPRO')"
                   class="ml-2 text-[10px] bg-neutral-50 text-neutral-600 px-2 py-0.5 rounded border border-neutral-200 hover:bg-neutral-100 transition-colors">
                   + Tramo
                 </button>
               </div>
-              <div class="overflow-x-auto">
+              <div class="overflow-visible">
                 <table class="min-w-full divide-y divide-neutral-200">
                   <thead class="bg-neutral-50">
                     <tr>
@@ -258,13 +258,7 @@
                         </label>
                       </td>
                       <td class="px-2 py-1 text-right">
-                        <button
-                          type="button"
-                          onclick="
-                            this.closest('tr').remove();
-                            document.getElementById('descargo-form').dispatchEvent(new Event('input'));
-                          "
-                          class="text-neutral-400 hover:text-danger-600 transition-colors">
+                        <button type="button" @click="$el.closest('tr').remove(); $dispatch('input')" class="text-neutral-400 hover:text-danger-600 transition-colors">
                           <i class="ph ph-trash"></i>
                         </button>
                       </td>
@@ -279,7 +273,7 @@
 
         <!-- TRAMO DE RETORNO -->
         {{ if .Solicitud.GetItemVuelta }}
-        <div class="border border-neutral-200 rounded-lg overflow-hidden shadow-sm">
+        <div class="border border-neutral-200 rounded-lg overflow-visible shadow-sm">
           <div class="bg-neutral-100 px-3 py-1.5 border-b border-neutral-200 flex justify-between items-center">
             <span class="text-[11px] font-black text-neutral-600 uppercase tracking-tighter">Tramo de Retorno</span>
             <i class="ph ph-airplane-landing text-neutral-400"></i>
@@ -292,7 +286,7 @@
                 <span class="px-2 text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Vuelo Original</span>
                 <div class="h-px bg-neutral-200 flex-1"></div>
               </div>
-              <div class="overflow-x-auto">
+              <div class="overflow-visible">
                 <table class="min-w-full divide-y divide-neutral-200">
                   <thead class="bg-neutral-50">
                     <tr>
@@ -382,12 +376,12 @@
                 <div class="h-px bg-neutral-200 flex-1"></div>
                 <button
                   type="button"
-                  onclick="addItinRow('VUELTA_REPRO')"
+                  @click="addItinRow('VUELTA_REPRO')"
                   class="ml-2 text-[10px] bg-neutral-50 text-neutral-600 px-2 py-0.5 rounded border border-neutral-200 hover:bg-neutral-100 transition-colors">
                   + Tramo
                 </button>
               </div>
-              <div class="overflow-x-auto">
+              <div class="overflow-visible">
                 <table class="min-w-full divide-y divide-neutral-200">
                   <thead class="bg-neutral-50">
                     <tr>
@@ -463,13 +457,7 @@
                         </label>
                       </td>
                       <td class="px-2 py-1 text-right">
-                        <button
-                          type="button"
-                          onclick="
-                            this.closest('tr').remove();
-                            document.getElementById('descargo-form').dispatchEvent(new Event('input'));
-                          "
-                          class="text-neutral-400 hover:text-danger-600 transition-colors">
+                        <button type="button" @click="$el.closest('tr').remove(); $dispatch('input')" class="text-neutral-400 hover:text-danger-600 transition-colors">
                           <i class="ph ph-trash"></i>
                         </button>
                       </td>
@@ -740,16 +728,34 @@
 </div>
 
 <script>
-  let itinCounter = 0;
+  // Destinos data from server
+  const destinos = [
+    {{ range .Destinos }}
+    { iata: "{{ .IATA }}", nombre: "{{ .Ciudad }}" },
+    {{ end }}
+  ];
 
-  window.addItinRow = function (type) {
+  // Prepare items for searchable select
+  const selectItems = destinos.map(d => ({
+    value: d.iata,
+    label: d.iata + " - " + d.nombre
+  }));
+
+  let itinCounter = 100;
+
+  // Attach to window so it's globally available to Alpine @click handlers
+  window.addItinRow = function(type) {
     const containerId = type === "IDA_REPRO" ? "itin-ida-repro-container" : "itin-vuelta-repro-container";
     const container = document.getElementById(containerId);
     if (!container) return;
 
     const index = itinCounter++;
     const row = document.createElement("tr");
-    row.setAttribute("x-data", "{ devuelto: false }");
+    row.setAttribute("x-data", "{ devuelto: false, orig: '', dest: '', openRow: false }");
+    row.setAttribute(":class", "{ 'relative z-50': openRow, 'relative': !openRow }");
+    row.setAttribute("@update-orig.stop", "orig = $event.detail");
+    row.setAttribute("@update-dest.stop", "dest = $event.detail");
+    row.setAttribute("@update-open.stop", "openRow = $event.detail");
 
     row.innerHTML = `
       <td class="px-2 py-1 text-center">
@@ -758,10 +764,95 @@
         <input type="checkbox" name="itin_devolucion[]" value="${index}" x-model="devuelto" class="h-4 w-4 text-primary border-neutral-300 rounded focus:ring-primary">
       </td>
       <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
-        <input type="text" name="itin_ruta[]" placeholder="Origen - Destino" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2 focus:ring-secondary focus:border-secondary">
+        <div class="flex items-center gap-1">
+          <!-- SEARCHABLE SELECT ORIGEN -->
+          <div class="relative flex-1" x-data="searchableSelect({ items: selectItems, placeholder: 'Origen' })"
+               x-init="$watch('value', v => { $dispatch('update-orig', v) }); $watch('open', o => { $dispatch('update-open', o) })">
+            <button
+              x-ref="button"
+              @click="open = !open; if(open) $nextTick(function() { $refs.searchInput.focus() })"
+              type="button"
+              :disabled="devuelto"
+              class="relative w-full bg-white border border-neutral-300 rounded pl-2 pr-6 py-1 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-secondary focus:border-secondary text-[10px]">
+              <span class="block truncate" :class="{'text-neutral-400': !value, 'text-neutral-900 font-medium': value}" x-text="label"></span>
+              <span class="absolute inset-y-0 right-0 flex items-center pr-1 pointer-events-none">
+                <i class="ph ph-caret-up-down text-neutral-400"></i>
+              </span>
+            </button>
+            <div
+              x-show="open"
+              @click.away="open = false"
+              class="absolute z-[100] mt-1 w-64 bg-white shadow-xl max-h-60 rounded-md py-1 text-xs ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none"
+              style="display: none">
+              <div class="sticky top-0 bg-white p-2 border-b z-10">
+                <input
+                  x-ref="searchInput"
+                  x-model="search"
+                  type="text"
+                  class="w-full border-neutral-300 rounded text-xs p-1 focus:ring-secondary focus:border-secondary"
+                  placeholder="Buscar..." />
+              </div>
+              <ul class="pt-1">
+                <template x-for="item in filteredItems" :key="item.value">
+                  <li @click="select(item)" class="cursor-pointer select-none relative py-1.5 pl-3 pr-9 hover:bg-secondary-50 text-neutral-900">
+                    <span class="block truncate" x-text="item.label" :class="{'font-bold text-secondary-700': value === item.value, 'font-normal': value !== item.value}"></span>
+                    <span x-show="value === item.value" class="absolute inset-y-0 right-0 flex items-center pr-3 text-secondary-600">
+                      <i class="ph ph-check text-xs"></i>
+                    </span>
+                  </li>
+                </template>
+                <li x-show="filteredItems.length === 0" class="cursor-default select-none relative py-2 pl-3 pr-9 text-neutral-500 italic">No hay resultados</li>
+              </ul>
+            </div>
+          </div>
+
+          <span class="text-neutral-400">-</span>
+
+          <!-- SEARCHABLE SELECT DESTINO -->
+          <div class="relative flex-1" x-data="searchableSelect({ items: selectItems, placeholder: 'Destino' })"
+               x-init="$watch('value', v => { $dispatch('update-dest', v) }); $watch('open', o => { $dispatch('update-open', o) })">
+            <button
+              x-ref="button"
+              @click="open = !open; if(open) $nextTick(function() { $refs.searchInput.focus() })"
+              type="button"
+              :disabled="devuelto"
+              class="relative w-full bg-white border border-neutral-300 rounded pl-2 pr-6 py-1 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-secondary focus:border-secondary text-[10px]">
+              <span class="block truncate" :class="{'text-neutral-400': !value, 'text-neutral-900 font-medium': value}" x-text="label"></span>
+              <span class="absolute inset-y-0 right-0 flex items-center pr-1 pointer-events-none">
+                <i class="ph ph-caret-up-down text-neutral-400"></i>
+              </span>
+            </button>
+            <div
+              x-show="open"
+              @click.away="open = false"
+              class="absolute z-[100] mt-1 w-64 bg-white shadow-xl max-h-60 rounded-md py-1 text-xs ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none"
+              style="display: none">
+              <div class="sticky top-0 bg-white p-2 border-b z-10">
+                <input
+                  x-ref="searchInput"
+                  x-model="search"
+                  type="text"
+                  class="w-full border-neutral-300 rounded text-xs p-1 focus:ring-secondary focus:border-secondary"
+                  placeholder="Buscar..." />
+              </div>
+              <ul class="pt-1">
+                <template x-for="item in filteredItems" :key="item.value">
+                  <li @click="select(item)" class="cursor-pointer select-none relative py-1.5 pl-3 pr-9 hover:bg-secondary-50 text-neutral-900">
+                    <span class="block truncate" x-text="item.label" :class="{'font-bold text-secondary-700': value === item.value, 'font-normal': value !== item.value}"></span>
+                    <span x-show="value === item.value" class="absolute inset-y-0 right-0 flex items-center pr-3 text-secondary-600">
+                      <i class="ph ph-check text-xs"></i>
+                    </span>
+                  </li>
+                </template>
+                <li x-show="filteredItems.length === 0" class="cursor-default select-none relative py-2 pl-3 pr-9 text-neutral-500 italic">No hay resultados</li>
+              </ul>
+            </div>
+          </div>
+          <input type="hidden" name="itin_ruta[]" :value="orig && dest ? orig + ' - ' + dest : (orig || dest || '')" :required="!devuelto" />
+        </div>
       </td>
       <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
-        <input type="date" name="itin_fecha[]" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2 focus:ring-secondary focus:border-secondary">
+        <input type="date" name="itin_fecha[]" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-200 rounded py-0.5 px-2 focus:ring-secondary focus:border-secondary">
       </td>
       <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
         <input type="text" name="itin_boleto[]" placeholder="Boleto" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2 focus:ring-secondary focus:border-secondary">
@@ -770,7 +861,7 @@
         <input type="text" name="itin_pase_numero[]" placeholder="Pase" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2 focus:ring-secondary focus:border-secondary">
       </td>
       <td class="px-2 py-1 text-center" :class="{ 'opacity-50': devuelto }" x-data="{ fileName: '' }">
-        <label class="cursor-pointer flex items-center justify-center py-0.5 px-1.5 rounded border transition-colors hover:bg-neutral-100 border-neutral-200 bg-neutral-50 text-neutral-500" 
+        <label class="cursor-pointer flex items-center justify-center py-0.5 px-1.5 rounded border transition-colors hover:bg-neutral-100 border-neutral-200 bg-neutral-50 text-neutral-500"
                :class="fileName ? 'bg-success-50 border-success-200 text-success-700' : ''"
                :title="fileName ? fileName : 'Subir PDF (Opcional)'">
           <input type="file" :disabled="devuelto" name="itin_archivo_${index}" class="hidden" accept=".pdf,application/pdf" @change="fileName = $el.files[0] ? $el.files[0].name : ''" />
@@ -778,16 +869,27 @@
         </label>
       </td>
       <td class="px-2 py-1 text-right">
-        <button type="button" onclick="this.closest('tr').remove(); document.getElementById('descargo-form').dispatchEvent(new Event('input'))" class="text-neutral-400 hover:text-danger-600 transition-colors">
+        <button type="button" class="remove-row-btn text-neutral-400 hover:text-danger-600 transition-colors">
           <i class="ph ph-trash"></i>
         </button>
       </td>
     `;
+
+    row.querySelector('.remove-row-btn').addEventListener('click', () => {
+      row.remove();
+      const form = document.getElementById('descargo-form');
+      if (form) form.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+
     container.appendChild(row);
   };
 
   document.addEventListener("DOMContentLoaded", () => {
-    itinCounter = document.querySelectorAll('input[name="itin_tipo[]"]').length + 100;
+    // Sync counter with existing rows if any
+    const existingCount = document.querySelectorAll('input[name="itin_tipo[]"]').length;
+    if (existingCount > 0) {
+      itinCounter = existingCount + 100;
+    }
   });
 </script>
 

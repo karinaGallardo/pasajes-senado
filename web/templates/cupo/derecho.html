@@ -161,7 +161,7 @@
                     {{ end }}
 
                     <!-- Owner Actions (Solicitudes) -->
-
+                    {{ if eq .SenAsignadoID $targetUserID }}
                     <!-- Solicitar Pasaje (Ida o Ida+Vuelta) -->
                     {{ if .Permissions.CanCreateIda }}
                     <button
@@ -201,7 +201,7 @@
                       <i class="ph ph-printer text-sm"></i>
                       <span class="sr-only sm:not-sr-only">Imprimir</span>
                     </button>
-                    {{ end }} {{ end }}
+                    {{ end }} {{ end }} {{ end }}
                   </div>
                   {{ if .EsTransferido }}
                   <div>

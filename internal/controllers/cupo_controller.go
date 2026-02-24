@@ -187,7 +187,7 @@ func (ctrl *CupoController) AsignarCupo(c *gin.Context) {
 		return
 	}
 
-	if item.IsVencido() {
+	if item.IsVencido() && !authUser.IsAdminOrResponsable() {
 		c.String(http.StatusBadRequest, "No se puede asignar un cupo vencido")
 		return
 	}
@@ -224,7 +224,7 @@ func (ctrl *CupoController) Transferir(c *gin.Context) {
 		return
 	}
 
-	if item.IsVencido() {
+	if item.IsVencido() && !authUser.IsAdminOrResponsable() {
 		c.String(http.StatusBadRequest, "No se puede transferir un cupo vencido")
 		return
 	}
@@ -499,7 +499,7 @@ func (ctrl *CupoController) DerechoByYear(c *gin.Context) {
 
 			// 2. Tomar / Asignar Cupo (Para el Target Suplente)
 			hasTitular := targetUser.TitularID != nil
-			if isDisponible && !isVencido && hasTitular && modelItem.SenAsignadoID == *targetUser.TitularID {
+			if isDisponible && (isViewerAdminOrResponsable || !isVencido) && hasTitular && modelItem.SenAsignadoID == *targetUser.TitularID {
 				// Opción 1: El mismo suplente toma su cupo (Solo si no tiene cupo)
 				if isTargetSuplente && !targetHasQuota && isViewerSuplente && authUser.ID == targetUser.ID {
 					perms.CanTomarCupo = true
@@ -517,7 +517,7 @@ func (ctrl *CupoController) DerechoByYear(c *gin.Context) {
 			}
 
 			// 3. Transferencia (Admin/Responsable)
-			if isViewerAdminOrResponsable && !isVencido && !isTransferido && !perms.CanAsignarCupo {
+			if isViewerAdminOrResponsable && !isTransferido && !perms.CanAsignarCupo {
 				perms.CanTransfer = true
 			}
 
@@ -692,7 +692,7 @@ func (ctrl *CupoController) DerechoByMonth(c *gin.Context) {
 
 		// 2. Tomar / Asignar Cupo (Para el Target Suplente)
 		hasTitular := targetUser.TitularID != nil
-		if isDisponible && !isVencido && hasTitular && modelItem.SenAsignadoID == *targetUser.TitularID {
+		if isDisponible && (isViewerAdminOrResponsable || !isVencido) && hasTitular && modelItem.SenAsignadoID == *targetUser.TitularID {
 			// Opción 1: El mismo suplente toma su cupo (Solo si no tiene cupo)
 			if isTargetSuplente && !targetHasQuota && isViewerSuplente && authUser.ID == targetUser.ID {
 				perms.CanTomarCupo = true
@@ -710,7 +710,7 @@ func (ctrl *CupoController) DerechoByMonth(c *gin.Context) {
 		}
 
 		// 3. Transferencia (Admin/Responsable)
-		if isViewerAdminOrResponsable && !isVencido && !isTransferido && !perms.CanAsignarCupo {
+		if isViewerAdminOrResponsable && !isTransferido && !perms.CanAsignarCupo {
 			perms.CanTransfer = true
 		}
 

@@ -17,6 +17,7 @@ import (
 type DescargoController struct {
 	descargoService  *services.DescargoService
 	solicitudService *services.SolicitudService
+	destinoService   *services.DestinoService
 	reportService    *services.ReportService
 	peopleService    *services.PeopleService
 }
@@ -25,6 +26,7 @@ func NewDescargoController() *DescargoController {
 	return &DescargoController{
 		descargoService:  services.NewDescargoService(),
 		solicitudService: services.NewSolicitudService(),
+		destinoService:   services.NewDestinoService(),
 		reportService:    services.NewReportService(),
 		peopleService:    services.NewPeopleService(),
 	}
@@ -93,11 +95,13 @@ func (ctrl *DescargoController) CreateDerecho(c *gin.Context) {
 		}
 	}
 
+	destinos, _ := ctrl.destinoService.GetAll(c.Request.Context())
 	utils.Render(c, "descargo/derecho/create", gin.H{
 		"Title":                "Nuevo Descargo",
 		"Solicitud":            solicitud,
 		"PasajesOriginales":    pasajesOriginales,
 		"PasajesReprogramados": pasajesReprogramados,
+		"Destinos":             destinos,
 	})
 }
 
@@ -171,12 +175,14 @@ func (ctrl *DescargoController) CreateOficial(c *gin.Context) {
 		}
 	}
 
+	destinos, _ := ctrl.destinoService.GetAll(c.Request.Context())
 	utils.Render(c, "descargo/oficial/create", gin.H{
 		"Title":                "Formulario de Descargo PV-06 - Pasajes, Viáticos y Gastos de Representación",
 		"Solicitud":            solicitud,
 		"PasajesOriginales":    pasajesOriginales,
 		"PasajesReprogramados": pasajesReprogramados,
 		"HasGastosRep":         hasGastosRep,
+		"Destinos":             destinos,
 		"ZeroFloat":            float64(0),
 	})
 }
@@ -274,10 +280,12 @@ func (ctrl *DescargoController) Edit(c *gin.Context) {
 		templateName = "descargo/oficial/edit"
 	}
 
+	destinos, _ := ctrl.destinoService.GetAll(c.Request.Context())
 	utils.Render(c, templateName, gin.H{
 		"Title":       "Editar Descargo",
 		"Descargo":    descargo,
 		"ItemsByType": itemsByType,
+		"Destinos":    destinos,
 	})
 }
 
