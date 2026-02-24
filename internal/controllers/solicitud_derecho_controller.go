@@ -340,7 +340,7 @@ func (ctrl *SolicitudDerechoController) Edit(c *gin.Context) {
 	lpbLoc, _ := ctrl.destinoService.GetByIATA(c.Request.Context(), "LPB")
 
 	var origen, destino *models.Destino
-	if ActiveTab == "SOLO_IDA" {
+	if ActiveTab == "SOLO_IDA" || ActiveTab == "IDA_VUELTA" {
 		origen = userLoc
 		destino = lpbLoc
 	} else {
@@ -396,7 +396,7 @@ func (ctrl *SolicitudDerechoController) GetEditModal(c *gin.Context) {
 	lpbLoc, _ := ctrl.destinoService.GetByIATA(c.Request.Context(), "LPB")
 
 	var origen, destino *models.Destino
-	if solicitud.TipoItinerario.Codigo == "SOLO_IDA" {
+	if solicitud.TipoItinerario.Codigo == "SOLO_IDA" || solicitud.TipoItinerario.Codigo == "IDA_VUELTA" {
 		origen = userLoc
 		destino = lpbLoc
 	} else {
