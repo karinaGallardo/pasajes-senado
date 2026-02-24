@@ -1,5 +1,5 @@
 {{ define "auth/login" }}
-<!DOCTYPE html>
+<!doctype html>
 <html lang="es">
   <head>
     <meta charset="UTF-8" />
@@ -59,10 +59,10 @@
   </head>
   <body class="bg-neutral-50 h-screen flex items-center justify-center">
     <div class="bg-white p-8 rounded-2xl shadow-xl w-full max-w-md border border-neutral-100">
-      <div class="text-center mb-8">
-        <img src="/static/img/logo_senado.webp" alt="Logo Senado" class="mx-auto h-24 mb-4" />
-        <h1 class="text-2xl font-bold text-neutral-900">Sistema de Pasajes</h1>
-        <p class="text-neutral-500">Senado del Estado Plurinacional</p>
+      <div class="text-center mb-0">
+        <img src="/static/img/logo_login.png" alt="Logo Pasajes GO" class="mx-auto h-72 mb-0" />
+        <!-- <h1 class="text-2xl font-bold text-neutral-900">Pasajes GO</h1> -->
+        <!-- <p class="text-neutral-500">Sistema de Pasajes - Senado</p> -->
       </div>
 
       {{ if .error }}
@@ -74,7 +74,7 @@
       <form action="/auth/login" method="POST" class="space-y-5">
         <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
         <div>
-          <label for="username" class="block text-sm font-bold text-neutral-700 mb-1">Usuario / CI</label>
+          <label for="username" class="block text-sm font-bold text-neutral-700 mb-1">Usuario</label>
           <div class="relative rounded-lg shadow-sm">
             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <i class="fas fa-user text-neutral-400 text-sm"></i>
@@ -84,7 +84,7 @@
               name="username"
               id="username"
               class="block w-full pl-10 pr-3 py-2.5 border border-neutral-300 rounded-lg text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-              placeholder="Ingrese su C.I."
+              placeholder="Ingrese su usuario"
               required />
           </div>
         </div>

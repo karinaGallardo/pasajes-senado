@@ -448,32 +448,13 @@
         <div class="space-y-4">
           <div class="bg-white shadow-sm rounded-xl border border-neutral-200 p-4">
             <h3 class="text-xs font-bold text-neutral-500 uppercase tracking-widest mb-4 border-b pb-2">Beneficiario</h3>
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-4">
-              <div class="flex items-center space-x-3">
-                <div class="h-12 w-12 rounded-full bg-primary-50 border border-primary-100 flex items-center justify-center text-primary-600 font-bold">
-                  {{ printf "%.2s" .Solicitud.Usuario.GetNombreCompleto }}
-                </div>
-                <div>
-                  <p class="text-sm font-bold text-neutral-900">{{ .Solicitud.Usuario.GetNombreCompleto }}</p>
-                  <p class="text-[10px] text-neutral-500 uppercase font-bold">{{ .Solicitud.Usuario.CI }}</p>
-                </div>
+            <div class="flex items-center space-x-3 mb-4">
+              <div class="h-12 w-12 rounded-full bg-primary-50 border border-primary-100 flex items-center justify-center text-primary-600 font-bold">
+                {{ printf "%.2s" .Solicitud.Usuario.GetNombreCompleto }}
               </div>
-              <div class="flex items-center gap-2">
-                {{ if .DescargoID }}
-                <a
-                  href="/descargos/{{ .DescargoID }}"
-                  class="inline-flex items-center gap-1.5 px-3 py-1.5 border border-primary-600 rounded-md shadow-sm text-xs font-bold text-primary-600 bg-white hover:bg-primary-50 focus:outline-none transition-all">
-                  <i class="ph ph-eye text-base"></i>
-                  Ver descargo (PV-06)
-                </a>
-                {{ else if .Perms.CanMakeDescargo }}
-                <a
-                  href="/solicitudes/oficial/{{ .Solicitud.ID }}/descargo"
-                  class="inline-flex items-center gap-1.5 px-3 py-1.5 border border-transparent rounded-md shadow-sm text-xs font-bold text-white bg-primary hover:bg-primary-600 focus:outline-none transition-colors">
-                  <i class="ph ph-file-plus text-base"></i>
-                  Realizar descargo (PV-06)
-                </a>
-                {{ end }}
+              <div>
+                <p class="text-sm font-bold text-neutral-900">{{ .Solicitud.Usuario.GetNombreCompleto }}</p>
+                <p class="text-[10px] text-neutral-500 uppercase font-bold">{{ .Solicitud.Usuario.CI }}</p>
               </div>
             </div>
             <div class="space-y-3 pt-3 border-t border-neutral-100">

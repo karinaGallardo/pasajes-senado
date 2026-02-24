@@ -1,31 +1,56 @@
 {{ define "descargo/derecho/create" }} {{ template "layout_start" . }}
 
-<div class="max-w-4xl mx-auto">
+<div class="max-w-4xl mx-auto" 
+     x-data="{ canSubmit: false, submitting: false }" 
+     x-init="canSubmit = $refs.form.checkValidity()">
   <div class="md:flex md:items-center md:justify-between mb-6">
     <div class="flex-1 min-w-0">
-      <h2 class="text-2xl font-bold leading-7 text-neutral-900 sm:text-3xl sm:truncate">Realizar Descargo (PV-05)</h2>
-      <p class="text-sm text-neutral-500 mt-1">Para Solicitud #{{ .Solicitud.Codigo }}</p>
+      <h2 class="text-2xl font-black text-neutral-900 tracking-tight">Realizar Descargo (PV-05)</h2>
+      <p class="text-xs text-neutral-400 mt-1 uppercase tracking-tighter">
+        <span class="font-bold">Para Solicitud:</span> #{{ .Solicitud.Codigo }}
+      </p>
     </div>
-    <div class="mt-4 flex md:mt-0 md:ml-4">
+    <div class="mt-4 flex flex-wrap items-center gap-2">
+      <!-- Volver -->
       <a
-        href="/descargos/pv5?solicitud_id={{ .Solicitud.ID }}"
-        class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-bold text-white bg-secondary hover:bg-primary transition-colors focus:outline-none ring-2 ring-offset-2 ring-secondary">
-        <i class="ph ph-file-doc mr-2 text-lg"></i>
-        Descargar Formulario PV-05 Pre-llenado
+        href="/solicitudes/derecho/{{ .Solicitud.ID }}/detalle"
+        class="inline-flex items-center px-3 py-1.5 border border-neutral-300 shadow-sm text-[10px] font-black rounded-md text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none transition-all active:scale-95 uppercase tracking-widest">
+        <i class="ph ph-arrow-left mr-1.5 text-base"></i>
+        Volver
       </a>
+
+      <!-- Botón Registrar (Submit) -->
+      <button
+        type="submit"
+        form="descargo-form"
+        :disabled="!canSubmit || submitting"
+        :class="(canSubmit && !submitting) ? 'bg-success-600 hover:bg-success-700 shadow-md' : 'bg-neutral-100 text-neutral-400 cursor-not-allowed'"
+        class="inline-flex items-center px-4 py-1.5 border border-transparent shadow-sm text-[10px] font-black rounded-md text-white focus:outline-none transition-all active:scale-95 uppercase tracking-widest min-w-[140px] justify-center">
+        <span x-show="!submitting" class="flex items-center">
+          <i class="ph ph-check-circle mr-1.5 text-base"></i>
+          Registrar Descargo
+        </span>
+        <span x-show="submitting" x-cloak class="flex items-center">
+          <svg class="animate-spin h-3.5 w-3.5 mr-2" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+          </svg>
+          Guardando...
+        </span>
+      </button>
     </div>
   </div>
 
   <form
     id="descargo-form"
+    x-ref="form"
     action="/descargos"
     method="POST"
     enctype="multipart/form-data"
-    x-data="{ canSubmit: false }"
-    x-init="canSubmit = $el.checkValidity()"
-    @input.debounce.50ms="canSubmit = $el.checkValidity()"
-    @change.debounce.50ms="canSubmit = $el.checkValidity()"
-    class="bg-white shadow rounded-lg overflow-hidden border border-neutral-200">
+    class="bg-white shadow rounded-lg overflow-hidden border border-neutral-200"
+    @input.debounce.50ms="canSubmit = $refs.form.checkValidity()"
+    @change.debounce.50ms="canSubmit = $refs.form.checkValidity()"
+    @submit="submitting = true">
     <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
     <input type="hidden" name="solicitud_id" value="{{ .Solicitud.ID }}" />
 
@@ -64,64 +89,49 @@
                   <span class="px-2 text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Vuelo Original</span>
                   <div class="h-px bg-neutral-200 flex-1"></div>
                 </div>
-                <div class="grid grid-cols-12 gap-2 px-1 mb-1">
-                  <div class="col-span-1 text-[9px] font-bold text-neutral-400 uppercase text-center">Dev.</div>
-                  <div class="col-span-3 text-[9px] font-bold text-neutral-400 uppercase">Ruta / Tramo</div>
-                  <div class="col-span-2 text-[9px] font-bold text-neutral-400 uppercase">Fecha</div>
-                  <div class="col-span-2 text-[9px] font-bold text-neutral-400 uppercase">Boleto</div>
-                  <div class="col-span-2 text-[9px] font-bold text-neutral-400 uppercase">Nº Pase</div>
-                  <div class="col-span-2 text-[9px] font-bold text-neutral-400 uppercase">Boarding Pass</div>
-                </div>
-                <div class="space-y-2">
-                  {{ range $i, $p := (index .PasajesOriginales "IDA") }}
-                  <div class="grid grid-cols-12 gap-2 items-start" x-data="{ devuelto: false }">
-                    <input type="hidden" name="itin_tipo[]" value="IDA_ORIGINAL" />
-                    <input type="hidden" name="itin_index[]" value="io_{{ $i }}" />
-                    <div class="col-span-1 pt-1.5 flex justify-center">
-                      <label class="cursor-pointer" title="Pasaje Devuelto">
-                        <input type="checkbox" name="itin_devolucion[]" value="io_{{ $i }}" x-model="devuelto" class="h-4 w-4 text-primary border-neutral-300 rounded focus:ring-primary">
-                      </label>
-                    </div>
-                    <div class="col-span-3" :class="{ 'opacity-50': devuelto }">
-                      <input
-                        type="text"
-                        name="itin_ruta[]"
-                        value="{{ .Ruta }}"
-                        required
-                        class="block w-full text-[11px] border-neutral-200 rounded p-1.5 bg-neutral-50 px-2"
-                        readonly />
-                    </div>
-                    <div class="col-span-2" :class="{ 'opacity-50': devuelto }">
-                      <input
-                        type="date"
-                        name="itin_fecha[]"
-                        value="{{ .Fecha }}"
-                        required
-                        class="block w-full text-[11px] border-neutral-200 rounded p-1.5 bg-neutral-50 px-1"
-                        readonly />
-                    </div>
-                    <div class="col-span-2" :class="{ 'opacity-50': devuelto }">
-                      <input type="text" name="itin_boleto[]" value="{{ .Boleto }}" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded p-1.5 px-2" />
-                    </div>
-                    <div class="col-span-2" :class="{ 'opacity-50': devuelto }">
-                      <input type="text" name="itin_pase_numero[]" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded p-1.5 px-2" placeholder="Pase" />
-                    </div>
-                    <div class="col-span-2 pt-1 flex justify-center" :class="{ 'opacity-50': devuelto }" x-data="{ fileName: '' }">
-                      <label class="cursor-pointer flex items-center gap-2 px-3 py-1.5 rounded border transition-colors w-full justify-center" 
-                             :class="fileName ? 'bg-success-50 border-success-200 text-success-700' : 'bg-neutral-50 border-neutral-200 text-neutral-500 hover:bg-neutral-100 hover:border-neutral-300'">
-                        <input
-                          type="file"
-                          :disabled="devuelto"
-                          name="itin_archivo_io_{{ $i }}"
-                          class="hidden"
-                          accept=".pdf,application/pdf"
-                          @change="fileName = $el.files[0] ? $el.files[0].name : ''" />
-                        <i class="ph text-lg" :class="fileName ? 'ph-file-pdf' : 'ph-upload-simple'"></i>
-                        <span class="text-[10px] font-bold uppercase truncate max-w-[100px]" x-text="fileName ? fileName : 'Subir PDF'"></span>
-                      </label>
-                    </div>
-                  </div>
-                  {{ end }}
+                <div class="overflow-x-auto">
+                  <table class="min-w-full divide-y divide-neutral-200">
+                    <thead class="bg-neutral-50">
+                      <tr>
+                        <th class="px-2 py-1 text-center text-[9px] font-bold text-neutral-400 uppercase">Dev.</th>
+                        <th class="px-2 py-1 text-left text-[9px] font-bold text-neutral-400 uppercase">Ruta / Tramo</th>
+                        <th class="px-2 py-1 text-left text-[9px] font-bold text-neutral-400 uppercase">Fecha</th>
+                        <th class="px-2 py-1 text-left text-[9px] font-bold text-neutral-400 uppercase">Boleto</th>
+                        <th class="px-2 py-1 text-left text-[9px] font-bold text-neutral-400 uppercase">Nº Pase</th>
+                        <th class="px-2 py-1 text-center text-[9px] font-bold text-neutral-400 uppercase">PDF</th>
+                      </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-neutral-100">
+                      {{ range $i, $p := (index .PasajesOriginales "IDA") }}
+                      <tr x-data="{ devuelto: false }">
+                        <td class="px-2 py-1 text-center">
+                          <input type="hidden" name="itin_tipo[]" value="IDA_ORIGINAL" />
+                          <input type="hidden" name="itin_index[]" value="io_{{ $i }}" />
+                          <input type="checkbox" name="itin_devolucion[]" value="io_{{ $i }}" x-model="devuelto" class="h-4 w-4 text-primary border-neutral-300 rounded focus:ring-primary">
+                        </td>
+                        <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
+                          <input type="text" name="itin_ruta[]" value="{{ .Ruta }}" required class="block w-full text-[11px] border-neutral-200 rounded py-0.5 px-2 bg-neutral-50" readonly />
+                        </td>
+                        <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
+                          <input type="date" name="itin_fecha[]" value="{{ .Fecha }}" required class="block w-full text-[11px] border-neutral-200 rounded py-0.5 px-1 bg-neutral-50" readonly />
+                        </td>
+                        <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
+                          <input type="text" name="itin_boleto[]" value="{{ .Boleto }}" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" />
+                        </td>
+                        <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
+                          <input type="text" name="itin_pase_numero[]" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" placeholder="Pase" />
+                        </td>
+                        <td class="px-2 py-1 text-center" :class="{ 'opacity-50': devuelto }" x-data="{ fileName: '' }">
+                          <label class="cursor-pointer flex items-center justify-center py-0.5 px-1.5 rounded border transition-colors hover:bg-neutral-100" 
+                                :class="fileName ? 'bg-success-50 border-success-200 text-success-700' : 'bg-neutral-50 border-neutral-200 text-neutral-500'">
+                            <input type="file" :disabled="devuelto" name="itin_archivo_io_{{ $i }}" class="hidden" accept=".pdf,application/pdf" @change="fileName = $el.files[0] ? $el.files[0].name : ''" />
+                            <i class="ph text-base" :class="fileName ? 'ph-file-pdf' : 'ph-upload-simple'"></i>
+                          </label>
+                        </td>
+                      </tr>
+                      {{ end }}
+                    </tbody>
+                  </table>
                 </div>
               </div>
 
@@ -131,68 +141,59 @@
                   <div class="h-px bg-neutral-200 flex-1"></div>
                   <span class="px-2 text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Reprogramación</span>
                   <div class="h-px bg-neutral-200 flex-1"></div>
-                  <button
-                    type="button"
-                    onclick="addItinRow('IDA_REPRO')"
-                    class="ml-2 text-[10px] bg-neutral-50 text-neutral-600 px-2 py-0.5 rounded border border-neutral-200 hover:bg-neutral-100 transition-colors">
+                  <button type="button" onclick="addItinRow('IDA_REPRO')" class="ml-2 text-[10px] bg-neutral-50 text-neutral-600 px-2 py-0.5 rounded border border-neutral-200 hover:bg-neutral-100 transition-colors">
                     + Tramo
                   </button>
                 </div>
-                <div class="grid grid-cols-12 gap-2 px-3 mb-1">
-                  <div class="col-span-1 text-[9px] font-bold text-neutral-400 uppercase text-center">Dev.</div>
-                  <div class="col-span-3 text-[9px] font-bold text-neutral-400 uppercase">Ruta / Tramo</div>
-                  <div class="col-span-2 text-[9px] font-bold text-neutral-400 uppercase">Fecha</div>
-                  <div class="col-span-2 text-[9px] font-bold text-neutral-400 uppercase">Boleto</div>
-                  <div class="col-span-2 text-[9px] font-bold text-neutral-400 uppercase">Nº Pase</div>
-                  <div class="col-span-1 text-[9px] font-bold text-neutral-400 uppercase">PDF</div>
-                  <div class="col-span-1 text-[9px] font-bold text-neutral-400 uppercase text-right"></div>
-                </div>
-                <div id="itin-ida-repro-container" class="space-y-3">
-                  {{ range $i, $p := (index .PasajesReprogramados "IDA") }}
-                   <div class="grid grid-cols-12 gap-2 items-center bg-neutral-50/50 p-3 rounded border border-neutral-100 relative" x-data="{ devuelto: false }">
-                    <input type="hidden" name="itin_tipo[]" value="IDA_REPRO" />
-                    <input type="hidden" name="itin_index[]" value="ir_{{ $i }}" />
-                    <div class="col-span-1 pt-1 flex justify-center">
-                      <label class="cursor-pointer" title="Pasaje Devuelto">
-                        <input type="checkbox" name="itin_devolucion[]" value="ir_{{ $i }}" x-model="devuelto" class="h-4 w-4 text-primary border-neutral-300 rounded focus:ring-primary">
-                      </label>
-                    </div>
-                    <div class="col-span-3" :class="{ 'opacity-50': devuelto }">
-                      <input type="text" name="itin_ruta[]" value="{{ .Ruta }}" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded p-1.5" />
-                    </div>
-                    <div class="col-span-2" :class="{ 'opacity-50': devuelto }">
-                      <input type="date" name="itin_fecha[]" value="{{ .Fecha }}" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded p-1.5" />
-                    </div>
-                    <div class="col-span-2" :class="{ 'opacity-50': devuelto }">
-                      <input type="text" name="itin_boleto[]" value="{{ .Boleto }}" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded p-1.5" />
-                    </div>
-                    <div class="col-span-2" :class="{ 'opacity-50': devuelto }">
-                      <input type="text" name="itin_pase_numero[]" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded p-1.5" />
-                    </div>
-                    <div class="col-span-1 flex justify-center" :class="{ 'opacity-50': devuelto }" x-data="{ fileName: '' }">
-                      <label class="cursor-pointer flex items-center justify-center p-1.5 rounded border transition-colors w-full" 
-                             :class="fileName ? 'bg-success-50 border-success-200 text-success-700' : 'bg-neutral-50 border-neutral-200 text-neutral-500 hover:bg-neutral-100 hover:border-neutral-300'"
-                             :title="fileName ? fileName : 'Subir PDF'">
-                        <input
-                          type="file"
-                          :disabled="devuelto"
-                          name="itin_archivo_ir_{{ $i }}"
-                          class="hidden"
-                          accept=".pdf,application/pdf"
-                          @change="fileName = $el.files[0] ? $el.files[0].name : ''" />
-                        <i class="ph text-lg" :class="fileName ? 'ph-file-pdf' : 'ph-upload-simple'"></i>
-                      </label>
-                    </div>
-                    <div class="col-span-1 text-right pt-4">
-                      <button
-                        type="button"
-                        onclick="this.closest('.grid').remove(); document.getElementById('descargo-form').dispatchEvent(new Event('input'))"
-                        class="text-neutral-400 hover:text-danger-600 transition-colors">
-                        <i class="ph ph-trash"></i>
-                      </button>
-                    </div>
-                  </div>
-                  {{ end }}
+                <div class="overflow-x-auto">
+                  <table class="min-w-full divide-y divide-neutral-200">
+                    <thead class="bg-neutral-50">
+                      <tr>
+                        <th class="px-2 py-1 text-center text-[9px] font-bold text-neutral-400 uppercase">Dev.</th>
+                        <th class="px-2 py-1 text-left text-[9px] font-bold text-neutral-400 uppercase">Ruta / Tramo</th>
+                        <th class="px-2 py-1 text-left text-[9px] font-bold text-neutral-400 uppercase">Fecha</th>
+                        <th class="px-2 py-1 text-left text-[9px] font-bold text-neutral-400 uppercase">Boleto</th>
+                        <th class="px-2 py-1 text-left text-[9px] font-bold text-neutral-400 uppercase">Nº Pase</th>
+                        <th class="px-2 py-1 text-center text-[9px] font-bold text-neutral-400 uppercase">PDF</th>
+                        <th class="px-2 py-1 text-right"></th>
+                      </tr>
+                    </thead>
+                    <tbody id="itin-ida-repro-container" class="bg-white divide-y divide-neutral-100">
+                      {{ range $i, $p := (index .PasajesReprogramados "IDA") }}
+                      <tr x-data="{ devuelto: false }">
+                        <td class="px-2 py-1 text-center">
+                          <input type="hidden" name="itin_tipo[]" value="IDA_REPRO" />
+                          <input type="hidden" name="itin_index[]" value="ir_{{ $i }}" />
+                          <input type="checkbox" name="itin_devolucion[]" value="ir_{{ $i }}" x-model="devuelto" class="h-4 w-4 text-primary border-neutral-300 rounded focus:ring-primary">
+                        </td>
+                        <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
+                          <input type="text" name="itin_ruta[]" value="{{ .Ruta }}" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" />
+                        </td>
+                        <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
+                          <input type="date" name="itin_fecha[]" value="{{ .Fecha }}" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" />
+                        </td>
+                        <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
+                          <input type="text" name="itin_boleto[]" value="{{ .Boleto }}" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" />
+                        </td>
+                        <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
+                          <input type="text" name="itin_pase_numero[]" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" />
+                        </td>
+                        <td class="px-2 py-1 text-center" :class="{ 'opacity-50': devuelto }" x-data="{ fileName: '' }">
+                          <label class="cursor-pointer flex items-center justify-center py-0.5 px-1.5 rounded border transition-colors hover:bg-neutral-100" 
+                                :class="fileName ? 'bg-success-50 border-success-200 text-success-700' : 'bg-neutral-50 border-neutral-200 text-neutral-500'">
+                            <input type="file" :disabled="devuelto" name="itin_archivo_ir_{{ $i }}" class="hidden" accept=".pdf,application/pdf" @change="fileName = $el.files[0] ? $el.files[0].name : ''" />
+                            <i class="ph text-base" :class="fileName ? 'ph-file-pdf' : 'ph-upload-simple'"></i>
+                          </label>
+                        </td>
+                        <td class="px-2 py-1 text-right">
+                          <button type="button" onclick="this.closest('tr').remove(); document.getElementById('descargo-form').dispatchEvent(new Event('input'))" class="text-neutral-400 hover:text-danger-600 transition-colors">
+                            <i class="ph ph-trash"></i>
+                          </button>
+                        </td>
+                      </tr>
+                      {{ end }}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>
@@ -213,64 +214,49 @@
                   <span class="px-2 text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Vuelo Original</span>
                   <div class="h-px bg-neutral-200 flex-1"></div>
                 </div>
-                <div class="grid grid-cols-12 gap-2 px-1 mb-1">
-                  <div class="col-span-1 text-[9px] font-bold text-neutral-400 uppercase text-center">Dev.</div>
-                  <div class="col-span-3 text-[9px] font-bold text-neutral-400 uppercase">Ruta / Tramo</div>
-                  <div class="col-span-2 text-[9px] font-bold text-neutral-400 uppercase">Fecha</div>
-                  <div class="col-span-2 text-[9px] font-bold text-neutral-400 uppercase">Boleto</div>
-                  <div class="col-span-2 text-[9px] font-bold text-neutral-400 uppercase">Nº Pase</div>
-                  <div class="col-span-2 text-[9px] font-bold text-neutral-400 uppercase">Boarding Pass</div>
-                </div>
-                <div class="space-y-2">
-                  {{ range $i, $p := (index .PasajesOriginales "VUELTA") }}
-                   <div class="grid grid-cols-12 gap-2 items-start" x-data="{ devuelto: false }">
-                    <input type="hidden" name="itin_tipo[]" value="VUELTA_ORIGINAL" />
-                    <input type="hidden" name="itin_index[]" value="vo_{{ $i }}" />
-                    <div class="col-span-1 pt-1.5 flex justify-center">
-                      <label class="cursor-pointer" title="Pasaje Devuelto">
-                        <input type="checkbox" name="itin_devolucion[]" value="vo_{{ $i }}" x-model="devuelto" class="h-4 w-4 text-primary border-neutral-300 rounded focus:ring-primary">
-                      </label>
-                    </div>
-                    <div class="col-span-3" :class="{ 'opacity-50': devuelto }">
-                      <input
-                        type="text"
-                        name="itin_ruta[]"
-                        value="{{ .Ruta }}"
-                        required
-                        class="block w-full text-[11px] border-neutral-200 rounded p-1.5 bg-neutral-50 px-2"
-                        readonly />
-                    </div>
-                    <div class="col-span-2" :class="{ 'opacity-50': devuelto }">
-                      <input
-                        type="date"
-                        name="itin_fecha[]"
-                        value="{{ .Fecha }}"
-                        required
-                        class="block w-full text-[11px] border-neutral-200 rounded p-1.5 bg-neutral-50 px-1"
-                        readonly />
-                    </div>
-                    <div class="col-span-2" :class="{ 'opacity-50': devuelto }">
-                      <input type="text" name="itin_boleto[]" value="{{ .Boleto }}" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded p-1.5 px-2" />
-                    </div>
-                    <div class="col-span-2" :class="{ 'opacity-50': devuelto }">
-                      <input type="text" name="itin_pase_numero[]" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded p-1.5 px-2" placeholder="Pase" />
-                    </div>
-                    <div class="col-span-2 pt-1 flex justify-center" :class="{ 'opacity-50': devuelto }" x-data="{ fileName: '' }">
-                      <label class="cursor-pointer flex items-center gap-2 px-3 py-1.5 rounded border transition-colors w-full justify-center" 
-                             :class="fileName ? 'bg-success-50 border-success-200 text-success-700' : 'bg-neutral-50 border-neutral-200 text-neutral-500 hover:bg-neutral-100 hover:border-neutral-300'">
-                        <input
-                          type="file"
-                          :disabled="devuelto"
-                          name="itin_archivo_vo_{{ $i }}"
-                          class="hidden"
-                          accept=".pdf,application/pdf"
-                          @change="fileName = $el.files[0] ? $el.files[0].name : ''" />
-                        <i class="ph text-lg" :class="fileName ? 'ph-file-pdf' : 'ph-upload-simple'"></i>
-                        <span class="text-[10px] font-bold uppercase truncate max-w-[100px]" x-text="fileName ? fileName : 'Subir PDF'"></span>
-                      </label>
-                    </div>
-                  </div>
-                  {{ end }}
+                <div class="overflow-x-auto">
+                  <table class="min-w-full divide-y divide-neutral-200">
+                    <thead class="bg-neutral-50">
+                      <tr>
+                        <th class="px-2 py-1 text-center text-[9px] font-bold text-neutral-400 uppercase">Dev.</th>
+                        <th class="px-2 py-1 text-left text-[9px] font-bold text-neutral-400 uppercase">Ruta / Tramo</th>
+                        <th class="px-2 py-1 text-left text-[9px] font-bold text-neutral-400 uppercase">Fecha</th>
+                        <th class="px-2 py-1 text-left text-[9px] font-bold text-neutral-400 uppercase">Boleto</th>
+                        <th class="px-2 py-1 text-left text-[9px] font-bold text-neutral-400 uppercase">Nº Pase</th>
+                        <th class="px-2 py-1 text-center text-[9px] font-bold text-neutral-400 uppercase">PDF</th>
+                      </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-neutral-100">
+                      {{ range $i, $p := (index .PasajesOriginales "VUELTA") }}
+                      <tr x-data="{ devuelto: false }">
+                        <td class="px-2 py-1 text-center">
+                          <input type="hidden" name="itin_tipo[]" value="VUELTA_ORIGINAL" />
+                          <input type="hidden" name="itin_index[]" value="vo_{{ $i }}" />
+                          <input type="checkbox" name="itin_devolucion[]" value="vo_{{ $i }}" x-model="devuelto" class="h-4 w-4 text-primary border-neutral-300 rounded focus:ring-primary">
+                        </td>
+                        <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
+                          <input type="text" name="itin_ruta[]" value="{{ .Ruta }}" required class="block w-full text-[11px] border-neutral-200 rounded py-0.5 px-2 bg-neutral-50" readonly />
+                        </td>
+                        <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
+                          <input type="date" name="itin_fecha[]" value="{{ .Fecha }}" required class="block w-full text-[11px] border-neutral-200 rounded py-0.5 px-1 bg-neutral-50" readonly />
+                        </td>
+                        <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
+                          <input type="text" name="itin_boleto[]" value="{{ .Boleto }}" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" />
+                        </td>
+                        <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
+                          <input type="text" name="itin_pase_numero[]" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" placeholder="Pase" />
+                        </td>
+                        <td class="px-2 py-1 text-center" :class="{ 'opacity-50': devuelto }" x-data="{ fileName: '' }">
+                          <label class="cursor-pointer flex items-center justify-center py-0.5 px-1.5 rounded border transition-colors hover:bg-neutral-100" 
+                                :class="fileName ? 'bg-success-50 border-success-200 text-success-700' : 'bg-neutral-50 border-neutral-200 text-neutral-500'">
+                            <input type="file" :disabled="devuelto" name="itin_archivo_vo_{{ $i }}" class="hidden" accept=".pdf,application/pdf" @change="fileName = $el.files[0] ? $el.files[0].name : ''" />
+                            <i class="ph text-base" :class="fileName ? 'ph-file-pdf' : 'ph-upload-simple'"></i>
+                          </label>
+                        </td>
+                      </tr>
+                      {{ end }}
+                    </tbody>
+                  </table>
                 </div>
               </div>
 
@@ -280,68 +266,59 @@
                   <div class="h-px bg-neutral-200 flex-1"></div>
                   <span class="px-2 text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Reprogramación</span>
                   <div class="h-px bg-neutral-200 flex-1"></div>
-                  <button
-                    type="button"
-                    onclick="addItinRow('VUELTA_REPRO')"
-                    class="ml-2 text-[10px] bg-neutral-50 text-neutral-600 px-2 py-0.5 rounded border border-neutral-200 hover:bg-neutral-100 transition-colors">
+                  <button type="button" onclick="addItinRow('VUELTA_REPRO')" class="ml-2 text-[10px] bg-neutral-50 text-neutral-600 px-2 py-0.5 rounded border border-neutral-200 hover:bg-neutral-100 transition-colors">
                     + Tramo
                   </button>
                 </div>
-                <div class="grid grid-cols-12 gap-2 px-3 mb-1">
-                  <div class="col-span-1 text-[9px] font-bold text-neutral-400 uppercase text-center">Dev.</div>
-                  <div class="col-span-3 text-[9px] font-bold text-neutral-400 uppercase">Ruta / Tramo</div>
-                  <div class="col-span-2 text-[9px] font-bold text-neutral-400 uppercase">Fecha</div>
-                  <div class="col-span-2 text-[9px] font-bold text-neutral-400 uppercase">Boleto</div>
-                  <div class="col-span-2 text-[9px] font-bold text-neutral-400 uppercase">Nº Pase</div>
-                  <div class="col-span-1 text-[9px] font-bold text-neutral-400 uppercase">PDF</div>
-                  <div class="col-span-1 text-[9px] font-bold text-neutral-400 uppercase text-right"></div>
-                </div>
-                <div id="itin-vuelta-repro-container" class="space-y-3">
-                  {{ range $i, $p := (index .PasajesReprogramados "VUELTA") }}
-                  <div class="grid grid-cols-12 gap-2 items-center bg-neutral-50/50 p-3 rounded border border-neutral-100 relative" x-data="{ devuelto: false }">
-                    <input type="hidden" name="itin_tipo[]" value="VUELTA_REPRO" />
-                    <input type="hidden" name="itin_index[]" value="vr_{{ $i }}" />
-                    <div class="col-span-1 pt-1 flex justify-center">
-                      <label class="cursor-pointer" title="Pasaje Devuelto">
-                        <input type="checkbox" name="itin_devolucion[]" value="vr_{{ $i }}" x-model="devuelto" class="h-4 w-4 text-primary border-neutral-300 rounded focus:ring-primary">
-                      </label>
-                    </div>
-                    <div class="col-span-3" :class="{ 'opacity-50': devuelto }">
-                      <input type="text" name="itin_ruta[]" value="{{ .Ruta }}" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded p-1.5" />
-                    </div>
-                    <div class="col-span-2" :class="{ 'opacity-50': devuelto }">
-                      <input type="date" name="itin_fecha[]" value="{{ .Fecha }}" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded p-1.5" />
-                    </div>
-                    <div class="col-span-2" :class="{ 'opacity-50': devuelto }">
-                      <input type="text" name="itin_boleto[]" value="{{ .Boleto }}" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded p-1.5" />
-                    </div>
-                    <div class="col-span-2" :class="{ 'opacity-50': devuelto }">
-                      <input type="text" name="itin_pase_numero[]" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded p-1.5" />
-                    </div>
-                    <div class="col-span-1 flex justify-center" :class="{ 'opacity-50': devuelto }" x-data="{ fileName: '' }">
-                      <label class="cursor-pointer flex items-center justify-center p-1.5 rounded border transition-colors w-full" 
-                             :class="fileName ? 'bg-success-50 border-success-200 text-success-700' : 'bg-neutral-50 border-neutral-200 text-neutral-500 hover:bg-neutral-100 hover:border-neutral-300'"
-                             :title="fileName ? fileName : 'Subir PDF'">
-                        <input
-                          type="file"
-                          :disabled="devuelto"
-                          name="itin_archivo_vr_{{ $i }}"
-                          class="hidden"
-                          accept=".pdf,application/pdf"
-                          @change="fileName = $el.files[0] ? $el.files[0].name : ''" />
-                        <i class="ph text-lg" :class="fileName ? 'ph-file-pdf' : 'ph-upload-simple'"></i>
-                      </label>
-                    </div>
-                    <div class="col-span-1 text-right pt-4">
-                      <button
-                        type="button"
-                        onclick="this.closest('.grid').remove(); document.getElementById('descargo-form').dispatchEvent(new Event('input'))"
-                        class="text-neutral-400 hover:text-danger-600 transition-colors">
-                        <i class="ph ph-trash"></i>
-                      </button>
-                    </div>
-                  </div>
-                  {{ end }}
+                <div class="overflow-x-auto">
+                  <table class="min-w-full divide-y divide-neutral-200">
+                    <thead class="bg-neutral-50">
+                      <tr>
+                        <th class="px-2 py-1 text-center text-[9px] font-bold text-neutral-400 uppercase">Dev.</th>
+                        <th class="px-2 py-1 text-left text-[9px] font-bold text-neutral-400 uppercase">Ruta / Tramo</th>
+                        <th class="px-2 py-1 text-left text-[9px] font-bold text-neutral-400 uppercase">Fecha</th>
+                        <th class="px-2 py-1 text-left text-[9px] font-bold text-neutral-400 uppercase">Boleto</th>
+                        <th class="px-2 py-1 text-left text-[9px] font-bold text-neutral-400 uppercase">Nº Pase</th>
+                        <th class="px-2 py-1 text-center text-[9px] font-bold text-neutral-400 uppercase">PDF</th>
+                        <th class="px-2 py-1 text-right"></th>
+                      </tr>
+                    </thead>
+                    <tbody id="itin-vuelta-repro-container" class="bg-white divide-y divide-neutral-100">
+                      {{ range $i, $p := (index .PasajesReprogramados "VUELTA") }}
+                      <tr x-data="{ devuelto: false }">
+                        <td class="px-2 py-1 text-center">
+                          <input type="hidden" name="itin_tipo[]" value="VUELTA_REPRO" />
+                          <input type="hidden" name="itin_index[]" value="vr_{{ $i }}" />
+                          <input type="checkbox" name="itin_devolucion[]" value="vr_{{ $i }}" x-model="devuelto" class="h-4 w-4 text-primary border-neutral-300 rounded focus:ring-primary">
+                        </td>
+                        <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
+                          <input type="text" name="itin_ruta[]" value="{{ .Ruta }}" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" />
+                        </td>
+                        <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
+                          <input type="date" name="itin_fecha[]" value="{{ .Fecha }}" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" />
+                        </td>
+                        <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
+                          <input type="text" name="itin_boleto[]" value="{{ .Boleto }}" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" />
+                        </td>
+                        <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
+                          <input type="text" name="itin_pase_numero[]" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" />
+                        </td>
+                        <td class="px-2 py-1 text-center" :class="{ 'opacity-50': devuelto }" x-data="{ fileName: '' }">
+                          <label class="cursor-pointer flex items-center justify-center py-0.5 px-1.5 rounded border transition-colors hover:bg-neutral-100" 
+                                :class="fileName ? 'bg-success-50 border-success-200 text-success-700' : 'bg-neutral-50 border-neutral-200 text-neutral-500'">
+                            <input type="file" :disabled="devuelto" name="itin_archivo_vr_{{ $i }}" class="hidden" accept=".pdf,application/pdf" @change="fileName = $el.files[0] ? $el.files[0].name : ''" />
+                            <i class="ph text-base" :class="fileName ? 'ph-file-pdf' : 'ph-upload-simple'"></i>
+                          </label>
+                        </td>
+                        <td class="px-2 py-1 text-right">
+                          <button type="button" onclick="this.closest('tr').remove(); document.getElementById('descargo-form').dispatchEvent(new Event('input'))" class="text-neutral-400 hover:text-danger-600 transition-colors">
+                            <i class="ph ph-trash"></i>
+                          </button>
+                        </td>
+                      </tr>
+                      {{ end }}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>
@@ -350,15 +327,7 @@
       </div>
     </div>
 
-    <div class="px-4 py-3 bg-neutral-50 text-right sm:px-6 flex justify-end">
-      <button
-        type="submit"
-        :disabled="!canSubmit"
-        :class="canSubmit ? 'bg-primary hover:bg-primary-800' : 'bg-neutral-300 cursor-not-allowed'"
-        class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white transition-all focus:outline-none">
-        Registrar Descargo
-      </button>
-    </div>
+    <!-- Bottom actions removed per user request, moved to top header -->
   </form>
 </div>
 <script>
@@ -370,58 +339,46 @@
     if (!container) return;
 
     const index = itinCounter++;
-    const row = document.createElement("div");
-    row.className = "grid grid-cols-12 gap-2 items-center bg-neutral-50/50 p-3 rounded border border-neutral-100 relative";
+    const row = document.createElement("tr");
+    row.setAttribute("x-data", "{ devuelto: false }");
 
     row.innerHTML = `
-      <input type="hidden" name="itin_tipo[]" value="${type}">
-      <input type="hidden" name="itin_index[]" value="${index}">
-      <div class="col-span-1 pt-1 flex justify-center">
-        <label class="cursor-pointer" title="Pasaje Devuelto">
-          <input type="checkbox" name="itin_devolucion[]" value="${index}" x-model="devuelto" class="h-4 w-4 text-primary border-neutral-300 rounded focus:ring-primary">
-        </label>
-      </div>
-      <div class="col-span-3" :class="{ 'opacity-50': devuelto }">
-        <input type="text" name="itin_ruta[]" placeholder="Origen - Destino" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded p-1.5 focus:ring-secondary focus:border-secondary">
-      </div>
-      <div class="col-span-2" :class="{ 'opacity-50': devuelto }">
-        <input type="date" name="itin_fecha[]" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded p-1.5 focus:ring-secondary focus:border-secondary">
-      </div>
-      <div class="col-span-2" :class="{ 'opacity-50': devuelto }">
-        <input type="text" name="itin_boleto[]" placeholder="Boleto" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded p-1.5 focus:ring-secondary focus:border-secondary">
-      </div>
-      <div class="col-span-2" :class="{ 'opacity-50': devuelto }">
-        <input type="text" name="itin_pase_numero[]" placeholder="Pase" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded p-1.5 focus:ring-secondary focus:border-secondary">
-      </div>
-      <div class="col-span-1 flex justify-center" :class="{ 'opacity-50': devuelto }" x-data="{ fileName: '' }">
-        <label class="cursor-pointer flex items-center justify-center p-1.5 rounded border transition-colors w-full" 
-               :class="fileName ? 'bg-success-50 border-success-200 text-success-700' : 'bg-neutral-50 border-neutral-200 text-neutral-500 hover:bg-neutral-100 hover:border-neutral-300'"
+      <td class="px-2 py-1 text-center">
+        <input type="hidden" name="itin_tipo[]" value="${type}">
+        <input type="hidden" name="itin_index[]" value="${index}">
+        <input type="checkbox" name="itin_devolucion[]" value="${index}" x-model="devuelto" class="h-4 w-4 text-primary border-neutral-300 rounded focus:ring-primary">
+      </td>
+      <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
+        <input type="text" name="itin_ruta[]" placeholder="Origen - Destino" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2 focus:ring-secondary focus:border-secondary">
+      </td>
+      <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
+        <input type="date" name="itin_fecha[]" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2 focus:ring-secondary focus:border-secondary">
+      </td>
+      <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
+        <input type="text" name="itin_boleto[]" placeholder="Boleto" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2 focus:ring-secondary focus:border-secondary">
+      </td>
+      <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
+        <input type="text" name="itin_pase_numero[]" placeholder="Pase" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2 focus:ring-secondary focus:border-secondary">
+      </td>
+      <td class="px-2 py-1 text-center" :class="{ 'opacity-50': devuelto }" x-data="{ fileName: '' }">
+        <label class="cursor-pointer flex items-center justify-center py-0.5 px-1.5 rounded border transition-colors hover:bg-neutral-100 border-neutral-200 bg-neutral-50 text-neutral-500" 
+               :class="fileName ? 'bg-success-50 border-success-200 text-success-700' : ''"
                :title="fileName ? fileName : 'Subir PDF (Opcional)'">
-          <input
-            type="file"
-            :disabled="devuelto"
-            name="itin_archivo_${index}"
-            class="hidden"
-            accept=".pdf,application/pdf"
-            @change="fileName = $el.files[0] ? $el.files[0].name : ''" />
-          <i class="ph text-lg" :class="fileName ? 'ph-file-pdf' : 'ph-upload-simple'"></i>
+          <input type="file" :disabled="devuelto" name="itin_archivo_${index}" class="hidden" accept=".pdf,application/pdf" @change="fileName = $el.files[0] ? $el.files[0].name : ''" />
+          <i class="ph text-base" :class="fileName ? 'ph-file-pdf' : 'ph-upload-simple'"></i>
         </label>
-      </div>
-      <div class="col-span-1 text-right pt-4">
-        <button type="button" onclick="this.closest('.grid').remove(); document.getElementById('descargo-form').dispatchEvent(new Event('input'))" class="text-neutral-400 hover:text-danger-600 transition-colors">
+      </td>
+      <td class="px-2 py-1 text-right">
+        <button type="button" onclick="this.closest('tr').remove(); document.getElementById('descargo-form').dispatchEvent(new Event('input'))" class="text-neutral-400 hover:text-danger-600 transition-colors">
           <i class="ph ph-trash"></i>
         </button>
-      </div>
+      </td>
     `;
-    row.setAttribute("x-data", "{ devuelto: false }");
     container.appendChild(row);
   };
 
-  // Initialize counter with existing rows if any (though usually it's empty on start)
   document.addEventListener("DOMContentLoaded", () => {
-    // Count existing range iterations? Hard in template.
-    // I'll just use a large enough starting index or just count them in JS.
-    itinCounter = document.querySelectorAll('input[name="itin_tipo[]"]').length;
+    itinCounter = document.querySelectorAll('input[name="itin_tipo[]"]').length + 100;
   });
 </script>
 

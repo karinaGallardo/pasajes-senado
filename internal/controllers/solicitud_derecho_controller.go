@@ -28,6 +28,7 @@ type SolicitudDerechoController struct {
 	agenciaService        *services.AgenciaService
 	tipoItinerarioService *services.TipoItinerarioService
 	rutaService           *services.RutaService
+	descargoService       *services.DescargoService
 }
 
 func NewSolicitudDerechoController() *SolicitudDerechoController {
@@ -45,6 +46,7 @@ func NewSolicitudDerechoController() *SolicitudDerechoController {
 		agenciaService:        services.NewAgenciaService(),
 		tipoItinerarioService: services.NewTipoItinerarioService(),
 		rutaService:           services.NewRutaService(),
+		descargoService:       services.NewDescargoService(),
 	}
 }
 
@@ -587,10 +589,16 @@ func (ctrl *SolicitudDerechoController) Show(c *gin.Context) {
 		usuariosMap[usuarios[i].ID] = &usuarios[i]
 	}
 
+	var descargoID string
+	if descargo, _ := ctrl.descargoService.GetBySolicitudID(c.Request.Context(), id); descargo != nil && descargo.ID != "" {
+		descargoID = descargo.ID
+	}
+
 	utils.Render(c, "solicitud/derecho/show", gin.H{
-		"Title":     "Detalle Solicitud (Derecho) #" + id,
-		"Solicitud": solicitud,
-		"Usuarios":  usuariosMap,
+		"Title":      "Detalle Solicitud (Derecho) #" + id,
+		"Solicitud":  solicitud,
+		"Usuarios":   usuariosMap,
+		"DescargoID": descargoID,
 
 		// New View Data
 		"Perms":         perms,

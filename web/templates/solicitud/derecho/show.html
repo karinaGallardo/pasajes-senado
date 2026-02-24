@@ -42,6 +42,21 @@
         <i class="ph ph-printer mr-2 text-lg"></i>
         Imprimir
       </button>
+      {{ if .DescargoID }}
+      <a
+        href="/descargos/{{ .DescargoID }}"
+        class="inline-flex items-center px-4 py-1 border border-primary-600 shadow-sm text-sm font-medium rounded-md text-primary-600 bg-white hover:bg-primary-50 focus:outline-none transition-all active:scale-95">
+        <i class="ph ph-eye mr-2 text-lg"></i>
+        Ver Descargo
+      </a>
+      {{ else if .Perms.CanMakeDescargo }}
+      <a
+        href="/solicitudes/derecho/{{ .Solicitud.ID }}/descargo"
+        class="inline-flex items-center px-4 py-1 border border-primary-600 shadow-sm text-sm font-medium rounded-md text-primary-600 bg-white hover:bg-primary-50 focus:outline-none transition-all active:scale-95">
+        <i class="ph ph-file-plus mr-2 text-lg"></i>
+        Descargo
+      </a>
+      {{ end }}
       <a
         href="/solicitudes?estado={{ .Solicitud.EstadoSolicitud.Codigo }}"
         class="inline-flex items-center px-4 py-1 border border-neutral-300 shadow-sm text-sm font-medium rounded-md text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none">
@@ -316,16 +331,6 @@
               {{ if eq .Solicitud.Usuario.Tipo "SENADOR_TITULAR" }}TITULAR{{ else }}SUPLENTE{{ end }}
             </span>
           </div>
-        </div>
-
-        <div class="flex items-center gap-2">
-          {{ if .Perms.CanMakeDescargo }}
-          <a
-            href="/solicitudes/derecho/{{ .Solicitud.ID }}/descargo"
-            class="inline-flex items-center px-3 py-1.5 border border-transparent rounded-md shadow-sm text-xs font-bold text-white bg-accent hover:bg-danger-700 focus:outline-none">
-            Descargo
-          </a>
-          {{ end }}
         </div>
       </div>
 

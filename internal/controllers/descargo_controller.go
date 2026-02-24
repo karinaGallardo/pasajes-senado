@@ -226,7 +226,7 @@ func (ctrl *DescargoController) Store(c *gin.Context) {
 		return
 	}
 
-	c.Redirect(http.StatusFound, "/descargos/"+descargo.ID)
+	c.Redirect(http.StatusFound, "/descargos/"+descargo.ID+"/editar")
 }
 
 func (ctrl *DescargoController) Show(c *gin.Context) {
@@ -334,7 +334,7 @@ func (ctrl *DescargoController) Update(c *gin.Context) {
 		return
 	}
 
-	c.Redirect(http.StatusFound, "/descargos/"+id)
+	c.Redirect(http.StatusFound, "/descargos/"+id+"/editar")
 }
 
 func (ctrl *DescargoController) Approve(c *gin.Context) {
