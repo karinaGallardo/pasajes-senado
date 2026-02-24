@@ -21,22 +21,51 @@ func NewDescargoService() *DescargoService {
 	}
 }
 
-func (s *DescargoService) Create(ctx context.Context, req dtos.CreateDescargoRequest, userID string, archivoPaths []string) (*models.Descargo, error) {
+func (s *DescargoService) Create(ctx context.Context, req dtos.CreateDescargoRequest, userID string, archivoPaths []string, anexoPaths []string) (*models.Descargo, error) {
 	solicitud, err := s.solicitudRepo.WithContext(ctx).FindByID(req.SolicitudID)
 	if err != nil {
 		return nil, err
 	}
 
 	descargo := &models.Descargo{
-		SolicitudID:        req.SolicitudID,
-		UsuarioID:          userID,
-		Codigo:             solicitud.Codigo,
-		FechaPresentacion:  time.Now(),
-		InformeActividades: req.InformeActividades,
-		Observaciones:      req.Observaciones,
-		Estado:             "EN_REVISION",
+		SolicitudID:       req.SolicitudID,
+		UsuarioID:         userID,
+		Codigo:            solicitud.Codigo,
+		FechaPresentacion: time.Now(),
+		Observaciones:     req.Observaciones,
+		Estado:            "EN_REVISION",
 	}
 	descargo.CreatedBy = &userID
+
+	// Si es solicitud oficial, crear detalle PV-06
+	isOficial := req.NroMemorandum != "" || req.InformeActividades != "" || req.ObjetivoViaje != "" || req.ResultadosViaje != "" || req.ConclusionesRecomendaciones != "" || req.MontoDevolucion > 0
+
+	if isOficial {
+		oficial := &models.DescargoOficial{
+			NroMemorandum:               req.NroMemorandum,
+			ObjetivoViaje:               req.ObjetivoViaje,
+			TipoTransporte:              req.TipoTransporte,
+			PlacaVehiculo:               req.PlacaVehiculo,
+			InformeActividades:          req.InformeActividades,
+			ResultadosViaje:             req.ResultadosViaje,
+			ConclusionesRecomendaciones: req.ConclusionesRecomendaciones,
+			MontoDevolucion:             req.MontoDevolucion,
+			NroBoletaDeposito:           req.NroBoletaDeposito,
+		}
+
+		// Mapear Anexos
+		var anexos []models.AnexoDescargo
+		for i, path := range anexoPaths {
+			if path != "" {
+				anexos = append(anexos, models.AnexoDescargo{
+					Archivo: path,
+					Orden:   i,
+				})
+			}
+		}
+		oficial.Anexos = anexos
+		descargo.Oficial = oficial
+	}
 
 	// Mapear Detalles de Itinerario
 	devolucionMap := make(map[string]bool)
@@ -110,15 +139,58 @@ func (s *DescargoService) Update(ctx context.Context, descargo *models.Descargo)
 	return s.repo.WithContext(ctx).Update(descargo)
 }
 
-func (s *DescargoService) UpdateFull(ctx context.Context, id string, req dtos.CreateDescargoRequest, userID string, archivoPaths []string) error {
+func (s *DescargoService) UpdateFull(ctx context.Context, id string, req dtos.CreateDescargoRequest, userID string, archivoPaths []string, anexoPaths []string) error {
 	descargo, err := s.repo.WithContext(ctx).FindByID(id)
 	if err != nil {
 		return err
 	}
 
-	descargo.InformeActividades = req.InformeActividades
 	descargo.Observaciones = req.Observaciones
 	descargo.UpdatedBy = &userID
+
+	// Mapear Detalle Oficial
+	isOficialUpdate := req.NroMemorandum != "" || req.InformeActividades != "" || req.ObjetivoViaje != "" || req.ResultadosViaje != "" || req.ConclusionesRecomendaciones != "" || req.MontoDevolucion > 0
+
+	if isOficialUpdate {
+		if descargo.Oficial == nil {
+			descargo.Oficial = &models.DescargoOficial{DescargoID: id}
+		}
+		descargo.Oficial.NroMemorandum = req.NroMemorandum
+		descargo.Oficial.ObjetivoViaje = req.ObjetivoViaje
+		descargo.Oficial.TipoTransporte = req.TipoTransporte
+		descargo.Oficial.PlacaVehiculo = req.PlacaVehiculo
+		descargo.Oficial.InformeActividades = req.InformeActividades
+		descargo.Oficial.ResultadosViaje = req.ResultadosViaje
+		descargo.Oficial.ConclusionesRecomendaciones = req.ConclusionesRecomendaciones
+		descargo.Oficial.MontoDevolucion = req.MontoDevolucion
+		descargo.Oficial.NroBoletaDeposito = req.NroBoletaDeposito
+
+		// Explicitly save the official detail to ensure columns are updated correctly
+		if err := s.repo.WithContext(ctx).UpdateOficial(descargo.Oficial); err != nil {
+			return err
+		}
+
+		// Mapear Anexos
+		if len(anexoPaths) > 0 {
+			var anexos []models.AnexoDescargo
+			for i, path := range anexoPaths {
+				if path != "" {
+					anexos = append(anexos, models.AnexoDescargo{
+						DescargoOficialID: descargo.Oficial.ID,
+						Archivo:           path,
+						Orden:             i,
+					})
+				}
+			}
+			// Clear existing ones using oficial ID if exists
+			if descargo.Oficial.ID != "" {
+				if err := s.repo.WithContext(ctx).ClearAnexos(descargo.Oficial.ID); err != nil {
+					return err
+				}
+			}
+			descargo.Oficial.Anexos = anexos
+		}
+	}
 
 	// Mapear Detalles de Itinerario
 	devolucionMap := make(map[string]bool)

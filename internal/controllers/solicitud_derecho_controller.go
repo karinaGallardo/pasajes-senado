@@ -48,125 +48,6 @@ func NewSolicitudDerechoController() *SolicitudDerechoController {
 	}
 }
 
-func (ctrl *SolicitudDerechoController) Create(c *gin.Context) {
-
-	authUser := appcontext.AuthUser(c)
-
-	itemID := c.Param("item_id")
-	itinerarioCode := c.Param("itinerario_code")
-
-	item, err := ctrl.cupoService.GetCupoDerechoItemByID(c.Request.Context(), itemID)
-	if err != nil {
-		c.String(http.StatusNotFound, "Derecho no encontrado")
-		return
-	}
-
-	itinerario, err := ctrl.tipoItinerarioService.GetByCodigo(c.Request.Context(), itinerarioCode)
-	if err != nil {
-		c.String(http.StatusBadRequest, "Itinerario inválido")
-		return
-	}
-
-	targetUser, err := ctrl.userService.GetByID(c.Request.Context(), item.SenAsignadoID)
-	if err != nil {
-		c.String(http.StatusInternalServerError, "Usuario titular del derecho no encontrado")
-		return
-	}
-
-	canCreate := false
-	if authUser.ID == targetUser.ID {
-		canCreate = true
-	} else if authUser.IsAdminOrResponsable() {
-		canCreate = true
-	} else if targetUser.EncargadoID != nil && *targetUser.EncargadoID == authUser.ID {
-		canCreate = true
-	}
-
-	if !canCreate {
-		c.String(http.StatusForbidden, "No tiene permisos para realizar esta solicitud")
-		return
-	}
-
-	var alertaOrigen string
-	if targetUser.GetOrigenIATA() == "" {
-		alertaOrigen = "Este usuario no tiene configurado su LUGAR DE ORIGEN en el perfil. El sistema no podrá calcular rutas automáticamente."
-	}
-
-	aerolineas, _ := ctrl.aerolineaService.GetAllActive(c.Request.Context())
-
-	tipoSolicitud, ambitoNac, _ := ctrl.tipoSolicitudService.GetByCodigoAndAmbito(c.Request.Context(), "USO_CUPO", "NACIONAL")
-
-	weekDays := ctrl.cupoService.GetCupoDerechoItemWeekDays(item)
-
-	origenIATA := targetUser.GetOrigenIATA()
-
-	var origen, destino *models.Destino
-
-	userLoc, err := ctrl.destinoService.GetByIATA(c.Request.Context(), origenIATA)
-	if err != nil || userLoc == nil {
-		c.Redirect(http.StatusFound, fmt.Sprintf("/usuarios/%s/editar", targetUser.ID))
-		return
-	}
-
-	lpbLoc, _ := ctrl.destinoService.GetByIATA(c.Request.Context(), "LPB")
-
-	if itinerario.Codigo == "SOLO_IDA" || itinerario.Codigo == "IDA_VUELTA" {
-		origen = userLoc
-		destino = lpbLoc
-	} else {
-		origen = lpbLoc
-		destino = userLoc
-
-		existingSolicitudes, _ := ctrl.solicitudService.GetByCupoDerechoItemID(c.Request.Context(), itemID)
-		var fechaIda *time.Time
-		for _, sol := range existingSolicitudes {
-			if sol.TipoItinerario.Codigo == "SOLO_IDA" {
-				stateCode := sol.GetEstadoCodigo()
-				if stateCode != "RECHAZADO" && stateCode != "ELIMINADO" {
-					for _, item := range sol.Items {
-						if item.Fecha != nil {
-							fechaIda = item.Fecha
-							break
-						}
-					}
-				}
-			}
-			if fechaIda != nil {
-				break
-			}
-		}
-
-		if fechaIda != nil {
-			var filteredDays []map[string]string
-			fechaIdaStr := fechaIda.Format("2006-01-02")
-			for _, d := range weekDays {
-				if d["date"] > fechaIdaStr {
-					filteredDays = append(filteredDays, d)
-				}
-			}
-			weekDays = filteredDays
-		}
-	}
-
-	data := gin.H{
-		"Title":        "Pasaje por Derecho - " + targetUser.GetNombreCompleto(),
-		"TargetUser":   targetUser,
-		"Aerolineas":   aerolineas,
-		"AlertaOrigen": alertaOrigen,
-		"Item":         item,
-		"WeekDays":     weekDays,
-
-		"Concepto":      tipoSolicitud.ConceptoViaje,
-		"TipoSolicitud": tipoSolicitud,
-		"Ambito":        ambitoNac,
-
-		"Itinerario": itinerario,
-		"Origen":     origen,
-		"Destino":    destino,
-	}
-	utils.Render(c, "solicitud/derecho/create", data)
-}
-
 func (ctrl *SolicitudDerechoController) GetCreateModal(c *gin.Context) {
 	itemID := c.Param("item_id")
 	itinerarioCode := c.Param("itinerario_code")
@@ -212,7 +93,7 @@ func (ctrl *SolicitudDerechoController) GetCreateModal(c *gin.Context) {
 		referer = "/cupos/derecho/" + targetUser.ID
 	}
 
-	utils.Render(c, "solicitud/derecho/modal_form", gin.H{
+	utils.Render(c, "solicitud/derecho/modal_create", gin.H{
 		"TargetUser":        targetUser,
 		"Aerolineas":        aerolineas,
 		"Item":              item,
@@ -261,130 +142,6 @@ func (ctrl *SolicitudDerechoController) Store(c *gin.Context) {
 	c.Redirect(http.StatusFound, targetURL)
 }
 
-func (ctrl *SolicitudDerechoController) Edit(c *gin.Context) {
-	id := c.Param("id")
-	solicitud, err := ctrl.solicitudService.GetByID(c.Request.Context(), id)
-	if err != nil {
-		c.String(http.StatusInternalServerError, "Error: "+err.Error())
-		return
-	}
-
-	// Sort items (IDA first, then VUELTA)
-	sort.Slice(solicitud.Items, func(i, j int) bool {
-		ti := string(solicitud.Items[i].Tipo)
-		tj := string(solicitud.Items[j].Tipo)
-
-		if ti == "IDA" && tj == "VUELTA" {
-			return true
-		}
-		if ti == "VUELTA" && tj == "IDA" {
-			return false
-		}
-
-		// Chronological fallback if same type or unknown
-		if solicitud.Items[i].Fecha != nil && solicitud.Items[j].Fecha != nil {
-			return solicitud.Items[i].Fecha.Before(*solicitud.Items[j].Fecha)
-		}
-		return false
-	})
-
-	if solicitud.EstadoSolicitudCodigo != nil && *solicitud.EstadoSolicitudCodigo != "SOLICITADO" {
-		c.String(http.StatusForbidden, "No se puede editar una solicitud que no está en estado SOLICITADO")
-		return
-	}
-
-	authUser := appcontext.AuthUser(c)
-
-	if !authUser.CanEditSolicitud(*solicitud) {
-		c.String(http.StatusForbidden, "No tiene permisos para editar esta solicitud")
-		return
-	}
-
-	if solicitud.CupoDerechoItemID == nil {
-		c.String(http.StatusBadRequest, "Esta solicitud no corresponde a un pasaje por derecho")
-		return
-	}
-
-	item, err := ctrl.cupoService.GetCupoDerechoItemByID(c.Request.Context(), *solicitud.CupoDerechoItemID)
-	if err != nil {
-		c.String(http.StatusInternalServerError, "Derecho asociado no encontrado")
-		return
-	}
-
-	TiposItinerario, _ := ctrl.tipoItinerarioService.GetAll(c.Request.Context())
-	var ItinerarioIdaID string
-	var ItinerarioVueltaID string
-	var ActiveTab string
-
-	for _, t := range TiposItinerario {
-		if t.Codigo == "SOLO_IDA" {
-			ItinerarioIdaID = t.Codigo
-		}
-		if t.Codigo == "SOLO_VUELTA" {
-			ItinerarioVueltaID = t.Codigo
-		}
-	}
-
-	if solicitud.TipoItinerario != nil {
-		ActiveTab = solicitud.TipoItinerario.Codigo
-	}
-
-	aerolineas, _ := ctrl.aerolineaService.GetAllActive(c.Request.Context())
-
-	origenIATA := solicitud.Usuario.GetOrigenIATA()
-	userLoc, err := ctrl.destinoService.GetByIATA(c.Request.Context(), origenIATA)
-	if err != nil || userLoc == nil {
-		c.String(http.StatusInternalServerError, "Usuario sin origen configurado")
-		return
-	}
-	lpbLoc, _ := ctrl.destinoService.GetByIATA(c.Request.Context(), "LPB")
-
-	var origen, destino *models.Destino
-	if ActiveTab == "SOLO_IDA" || ActiveTab == "IDA_VUELTA" {
-		origen = userLoc
-		destino = lpbLoc
-	} else {
-		origen = lpbLoc
-		destino = userLoc
-	}
-
-	weekDays := []gin.H{}
-	if item.FechaDesde != nil {
-		start := *item.FechaDesde
-		names := []string{"Dom", "Lun", "Mar", "Mie", "Jue", "Vie", "Sab"}
-		for i := 0; i < 7; i++ {
-			d := start.AddDate(0, 0, i)
-			esName := names[d.Weekday()]
-			weekDays = append(weekDays, gin.H{
-				"date":   d.Format("2006-01-02"),
-				"name":   esName,
-				"dayNum": d.Format("02"),
-			})
-		}
-	}
-
-	data := gin.H{
-		"Aerolineas":         aerolineas,
-		"TargetUser":         &solicitud.Usuario,
-		"Itinerarios":        TiposItinerario,
-		"ItinerarioIdaID":    ItinerarioIdaID,
-		"ItinerarioVueltaID": ItinerarioVueltaID,
-		"Item":               item,
-		"ItemID":             item.ID,
-		"ActiveTab":          ActiveTab,
-		"Solicitud":          solicitud,
-		"IsEdit":             true,
-		"WeekDays":           weekDays,
-		"Origen":             origen,
-		"Destino":            destino,
-		"Concepto":           solicitud.TipoSolicitud.ConceptoViaje,
-		"TipoSolicitud":      solicitud.TipoSolicitud,
-		"Ambito":             solicitud.AmbitoViaje,
-		"Itinerario":         solicitud.TipoItinerario,
-	}
-	utils.Render(c, "solicitud/derecho/edit", data)
-}
-
 func (ctrl *SolicitudDerechoController) GetEditModal(c *gin.Context) {
 	id := c.Param("id")
 	solicitud, _ := ctrl.solicitudService.GetByID(c.Request.Context(), id)
@@ -404,9 +161,6 @@ func (ctrl *SolicitudDerechoController) GetEditModal(c *gin.Context) {
 		destino = userLoc
 	}
 
-	// Calculate Return Days (Current Week + Next Week)
-	// Calculate Min/Max Dates for Calendar (Edit Mode)
-	// Calculate Min/Max Dates for Calendar (Extended Range: +/- 2 weeks)
 	var minDateIda string
 	if item.FechaDesde != nil {
 		minDateIda = item.FechaDesde.AddDate(0, 0, -14).Format("2006-01-02")
@@ -427,7 +181,7 @@ func (ctrl *SolicitudDerechoController) GetEditModal(c *gin.Context) {
 		referer = "/cupos/derecho/" + solicitud.Usuario.ID
 	}
 
-	utils.Render(c, "solicitud/derecho/modal_form", gin.H{
+	utils.Render(c, "solicitud/derecho/modal_edit", gin.H{
 		"Aerolineas":    aerolineas,
 		"TargetUser":    &solicitud.Usuario,
 		"Item":          item,

@@ -30,7 +30,7 @@
         type="button"
         hx-get="/solicitudes/derecho/{{ .Solicitud.ID }}/modal-editar"
         hx-target="#modal-container"
-        class="inline-flex items-center px-4 py-2 border border-primary-600 shadow-sm text-sm font-medium rounded-md text-primary-600 bg-white hover:bg-primary-50 focus:outline-none cursor-pointer">
+        class="inline-flex items-center px-4 py-1 border border-primary-600 shadow-sm text-sm font-medium rounded-md text-primary-600 bg-white hover:bg-primary-50 focus:outline-none cursor-pointer">
         Editar
       </button>
       {{ end }}
@@ -38,13 +38,13 @@
         type="button"
         hx-get="/solicitudes/derecho/{{ .Solicitud.ID }}/print"
         hx-target="#modal-container"
-        class="inline-flex items-center px-4 py-2 border border-neutral-300 shadow-sm text-sm font-medium rounded-md text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none cursor-pointer">
+        class="inline-flex items-center px-4 py-1 border border-neutral-300 shadow-sm text-sm font-medium rounded-md text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none cursor-pointer">
         <i class="ph ph-printer mr-2 text-lg"></i>
         Imprimir
       </button>
       <a
         href="/solicitudes?estado={{ .Solicitud.EstadoSolicitud.Codigo }}"
-        class="inline-flex items-center px-4 py-2 border border-neutral-300 shadow-sm text-sm font-medium rounded-md text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none">
+        class="inline-flex items-center px-4 py-1 border border-neutral-300 shadow-sm text-sm font-medium rounded-md text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none">
         Volver a Solicitudes
       </a>
     </div>
@@ -155,7 +155,7 @@
                 hx-post="/solicitudes/derecho/{{ $.Solicitud.ID }}/items/{{ .ID }}/aprobar"
                 hx-confirm="¿Aprobar este tramo?"
                 hx-target="body"
-                class="inline-flex items-center px-3 py-1.5 border border-transparent rounded-lg shadow-sm text-xs font-bold text-white bg-success-600 hover:bg-success-700 transition-colors cursor-pointer">
+                class="inline-flex items-center px-1.5 py-0.5 border border-transparent rounded-sm shadow-sm text-xs font-bold text-white bg-success-600 hover:bg-success-700 transition-colors cursor-pointer">
                 <i class="ph ph-check mr-1.5"></i>
                 Aprobar Tramo
               </button>
@@ -164,7 +164,7 @@
                 hx-post="/solicitudes/derecho/{{ $.Solicitud.ID }}/items/{{ .ID }}/rechazar"
                 hx-confirm="¿Rechazar este tramo?"
                 hx-target="body"
-                class="inline-flex items-center px-3 py-1.5 border border-transparent rounded-lg shadow-sm text-xs font-bold text-white bg-danger-600 hover:bg-danger-700 transition-colors cursor-pointer">
+                class="inline-flex items-center px-1.5 py-0.5 border border-transparent rounded-sm shadow-sm text-xs font-bold text-white bg-danger-600 hover:bg-danger-700 transition-colors cursor-pointer">
                 <i class="ph ph-x mr-1.5"></i>
                 Rechazar
               </button>
@@ -174,7 +174,7 @@
                 hx-post="/solicitudes/derecho/{{ $.Solicitud.ID }}/items/{{ .ID }}/revertir-aprobacion"
                 hx-confirm="¿Está seguro de revertir la aprobación de este tramo? Volverá a estado SOLICITADO."
                 hx-target="body"
-                class="inline-flex items-center px-3 py-1.5 border border-warning-600 rounded-lg shadow-sm text-xs font-bold text-warning-700 bg-white hover:bg-warning-50 transition-colors cursor-pointer">
+                class="inline-flex items-center px-1.5 py-0.5 border border-warning-600 rounded-sm shadow-sm text-xs font-bold text-warning-700 bg-white hover:bg-warning-50 transition-colors cursor-pointer">
                 <i class="ph ph-arrow-u-up-left mr-1.5"></i>
                 Revertir
               </button>
@@ -182,7 +182,7 @@
                 type="button"
                 hx-get="/solicitudes/{{ $.Solicitud.ID }}/pasajes/nuevo?item_id={{ .ID }}"
                 hx-target="#modal-container"
-                class="inline-flex items-center px-3 py-1.5 border border-transparent rounded-lg shadow-sm text-xs font-bold text-white bg-secondary hover:bg-primary transition-colors cursor-pointer">
+                class="inline-flex items-center px-1.5 py-0.5 border border-transparent rounded-sm shadow-sm text-xs font-bold text-white bg-secondary hover:bg-primary transition-colors cursor-pointer">
                 <i class="ph ph-plus mr-1.5"></i>
                 Asignar Pasaje
               </button>

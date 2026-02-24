@@ -174,7 +174,7 @@ func (s *ReportService) GeneratePV01(ctx context.Context, solicitud *models.Soli
 		pdf.SetFont("Arial", "B", 9)
 		pdf.CellFormat(190, 6, tr(" "+title), "B", 1, "L", false, 0, "")
 
-		if item != nil {
+		if item != nil && item.GetEstado() != "PENDIENTE" {
 			fecha := "-"
 			hora := "-"
 			if item.Fecha != nil {
@@ -240,7 +240,7 @@ func (s *ReportService) GeneratePV01(ctx context.Context, solicitud *models.Soli
 
 		} else {
 			pdf.SetFont("Arial", "I", 9)
-			pdf.CellFormat(190, 10, tr(" TRAMO NO SOLICITADO / DISPONIBLE"), "", 1, "C", false, 0, "")
+			pdf.CellFormat(190, 10, tr(" TRAMO NO SOLICITADO"), "", 1, "C", false, 0, "")
 		}
 		pdf.Ln(2)
 	}
@@ -911,20 +911,17 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 	drawLabelBox := func(label, value string, wLabel, wBox float64, sameLine bool) {
 		h := 6.0
 		pdf.SetFont("Arial", "B", 8)
-		pdf.CellFormat(wLabel, h, tr(label), "", 0, "R", false, 0, "")
+		pdf.CellFormat(wLabel, h, tr(label), "", 0, "L", false, 0, "")
 		pdf.SetFont("Arial", "", 9)
-		if len(value) > 75 {
-			value = value[:72] + "..."
-		}
-		pdf.CellFormat(wBox, h, "  "+tr(value), "1", 0, "L", false, 0, "")
+		pdf.CellFormat(wBox, h, tr(value), "", 0, "L", false, 0, "")
 		if !sameLine {
-			pdf.Ln(h + 2)
+			pdf.Ln(h + 1)
 		}
 	}
 
-	drawLabelBox("NOMBRE Y APELLIDOS :", solicitud.Usuario.GetNombreCompleto(), 40, 150, false)
-	drawLabelBox("C.I. :", solicitud.Usuario.CI, 40, 60, true)
-	drawLabelBox("TEL. REF :", solicitud.Usuario.Phone, 30, 60, false)
+	drawLabelBox("NOMBRE Y APELLIDOS:", solicitud.Usuario.GetNombreCompleto(), 40, 150, false)
+	drawLabelBox("C.I.:", solicitud.Usuario.CI, 40, 60, true)
+	drawLabelBox("TEL. REF:", solicitud.Usuario.Phone, 30, 60, false)
 
 	cargoStr := ""
 	if personaView != nil && personaView.Cargo != "" {
@@ -938,9 +935,9 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 	} else if solicitud.Usuario.Oficina != nil {
 		unidadStr = solicitud.Usuario.Oficina.Detalle
 	}
-	drawLabelBox(tr("CARGO :"), cargoStr, 40, 60, true)
-	drawLabelBox(tr("UNIDAD FUNCIONAL :"), unidadStr, 40, 120, false)
-	pdf.Ln(8)
+	drawLabelBox(tr("CARGO:"), cargoStr, 40, 60, true)
+	drawLabelBox(tr("UNIDAD:"), unidadStr, 30, 60, false)
+	pdf.Ln(4)
 
 	mes := ""
 	var mainDate *time.Time
@@ -953,7 +950,7 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 	if mainDate != nil {
 		mes = utils.TranslateMonth(mainDate.Month())
 	}
-	drawLabelBox("CORRESPONDIENTE AL MES DE :", mes, 50, 60, false)
+	drawLabelBox("CORRESPONDIENTE AL MES DE:", mes, 50, 60, false)
 	pdf.Ln(2)
 
 	pdf.SetFont("Arial", "B", 10)
@@ -1136,15 +1133,100 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 	} else {
 		drawReturnTable("", nil)
 	}
-	pdf.Ln(10)
+	pdf.Ln(5)
 
-	sigY := 220.0
-	if len(solicitud.Viaticos) > 0 {
-		sigY = pdf.GetY() + 12
-		if sigY < 200 {
-			sigY = 200
+	// INFORME DETALLADO PV-06
+	pdf.SetFont("Arial", "B", 10)
+	pdf.CellFormat(190, 8, tr("INFORME DE COMISIÓN"), "B", 1, "C", false, 0, "")
+	pdf.Ln(4)
+
+	// Memo y Objetivo
+	nroMemo := "S/N"
+	objViaje := "No especificado"
+	if descargo.Oficial != nil {
+		if descargo.Oficial.NroMemorandum != "" {
+			nroMemo = descargo.Oficial.NroMemorandum
+		}
+		if descargo.Oficial.ObjetivoViaje != "" {
+			objViaje = descargo.Oficial.ObjetivoViaje
 		}
 	}
+
+	pdf.SetFont("Arial", "B", 9)
+	pdf.CellFormat(40, 6, tr("N° MEMORÁNDUM:"), "", 0, "L", false, 0, "")
+	pdf.SetFont("Arial", "", 9)
+	pdf.MultiCell(150, 6, tr(nroMemo), "", "L", false)
+	pdf.Ln(1)
+
+	pdf.SetFont("Arial", "B", 9)
+	pdf.CellFormat(40, 6, tr("OBJETIVO DEL VIAJE:"), "", 0, "L", false, 0, "")
+	pdf.SetFont("Arial", "", 9)
+	pdf.MultiCell(150, 6, tr(objViaje), "", "L", false)
+	pdf.Ln(4)
+
+	// Actividades
+	infActividades := "Sin información"
+	if descargo.Oficial != nil && descargo.Oficial.InformeActividades != "" {
+		infActividades = descargo.Oficial.InformeActividades
+	}
+	pdf.SetFont("Arial", "B", 9)
+	pdf.CellFormat(190, 6, tr("1. ACTIVIDADES REALIZADAS:"), "", 1, "L", false, 0, "")
+	pdf.SetFont("Arial", "", 9)
+	pdf.SetX(15) // Sangría
+	pdf.MultiCell(175, 5, tr(infActividades), "", "J", false)
+	pdf.Ln(4)
+
+	// Resultados
+	if descargo.Oficial != nil && descargo.Oficial.ResultadosViaje != "" {
+		pdf.SetFont("Arial", "B", 9)
+		pdf.CellFormat(190, 6, tr("2. RESULTADOS OBTENIDOS:"), "", 1, "L", false, 0, "")
+		pdf.SetFont("Arial", "", 9)
+		pdf.SetX(15)
+		pdf.MultiCell(175, 5, tr(descargo.Oficial.ResultadosViaje), "", "J", false)
+		pdf.Ln(4)
+	}
+
+	// Conclusiones
+	if descargo.Oficial != nil && descargo.Oficial.ConclusionesRecomendaciones != "" {
+		pdf.SetFont("Arial", "B", 9)
+		pdf.CellFormat(190, 6, tr("3. CONCLUSIONES Y RECOMENDACIONES:"), "", 1, "L", false, 0, "")
+		pdf.SetFont("Arial", "", 9)
+		pdf.SetX(15)
+		pdf.MultiCell(175, 5, tr(descargo.Oficial.ConclusionesRecomendaciones), "", "J", false)
+		pdf.Ln(4)
+	}
+
+	// Transporte y Devolución
+	tipoTrans := "No especificado"
+	if descargo.Oficial != nil && descargo.Oficial.TipoTransporte != "" {
+		tipoTrans = descargo.Oficial.TipoTransporte
+		if descargo.Oficial.PlacaVehiculo != "" {
+			tipoTrans += " (Placa: " + descargo.Oficial.PlacaVehiculo + ")"
+		}
+	}
+	pdf.SetFont("Arial", "B", 9)
+	pdf.CellFormat(50, 6, tr("TRANSPORTE UTILIZADO:"), "", 0, "L", false, 0, "")
+	pdf.SetFont("Arial", "", 9)
+	pdf.CellFormat(140, 6, tr(tipoTrans), "", 1, "L", false, 0, "")
+
+	if descargo.Oficial != nil && descargo.Oficial.MontoDevolucion > 0 {
+		pdf.SetFont("Arial", "B", 9)
+		pdf.CellFormat(50, 6, tr("MONTO DEVUELTO:"), "", 0, "L", false, 0, "")
+		pdf.SetFont("Arial", "", 9)
+		devoStr := fmt.Sprintf("Bs. %.2f (Boleta N° %s)", descargo.Oficial.MontoDevolucion, descargo.Oficial.NroBoletaDeposito)
+		pdf.CellFormat(140, 6, tr(devoStr), "", 1, "L", false, 0, "")
+	}
+
+	// --- Signatures (Dynamic Position) ---
+	currY := pdf.GetY()
+	sigY := currY + 25
+
+	// Ensure we don't start signatures too low on the page
+	if sigY > 230 {
+		pdf.AddPage()
+		sigY = 40
+	}
+
 	pdf.SetY(sigY)
 	pdf.SetFont("Arial", "B", 8)
 	pdf.Line(35, sigY+10, 95, sigY+10)
@@ -1161,11 +1243,34 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 	pdf.Line(110, sigY+10, 180, sigY+10)
 	pdf.SetXY(110, sigY+12)
 	pdf.SetFont("Arial", "B", 7)
-	pdf.CellFormat(70, 4, tr("RESPONSABLE PRESENTACION DEL DESCARGO"), "", 1, "C", false, 0, "")
+	pdf.CellFormat(70, 4, tr("RESPONSABLE PRESENTACIÓN DEL DESCARGO"), "", 1, "C", false, 0, "")
 
-	pdf.SetY(sigY + 32)
+	pdf.SetY(sigY + 30)
 	pdf.SetFont("Arial", "I", 8)
 	pdf.CellFormat(0, 5, tr(fmt.Sprintf("Generado electrónicamente por Sistema Pasajes Senado - %s", time.Now().Format("02/01/2006 15:04:05"))), "", 1, "C", false, 0, "")
+
+	// Anexos (Imágenes)
+	if descargo.Oficial != nil && len(descargo.Oficial.Anexos) > 0 {
+		pdf.AddPage()
+		pdf.SetFont("Arial", "B", 12)
+		pdf.CellFormat(190, 10, tr("ANEXO FOTOGRÁFICO / ACTIVIDADES"), "B", 1, "C", false, 0, "")
+		pdf.Ln(5)
+
+		for _, anexo := range descargo.Oficial.Anexos {
+			if _, err := os.Stat(anexo.Archivo); err == nil {
+				// Evaluar si la imagen cabe en lo que queda de página, si no, nueva página
+				// Asumimos un alto estimado o simplemente una por página para máxima claridad
+				pdf.Image(anexo.Archivo, 15, pdf.GetY(), 180, 0, false, "", 0, "")
+				pdf.Ln(5)
+				// Dejar espacio o saltar página si ya está muy abajo
+				if pdf.GetY() > 200 {
+					pdf.AddPage()
+				} else {
+					pdf.Ln(10)
+				}
+			}
+		}
+	}
 
 	return pdf
 }

@@ -93,7 +93,7 @@ func (ctrl *DescargoController) CreateDerecho(c *gin.Context) {
 		}
 	}
 
-	utils.Render(c, "descargo/create", gin.H{
+	utils.Render(c, "descargo/derecho/create", gin.H{
 		"Title":                "Nuevo Descargo",
 		"Solicitud":            solicitud,
 		"PasajesOriginales":    pasajesOriginales,
@@ -171,7 +171,7 @@ func (ctrl *DescargoController) CreateOficial(c *gin.Context) {
 		}
 	}
 
-	utils.Render(c, "descargo/create_oficial", gin.H{
+	utils.Render(c, "descargo/oficial/create", gin.H{
 		"Title":                "Formulario de Descargo PV-06 - Pasajes, Viáticos y Gastos de Representación",
 		"Solicitud":            solicitud,
 		"PasajesOriginales":    pasajesOriginales,
@@ -208,7 +208,18 @@ func (ctrl *DescargoController) Store(c *gin.Context) {
 		archivoPaths = append(archivoPaths, path)
 	}
 
-	descargo, err := ctrl.descargoService.Create(c.Request.Context(), req, authUser.ID, archivoPaths)
+	// Procesar Anexos
+	var anexoPaths []string
+	form, _ := c.MultipartForm()
+	files := form.File["anexos[]"]
+	for _, fileHeader := range files {
+		savedPath, err := utils.SaveUploadedFile(c, fileHeader, "uploads/anexos", "anexo_"+req.SolicitudID+"_")
+		if err == nil {
+			anexoPaths = append(anexoPaths, savedPath)
+		}
+	}
+
+	descargo, err := ctrl.descargoService.Create(c.Request.Context(), req, authUser.ID, archivoPaths, anexoPaths)
 	if err != nil {
 		log.Printf("Error creando descargo: %v", err)
 		c.Redirect(http.StatusFound, "/solicitudes?error=ErrorCreacion")
@@ -228,7 +239,12 @@ func (ctrl *DescargoController) Show(c *gin.Context) {
 		return
 	}
 
-	utils.Render(c, "descargo/show", gin.H{
+	templateName := "descargo/derecho/show"
+	if strings.HasPrefix(descargo.Codigo, "SOF") {
+		templateName = "descargo/oficial/show"
+	}
+
+	utils.Render(c, templateName, gin.H{
 		"Title":    "Detalle de Descargo",
 		"Descargo": descargo,
 	})
@@ -253,7 +269,12 @@ func (ctrl *DescargoController) Edit(c *gin.Context) {
 		itemsByType[string(item.Tipo)] = append(itemsByType[string(item.Tipo)], item)
 	}
 
-	utils.Render(c, "descargo/edit", gin.H{
+	templateName := "descargo/derecho/edit"
+	if strings.HasPrefix(descargo.Codigo, "SOF") {
+		templateName = "descargo/oficial/edit"
+	}
+
+	utils.Render(c, templateName, gin.H{
 		"Title":       "Editar Descargo",
 		"Descargo":    descargo,
 		"ItemsByType": itemsByType,
@@ -288,7 +309,26 @@ func (ctrl *DescargoController) Update(c *gin.Context) {
 		archivoPaths = append(archivoPaths, path)
 	}
 
-	if err := ctrl.descargoService.UpdateFull(c.Request.Context(), id, req, authUser.ID, archivoPaths); err != nil {
+	// Procesar Anexos (Nuevos)
+	var anexoPaths []string
+	// Aquí podríamos tener 'anexos_existentes[]' pero por ahora si sube nuevos reemplaza o agrega.
+	// Vamos a simplificar: si hay nuevos, se agregan a los existentes o se reemplazan?
+	// PV-06 suele ser un documento final, así que si edita puede querer subir más.
+	form, _ := c.MultipartForm()
+	newAnexos := form.File["anexos[]"]
+
+	// Recuperar existentes mandados por el form (si quisiéramos persistencia selectiva)
+	existentes := c.PostFormArray("anexos_existentes[]")
+	anexoPaths = append(anexoPaths, existentes...)
+
+	for _, fileHeader := range newAnexos {
+		savedPath, err := utils.SaveUploadedFile(c, fileHeader, "uploads/anexos", "anexo_edit_"+id+"_")
+		if err == nil {
+			anexoPaths = append(anexoPaths, savedPath)
+		}
+	}
+
+	if err := ctrl.descargoService.UpdateFull(c.Request.Context(), id, req, authUser.ID, archivoPaths, anexoPaths); err != nil {
 		log.Printf("Error actualizando descargo: %v", err)
 		c.Redirect(http.StatusFound, "/descargos/"+id+"/editar?error=ErrorActualizacion")
 		return

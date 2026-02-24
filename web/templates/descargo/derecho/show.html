@@ -1,4 +1,4 @@
-{{ define "descargo/show" }} {{ template "layout_start" . }}
+{{ define "descargo/derecho/show" }} {{ template "layout_start" . }}
 
 <div class="w-full space-y-6">
   <!-- Header -->
@@ -106,14 +106,14 @@
           hx-target="#modal-container"
           class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-800 transition-colors">
           <i class="ph ph-file-pdf mr-2"></i>
-          Ver / Imprimir {{ if .Descargo.Solicitud.GetConceptoCodigo | eq "OFICIAL" }}PV-06{{ else }}PV-05{{ end }}
+          Ver / Imprimir PV-05
         </button>
       </div>
     </div>
 
     <!-- Right Col: Report Content -->
     <div class="md:col-span-2 space-y-6">
-      <!-- Detailed Itinerary (FV-05) -->
+      <!-- Detailed Itinerary (PV-05) -->
       <div class="bg-white shadow rounded-lg overflow-hidden border border-neutral-200">
         <div class="px-6 py-4 border-b border-neutral-100 bg-neutral-50 flex justify-between items-center">
           <h3 class="text-lg font-bold text-neutral-900">Itinerario Realizado / Tramos</h3>

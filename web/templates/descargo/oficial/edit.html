@@ -1,0 +1,644 @@
+{{ define "descargo/oficial/edit" }} {{ template "layout_start" . }}
+
+<div class="max-w-4xl mx-auto">
+  <div class="md:flex md:items-center md:justify-between mb-6">
+    <div class="flex-1 min-w-0">
+      <h2 class="text-2xl font-bold leading-7 text-neutral-900 sm:text-3xl sm:truncate">Editar Descargo #{{ .Descargo.Codigo }}</h2>
+      <p class="text-sm text-neutral-500 mt-1">Para Solicitud #{{ .Descargo.Solicitud.Codigo }} - {{ .Descargo.Solicitud.GetDestinoCiudad }}</p>
+    </div>
+  </div>
+
+  <form
+    id="descargo-form"
+    action="/descargos/{{ .Descargo.ID }}/actualizar"
+    method="POST"
+    enctype="multipart/form-data"
+    x-data="{ canSubmit: false }"
+    x-init="canSubmit = $el.checkValidity()"
+    @input.debounce.50ms="canSubmit = $el.checkValidity()"
+    @change.debounce.50ms="canSubmit = $el.checkValidity()"
+    class="bg-white shadow rounded-lg overflow-hidden border border-neutral-200">
+    <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
+    <input type="hidden" name="solicitud_id" value="{{ .Descargo.SolicitudID }}" />
+
+    <div class="p-6 space-y-6">
+      <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
+        <div class="sm:col-span-6 bg-primary-50 p-4 rounded-md border border-primary-100">
+          <h4 class="text-xs font-black text-primary uppercase tracking-widest mb-3">Resumen del Viaje</h4>
+          <div class="grid grid-cols-2 gap-4">
+            <p class="text-sm text-primary">
+              <strong class="font-bold">Motivo:</strong>
+              {{ .Descargo.Solicitud.Motivo }}
+            </p>
+            <p class="text-sm text-primary">
+              <strong class="font-bold">Fechas:</strong>
+              {{ if .Descargo.Solicitud.GetFechaIda }}{{ .Descargo.Solicitud.GetFechaIda.Format "02/01/2006" }}{{ else }} - {{ end }} - {{ if .Descargo.Solicitud.GetFechaVuelta }}{{
+              .Descargo.Solicitud.GetFechaVuelta.Format "02/01/2006" }}{{ else }} - {{ end }}
+            </p>
+          </div>
+        </div>
+
+        <!-- Detalles de Itinerario (FV-05) -->
+        <div class="sm:col-span-6 space-y-6">
+          <h3 class="text-sm font-bold text-neutral-800 uppercase tracking-widest border-b border-neutral-200 pb-1">Detalles de Itinerario (PV-06)</h3>
+
+          <!-- TRAMO DE IDA -->
+          <div class="border border-neutral-200 rounded-lg overflow-hidden shadow-sm">
+            <div class="bg-neutral-100 px-3 py-1.5 border-b border-neutral-200 flex justify-between items-center">
+              <span class="text-[11px] font-black text-neutral-600 uppercase tracking-tighter">Tramo de Ida</span>
+              <i class="ph ph-airplane-takeoff text-neutral-400"></i>
+            </div>
+            <div class="p-4 bg-white space-y-6">
+              <!-- Original Section -->
+              <div class="space-y-3">
+                <div class="flex items-center">
+                  <div class="h-px bg-neutral-200 flex-1"></div>
+                  <span class="px-2 text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Vuelo Original</span>
+                  <div class="h-px bg-neutral-200 flex-1"></div>
+                </div>
+                <div class="grid grid-cols-12 gap-2 px-1 mb-1">
+                  <div class="col-span-1 text-[9px] font-bold text-neutral-400 uppercase text-center">Dev.</div>
+                  <div class="col-span-3 text-[9px] font-bold text-neutral-400 uppercase">Ruta / Tramo</div>
+                  <div class="col-span-2 text-[9px] font-bold text-neutral-400 uppercase">Fecha</div>
+                  <div class="col-span-2 text-[9px] font-bold text-neutral-400 uppercase">Boleto</div>
+                  <div class="col-span-2 text-[9px] font-bold text-neutral-400 uppercase">Nº Pase</div>
+                  <div class="col-span-2 text-[9px] font-bold text-neutral-400 uppercase">Boarding Pass</div>
+                </div>
+                <div class="space-y-2">
+                  {{ range $i, $p := (index .ItemsByType "IDA_ORIGINAL") }}
+                  <div class="grid grid-cols-12 gap-2 items-start" x-data="{ devuelto: {{ if $p.EsDevolucion }}true{{ else }}false{{ end }} }">
+                    <input type="hidden" name="itin_tipo[]" value="IDA_ORIGINAL" />
+                    <input type="hidden" name="itin_index[]" value="io_{{ $i }}" />
+                    <div class="col-span-1 pt-1.5 flex justify-center">
+                      <label class="cursor-pointer" title="Pasaje Devuelto">
+                        <input type="checkbox" name="itin_devolucion[]" value="io_{{ $i }}" x-model="devuelto" {{ if $p.EsDevolucion }}checked{{ end }} class="h-4 w-4 text-primary border-neutral-300 rounded focus:ring-primary">
+                      </label>
+                    </div>
+                    <div class="col-span-3" :class="{ 'opacity-50': devuelto }">
+                      <input
+                        type="text"
+                        name="itin_ruta[]"
+                        value="{{ $p.Ruta }}"
+                        required
+                        class="block w-full text-[11px] border-neutral-200 rounded p-1.5 bg-neutral-50 px-2"
+                        readonly />
+                    </div>
+                    <div class="col-span-2" :class="{ 'opacity-50': devuelto }">
+                      <input
+                        type="date"
+                        name="itin_fecha[]"
+                        value="{{ if $p.Fecha }}{{ $p.Fecha.Format "2006-01-02" }}{{ end }}"
+                        required
+                        class="block w-full text-[11px] border-neutral-200 rounded p-1.5 bg-neutral-50 px-1"
+                        readonly />
+                    </div>
+                    <div class="col-span-2" :class="{ 'opacity-50': devuelto }">
+                      <input type="text" name="itin_boleto[]" value="{{ $p.Boleto }}" :required="!devuelto" :readonly="devuelto" class="block w-full text-[11px] border-neutral-300 rounded p-1.5 px-2" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto }" />
+                    </div>
+                    <div class="col-span-2" :class="{ 'opacity-50': devuelto }">
+                      <input type="text" name="itin_pase_numero[]" value="{{ $p.NumeroPaseAbordo }}" :required="!devuelto" :readonly="devuelto" class="block w-full text-[11px] border-neutral-300 rounded p-1.5 px-2" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto }" />
+                    </div>
+                    <div class="col-span-2 pt-1 flex justify-center" :class="{ 'opacity-50': devuelto }" x-data="{ fileName: '' }">
+                      <input type="hidden" name="itin_archivo_existente_io_{{ $i }}" value="{{ $p.ArchivoPaseAbordo }}" />
+                      <label class="cursor-pointer flex items-center gap-2 px-3 py-1.5 rounded border transition-colors w-full justify-center" 
+                             :class="(fileName || '{{ $p.ArchivoPaseAbordo }}') ? 'bg-success-50 border-success-200 text-success-700' : 'bg-neutral-50 border-neutral-200 text-neutral-500 hover:bg-neutral-100 hover:border-neutral-300'"
+                             title="{{ if $p.ArchivoPaseAbordo }}Archivo actual: {{ $p.ArchivoPaseAbordo }}{{ else }}Subir PDF (Opcional){{ end }}">
+                        <input
+                          type="file"
+                          name="itin_archivo_io_{{ $i }}"
+                          :disabled="devuelto"
+                          class="hidden"
+                          accept=".pdf,application/pdf"
+                          @change="fileName = $el.files[0] ? $el.files[0].name : ''" />
+                        <i class="ph text-lg" :class="(fileName || '{{ $p.ArchivoPaseAbordo }}') ? 'ph-file-pdf' : 'ph-upload-simple'"></i>
+                        <span class="text-[10px] font-bold uppercase truncate max-w-[100px]" x-text="fileName ? fileName : ('{{ $p.ArchivoPaseAbordo }}' ? 'Archivo Cargado' : 'Subir PDF')"></span>
+                      </label>
+                      {{ if $p.ArchivoPaseAbordo }}
+                      <button type="button" 
+                        hx-get="/preview-file?path={{ $p.ArchivoPaseAbordo }}" 
+                        hx-target="#modal-container"
+                        class="ml-2 text-primary hover:text-primary-800" title="Ver archivo actual">
+                        <i class="ph ph-eye"></i>
+                      </button>
+                      {{ end }}
+                    </div>
+                  </div>
+                  {{ end }}
+                </div>
+              </div>
+
+              <!-- Reprogramación Section -->
+              <div class="space-y-3">
+                <div class="flex items-center justify-between">
+                  <div class="h-px bg-neutral-200 flex-1"></div>
+                  <span class="px-2 text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Reprogramación</span>
+                  <div class="h-px bg-neutral-200 flex-1"></div>
+                  <button
+                    type="button"
+                    onclick="addItinRow('IDA_REPRO')"
+                    class="ml-2 text-[10px] bg-neutral-50 text-neutral-600 px-2 py-0.5 rounded border border-neutral-200 hover:bg-neutral-100 transition-colors">
+                    + Tramo
+                  </button>
+                </div>
+                <div class="grid grid-cols-12 gap-2 px-3 mb-1">
+                  <div class="col-span-1 text-[9px] font-bold text-neutral-400 uppercase text-center">Dev.</div>
+                  <div class="col-span-3 text-[9px] font-bold text-neutral-400 uppercase">Ruta / Tramo</div>
+                  <div class="col-span-2 text-[9px] font-bold text-neutral-400 uppercase">Fecha</div>
+                  <div class="col-span-2 text-[9px] font-bold text-neutral-400 uppercase">Boleto</div>
+                  <div class="col-span-2 text-[9px] font-bold text-neutral-400 uppercase">Nº Pase</div>
+                  <div class="col-span-1 text-[9px] font-bold text-neutral-400 uppercase">PDF</div>
+                  <div class="col-span-1 text-[9px] font-bold text-neutral-400 uppercase text-right"></div>
+                </div>
+                <div id="itin-ida-repro-container" class="space-y-3">
+                  {{ range $i, $p := (index .ItemsByType "IDA_REPRO") }}
+                  <div class="grid grid-cols-12 gap-2 items-center bg-neutral-50/50 p-3 rounded border border-neutral-100 relative" x-data="{ devuelto: {{ if $p.EsDevolucion }}true{{ else }}false{{ end }} }">
+                    <input type="hidden" name="itin_tipo[]" value="IDA_REPRO" />
+                    <input type="hidden" name="itin_index[]" value="ir_{{ $i }}" />
+                    <div class="col-span-1 pt-1 flex justify-center">
+                      <label class="cursor-pointer" title="Pasaje Devuelto">
+                        <input type="checkbox" name="itin_devolucion[]" value="ir_{{ $i }}" x-model="devuelto" {{ if $p.EsDevolucion }}checked{{ end }} class="h-4 w-4 text-primary border-neutral-300 rounded focus:ring-primary">
+                      </label>
+                    </div>
+                    <div class="col-span-3" :class="{ 'opacity-50': devuelto }">
+                      <input type="text" name="itin_ruta[]" value="{{ $p.Ruta }}" :required="!devuelto" :readonly="devuelto" class="block w-full text-[11px] border-neutral-300 rounded p-1.5" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto }" />
+                    </div>
+                    <div class="col-span-2" :class="{ 'opacity-50': devuelto }">
+                      <input type="date" name="itin_fecha[]" value="{{ if $p.Fecha }}{{ $p.Fecha.Format "2006-01-02" }}{{ end }}" :required="!devuelto" :readonly="devuelto" class="block w-full text-[11px] border-neutral-300 rounded p-1.5" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto }" />
+                    </div>
+                    <div class="col-span-2" :class="{ 'opacity-50': devuelto }">
+                      <input type="text" name="itin_boleto[]" value="{{ $p.Boleto }}" :required="!devuelto" :readonly="devuelto" class="block w-full text-[11px] border-neutral-300 rounded p-1.5" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto }" />
+                    </div>
+                    <div class="col-span-2" :class="{ 'opacity-50': devuelto }">
+                      <input type="text" name="itin_pase_numero[]" value="{{ $p.NumeroPaseAbordo }}" :required="!devuelto" :readonly="devuelto" class="block w-full text-[11px] border-neutral-300 rounded p-1.5" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto }" />
+                    </div>
+                    <div class="col-span-1 pt-1 flex justify-center items-center" :class="{ 'opacity-50': devuelto }" x-data="{ fileName: '' }">
+                      <input type="hidden" name="itin_archivo_existente_ir_{{ $i }}" value="{{ $p.ArchivoPaseAbordo }}" />
+                      <label class="cursor-pointer flex items-center justify-center p-1.5 rounded border transition-colors w-full" 
+                             :class="(fileName || '{{ $p.ArchivoPaseAbordo }}') ? 'bg-success-50 border-success-200 text-success-700' : 'bg-neutral-50 border-neutral-200 text-neutral-500 hover:bg-neutral-100 hover:border-neutral-300'"
+                             title="{{ if $p.ArchivoPaseAbordo }}Archivo actual: {{ $p.ArchivoPaseAbordo }}{{ else }}Subir PDF (Opcional){{ end }}">
+                        <input
+                          type="file"
+                          name="itin_archivo_ir_{{ $i }}"
+                          :disabled="devuelto"
+                          class="hidden"
+                          accept=".pdf,application/pdf"
+                          @change="fileName = $el.files[0] ? $el.files[0].name : ''" />
+                        <i class="ph text-lg" :class="(fileName || '{{ $p.ArchivoPaseAbordo }}') ? 'ph-file-pdf' : 'ph-upload-simple'"></i>
+                      </label>
+                      {{ if $p.ArchivoPaseAbordo }}
+                      <button type="button" 
+                        hx-get="/preview-file?path={{ $p.ArchivoPaseAbordo }}" 
+                        hx-target="#modal-container"
+                        class="ml-1 text-primary hover:text-primary-800" title="Ver archivo actual">
+                        <i class="ph ph-eye"></i>
+                      </button>
+                      {{ end }}
+                    </div>
+                    <div class="col-span-1 text-right pt-4">
+                      <button
+                        type="button"
+                        onclick="this.closest('.grid').remove(); document.getElementById('descargo-form').dispatchEvent(new Event('input'))"
+                        class="text-neutral-400 hover:text-danger-600 transition-colors">
+                        <i class="ph ph-trash"></i>
+                      </button>
+                    </div>
+                  </div>
+                  {{ end }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- TRAMO DE RETORNO -->
+          {{ if .Descargo.Solicitud.GetItemVuelta }}
+          <div class="border border-neutral-200 rounded-lg overflow-hidden shadow-sm">
+            <div class="bg-neutral-100 px-3 py-1.5 border-b border-neutral-200 flex justify-between items-center">
+              <span class="text-[11px] font-black text-neutral-600 uppercase tracking-tighter">Tramo de Retorno</span>
+              <i class="ph ph-airplane-landing text-neutral-400"></i>
+            </div>
+            <div class="p-4 bg-white space-y-6">
+              <!-- Original Section -->
+              <div class="space-y-3">
+                <div class="flex items-center">
+                  <div class="h-px bg-neutral-200 flex-1"></div>
+                  <span class="px-2 text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Vuelo Original</span>
+                  <div class="h-px bg-neutral-200 flex-1"></div>
+                </div>
+                <div class="grid grid-cols-12 gap-2 px-1 mb-1">
+                  <div class="col-span-1 text-[9px] font-bold text-neutral-400 uppercase text-center">Dev.</div>
+                  <div class="col-span-3 text-[9px] font-bold text-neutral-400 uppercase">Ruta / Tramo</div>
+                  <div class="col-span-2 text-[9px] font-bold text-neutral-400 uppercase">Fecha</div>
+                  <div class="col-span-2 text-[9px] font-bold text-neutral-400 uppercase">Boleto</div>
+                  <div class="col-span-2 text-[9px] font-bold text-neutral-400 uppercase">Nº Pase</div>
+                  <div class="col-span-2 text-[9px] font-bold text-neutral-400 uppercase">Boarding Pass</div>
+                </div>
+                <div class="space-y-2">
+                  {{ range $i, $p := (index .ItemsByType "VUELTA_ORIGINAL") }}
+                  <div class="grid grid-cols-12 gap-2 items-start" x-data="{ devuelto: {{ if $p.EsDevolucion }}true{{ else }}false{{ end }} }">
+                    <input type="hidden" name="itin_tipo[]" value="VUELTA_ORIGINAL" />
+                    <input type="hidden" name="itin_index[]" value="vo_{{ $i }}" />
+                    <div class="col-span-1 pt-1.5 flex justify-center">
+                      <label class="cursor-pointer" title="Pasaje Devuelto">
+                        <input type="checkbox" name="itin_devolucion[]" value="vo_{{ $i }}" x-model="devuelto" {{ if $p.EsDevolucion }}checked{{ end }} class="h-4 w-4 text-primary border-neutral-300 rounded focus:ring-primary">
+                      </label>
+                    </div>
+                    <div class="col-span-3" :class="{ 'opacity-50': devuelto }">
+                      <input
+                        type="text"
+                        name="itin_ruta[]"
+                        value="{{ $p.Ruta }}"
+                        required
+                        class="block w-full text-[11px] border-neutral-200 rounded p-1.5 bg-neutral-50 px-2"
+                        readonly />
+                    </div>
+                    <div class="col-span-2" :class="{ 'opacity-50': devuelto }">
+                      <input
+                        type="date"
+                        name="itin_fecha[]"
+                        value="{{ if $p.Fecha }}{{ $p.Fecha.Format "2006-01-02" }}{{ end }}"
+                        required
+                        class="block w-full text-[11px] border-neutral-200 rounded p-1.5 bg-neutral-50 px-1"
+                        readonly />
+                    </div>
+                    <div class="col-span-2" :class="{ 'opacity-50': devuelto }">
+                      <input type="text" name="itin_boleto[]" value="{{ $p.Boleto }}" :required="!devuelto" :readonly="devuelto" class="block w-full text-[11px] border-neutral-300 rounded p-1.5 px-2" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto }" />
+                    </div>
+                    <div class="col-span-2" :class="{ 'opacity-50': devuelto }">
+                      <input type="text" name="itin_pase_numero[]" value="{{ $p.NumeroPaseAbordo }}" :required="!devuelto" :readonly="devuelto" class="block w-full text-[11px] border-neutral-300 rounded p-1.5 px-2" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto }" />
+                    </div>
+                    <div class="col-span-2 pt-1 flex justify-center" :class="{ 'opacity-50': devuelto }" x-data="{ fileName: '' }">
+                      <input type="hidden" name="itin_archivo_existente_vo_{{ $i }}" value="{{ $p.ArchivoPaseAbordo }}" />
+                      <label class="cursor-pointer flex items-center gap-2 px-3 py-1.5 rounded border transition-colors w-full justify-center" 
+                             :class="(fileName || '{{ $p.ArchivoPaseAbordo }}') ? 'bg-success-50 border-success-200 text-success-700' : 'bg-neutral-50 border-neutral-200 text-neutral-500 hover:bg-neutral-100 hover:border-neutral-300'"
+                             title="{{ if $p.ArchivoPaseAbordo }}Archivo actual: {{ $p.ArchivoPaseAbordo }}{{ else }}Subir PDF (Opcional){{ end }}">
+                        <input
+                          type="file"
+                          name="itin_archivo_vo_{{ $i }}"
+                          :disabled="devuelto"
+                          class="hidden"
+                          accept=".pdf,application/pdf"
+                          @change="fileName = $el.files[0] ? $el.files[0].name : ''" />
+                        <i class="ph text-lg" :class="(fileName || '{{ $p.ArchivoPaseAbordo }}') ? 'ph-file-pdf' : 'ph-upload-simple'"></i>
+                        <span class="text-[10px] font-bold uppercase truncate max-w-[100px]" x-text="fileName ? fileName : ('{{ $p.ArchivoPaseAbordo }}' ? 'Archivo Cargado' : 'Subir PDF')"></span>
+                      </label>
+                      {{ if $p.ArchivoPaseAbordo }}
+                      <button type="button" 
+                        hx-get="/preview-file?path={{ $p.ArchivoPaseAbordo }}" 
+                        hx-target="#modal-container"
+                        class="ml-2 text-primary hover:text-primary-800" title="Ver archivo actual">
+                        <i class="ph ph-eye"></i>
+                      </button>
+                      {{ end }}
+                    </div>
+                  </div>
+                  {{ end }}
+                </div>
+              </div>
+
+              <!-- Reprogramación Section -->
+              <div class="space-y-3">
+                <div class="flex items-center justify-between">
+                  <div class="h-px bg-neutral-200 flex-1"></div>
+                  <span class="px-2 text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Reprogramación</span>
+                  <div class="h-px bg-neutral-200 flex-1"></div>
+                  <button
+                    type="button"
+                    onclick="addItinRow('VUELTA_REPRO')"
+                    class="ml-2 text-[10px] bg-neutral-50 text-neutral-600 px-2 py-0.5 rounded border border-neutral-200 hover:bg-neutral-100 transition-colors">
+                    + Tramo
+                  </button>
+                </div>
+                <div class="grid grid-cols-12 gap-2 px-3 mb-1">
+                  <div class="col-span-1 text-[9px] font-bold text-neutral-400 uppercase text-center">Dev.</div>
+                  <div class="col-span-3 text-[9px] font-bold text-neutral-400 uppercase">Ruta / Tramo</div>
+                  <div class="col-span-2 text-[9px] font-bold text-neutral-400 uppercase">Fecha</div>
+                  <div class="col-span-2 text-[9px] font-bold text-neutral-400 uppercase">Boleto</div>
+                  <div class="col-span-2 text-[9px] font-bold text-neutral-400 uppercase">Nº Pase</div>
+                  <div class="col-span-1 text-[9px] font-bold text-neutral-400 uppercase">PDF</div>
+                  <div class="col-span-1 text-[9px] font-bold text-neutral-400 uppercase text-right"></div>
+                </div>
+                <div id="itin-vuelta-repro-container" class="space-y-3">
+                  {{ range $i, $p := (index .ItemsByType "VUELTA_REPRO") }}
+                  <div class="grid grid-cols-12 gap-2 items-center bg-neutral-50/50 p-3 rounded border border-neutral-100 relative" x-data="{ devuelto: {{ if $p.EsDevolucion }}true{{ else }}false{{ end }} }">
+                    <input type="hidden" name="itin_tipo[]" value="VUELTA_REPRO" />
+                    <input type="hidden" name="itin_index[]" value="vr_{{ $i }}" />
+                    <div class="col-span-1 pt-1 flex justify-center">
+                      <label class="cursor-pointer" title="Pasaje Devuelto">
+                        <input type="checkbox" name="itin_devolucion[]" value="vr_{{ $i }}" x-model="devuelto" {{ if $p.EsDevolucion }}checked{{ end }} class="h-4 w-4 text-primary border-neutral-300 rounded focus:ring-primary">
+                      </label>
+                    </div>
+                    <div class="col-span-3" :class="{ 'opacity-50': devuelto }">
+                      <input type="text" name="itin_ruta[]" value="{{ $p.Ruta }}" :required="!devuelto" :readonly="devuelto" class="block w-full text-[11px] border-neutral-300 rounded p-1.5" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto }" />
+                    </div>
+                    <div class="col-span-2" :class="{ 'opacity-50': devuelto }">
+                      <input type="date" name="itin_fecha[]" value="{{ if $p.Fecha }}{{ $p.Fecha.Format "2006-01-02" }}{{ end }}" :required="!devuelto" :readonly="devuelto" class="block w-full text-[11px] border-neutral-300 rounded p-1.5" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto }" />
+                    </div>
+                    <div class="col-span-2" :class="{ 'opacity-50': devuelto }">
+                      <input type="text" name="itin_boleto[]" value="{{ $p.Boleto }}" :required="!devuelto" :readonly="devuelto" class="block w-full text-[11px] border-neutral-300 rounded p-1.5" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto }" />
+                    </div>
+                    <div class="col-span-2" :class="{ 'opacity-50': devuelto }">
+                      <input type="text" name="itin_pase_numero[]" value="{{ $p.NumeroPaseAbordo }}" :required="!devuelto" :readonly="devuelto" class="block w-full text-[11px] border-neutral-300 rounded p-1.5" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto }" />
+                    </div>
+                    <div class="col-span-1 pt-1 flex justify-center items-center" :class="{ 'opacity-50': devuelto }" x-data="{ fileName: '' }">
+                      <input type="hidden" name="itin_archivo_existente_vr_{{ $i }}" value="{{ $p.ArchivoPaseAbordo }}" />
+                      <label class="cursor-pointer flex items-center justify-center p-1.5 rounded border transition-colors w-full" 
+                             :class="(fileName || '{{ $p.ArchivoPaseAbordo }}') ? 'bg-success-50 border-success-200 text-success-700' : 'bg-neutral-50 border-neutral-200 text-neutral-500 hover:bg-neutral-100 hover:border-neutral-300'"
+                             title="{{ if $p.ArchivoPaseAbordo }}Archivo actual: {{ $p.ArchivoPaseAbordo }}{{ else }}Subir PDF (Opcional){{ end }}">
+                        <input
+                          type="file"
+                          name="itin_archivo_vr_{{ $i }}"
+                          :disabled="devuelto"
+                          class="hidden"
+                          accept=".pdf,application/pdf"
+                          @change="fileName = $el.files[0] ? $el.files[0].name : ''" />
+                        <i class="ph text-lg" :class="(fileName || '{{ $p.ArchivoPaseAbordo }}') ? 'ph-file-pdf' : 'ph-upload-simple'"></i>
+                      </label>
+                      {{ if $p.ArchivoPaseAbordo }}
+                      <button type="button" 
+                        hx-get="/preview-file?path={{ $p.ArchivoPaseAbordo }}" 
+                        hx-target="#modal-container"
+                        class="ml-1 text-primary hover:text-primary-800" title="Ver archivo actual">
+                        <i class="ph ph-eye"></i>
+                      </button>
+                      {{ end }}
+                    </div>
+                    <div class="col-span-1 text-right pt-4">
+                      <button
+                        type="button"
+                        onclick="this.closest('.grid').remove(); document.getElementById('descargo-form').dispatchEvent(new Event('input'))"
+                        class="text-neutral-400 hover:text-danger-600 transition-colors">
+                        <i class="ph ph-trash"></i>
+                      </button>
+                    </div>
+                  </div>
+                  {{ end }}
+                </div>
+              </div>
+            </div>
+          </div>
+          {{ end }}
+        </div>
+      </div>
+
+          <!-- 2. DESARROLLO DEL INFORME -->
+          <div class="sm:col-span-6 space-y-4">
+            <h3 class="text-sm font-bold text-neutral-800 uppercase tracking-widest border-b-2 border-primary-200 pb-2 flex items-center gap-2">
+              <i class="ph ph-file-text text-primary"></i>
+              2. Desarrollo del Informe
+            </h3>
+            <div class="grid grid-cols-1 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-neutral-600 uppercase tracking-wider mb-1">Objetivo del Viaje</label>
+                <textarea
+                  name="objetivo_viaje"
+                  rows="2"
+                  required
+                  class="block w-full border border-neutral-300 rounded-md shadow-sm text-sm p-2"
+                  placeholder="Escriba el objetivo del viaje.">{{ if .Descargo.Oficial }}{{ .Descargo.Oficial.ObjetivoViaje }}{{ else }}{{ .Descargo.Solicitud.Motivo }}{{ end }}</textarea>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-neutral-600 uppercase tracking-wider mb-1">Actividades Realizadas por día</label>
+                <textarea
+                  name="informe_actividades"
+                  rows="5"
+                  required
+                  class="block w-full border border-neutral-300 rounded-md shadow-sm text-sm p-2"
+                  placeholder="Describa las actividades realizadas diariamente durante la comisión.">{{ if .Descargo.Oficial }}{{ .Descargo.Oficial.InformeActividades }}{{ end }}</textarea>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-neutral-600 uppercase tracking-wider mb-1">Resultados del Viaje</label>
+                <textarea
+                  name="resultados_viaje"
+                  rows="3"
+                  class="block w-full border border-neutral-300 rounded-md shadow-sm text-sm p-2"
+                  placeholder="Describa los resultados u objetivos alcanzados.">{{ if .Descargo.Oficial }}{{ .Descargo.Oficial.ResultadosViaje }}{{ end }}</textarea>
+              </div>
+              <div>
+                <label class="block text-xs font-bold text-neutral-600 uppercase tracking-wider mb-1">Conclusiones y Recomendaciones</label>
+                <textarea
+                  name="conclusiones_recomendaciones"
+                  rows="3"
+                  class="block w-full border border-neutral-300 rounded-md shadow-sm text-sm p-2"
+                  placeholder="Escriba conclusiones y/o recomendaciones.">{{ if .Descargo.Oficial }}{{ .Descargo.Oficial.ConclusionesRecomendaciones }}{{ end }}</textarea>
+              </div>
+            </div>
+          </div>
+
+          <!-- 3. DATOS DE LA COMISIÓN (MEMO) -->
+          <div class="sm:col-span-6 space-y-4">
+            <h3 class="text-sm font-bold text-neutral-800 uppercase tracking-widest border-b-2 border-primary-200 pb-2 flex items-center gap-2">
+              <i class="ph ph-info text-primary"></i>
+              3. Datos de la Comisión
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold text-neutral-600 uppercase tracking-wider mb-1">Nº de Memorándum o Resolución</label>
+                <input
+                  type="text"
+                  name="nro_memorandum"
+                  value="{{ if .Descargo.Oficial }}{{ .Descargo.Oficial.NroMemorandum }}{{ end }}"
+                  class="block w-full border border-neutral-300 rounded-md shadow-sm text-sm p-2"
+                  placeholder="Ej. MEMO-GRI-001/2024" />
+              </div>
+            </div>
+          </div>
+
+
+
+          <!-- 4. TRANSPORTE Y OTROS -->
+          <div class="sm:col-span-6 space-y-4" x-data="{ transport: '{{ if .Descargo.Oficial }}{{ if .Descargo.Oficial.TipoTransporte }}{{ .Descargo.Oficial.TipoTransporte }}{{ else }}AEREO{{ end }}{{ else }}AEREO{{ end }}' }">
+            <h3 class="text-sm font-bold text-neutral-800 uppercase tracking-widest border-b-2 border-primary-200 pb-2 flex items-center gap-2">
+              <i class="ph ph-truck text-primary"></i>
+              4. Transporte y Otros
+            </h3>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="space-y-3">
+                <label class="block text-xs font-bold text-neutral-600 uppercase tracking-wider">Tipo de Transporte Utilizado</label>
+                <div class="flex flex-wrap gap-4">
+                  <label class="flex items-center space-x-2 cursor-pointer">
+                    <input type="radio" name="tipo_transporte" value="AEREO" x-model="transport" class="text-primary focus:ring-primary h-4 w-4" />
+                    <span class="text-xs text-neutral-700">Aéreo</span>
+                  </label>
+                  <label class="flex items-center space-x-2 cursor-pointer">
+                    <input type="radio" name="tipo_transporte" value="TERRESTRE_PUBLICO" x-model="transport" class="text-primary focus:ring-primary h-4 w-4" />
+                    <span class="text-xs text-neutral-700">Público Terrestre</span>
+                  </label>
+                  <label class="flex items-center space-x-2 cursor-pointer">
+                    <input type="radio" name="tipo_transporte" value="VEHICULO_OFICIAL" x-model="transport" class="text-primary focus:ring-primary h-4 w-4" />
+                    <span class="text-xs text-neutral-700">Vehículo Oficial</span>
+                  </label>
+                </div>
+
+                <div x-show="transport === 'VEHICULO_OFICIAL'" x-transition class="mt-2" x-cloak>
+                  <label class="block text-[10px] font-bold text-neutral-500 uppercase mb-1">N° de Placa</label>
+                  <input type="text" name="placa_vehiculo" value="{{ if .Descargo.Oficial }}{{ .Descargo.Oficial.PlacaVehiculo }}{{ end }}" class="block w-full border border-neutral-300 rounded-md shadow-sm text-sm p-1.5" placeholder="Placa del vehículo" />
+                </div>
+              </div>
+
+              <div class="space-y-3 bg-neutral-50 p-3 rounded-lg border border-neutral-200" x-data="{ hasDevo: {{ if .Descargo.Oficial }}{{ if gt .Descargo.Oficial.MontoDevolucion 0.0 }}true{{ else }}false{{ end }}{{ else }}false{{ end }} }">
+                <label class="flex items-center space-x-2 cursor-pointer mb-2">
+                  <input type="checkbox" x-model="hasDevo" class="text-danger-600 focus:ring-danger-500 h-4 w-4 rounded" />
+                  <span class="text-xs font-bold text-neutral-600 uppercase">¿Existió Devolución de Pasajes/Viáticos?</span>
+                </label>
+
+                <div x-show="hasDevo" x-transition class="grid grid-cols-2 gap-2" x-cloak>
+                  <div>
+                    <label class="block text-[10px] font-bold text-neutral-500 uppercase mb-1">Monto Depositado (Bs.)</label>
+                    <input type="number" step="0.01" name="monto_devolucion" value="{{ if .Descargo.Oficial }}{{ .Descargo.Oficial.MontoDevolucion }}{{ end }}" class="block w-full border border-neutral-300 rounded-md shadow-sm text-sm p-1.5" />
+                  </div>
+                  <div>
+                    <label class="block text-[10px] font-bold text-neutral-500 uppercase mb-1">N° de Boleta</label>
+                    <input type="text" name="nro_boleta_deposito" value="{{ if .Descargo.Oficial }}{{ .Descargo.Oficial.NroBoletaDeposito }}{{ end }}" class="block w-full border border-neutral-300 rounded-md shadow-sm text-sm p-1.5" />
+                  </div>
+                  <p class="col-span-2 text-[9px] text-neutral-400 italic mt-1">Cuenta Banco Unión N° 10000005588211</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 5. ANEXOS (IMÁGENES) -->
+          <div class="sm:col-span-6 space-y-4" x-data="{
+              newAnexos: [],
+              removeNew(index) {
+                  this.newAnexos.splice(index, 1);
+                  this.syncFiles();
+              },
+              handleFiles(event) {
+                  const files = Array.from(event.target.files);
+                  files.forEach(file => {
+                      this.newAnexos.push({
+                          file: file,
+                          url: URL.createObjectURL(file)
+                      });
+                  });
+                  this.syncFiles();
+              },
+              syncFiles() {
+                  const dt = new DataTransfer();
+                  this.newAnexos.forEach(item => dt.items.add(item.file));
+                  this.$refs.fileInput.files = dt.files;
+              }
+          }">
+            <h3 class="text-sm font-bold text-neutral-800 uppercase tracking-widest border-b-2 border-primary-200 pb-2 flex items-center gap-2">
+              <i class="ph ph-image text-primary"></i>
+              5. Anexos (Imágenes)
+            </h3>
+            <p class="text-[10px] text-neutral-500 italic">Suba fotografías o escaneos que respalden las actividades realizadas (Max. 5MB por archivo).</p>
+
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-4" id="anexos-container">
+              {{ if .Descargo.Oficial }}
+              {{ range .Descargo.Oficial.Anexos }}
+              <div class="relative group aspect-square rounded-lg overflow-hidden border border-neutral-200 shadow-sm bg-neutral-100">
+                <img src="/{{ .Archivo }}" class="w-full h-full object-cover" />
+                <input type="hidden" name="anexos_existentes[]" value="{{ .Archivo }}" />
+                <button type="button" 
+                        onclick="this.parentElement.remove()"
+                        class="absolute top-1 right-1 bg-danger-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <i class="ph ph-x text-xs"></i>
+                </button>
+              </div>
+              {{ end }}
+              {{ end }}
+
+              <!-- Nuevos Previews -->
+              <template x-for="(item, index) in newAnexos" :key="index">
+                <div class="relative group aspect-square rounded-lg overflow-hidden border border-primary-200 shadow-sm bg-primary-50">
+                  <img :src="item.url" class="w-full h-full object-cover animate-pulse" @load="$el.classList.remove('animate-pulse')" />
+                  <button type="button" 
+                          @click="removeNew(index)"
+                          class="absolute top-1 right-1 bg-danger-600 text-white rounded-full p-1 shadow-sm hover:bg-danger-700 transition-colors z-10">
+                    <i class="ph ph-trash text-xs"></i>
+                  </button>
+                  <div class="absolute bottom-0 inset-x-0 bg-primary-900/60 backdrop-blur-sm text-[8px] text-white px-1.5 py-1 truncate font-medium" x-text="item.file.name"></div>
+                </div>
+              </template>
+
+              <!-- Botón Agregar -->
+              <label class="flex flex-col items-center justify-center aspect-square rounded-lg border-2 border-dashed border-neutral-300 hover:border-primary hover:bg-primary-50 transition-all cursor-pointer text-neutral-400 hover:text-primary group">
+                <input type="file" x-ref="fileInput" name="anexos[]" multiple accept="image/*" class="hidden" 
+                       @change="handleFiles($event)" />
+                <i class="ph ph-plus-circle text-3xl mb-1 group-hover:scale-110 transition-transform"></i>
+                <span class="text-[9px] font-black uppercase tracking-tighter">Agregar Fotos</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="sm:col-span-6 space-y-4">
+            <label class="block text-xs font-bold text-neutral-600 uppercase tracking-wider mb-1">Observaciones adicionales (opcional)</label>
+            <textarea
+              name="observaciones"
+              rows="2"
+              class="block w-full border border-neutral-300 rounded-md shadow-sm text-sm p-2"
+              placeholder="Cualquier observación adicional relevante para el descargo.">{{ .Descargo.Observaciones }}</textarea>
+          </div>
+        </div>
+
+        <div class="px-4 py-3 bg-neutral-50 text-right sm:px-6 flex justify-end">
+          <button
+            type="submit"
+            :disabled="!canSubmit"
+            :class="canSubmit ? 'bg-primary hover:bg-primary-800' : 'bg-neutral-300 cursor-not-allowed'"
+            class="inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white transition-all focus:outline-none">
+            Actualizar Descargo
+          </button>
+        </div>
+      </div>
+  </form>
+</div>
+<script>
+  let itinCounter = 1000; // Use a large counter to avoid collision with existing indices
+
+  window.addItinRow = function (type) {
+    const containerId = type === "IDA_REPRO" ? "itin-ida-repro-container" : "itin-vuelta-repro-container";
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const index = itinCounter++;
+    const row = document.createElement("div");
+    row.innerHTML = `
+      <div class="grid grid-cols-12 gap-2 items-center bg-neutral-50/50 p-3 rounded border border-neutral-100 relative" x-data="{ devuelto: false }">
+        <input type="hidden" name="itin_tipo[]" value="${type}">
+        <input type="hidden" name="itin_index[]" value="${index}">
+        <div class="col-span-1 pt-1 flex justify-center">
+          <label class="cursor-pointer" title="Pasaje Devuelto">
+            <input type="checkbox" name="itin_devolucion[]" value="${index}" x-model="devuelto" class="h-4 w-4 text-primary border-neutral-300 rounded focus:ring-primary">
+          </label>
+        </div>
+        <div class="col-span-3" :class="{ 'opacity-50': devuelto }">
+          <input type="text" name="itin_ruta[]" placeholder="Origen - Destino" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded p-1.5 focus:ring-secondary focus:border-secondary">
+        </div>
+        <div class="col-span-2" :class="{ 'opacity-50': devuelto }">
+          <input type="date" name="itin_fecha[]" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded p-1.5 focus:ring-secondary focus:border-secondary">
+        </div>
+        <div class="col-span-2" :class="{ 'opacity-50': devuelto }">
+          <input type="text" name="itin_boleto[]" placeholder="Boleto" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded p-1.5 focus:ring-secondary focus:border-secondary">
+        </div>
+        <div class="col-span-2" :class="{ 'opacity-50': devuelto }">
+          <input type="text" name="itin_pase_numero[]" placeholder="Pase" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded p-1.5 focus:ring-secondary focus:border-secondary">
+        </div>
+        <div class="col-span-1 flex justify-center" :class="{ 'opacity-50': devuelto }" x-data="{ fileName: '' }">
+        <label class="cursor-pointer flex items-center justify-center p-1.5 rounded border transition-colors w-full" 
+               :class="fileName ? 'bg-success-50 border-success-200 text-success-700' : 'bg-neutral-50 border-neutral-200 text-neutral-500 hover:bg-neutral-100 hover:border-neutral-300'"
+               :title="fileName ? fileName : 'Subir PDF (Opcional)'">
+          <input
+            type="file"
+            :disabled="devuelto"
+            name="itin_archivo_${index}"
+            class="hidden"
+            accept=".pdf,application/pdf"
+            @change="fileName = $el.files[0] ? $el.files[0].name : ''" />
+          <i class="ph text-lg" :class="fileName ? 'ph-file-pdf' : 'ph-upload-simple'"></i>
+        </label>
+      </div>
+        <div class="col-span-1 text-right pt-4">
+          <button type="button" onclick="this.closest('.grid').remove(); document.getElementById('descargo-form').dispatchEvent(new Event('input'))" class="text-neutral-400 hover:text-danger-600 transition-colors">
+            <i class="ph ph-trash"></i>
+          </button>
+        </div>
+      </div>
+    `;
+    container.appendChild(row);
+  };
+</script>
+
+{{ template "layout_end" . }} {{ end }}

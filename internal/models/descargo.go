@@ -11,10 +11,8 @@ type Descargo struct {
 	Codigo     string `gorm:"size:20;uniqueIndex"`
 	NumeroCite string `gorm:"size:50;index"`
 
-	FechaPresentacion  time.Time `gorm:"not null;type:timestamp"`
-	InformeActividades string    `gorm:"type:text"`
-	MontoDevolucion    float64   `gorm:"type:decimal(10,2);default:0"`
-	Observaciones      string    `gorm:"type:text"`
+	FechaPresentacion time.Time `gorm:"not null;type:timestamp"`
+	Observaciones     string    `gorm:"type:text"`
 
 	// Detalles de Itinerario (FV-05) - Relación granular por conexiones
 	DetallesItinerario []DetalleItinerarioDescargo `gorm:"foreignKey:DescargoID"`
@@ -22,6 +20,9 @@ type Descargo struct {
 	Estado string `gorm:"size:50;default:'EN_REVISION'"`
 
 	Documentos []DocumentoDescargo `gorm:"foreignKey:DescargoID"`
+
+	// Detalle opcional para informes oficiales (PV-06)
+	Oficial *DescargoOficial `gorm:"foreignKey:DescargoID"`
 }
 
 func (Descargo) TableName() string {

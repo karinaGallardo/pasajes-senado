@@ -1,4 +1,4 @@
-{{ define "solicitud/derecho/modal_form" }}
+{{ define "solicitud/derecho/modal_create" }}
 <div x-data="{ open: true }" x-show="open" class="fixed z-[60] inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
   <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
     <div
@@ -16,26 +16,19 @@
       class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full sm:p-6"
       x-data="{
         error: '',
-        {{ $ida := .Solicitud.GetItemIda }}
-        {{ $vuelta := .Solicitud.GetItemVuelta }}
-        {{ $stIda := `` }}{{ if $ida }}{{ $stIda = $ida.GetEstado }}{{ end }}
-        {{ $stVuelta := `` }}{{ if $vuelta }}{{ $stVuelta = $vuelta.GetEstado }}{{ end }}
-        {{ $canEditIda := true }}{{ if .IsEdit }}{{ if .AuthUser.IsAdminOrResponsable }}{{ $canEditIda = true }}{{ else }}{{ $canEditIda = or (eq $stIda `PENDIENTE`) (eq $stIda `SOLICITADO`) (eq $stIda `RECHAZADO`) }}{{ end }}{{ end }}
-        {{ $canEditVuelta := true }}{{ if .IsEdit }}{{ if .AuthUser.IsAdminOrResponsable }}{{ $canEditVuelta = true }}{{ else }}{{ $canEditVuelta = or (eq $stVuelta `PENDIENTE`) (eq $stVuelta `SOLICITADO`) (eq $stVuelta `RECHAZADO`) }}{{ end }}{{ end }}
-
-        selectedDaySalida: '{{ if .IsEdit }}{{ if eq .Itinerario.Codigo `SOLO_VUELTA` }}{{ if .Solicitud.GetFechaVuelta }}{{ .Solicitud.GetFechaVuelta.Format `2006-01-02` }}{{ end }}{{ else }}{{ if .Solicitud.GetFechaIda }}{{ .Solicitud.GetFechaIda.Format `2006-01-02` }}{{ end }}{{ end }}{{ else }}{{ .DefaultDateIda }}{{ end }}',
-        selectedTimeSalida: '{{ if .IsEdit }}{{ if eq .Itinerario.Codigo `SOLO_VUELTA` }}{{ if .Solicitud.GetFechaVuelta }}{{ .Solicitud.GetFechaVuelta.Format `15:04` }}{{ end }}{{ else }}{{ if .Solicitud.GetFechaIda }}{{ .Solicitud.GetFechaIda.Format `15:04` }}{{ end }}{{ end }}{{ else }}08:00{{ end }}',
-        selectedDayRetorno: '{{ if and .IsEdit .Solicitud.GetFechaVuelta }}{{ .Solicitud.GetFechaVuelta.Format `2006-01-02` }}{{ else }}{{ .DefaultDateVuelta }}{{ end }}',
-        selectedTimeRetorno: '{{ if and .IsEdit .Solicitud.GetFechaVuelta }}{{ .Solicitud.GetFechaVuelta.Format `15:04` }}{{ else }}18:00{{ end }}',
+        selectedDaySalida: '{{ .DefaultDateIda }}',
+        selectedTimeSalida: '08:00',
+        selectedDayRetorno: '{{ .DefaultDateVuelta }}',
+        selectedTimeRetorno: '18:00',
         isSubmitting: false,
-        isEdit: {{ .IsEdit }},
-        canEditIda: {{ $canEditIda }},
-        canEditVuelta: {{ $canEditVuelta }},
-        tipoItinerario: '{{ if .IsEdit }}{{ .Solicitud.TipoItinerarioCodigo }}{{ else }}IDA_VUELTA{{ end }}',
-        vueltaPorConfirmar: {{ if and .IsEdit .Solicitud.GetItemVuelta (eq .Solicitud.GetItemVuelta.GetEstado `PENDIENTE`) }}true{{ else }}false{{ end }},
-        editId: '{{ if .IsEdit }}{{ .Solicitud.ID }}{{ end }}',
-        motivo: '{{ if .IsEdit }}{{ .Solicitud.Motivo }}{{ end }}',
-        aerolinea: '{{ if .IsEdit }}{{ .Solicitud.AerolineaSugerida }}{{ end }}',
+        isEdit: false,
+        canEditIda: true,
+        canEditVuelta: true,
+        tipoItinerario: '{{ .Itinerario.Codigo }}',
+        vueltaPorConfirmar: false,
+        editId: '',
+        motivo: '',
+        aerolinea: '',
         selectedWeekLabel: '{{ .Item.Semana }}: del {{ if .Item.FechaDesde }}{{ .Item.FechaDesde.Format `02/01/2006` }}{{ end }} al {{ if .Item.FechaHasta }}{{ .Item.FechaHasta.Format `02/01/2006` }}{{ end }}'
       }">
       <div
@@ -63,11 +56,7 @@
             <i class="ph ph-airplane-tilt text-2xl"></i>
           </div>
           <div>
-            <h3 class="text-lg font-bold text-neutral-800">
-              {{ if .IsEdit }}{{ if not .Solicitud.GetFechaVuelta }}Agendar Retorno{{ else }}Editar Solicitud{{ end }}
-              <span class="text-primary-600">[{{ .Solicitud.Codigo }}]</span>
-              {{ else }}Nueva Solicitud{{ end }}: {{ .Itinerario.Nombre }}
-            </h3>
+            <h3 class="text-lg font-bold text-neutral-800">Nueva Solicitud: {{ .Itinerario.Nombre }}</h3>
             <p class="text-xs text-neutral-500 font-medium tracking-tighter">
               {{ .TargetUser.GetNombreCompleto }} • {{ .Item.Semana }} / {{ .Item.Mes | nombreMes }} {{ .Item.Gestion }}
               <span class="text-primary-600 font-bold ml-1">{{ rangoSemana .Item.FechaDesde .Item.FechaHasta }}</span>
@@ -85,7 +74,7 @@
             :class="(isSubmitting || error !== '') ? 'opacity-50 cursor-not-allowed bg-neutral-400' : 'bg-primary hover:bg-primary-800'"
             class="inline-flex items-center justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-bold rounded-md text-white transition-colors">
             <i x-show="isSubmitting" class="ph ph-spinner animate-spin mr-2"></i>
-            <span x-text="isEdit ? 'Actualizar' : 'Guardar'"></span>
+            <span>Guardar</span>
           </button>
 
           <button
@@ -113,9 +102,7 @@
       </div>
       {{ end }}
 
-      <div id="modal-form-container">
-        {{ if .IsEdit }} {{ template "solicitud/components/form_pasaje_edit" . }} {{ else }} {{ template "solicitud/components/form_pasaje_create" . }} {{ end }}
-      </div>
+      <div id="modal-form-container">{{ template "solicitud/components/form_pasaje_create" . }}</div>
     </div>
   </div>
 </div>

@@ -1,0 +1,119 @@
+{{ define "solicitud/derecho/modal_edit" }}
+<div x-data="{ open: true }" x-show="open" class="fixed z-[60] inset-0 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+  <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+    <div
+      x-show="open"
+      x-transition:enter="ease-out duration-300"
+      x-transition:enter-start="opacity-0"
+      x-transition:enter-end="opacity-100"
+      x-transition:leave="ease-in duration-200"
+      x-transition:leave-start="opacity-100"
+      x-transition:leave-end="opacity-0"
+      class="fixed inset-0 bg-neutral-500 bg-opacity-75 transition-opacity"></div>
+
+    <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+    <div
+      class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full sm:p-6"
+      x-data="{
+        error: '',
+        {{ $ida := .Solicitud.GetItemIda }}
+        {{ $vuelta := .Solicitud.GetItemVuelta }}
+        {{ $stIda := `` }}{{ if $ida }}{{ $stIda = $ida.GetEstado }}{{ end }}
+        {{ $stVuelta := `` }}{{ if $vuelta }}{{ $stVuelta = $vuelta.GetEstado }}{{ end }}
+        {{ $canEditIda := true }}{{ if .AuthUser.IsAdminOrResponsable }}{{ $canEditIda = true }}{{ else }}{{ $canEditIda = or (eq $stIda `PENDIENTE`) (eq $stIda `SOLICITADO`) (eq $stIda `RECHAZADO`) }}{{ end }}
+        {{ $canEditVuelta := true }}{{ if .AuthUser.IsAdminOrResponsable }}{{ $canEditVuelta = true }}{{ else }}{{ $canEditVuelta = or (eq $stVuelta `PENDIENTE`) (eq $stVuelta `SOLICITADO`) (eq $stVuelta `RECHAZADO`) }}{{ end }}
+
+        selectedDaySalida: '{{ if eq .Itinerario.Codigo `SOLO_VUELTA` }}{{ if .Solicitud.GetFechaVuelta }}{{ .Solicitud.GetFechaVuelta.Format `2006-01-02` }}{{ end }}{{ else }}{{ if .Solicitud.GetFechaIda }}{{ .Solicitud.GetFechaIda.Format `2006-01-02` }}{{ end }}{{ end }}',
+        selectedTimeSalida: '{{ if eq .Itinerario.Codigo `SOLO_VUELTA` }}{{ if .Solicitud.GetFechaVuelta }}{{ .Solicitud.GetFechaVuelta.Format `15:04` }}{{ end }}{{ else }}{{ if .Solicitud.GetFechaIda }}{{ .Solicitud.GetFechaIda.Format `15:04` }}{{ end }}{{ end }}',
+        selectedDayRetorno: '{{ if .Solicitud.GetFechaVuelta }}{{ .Solicitud.GetFechaVuelta.Format `2006-01-02` }}{{ end }}',
+        selectedTimeRetorno: '{{ if .Solicitud.GetFechaVuelta }}{{ .Solicitud.GetFechaVuelta.Format `15:04` }}{{ end }}',
+        isSubmitting: false,
+        isEdit: true,
+        canEditIda: {{ $canEditIda }},
+        canEditVuelta: {{ $canEditVuelta }},
+        tipoItinerario: '{{ .Solicitud.TipoItinerarioCodigo }}',
+        vueltaPorConfirmar: {{ if and .Solicitud.GetItemVuelta (eq .Solicitud.GetItemVuelta.GetEstado `PENDIENTE`) }}true{{ else }}false{{ end }},
+        editId: '{{ .Solicitud.ID }}',
+        motivo: '{{ .Solicitud.Motivo }}',
+        aerolinea: '{{ .Solicitud.AerolineaSugerida }}',
+        selectedWeekLabel: '{{ .Item.Semana }}: del {{ if .Item.FechaDesde }}{{ .Item.FechaDesde.Format `02/01/2006` }}{{ end }} al {{ if .Item.FechaHasta }}{{ .Item.FechaHasta.Format `02/01/2006` }}{{ end }}'
+      }">
+      <div
+        class="flex items-center justify-between mb-4 border-b pb-3"
+        x-effect="
+           const now = new Date();
+           const selectedDate = new Date(`${selectedDaySalida}T${selectedTimeSalida}`);
+           const isAdmin = {{ if .AuthUser.IsAdminOrResponsable }}true{{ else }}false{{ end }};
+
+           if (!isAdmin && canEditIda && selectedDate < now) {
+             error = 'La fecha y hora de salida ya ha pasado.';
+           } else {
+             error = '';
+           }
+
+           if (error === '' && tipoItinerario === 'IDA_VUELTA' && !vueltaPorConfirmar) {
+             const returnDate = new Date(`${selectedDayRetorno}T${selectedTimeRetorno}`);
+             if (canEditVuelta && returnDate <= selectedDate) {
+                error = 'La fecha de retorno debe ser posterior a la de salida.';
+             }
+           }
+        ">
+        <div class="flex items-center space-x-3">
+          <div class="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+            <i class="ph ph-airplane-tilt text-2xl"></i>
+          </div>
+          <div>
+            <h3 class="text-lg font-bold text-neutral-800">
+              {{ if not .Solicitud.GetFechaVuelta }}Agendar Retorno{{ else }}Editar Solicitud{{ end }}
+              <span class="text-primary-600">[{{ .Solicitud.Codigo }}]</span>
+            </h3>
+            <p class="text-xs text-neutral-500 font-medium tracking-tighter">
+              {{ .TargetUser.GetNombreCompleto }} • {{ .Item.Semana }} / {{ .Item.Mes | nombreMes }} {{ .Item.Gestion }}
+              <span class="text-primary-600 font-bold ml-1">{{ rangoSemana .Item.FechaDesde .Item.FechaHasta }}</span>
+            </p>
+          </div>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <span x-show="error" x-text="error" class="text-xs text-red-500 font-bold hidden sm:inline-block mr-2"></span>
+
+          <button
+            type="submit"
+            form="pasajeForm"
+            :disabled="isSubmitting || error !== ''"
+            :class="(isSubmitting || error !== '') ? 'opacity-50 cursor-not-allowed bg-neutral-400' : 'bg-primary hover:bg-primary-800'"
+            class="inline-flex items-center justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-bold rounded-md text-white transition-colors">
+            <i x-show="isSubmitting" class="ph ph-spinner animate-spin mr-2"></i>
+            <span>Actualizar</span>
+          </button>
+
+          <button
+            @click="open = false"
+            type="button"
+            class="text-neutral-500 hover:text-neutral-700 text-sm font-medium px-3 py-2 bg-neutral-100 hover:bg-neutral-200 rounded-md transition-colors">
+            Cancelar
+          </button>
+
+          <button @click="open = false" type="button" class="text-neutral-400 hover:text-neutral-600 p-2 hover:bg-neutral-100 rounded-full transition-colors ml-1">
+            <i class="ph ph-x text-xl"></i>
+          </button>
+        </div>
+      </div>
+
+      {{ if .AlertaOrigen }}
+      <div class="bg-amber-50 border-l-4 border-amber-400 p-3 rounded-md mb-4 flex items-center gap-3">
+        <i class="ph ph-warning text-amber-500 text-xl"></i>
+        <p class="text-xs text-amber-700 font-medium">
+          {{ .AlertaOrigen }}
+          <a href="{{ if eq .AuthUser.ID .TargetUser.ID }}/perfil{{ else }}/usuarios/{{ .TargetUser.ID }}/editar{{ end }}" class="font-bold underline hover:text-amber-800 ml-1">
+            Configurar ahora
+          </a>
+        </p>
+      </div>
+      {{ end }}
+
+      <div id="modal-form-container">{{ template "solicitud/components/form_pasaje_edit" . }}</div>
+    </div>
+  </div>
+</div>
+{{ end }}

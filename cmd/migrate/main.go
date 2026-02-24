@@ -62,6 +62,8 @@ func main() {
 		&models.Agencia{},
 		&models.Compensacion{},
 		&models.Descargo{},
+		&models.DescargoOficial{},
+		&models.AnexoDescargo{},
 		&models.DocumentoDescargo{},
 		&models.DetalleItinerarioDescargo{},
 	)

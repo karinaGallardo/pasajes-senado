@@ -53,7 +53,6 @@ func SetupRoutes(r *gin.Engine) {
 		// protected.GET("/solicitudes/:id/print", solicitudCtrl.PrintPV01)
 
 		// Solicitudes Derecho
-		protected.GET("/solicitudes/derecho/crear/:item_id/:itinerario_code", solicitudDerechoCtrl.Create)
 		protected.GET("/solicitudes/derecho/modal-crear/:item_id/:itinerario_code", solicitudDerechoCtrl.GetCreateModal)
 		protected.GET("/solicitudes/derecho/:id/detalle", solicitudDerechoCtrl.Show)
 		protected.GET("/solicitudes/derecho/:id/modal-editar", solicitudDerechoCtrl.GetEditModal)

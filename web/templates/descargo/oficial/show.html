@@ -1,0 +1,352 @@
+{{ define "descargo/oficial/show" }} {{ template "layout_start" . }}
+
+<div class="w-full space-y-6">
+  <!-- Header -->
+  <div class="flex items-center justify-between">
+    <div>
+      <h2 class="text-3xl font-bold text-neutral-900">Descargo #{{ .Descargo.Codigo }}</h2>
+      <p class="text-sm text-neutral-500">
+        Presentado el {{ .Descargo.FechaPresentacion.Format "02 Jan 2006" }} por
+        <span class="font-medium text-neutral-700">{{ .Descargo.Solicitud.Usuario.Username }}</span>
+      </p>
+    </div>
+    <div class="flex space-x-3">
+      {{ if eq .Descargo.Estado "EN_REVISION" }}
+      <a
+        href="/descargos/{{ .Descargo.ID }}/editar"
+        class="inline-flex items-center px-4 py-2 border border-secondary shadow-sm text-sm font-bold rounded-md text-secondary bg-white hover:bg-secondary-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary transition-colors">
+        <i class="ph ph-note-pencil mr-2"></i>
+        Editar
+      </a>
+      {{ end }}
+
+      <a
+        href="/solicitudes/oficial/{{ .Descargo.SolicitudID }}/detalle"
+        class="inline-flex items-center px-4 py-2 border border-neutral-300 shadow-sm text-sm font-medium rounded-md text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-secondary">
+        Volver
+      </a>
+    </div>
+  </div>
+
+  <!-- Status Banner -->
+  <div class="bg-white shadow rounded-lg p-6 border-l-4 {{ if eq .Descargo.Estado `EN_REVISION` }}border-gold{{ else }}border-primary{{ end }}">
+    <div class="flex items-center justify-between">
+      <div>
+        <p class="text-sm font-medium text-neutral-500 uppercase tracking-wider">Estado del Trámite</p>
+        <h3 class="text-2xl font-bold text-neutral-900 mt-1">{{ .Descargo.Estado }}</h3>
+      </div>
+      <div>
+        {{ if eq .Descargo.Estado `EN_REVISION` }}
+        <div class="flex space-x-2 items-center">
+          <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-warning-100 text-warning-800 mr-4">Pendiente de Aprobación</span>
+
+          {{ if .AuthUser.IsAdminOrResponsable }}
+          <form action="/descargos/{{ .Descargo.ID }}/aprobar" method="POST" x-data="{ loading: false }" @submit="loading = true">
+            <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
+            <button
+              type="submit"
+              :disabled="loading"
+              class="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-success-600 hover:bg-success-700 focus:outline-none disabled:opacity-50">
+              <span x-show="!loading">Aprobar y Finalizar</span>
+              <span x-show="loading">Procesando...</span>
+            </button>
+          </form>
+          {{ end }}
+        </div>
+        {{ else }}
+        <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-success-100 text-success-800">Procesado / Finalizado</span>
+        {{ end }}
+      </div>
+    </div>
+  </div>
+
+  <!-- Grid Layout -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+    <!-- Left Col: Travel Info -->
+    <div class="md:col-span-1 space-y-6">
+      <!-- Travel Context -->
+      <div class="bg-primary-50 shadow rounded-lg p-6 border border-primary-100">
+        <h3 class="text-lg font-bold text-primary mb-4">Datos del Viaje</h3>
+        <dl class="space-y-4">
+          <div>
+            <dt class="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Solicitud Base</dt>
+            <dd class="text-sm text-neutral-900 font-bold mt-1">
+              <a href="/solicitudes/oficial/{{ .Descargo.Solicitud.ID }}/detalle" class="text-secondary hover:underline flex items-center">
+                <i class="ph ph-file-text mr-1.5"></i>
+                Solicitud #{{ .Descargo.Solicitud.Codigo }}
+              </a>
+            </dd>
+          </div>
+          <div>
+            <dt class="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Destino Institucional</dt>
+            <dd class="text-sm text-neutral-900 mt-1 flex items-center">
+              <i class="ph ph-map-pin mr-1.5 text-neutral-400"></i>
+              {{ .Descargo.Solicitud.GetOrigenCiudad }} - {{ .Descargo.Solicitud.GetDestinoCiudad }}
+            </dd>
+          </div>
+          <div>
+            <dt class="text-xs font-semibold text-neutral-500 uppercase tracking-wider">Período del Viaje</dt>
+            <dd class="text-sm text-neutral-900 mt-1">
+              <div class="flex items-center space-x-2">
+                <i class="ph ph-calendar mr-1.5 text-neutral-400"></i>
+                <span>{{ if .Descargo.Solicitud.GetFechaIda }}{{ .Descargo.Solicitud.GetFechaIda.Format "02/01/2006" }}{{ else }} - {{ end }}</span>
+                <span class="text-neutral-300">|</span>
+                <span>{{ if .Descargo.Solicitud.GetFechaVuelta }}{{ .Descargo.Solicitud.GetFechaVuelta.Format "02/01/2006" }}{{ else }} - {{ end }}</span>
+              </div>
+            </dd>
+          </div>
+        </dl>
+      </div>
+
+      <!-- Quick Actions -->
+      <div class="bg-white shadow rounded-lg p-6 border border-neutral-200">
+        <h3 class="text-sm font-bold text-neutral-800 uppercase mb-4 tracking-widest">Descargas</h3>
+        <button
+          hx-get="/descargos/{{ .Descargo.ID }}/previsualizar-pv5"
+          hx-target="#modal-container"
+          class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-800 transition-colors">
+          <i class="ph ph-file-pdf mr-2"></i>
+          Ver / Imprimir PV-06
+        </button>
+      </div>
+    </div>
+
+    <!-- Right Col: Report Content -->
+    <div class="md:col-span-2 space-y-6">
+      <!-- Detailed Itinerary (PV-06) -->
+      <div class="bg-white shadow rounded-lg overflow-hidden border border-neutral-200">
+        <div class="px-6 py-4 border-b border-neutral-100 bg-neutral-50 flex justify-between items-center">
+          <h3 class="text-lg font-bold text-neutral-900">Itinerario Realizado / Tramos</h3>
+          <i class="ph ph-airplane text-neutral-400 text-xl"></i>
+        </div>
+
+        {{ if .Descargo.DetallesItinerario }}
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-neutral-200 border-separate border-spacing-0">
+            <thead class="bg-neutral-50/50">
+              <tr>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider">Tipo de Tramo</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider">Ruta & Fecha</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-semibold text-neutral-500 uppercase tracking-wider">Documentación</th>
+                <th scope="col" class="relative px-6 py-3 text-right"><span class="sr-only">Acciones</span></th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-neutral-100">
+              {{ range .Descargo.DetallesItinerario }}
+              {{ if not .EsDevolucion }}
+              <tr class="group hover:bg-neutral-50/80 transition-all duration-200">
+                <!-- Tipo -->
+                <td class="px-6 py-4 whitespace-nowrap align-top">
+                  <div class="flex items-center">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-bold border 
+                      {{ if eq .Tipo `IDA_ORIGINAL` }} bg-blue-50 text-blue-700 border-blue-100 
+                      {{ else if eq .Tipo `VUELTA_ORIGINAL` }} bg-indigo-50 text-indigo-700 border-indigo-100 
+                      {{ else }} bg-amber-50 text-amber-700 border-amber-100 {{ end }}">
+                      {{ if eq .Tipo `IDA_ORIGINAL` }}IDA Original{{ else }}
+                      {{ if eq .Tipo `VUELTA_ORIGINAL` }}Vuelta Original{{ else }}
+                      {{ .Tipo }}{{ end }}{{ end }}
+                    </span>
+                  </div>
+                </td>
+
+                <!-- Ruta & Fecha -->
+                <td class="px-6 py-4 whitespace-nowrap align-top">
+                  <div class="flex flex-col">
+                    <span class="text-sm font-bold text-neutral-900 flex items-center mb-1">
+                      <i class="ph ph-airplane-tilt text-neutral-400 mr-2"></i>
+                      {{ .Ruta }}
+                    </span>
+                    <span class="text-xs text-neutral-500 flex items-center">
+                      <i class="ph ph-calendar-blank text-neutral-400 mr-2"></i>
+                      {{ if .Fecha }}{{ .Fecha.Format "02 de Ene, 2006" }}{{ else }} - {{ end }}
+                    </span>
+                  </div>
+                </td>
+
+                <!-- Documentación -->
+                <td class="px-6 py-4 whitespace-nowrap align-top">
+                  <div class="flex flex-col space-y-1.5">
+                    <div class="flex items-center text-xs text-neutral-700">
+                      <span class="w-12 font-semibold text-neutral-400 uppercase text-[9px] tracking-wide">Boleto</span>
+                      <span class="font-mono text-neutral-900 font-medium ml-2">{{ if .Boleto }}{{ .Boleto }}{{ else }} - {{ end }}</span>
+                    </div>
+                    <div class="flex items-center text-xs text-neutral-700">
+                      <span class="w-12 font-semibold text-neutral-400 uppercase text-[9px] tracking-wide">Pase</span>
+                      <span class="font-mono text-neutral-900 font-medium ml-2">{{ if .NumeroPaseAbordo }}{{ .NumeroPaseAbordo }}{{ else }} - {{ end }}</span>
+                    </div>
+                  </div>
+                </td>
+
+                <!-- Acciones -->
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium align-middle">
+                  {{ if .ArchivoPaseAbordo }}
+                  {{ $sol := $.Descargo.Solicitud }}
+                  {{ $p := "" }}
+                  {{ if eq .Tipo "IDA_ORIGINAL" }}{{ if $sol.GetItemIda }}{{ $p = $sol.GetItemIda.GetPasajeOriginal }}{{ end }}{{ end }}
+                  {{ if eq .Tipo "VUELTA_ORIGINAL" }}{{ if $sol.GetItemVuelta }}{{ $p = $sol.GetItemVuelta.GetPasajeOriginal }}{{ end }}{{ end }}
+                  {{ if eq .Tipo "IDA_REPRO" }}{{ if $sol.GetItemIda }}{{ $p = $sol.GetItemIda.GetPasajeReprogramado }}{{ end }}{{ end }}
+                  {{ if eq .Tipo "VUELTA_REPRO" }}{{ if $sol.GetItemVuelta }}{{ $p = $sol.GetItemVuelta.GetPasajeReprogramado }}{{ end }}{{ end }}
+
+                  <button
+                    type="button"
+                    hx-get="/preview-file?path={{ .ArchivoPaseAbordo }}&info_tramo_registrado={{ .Ruta | urlquery }}&info_fecha_registrada={{ if .Fecha }}{{ .Fecha.Format "02/01/2006" | urlquery }}{{ end }}&info_boleto_registrado={{ .Boleto | urlquery }}&info_pase_registrado={{ .NumeroPaseAbordo | urlquery }}{{ if $p }}&ruta={{ $p.Ruta | urlquery }}&fecha={{ $p.FechaVuelo.Format "02/01/2006 15:04" | urlquery }}&boleto={{ $p.NumeroBoleto | urlquery }}&vuelo={{ $p.NumeroVuelo | urlquery }}{{ end }}"
+                    hx-target="#modal-container"
+                    class="inline-flex items-center px-3 py-1.5 border border-neutral-200 rounded-lg text-xs font-bold text-neutral-600 bg-white hover:bg-primary-50 hover:text-primary hover:border-primary/30 transition-all shadow-sm group-hover:shadow-md">
+                    <i class="ph ph-file-search mr-2 text-lg text-primary-500"></i>
+                    Ver Documento
+                  </button>
+                  {{ else }}
+                  <span class="inline-flex items-center px-2 py-1 rounded text-xs font-medium bg-neutral-100 text-neutral-400 italic">
+                    <i class="ph ph-prohibit mr-1.5"></i> Sin archivo
+                  </span>
+                  {{ end }}
+                </td>
+              </tr>
+              {{ end }}
+              {{ end }}
+            </tbody>
+          </table>
+        </div>
+        {{ else }}
+        <div class="p-8 text-center text-neutral-400 text-sm italic">No se registraron detalles de tramos en este descargo.</div>
+        {{ end }}
+      </div>
+
+      <!-- INFORME DETALLADO PV-06 -->
+      <div class="bg-white shadow rounded-lg overflow-hidden border border-neutral-200">
+        <div class="px-6 py-4 border-b border-neutral-100 bg-neutral-50 flex justify-between items-center">
+          <h3 class="text-lg font-bold text-neutral-900">Informe de Actividades y Resultados</h3>
+          <i class="ph ph-clipboard-text text-neutral-400 text-xl"></i>
+        </div>
+        <div class="p-6 space-y-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <h4 class="text-xs font-black text-neutral-400 uppercase tracking-widest mb-1">N° Memorándum / Resolución</h4>
+              <p class="text-sm font-bold text-neutral-900">{{ if .Descargo.Oficial }}{{ if .Descargo.Oficial.NroMemorandum }}{{ .Descargo.Oficial.NroMemorandum }}{{ else }} - {{ end }}{{ else }} - {{ end }}</p>
+            </div>
+            <div>
+              <h4 class="text-xs font-black text-neutral-400 uppercase tracking-widest mb-1">Objetivo del Viaje</h4>
+              <p class="text-sm text-neutral-900">{{ if .Descargo.Oficial }}{{ if .Descargo.Oficial.ObjetivoViaje }}{{ .Descargo.Oficial.ObjetivoViaje }}{{ else }}{{ .Descargo.Solicitud.Motivo }}{{ end }}{{ else }}{{ .Descargo.Solicitud.Motivo }}{{ end }}</p>
+            </div>
+          </div>
+
+          <div class="border-t border-neutral-100 pt-4">
+            <h4 class="text-xs font-black text-neutral-400 uppercase tracking-widest mb-2">Actividades Realizadas</h4>
+            <div class="bg-neutral-50 p-4 rounded-lg prose prose-sm max-w-none text-neutral-800 whitespace-pre-wrap">{{ if .Descargo.Oficial }}{{ .Descargo.Oficial.InformeActividades }}{{ end }}</div>
+          </div>
+
+          {{ if .Descargo.Oficial }}
+          {{ if .Descargo.Oficial.ResultadosViaje }}
+          <div class="border-t border-neutral-100 pt-4">
+            <h4 class="text-xs font-black text-neutral-400 uppercase tracking-widest mb-2">Resultados Obtenidos</h4>
+            <div class="bg-primary-50/30 p-4 rounded-lg text-sm text-neutral-800 whitespace-pre-wrap">{{ .Descargo.Oficial.ResultadosViaje }}</div>
+          </div>
+          {{ end }}
+
+          {{ if .Descargo.Oficial.ConclusionesRecomendaciones }}
+          <div class="border-t border-neutral-100 pt-4">
+            <h4 class="text-xs font-black text-neutral-400 uppercase tracking-widest mb-2">Conclusiones y Recomendaciones</h4>
+            <div class="bg-indigo-50/30 p-4 rounded-lg text-sm text-neutral-800 whitespace-pre-wrap">{{ .Descargo.Oficial.ConclusionesRecomendaciones }}</div>
+          </div>
+          {{ end }}
+
+          {{ if .Descargo.Oficial.Anexos }}
+          <div class="border-t border-neutral-100 pt-4">
+            <h4 class="text-xs font-black text-neutral-400 uppercase tracking-widest mb-3">Anexo Fotográfico</h4>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+              {{ range .Descargo.Oficial.Anexos }}
+              <div class="relative aspect-square rounded-lg overflow-hidden border border-neutral-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer" 
+                   hx-get="/preview-file?path={{ .Archivo }}" hx-target="#modal-container">
+                <img src="/{{ .Archivo }}" class="w-full h-full object-cover" />
+              </div>
+              {{ end }}
+            </div>
+          </div>
+          {{ end }}
+          {{ end }}
+
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 border-t border-neutral-100 pt-4">
+            <div>
+              <h4 class="text-xs font-black text-neutral-400 uppercase tracking-widest mb-1">Tipo de Transporte</h4>
+              <p class="text-sm font-bold text-neutral-900">
+                {{ if .Descargo.Oficial }}
+                  {{ if eq .Descargo.Oficial.TipoTransporte "AEREO" }}Aéreo
+                  {{ else if eq .Descargo.Oficial.TipoTransporte "TERRESTRE_PUBLICO" }}Público Terrestre
+                  {{ else if eq .Descargo.Oficial.TipoTransporte "VEHICULO_OFICIAL" }}Vehículo Oficial ({{ .Descargo.Oficial.PlacaVehiculo }})
+                  {{ else }} - {{ end }}
+                {{ else }} - {{ end }}
+              </p>
+            </div>
+            {{ if .Descargo.Oficial }}
+            {{ if gt .Descargo.Oficial.MontoDevolucion 0.0 }}
+            <div>
+              <h4 class="text-xs font-black text-danger-400 uppercase tracking-widest mb-1">Monto Devuelto</h4>
+              <p class="text-sm font-bold text-danger-700">Bs {{ printf "%.2f" .Descargo.Oficial.MontoDevolucion }}</p>
+            </div>
+            <div>
+              <h4 class="text-xs font-black text-neutral-400 uppercase tracking-widest mb-1">N° Boleta Depósito</h4>
+              <p class="text-sm font-bold text-neutral-900">{{ .Descargo.Oficial.NroBoletaDeposito }}</p>
+            </div>
+            {{ end }}
+            {{ end }}
+          </div>
+
+          {{ if .Descargo.Observaciones }}
+          <div class="border-t border-neutral-100 pt-4">
+            <h4 class="text-xs font-black text-neutral-400 uppercase tracking-widest mb-1">Observaciones</h4>
+            <p class="text-sm text-neutral-600 italic">{{ .Descargo.Observaciones }}</p>
+          </div>
+          {{ end }}
+        </div>
+      </div>
+
+      <!-- Pasajes Devueltos -->
+      {{ $hasReturns := false }}
+      {{ range .Descargo.DetallesItinerario }}{{ if .EsDevolucion }}{{ $hasReturns = true }}{{ end }}{{ end }}
+
+      {{ if $hasReturns }}
+      <div class="bg-white shadow rounded-lg overflow-hidden border border-danger-200">
+        <div class="px-6 py-4 border-b border-danger-100 bg-danger-50 flex justify-between items-center">
+          <h3 class="text-lg font-bold text-danger-900">Pasajes Devueltos</h3>
+          <i class="ph ph-ticket text-danger-400 text-xl"></i>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-danger-100">
+            <thead class="bg-danger-50/50">
+              <tr>
+                <th class="px-4 py-3 text-left text-[10px] font-bold text-danger-800 uppercase tracking-widest">Tipo</th>
+                <th class="px-4 py-3 text-left text-[10px] font-bold text-danger-800 uppercase tracking-widest">Ruta Original</th>
+                <th class="px-4 py-3 text-left text-[10px] font-bold text-danger-800 uppercase tracking-widest">Fecha Original</th>
+                <th class="px-4 py-3 text-left text-[10px] font-bold text-danger-800 uppercase tracking-widest">Estado</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-danger-100">
+              {{ range .Descargo.DetallesItinerario }}
+              {{ if .EsDevolucion }}
+              <tr class="hover:bg-danger-50/30 transition-colors">
+                <td class="px-4 py-3 whitespace-nowrap">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold leading-4 bg-neutral-100 text-neutral-600 border border-neutral-200">
+                    {{ .Tipo }}
+                  </span>
+                </td>
+                <td class="px-4 py-3 whitespace-nowrap text-xs font-medium text-neutral-700">{{ .Ruta }}</td>
+                <td class="px-4 py-3 whitespace-nowrap text-xs text-neutral-500">{{ if .Fecha }}{{ .Fecha.Format "02/01/2006" }}{{ else }} - {{ end }}</td>
+                <td class="px-4 py-3 whitespace-nowrap">
+                  <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold leading-4 bg-danger-100 text-danger-800 border border-danger-200">
+                    DEVUELTO
+                  </span>
+                </td>
+              </tr>
+              {{ end }}
+              {{ end }}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {{ end }}
+      </div>
+    </div>
+  </div>
+</div>
+
+{{ template "layout_end" . }} {{ end }}
