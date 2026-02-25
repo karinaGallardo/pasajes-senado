@@ -760,7 +760,7 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 		pdf.Ln(1)
 		var origRows, reproRows []models.DetalleItinerarioDescargo
 		for _, d := range descargo.DetallesItinerario {
-			if d.EsDevolucion || d.EsModificacion {
+			if d.EsDevolucion {
 				continue
 			}
 			switch d.Tipo {
@@ -783,9 +783,7 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 	pdf.Ln(4)
 
 	pdf.SetFont("Arial", "B", 9)
-	pdf.CellFormat(190, 6, tr(" DEVOLUCIÓN DE PASAJES POR DERECHO"), "B", 1, "L", false, 0, "")
-	pdf.SetFont("Arial", "", 8)
-	pdf.CellFormat(190, 5, tr(" (En caso de no haber utilizado el boleto emitido o un tramo informar en el siguiente cuadro)"), "", 1, "L", false, 0, "")
+	pdf.CellFormat(190, 6, tr(" PASAJE ABIERTO-OPEN TICKET"), "B", 1, "L", false, 0, "")
 
 	var returnsIda, returnsVuelta []models.DetalleItinerarioDescargo
 	for _, d := range descargo.DetallesItinerario {
@@ -1008,7 +1006,7 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 		pdf.Ln(1)
 		var origRows, reproRows []models.DetalleItinerarioDescargo
 		for _, d := range descargo.DetallesItinerario {
-			if d.EsDevolucion || d.EsModificacion {
+			if d.EsDevolucion {
 				continue
 			}
 			switch d.Tipo {

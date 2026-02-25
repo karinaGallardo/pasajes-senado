@@ -115,7 +115,7 @@
           </form>
           {{ end }}
 
-          {{ if and (eq .Descargo.Estado "EN_REVISION") (or .AuthUser.IsAdminOrResponsable (eq .AuthUser.ID .Descargo.CreatedBy)) }}
+          {{ if and (eq .Descargo.Estado "EN_REVISION") (or .AuthUser.IsAdminOrResponsable (eq .AuthUser.ID (deref .Descargo.CreatedBy))) }}
           <a
             href="/descargos/oficial/{{ .Descargo.ID }}/editar"
             class="w-full inline-flex justify-center items-center px-4 py-2 border border-neutral-200 text-xs font-black rounded-md text-neutral-600 bg-white hover:bg-neutral-50 transition-all shadow-sm active:scale-95 uppercase tracking-tight">

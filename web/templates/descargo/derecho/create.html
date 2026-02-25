@@ -385,38 +385,39 @@
     if (!container) return;
 
     const index = itinCounter++;
-    const row = document.createElement("tr");
-    row.setAttribute("x-data", "{ devuelto: false, modificado: false, orig: '', dest: '', openRow: false }");
-    row.setAttribute(":class", "{ 'relative z-50': openRow, 'relative': !openRow }");
-    row.setAttribute("@update-orig.stop", "orig = $event.detail");
-    row.setAttribute("@update-dest.stop", "dest = $event.detail");
-    row.setAttribute("@update-open.stop", "openRow = $event.detail");
-
-    row.innerHTML = `
-      <td class="px-2 py-1 text-center">
-        <input type="hidden" name="itin_tipo[]" value="${type}">
-        <input type="hidden" name="itin_index[]" value="${index}">
-        <input type="checkbox" name="itin_devolucion[]" value="${index}" x-model="devuelto" @change="if(devuelto) modificado = false" title="Devolver" class="h-4 w-4 text-danger-600 border-neutral-300 rounded focus:ring-danger-500">
-      </td>
-      <td class="px-2 py-1 text-center">
-        <input type="checkbox" name="itin_modificacion[]" value="${index}" x-model="modificado" @change="if(modificado) devuelto = false" title="Modificar" class="h-4 w-4 text-amber-600 border-neutral-300 rounded focus:ring-amber-500">
-      </td>
-      <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
-        <div class="flex items-center gap-1">
-          <!-- SEARCHABLE SELECT ORIGEN -->
-          <div class="relative flex-1" x-data="searchableSelect({ items: selectItems, placeholder: 'Origen' })" 
-               x-init="$watch('value', v => { const item = items.find(i => i.value === v); $dispatch('update-orig', item ? item.cityName : '') }); $watch('open', o => { $dispatch('update-open', o) })">
-            <button
-              x-ref="button"
-              @click="open = !open"
-              type="button"
-              :readonly="devuelto"
-              class="relative w-full bg-white border border-neutral-300 rounded pl-2 pr-6 py-1 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-secondary focus:border-secondary text-[10px]">
-              <span class="block truncate" :class="{'text-neutral-400': !value, 'text-neutral-900 font-medium': value}" x-text="label"></span>
-              <span class="absolute inset-y-0 right-0 flex items-center pr-1 pointer-events-none">
-                <i class="ph ph-caret-up-down text-neutral-400"></i>
-              </span>
-            </button>
+    const xData = "{ devuelto: false, modificado: false, orig: '', dest: '', openRow: false }";
+    const xClass = "{ 'relative z-50': openRow, 'relative': !openRow }";
+    
+    const rowHtml = `
+      <tr x-data="${xData}" 
+          :class="${xClass}"
+          @update-orig.stop="orig = $event.detail"
+          @update-dest.stop="dest = $event.detail"
+          @update-open.stop="openRow = $event.detail">
+        <td class="px-2 py-1 text-center">
+          <input type="hidden" name="itin_tipo[]" value="${type}">
+          <input type="hidden" name="itin_index[]" value="${index}">
+          <input type="checkbox" name="itin_devolucion[]" value="${index}" x-model="devuelto" @change="if(devuelto) modificado = false" title="Devolver" class="h-4 w-4 text-danger-600 border-neutral-300 rounded focus:ring-danger-500">
+        </td>
+        <td class="px-2 py-1 text-center">
+          <input type="checkbox" name="itin_modificacion[]" value="${index}" x-model="modificado" @change="if(modificado) devuelto = false" title="Modificar" class="h-4 w-4 text-amber-600 border-neutral-300 rounded focus:ring-amber-500">
+        </td>
+        <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
+          <div class="flex items-center gap-1">
+            <!-- SEARCHABLE SELECT ORIGEN -->
+            <div class="relative flex-1" x-data="searchableSelect({ items: selectItems, placeholder: 'Origen' })" 
+                 x-init="$watch('value', v => { const item = items.find(i => i.value === v); $dispatch('update-orig', item ? item.cityName : '') }); $watch('open', o => { $dispatch('update-open', o) })">
+              <button
+                x-ref="button"
+                @click="open = !open"
+                type="button"
+                :disabled="devuelto"
+                class="relative w-full bg-white border border-neutral-300 rounded pl-2 pr-6 py-1 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-secondary focus:border-secondary text-[10px]">
+                <span class="block truncate" :class="{'text-neutral-400': !value, 'text-neutral-900 font-medium': value}" x-text="label"></span>
+                <span class="absolute inset-y-0 right-0 flex items-center pr-1 pointer-events-none">
+                  <i class="ph ph-caret-up-down text-neutral-400"></i>
+                </span>
+              </button>
             <div
               x-show="open"
               @click.away="open = false"
@@ -519,15 +520,16 @@
           <i class="ph ph-trash"></i>
         </button>
       </td>
-    `;
+    </tr>`;
+
+    container.insertAdjacentHTML('beforeend', rowHtml);
+    const row = container.lastElementChild;
 
     row.querySelector('.remove-row-btn').addEventListener('click', () => {
       row.remove();
       const form = document.getElementById('descargo-form');
       if (form) form.dispatchEvent(new Event('input', { bubbles: true }));
     });
-
-    container.appendChild(row);
   };
 
   document.addEventListener("DOMContentLoaded", () => {
