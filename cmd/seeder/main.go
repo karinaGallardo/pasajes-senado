@@ -313,7 +313,7 @@ func seedCatalogosViaje() {
 	configs.DB.FirstOrCreate(&ambitoInt, models.AmbitoViaje{Codigo: "INTERNACIONAL"})
 
 	conceptoDer := models.ConceptoViaje{Codigo: "DERECHO", Nombre: "Pasaje por Derecho"}
-	conceptoOfi := models.ConceptoViaje{Codigo: "OFICIAL", Nombre: "Misión Oficial"}
+	conceptoOfi := models.ConceptoViaje{Codigo: "OFICIAL", Nombre: "Comisión Oficial"}
 	configs.DB.FirstOrCreate(&conceptoDer, models.ConceptoViaje{Codigo: "DERECHO"})
 	configs.DB.FirstOrCreate(&conceptoOfi, models.ConceptoViaje{Codigo: "OFICIAL"})
 

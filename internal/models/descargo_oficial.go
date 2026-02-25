@@ -15,6 +15,7 @@ type DescargoOficial struct {
 
 	MontoDevolucion   float64 `gorm:"type:decimal(10,2);default:0"`
 	NroBoletaDeposito string  `gorm:"size:100"`
+	DirigidoA         string  `gorm:"size:255"`
 
 	Anexos []AnexoDescargo `gorm:"foreignKey:DescargoOficialID"`
 }

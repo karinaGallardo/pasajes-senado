@@ -31,6 +31,17 @@ func NewReportService() *ReportService {
 func (s *ReportService) GeneratePV01(ctx context.Context, solicitud *models.Solicitud, personaView *models.MongoPersonaView, mode string) *gofpdf.Fpdf {
 	pdf := gofpdf.New("P", "mm", "Letter", "")
 	tr := pdf.UnicodeTranslatorFromDescriptor("")
+
+	pdf.SetFooterFunc(func() {
+		if pdf.PageNo() == 1 {
+			pdf.SetY(-15)
+			pdf.SetFont("Arial", "I", 7)
+			pdf.SetTextColor(128, 128, 128)
+			pdf.CellFormat(0, 10, tr(utils.FormatDateTimeShortES(time.Now())), "", 0, "R", false, 0, "")
+			pdf.SetTextColor(0, 0, 0)
+		}
+	})
+
 	pdf.AddPage()
 	pdf.SetFont("Arial", "B", 16)
 
@@ -317,10 +328,6 @@ func (s *ReportService) GeneratePV01(ctx context.Context, solicitud *models.Soli
 	pdf.SetFont("Arial", "I", 6)
 	pdf.CellFormat(60, 3, tr("(FIRMA Y SELLO)"), "", 1, "C", false, 0, "")
 
-	pdf.SetY(250)
-	pdf.SetFont("Arial", "I", 8)
-	pdf.CellFormat(0, 5, tr(fmt.Sprintf("Generado electrónicamente por Sistema Pasajes Senado - %s", time.Now().Format("02/01/2006 15:04:05"))), "", 1, "C", false, 0, "")
-
 	return pdf
 }
 
@@ -329,6 +336,17 @@ func (s *ReportService) GeneratePV01(ctx context.Context, solicitud *models.Soli
 func (s *ReportService) GeneratePV02(ctx context.Context, solicitud *models.Solicitud, personaView *models.MongoPersonaView) *gofpdf.Fpdf {
 	pdf := gofpdf.New("P", "mm", "Letter", "")
 	tr := pdf.UnicodeTranslatorFromDescriptor("")
+
+	pdf.SetFooterFunc(func() {
+		if pdf.PageNo() == 1 {
+			pdf.SetY(-15)
+			pdf.SetFont("Arial", "I", 7)
+			pdf.SetTextColor(128, 128, 128)
+			pdf.CellFormat(0, 10, tr(utils.FormatDateTimeShortES(time.Now())), "", 0, "R", false, 0, "")
+			pdf.SetTextColor(0, 0, 0)
+		}
+	})
+
 	pdf.AddPage()
 	pdf.SetFont("Arial", "B", 16)
 
@@ -585,13 +603,10 @@ func (s *ReportService) GeneratePV02(ctx context.Context, solicitud *models.Soli
 
 	// Disclaimer
 	pdf.SetFont("Arial", "I", 6)
-	disclaimer := tr("NO SE DARA CURSO AL TRAMITE DE PASAJES Y VIATICOS, EN CASO DE VERIFICARSE QUE LOS DOCUMENTOS DE DECLARATORIA Y/O DESCARGO EN COMISION Y/O MISION OFICIAL PRESENTEN ALTERACIONES, BORRONES O ENMIENDAS QUE MODIFIQUEN EL CONTENIDO DE LA MISMA, SIN PERJUICIO DE INICIAR LAS ACCIONES LEGALES QUE CORRESPONDA.")
+	disclaimer := tr("NO SE DARA CURSO AL TRAMITE DE PASAJES Y VIATICOS, EN CASO DE VERIFICARSE QUE LOS DOCUMENTOS DE DECLARATORIA Y/O DESCARGO EN COMISION OFICIAL PRESENTEN ALTERACIONES, BORRONES O ENMIENDAS QUE MODIFIQUEN EL CONTENIDO DE LA MISMA, SIN PERJUICIO DE INICIAR LAS ACCIONES LEGALES QUE CORRESPONDA.")
 	pdf.MultiCell(190, 3, disclaimer, "", "L", false)
 
-	pdf.Ln(2)
 	pdf.SetFont("Arial", "I", 8)
-	pdf.CellFormat(0, 5, tr(fmt.Sprintf("Generado electrónicamente por Sistema Pasajes Senado - %s", time.Now().Format("02/01/2006 15:04:05"))), "", 1, "C", false, 0, "")
-
 	return pdf
 }
 
@@ -600,6 +615,17 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 
 	pdf := gofpdf.New("P", "mm", "Letter", "")
 	tr := pdf.UnicodeTranslatorFromDescriptor("")
+
+	pdf.SetFooterFunc(func() {
+		if pdf.PageNo() == 1 {
+			pdf.SetY(-15)
+			pdf.SetFont("Arial", "I", 7)
+			pdf.SetTextColor(128, 128, 128)
+			pdf.CellFormat(0, 10, tr(utils.FormatDateTimeShortES(time.Now())), "", 0, "R", false, 0, "")
+			pdf.SetTextColor(0, 0, 0)
+		}
+	})
+
 	pdf.AddPage()
 	pdf.SetFont("Arial", "B", 16)
 
@@ -861,10 +887,6 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 	pdf.SetFont("Arial", "B", 7)
 	pdf.CellFormat(70, 4, tr("RESPONSABLE PRESENTACION DEL DESCARGO"), "", 1, "C", false, 0, "")
 
-	pdf.SetY(sigY + 32)
-	pdf.SetFont("Arial", "I", 8)
-	pdf.CellFormat(0, 5, tr(fmt.Sprintf("Generado electrónicamente por Sistema Pasajes Senado - %s", time.Now().Format("02/01/2006 15:04:05"))), "", 1, "C", false, 0, "")
-
 	return pdf
 }
 
@@ -873,6 +895,17 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 
 	pdf := gofpdf.New("P", "mm", "Letter", "")
 	tr := pdf.UnicodeTranslatorFromDescriptor("")
+
+	pdf.SetFooterFunc(func() {
+		if pdf.PageNo() == 1 {
+			pdf.SetY(-15)
+			pdf.SetFont("Arial", "I", 7)
+			pdf.SetTextColor(128, 128, 128)
+			pdf.CellFormat(0, 10, tr(utils.FormatDateTimeShortES(time.Now())), "", 0, "R", false, 0, "")
+			pdf.SetTextColor(0, 0, 0)
+		}
+	})
+
 	pdf.AddPage()
 	pdf.SetFont("Arial", "B", 16)
 
@@ -906,49 +939,90 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 	pdf.SetY(40)
 	pdf.SetFont("Arial", "", 10)
 
-	drawLabelBox := func(label, value string, wLabel, wBox float64, sameLine bool) {
-		h := 6.0
-		pdf.SetFont("Arial", "B", 8)
-		pdf.CellFormat(wLabel, h, tr(label), "", 0, "L", false, 0, "")
-		pdf.SetFont("Arial", "", 9)
-		pdf.CellFormat(wBox, h, tr(value), "", 0, "L", false, 0, "")
-		if !sameLine {
-			pdf.Ln(h + 1)
-		}
-	}
-
-	drawLabelBox("NOMBRE Y APELLIDOS:", solicitud.Usuario.GetNombreCompleto(), 40, 150, false)
-	drawLabelBox("C.I.:", solicitud.Usuario.CI, 40, 60, true)
-	drawLabelBox("TEL. REF:", solicitud.Usuario.Phone, 30, 60, false)
-
 	cargoStr := ""
 	if personaView != nil && personaView.Cargo != "" {
 		cargoStr = personaView.Cargo
 	} else if solicitud.Usuario.Cargo != nil {
 		cargoStr = solicitud.Usuario.Cargo.Descripcion
 	}
-	unidadStr := ""
-	if personaView != nil && personaView.Dependencia != "" {
-		unidadStr = personaView.Dependencia
-	} else if solicitud.Usuario.Oficina != nil {
-		unidadStr = solicitud.Usuario.Oficina.Detalle
+
+	pdf.SetLineWidth(0.2)
+	pdf.SetDrawColor(0, 0, 0)
+
+	drawMemoRow := func(label, value string) {
+		h := 7.0
+		pdf.SetFillColor(255, 255, 255) // White background
+		pdf.SetFont("Arial", "B", 10)
+		pdf.CellFormat(30, h, tr(label), "1", 0, "R", true, 0, "")
+
+		pdf.SetFillColor(255, 255, 255)
+		pdf.SetFont("Arial", "", 10)
+		pdf.CellFormat(160, h, "  "+tr(value), "1", 1, "L", false, 0, "")
 	}
-	drawLabelBox(tr("CARGO:"), cargoStr, 40, 60, true)
-	drawLabelBox(tr("UNIDAD:"), unidadStr, 30, 60, false)
+
+	aQuien := ""
+	if descargo.Oficial != nil {
+		aQuien = descargo.Oficial.DirigidoA
+	}
+
+	if aQuien == "" && solicitud.Usuario.Encargado != nil {
+		aQuien = solicitud.Usuario.Encargado.GetNombreCompleto()
+		if solicitud.Usuario.Encargado.Cargo != nil {
+			aQuien += " - " + solicitud.Usuario.Encargado.Cargo.Descripcion
+		}
+	}
+
+	drawMemoRow("A :", aQuien)
+	drawMemoRow("De :", solicitud.Usuario.GetNombreCompleto())
+	drawMemoRow("Cargo :", cargoStr)
+	drawMemoRow("Fecha :", solicitud.CreatedAt.Format("02/01/2006"))
+
 	pdf.Ln(4)
 
-	mes := ""
-	var mainDate *time.Time
-	for _, it := range solicitud.Items {
-		if it.Fecha != nil {
-			mainDate = it.Fecha
+	pdf.SetFont("Arial", "B", 10)
+	pdf.CellFormat(0, 8, tr("Datos Generales del Viaje:"), "", 1, "L", false, 0, "")
+
+	// Row for "Lugar del Viaje"
+	pdf.SetFillColor(255, 255, 255) // Peach color from image
+	pdf.SetFont("Arial", "B", 10)
+	pdf.CellFormat(35, 8, tr("Lugar del Viaje:"), "1", 0, "L", true, 0, "")
+	pdf.SetFont("Arial", "", 10)
+	lugarViaje := "-"
+	// Search for the LAST item of type IDA to get the final destination
+	for i := len(solicitud.Items) - 1; i >= 0; i-- {
+		if solicitud.Items[i].Tipo == models.TipoSolicitudItemIda {
+			if solicitud.Items[i].Destino != nil {
+				lugarViaje = solicitud.Items[i].Destino.Ciudad
+			}
 			break
 		}
 	}
-	if mainDate != nil {
-		mes = utils.TranslateMonth(mainDate.Month())
+	if lugarViaje == "-" {
+		lugarViaje = solicitud.GetDestinoCiudad()
 	}
-	drawLabelBox("CORRESPONDIENTE AL MES DE:", mes, 50, 60, false)
+
+	pdf.CellFormat(155, 8, "  "+tr(lugarViaje), "1", 1, "L", false, 0, "")
+
+	pdf.Ln(2)
+
+	// Row for "Nº de Memorándum o Resolución"
+	nroMemo := ""
+	if descargo.Oficial != nil {
+		nroMemo = descargo.Oficial.NroMemorandum
+	}
+
+	wLabelMemo := 65.0
+	wValueMemo := 50.0
+	totalW := wLabelMemo + wValueMemo
+	currentX := pdf.GetX()
+	pdf.SetX(currentX + (190-totalW)/2) // Centering the block in 190mm width
+
+	pdf.SetFont("Arial", "B", 10)
+	pdf.CellFormat(wLabelMemo, 7, tr("N° de Memorándum o Resolución:"), "", 0, "R", false, 0, "")
+	pdf.SetFont("Arial", "", 10)
+	pdf.CellFormat(wValueMemo, 7, tr(nroMemo), "1", 1, "L", false, 0, "")
+
+	pdf.Ln(2)
 	pdf.Ln(2)
 
 	pdf.SetFont("Arial", "B", 10)
@@ -1139,7 +1213,9 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 	pdf.Ln(4)
 
 	// Memo y Objetivo
-	nroMemo := "S/N"
+	if nroMemo == "" {
+		nroMemo = "S/N"
+	}
 	objViaje := "No especificado"
 	if descargo.Oficial != nil {
 		if descargo.Oficial.NroMemorandum != "" {
@@ -1242,10 +1318,6 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 	pdf.SetXY(110, sigY+12)
 	pdf.SetFont("Arial", "B", 7)
 	pdf.CellFormat(70, 4, tr("RESPONSABLE PRESENTACIÓN DEL DESCARGO"), "", 1, "C", false, 0, "")
-
-	pdf.SetY(sigY + 30)
-	pdf.SetFont("Arial", "I", 8)
-	pdf.CellFormat(0, 5, tr(fmt.Sprintf("Generado electrónicamente por Sistema Pasajes Senado - %s", time.Now().Format("02/01/2006 15:04:05"))), "", 1, "C", false, 0, "")
 
 	// Anexos (Imágenes)
 	if descargo.Oficial != nil && len(descargo.Oficial.Anexos) > 0 {

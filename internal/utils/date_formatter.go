@@ -39,3 +39,39 @@ func FormatDateShortES(t time.Time) string {
 
 	return fmt.Sprintf("%s %s %s %d", day, dayNum, month, year)
 }
+
+// FormatDateTimeShortES formatear una fecha y hora en formato "mar. 03 feb. 2026 15:04:05"
+func FormatDateTimeShortES(t time.Time) string {
+	dayNames := map[string]string{
+		"Monday":    "lun.",
+		"Tuesday":   "mar.",
+		"Wednesday": "mié.",
+		"Thursday":  "jue.",
+		"Friday":    "vie.",
+		"Saturday":  "sáb.",
+		"Sunday":    "dom.",
+	}
+
+	monthNames := map[string]string{
+		"January":   "ene.",
+		"February":  "feb.",
+		"March":     "mar.",
+		"April":     "abr.",
+		"May":       "may.",
+		"June":      "jun.",
+		"July":      "jul.",
+		"August":    "ago.",
+		"September": "sep.",
+		"October":   "oct.",
+		"November":  "nov.",
+		"December":  "dic.",
+	}
+
+	day := dayNames[t.Weekday().String()]
+	month := monthNames[t.Month().String()]
+	dayNum := t.Format("02")
+	year := t.Year()
+	timeStr := t.Format("15:04:05")
+
+	return fmt.Sprintf("%s %s %s %d %s", day, dayNum, month, year, timeStr)
+}

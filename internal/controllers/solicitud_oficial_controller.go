@@ -102,7 +102,7 @@ func (ctrl *SolicitudOficialController) Store(c *gin.Context) {
 		return
 	}
 
-	utils.SetSuccessMessage(c, "Solicitud Oficial creada correctamente")
+	utils.SetSuccessMessage(c, "Solicitud de Comisión Oficial creada correctamente")
 	c.Redirect(http.StatusFound, "/solicitudes")
 }
 
@@ -308,7 +308,7 @@ func (ctrl *SolicitudOficialController) Show(c *gin.Context) {
 	}
 
 	utils.Render(c, "solicitud/oficial/show", gin.H{
-		"Title":          "Solicitud Oficial " + solicitud.Codigo,
+		"Title":          "Solicitud de Comisión Oficial " + solicitud.Codigo,
 		"Solicitud":      solicitud,
 		"AuthUser":       authUser,
 		"Perms":          perms,

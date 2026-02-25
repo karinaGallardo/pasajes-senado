@@ -9,6 +9,7 @@ type CreateDescargoRequest struct {
 	ResultadosViaje             string `form:"resultados_viaje"`
 	ConclusionesRecomendaciones string `form:"conclusiones_recomendaciones"`
 	Observaciones               string `form:"observaciones"`
+	DirigidoA                   string `form:"dirigido_a"`
 
 	// Informe PV-06
 	NroMemorandum     string  `form:"nro_memorandum"`

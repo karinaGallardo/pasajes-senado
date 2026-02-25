@@ -52,6 +52,7 @@ func (s *DescargoService) Create(ctx context.Context, req dtos.CreateDescargoReq
 			ConclusionesRecomendaciones: req.ConclusionesRecomendaciones,
 			MontoDevolucion:             req.MontoDevolucion,
 			NroBoletaDeposito:           req.NroBoletaDeposito,
+			DirigidoA:                   req.DirigidoA,
 		}
 
 		// Mapear Anexos
@@ -173,6 +174,7 @@ func (s *DescargoService) UpdateFull(ctx context.Context, id string, req dtos.Cr
 		descargo.Oficial.ConclusionesRecomendaciones = req.ConclusionesRecomendaciones
 		descargo.Oficial.MontoDevolucion = req.MontoDevolucion
 		descargo.Oficial.NroBoletaDeposito = req.NroBoletaDeposito
+		descargo.Oficial.DirigidoA = req.DirigidoA
 
 		// Explicitly save the official detail to ensure columns are updated correctly
 		if err := s.repo.WithContext(ctx).UpdateOficial(descargo.Oficial); err != nil {

@@ -30,7 +30,7 @@ func (ctrl *SolicitudController) IndexDerecho(c *gin.Context) {
 }
 
 func (ctrl *SolicitudController) IndexOficial(c *gin.Context) {
-	ctrl.renderIndex(c, "OFICIAL", "Bandeja de Misiones Oficiales")
+	ctrl.renderIndex(c, "OFICIAL", "Bandeja de Comisiones Oficiales")
 }
 
 func (ctrl *SolicitudController) renderIndex(c *gin.Context, concepto string, title string) {
