@@ -18,7 +18,8 @@ func SetupRoutes(r *gin.Engine) {
 	perfilCtrl := controllers.NewPerfilController()
 	usuarioCtrl := controllers.NewUsuarioController()
 	cupoCtrl := controllers.NewCupoController()
-	descargoCtrl := controllers.NewDescargoController()
+	descargoDerechoCtrl := controllers.NewDescargoDerechoController()
+	descargoOficialCtrl := controllers.NewDescargoOficialController()
 
 	r.GET("/auth/login", authCtrl.ShowLogin)
 	r.POST("/auth/login", authCtrl.Login)
@@ -42,22 +43,23 @@ func SetupRoutes(r *gin.Engine) {
 		protected.GET("/solicitudes", solicitudCtrl.Index)
 		protected.GET("/solicitudes/derecho", solicitudCtrl.IndexDerecho)
 		protected.GET("/solicitudes/oficial", solicitudCtrl.IndexOficial)
-		// protected.GET("/solicitudes/nueva", solicitudCtrl.Create)
-		// protected.GET("/solicitudes/:id", solicitudCtrl.Show)
-		// protected.POST("/solicitudes", solicitudCtrl.Store) // Generic Store
-		// protected.GET("/solicitudes/check-cupo", solicitudCtrl.CheckCupo)
-		// protected.POST("/solicitudes/:id/aprobar", solicitudCtrl.Approve)
-		// protected.POST("/solicitudes/:id/rechazar", solicitudCtrl.Reject)
-		// protected.GET("/solicitudes/:id/editar", solicitudCtrl.Edit)
-		// protected.POST("/solicitudes/:id/actualizar", solicitudCtrl.Update)
-		// protected.GET("/solicitudes/:id/print", solicitudCtrl.PrintPV01)
 
 		// Solicitudes Derecho
 		protected.GET("/solicitudes/derecho/modal-crear/:item_id/:itinerario_code", solicitudDerechoCtrl.GetCreateModal)
 		protected.GET("/solicitudes/derecho/:id/detalle", solicitudDerechoCtrl.Show)
 		protected.GET("/solicitudes/derecho/:id/modal-editar", solicitudDerechoCtrl.GetEditModal)
 		protected.GET("/solicitudes/derecho/:id/print", solicitudDerechoCtrl.Print)
-		protected.GET("/solicitudes/derecho/:id/descargo", descargoCtrl.CreateDerecho)
+
+		// Descargos Derecho
+		protected.GET("/descargos/derecho/nuevo/:id", descargoDerechoCtrl.Create)
+		protected.POST("/descargos/derecho", descargoDerechoCtrl.Store)
+		protected.GET("/descargos/derecho/:id", descargoDerechoCtrl.Show)
+		protected.GET("/descargos/derecho/:id/editar", descargoDerechoCtrl.Edit)
+		protected.POST("/descargos/derecho/:id/actualizar", descargoDerechoCtrl.Update)
+		protected.GET("/descargos/derecho/:id/imprimir", descargoDerechoCtrl.Print)
+		protected.GET("/descargos/derecho/:id/previsualizar", descargoDerechoCtrl.Preview)
+		protected.POST("/descargos/derecho/:id/aprobar", descargoDerechoCtrl.Approve)
+		protected.POST("/descargos/derecho/:id/revertir-aprobacion", descargoDerechoCtrl.RevertApproval)
 
 		protected.POST("/solicitudes/derecho/:id/actualizar", solicitudDerechoCtrl.Update)
 		protected.POST("/solicitudes/derecho/:id/aprobar", solicitudDerechoCtrl.Approve)
@@ -74,7 +76,18 @@ func SetupRoutes(r *gin.Engine) {
 		protected.GET("/solicitudes/oficial/:id/detalle", solicitudOficialCtrl.Show)
 		protected.GET("/solicitudes/oficial/:id/modal-editar", solicitudOficialCtrl.GetEditModal)
 		protected.GET("/solicitudes/oficial/:id/print", solicitudOficialCtrl.Print)
-		protected.GET("/solicitudes/oficial/:id/descargo", descargoCtrl.CreateOficial)
+
+		// Descargos Oficial
+		protected.GET("/descargos/oficial/nuevo/:id", descargoOficialCtrl.Create)
+		protected.POST("/descargos/oficial", descargoOficialCtrl.Store)
+		protected.GET("/descargos/oficial/:id", descargoOficialCtrl.Show)
+		protected.GET("/descargos/oficial/:id/editar", descargoOficialCtrl.Edit)
+		protected.POST("/descargos/oficial/:id/actualizar", descargoOficialCtrl.Update)
+		protected.GET("/descargos/oficial/:id/imprimir", descargoOficialCtrl.Print)
+		protected.GET("/descargos/oficial/:id/previsualizar", descargoOficialCtrl.Preview)
+		protected.POST("/descargos/oficial/:id/aprobar", descargoOficialCtrl.Approve)
+		protected.POST("/descargos/oficial/:id/revertir-aprobacion", descargoOficialCtrl.RevertApproval)
+
 		protected.POST("/solicitudes/oficial/:id/actualizar", solicitudOficialCtrl.Update)
 		protected.POST("/solicitudes/oficial", solicitudOficialCtrl.Store)
 		protected.POST("/solicitudes/oficial/:id/aprobar", solicitudOficialCtrl.Approve)
@@ -102,15 +115,9 @@ func SetupRoutes(r *gin.Engine) {
 		protected.POST("/solicitudes/:id/viaticos", viaticoCtrl.Store)
 		protected.GET("/viaticos/:id/print", viaticoCtrl.Print)
 
-		protected.GET("/descargos", descargoCtrl.Index)
-		protected.GET("/descargos/:id/imprimir-pv5", descargoCtrl.DownloadPV5ByID)
-		protected.GET("/descargos/:id/previsualizar-pv5", descargoCtrl.PreviewPV5)
-		protected.GET("/preview-file", descargoCtrl.PreviewFile)
-		protected.POST("/descargos", descargoCtrl.Store)
-		protected.GET("/descargos/:id", descargoCtrl.Show)
-		protected.GET("/descargos/:id/editar", descargoCtrl.Edit)
-		protected.POST("/descargos/:id/actualizar", descargoCtrl.Update)
-		protected.POST("/descargos/:id/aprobar", descargoCtrl.Approve)
+		// Descargos Comunes (Manejados por Derecho Controller para conveniencia)
+		protected.GET("/descargos", descargoDerechoCtrl.Index)
+		protected.GET("/preview-file", descargoDerechoCtrl.PreviewFile)
 
 		compCtrl := controllers.NewCompensacionController()
 		protected.GET("/compensaciones", compCtrl.Index)

@@ -79,9 +79,10 @@ func (ctrl *SolicitudController) renderIndex(c *gin.Context, concepto string, ti
 	}
 
 	linkBase := "/solicitudes"
-	if concepto == "DERECHO" {
+	switch concepto {
+	case "DERECHO":
 		linkBase = "/solicitudes/derecho"
-	} else if concepto == "OFICIAL" {
+	case "OFICIAL":
 		linkBase = "/solicitudes/oficial"
 	}
 

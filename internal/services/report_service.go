@@ -465,12 +465,12 @@ func (s *ReportService) GeneratePV02(ctx context.Context, solicitud *models.Soli
 	}
 	pdf.Ln(8)
 
-	// Separar tramos de ida y vuelta
 	var itemsIda, itemsVuelta []models.SolicitudItem
 	for _, item := range solicitud.Items {
-		if item.Tipo == models.TipoSolicitudItemIda {
+		switch item.Tipo {
+		case models.TipoSolicitudItemIda:
 			itemsIda = append(itemsIda, item)
-		} else if item.Tipo == models.TipoSolicitudItemVuelta {
+		case models.TipoSolicitudItemVuelta:
 			itemsVuelta = append(itemsVuelta, item)
 		}
 	}
@@ -760,7 +760,7 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 		pdf.Ln(1)
 		var origRows, reproRows []models.DetalleItinerarioDescargo
 		for _, d := range descargo.DetallesItinerario {
-			if d.EsDevolucion {
+			if d.EsDevolucion || d.EsModificacion {
 				continue
 			}
 			switch d.Tipo {
@@ -1008,7 +1008,7 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 		pdf.Ln(1)
 		var origRows, reproRows []models.DetalleItinerarioDescargo
 		for _, d := range descargo.DetallesItinerario {
-			if d.EsDevolucion {
+			if d.EsDevolucion || d.EsModificacion {
 				continue
 			}
 			switch d.Tipo {

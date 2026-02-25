@@ -44,17 +44,17 @@
       </button>
       {{ if .DescargoID }}
       <a
-        href="/descargos/{{ .DescargoID }}"
+        href="/descargos/derecho/{{ .DescargoID }}"
         class="inline-flex items-center px-4 py-1 border border-primary-600 shadow-sm text-sm font-medium rounded-md text-primary-600 bg-white hover:bg-primary-50 focus:outline-none transition-all active:scale-95">
         <i class="ph ph-eye mr-2 text-lg"></i>
         Ver Descargo
       </a>
       {{ else if .Perms.CanMakeDescargo }}
       <a
-        href="/solicitudes/derecho/{{ .Solicitud.ID }}/descargo"
+        href="/descargos/derecho/nuevo/{{ .Solicitud.ID }}"
         class="inline-flex items-center px-4 py-1 border border-primary-600 shadow-sm text-sm font-medium rounded-md text-primary-600 bg-white hover:bg-primary-50 focus:outline-none transition-all active:scale-95">
         <i class="ph ph-file-plus mr-2 text-lg"></i>
-        Descargo
+        Crear Descargo
       </a>
       {{ end }}
       <a

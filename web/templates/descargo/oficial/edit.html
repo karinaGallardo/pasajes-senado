@@ -11,7 +11,7 @@
     <div class="mt-4 flex flex-wrap items-center gap-3">
       <!-- Volver -->
       <a
-        href="/descargos/{{ .Descargo.ID }}"
+        href="/descargos/oficial/{{ .Descargo.ID }}"
         class="inline-flex items-center px-5 py-2 border border-neutral-300 shadow-sm text-xs font-bold rounded-lg text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none transition-all active:scale-95 uppercase tracking-wider">
         <i class="ph ph-arrow-left mr-1.5 text-base text-neutral-400"></i>
         Volver
@@ -42,7 +42,7 @@
   <form
     id="descargo-form"
     x-ref="form"
-    action="/descargos/{{ .Descargo.ID }}/actualizar"
+    action="/descargos/oficial/{{ .Descargo.ID }}/actualizar"
     method="POST"
     enctype="multipart/form-data"
     @input.debounce.50ms="canSubmit = $refs.form.checkValidity()"
@@ -54,18 +54,32 @@
 
     <div class="p-6 space-y-6">
       <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
-        <div class="sm:col-span-6 bg-primary-50 p-4 rounded-md border border-primary-100">
-          <h4 class="text-xs font-black text-primary uppercase tracking-widest mb-3">Resumen del Viaje</h4>
-          <div class="grid grid-cols-2 gap-4">
-            <p class="text-sm text-primary">
-              <strong class="font-bold">Motivo:</strong>
-              {{ .Descargo.Solicitud.Motivo }}
-            </p>
-            <p class="text-sm text-primary">
-              <strong class="font-bold">Fechas:</strong>
-              {{ if .Descargo.Solicitud.GetFechaIda }}{{ .Descargo.Solicitud.GetFechaIda.Format "02/01/2006" }}{{ else }} - {{ end }} - {{ if .Descargo.Solicitud.GetFechaVuelta }}{{
-              .Descargo.Solicitud.GetFechaVuelta.Format "02/01/2006" }}{{ else }} - {{ end }}
-            </p>
+        <div class="sm:col-span-6 bg-primary-50 p-5 rounded-xl border border-primary-100 shadow-sm relative overflow-hidden">
+          <div class="absolute top-0 right-0 p-4 opacity-10">
+            <i class="ph ph-briefcase text-6xl text-primary"></i>
+          </div>
+          <h4 class="text-[10px] font-black text-primary-500 uppercase tracking-widest mb-4 flex items-center">
+            <i class="ph ph-info mr-2 text-base"></i>
+            Información de Referencia de la Comisión
+          </h4>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div class="space-y-1">
+              <span class="text-[10px] font-bold text-primary-400 uppercase tracking-tight block">Funcionario/Comisionado</span>
+              <span class="text-sm font-black text-primary-900 leading-tight block">{{ .Descargo.Solicitud.Usuario.GetNombreCompleto }}</span>
+            </div>
+            <div class="space-y-1">
+              <span class="text-[10px] font-bold text-primary-400 uppercase tracking-tight block">Motivo de la Comisión</span>
+              <span class="text-xs font-semibold text-primary-800 leading-tight block">{{ .Descargo.Solicitud.Motivo }}</span>
+            </div>
+            <div class="space-y-1">
+              <span class="text-[10px] font-bold text-primary-400 uppercase tracking-tight block">Periodo Autorizado</span>
+              <span class="text-xs font-black text-primary-900 block flex items-center">
+                <i class="ph ph-calendar-blank text-primary-400 mr-1"></i>
+                {{ if .Descargo.Solicitud.GetFechaIda }}{{ .Descargo.Solicitud.GetFechaIda.Format "02/01/2006" }}{{ else }} - {{ end }} 
+                <span class="mx-1 text-primary-300">al</span>
+                {{ if .Descargo.Solicitud.GetFechaVuelta }}{{ .Descargo.Solicitud.GetFechaVuelta.Format "02/01/2006" }}{{ else }} - {{ end }}
+              </span>
+            </div>
           </div>
         </div>
 
@@ -97,36 +111,40 @@
                         <th class="px-2 py-1 text-left text-[9px] font-bold text-neutral-400 uppercase">Fecha</th>
                         <th class="px-2 py-1 text-left text-[9px] font-bold text-neutral-400 uppercase">Boleto</th>
                         <th class="px-2 py-1 text-left text-[9px] font-bold text-neutral-400 uppercase">Nº Pase</th>
-                        <th class="px-2 py-1 text-center text-[9px] font-bold text-neutral-400 uppercase">PDF</th>
+                        <th class="px-2 py-1 text-center text-[9px] font-bold text-neutral-400 uppercase">Dev.</th>
+                        <th class="px-2 py-1 text-center text-[9px] font-bold text-neutral-400 uppercase">Mod.</th>
                       </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-neutral-100">
                       {{ range $i, $p := (index .ItemsByType "IDA_ORIGINAL") }}
-                      <tr x-data="{ devuelto: {{ if .EsDevolucion }}true{{ else }}false{{ end }} }">
+                      <tr x-data="{ devuelto: {{ if .EsDevolucion }}true{{ else }}false{{ end }}, modificado: {{ if .EsModificacion }}true{{ else }}false{{ end }} }">
                         <td class="px-2 py-1 text-center">
                           <input type="hidden" name="itin_tipo[]" value="IDA_ORIGINAL" />
                           <input type="hidden" name="itin_index[]" value="io_{{ $i }}" />
-                          <input type="checkbox" name="itin_devolucion[]" value="io_{{ $i }}" x-model="devuelto" {{ if .EsDevolucion }}checked{{ end }} class="h-4 w-4 text-primary border-neutral-300 rounded focus:ring-primary">
+                          <input type="checkbox" name="itin_devolucion[]" value="io_{{ $i }}" x-model="devuelto" @change="if(devuelto) modificado = false" {{ if .EsDevolucion }}checked{{ end }} title="Devolver" class="h-4 w-4 text-danger-600 border-neutral-300 rounded focus:ring-danger-500">
                         </td>
-                        <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
+                        <td class="px-2 py-1 text-center">
+                          <input type="checkbox" name="itin_modificacion[]" value="io_{{ $i }}" x-model="modificado" @change="if(modificado) devuelto = false" {{ if .EsModificacion }}checked{{ end }} title="Modificar" class="h-4 w-4 text-amber-600 border-neutral-300 rounded focus:ring-amber-500">
+                        </td>
+                        <td class="px-2 py-1" :class="{ 'opacity-50': devuelto || modificado }">
                           <input type="text" name="itin_ruta[]" value="{{ .Ruta }}" required class="block w-full text-[11px] border-neutral-200 rounded py-0.5 px-2 bg-neutral-50" readonly />
                         </td>
-                        <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
+                        <td class="px-2 py-1" :class="{ 'opacity-50': devuelto || modificado }">
                           <input type="date" name="itin_fecha[]" value="{{ if .Fecha }}{{ .Fecha.Format "2006-01-02" }}{{ end }}" required class="block w-full text-[11px] border-neutral-200 rounded py-0.5 px-1 bg-neutral-50" readonly />
                         </td>
-                        <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
-                          <input type="text" name="itin_boleto[]" value="{{ .Boleto }}" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto }" />
+                        <td class="px-2 py-1" :class="{ 'opacity-50': devuelto || modificado }">
+                          <input type="text" name="itin_boleto[]" value="{{ .Boleto }}" :readonly="devuelto || modificado" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto || modificado }" />
                         </td>
-                        <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
-                          <input type="text" name="itin_pase_numero[]" value="{{ .NumeroPaseAbordo }}" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto }" />
+                        <td class="px-2 py-1" :class="{ 'opacity-50': devuelto || modificado }">
+                          <input type="text" name="itin_pase_numero[]" value="{{ .NumeroPaseAbordo }}" :readonly="devuelto || modificado" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto || modificado }" />
                         </td>
-                        <td class="px-2 py-1 text-center" :class="{ 'opacity-50': devuelto }" x-data="{ fileName: '' }">
+                        <td class="px-2 py-1 text-center" :class="{ 'opacity-50': devuelto || modificado }" x-data="{ fileName: '' }">
                           <input type="hidden" name="itin_archivo_existente_io_{{ $i }}" value="{{ .ArchivoPaseAbordo }}" />
                           <div class="flex items-center justify-center gap-1">
                             <label class="cursor-pointer flex items-center justify-center py-0.5 px-1.5 rounded border transition-colors hover:bg-neutral-100 border-neutral-200" 
                                   :class="(fileName || '{{ .ArchivoPaseAbordo }}') ? 'bg-success-50 border-success-200 text-success-700' : 'bg-neutral-50 text-neutral-500'"
                                   title="{{ if .ArchivoPaseAbordo }}Archivo actual: {{ .ArchivoPaseAbordo }}{{ else }}Subir PDF (Opcional){{ end }}">
-                              <input type="file" :disabled="devuelto" name="itin_archivo_io_{{ $i }}" class="hidden" accept=".pdf,application/pdf" @change="fileName = $el.files[0] ? $el.files[0].name : ''" />
+                              <input type="file" :disabled="devuelto || modificado" name="itin_archivo_io_{{ $i }}" class="hidden" accept=".pdf,application/pdf" @change="fileName = $el.files[0] ? $el.files[0].name : ''" />
                               <i class="ph text-base" :class="(fileName || '{{ .ArchivoPaseAbordo }}') ? 'ph-file-pdf' : 'ph-upload-simple'"></i>
                             </label>
                             {{ if .ArchivoPaseAbordo }}
@@ -158,6 +176,7 @@
                     <thead class="bg-neutral-50">
                       <tr>
                         <th class="px-2 py-1 text-center text-[9px] font-bold text-neutral-400 uppercase">Dev.</th>
+                        <th class="px-2 py-1 text-center text-[9px] font-bold text-neutral-400 uppercase">Mod.</th>
                         <th class="px-2 py-1 text-left text-[9px] font-bold text-neutral-400 uppercase">Ruta / Tramo</th>
                         <th class="px-2 py-1 text-left text-[9px] font-bold text-neutral-400 uppercase">Fecha</th>
                         <th class="px-2 py-1 text-left text-[9px] font-bold text-neutral-400 uppercase">Boleto</th>
@@ -168,23 +187,26 @@
                     </thead>
                     <tbody id="itin-ida-repro-container" class="bg-white divide-y divide-neutral-100">
                       {{ range $i, $p := (index .ItemsByType "IDA_REPRO") }}
-                      <tr x-data="{ devuelto: {{ if .EsDevolucion }}true{{ else }}false{{ end }} }">
+                      <tr x-data="{ devuelto: {{ if .EsDevolucion }}true{{ else }}false{{ end }}, modificado: {{ if .EsModificacion }}true{{ else }}false{{ end }} }">
                         <td class="px-2 py-1 text-center">
                           <input type="hidden" name="itin_tipo[]" value="IDA_REPRO" />
                           <input type="hidden" name="itin_index[]" value="ir_{{ $i }}" />
-                          <input type="checkbox" name="itin_devolucion[]" value="ir_{{ $i }}" x-model="devuelto" {{ if .EsDevolucion }}checked{{ end }} class="h-4 w-4 text-primary border-neutral-300 rounded focus:ring-primary">
+                          <input type="checkbox" name="itin_devolucion[]" value="ir_{{ $i }}" x-model="devuelto" @change="if(devuelto) modificado = false" {{ if .EsDevolucion }}checked{{ end }} title="Devolver" class="h-4 w-4 text-danger-600 border-neutral-300 rounded focus:ring-danger-500">
+                        </td>
+                        <td class="px-2 py-1 text-center">
+                          <input type="checkbox" name="itin_modificacion[]" value="ir_{{ $i }}" x-model="modificado" @change="if(modificado) devuelto = false" {{ if .EsModificacion }}checked{{ end }} title="Modificar" class="h-4 w-4 text-amber-600 border-neutral-300 rounded focus:ring-amber-500">
                         </td>
                         <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
-                          <input type="text" name="itin_ruta[]" value="{{ .Ruta }}" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto }" />
+                          <input type="text" name="itin_ruta[]" value="{{ .Ruta }}" :required="!devuelto" :readonly="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto }" />
                         </td>
                         <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
-                          <input type="date" name="itin_fecha[]" value="{{ if .Fecha }}{{ .Fecha.Format "2006-01-02" }}{{ end }}" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto }" />
+                          <input type="date" name="itin_fecha[]" value="{{ if .Fecha }}{{ .Fecha.Format "2006-01-02" }}{{ end }}" :required="!devuelto" :readonly="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto }" />
                         </td>
                         <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
-                          <input type="text" name="itin_boleto[]" value="{{ .Boleto }}" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto }" />
+                          <input type="text" name="itin_boleto[]" value="{{ .Boleto }}" :readonly="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto }" />
                         </td>
                         <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
-                          <input type="text" name="itin_pase_numero[]" value="{{ .NumeroPaseAbordo }}" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto }" />
+                          <input type="text" name="itin_pase_numero[]" value="{{ .NumeroPaseAbordo }}" :readonly="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto }" />
                         </td>
                         <td class="px-2 py-1 text-center" :class="{ 'opacity-50': devuelto }" x-data="{ fileName: '' }">
                           <input type="hidden" name="itin_archivo_existente_ir_{{ $i }}" value="{{ .ArchivoPaseAbordo }}" />
@@ -237,6 +259,7 @@
                   <thead class="bg-neutral-50">
                     <tr>
                       <th class="px-2 py-1 text-center text-[9px] font-bold text-neutral-400 uppercase">Dev.</th>
+                      <th class="px-2 py-1 text-center text-[9px] font-bold text-neutral-400 uppercase">Mod.</th>
                       <th class="px-2 py-1 text-left text-[9px] font-bold text-neutral-400 uppercase">Ruta / Tramo</th>
                       <th class="px-2 py-1 text-left text-[9px] font-bold text-neutral-400 uppercase">Fecha</th>
                       <th class="px-2 py-1 text-left text-[9px] font-bold text-neutral-400 uppercase">Boleto</th>
@@ -246,31 +269,34 @@
                   </thead>
                   <tbody class="bg-white divide-y divide-neutral-100">
                     {{ range $i, $p := (index .ItemsByType "VUELTA_ORIGINAL") }}
-                    <tr x-data="{ devuelto: {{ if .EsDevolucion }}true{{ else }}false{{ end }} }">
+                    <tr x-data="{ devuelto: {{ if .EsDevolucion }}true{{ else }}false{{ end }}, modificado: {{ if .EsModificacion }}true{{ else }}false{{ end }} }">
                       <td class="px-2 py-1 text-center">
                         <input type="hidden" name="itin_tipo[]" value="VUELTA_ORIGINAL" />
                         <input type="hidden" name="itin_index[]" value="vo_{{ $i }}" />
-                        <input type="checkbox" name="itin_devolucion[]" value="vo_{{ $i }}" x-model="devuelto" {{ if .EsDevolucion }}checked{{ end }} class="h-4 w-4 text-primary border-neutral-300 rounded focus:ring-primary">
+                        <input type="checkbox" name="itin_devolucion[]" value="vo_{{ $i }}" x-model="devuelto" @change="if(devuelto) modificado = false" {{ if .EsDevolucion }}checked{{ end }} title="Devolver" class="h-4 w-4 text-danger-600 border-neutral-300 rounded focus:ring-danger-500">
                       </td>
-                      <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
+                      <td class="px-2 py-1 text-center">
+                        <input type="checkbox" name="itin_modificacion[]" value="vo_{{ $i }}" x-model="modificado" @change="if(modificado) devuelto = false" {{ if .EsModificacion }}checked{{ end }} title="Modificar" class="h-4 w-4 text-amber-600 border-neutral-300 rounded focus:ring-amber-500">
+                      </td>
+                      <td class="px-2 py-1" :class="{ 'opacity-50': devuelto || modificado }">
                         <input type="text" name="itin_ruta[]" value="{{ .Ruta }}" required class="block w-full text-[11px] border-neutral-200 rounded py-0.5 px-2 bg-neutral-50" readonly />
                       </td>
-                      <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
+                      <td class="px-2 py-1" :class="{ 'opacity-50': devuelto || modificado }">
                         <input type="date" name="itin_fecha[]" value="{{ if .Fecha }}{{ .Fecha.Format "2006-01-02" }}{{ end }}" required class="block w-full text-[11px] border-neutral-200 rounded py-0.5 px-1 bg-neutral-50" readonly />
                       </td>
-                      <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
-                        <input type="text" name="itin_boleto[]" value="{{ .Boleto }}" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto }" />
+                      <td class="px-2 py-1" :class="{ 'opacity-50': devuelto || modificado }">
+                        <input type="text" name="itin_boleto[]" value="{{ .Boleto }}" :readonly="devuelto || modificado" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto || modificado }" />
                       </td>
-                      <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
-                        <input type="text" name="itin_pase_numero[]" value="{{ .NumeroPaseAbordo }}" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto }" />
+                      <td class="px-2 py-1" :class="{ 'opacity-50': devuelto || modificado }">
+                        <input type="text" name="itin_pase_numero[]" value="{{ .NumeroPaseAbordo }}" :readonly="devuelto || modificado" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto || modificado }" />
                       </td>
-                      <td class="px-2 py-1 text-center" :class="{ 'opacity-50': devuelto }" x-data="{ fileName: '' }">
+                      <td class="px-2 py-1 text-center" :class="{ 'opacity-50': devuelto || modificado }" x-data="{ fileName: '' }">
                         <input type="hidden" name="itin_archivo_existente_vo_{{ $i }}" value="{{ .ArchivoPaseAbordo }}" />
                         <div class="flex items-center justify-center gap-1">
                           <label class="cursor-pointer flex items-center justify-center py-0.5 px-1.5 rounded border transition-colors hover:bg-neutral-100 border-neutral-200" 
                                 :class="(fileName || '{{ .ArchivoPaseAbordo }}') ? 'bg-success-50 border-success-200 text-success-700' : 'bg-neutral-50 text-neutral-500'"
                                 title="{{ if .ArchivoPaseAbordo }}Archivo actual: {{ .ArchivoPaseAbordo }}{{ else }}Subir PDF (Opcional){{ end }}">
-                            <input type="file" :disabled="devuelto" name="itin_archivo_vo_{{ $i }}" class="hidden" accept=".pdf,application/pdf" @change="fileName = $el.files[0] ? $el.files[0].name : ''" />
+                            <input type="file" :disabled="devuelto || modificado" name="itin_archivo_vo_{{ $i }}" class="hidden" accept=".pdf,application/pdf" @change="fileName = $el.files[0] ? $el.files[0].name : ''" />
                             <i class="ph text-base" :class="(fileName || '{{ .ArchivoPaseAbordo }}') ? 'ph-file-pdf' : 'ph-upload-simple'"></i>
                           </label>
                           {{ if .ArchivoPaseAbordo }}
@@ -302,6 +328,7 @@
                   <thead class="bg-neutral-50">
                     <tr>
                       <th class="px-2 py-1 text-center text-[9px] font-bold text-neutral-400 uppercase">Dev.</th>
+                      <th class="px-2 py-1 text-center text-[9px] font-bold text-neutral-400 uppercase">Mod.</th>
                       <th class="px-2 py-1 text-left text-[9px] font-bold text-neutral-400 uppercase">Ruta / Tramo</th>
                       <th class="px-2 py-1 text-left text-[9px] font-bold text-neutral-400 uppercase">Fecha</th>
                       <th class="px-2 py-1 text-left text-[9px] font-bold text-neutral-400 uppercase">Boleto</th>
@@ -312,23 +339,26 @@
                   </thead>
                   <tbody id="itin-vuelta-repro-container" class="bg-white divide-y divide-neutral-100">
                     {{ range $i, $p := (index .ItemsByType "VUELTA_REPRO") }}
-                    <tr x-data="{ devuelto: {{ if .EsDevolucion }}true{{ else }}false{{ end }} }">
+                    <tr x-data="{ devuelto: {{ if .EsDevolucion }}true{{ else }}false{{ end }}, modificado: {{ if .EsModificacion }}true{{ else }}false{{ end }} }">
                       <td class="px-2 py-1 text-center">
                         <input type="hidden" name="itin_tipo[]" value="VUELTA_REPRO" />
                         <input type="hidden" name="itin_index[]" value="vr_{{ $i }}" />
-                        <input type="checkbox" name="itin_devolucion[]" value="vr_{{ $i }}" x-model="devuelto" {{ if .EsDevolucion }}checked{{ end }} class="h-4 w-4 text-primary border-neutral-300 rounded focus:ring-primary">
+                        <input type="checkbox" name="itin_devolucion[]" value="vr_{{ $i }}" x-model="devuelto" @change="if(devuelto) modificado = false" {{ if .EsDevolucion }}checked{{ end }} title="Devolver" class="h-4 w-4 text-danger-600 border-neutral-300 rounded focus:ring-danger-500">
+                      </td>
+                      <td class="px-2 py-1 text-center">
+                        <input type="checkbox" name="itin_modificacion[]" value="vr_{{ $i }}" x-model="modificado" @change="if(modificado) devuelto = false" {{ if .EsModificacion }}checked{{ end }} title="Modificar" class="h-4 w-4 text-amber-600 border-neutral-300 rounded focus:ring-amber-500">
                       </td>
                       <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
-                        <input type="text" name="itin_ruta[]" value="{{ .Ruta }}" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto }" />
+                        <input type="text" name="itin_ruta[]" value="{{ .Ruta }}" :required="!devuelto" :readonly="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto }" />
                       </td>
                       <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
-                        <input type="date" name="itin_fecha[]" value="{{ if .Fecha }}{{ .Fecha.Format "2006-01-02" }}{{ end }}" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto }" />
+                        <input type="date" name="itin_fecha[]" value="{{ if .Fecha }}{{ .Fecha.Format "2006-01-02" }}{{ end }}" :required="!devuelto" :readonly="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto }" />
                       </td>
                       <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
-                        <input type="text" name="itin_boleto[]" value="{{ .Boleto }}" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto }" />
+                        <input type="text" name="itin_boleto[]" value="{{ .Boleto }}" :readonly="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto }" />
                       </td>
                       <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
-                        <input type="text" name="itin_pase_numero[]" value="{{ .NumeroPaseAbordo }}" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto }" />
+                        <input type="text" name="itin_pase_numero[]" value="{{ .NumeroPaseAbordo }}" :readonly="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto }" />
                       </td>
                       <td class="px-2 py-1 text-center" :class="{ 'opacity-50': devuelto }" x-data="{ fileName: '' }">
                         <input type="hidden" name="itin_archivo_existente_vr_{{ $i }}" value="{{ .ArchivoPaseAbordo }}" />
@@ -585,7 +615,7 @@
 
     const index = itinCounter++;
     const row = document.createElement("tr");
-    row.setAttribute("x-data", "{ devuelto: false, orig: '', dest: '', openRow: false }");
+    row.setAttribute("x-data", "{ devuelto: false, modificado: false, orig: '', dest: '', openRow: false }");
     row.setAttribute(":class", "{ 'relative z-50': openRow, 'relative': !openRow }");
     row.setAttribute("@update-orig.stop", "orig = $event.detail");
     row.setAttribute("@update-dest.stop", "dest = $event.detail");
@@ -595,7 +625,10 @@
       <td class="px-2 py-1 text-center">
         <input type="hidden" name="itin_tipo[]" value="${type}">
         <input type="hidden" name="itin_index[]" value="${index}">
-        <input type="checkbox" name="itin_devolucion[]" value="${index}" x-model="devuelto" class="h-4 w-4 text-primary border-neutral-300 rounded focus:ring-primary">
+        <input type="checkbox" name="itin_devolucion[]" value="${index}" x-model="devuelto" @change="if(devuelto) modificado = false" title="Devolver" class="h-4 w-4 text-danger-600 border-neutral-300 rounded focus:ring-danger-500">
+      </td>
+      <td class="px-2 py-1 text-center">
+        <input type="checkbox" name="itin_modificacion[]" value="${index}" x-model="modificado" @change="if(modificado) devuelto = false" title="Modificar" class="h-4 w-4 text-amber-600 border-neutral-300 rounded focus:ring-amber-500">
       </td>
       <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
         <div class="flex items-center gap-1">
@@ -606,7 +639,7 @@
               x-ref="button"
               @click="open = !open"
               type="button"
-              :disabled="devuelto"
+              :readonly="devuelto"
               class="relative w-full bg-white border border-neutral-300 rounded pl-2 pr-6 py-1 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-secondary focus:border-secondary text-[10px]">
               <span class="block truncate" :class="{'text-neutral-400': !value, 'text-neutral-900 font-medium': value}" x-text="label"></span>
               <span class="absolute inset-y-0 right-0 flex items-center pr-1 pointer-events-none">
@@ -653,7 +686,7 @@
               x-ref="button"
               @click="open = !open"
               type="button"
-              :disabled="devuelto"
+              :readonly="devuelto"
               class="relative w-full bg-white border border-neutral-300 rounded pl-2 pr-6 py-1 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-secondary focus:border-secondary text-[10px]">
               <span class="block truncate" :class="{'text-neutral-400': !value, 'text-neutral-900 font-medium': value}" x-text="label"></span>
               <span class="absolute inset-y-0 right-0 flex items-center pr-1 pointer-events-none">
@@ -694,13 +727,13 @@
         </div>
       </td>
       <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
-        <input type="date" name="itin_fecha[]" :required="!devuelto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-200 rounded py-0.5 px-2 focus:ring-secondary focus:border-secondary">
+        <input type="date" name="itin_fecha[]" :required="!devuelto" :readonly="devuelto" class="block w-full text-[11px] border-neutral-200 rounded py-0.5 px-2 focus:ring-secondary focus:border-secondary">
       </td>
       <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
-        <input type="text" name="itin_boleto[]" placeholder="Boleto" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2 focus:ring-secondary focus:border-secondary">
+        <input type="text" name="itin_boleto[]" placeholder="Boleto" :readonly="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2 focus:ring-secondary focus:border-secondary">
       </td>
       <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
-        <input type="text" name="itin_pase_numero[]" placeholder="Pase" :disabled="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2 focus:ring-secondary focus:border-secondary">
+        <input type="text" name="itin_pase_numero[]" placeholder="Pase" :readonly="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2 focus:ring-secondary focus:border-secondary">
       </td>
       <td class="px-2 py-1 text-center" :class="{ 'opacity-50': devuelto }" x-data="{ fileName: '' }">
         <label class="cursor-pointer flex items-center justify-center py-0.5 px-1.5 rounded border transition-colors hover:bg-neutral-100 border-neutral-200 bg-neutral-50 text-neutral-500" 

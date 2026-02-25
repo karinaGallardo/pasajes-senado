@@ -1019,3 +1019,42 @@ func (s *SolicitudService) UpdateOficial(ctx context.Context, id string, req dto
 		return nil
 	})
 }
+
+func (s *SolicitudService) RevertFinalize(ctx context.Context, id string) error {
+	return s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
+		itemRepoTx := s.itemRepo.WithTx(tx)
+
+		solicitud, err := repoTx.FindByID(id)
+		if err != nil {
+			return err
+		}
+
+		if solicitud.EstadoSolicitudCodigo == nil || *solicitud.EstadoSolicitudCodigo != "FINALIZADO" {
+			return errors.New("la solicitud no está en estado FINALIZADO")
+		}
+
+		// Change status back to EMITIDO (since it reached FINALIZADO, it must have been EMITIDO)
+		if err := repoTx.UpdateStatus(id, "EMITIDO"); err != nil {
+			return err
+		}
+
+		// Revert items to EMITIDO
+		for _, item := range solicitud.Items {
+			if err := tx.Model(&item).Update("estado_item_codigo", "EMITIDO").Error; err != nil {
+				return err
+			}
+		}
+
+		if solicitud.CupoDerechoItemID != nil {
+			item, err := itemRepoTx.FindByID(*solicitud.CupoDerechoItemID)
+			if err == nil && item != nil {
+				item.EstadoCupoDerechoCodigo = "RESERVADO"
+				if err := itemRepoTx.Update(item); err != nil {
+					return err
+				}
+			}
+		}
+
+		return nil
+	})
+}

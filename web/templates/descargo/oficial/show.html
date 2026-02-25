@@ -80,7 +80,7 @@
         <div class="space-y-3">
           <!-- Finalize Action (Primary if pending) -->
           {{ if and (eq .Descargo.Estado "EN_REVISION") .AuthUser.IsAdminOrResponsable }}
-          <form action="/descargos/{{ .Descargo.ID }}/aprobar" method="POST" x-data="{ loading: false }" @submit="loading = true">
+          <form action="/descargos/oficial/{{ .Descargo.ID }}/aprobar" method="POST" x-data="{ loading: false }" @submit="loading = true">
             <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
             <button
               type="submit"
@@ -94,16 +94,30 @@
           {{ end }}
 
           <button
-            hx-get="/descargos/{{ .Descargo.ID }}/previsualizar-pv6"
+            hx-get="/descargos/oficial/{{ .Descargo.ID }}/previsualizar"
             hx-target="#modal-container"
             class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-xs font-black rounded-md text-white bg-primary hover:bg-primary-600 transition-all shadow-sm active:scale-95 uppercase tracking-tight cursor-pointer">
             <i class="ph ph-file-pdf mr-2 text-lg"></i>
             Ver / Imprimir PV-06
           </button>
 
+          {{ if and (eq .Descargo.Estado "APROBADO") .AuthUser.IsAdminOrResponsable }}
+          <form action="/descargos/oficial/{{ .Descargo.ID }}/revertir-aprobacion" method="POST" x-data="{ loading: false }" @submit="loading = true">
+            <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
+            <button
+              type="submit"
+              :disabled="loading"
+              class="w-full inline-flex justify-center items-center px-4 py-2 border border-neutral-200 text-xs font-black rounded-md text-danger-600 bg-white hover:bg-danger-50 transition-all shadow-sm active:scale-95 disabled:opacity-50 uppercase tracking-tight cursor-pointer">
+              <i class="ph ph-arrow-counter-clockwise mr-2 text-lg" x-show="!loading"></i>
+              <span x-show="!loading">Revertir Aprobación</span>
+              <span x-show="loading">Procesando...</span>
+            </button>
+          </form>
+          {{ end }}
+
           {{ if and (eq .Descargo.Estado "EN_REVISION") (or .AuthUser.IsAdminOrResponsable (eq .AuthUser.ID .Descargo.CreatedBy)) }}
           <a
-            href="/descargos/{{ .Descargo.ID }}/editar"
+            href="/descargos/oficial/{{ .Descargo.ID }}/editar"
             class="w-full inline-flex justify-center items-center px-4 py-2 border border-neutral-200 text-xs font-black rounded-md text-neutral-600 bg-white hover:bg-neutral-50 transition-all shadow-sm active:scale-95 uppercase tracking-tight">
             <i class="ph ph-note-pencil mr-2 text-lg"></i>
             Editar Descargo

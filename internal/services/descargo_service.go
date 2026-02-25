@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"errors"
 	"sistema-pasajes/internal/dtos"
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
@@ -73,6 +74,11 @@ func (s *DescargoService) Create(ctx context.Context, req dtos.CreateDescargoReq
 		devolucionMap[idx] = true
 	}
 
+	modificacionMap := make(map[string]bool)
+	for _, idx := range req.ItinModificacion {
+		modificacionMap[idx] = true
+	}
+
 	var itinDetalles []models.DetalleItinerarioDescargo
 	for i := range req.ItinTipo {
 		if i < len(req.ItinRuta) && req.ItinRuta[i] != "" {
@@ -98,8 +104,10 @@ func (s *DescargoService) Create(ctx context.Context, req dtos.CreateDescargoReq
 			}
 
 			esDevo := false
+			esMod := false
 			if i < len(req.ItinIndex) {
 				esDevo = devolucionMap[req.ItinIndex[i]]
+				esMod = modificacionMap[req.ItinIndex[i]]
 			}
 
 			itinDetalles = append(itinDetalles, models.DetalleItinerarioDescargo{
@@ -108,6 +116,7 @@ func (s *DescargoService) Create(ctx context.Context, req dtos.CreateDescargoReq
 				Fecha:             fecha,
 				Boleto:            boleto,
 				EsDevolucion:      esDevo,
+				EsModificacion:    esMod,
 				NumeroPaseAbordo:  paseNumero,
 				ArchivoPaseAbordo: archivoPath,
 				Orden:             i,
@@ -198,6 +207,11 @@ func (s *DescargoService) UpdateFull(ctx context.Context, id string, req dtos.Cr
 		devolucionMap[idx] = true
 	}
 
+	modificacionMap := make(map[string]bool)
+	for _, idx := range req.ItinModificacion {
+		modificacionMap[idx] = true
+	}
+
 	var itinDetalles []models.DetalleItinerarioDescargo
 	for i := range req.ItinTipo {
 		if i < len(req.ItinRuta) && req.ItinRuta[i] != "" {
@@ -223,8 +237,10 @@ func (s *DescargoService) UpdateFull(ctx context.Context, id string, req dtos.Cr
 			}
 
 			esDevo := false
+			esMod := false
 			if i < len(req.ItinIndex) {
 				esDevo = devolucionMap[req.ItinIndex[i]]
+				esMod = modificacionMap[req.ItinIndex[i]]
 			}
 
 			itinDetalles = append(itinDetalles, models.DetalleItinerarioDescargo{
@@ -234,6 +250,7 @@ func (s *DescargoService) UpdateFull(ctx context.Context, id string, req dtos.Cr
 				Fecha:             fecha,
 				Boleto:            boleto,
 				EsDevolucion:      esDevo,
+				EsModificacion:    esMod,
 				NumeroPaseAbordo:  paseNumero,
 				ArchivoPaseAbordo: archivoPath,
 				Orden:             i,
@@ -241,12 +258,26 @@ func (s *DescargoService) UpdateFull(ctx context.Context, id string, req dtos.Cr
 		}
 	}
 
-	// Iniciar Transacción? The repo doesn't seem to expose it easily, but I can just do it.
-	// For now, I'll clear and save.
 	if err := s.repo.WithContext(ctx).ClearDetalles(id); err != nil {
 		return err
 	}
 
 	descargo.DetallesItinerario = itinDetalles
+	return s.repo.WithContext(ctx).Update(descargo)
+}
+
+func (s *DescargoService) RevertApproval(ctx context.Context, id string, userID string) error {
+	descargo, err := s.repo.WithContext(ctx).FindByID(id)
+	if err != nil {
+		return err
+	}
+
+	if descargo.Estado != "APROBADO" {
+		return errors.New("el descargo no está en estado APROBADO")
+	}
+
+	descargo.Estado = "EN_REVISION"
+	descargo.UpdatedBy = &userID
+
 	return s.repo.WithContext(ctx).Update(descargo)
 }

@@ -18,12 +18,13 @@ type CreateDescargoRequest struct {
 	NroBoletaDeposito string  `form:"nro_boleta_deposito"`
 
 	// Detalles Itinerario (FV-05) - Arreglos paralelos para conexiones
-	ItinTipo        []string                `form:"itin_tipo[]"` // IDA_ORIGINAL, IDA_REPRO, VUELTA_ORIGINAL, VUELTA_REPRO
-	ItinIndex       []string                `form:"itin_index[]"`
-	ItinRuta        []string                `form:"itin_ruta[]"`
-	ItinFecha       []string                `form:"itin_fecha[]"`
-	ItinBoleto      []string                `form:"itin_boleto[]"`
-	ItinPaseNumero  []string                `form:"itin_pase_numero[]"`
-	ItinDevolucion  []string                `form:"itin_devolucion[]"`
-	ItinPaseArchivo []*multipart.FileHeader `form:"itin_archivo[]"`
+	ItinTipo         []string                `form:"itin_tipo[]"` // IDA_ORIGINAL, IDA_REPRO, VUELTA_ORIGINAL, VUELTA_REPRO
+	ItinIndex        []string                `form:"itin_index[]"`
+	ItinRuta         []string                `form:"itin_ruta[]"`
+	ItinFecha        []string                `form:"itin_fecha[]"`
+	ItinBoleto       []string                `form:"itin_boleto[]"`
+	ItinPaseNumero   []string                `form:"itin_pase_numero[]"`
+	ItinDevolucion   []string                `form:"itin_devolucion[]"`
+	ItinModificacion []string                `form:"itin_modificacion[]"`
+	ItinPaseArchivo  []*multipart.FileHeader `form:"itin_archivo[]"`
 }

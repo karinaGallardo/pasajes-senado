@@ -76,17 +76,17 @@
       </button>
       {{ if .DescargoID }}
       <a
-        href="/descargos/{{ .DescargoID }}"
+        href="/descargos/oficial/{{ .DescargoID }}"
         class="inline-flex items-center px-1.5 py-0.5 border border-primary-600 shadow-sm text-xs font-bold rounded-sm text-primary-600 bg-white hover:bg-primary-50 focus:outline-none transition-all active:scale-95">
         <i class="ph ph-eye mr-1.5 text-base"></i>
         Ver Descargo
       </a>
       {{ else if .Perms.CanMakeDescargo }}
       <a
-        href="/solicitudes/oficial/{{ .Solicitud.ID }}/descargo"
+        href="/descargos/oficial/nuevo/{{ .Solicitud.ID }}"
         class="inline-flex items-center px-1.5 py-0.5 border border-primary-600 shadow-sm text-xs font-bold rounded-sm text-primary-600 bg-white hover:bg-primary-50 focus:outline-none transition-all active:scale-95">
         <i class="ph ph-file-plus mr-1.5 text-base"></i>
-        Descargo
+        Crear Descargo
       </a>
       {{ end }}
       <a
