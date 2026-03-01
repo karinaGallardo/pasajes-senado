@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"sistema-pasajes/internal/configs"
 	"sistema-pasajes/internal/routes"
@@ -18,17 +19,37 @@ import (
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
+	"github.com/robfig/cron/v3"
 	"github.com/spf13/viper"
 	"github.com/webstradev/gin-pagination/v2/pkg/pagination"
 )
 
 func main() {
 	configs.ConnectDB()
+	services.InitHub()
 
 	// --- Background Workers ---
 	workerPool := worker.GetPool()
 	workerPool.Start(context.Background())
 	defer workerPool.Stop()
+
+	// --- Professional Scheduler (robfig/cron) ---
+	c := cron.New(cron.WithLocation(time.Local))
+	alertaService := services.NewAlertaService()
+
+	// "0 7 * * 1-5" means: At 07:00 AM, Mon through Fri
+	_, err := c.AddFunc("0 7 * * 1-5", func() {
+		log.Println("[Scheduler] Ejecutando alertas de descargo programadas (7:00 AM Mon-Fri)...")
+		workerPool.Submit(&services.AlertaDescargoJob{Service: alertaService})
+	})
+	if err != nil {
+		log.Printf("[Scheduler] ERROR al programar alertas: %v", err)
+	}
+
+	c.Start()
+	defer c.Stop()
+
+	log.Println("[Scheduler] Programador iniciado: Alertas diarias Mon-Fri 07:00 AM.")
 
 	itinerarioService := services.NewTipoItinerarioService()
 	if err := itinerarioService.EnsureDefaults(context.Background()); err != nil {
@@ -111,7 +132,7 @@ func main() {
 	r.Static("/uploads", "./uploads")
 
 	var files []string
-	err := filepath.Walk("web/templates", func(path string, info os.FileInfo, err error) error {
+	err = filepath.Walk("web/templates", func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}

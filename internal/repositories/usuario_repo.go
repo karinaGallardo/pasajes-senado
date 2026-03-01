@@ -201,6 +201,13 @@ func (r *UsuarioRepository) FindAllSenators() ([]models.Usuario, error) {
 	return usuarios, err
 }
 
+func (r *UsuarioRepository) FindAdminsAndResponsables() ([]models.Usuario, error) {
+	var usuarios []models.Usuario
+	err := r.db.Where("rol_codigo IN ?", []string{"ADMIN", "RESPONSABLE"}).
+		Find(&usuarios).Error
+	return usuarios, err
+}
+
 func (r *UsuarioRepository) RunTransaction(fn func(repo *UsuarioRepository) error) error {
 	return r.db.Transaction(func(tx *gorm.DB) error {
 		txRepo := r.WithTx(tx)

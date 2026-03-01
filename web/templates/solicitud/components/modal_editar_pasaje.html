@@ -20,7 +20,7 @@
           {{ range .Rutas }}
           '{{ .Tramo }}': {
               {{ range .Contratos }}
-              '{{ .AerolineaID }}': {{ .MontoReferencial }},
+              '{{ .AerolineaID }}': {{ if .MontoReferencial }}{{ .MontoReferencial }}{{ else }}0{{ end }},
               {{ end }}
           },
           {{ end }}
@@ -247,11 +247,13 @@
             <div class="col-span-3">
               <label class="block text-sm font-medium text-neutral-700">Fecha Emisión Boleto</label>
               <input
-                type="date"
+                type="text"
                 name="fecha_emision"
                 x-model="fecha_emision"
+                x-flatpickr="{ enableTime: false, dateFormat: 'Y-m-d', altFormat: 'd/m/Y' }"
                 required
-                class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md border p-2" />
+                class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md border p-2 bg-white"
+                placeholder="Seleccione fecha..." />
             </div>
 
             <div class="col-span-3">
@@ -267,11 +269,13 @@
             <div class="col-span-3">
               <label class="block text-sm font-medium text-neutral-700">Fecha y Hora Vuelo</label>
               <input
-                type="datetime-local"
+                type="text"
                 name="fecha_vuelo"
                 x-model="fecha_vuelo"
+                x-flatpickr
                 required
-                class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md border p-2" />
+                class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md border p-2 bg-white"
+                placeholder="Seleccione fecha y hora..." />
             </div>
 
             <div class="col-span-1">

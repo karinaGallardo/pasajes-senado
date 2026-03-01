@@ -175,3 +175,14 @@ func (r *SolicitudRepository) ExistsByCodigo(codigo string) (bool, error) {
 	err := r.db.Model(&models.Solicitud{}).Where("codigo = ?", codigo).Count(&count).Error
 	return count > 0, err
 }
+
+func (r *SolicitudRepository) FindPendientesDeDescargo() ([]models.Solicitud, error) {
+	var solicitudes []models.Solicitud
+	err := r.db.Preload("Usuario.Encargado").
+		Preload("Items").
+		Joins("LEFT JOIN descargos ON solicitudes.id = descargos.solicitud_id").
+		Where("descargos.id IS NULL").
+		Where("solicitudes.estado_solicitud_codigo IN (?)", []string{"EMITIDO", "FINALIZADO"}).
+		Find(&solicitudes).Error
+	return solicitudes, err
+}

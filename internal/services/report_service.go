@@ -165,15 +165,14 @@ func (s *ReportService) GeneratePV01(ctx context.Context, solicitud *models.Soli
 
 	mesYNum := ""
 	if strings.Contains(strings.ToUpper(concepto), "DERECHO") {
-		var dateRef *time.Time
-		for _, item := range solicitud.Items {
-			if item.Fecha != nil {
-				dateRef = item.Fecha
-				break
+		if solicitud.CupoDerechoItem != nil {
+			monthStr := utils.TranslateMonth(time.Month(solicitud.CupoDerechoItem.Mes))
+			s := strings.ToUpper(solicitud.CupoDerechoItem.Semana)
+			cupoStr := strings.Replace(s, "SEMANA", "CUPO", 1)
+			if !strings.Contains(cupoStr, "CUPO") {
+				cupoStr = "CUPO " + cupoStr
 			}
-		}
-		if dateRef != nil {
-			mesYNum = utils.TranslateMonth(dateRef.Month())
+			mesYNum = fmt.Sprintf("%s - %s", monthStr, cupoStr)
 		}
 	}
 	drawLabelBox("MES DE VIAJE :", mesYNum, 40, 50, false)

@@ -214,3 +214,162 @@ button.htmx-request .button-loading {
   color: #f59e0b;
   border-color: #f59e0b33;
 }
+/* =========================================
+   5. MINI FLATPICKR (AIRBNB THEME)
+   ========================================= */
+
+.flatpickr-calendar {
+  width: auto;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2) !important;
+}
+
+.flatpickr-calendar.airbnb {
+  width: 238px !important;
+  min-width: 238px !important;
+  max-width: 238px !important;
+  border-radius: 12px !important;
+  padding: 0 !important;
+  background: #fff !important;
+  overflow: hidden !important;
+  border: 1px solid #94a3b8 !important; /* Borde Slate-400 para alta definición */
+  box-sizing: content-box !important;
+}
+
+.flatpickr-innerContainer,
+.flatpickr-months,
+.flatpickr-days,
+.dayContainer,
+.flatpickr-rContainer {
+  width: 238px !important;
+  min-width: 238px !important;
+  max-width: 238px !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  box-sizing: border-box !important;
+}
+
+.flatpickr-month {
+  height: 38px !important;
+  padding: 8px 0 !important;
+  display: flex !important;
+}
+
+.flatpickr-current-month {
+  font-weight: 700 !important;
+  font-size: 14px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+.flatpickr-weekdays {
+  width: 238px !important;
+  height: 28px !important;
+}
+
+.flatpickr-weekday {
+  font-size: 10px !important;
+  font-weight: 800 !important;
+  color: #64748b !important;
+  width: calc(238px / 7) !important;
+  flex: 1 !important;
+}
+
+.flatpickr-day {
+  flex-basis: 34px !important;
+  max-width: 34px !important;
+  height: 34px !important;
+  line-height: 34px !important;
+  font-size: 11px !important;
+  margin: 0 !important;
+  border-radius: 6px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  box-sizing: border-box !important;
+}
+
+.flatpickr-day.selected {
+  background: var(--brand-primary) !important;
+  border-color: var(--brand-primary) !important;
+}
+
+.flatpickr-time {
+  height: 40px !important;
+  border-top: 1px solid #f1f5f9 !important;
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  width: 238px !important;
+}
+
+.flatpickr-time .numInputWrapper {
+  width: 60px !important;
+  flex: none !important;
+}
+
+.flatpickr-am-pm {
+  width: 45px !important;
+  text-align: center !important;
+}
+
+/* Confirm Button Fix */
+.flatpickr-confirm {
+  background: var(--brand-primary) !important;
+  color: white !important;
+  font-size: 11px !important;
+  font-weight: 800 !important;
+  text-transform: uppercase !important;
+  padding: 10px 0 !important;
+  border-radius: 0 !important;
+  width: 238px !important;
+  margin: 0 !important;
+  cursor: pointer !important;
+  border: none !important;
+  display: block !important;
+  text-align: center !important;
+  box-sizing: border-box !important;
+}
+
+.flatpickr-confirm:hover {
+  background: var(--primary-600) !important;
+}
+
+.flatpickr-confirm svg {
+  display: none !important;
+}
+
+/* Form connectivity */
+.flatpickr-input[readonly]:not(.cursor-not-allowed) {
+  background-color: white !important;
+  cursor: pointer !important;
+}
+
+/* Notification List Styles */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.max-h-96::-webkit-scrollbar {
+  width: 4px;
+}
+
+.max-h-96::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+.max-h-96::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 10px;
+}
+
+.max-h-96::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+[x-cloak] { display: none !important; }

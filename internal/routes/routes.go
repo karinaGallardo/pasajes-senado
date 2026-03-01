@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"sistema-pasajes/internal/controllers"
 	"sistema-pasajes/internal/middleware"
+	"sistema-pasajes/internal/services"
 
 	"github.com/gin-gonic/gin"
 )
@@ -202,8 +203,17 @@ func SetupRoutes(r *gin.Engine) {
 			catViaticoCtrl := controllers.NewCategoriaViaticoController()
 			sysAdmin.GET("/admin/viaticos/categorias", catViaticoCtrl.Index)
 			sysAdmin.POST("/admin/viaticos/categorias", catViaticoCtrl.Store)
-			sysAdmin.POST("/admin/viaticos/zonas", catViaticoCtrl.StoreZona)
+			protected.POST("/admin/viaticos/zonas", catViaticoCtrl.StoreZona)
 		}
+
+		notifCtrl := controllers.NewNotificationController()
+		protected.GET("/api/notifications/recent", notifCtrl.GetRecent)
+		protected.POST("/api/notifications/:id/read", notifCtrl.MarkAsRead)
+		protected.POST("/api/notifications/read-all", notifCtrl.MarkAllAsRead)
+
+		protected.GET("/ws/notifications", func(c *gin.Context) {
+			services.Hub.HandleWebSocket(c.Writer, c.Request)
+		})
 	}
 
 	r.NoRoute(func(c *gin.Context) {

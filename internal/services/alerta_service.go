@@ -1,0 +1,152 @@
+package services
+
+import (
+	"context"
+	"fmt"
+	"log"
+	"sistema-pasajes/internal/models"
+	"sistema-pasajes/internal/repositories"
+	"sistema-pasajes/internal/utils"
+	"time"
+
+	"github.com/spf13/viper"
+)
+
+type AlertaService struct {
+	solicitudRepo *repositories.SolicitudRepository
+	descargoRepo  *repositories.DescargoRepository
+	emailService  *EmailService
+}
+
+type AlertaDescargoJob struct {
+	Service *AlertaService
+}
+
+func (j *AlertaDescargoJob) Name() string {
+	return "AlertaDescargoJob"
+}
+
+func (j *AlertaDescargoJob) Run(ctx context.Context) error {
+	return j.Service.ProcesarAlertasDescargo(ctx)
+}
+
+func NewAlertaService() *AlertaService {
+	return &AlertaService{
+		solicitudRepo: repositories.NewSolicitudRepository(),
+		descargoRepo:  repositories.NewDescargoRepository(),
+		emailService:  NewEmailService(),
+	}
+}
+
+// ProcesarAlertasDescargo revisa las solicitudes que requieren descargo y envía alertas si están próximas al límite.
+func (s *AlertaService) ProcesarAlertasDescargo(ctx context.Context) error {
+	log.Println("[AlertaService] Iniciando procesamiento de alertas de descargo...")
+
+	// 1. Obtener solicitudes que potencialmente necesitan descargo (EMITIDO o FINALIZADO)
+	// Pero que aún NO tienen un descargo registrado.
+	solicitudes, err := s.solicitudRepo.WithContext(ctx).FindPendientesDeDescargo()
+	if err != nil {
+		return fmt.Errorf("error al buscar solicitudes pendientes de descargo: %w", err)
+	}
+
+	hoy := time.Now().Truncate(24 * time.Hour)
+	alertasEnviadas := 0
+
+	for _, sol := range solicitudes {
+		fechaFin := s.obtenerFechaFinViaje(sol)
+		if fechaFin.IsZero() {
+			continue
+		}
+
+		// La fecha límite son 8 días hábiles después del fin del viaje
+		fechaLimite := utils.CalcularFechaLimiteDescargo(fechaFin)
+
+		// Iniciar alertas 2 días antes de la fecha límite
+		fechaInicioAlerta := fechaLimite.AddDate(0, 0, -2)
+
+		if hoy.After(fechaInicioAlerta) || hoy.Equal(fechaInicioAlerta) {
+			// Enviar alerta
+			if err := s.enviarAlertaEmail(sol, fechaLimite); err != nil {
+				log.Printf("[AlertaService] Error enviando email para solicitud %s: %v", sol.Codigo, err)
+			} else {
+				alertasEnviadas++
+			}
+		}
+	}
+
+	log.Printf("[AlertaService] Procesamiento finalizado. Alertas enviadas: %d", alertasEnviadas)
+	return nil
+}
+
+func (s *AlertaService) obtenerFechaFinViaje(sol models.Solicitud) time.Time {
+	var lastDate time.Time
+	for _, item := range sol.Items {
+		if item.Fecha != nil {
+			if lastDate.IsZero() || item.Fecha.After(lastDate) {
+				lastDate = *item.Fecha
+			}
+		}
+	}
+	return lastDate
+}
+
+func (s *AlertaService) enviarAlertaEmail(sol models.Solicitud, fechaLimite time.Time) error {
+	beneficiario := sol.Usuario
+	if beneficiario.Email == "" {
+		return fmt.Errorf("el beneficiario %s no tiene correo electrónico", beneficiario.GetNombreCompleto())
+	}
+
+	destinatarios := []string{beneficiario.Email}
+	var copias []string
+
+	// Si tiene encargado, enviar con copia
+	if beneficiario.Encargado != nil && beneficiario.Encargado.Email != "" {
+		copias = append(copias, beneficiario.Encargado.Email)
+	}
+
+	// Copia oculta a pasajesgo (o configuración)
+	bccEmail := viper.GetString("ALERTA_BCC_EMAIL")
+	if bccEmail == "" {
+		bccEmail = "pasajesgo@gmail.com" // Placeholder por defecto sugerido por el usuario
+	}
+	ocultos := []string{bccEmail}
+
+	subject := fmt.Sprintf("[ALERTA] Pendiente de Descargo de Pasajes - %s", sol.Codigo)
+
+	// Construir cuerpo del mensaje
+	fechaLimiteStr := fechaLimite.Format("02/01/2006")
+
+	body := fmt.Sprintf(`
+		<div style="font-family: Arial, sans-serif; color: #333; max-width: 600px; border: 1px solid #eee; border-radius: 8px; overflow: hidden;">
+			<div style="background-color: #EAB308; color: white; padding: 20px;">
+				<h2 style="margin: 0;">Recordatorio de Descargo</h2>
+				<p style="margin: 5px 0 0 0; opacity: 0.9;">Solicitud: %s</p>
+			</div>
+			<div style="padding: 25px; line-height: 1.6;">
+				<p>Estimado(a) <strong>%s</strong>,</p>
+				<p>Le recordamos que tiene pendiente la presentación del <strong>Descargo de Pasajes</strong> correspondiente a su viaje con código de solicitud <strong>%s</strong>.</p>
+
+				<div style="background-color: #FFFBEB; border-left: 4px solid #EAB308; padding: 15px; margin: 20px 0;">
+					<p style="margin: 0; font-weight: bold; color: #92400E;">Fecha Límite de Presentación: %s</p>
+					<p style="margin: 5px 0 0 0; font-size: 14px; color: #B45309;">
+						Recuerde que dispone de 8 días hábiles administrativos a partir de la fecha de retorno para formalizar su descargo.
+					</p>
+				</div>
+
+				<p>Es importante regularizar este trámite para evitar observaciones administrativas y habilitar futuros requerimientos de pasajes.</p>
+
+				<div style="margin-top: 30px; text-align: center;">
+					<a href="%s/solicitudes"
+					   style="background-color: #03738C; color: white; padding: 12px 25px; text-decoration: none; border-radius: 6px; font-weight: bold; display: inline-block;">
+						Ir al Sistema de Pasajes
+					</a>
+				</div>
+			</div>
+			<div style="background-color: #F9FAFB; padding: 15px; text-align: center; border-top: 1px solid #eee; font-size: 12px; color: #6B7280;">
+				Este es un mensaje automático del Sistema de Gestión de Pasajes - Senado.
+			</div>
+		</div>
+	`, sol.Codigo, beneficiario.GetNombreCompleto(), sol.Codigo, fechaLimiteStr, viper.GetString("APP_URL"))
+
+	return s.emailService.SendEmail(destinatarios, copias, ocultos, subject, body)
+}

@@ -66,6 +66,7 @@ func main() {
 		&models.AnexoDescargo{},
 		&models.DocumentoDescargo{},
 		&models.DetalleItinerarioDescargo{},
+		&models.Notification{},
 	)
 
 	if err != nil {

@@ -29,7 +29,7 @@
         x-transition:leave="ease-in duration-200"
         x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
         x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-        class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-5xl">
+        class="relative transform rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-5xl">
         <form x-ref="form" @submit.prevent="submitForm" action="/solicitudes/oficial/{{ .Solicitud.ID }}/actualizar" method="POST" autocomplete="off">
           <input type="hidden" name="tramos_json" id="tramos_json_input_edit" value="" />
 
@@ -57,7 +57,7 @@
             </div>
           </div>
 
-          <div class="p-6 space-y-8 max-h-[75vh] overflow-y-auto">
+          <div class="p-6 space-y-8">
             <div class="w-full md:w-1/3">
               <label class="block text-xs font-black text-neutral-500 uppercase tracking-widest mb-1">Ámbito del Viaje</label>
               <select name="ambito_viaje_codigo" x-model="ambito" required class="w-full rounded-md border-neutral-300 text-sm focus:ring-primary focus:border-primary">
@@ -106,30 +106,28 @@
                         </div>
                         <div
                           x-show="canEditOrigin(entry.index)"
-                          x-data="searchableSelect({ items: allDestinos, initialValue: entry.tramo.origen, initialLabel: entry.tramo.origenLabel, placeholder: 'Buscar origen...' })"
+                          x-data="searchableSelect({ items: [], initialValue: entry.tramo.origen, initialLabel: entry.tramo.origenLabel, placeholder: 'Buscar origen...' })"
+                          x-effect="items = availableDestinos"
                           x-init="value = entry.tramo.origen; label = entry.tramo.origenLabel || placeholder; $watch('value', function(v) { entry.tramo.origen = v; var it = allDestinos.find(function(d) { return d.value === v; }); if (it) entry.tramo.origenLabel = it.value + ' - ' + it.label; })"
                           class="relative">
-                          <button
-                            type="button"
-                            @click="open = !open; if(open) $nextTick(function() { $refs.searchInput.focus() })"
+                          <div
+                            x-show="!open"
+                            @click="open = true; $nextTick(function() { $refs.searchInput.focus() })"
                             class="relative w-full bg-white border border-neutral-300 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm min-h-[38px] flex items-center justify-between">
                             <span class="block truncate" :class="label ? 'text-neutral-900' : 'text-neutral-400'" x-text="label || placeholder"></span>
                             <i class="ph ph-magnifying-glass text-neutral-400"></i>
-                          </button>
-                          <div
+                          </div>
+                          <input
+                            x-ref="searchInput"
+                            x-model="search"
                             x-show="open"
                             @click.away="open = false"
-                            class="absolute z-50 mt-1 w-full bg-white shadow-xl max-h-48 rounded-md border border-neutral-200 overflow-hidden"
-                            style="display: none">
-                            <div class="sticky top-0 bg-white p-2 border-b border-neutral-100">
-                              <input
-                                x-ref="searchInput"
-                                x-model="search"
-                                type="text"
-                                autocomplete="off"
-                                class="w-full border-neutral-300 rounded text-sm focus:ring-primary focus:border-primary"
-                                placeholder="Buscar ciudad..." />
-                            </div>
+                            @keydown.escape="open = false"
+                            @keydown.enter.prevent="if (filteredItems.length > 0) select(filteredItems[0])"
+                            type="text"
+                            class="w-full bg-white border border-primary rounded-md shadow-sm pl-3 pr-10 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary min-h-[38px]"
+                            placeholder="Buscar ciudad..." />
+                          <div x-show="open" class="absolute z-50 mt-1 w-full bg-white shadow-xl max-h-48 rounded-md border border-neutral-200 overflow-hidden" x-cloak>
                             <div class="max-h-36 overflow-y-auto">
                               <template x-for="item in filteredItems" :key="item.value">
                                 <div @click="select(item)" class="px-3 py-2 hover:bg-primary hover:text-white cursor-pointer text-xs font-bold border-b border-neutral-50">
@@ -152,32 +150,30 @@
                         </div>
                         <div
                           x-show="entry.tramo.estado === 'SOLICITADO'"
-                          x-data="searchableSelect({ items: allDestinos, initialValue: entry.tramo.destino, initialLabel: entry.tramo.destinoLabel, placeholder: 'Buscar destino...' })"
+                          x-data="searchableSelect({ items: [], initialValue: entry.tramo.destino, initialLabel: entry.tramo.destinoLabel, placeholder: 'Buscar destino...' })"
+                          x-effect="items = availableDestinos"
                           x-init="value = entry.tramo.destino; label = entry.tramo.destinoLabel || placeholder; $watch('value', function(v) { entry.tramo.destino = v; var it = allDestinos.find(function(d) { return d.value === v; }); if (it) entry.tramo.destinoLabel = it.value + ' - ' + it.label; })"
                           class="relative">
                           <input type="hidden" :name="'tramos['+entry.index+'].destino'" x-model="entry.tramo.destino" :required="entry.tramo.estado === 'SOLICITADO'" />
-                          <button
-                            type="button"
-                            @click="open = !open; if(open) $nextTick(function() { $refs.searchInput.focus() })"
+                          <div
+                            x-show="!open"
+                            @click="open = true; $nextTick(function() { $refs.searchInput.focus() })"
                             class="relative w-full bg-white border border-neutral-300 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm min-h-[38px] flex items-center justify-between">
                             <span class="block truncate" :class="label ? 'text-neutral-900' : 'text-neutral-400'" x-text="label || placeholder"></span>
                             <i class="ph ph-magnifying-glass text-neutral-400"></i>
-                          </button>
-
-                          <div
+                          </div>
+                          <input
+                            x-ref="searchInput"
+                            x-model="search"
                             x-show="open"
                             @click.away="open = false"
-                            class="absolute z-50 mt-1 w-full bg-white shadow-xl max-h-48 rounded-md border border-neutral-200 overflow-hidden"
-                            style="display: none">
-                            <div class="sticky top-0 bg-white p-2 border-b border-neutral-100">
-                              <input
-                                x-ref="searchInput"
-                                x-model="search"
-                                type="text"
-                                autocomplete="off"
-                                class="w-full border-neutral-300 rounded text-sm focus:ring-primary focus:border-primary"
-                                placeholder="Buscar ciudad..." />
-                            </div>
+                            @keydown.escape="open = false"
+                            @keydown.enter.prevent="if (filteredItems.length > 0) select(filteredItems[0])"
+                            type="text"
+                            class="w-full bg-white border border-primary rounded-md shadow-sm pl-3 pr-10 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary min-h-[38px]"
+                            placeholder="Buscar ciudad..." />
+
+                          <div x-show="open" class="absolute z-50 mt-1 w-full bg-white shadow-xl max-h-48 rounded-md border border-neutral-200 overflow-hidden" x-cloak>
                             <div class="max-h-36 overflow-y-auto">
                               <template x-for="item in filteredItems" :key="item.value">
                                 <div @click="select(item)" class="px-3 py-2 hover:bg-primary hover:text-white cursor-pointer text-xs font-bold border-b border-neutral-50">
@@ -192,13 +188,15 @@
                       <div class="md:col-span-3 space-y-1">
                         <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">Fecha Salida</label>
                         <input
-                          type="datetime-local"
+                          type="text"
+                          x-flatpickr
                           :name="'tramos['+entry.index+'].fecha_salida'"
                           x-model="entry.tramo.fechaSalida"
                           :required="entry.tramo.estado === 'SOLICITADO'"
                           :readonly="entry.tramo.estado !== 'SOLICITADO'"
-                          :class="entry.tramo.estado !== 'SOLICITADO' ? 'bg-neutral-100 text-neutral-500 cursor-not-allowed' : ''"
-                          class="w-full rounded-md border-neutral-300 shadow-sm text-sm focus:ring-primary focus:border-primary" />
+                          :class="entry.tramo.estado !== 'SOLICITADO' ? 'bg-neutral-100 text-neutral-500 cursor-not-allowed' : 'bg-white'"
+                          class="w-full rounded-md border-neutral-300 shadow-sm text-sm focus:ring-primary focus:border-primary"
+                          placeholder="Seleccione fecha..." />
                       </div>
                     </div>
                   </div>
@@ -243,30 +241,28 @@
                         </div>
                         <div
                           x-show="canEditOrigin(entry.index)"
-                          x-data="searchableSelect({ items: allDestinos, initialValue: entry.tramo.origen, initialLabel: entry.tramo.origenLabel, placeholder: 'Buscar origen...' })"
+                          x-data="searchableSelect({ items: [], initialValue: entry.tramo.origen, initialLabel: entry.tramo.origenLabel, placeholder: 'Buscar origen...' })"
+                          x-effect="items = availableDestinos"
                           x-init="value = entry.tramo.origen; label = entry.tramo.origenLabel || placeholder; $watch('value', function(v) { entry.tramo.origen = v; var it = allDestinos.find(function(d) { return d.value === v; }); if (it) entry.tramo.origenLabel = it.value + ' - ' + it.label; })"
                           class="relative">
-                          <button
-                            type="button"
-                            @click="open = !open; if(open) $nextTick(function() { $refs.searchInput.focus() })"
+                          <div
+                            x-show="!open"
+                            @click="open = true; $nextTick(function() { $refs.searchInput.focus() })"
                             class="relative w-full bg-white border border-neutral-300 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm min-h-[38px] flex items-center justify-between">
                             <span class="block truncate" :class="label ? 'text-neutral-900' : 'text-neutral-400'" x-text="label || placeholder"></span>
                             <i class="ph ph-magnifying-glass text-neutral-400"></i>
-                          </button>
-                          <div
+                          </div>
+                          <input
+                            x-ref="searchInput"
+                            x-model="search"
                             x-show="open"
                             @click.away="open = false"
-                            class="absolute z-50 mt-1 w-full bg-white shadow-xl max-h-48 rounded-md border border-neutral-200 overflow-hidden"
-                            style="display: none">
-                            <div class="sticky top-0 bg-white p-2 border-b border-neutral-100">
-                              <input
-                                x-ref="searchInput"
-                                x-model="search"
-                                type="text"
-                                autocomplete="off"
-                                class="w-full border-neutral-300 rounded text-sm focus:ring-primary focus:border-primary"
-                                placeholder="Buscar ciudad..." />
-                            </div>
+                            @keydown.escape="open = false"
+                            @keydown.enter.prevent="if (filteredItems.length > 0) select(filteredItems[0])"
+                            type="text"
+                            class="w-full bg-white border border-primary rounded-md shadow-sm pl-3 pr-10 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary min-h-[38px]"
+                            placeholder="Buscar ciudad..." />
+                          <div x-show="open" class="absolute z-50 mt-1 w-full bg-white shadow-xl max-h-48 rounded-md border border-neutral-200 overflow-hidden" x-cloak>
                             <div class="max-h-36 overflow-y-auto">
                               <template x-for="item in filteredItems" :key="item.value">
                                 <div @click="select(item)" class="px-3 py-2 hover:bg-primary hover:text-white cursor-pointer text-xs font-bold border-b border-neutral-50">
@@ -289,31 +285,30 @@
                         </div>
                         <div
                           x-show="entry.tramo.estado === 'SOLICITADO'"
-                          x-data="searchableSelect({ items: allDestinos, initialValue: entry.tramo.destino, initialLabel: entry.tramo.destinoLabel, placeholder: 'Buscar destino...' })"
+                          x-data="searchableSelect({ items: [], initialValue: entry.tramo.destino, initialLabel: entry.tramo.destinoLabel, placeholder: 'Buscar destino...' })"
+                          x-effect="items = availableDestinos"
                           x-init="value = entry.tramo.destino; label = entry.tramo.destinoLabel || placeholder; $watch('value', function(v) { entry.tramo.destino = v; var it = allDestinos.find(function(d) { return d.value === v; }); if (it) entry.tramo.destinoLabel = it.value + ' - ' + it.label; })"
                           class="relative">
                           <input type="hidden" :name="'tramos['+entry.index+'].destino'" x-model="entry.tramo.destino" :required="entry.tramo.estado === 'SOLICITADO'" />
-                          <button
-                            type="button"
-                            @click="open = !open; if(open) $nextTick(function() { $refs.searchInput.focus() })"
+                          <div
+                            x-show="!open"
+                            @click="open = true; $nextTick(function() { $refs.searchInput.focus() })"
                             class="relative w-full bg-white border border-neutral-300 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-pointer focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary sm:text-sm min-h-[38px] flex items-center justify-between">
                             <span class="block truncate" :class="label ? 'text-neutral-900' : 'text-neutral-400'" x-text="label || placeholder"></span>
                             <i class="ph ph-magnifying-glass text-neutral-400"></i>
-                          </button>
-                          <div
+                          </div>
+                          <input
+                            x-ref="searchInput"
+                            x-model="search"
                             x-show="open"
                             @click.away="open = false"
-                            class="absolute z-50 mt-1 w-full bg-white shadow-xl max-h-48 rounded-md border border-neutral-200 overflow-hidden"
-                            style="display: none">
-                            <div class="sticky top-0 bg-white p-2 border-b border-neutral-100">
-                              <input
-                                x-ref="searchInput"
-                                x-model="search"
-                                type="text"
-                                autocomplete="off"
-                                class="w-full border-neutral-300 rounded text-sm focus:ring-primary focus:border-primary"
-                                placeholder="Buscar ciudad..." />
-                            </div>
+                            @keydown.escape="open = false"
+                            @keydown.enter.prevent="if (filteredItems.length > 0) select(filteredItems[0])"
+                            type="text"
+                            class="w-full bg-white border border-primary rounded-md shadow-sm pl-3 pr-10 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary min-h-[38px]"
+                            placeholder="Buscar ciudad..." />
+
+                          <div x-show="open" class="absolute z-50 mt-1 w-full bg-white shadow-xl max-h-48 rounded-md border border-neutral-200 overflow-hidden" x-cloak>
                             <div class="max-h-36 overflow-y-auto">
                               <template x-for="item in filteredItems" :key="item.value">
                                 <div @click="select(item)" class="px-3 py-2 hover:bg-primary hover:text-white cursor-pointer text-xs font-bold border-b border-neutral-50">
@@ -328,13 +323,15 @@
                       <div class="md:col-span-3 space-y-1">
                         <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">Fecha Salida</label>
                         <input
-                          type="datetime-local"
+                          type="text"
+                          x-flatpickr
                           :name="'tramos['+entry.index+'].fecha_salida'"
                           x-model="entry.tramo.fechaSalida"
                           :required="entry.tramo.estado === 'SOLICITADO'"
                           :readonly="entry.tramo.estado !== 'SOLICITADO'"
-                          :class="entry.tramo.estado !== 'SOLICITADO' ? 'bg-neutral-100 text-neutral-500 cursor-not-allowed' : ''"
-                          class="w-full rounded-md border-neutral-300 shadow-sm text-sm focus:ring-primary focus:border-primary" />
+                          :class="entry.tramo.estado !== 'SOLICITADO' ? 'bg-neutral-100 text-neutral-500 cursor-not-allowed' : 'bg-white'"
+                          class="w-full rounded-md border-neutral-300 shadow-sm text-sm focus:ring-primary focus:border-primary"
+                          placeholder="Seleccione fecha..." />
                       </div>
                     </div>
                   </div>
@@ -344,14 +341,24 @@
 
             <div class="pt-6 border-t border-neutral-100 grid grid-cols-1 md:grid-cols-2 gap-6">
               <div class="md:col-span-2">
-                <label class="block text-xs font-black text-neutral-500 uppercase mb-1">Motivo de la Comisión</label>
+                <label class="block text-xs font-black text-neutral-500 uppercase mb-1">
+                  Motivo de la Comisión {{ if .Solicitud.Usuario.IsSenador }}
+                  <span class="text-neutral-400 font-normal lowercase opacity-70 italic">(Opcional para Senadores)</span>
+                  {{ end }}
+                </label>
                 <textarea
                   name="motivo"
                   x-model="motivo"
                   rows="2"
-                  required
-                  class="w-full rounded-md border-neutral-300 text-sm"
-                  placeholder="Describa el propósito del viaje oficial completo..."></textarea>
+                  {{
+                  if
+                  not
+                  .Solicitud.Usuario.IsSenador
+                  }}required{{
+                  end
+                  }}
+                  class="w-full rounded-md border-neutral-300 text-sm focus:ring-primary transition-all resize-none"
+                  placeholder="{{ if .Solicitud.Usuario.IsSenador }}Ej: Gestión Parlamentaria...{{ else }}Describa el propósito del viaje oficial completo...{{ end }}"></textarea>
               </div>
               <div>
                 <label class="block text-xs font-black text-neutral-500 uppercase mb-1">Nro(Memo/RD/Nota JG/RC)</label>
@@ -384,6 +391,14 @@
         aerolinea: "",
         allDestinos: [],
         tramos: [],
+
+        get availableDestinos() {
+          if (!this.ambito) return [];
+          if (this.ambito === "INTERNACIONAL") return this.allDestinos;
+          return this.allDestinos.filter(function (d) {
+            return d.ambito === "NACIONAL";
+          });
+        },
 
         init() {
           var destinosEl = document.getElementById("destinos-edit-data");

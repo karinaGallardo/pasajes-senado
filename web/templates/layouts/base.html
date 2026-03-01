@@ -12,6 +12,13 @@
 
     <script src="/static/lib/polyfills.js"></script>
     <script src="/static/lib/htmx/htmx.min.js"></script>
+    <!-- Flatpickr -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/airbnb.css" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/confirmDate/confirmDate.css" />
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/confirmDate/confirmDate.js"></script>
     <script>
       /*
         document.addEventListener("htmx:configRequest", function(event) {
@@ -47,6 +54,49 @@
               this.search = "";
             },
           };
+        });
+
+        Alpine.directive("flatpickr", (el, { expression }, { evaluate }) => {
+          let options = {};
+          if (typeof expression === "string" && expression.trim() !== "") {
+            options = evaluate(expression) || {};
+          }
+          const defaultOptions = {
+            locale: "es",
+            dateFormat: "Y-m-d H:i", // Keep server format in 24h
+            enableTime: true,
+            time_24hr: false, // Enable AM/PM toggle
+            altInput: true,
+            altFormat: "d/m/Y h:i K", // Formato estándar Bolivia: 01/03/2026 02:30 PM
+            allowInput: true,
+            static: true, // Crucial for components inside modals
+            position: "auto right",
+            plugins: [
+              new confirmDatePlugin({
+                confirmText: "Aceptar",
+                showAlways: false,
+                theme: "light",
+              }),
+            ],
+          };
+
+          const fp = flatpickr(el, {
+            ...defaultOptions,
+            ...options,
+            onChange: (selectedDates, dateStr) => {
+              el.value = dateStr;
+              el.dispatchEvent(new Event("input", { bubbles: true }));
+              el.dispatchEvent(new Event("change", { bubbles: true }));
+            },
+          });
+
+          // Watch for external value changes
+          el._fp_cleanup = Alpine.effect(() => {
+            const val = el.getAttribute("value") || el.value;
+            if (val && fp.input.value !== val) {
+              fp.setDate(val, false);
+            }
+          });
         });
       });
     </script>
@@ -367,6 +417,83 @@
 
           <!-- Right Header Actions -->
           <div class="ml-4 flex items-center space-x-4">
+            <!-- Notifications Dropdown -->
+            <div
+              class="relative"
+              x-data="{ 
+                open: false, 
+                notifications: [], 
+                unreadCount: 0,
+                async fetchNotifications() {
+                  const res = await fetch('/api/notifications/recent');
+                  const data = await res.json();
+                  this.notifications = data.notifications || [];
+                  this.unreadCount = data.unread_count || 0;
+                },
+                async markAsRead(id, url) {
+                  await fetch(`/api/notifications/${id}/read`, { method: 'POST' });
+                  window.location.href = url;
+                },
+                async markAllAsRead() {
+                  await fetch('/api/notifications/read-all', { method: 'POST' });
+                  this.fetchNotifications();
+                }
+              }"
+              x-init="
+                fetchNotifications();
+                window.addEventListener('refresh_notifications', (e) => {
+                   if (e.detail.target_user === '{{ .AuthUser.ID }}') {
+                      fetchNotifications();
+                   }
+                });
+              ">
+              <button @click="open = !open; if(open) fetchNotifications()" class="p-2 text-neutral-400 hover:text-primary transition-colors focus:outline-none relative">
+                <i class="ph ph-bell text-2xl"></i>
+                <span
+                  x-show="unreadCount > 0"
+                  class="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-danger-500 text-[10px] font-bold text-white shadow-sm"
+                  x-text="unreadCount"></span>
+              </button>
+
+              <div
+                x-show="open"
+                @click.away="open = false"
+                x-transition:enter="transition ease-out duration-100"
+                x-transition:enter-start="opacity-0 scale-95"
+                x-transition:enter-end="opacity-100 scale-100"
+                class="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-premium border border-neutral-200 z-50 overflow-hidden"
+                style="display: none">
+                <div class="p-4 border-b border-neutral-100 flex items-center justify-between bg-neutral-50/50">
+                  <h3 class="text-sm font-bold text-neutral-800">Notificaciones</h3>
+                  <button @click="markAllAsRead" class="text-xs font-semibold text-primary hover:text-primary-600">Marcar todo leido</button>
+                </div>
+
+                <div class="max-h-96 overflow-y-auto">
+                  <template x-if="notifications.length === 0">
+                    <div class="p-8 text-center">
+                      <i class="ph ph-bell-slash text-4xl text-neutral-200 mb-2"></i>
+                      <p class="text-xs text-neutral-400">No tienes notificaciones</p>
+                    </div>
+                  </template>
+
+                  <template x-for="n in notifications" :key="n.id">
+                    <div
+                      @click="markAsRead(n.id, n.target_url)"
+                      class="p-4 border-b border-neutral-50 hover:bg-neutral-50 cursor-pointer transition-colors relative group"
+                      :class="{ 'bg-primary-50/30': !n.is_read }">
+                      <div class="flex items-start">
+                        <div class="h-2 w-2 rounded-full bg-primary mt-1.5 mr-3 flex-shrink-0" x-show="!n.is_read"></div>
+                        <div class="flex-1">
+                          <p class="text-sm font-bold text-neutral-800 mb-0.5" x-text="n.title"></p>
+                          <p class="text-xs text-neutral-500 line-clamp-2" x-text="n.message"></p>
+                        </div>
+                      </div>
+                    </div>
+                  </template>
+                </div>
+              </div>
+            </div>
+
             <!-- User Profile -->
             <div class="flex items-center pl-4 border-l border-neutral-200" x-data="{ open: false }">
               <div class="flex items-center cursor-pointer" @click="open = !open">
@@ -404,7 +531,54 @@
     <!-- Global Modal Container for HTMX -->
     <div id="modal-container"></div>
 
-    {{ block "footer_scripts" . }}{{ end }}
+    <!-- WebSocket Notifications for Admins -->
+    {{ if .AuthUser }} {{ if or (eq .AuthUser.Rol.Codigo "ADMIN") (eq .AuthUser.Rol.Codigo "RESPONSABLE") }}
+    <script>
+      (function () {
+        const audio = new Audio("/static/sounds/magic-notification-ring.wav");
+        let socket;
+
+        function connect() {
+          const protocol = window.location.protocol === "https:" ? "wss://" : "ws://";
+          socket = new WebSocket(protocol + window.location.host + "/ws/notifications");
+
+          socket.onmessage = function (event) {
+            try {
+              const data = JSON.parse(event.data);
+
+              // Only process if the notification is for this user
+              if (data.event === "refresh_notifications" && data.target_user === "{{ .AuthUser.ID }}") {
+                // Dispatch event for Alpine component to pick up (updates the bell icon)
+                window.dispatchEvent(new CustomEvent("refresh_notifications", { detail: data }));
+
+                // Audio signal for new requests
+                if (data.type === "new_solicitud") {
+                  audio.play().catch((e) => console.log("Permiso de audio requerido:", e));
+
+                  // Toast removed by request (it "gets lost").
+                  // Users now use the persistent bell icon in the header.
+                }
+              }
+            } catch (err) {
+              console.error("Error procesando mensaje WS:", err);
+            }
+          };
+
+          socket.onclose = function () {
+            console.log("WebSocket cerrado. Reintentando en 5s...");
+            setTimeout(connect, 5000);
+          };
+
+          socket.onerror = function (err) {
+            console.error("Error en WebSocket:", err);
+            socket.close();
+          };
+        }
+
+        connect();
+      })();
+    </script>
+    {{ end }} {{ end }} {{ block "footer_scripts" . }}{{ end }}
   </body>
 </html>
 {{ end }}

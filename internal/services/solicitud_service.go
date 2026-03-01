@@ -26,6 +26,7 @@ func NewSolicitudService() *SolicitudService {
 		solicitudItemRepo:   repositories.NewSolicitudItemRepository(),
 		pasajeRepo:          repositories.NewPasajeRepository(),
 		emailService:        NewEmailService(),
+		notificationService: NewNotificationService(),
 	}
 }
 
@@ -39,6 +40,7 @@ type SolicitudService struct {
 	solicitudItemRepo   *repositories.SolicitudItemRepository
 	pasajeRepo          *repositories.PasajeRepository
 	emailService        *EmailService
+	notificationService *NotificationService
 }
 
 func (s *SolicitudService) CreateDerecho(ctx context.Context, req dtos.CreateSolicitudRequest, currentUser *models.Usuario) (*models.Solicitud, error) {
@@ -202,6 +204,13 @@ func (s *SolicitudService) CreateDerecho(ctx context.Context, req dtos.CreateSol
 		return nil, err
 	}
 
+	s.notificationService.NotifyAdmins(ctx,
+		"Nueva Solicitud: "+solicitud.Codigo,
+		fmt.Sprintf("Generada por: %s (DERECHO)", solicitud.Usuario.GetNombreCompleto()),
+		"new_solicitud",
+		fmt.Sprintf("/solicitudes/derecho/%s/detalle", solicitud.ID),
+	)
+
 	go s.sendCreationEmail(solicitud)
 
 	return solicitud, nil
@@ -299,6 +308,13 @@ func (s *SolicitudService) CreateOficial(ctx context.Context, req dtos.CreateSol
 	if err != nil {
 		return nil, err
 	}
+
+	s.notificationService.NotifyAdmins(ctx,
+		"Nueva Solicitud: "+solicitud.Codigo,
+		fmt.Sprintf("Generada por: %s (OFICIAL)", solicitud.Usuario.GetNombreCompleto()),
+		"new_solicitud",
+		fmt.Sprintf("/solicitudes/oficial/%s/detalle", solicitud.ID),
+	)
 
 	go s.sendCreationEmail(solicitud)
 
