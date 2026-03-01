@@ -56,7 +56,7 @@
         <i class="ph ph-currency-circle-dollar mr-1.5 text-base"></i>
         Asignar Viáticos
       </button>
-      {{ end }} {{ if and .Perms.CanEdit (or (eq .Solicitud.GetEstado "SOLICITADO") (eq .Solicitud.GetEstado "PARCIALMENTE_APROBADO")) }}
+      {{ end }} {{ if .Perms.CanEdit }}
       <button
         type="button"
         hx-get="/solicitudes/oficial/{{ .Solicitud.ID }}/modal-editar"

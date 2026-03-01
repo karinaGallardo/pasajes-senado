@@ -305,7 +305,7 @@
                 <input
                   type="text"
                   name="fecha_emision"
-                  x-flatpickr="{ enableTime: false, dateFormat: 'Y-m-d', altFormat: 'd/m/Y' }"
+                  x-flatpickr="{ static: false, enableTime: false, dateFormat: 'Y-m-d', altFormat: 'd/m/Y' }"
                   required
                   class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md border p-2 bg-white"
                   placeholder="Seleccione fecha..." />
@@ -326,7 +326,7 @@
                 <input
                   type="text"
                   name="fecha_vuelo"
-                  x-flatpickr
+                  x-flatpickr="{ static: false }"
                   required
                   class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md border p-2 bg-white"
                   placeholder="Seleccione fecha y hora..." />

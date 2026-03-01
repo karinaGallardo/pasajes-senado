@@ -30,7 +30,8 @@
         type="button"
         hx-get="/solicitudes/derecho/{{ .Solicitud.ID }}/modal-editar"
         hx-target="#modal-container"
-        class="inline-flex items-center px-4 py-1 border border-primary-600 shadow-sm text-sm font-medium rounded-md text-primary-600 bg-white hover:bg-primary-50 focus:outline-none cursor-pointer">
+        class="inline-flex items-center px-1.5 py-0.5 border border-primary-200 shadow-sm text-xs font-bold rounded-sm text-primary-700 bg-primary-50 hover:bg-primary-100 focus:outline-none cursor-pointer transition-all active:scale-95 leading-none">
+        <i class="ph ph-pencil-simple mr-1.5 text-base"></i>
         Editar
       </button>
       {{ end }}

@@ -146,7 +146,18 @@ func (ctrl *SolicitudDerechoController) Store(c *gin.Context) {
 
 func (ctrl *SolicitudDerechoController) GetEditModal(c *gin.Context) {
 	id := c.Param("id")
-	solicitud, _ := ctrl.solicitudService.GetByID(c.Request.Context(), id)
+	solicitud, err := ctrl.solicitudService.GetByID(c.Request.Context(), id)
+	if err != nil {
+		c.String(http.StatusNotFound, "Solicitud no encontrada")
+		return
+	}
+
+	authUser := appcontext.AuthUser(c)
+	if !authUser.CanEditSolicitud(*solicitud) {
+		c.String(http.StatusForbidden, "No tiene permisos para editar esta solicitud")
+		return
+	}
+
 	item, _ := ctrl.cupoService.GetCupoDerechoItemByID(c.Request.Context(), *solicitud.CupoDerechoItemID)
 	aerolineas, _ := ctrl.aerolineaService.GetAllActive(c.Request.Context())
 
@@ -233,15 +244,13 @@ func (ctrl *SolicitudDerechoController) Update(c *gin.Context) {
 		return
 	}
 
-	currentStatus := "SOLICITADO"
-	if solicitud.EstadoSolicitudCodigo != nil {
-		currentStatus = *solicitud.EstadoSolicitudCodigo
-	}
-
-	if currentStatus != "SOLICITADO" && currentStatus != "APROBADO" && currentStatus != "PARCIALMENTE_APROBADO" && currentStatus != "RECHAZADO" {
-		c.String(http.StatusForbidden, "No editable. El estado actual ("+currentStatus+") no permite modificaciones.")
+	authUser := appcontext.AuthUser(c)
+	if !authUser.CanEditSolicitud(*solicitud) {
+		c.String(http.StatusForbidden, "No tiene permisos para editar esta solicitud o el estado actual no lo permite")
 		return
 	}
+
+	currentStatus := solicitud.GetEstado()
 
 	if req.TipoItinerarioCodigo != "" {
 		solicitud.TipoItinerarioCodigo = req.TipoItinerarioCodigo
@@ -260,11 +269,22 @@ func (ctrl *SolicitudDerechoController) Update(c *gin.Context) {
 		for i := range solicitud.Items {
 			it := &solicitud.Items[i]
 
+			// Solo permitir edición de tramos que NO estén aprobados/emitidos,
+			// a menos que sea Admin o Responsable.
+			canEditItem := authUser.IsAdminOrResponsable() ||
+				(it.EstadoCodigo != nil && (*it.EstadoCodigo == "SOLICITADO" || *it.EstadoCodigo == "RECHAZADO" || *it.EstadoCodigo == "PENDIENTE"))
+
+			if !canEditItem {
+				continue
+			}
+
 			switch it.Tipo {
 			case models.TipoSolicitudItemIda:
-				it.Fecha = fechaIda
-				if fechaIda != nil {
-					it.Hora = fechaIda.Format("15:04")
+				if req.FechaIda != "" {
+					it.Fecha = fechaIda
+					if fechaIda != nil {
+						it.Hora = fechaIda.Format("15:04")
+					}
 				}
 				if orig != nil {
 					it.OrigenIATA = orig.IATA
@@ -276,9 +296,11 @@ func (ctrl *SolicitudDerechoController) Update(c *gin.Context) {
 				}
 
 			case models.TipoSolicitudItemVuelta:
-				it.Fecha = fechaVuelta
-				if fechaVuelta != nil {
-					it.Hora = fechaVuelta.Format("15:04")
+				if req.FechaVuelta != "" {
+					it.Fecha = fechaVuelta
+					if fechaVuelta != nil {
+						it.Hora = fechaVuelta.Format("15:04")
+					}
 				}
 				if orig != nil {
 					it.DestinoIATA = orig.IATA

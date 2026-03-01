@@ -157,16 +157,7 @@
           </td>
           <td class="px-3 py-3 whitespace-nowrap text-xs font-medium text-right">
             <div class="flex flex-row justify-end items-center gap-3">
-              {{ if and .EstadoSolicitud (or (eq .EstadoSolicitud.Codigo "SOLICITADO") (eq .EstadoSolicitud.Codigo "PARCIALMENTE_APROBADO") (eq .EstadoSolicitud.Codigo
-              "RECHAZADO")) }} {{ if ne .GetConceptoCodigo "OFICIAL" }}
-              <button
-                type="button"
-                hx-get="/solicitudes/derecho/{{ .ID }}/modal-editar"
-                hx-target="#modal-container"
-                class="text-primary hover:text-primary-700 font-bold uppercase tracking-tight cursor-pointer bg-transparent border-0 p-0 transition-colors">
-                Editar
-              </button>
-              {{ end }} {{ end }} {{ if eq .GetConceptoCodigo "OFICIAL" }}
+              {{ if eq .GetConceptoCodigo "OFICIAL" }}
               <a href="/solicitudes/oficial/{{ .ID }}/detalle" class="text-white bg-secondary hover:bg-primary px-3 py-1 rounded shadow-sm font-bold uppercase transition-colors">
                 Ver
               </a>

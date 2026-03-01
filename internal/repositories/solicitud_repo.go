@@ -179,10 +179,39 @@ func (r *SolicitudRepository) ExistsByCodigo(codigo string) (bool, error) {
 func (r *SolicitudRepository) FindPendientesDeDescargo() ([]models.Solicitud, error) {
 	var solicitudes []models.Solicitud
 	err := r.db.Preload("Usuario.Encargado").
-		Preload("Items").
+		Preload("Items.Pasajes").
 		Joins("LEFT JOIN descargos ON solicitudes.id = descargos.solicitud_id").
 		Where("descargos.id IS NULL").
-		Where("solicitudes.estado_solicitud_codigo IN (?)", []string{"EMITIDO", "FINALIZADO"}).
+		Where("solicitudes.estado_solicitud_codigo IN (?)", []string{"PARCIALMENTE_APROBADO", "APROBADO", "EMITIDO"}).
+		Where("EXISTS (SELECT 1 FROM pasajes p JOIN solicitud_items si ON p.solicitud_item_id = si.id WHERE si.solicitud_id = solicitudes.id AND p.estado_pasaje_codigo = 'EMITIDO')").
 		Find(&solicitudes).Error
+	return solicitudes, err
+}
+
+func (r *SolicitudRepository) FindPendientesDeDescargoUI(userID string, isAdmin bool) ([]models.Solicitud, error) {
+	var solicitudes []models.Solicitud
+	query := r.db.Preload("Usuario").
+		Preload("Usuario.Rol").
+		Preload("Items.Pasajes").
+		Preload("Items.Origen").
+		Preload("Items.Destino").
+		Preload("TipoSolicitud.ConceptoViaje").
+		Preload("EstadoSolicitud").
+		Joins("LEFT JOIN descargos ON solicitudes.id = descargos.solicitud_id").
+		Where("descargos.id IS NULL").
+		Where("solicitudes.estado_solicitud_codigo IN (?)", []string{"PARCIALMENTE_APROBADO", "APROBADO", "EMITIDO"}).
+		Where("EXISTS (SELECT 1 FROM pasajes p JOIN solicitud_items si ON p.solicitud_item_id = si.id WHERE si.solicitud_id = solicitudes.id AND p.estado_pasaje_codigo = 'EMITIDO')").
+		Order("created_at desc")
+
+	if !isAdmin {
+		query = query.Where(
+			"solicitudes.usuario_id = ? OR solicitudes.created_by = ? OR solicitudes.usuario_id IN (?)",
+			userID,
+			userID,
+			r.db.Table("usuarios").Select("id").Where("encargado_id = ?", userID),
+		)
+	}
+
+	err := query.Find(&solicitudes).Error
 	return solicitudes, err
 }

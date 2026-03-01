@@ -2,7 +2,7 @@
 
 <div class="max-w-5xl mx-auto space-y-6">
   <!-- HEADER -->
-  <div class="flex justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-neutral-200">
+  <div class="flex justify-between items-center bg-white p-4 rounded-md shadow-sm border border-neutral-200">
     <div>
       <div class="flex items-center gap-3">
         <h2 class="text-xl font-bold text-neutral-800 tracking-tight">Gestión de Pasajes - {{ .TargetUser.GetNombreCompleto }}</h2>
@@ -38,7 +38,7 @@
   {{ end }}
 
   <!-- LISTA DE MESES -->
-  <div class="bg-white rounded-lg shadow-sm border border-neutral-200 overflow-hidden">
+  <div class="bg-white rounded-md shadow-sm border border-neutral-200 overflow-hidden">
     <div class="p-6 border-b border-neutral-100 flex justify-between items-center bg-neutral-50/50">
       <div>
         <h3 class="text-xs font-bold text-secondary uppercase tracking-wider mb-1">Derechos de Pasaje Anuales</h3>
@@ -62,7 +62,7 @@
           {{ end }}
         </div>
 
-        <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 rounded-lg">
+        <div class="overflow-hidden shadow ring-1 ring-black ring-opacity-5 rounded-md">
           <table class="min-w-full divide-y divide-gray-300">
             <thead class="bg-neutral-50">
               <tr>
@@ -92,13 +92,12 @@
                 <td class="whitespace-nowrap px-3 py-4 text-sm">
                   <div class="flex flex-col">
                     {{ if .EstadoCupoDerecho }}
-                    <span
-                      class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase w-fit border status-badge-{{ .EstadoCupoDerecho.Codigo }}">
+                    <span class="inline-flex items-center gap-1 rounded-md px-2.5 py-0.5 text-[10px] font-bold uppercase w-fit border status-badge-{{ .EstadoCupoDerecho.Codigo }}">
                       <i class="{{ .EstadoCupoDerecho.Icon }} text-xs"></i>
                       {{ .EstadoCupoDerecho.Nombre }}
                     </span>
                     {{ else }}
-                    <span class="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase w-fit border bg-neutral-100 text-neutral-600">
+                    <span class="inline-flex items-center gap-1 rounded-md px-2.5 py-0.5 text-[10px] font-bold uppercase w-fit border bg-neutral-100 text-neutral-600">
                       {{ .EstadoCupoDerechoCodigo }}
                     </span>
                     {{ end }}
@@ -116,7 +115,7 @@
                         hx-post="/admin/cupos/derechos/{{ .ID }}/revertir-transferencia?gestion={{ .Gestion }}&mes={{ .Mes }}"
                         hx-target="body"
                         hx-confirm="¿Está seguro de revertir la transferencia{{ if .SenAsignado }} a {{.SenAsignado.GetNombreCompleto}}{{ end }}? El cupo volverá al titular."
-                        class="text-danger-600 hover:text-danger-900 border border-danger-200 bg-white font-bold text-[10px] uppercase px-3 py-1.5 rounded hover:bg-danger-50 transition-colors inline-flex items-center gap-1 cursor-pointer">
+                        class="text-danger-600 hover:text-danger-900 border border-danger-200 bg-white font-bold text-[10px] uppercase rounded-sm px-2 py-1 hover:bg-danger-50 transition-colors inline-flex items-center gap-1 cursor-pointer">
                         <span class="[.htmx-request_&]:hidden text-nowrap">Revertir Transferencia</span>
                         <i class="ph ph-spinner animate-spin hidden [.htmx-request_&]:block"></i>
                       </button>
@@ -126,7 +125,7 @@
                       type="button"
                       hx-get="/admin/cupos/derechos/{{ .ID }}/modal-transferir?gestion={{ .Gestion }}&mes={{ .Mes }}"
                       hx-target="#modal-container"
-                      class="text-primary-600 hover:text-primary-900 border border-primary-200 bg-white font-bold text-[10px] uppercase px-3 py-1.5 rounded hover:bg-primary-50 transition-colors inline-flex items-center gap-1 cursor-pointer">
+                      class="text-primary-600 hover:text-primary-900 border border-primary-200 bg-white font-bold text-[10px] uppercase rounded-sm px-2 py-1 hover:bg-primary-50 transition-colors inline-flex items-center gap-1 cursor-pointer">
                       <span class="[.htmx-request_&]:hidden">Transferir</span>
                       <i class="ph ph-spinner animate-spin hidden [.htmx-request_&]:block"></i>
                     </button>
@@ -140,7 +139,7 @@
                       hx-target="body"
                       hx-vals='{"item_id": "{{.ID}}", "gestion": "{{.Gestion}}", "mes": "{{.Mes}}", "return_url": "/cupos/derecho/{{$targetUserID}}/{{.Gestion}}"}'
                       hx-confirm="¿Desea TOMAR este cupo para su uso personal?"
-                      class="text-secondary-600 hover:text-secondary-900 border border-secondary-200 bg-white font-bold text-[10px] uppercase px-3 py-1.5 rounded hover:bg-secondary-50 transition-colors inline-flex items-center gap-1 cursor-pointer">
+                      class="text-secondary-600 hover:text-secondary-900 border border-secondary-200 bg-white font-bold text-[10px] uppercase rounded-sm px-2 py-1 hover:bg-secondary-50 transition-colors inline-flex items-center gap-1 cursor-pointer">
                       <span class="[.htmx-request_&]:hidden">Tomar Cupo</span>
                       <i class="ph ph-spinner animate-spin hidden [.htmx-request_&]:block"></i>
                     </button>
@@ -154,7 +153,7 @@
                       hx-target="body"
                       hx-vals='{"item_id": "{{.ID}}", "target_user_id": "{{$targetUserID}}", "gestion": "{{.Gestion}}", "mes": "{{.Mes}}", "return_url": "/cupos/derecho/{{$targetUserID}}/{{.Gestion}}"}'
                       hx-confirm="¿Desea ASIGNAR este cupo al suplente {{$.TargetUser.GetNombreCompleto}}?"
-                      class="text-primary-600 hover:text-primary-900 border border-primary-200 bg-white font-bold text-[10px] uppercase px-3 py-1.5 rounded hover:bg-primary-50 transition-colors inline-flex items-center gap-1 cursor-pointer">
+                      class="text-primary-600 hover:text-primary-900 border border-primary-200 bg-white font-bold text-[10px] uppercase rounded-sm px-2 py-1 hover:bg-primary-50 transition-colors inline-flex items-center gap-1 cursor-pointer">
                       <span class="[.htmx-request_&]:hidden">Asignar Cupo</span>
                       <i class="ph ph-spinner animate-spin hidden [.htmx-request_&]:block"></i>
                     </button>
@@ -168,7 +167,7 @@
                       type="button"
                       hx-get="/solicitudes/derecho/modal-crear/{{ .ID }}/IDA_VUELTA"
                       hx-target="#modal-container"
-                      class="text-white bg-primary hover:bg-primary-800 font-bold text-[10px] uppercase border border-primary rounded px-3 py-1.5 transition-colors cursor-pointer text-center inline-flex items-center justify-center shadow-sm">
+                      class="text-white bg-primary hover:bg-primary-800 font-bold text-[10px] uppercase border border-primary rounded-sm px-2 py-1 transition-colors cursor-pointer text-center inline-flex items-center justify-center shadow-sm">
                       <i class="ph ph-paper-plane-tilt mr-1.5 text-xs"></i>
                       Solicitar Pasaje
                     </button>
@@ -177,7 +176,7 @@
                       type="button"
                       hx-get="/solicitudes/derecho/{{ $solIda.ID }}/modal-editar"
                       hx-target="#modal-container"
-                      class="text-amber-700 hover:bg-amber-100 font-bold text-[10px] uppercase border border-amber-100 bg-amber-50 rounded px-3 py-1.5 transition-colors cursor-pointer text-center inline-flex items-center justify-center">
+                      class="text-amber-700 hover:bg-amber-100 font-bold text-[10px] uppercase border border-amber-100 bg-amber-50 rounded-md px-3 py-1.5 transition-colors cursor-pointer text-center inline-flex items-center justify-center">
                       <i class="ph ph-calendar-plus mr-1.5 text-xs"></i>
                       Editar / Agendar Retorno
                     </button>
@@ -186,7 +185,7 @@
                       type="button"
                       hx-get="/solicitudes/derecho/{{ $solIda.ID }}/modal-editar"
                       hx-target="#modal-container"
-                      class="text-amber-700 hover:bg-amber-100 font-bold text-[10px] uppercase border border-amber-100 bg-amber-50 rounded px-3 py-1.5 transition-colors cursor-pointer inline-flex items-center justify-center text-center">
+                      class="text-amber-700 hover:bg-amber-100 font-bold text-[10px] uppercase border border-amber-100 bg-amber-50 rounded-md px-3 py-1.5 transition-colors cursor-pointer inline-flex items-center justify-center text-center">
                       <i class="ph ph-pencil-simple mr-1.5 text-xs"></i>
                       Editar Solicitud
                     </button>
@@ -196,7 +195,7 @@
                       type="button"
                       hx-get="/solicitudes/derecho/{{ $printSol.ID }}/print"
                       hx-target="#modal-container"
-                      class="text-neutral-600 hover:text-neutral-900 border border-neutral-200 bg-white font-bold text-[10px] uppercase px-3 py-1.5 rounded hover:bg-neutral-50 transition-colors inline-flex items-center justify-center gap-1 cursor-pointer"
+                      class="text-neutral-600 hover:text-neutral-900 border border-neutral-200 bg-white font-bold text-[10px] uppercase rounded-sm px-2 py-1 hover:bg-neutral-50 transition-colors inline-flex items-center justify-center gap-1 cursor-pointer"
                       title="Imprimir Solicitud">
                       <i class="ph ph-printer text-sm"></i>
                       <span class="sr-only sm:not-sr-only">Imprimir</span>

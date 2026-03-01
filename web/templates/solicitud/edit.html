@@ -15,7 +15,7 @@
     </div>
   </div>
 
-  <form action="/solicitudes/{{ .Solicitud.ID }}/actualizar" method="POST" class="bg-white shadow rounded-lg overflow-hidden border border-neutral-200">
+  <form action="/solicitudes/{{ .Solicitud.ID }}/actualizar" method="POST" class="bg-white shadow rounded-md overflow-hidden border border-neutral-200">
     <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
     <div class="p-6 space-y-6">
       <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">

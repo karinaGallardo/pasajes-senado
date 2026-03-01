@@ -205,6 +205,15 @@ func (s Solicitud) GetDestinoIATA() string {
 	}
 	return ""
 }
+
+func (s Solicitud) GetRutaSimple() string {
+	origen := s.GetOrigenIATA()
+	destino := s.GetDestinoIATA()
+	if origen == "" || destino == "" {
+		return s.GetOrigenCiudad() + " - " + s.GetDestinoCiudad()
+	}
+	return origen + " - " + destino
+}
 func (s Solicitud) GetItemIda() *SolicitudItem {
 	for i := range s.Items {
 		if s.Items[i].Tipo == TipoSolicitudItemIda {
@@ -221,4 +230,78 @@ func (s Solicitud) GetItemVuelta() *SolicitudItem {
 		}
 	}
 	return nil
+}
+func (s Solicitud) GetMaxFechaVueloEmitida() *time.Time {
+	var maxDate *time.Time
+	for _, item := range s.Items {
+		for _, p := range item.Pasajes {
+			if p.GetEstadoCodigo() == "EMITIDO" {
+				if maxDate == nil || p.FechaVuelo.After(*maxDate) {
+					fecha := p.FechaVuelo
+					maxDate = &fecha
+				}
+			}
+		}
+	}
+	return maxDate
+}
+
+func (s Solicitud) GetUltimoVueloFecha() string {
+	maxDate := s.GetMaxFechaVueloEmitida()
+	if maxDate == nil {
+		return "-"
+	}
+	return maxDate.Format("02/01/2006")
+}
+
+// GetDiasRestantesDescargo calcula cuántos días hábiles le quedan para presentar.
+// Retorna un número negativo si ya venció.
+func (s Solicitud) GetDiasRestantesDescargo() int {
+	maxDate := s.GetMaxFechaVueloEmitida()
+	if maxDate == nil {
+		return 999
+	}
+
+	// 1. Obtener fecha límite (8 días hábiles desde el último vuelo)
+	// Como no puedo importar utils aquí directamente (circular dependency),
+	// haré la lógica simple o asumiré que se calcula fuera.
+	// Pero mejor la pongo aquí si puedo o uso una función auxiliar.
+	// Nota: No puedo importar utils. Calculemos aquí.
+
+	diasLimite := 0
+	limite := *maxDate
+	for diasLimite < 8 {
+		limite = limite.AddDate(0, 0, 1)
+		if limite.Weekday() != time.Saturday && limite.Weekday() != time.Sunday {
+			diasLimite++
+		}
+	}
+
+	// 2. Contar días hábiles desde HOY hasta el límite
+	hoy := time.Now().Truncate(24 * time.Hour)
+	limiteTrunc := limite.Truncate(24 * time.Hour)
+
+	if hoy.After(limiteTrunc) {
+		// Calcular cuántos días hábiles de mora
+		mora := 0
+		d := limiteTrunc
+		for d.Before(hoy) {
+			d = d.AddDate(0, 0, 1)
+			if d.Weekday() != time.Saturday && d.Weekday() != time.Sunday {
+				mora++
+			}
+		}
+		return -mora
+	}
+
+	// Días restantes
+	restantes := 0
+	d := hoy
+	for d.Before(limiteTrunc) {
+		d = d.AddDate(0, 0, 1)
+		if d.Weekday() != time.Saturday && d.Weekday() != time.Sunday {
+			restantes++
+		}
+	}
+	return restantes
 }

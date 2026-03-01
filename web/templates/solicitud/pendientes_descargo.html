@@ -1,0 +1,80 @@
+{{ define "solicitud/pendientes_descargo" }} {{ template "layout_start" . }}
+
+<div class="px-4 py-6 sm:px-0">
+  <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-neutral-800">{{ .Title }}</h1>
+      <p class="text-xs text-neutral-500 mt-1">Trámites con pasajes emitidos que aún no han presentado su descargo administrativo.</p>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div class="bg-white rounded-lg shadow overflow-x-auto border border-neutral-200">
+    <table class="min-w-full divide-y divide-gray-200">
+      <thead class="bg-neutral-50">
+        <tr>
+          <th scope="col" class="px-3 py-3 text-left text-xs font-bold text-neutral-500 uppercase tracking-wider">Código</th>
+          <th scope="col" class="px-3 py-3 text-left text-xs font-bold text-neutral-500 uppercase tracking-wider hidden md:table-cell">Beneficiario</th>
+          <th scope="col" class="px-3 py-3 text-center text-xs font-bold text-neutral-500 uppercase tracking-wider hidden md:table-cell">Tipo</th>
+          <th scope="col" class="px-3 py-3 text-left text-xs font-bold text-neutral-500 uppercase tracking-wider">Ruta / Concepto</th>
+          <th scope="col" class="px-3 py-3 text-center text-xs font-bold text-neutral-500 uppercase tracking-wider">Últ. Vuelo</th>
+          <th scope="col" class="px-3 py-3 text-center text-xs font-bold text-neutral-500 uppercase tracking-wider">Plazo Descargo</th>
+          <th scope="col" class="px-3 py-3 text-right text-xs font-bold text-neutral-500 uppercase tracking-wider">Acciones</th>
+        </tr>
+      </thead>
+      <tbody class="bg-white divide-y divide-neutral-100">
+        {{ range .Solicitudes }}
+        <tr class="hover:bg-neutral-50 transition-colors">
+          <td class="px-3 py-3 whitespace-nowrap">
+            <span class="text-xs font-bold text-primary">{{ .Codigo }}</span>
+          </td>
+          <td class="px-3 py-3 whitespace-nowrap hidden md:table-cell">
+            <div class="flex flex-col">
+              <span class="text-xs font-bold text-neutral-700 uppercase tracking-tight">{{ if .Usuario }}{{ .Usuario.GetNombreCompleto }}{{ else }}N/A{{ end }}</span>
+              <span class="text-[10px] text-neutral-400 capitalize">{{ if .Usuario }}{{ .Usuario.GetRolName }}{{ end }}</span>
+            </div>
+          </td>
+          <td class="px-3 py-3 whitespace-nowrap text-center text-xs text-neutral-500 hidden md:table-cell">
+            <span class="px-2 py-0.5 rounded-full bg-neutral-100 text-[10px] font-bold uppercase">{{ .GetConceptoCodigo }}</span>
+          </td>
+          <td class="px-3 py-3">
+            <div class="flex flex-col">
+              <span class="text-xs font-medium text-neutral-700 truncate max-w-[150px]">{{ .GetRutaSimple }}</span>
+              <span class="text-[9px] text-neutral-400 truncate max-w-[150px]">{{ .TipoSolicitud.ConceptoViaje.Nombre }}</span>
+            </div>
+          </td>
+          <td class="px-3 py-3 whitespace-nowrap text-center text-xs font-medium text-neutral-700">{{ .GetUltimoVueloFecha }}</td>
+          <td class="px-3 py-3 whitespace-nowrap text-center">
+            {{ $days := .GetDiasRestantesDescargo }} {{ if lt $days 0 }}
+            <span class="px-2 py-1 rounded bg-danger-100 text-danger-700 font-bold text-[10px] border border-danger-200" title="Vencido">{{ abs $days }} DÍAS MORA</span>
+            {{ else }}
+            <span class="px-2 py-1 rounded bg-success-50 text-success-700 font-bold text-[10px] border border-success-200" title="Días restantes">{{ $days }} DÍAS REST.</span>
+            {{ end }}
+          </td>
+          <td class="px-3 py-3 whitespace-nowrap text-xs font-medium text-right">
+            <a
+              href="/solicitudes/{{ lower .GetConceptoCodigo }}/{{ .ID }}/detalle"
+              class="inline-flex items-center gap-1 text-primary hover:text-primary-700 transition-colors"
+              title="Ver detalle">
+              <i class="ph ph-eye text-lg"></i>
+              <span>Ver Trámite</span>
+            </a>
+          </td>
+        </tr>
+        {{ else }}
+        <tr>
+          <td colspan="7" class="px-6 py-12 text-center">
+            <div class="flex flex-col items-center justify-center">
+              <i class="ph ph-check-circle text-4xl text-success-400 mb-2"></i>
+              <p class="text-neutral-500 text-sm">No hay solicitudes pendientes de descargo.</p>
+              <p class="text-neutral-400 text-xs mt-1">Todos los trámites emitidos tienen su descargo al día.</p>
+            </div>
+          </td>
+        </tr>
+        {{ end }}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+{{ template "layout_end" . }} {{ end }}

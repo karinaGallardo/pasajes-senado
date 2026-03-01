@@ -30,6 +30,8 @@ func TemplateFuncs() template.FuncMap {
 		"rangoSemanaCorto": FormatWeekRangeShort,
 		"contains":         strings.Contains,
 		"formatCurrency":   FormatCurrency,
+		"abs":              Abs,
+		"lower":            strings.ToLower,
 	}
 }
 
@@ -261,4 +263,11 @@ func DayNameLong(t *time.Time) string {
 		return "domingo"
 	}
 	return ""
+}
+
+func Abs(i int) int {
+	if i < 0 {
+		return -i
+	}
+	return i
 }

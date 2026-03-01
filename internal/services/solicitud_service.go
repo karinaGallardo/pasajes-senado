@@ -211,9 +211,18 @@ func (s *SolicitudService) CreateDerecho(ctx context.Context, req dtos.CreateSol
 		return nil, err
 	}
 
+	// Fetch beneficiary to use abbreviated name in notification
+	beneficiary, _ := s.usuarioRepo.WithContext(ctx).FindByID(solicitud.UsuarioID)
+	benefName := solicitud.UsuarioID
+	if beneficiary != nil {
+		benefName = beneficiary.GetNombreResumido()
+	}
+
 	s.notificationService.NotifyAdmins(ctx,
 		"Nueva Solicitud: "+solicitud.Codigo,
-		fmt.Sprintf("Generada por: %s (DERECHO)", solicitud.Usuario.GetNombreCompleto()),
+		fmt.Sprintf("<ul class='list-none space-y-0.5 mt-1'><li><strong>Beneficiario:</strong> %s</li><li><strong>Fecha:</strong> %s</li><li><strong>Tipo:</strong> DERECHO</li></ul>",
+			benefName,
+			solicitud.CreatedAt.Format("02/01/2006 15:04")),
 		"new_solicitud",
 		fmt.Sprintf("/solicitudes/derecho/%s/detalle", solicitud.ID),
 	)
@@ -316,9 +325,18 @@ func (s *SolicitudService) CreateOficial(ctx context.Context, req dtos.CreateSol
 		return nil, err
 	}
 
+	// Fetch beneficiary name for notification
+	beneficiary, _ := s.usuarioRepo.WithContext(ctx).FindByID(realSolicitanteID)
+	benefName := realSolicitanteID
+	if beneficiary != nil {
+		benefName = beneficiary.GetNombreResumido()
+	}
+
 	s.notificationService.NotifyAdmins(ctx,
 		"Nueva Solicitud: "+solicitud.Codigo,
-		fmt.Sprintf("Generada por: %s (OFICIAL)", solicitud.Usuario.GetNombreCompleto()),
+		fmt.Sprintf("<ul class='list-none space-y-0.5 mt-1'><li><strong>Beneficiario:</strong> %s</li><li><strong>Fecha:</strong> %s</li><li><strong>Tipo:</strong> OFICIAL</li></ul>",
+			benefName,
+			solicitud.CreatedAt.Format("02/01/2006 15:04")),
 		"new_solicitud",
 		fmt.Sprintf("/solicitudes/oficial/%s/detalle", solicitud.ID),
 	)
@@ -500,6 +518,10 @@ func (s *SolicitudService) GetByUserID(ctx context.Context, userID string, statu
 
 func (s *SolicitudService) GetByUserIdOrAccesibleByEncargadoID(ctx context.Context, userID string, status string, concepto string) ([]models.Solicitud, error) {
 	return s.repo.WithContext(ctx).FindByUserIdOrAccesibleByEncargadoID(userID, status, concepto)
+}
+
+func (s *SolicitudService) GetPendientesDescargo(ctx context.Context, userID string, isAdmin bool) ([]models.Solicitud, error) {
+	return s.repo.WithContext(ctx).FindPendientesDeDescargoUI(userID, isAdmin)
 }
 
 func (s *SolicitudService) GetByCupoDerechoItemID(ctx context.Context, itemID string) ([]models.Solicitud, error) {
@@ -970,8 +992,9 @@ func (s *SolicitudService) UpdateOficial(ctx context.Context, id string, req dto
 				if existing, ok := existingItemsMap[t.ID]; ok {
 					itemsToKeepIDs = append(itemsToKeepIDs, t.ID)
 
-					// Only allow updates if current status is "SOLICITADO"
-					if existing.GetEstado() == "SOLICITADO" {
+					// Only allow updates if current status is editable
+					st := existing.GetEstado()
+					if st == "SOLICITADO" || st == "RECHAZADO" || st == "PENDIENTE" {
 						existing.OrigenIATA = orig
 						existing.DestinoIATA = dest
 						existing.Fecha = fSalida

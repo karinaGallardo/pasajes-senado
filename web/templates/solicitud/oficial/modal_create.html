@@ -2,7 +2,6 @@
 <div
   x-data="oficialFormHandler()"
   x-init="init()"
-  @oficial-sync-chain.window="syncChain()"
   x-show="open"
   class="fixed inset-0 z-50 overflow-y-auto"
   aria-labelledby="modal-title"
@@ -65,7 +64,7 @@
                     name="ambito_viaje_codigo"
                     x-model="ambito"
                     required
-                    class="w-full rounded-lg border-neutral-300 text-sm focus:ring-primary focus:border-primary transition-all">
+                    class="w-full rounded-md border-neutral-300 text-sm focus:ring-primary focus:border-primary transition-all">
                     <option value="">Seleccione...</option>
                     {{ range .Ambitos }}
                     <option value="{{ .Codigo }}">{{ .Nombre }}</option>
@@ -79,13 +78,13 @@
                     type="text"
                     name="autorizacion"
                     x-model="autorizacion"
-                    class="w-full rounded-lg border-neutral-300 text-sm focus:ring-primary"
+                    class="w-full rounded-md border-neutral-300 text-sm focus:ring-primary"
                     placeholder="Ej: Res. 001/24" />
                 </div>
 
                 <div class="space-y-1">
                   <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">Aerolínea Sugerida</label>
-                  <select name="aerolinea" x-model="aerolinea" class="w-full rounded-lg border-neutral-300 text-sm focus:ring-primary transition-all">
+                  <select name="aerolinea" x-model="aerolinea" class="w-full rounded-md border-neutral-300 text-sm focus:ring-primary transition-all">
                     <option value="">Cualquiera</option>
                     {{ range .Aerolineas }}
                     <option value="{{ .Nombre }}">{{ .Nombre }}</option>
@@ -111,7 +110,7 @@
                     end
                     }}
                     rows="2"
-                    class="w-full rounded-lg border-neutral-300 text-sm focus:ring-primary transition-all resize-none"
+                    class="w-full rounded-md border-neutral-300 text-sm focus:ring-primary transition-all resize-none"
                     placeholder="{{ if .TargetUser.IsSenador }}Ej: Gestión Parlamentaria...{{ else }}Escriba aquí el propósito detallado del viaje oficial...{{ end }}"></textarea>
                 </div>
               </div>
@@ -134,14 +133,14 @@
               </div>
 
               <div>
-                <table class="min-w-full divide-y divide-neutral-200">
+                <table class="w-full divide-y divide-neutral-200 table-fixed">
                   <thead class="bg-neutral-50/50">
                     <tr>
-                      <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase tracking-widest pl-10">Origen</th>
-                      <th class="px-4 py-1 text-center text-[9px] font-black text-neutral-400 uppercase tracking-widest w-10"></th>
-                      <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase tracking-widest">Destino</th>
-                      <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase tracking-widest w-48">Salida (Fecha/Hora)</th>
-                      <th class="px-4 py-1 text-right text-[9px] font-black text-neutral-400 uppercase tracking-widest w-10"></th>
+                      <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase tracking-widest pl-10 w-[35%]">Origen</th>
+                      <th class="px-2 py-1 text-center text-[9px] font-black text-neutral-400 uppercase tracking-widest w-[5%]"></th>
+                      <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase tracking-widest w-[35%]">Destino</th>
+                      <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase tracking-widest w-[20%]">Salida (Fecha/Hora)</th>
+                      <th class="px-4 py-1 text-right text-[9px] font-black text-neutral-400 uppercase tracking-widest w-[5%]"></th>
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-neutral-100">
@@ -159,12 +158,12 @@
                               placeholder: 'Origen...'
                             })"
                             x-effect="items = availableDestinos"
-                            x-init="value = item.tramo.origen; label = item.tramo.origenLabel || placeholder; $watch('value', function(v) { item.tramo.origen = v; var it = allDestinos.find(function(d) { return d.value === v; }); if (it) item.tramo.origenLabel = it.value + ' - ' + it.label; setTimeout(function() { window.dispatchEvent(new CustomEvent('oficial-sync-chain')); }, 0); })"
+                            x-init="value = item.tramo.origen; label = item.tramo.origenLabel || placeholder; $watch('value', function(v) { item.tramo.origen = v; var it = allDestinos.find(function(d) { return d.value === v; }); if (it) item.tramo.origenLabel = it.value + ' - ' + it.label; })"
                             class="relative">
                             <div
                               x-show="!open"
                               @click="open = true; $nextTick(function() { $refs.searchInput.focus() })"
-                              class="w-full bg-white border border-neutral-300 rounded-lg shadow-sm pl-3 pr-8 py-1 text-left text-[11px] font-medium cursor-pointer flex items-center justify-between min-h-[26px]">
+                              class="w-full bg-white border border-neutral-300 rounded-md shadow-sm pl-3 pr-8 py-1 text-left text-[11px] font-medium cursor-pointer flex items-center justify-between h-[28px]">
                               <span class="truncate" x-text="label || placeholder"></span>
                               <i class="ph ph-magnifying-glass text-neutral-400 text-sm"></i>
                             </div>
@@ -176,7 +175,7 @@
                               @keydown.escape="open = false"
                               @keydown.enter.prevent="if (filteredItems.length > 0) select(filteredItems[0])"
                               type="text"
-                              class="w-full bg-white border border-primary rounded-lg shadow-sm pl-3 pr-3 py-1 text-[11px] font-medium focus:outline-none focus:ring-1 focus:ring-primary h-[26px]"
+                              class="w-full bg-white border border-primary rounded-md shadow-sm pl-3 pr-8 py-1 text-[11px] font-medium focus:outline-none focus:ring-1 focus:ring-primary h-[28px]"
                               placeholder="Filtrar..." />
                             <div x-show="open" class="absolute z-[100] mt-1 w-full bg-white shadow-xl rounded-lg border border-neutral-200 overflow-hidden" x-cloak>
                               <div class="max-h-60 overflow-y-auto">
@@ -206,13 +205,13 @@
                               placeholder: 'Destino...'
                             })"
                             x-effect="items = availableDestinos"
-                            x-init="value = item.tramo.destino; label = item.tramo.destinoLabel || placeholder; $watch('value', function(v) { item.tramo.destino = v; var it = allDestinos.find(function(d) { return d.value === v; }); if (it) item.tramo.destinoLabel = it.value + ' - ' + it.label; setTimeout(function() { window.dispatchEvent(new CustomEvent('oficial-sync-chain')); }, 0); })"
+                            x-init="value = item.tramo.destino; label = item.tramo.destinoLabel || placeholder; $watch('value', function(v) { item.tramo.destino = v; var it = allDestinos.find(function(d) { return d.value === v; }); if (it) item.tramo.destinoLabel = it.value + ' - ' + it.label; })"
                             class="relative">
                             <input type="hidden" :name="'tramos['+item.originalIndex+'].destino'" x-model="item.tramo.destino" required />
                             <div
                               x-show="!open"
                               @click="open = true; $nextTick(function() { $refs.searchInput.focus() })"
-                              class="w-full bg-white border border-neutral-300 rounded-lg shadow-sm pl-3 pr-8 py-1 text-left text-[11px] font-medium cursor-pointer flex items-center justify-between min-h-[26px]">
+                              class="w-full bg-white border border-neutral-300 rounded-md shadow-sm pl-3 pr-8 py-1 text-left text-[11px] font-medium cursor-pointer flex items-center justify-between h-[28px]">
                               <span class="truncate" x-text="label || placeholder"></span>
                               <i class="ph ph-magnifying-glass text-neutral-400 text-sm"></i>
                             </div>
@@ -224,7 +223,7 @@
                               @keydown.escape="open = false"
                               @keydown.enter.prevent="if (filteredItems.length > 0) select(filteredItems[0])"
                               type="text"
-                              class="w-full bg-white border border-primary rounded-lg shadow-sm pl-3 pr-3 py-1 text-[11px] font-medium focus:outline-none focus:ring-1 focus:ring-primary h-[26px]"
+                              class="w-full bg-white border border-primary rounded-md shadow-sm pl-3 pr-8 py-1 text-[11px] font-medium focus:outline-none focus:ring-1 focus:ring-primary h-[28px]"
                               placeholder="Filtrar..." />
                             <div x-show="open" class="absolute z-[100] mt-1 w-full bg-white shadow-xl rounded-lg border border-neutral-200 overflow-hidden" x-cloak>
                               <div class="max-h-60 overflow-y-auto">
@@ -248,7 +247,7 @@
                             :name="'tramos['+item.originalIndex+'].fecha_salida'"
                             x-model="item.tramo.fechaSalida"
                             required
-                            class="w-full rounded-lg border-neutral-300 text-[11px] py-1 focus:ring-primary shadow-sm bg-white"
+                            class="w-full rounded-md border-neutral-300 text-[11px] py-1 h-[28px] focus:ring-primary shadow-sm bg-white"
                             placeholder="Seleccione fecha..." />
                         </td>
 
@@ -286,14 +285,14 @@
               </div>
 
               <div>
-                <table class="min-w-full divide-y divide-neutral-200">
+                <table class="w-full divide-y divide-neutral-200 table-fixed">
                   <thead class="bg-neutral-50/50">
                     <tr>
-                      <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase tracking-widest pl-10">Origen</th>
-                      <th class="px-4 py-1 text-center text-[9px] font-black text-neutral-400 uppercase tracking-widest w-10"></th>
-                      <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase tracking-widest">Destino</th>
-                      <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase tracking-widest w-48">Salida (Fecha/Hora)</th>
-                      <th class="px-4 py-1 text-right text-[9px] font-black text-neutral-400 uppercase tracking-widest w-10"></th>
+                      <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase tracking-widest pl-10 w-[35%]">Origen</th>
+                      <th class="px-2 py-1 text-center text-[9px] font-black text-neutral-400 uppercase tracking-widest w-[5%]"></th>
+                      <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase tracking-widest w-[35%]">Destino</th>
+                      <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase tracking-widest w-[20%]">Salida (Fecha/Hora)</th>
+                      <th class="px-4 py-1 text-right text-[9px] font-black text-neutral-400 uppercase tracking-widest w-[5%]"></th>
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-neutral-100">
@@ -311,12 +310,12 @@
                               placeholder: 'Origen...'
                             })"
                             x-effect="items = availableDestinos"
-                            x-init="value = item.tramo.origen; label = item.tramo.origenLabel || placeholder; $watch('value', function(v) { item.tramo.origen = v; var it = allDestinos.find(function(d) { return d.value === v; }); if (it) item.tramo.origenLabel = it.value + ' - ' + it.label; setTimeout(function() { window.dispatchEvent(new CustomEvent('oficial-sync-chain')); }, 0); })"
+                            x-init="value = item.tramo.origen; label = item.tramo.origenLabel || placeholder; $watch('value', function(v) { item.tramo.origen = v; var it = allDestinos.find(function(d) { return d.value === v; }); if (it) item.tramo.origenLabel = it.value + ' - ' + it.label; })"
                             class="relative">
                             <div
                               x-show="!open"
                               @click="open = true; $nextTick(function() { $refs.searchInput.focus() })"
-                              class="w-full bg-white border border-neutral-300 rounded-lg shadow-sm pl-3 pr-8 py-1 text-left text-[11px] font-medium cursor-pointer flex items-center justify-between min-h-[26px]">
+                              class="w-full bg-white border border-neutral-300 rounded-md shadow-sm pl-3 pr-8 py-1 text-left text-[11px] font-medium cursor-pointer flex items-center justify-between h-[28px]">
                               <span class="truncate" x-text="label || placeholder"></span>
                               <i class="ph ph-magnifying-glass text-neutral-400 text-sm"></i>
                             </div>
@@ -328,7 +327,7 @@
                               @keydown.escape="open = false"
                               @keydown.enter.prevent="if (filteredItems.length > 0) select(filteredItems[0])"
                               type="text"
-                              class="w-full bg-white border border-primary rounded-lg shadow-sm pl-3 pr-3 py-1 text-[11px] font-medium focus:outline-none focus:ring-1 focus:ring-primary h-[26px]"
+                              class="w-full bg-white border border-primary rounded-md shadow-sm pl-3 pr-8 py-1 text-[11px] font-medium focus:outline-none focus:ring-1 focus:ring-primary h-[28px]"
                               placeholder="Filtrar..." />
                             <div x-show="open" class="absolute z-[100] mt-1 w-full bg-white shadow-xl rounded-lg border border-neutral-200 overflow-hidden" x-cloak>
                               <div class="max-h-60 overflow-y-auto">
@@ -358,13 +357,13 @@
                               placeholder: 'Destino...'
                             })"
                             x-effect="items = availableDestinos"
-                            x-init="value = item.tramo.destino; label = item.tramo.destinoLabel || placeholder; $watch('value', function(v) { item.tramo.destino = v; var it = allDestinos.find(function(d) { return d.value === v; }); if (it) item.tramo.destinoLabel = it.value + ' - ' + it.label; setTimeout(function() { window.dispatchEvent(new CustomEvent('oficial-sync-chain')); }, 0); })"
+                            x-init="value = item.tramo.destino; label = item.tramo.destinoLabel || placeholder; $watch('value', function(v) { item.tramo.destino = v; var it = allDestinos.find(function(d) { return d.value === v; }); if (it) item.tramo.destinoLabel = it.value + ' - ' + it.label; })"
                             class="relative">
                             <input type="hidden" :name="'tramos['+item.originalIndex+'].destino'" x-model="item.tramo.destino" required />
                             <div
                               x-show="!open"
                               @click="open = true; $nextTick(function() { $refs.searchInput.focus() })"
-                              class="w-full bg-white border border-neutral-300 rounded-lg shadow-sm pl-3 pr-8 py-1 text-left text-[11px] font-medium cursor-pointer flex items-center justify-between min-h-[26px]">
+                              class="w-full bg-white border border-neutral-300 rounded-md shadow-sm pl-3 pr-8 py-1 text-left text-[11px] font-medium cursor-pointer flex items-center justify-between h-[28px]">
                               <span class="truncate" x-text="label || placeholder"></span>
                               <i class="ph ph-magnifying-glass text-neutral-400 text-sm"></i>
                             </div>
@@ -376,7 +375,7 @@
                               @keydown.escape="open = false"
                               @keydown.enter.prevent="if (filteredItems.length > 0) select(filteredItems[0])"
                               type="text"
-                              class="w-full bg-white border border-primary rounded-lg shadow-sm pl-3 pr-3 py-1 text-[11px] font-medium focus:outline-none focus:ring-1 focus:ring-primary h-[26px]"
+                              class="w-full bg-white border border-primary rounded-md shadow-sm pl-3 pr-8 py-1 text-[11px] font-medium focus:outline-none focus:ring-1 focus:ring-primary h-[28px]"
                               placeholder="Filtrar..." />
                             <div x-show="open" class="absolute z-[100] mt-1 w-full bg-white shadow-xl rounded-lg border border-neutral-200 overflow-hidden" x-cloak>
                               <div class="max-h-60 overflow-y-auto">
@@ -399,7 +398,7 @@
                             x-flatpickr
                             :name="'tramos['+item.originalIndex+'].fecha_salida'"
                             x-model="item.tramo.fechaSalida"
-                            class="w-full rounded-lg border-neutral-300 text-[11px] py-1 focus:ring-primary shadow-sm bg-white"
+                            class="w-full rounded-md border-neutral-300 text-[11px] py-1 focus:ring-primary shadow-sm bg-white"
                             placeholder="Seleccione fecha..." />
                         </td>
 
@@ -444,9 +443,7 @@
         autorizacion: '',
         aerolinea: '',
         allDestinos: [
-          {{ range .Destinos }}
-          { value: '{{ .IATA }}', label: '{{ .GetLabel }}', ambito: '{{ .AmbitoCodigo }}' },
-          {{ end }}
+          {{ range $i, $d := .Destinos }}{{ if $i }},{{ end }}{ value: '{{ $d.IATA }}', label: '{{ $d.GetLabel }}', ambito: '{{ $d.AmbitoCodigo }}' }{{ end }}
         ],
         tramos: [],
 
@@ -457,14 +454,14 @@
         },
 
         init() {
-          const defaultOrigin = '{{ .TargetUser.GetOrigenIATA }}';
-          const defaultLabel = '{{ range .Destinos }}{{ if eq .IATA $.TargetUser.GetOrigenIATA }}{{ .GetLabel }}{{ end }}{{ end }}';
+          const defaultOrigin = '{{ .TargetUser.GetOrigenIATA }}'.trim();
+          const defaultLabel = '{{ range .Destinos }}{{ if eq .IATA $.TargetUser.GetOrigenIATA }}{{ .GetLabel }}{{ end }}{{ end }}'.trim();
 
           this.tramos = [
             {
               tipo: 'IDA',
               origen: defaultOrigin,
-              origenLabel: defaultOrigin + ' - ' + defaultLabel,
+              origenLabel: defaultOrigin ? (defaultOrigin + (defaultLabel ? ' - ' + defaultLabel : '')) : '',
               destino: '',
               destinoLabel: '',
               fechaSalida: '{{ .DefaultDate }}'
@@ -515,11 +512,23 @@
           return true;
         },
 
-        syncChain() {
-          for (let i = 1; i < this.tramos.length; i++) {
-            this.tramos[i].origen = this.tramos[i-1].destino;
-            this.tramos[i].origenLabel = this.tramos[i-1].destinoLabel;
-          }
+        tramosIda() {
+          return this.tramos
+            .map(function (t, i) {
+              return { tramo: t, index: i };
+            })
+            .filter(function (x) {
+              return x.tramo.tipo === "IDA";
+            });
+        },
+        tramosVuelta() {
+          return this.tramos
+            .map(function (t, i) {
+              return { tramo: t, index: i };
+            })
+            .filter(function (x) {
+              return x.tramo.tipo === "VUELTA";
+            });
         },
 
         submitForm() {

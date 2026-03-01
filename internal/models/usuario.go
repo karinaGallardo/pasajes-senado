@@ -59,7 +59,7 @@ func (u *Usuario) AfterFind(tx *gorm.DB) (err error) {
 	return
 }
 
-func (u *Usuario) GetNombreCompleto() string {
+func (u Usuario) GetNombreCompleto() string {
 	parts := []string{u.Firstname, u.Secondname, u.Lastname, u.Surname}
 	var clean []string
 	for _, p := range parts {
@@ -81,7 +81,7 @@ func (u *Usuario) GetInitials() string {
 	return strings.ToUpper(initials)
 }
 
-func (u *Usuario) GetNombreResumido() string {
+func (u Usuario) GetNombreResumido() string {
 	parts := []string{u.Firstname, u.Secondname, u.Lastname}
 	var clean []string
 	for _, p := range parts {
@@ -109,6 +109,16 @@ func (u *Usuario) GetOrigenNombre() string {
 		return ""
 	}
 	return u.Origen.Ciudad
+}
+
+func (u Usuario) GetRolName() string {
+	if u.Rol != nil {
+		return u.Rol.Nombre
+	}
+	if u.RolCodigo != nil {
+		return *u.RolCodigo
+	}
+	return u.Tipo
 }
 
 func (u *Usuario) IsAdmin() bool {
@@ -152,26 +162,32 @@ func (u *Usuario) CanMarkUsado(s Solicitud) bool {
 }
 
 func (u *Usuario) CanEditSolicitud(s Solicitud) bool {
+	// 1. Admins and Responsables can correct mistakes at any time
 	if u.IsAdminOrResponsable() {
 		return true
 	}
 
-	if s.EstadoSolicitudCodigo != nil {
-		st := *s.EstadoSolicitudCodigo
-		if st != "SOLICITADO" && st != "PENDIENTE" && st != "PARCIALMENTE_APROBADO" && st != "RECHAZADO" {
-			return false
-		}
+	// 2. State-based restrictions for regular users and assistants
+	st := s.GetEstado()
+	isEditableState := (st == "SOLICITADO" || st == "PENDIENTE" || st == "RECHAZADO" || st == "PARCIALMENTE_APROBADO")
+
+	if !isEditableState {
+		return false
 	}
 
+	// 3. Ownership / Assistant Check
+	// Owner of the solicitation
 	if u.ID == s.UsuarioID {
 		return true
 	}
 
-	if s.Usuario.EncargadoID != nil && *s.Usuario.EncargadoID == u.ID {
+	// Creator of the solicitation
+	if s.CreatedBy != nil && *s.CreatedBy == u.ID {
 		return true
 	}
 
-	if s.CreatedBy != nil && *s.CreatedBy == u.ID {
+	// Assigned assistant (Encargado) for the senator
+	if s.Usuario.EncargadoID != nil && *s.Usuario.EncargadoID == u.ID {
 		return true
 	}
 

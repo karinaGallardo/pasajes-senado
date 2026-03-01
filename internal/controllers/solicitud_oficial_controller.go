@@ -458,6 +458,12 @@ func (ctrl *SolicitudOficialController) GetEditModal(c *gin.Context) {
 		return
 	}
 
+	authUser := appcontext.AuthUser(c)
+	if !authUser.CanEditSolicitud(*solicitud) {
+		c.String(http.StatusForbidden, "No tiene permisos para editar esta solicitud")
+		return
+	}
+
 	aerolineas, _ := ctrl.aerolineaService.GetAllActive(c.Request.Context())
 	ambitos, _ := ctrl.ambitoService.GetAll(c.Request.Context())
 	destinos, _ := ctrl.destinoService.GetAll(c.Request.Context())
@@ -545,6 +551,21 @@ func (ctrl *SolicitudOficialController) GetEditModal(c *gin.Context) {
 
 func (ctrl *SolicitudOficialController) Update(c *gin.Context) {
 	id := c.Param("id")
+	authUser := appcontext.AuthUser(c)
+
+	solicitud, err := ctrl.solicitudService.GetByID(c.Request.Context(), id)
+	if err != nil {
+		utils.SetErrorMessage(c, "Solicitud no encontrada")
+		c.Redirect(http.StatusFound, "/solicitudes")
+		return
+	}
+
+	if !authUser.CanEditSolicitud(*solicitud) {
+		utils.SetErrorMessage(c, "No tiene permisos para editar esta solicitud")
+		c.Redirect(http.StatusFound, "/solicitudes/oficial/"+id+"/detalle")
+		return
+	}
+
 	var req dtos.CreateSolicitudOficialRequest
 	if err := c.ShouldBind(&req); err != nil {
 		utils.SetErrorMessage(c, "Datos inválidos")

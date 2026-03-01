@@ -33,13 +33,11 @@ func (s *ReportService) GeneratePV01(ctx context.Context, solicitud *models.Soli
 	tr := pdf.UnicodeTranslatorFromDescriptor("")
 
 	pdf.SetFooterFunc(func() {
-		if pdf.PageNo() == 1 {
-			pdf.SetY(-15)
-			pdf.SetFont("Arial", "I", 7)
-			pdf.SetTextColor(128, 128, 128)
-			pdf.CellFormat(0, 10, tr(utils.FormatDateTimeShortES(time.Now())), "", 0, "R", false, 0, "")
-			pdf.SetTextColor(0, 0, 0)
-		}
+		pdf.SetY(-12)
+		pdf.SetFont("Arial", "I", 6)
+		pdf.SetTextColor(50, 50, 50)
+		disclaimer := tr("Las Senadoras y Senadores, deberan solicitar Pasajes POR DERECHO mediante el formulario respectivo a ser presentado en el área de Pasajes con 48 horas previas al viaje consignando la información correspondiente. Asi mismo, deberán presentar los pases a bordo originales de ida y vuelta del ultimo viaje efectuado mediante formulario respectivo y en el plazo de 8 días.")
+		pdf.MultiCell(190, 3, disclaimer, "", "L", false)
 	})
 
 	pdf.AddPage()
@@ -291,14 +289,6 @@ func (s *ReportService) GeneratePV01(ctx context.Context, solicitud *models.Soli
 
 	pdf.Ln(2)
 
-	// Motivo
-	pdf.SetFont("Arial", "B", 8)
-	pdf.CellFormat(190, 6, tr("JUSTIFICACIÓN / MOTIVO"), "L,R,T", 1, "L", false, 0, "")
-	pdf.SetFont("Arial", "", 8)
-	pdf.MultiCell(190, 6, tr(solicitud.Motivo), "L,R,B", "L", false)
-
-	pdf.Ln(5)
-
 	pdf.SetY(220)
 
 	// Signatures
@@ -337,13 +327,11 @@ func (s *ReportService) GeneratePV02(ctx context.Context, solicitud *models.Soli
 	tr := pdf.UnicodeTranslatorFromDescriptor("")
 
 	pdf.SetFooterFunc(func() {
-		if pdf.PageNo() == 1 {
-			pdf.SetY(-15)
-			pdf.SetFont("Arial", "I", 7)
-			pdf.SetTextColor(128, 128, 128)
-			pdf.CellFormat(0, 10, tr(utils.FormatDateTimeShortES(time.Now())), "", 0, "R", false, 0, "")
-			pdf.SetTextColor(0, 0, 0)
-		}
+		pdf.SetY(-12)
+		pdf.SetFont("Arial", "I", 6)
+		pdf.SetTextColor(50, 50, 50)
+		disclaimer := tr("NO SE DARA CURSO AL TRAMITE DE PASAJES Y VIATICOS, EN CASO DE VERIFICARSE QUE LOS DOCUMENTOS DE DECLARATORIA Y/O DESCARGO EN COMISION OFICIAL PRESENTEN ALTERACIONES, BORRONES O ENMIENDAS QUE MODIFIQUEN EL CONTENIDO DE LA MISMA, SIN PERJUICIO DE INICIAR LAS ACCIONES LEGALES QUE CORRESPONDA.")
+		pdf.MultiCell(190, 3, disclaimer, "", "L", false)
 	})
 
 	pdf.AddPage()
@@ -586,8 +574,6 @@ func (s *ReportService) GeneratePV02(ctx context.Context, solicitud *models.Soli
 	drawRutaSeccion("RUTA DE IDA", itemsIda)
 	drawRutaSeccion("RUTA DE VUELTA", itemsVuelta)
 
-	pdf.Ln(5)
-
 	// Firmas
 	pdf.SetFont("Arial", "B", 7)
 	pdf.Line(25, 248, 95, 248)
@@ -597,13 +583,6 @@ func (s *ReportService) GeneratePV02(ctx context.Context, solicitud *models.Soli
 	pdf.Line(115, 248, 175, 248)
 	pdf.SetXY(115, 250)
 	pdf.CellFormat(60, 4, tr("FIRMA / SELLO SOLICITANTE"), "", 1, "C", false, 0, "")
-
-	pdf.Ln(2)
-
-	// Disclaimer
-	pdf.SetFont("Arial", "I", 6)
-	disclaimer := tr("NO SE DARA CURSO AL TRAMITE DE PASAJES Y VIATICOS, EN CASO DE VERIFICARSE QUE LOS DOCUMENTOS DE DECLARATORIA Y/O DESCARGO EN COMISION OFICIAL PRESENTEN ALTERACIONES, BORRONES O ENMIENDAS QUE MODIFIQUEN EL CONTENIDO DE LA MISMA, SIN PERJUICIO DE INICIAR LAS ACCIONES LEGALES QUE CORRESPONDA.")
-	pdf.MultiCell(190, 3, disclaimer, "", "L", false)
 
 	pdf.SetFont("Arial", "I", 8)
 	return pdf
@@ -616,13 +595,11 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 	tr := pdf.UnicodeTranslatorFromDescriptor("")
 
 	pdf.SetFooterFunc(func() {
-		if pdf.PageNo() == 1 {
-			pdf.SetY(-15)
-			pdf.SetFont("Arial", "I", 7)
-			pdf.SetTextColor(128, 128, 128)
-			pdf.CellFormat(0, 10, tr(utils.FormatDateTimeShortES(time.Now())), "", 0, "R", false, 0, "")
-			pdf.SetTextColor(0, 0, 0)
-		}
+		pdf.SetY(-12)
+		pdf.SetFont("Arial", "I", 6)
+		pdf.SetTextColor(50, 50, 50)
+		disclaimer := tr("NO SE DARA CURSO AL TRAMITE DE PASAJES Y VIATICOS, EN CASO DE VERIFICARSE QUE LOS DOCUMENTOS DE DECLARATORIA Y/O DESCARGO EN COMISION OFICIAL PRESENTEN ALTERACIONES, BORRONES O ENMIENDAS QUE MODIFIQUEN EL CONTENIDO DE LA MISMA, SIN PERJUICIO DE INICIAR LAS ACCIONES LEGALES QUE CORRESPONDA.")
+		pdf.MultiCell(190, 3, disclaimer, "", "L", false)
 	})
 
 	pdf.AddPage()
@@ -896,13 +873,11 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 	tr := pdf.UnicodeTranslatorFromDescriptor("")
 
 	pdf.SetFooterFunc(func() {
-		if pdf.PageNo() == 1 {
-			pdf.SetY(-15)
-			pdf.SetFont("Arial", "I", 7)
-			pdf.SetTextColor(128, 128, 128)
-			pdf.CellFormat(0, 10, tr(utils.FormatDateTimeShortES(time.Now())), "", 0, "R", false, 0, "")
-			pdf.SetTextColor(0, 0, 0)
-		}
+		pdf.SetY(-12)
+		pdf.SetFont("Arial", "I", 6)
+		pdf.SetTextColor(50, 50, 50)
+		disclaimer := tr("NO SE DARA CURSO AL TRAMITE DE PASAJES Y VIATICOS, EN CASO DE VERIFICARSE QUE LOS DOCUMENTOS DE DECLARATORIA Y/O DESCARGO EN COMISION OFICIAL PRESENTEN ALTERACIONES, BORRONES O ENMIENDAS QUE MODIFIQUEN EL CONTENIDO DE LA MISMA, SIN PERJUICIO DE INICIAR LAS ACCIONES LEGALES QUE CORRESPONDA.")
+		pdf.MultiCell(190, 3, disclaimer, "", "L", false)
 	})
 
 	pdf.AddPage()

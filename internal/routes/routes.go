@@ -44,6 +44,7 @@ func SetupRoutes(r *gin.Engine) {
 		protected.GET("/solicitudes", solicitudCtrl.Index)
 		protected.GET("/solicitudes/derecho", solicitudCtrl.IndexDerecho)
 		protected.GET("/solicitudes/oficial", solicitudCtrl.IndexOficial)
+		protected.GET("/solicitudes/pendientes-descargo", solicitudCtrl.IndexPendientesDescargo)
 
 		// Solicitudes Derecho
 		protected.GET("/solicitudes/derecho/modal-crear/:item_id/:itinerario_code", solicitudDerechoCtrl.GetCreateModal)
