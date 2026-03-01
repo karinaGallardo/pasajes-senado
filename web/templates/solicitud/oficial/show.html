@@ -257,7 +257,11 @@
                   <div class="h-1 w-1 rounded-full bg-neutral-300"></div>
                   <span class="text-[10px] text-neutral-500 font-bold uppercase tracking-widest">Detalle del Pasaje</span>
                 </div>
-                <div class="grid grid-cols-2 sm:grid-cols-5 gap-4 text-[11px] text-neutral-600">
+                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 text-[11px] text-neutral-600">
+                  <div>
+                    <span class="block text-neutral-400 uppercase font-bold tracking-tighter">Fecha/Hora Vuelo</span>
+                    <span class="font-bold text-primary-700">{{ fechaHora .FechaVuelo }}</span>
+                  </div>
                   <div>
                     <span class="block text-neutral-400 uppercase font-bold tracking-tighter">Ruta</span>
                     <span class="font-bold text-neutral-900">{{ .Ruta }}</span>

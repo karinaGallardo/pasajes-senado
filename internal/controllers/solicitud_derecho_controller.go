@@ -212,20 +212,16 @@ func (ctrl *SolicitudDerechoController) Update(c *gin.Context) {
 		return
 	}
 
-	layout := "2006-01-02T15:04"
-	var fechaIda *time.Time
-	if t, err := time.Parse(layout, req.FechaIda); err == nil {
-		fechaIda = &t
-	} else {
+	fechaIda, err := utils.ParseDateTime(req.FechaIda)
+	if err != nil {
 		c.String(http.StatusBadRequest, "Formato fecha salida inválido")
 		return
 	}
 
 	var fechaVuelta *time.Time
 	if req.FechaVuelta != "" {
-		if t, err := time.Parse(layout, req.FechaVuelta); err == nil {
-			fechaVuelta = &t
-		} else {
+		fechaVuelta, err = utils.ParseDateTime(req.FechaVuelta)
+		if err != nil {
 			c.String(http.StatusBadRequest, "Formato fecha retorno inválido")
 			return
 		}
@@ -255,21 +251,20 @@ func (ctrl *SolicitudDerechoController) Update(c *gin.Context) {
 		solicitud.TipoSolicitudCodigo = req.TipoSolicitudCodigo
 		solicitud.AmbitoViajeCodigo = req.AmbitoViajeCodigo
 		solicitud.AerolineaSugerida = req.AerolineaSugerida
+		solicitud.Motivo = req.Motivo
 
 		orig, _ := ctrl.destinoService.GetByIATA(c.Request.Context(), req.OrigenIATA)
 		dest, _ := ctrl.destinoService.GetByIATA(c.Request.Context(), req.DestinoIATA)
 
+		// Sync per-item fields
 		for i := range solicitud.Items {
 			it := &solicitud.Items[i]
-			st := it.GetEstado()
 
 			switch it.Tipo {
 			case models.TipoSolicitudItemIda:
 				it.Fecha = fechaIda
-				it.Hora = fechaIda.Format("15:04")
-				// Al editar la ida, si estaba rechazado vuelve a solicitado
-				if st == "RECHAZADO" {
-					it.EstadoCodigo = utils.Ptr("SOLICITADO")
+				if fechaIda != nil {
+					it.Hora = fechaIda.Format("15:04")
 				}
 				if orig != nil {
 					it.OrigenIATA = orig.IATA
@@ -279,21 +274,12 @@ func (ctrl *SolicitudDerechoController) Update(c *gin.Context) {
 					it.DestinoIATA = dest.IATA
 					it.Destino = dest
 				}
+
 			case models.TipoSolicitudItemVuelta:
 				it.Fecha = fechaVuelta
 				if fechaVuelta != nil {
 					it.Hora = fechaVuelta.Format("15:04")
-					// Si estaba pendiente (sin fecha) o rechazado y ahora tiene fecha, vuelve a SOLICITADO
-					if st == "PENDIENTE" || st == "RECHAZADO" {
-						it.EstadoCodigo = utils.Ptr("SOLICITADO")
-					}
-				} else {
-					// Si no tiene fecha (vuelta por confirmar) y estaba SOLICITADO o RECHAZADO, pasa a PENDIENTE
-					if st == "SOLICITADO" || st == "RECHAZADO" {
-						it.EstadoCodigo = utils.Ptr("PENDIENTE")
-					}
 				}
-				// Para la vuelta, el destino de llegada es el origen del viaje (regresa a casa)
 				if orig != nil {
 					it.DestinoIATA = orig.IATA
 					it.Destino = orig
@@ -305,7 +291,6 @@ func (ctrl *SolicitudDerechoController) Update(c *gin.Context) {
 			}
 		}
 	}
-	solicitud.Motivo = req.Motivo
 
 	// If it was APPROVED, PARCIAL or REJECTED, revert to SOLICITADO to trigger re-approval of adjustments
 	if currentStatus == "APROBADO" || currentStatus == "PARCIALMENTE_APROBADO" || currentStatus == "RECHAZADO" {

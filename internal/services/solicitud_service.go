@@ -44,17 +44,18 @@ type SolicitudService struct {
 }
 
 func (s *SolicitudService) CreateDerecho(ctx context.Context, req dtos.CreateSolicitudRequest, currentUser *models.Usuario) (*models.Solicitud, error) {
-	layout := "2006-01-02T15:04"
-	var fechaIda *time.Time
-	if t, err := time.Parse(layout, req.FechaIda); err == nil {
-		fechaIda = &t
+	fechaIda, err := utils.ParseDateTime(req.FechaIda)
+	if err != nil {
+		return nil, fmt.Errorf("error en fecha de ida: %v", err)
 	}
 
 	var fechaVuelta *time.Time
-	if req.FechaVuelta != "" && req.TipoItinerarioCodigo != "SOLO_IDA" {
-		if t, err := time.Parse(layout, req.FechaVuelta); err == nil {
-			fechaVuelta = &t
+	if req.TipoItinerarioCodigo != "SOLO_IDA" {
+		t, err := utils.ParseDateTime(req.FechaVuelta)
+		if err != nil {
+			return nil, fmt.Errorf("error en fecha de vuelta: %v", err)
 		}
+		fechaVuelta = t
 	}
 
 	realSolicitanteID := req.TargetUserID
@@ -168,16 +169,22 @@ func (s *SolicitudService) CreateDerecho(ctx context.Context, req dtos.CreateSol
 	solicitud.Items = items
 
 	err = s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
-		secuenciaRepoTx := s.codigoSecuenciaRepo.WithTx(tx)
 		itemRepoTx := s.itemRepo.WithTx(tx)
 
 		currentYear := time.Now().Year()
-		nextVal, err := secuenciaRepoTx.GetNext(currentYear, "SPD")
-		if err != nil {
-			return errors.New("error generando codigo de secuencia de solicitud")
-		}
+		for {
+			nextVal, err := s.codigoSecuenciaRepo.WithContext(ctx).GetNext(currentYear, "SPD")
+			if err != nil {
+				return errors.New("error generando codigo de secuencia de solicitud")
+			}
+			solicitud.Codigo = fmt.Sprintf("SPD-%d%04d", currentYear%100, nextVal)
 
-		solicitud.Codigo = fmt.Sprintf("SPD-%d%04d", currentYear%100, nextVal)
+			// Verificar si ya existe (incluyendo eliminados) para evitar errores de clave duplicada
+			exists, _ := repoTx.ExistsByCodigo(solicitud.Codigo)
+			if !exists {
+				break
+			}
+		}
 
 		if err := repoTx.Create(solicitud); err != nil {
 			return err
@@ -217,8 +224,6 @@ func (s *SolicitudService) CreateDerecho(ctx context.Context, req dtos.CreateSol
 }
 
 func (s *SolicitudService) CreateOficial(ctx context.Context, req dtos.CreateSolicitudOficialRequest, currentUser *models.Usuario) (*models.Solicitud, error) {
-	layout := "2006-01-02T15:04"
-
 	realSolicitanteID := req.TargetUserID
 	if realSolicitanteID == "" {
 		realSolicitanteID = currentUser.ID
@@ -247,18 +252,16 @@ func (s *SolicitudService) CreateOficial(ctx context.Context, req dtos.CreateSol
 	var items []models.SolicitudItem
 
 	// Multi-tramo process
-	for _, t := range req.Tramos {
+	for i, t := range req.Tramos {
 		orig := strings.TrimSpace(t.OrigenIATA)
 		dest := strings.TrimSpace(t.DestinoIATA)
 		if orig == "" || dest == "" {
 			continue
 		}
 
-		var fSalida *time.Time
-		if t.FechaSalida != "" {
-			if parsed, err := time.Parse(layout, t.FechaSalida); err == nil {
-				fSalida = &parsed
-			}
+		fSalida, err := utils.ParseDateTime(t.FechaSalida)
+		if err != nil {
+			return nil, fmt.Errorf("error en fecha del tramo #%d: %v", i+1, err)
 		}
 
 		tipoItem := models.TipoSolicitudItemIda
@@ -288,16 +291,20 @@ func (s *SolicitudService) CreateOficial(ctx context.Context, req dtos.CreateSol
 	solicitud.Items = items
 
 	err = s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
-		secuenciaRepoTx := s.codigoSecuenciaRepo.WithTx(tx)
-
 		currentYear := time.Now().Year()
-		// USE SOF for Official Solicitudes
-		nextVal, err := secuenciaRepoTx.GetNext(currentYear, "SOF")
-		if err != nil {
-			return errors.New("error generando codigo de secuencia de solicitud oficial")
-		}
+		for {
+			nextVal, err := s.codigoSecuenciaRepo.WithContext(ctx).GetNext(currentYear, "SOF")
+			if err != nil {
+				return errors.New("error generando codigo de secuencia de solicitud oficial")
+			}
+			solicitud.Codigo = fmt.Sprintf("SOF-%d%04d", currentYear%100, nextVal)
 
-		solicitud.Codigo = fmt.Sprintf("SOF-%d%04d", currentYear%100, nextVal)
+			// Verificar duplicados (incluyendo soft-deleted)
+			exists, _ := repoTx.ExistsByCodigo(solicitud.Codigo)
+			if !exists {
+				break
+			}
+		}
 
 		if err := repoTx.Create(solicitud); err != nil {
 			return err
@@ -699,12 +706,12 @@ func (s *SolicitudService) Reject(ctx context.Context, id string) error {
 
 func (s *SolicitudService) Update(ctx context.Context, solicitud *models.Solicitud) error {
 	return s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
-		// Update parent
+		// Update parent and its immediate fields
 		if err := tx.Save(solicitud).Error; err != nil {
 			return err
 		}
 
-		// Update items explicitly
+		// Update items explicitly to ensure date/time fields are persisted
 		for i := range solicitud.Items {
 			if err := tx.Save(&solicitud.Items[i]).Error; err != nil {
 				return err
@@ -712,6 +719,7 @@ func (s *SolicitudService) Update(ctx context.Context, solicitud *models.Solicit
 		}
 
 		solicitud.UpdateStatusBasedOnItems()
+		// Save again to persist status change if items were updated
 		return tx.Save(solicitud).Error
 	})
 }
@@ -914,8 +922,6 @@ func (s *SolicitudService) ReprogramarItem(ctx context.Context, req dtos.Reprogr
 	})
 }
 func (s *SolicitudService) UpdateOficial(ctx context.Context, id string, req dtos.CreateSolicitudOficialRequest) error {
-	layout := "2006-01-02T15:04"
-
 	// Minimal validation: at least one tramo
 	if len(req.Tramos) == 0 {
 		return errors.New("debe agregar al menos un tramo de viaje válido")
@@ -947,18 +953,16 @@ func (s *SolicitudService) UpdateOficial(ctx context.Context, id string, req dto
 		var itemsToKeepIDs []string
 
 		// 4. Process tramos from request
-		for _, t := range req.Tramos {
+		for i, t := range req.Tramos {
 			orig := strings.TrimSpace(t.OrigenIATA)
 			dest := strings.TrimSpace(t.DestinoIATA)
 			if orig == "" || dest == "" {
 				continue
 			}
 
-			var fSalida *time.Time
-			if t.FechaSalida != "" {
-				if parsed, err := time.Parse(layout, t.FechaSalida); err == nil {
-					fSalida = &parsed
-				}
+			fSalida, err := utils.ParseDateTime(t.FechaSalida)
+			if err != nil {
+				return fmt.Errorf("error en fecha del tramo #%d: %v", i+1, err)
 			}
 
 			if t.ID != "" {

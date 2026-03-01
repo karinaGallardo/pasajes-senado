@@ -172,7 +172,7 @@ func (r *SolicitudRepository) Delete(id string) error {
 
 func (r *SolicitudRepository) ExistsByCodigo(codigo string) (bool, error) {
 	var count int64
-	err := r.db.Model(&models.Solicitud{}).Where("codigo = ?", codigo).Count(&count).Error
+	err := r.db.Unscoped().Model(&models.Solicitud{}).Where("codigo = ?", codigo).Count(&count).Error
 	return count > 0, err
 }
 

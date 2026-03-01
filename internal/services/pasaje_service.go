@@ -9,6 +9,7 @@ import (
 	"sistema-pasajes/internal/utils"
 	"sistema-pasajes/internal/worker"
 	"strings"
+	"time"
 
 	"github.com/spf13/viper"
 	"gorm.io/gorm"
@@ -36,7 +37,11 @@ func (s *PasajeService) Create(ctx context.Context, solicitudID string, req dtos
 	}
 
 	costo := utils.ParseFloat(req.Costo)
-	fechaVuelo := utils.ParseDate("2006-01-02T15:04", req.FechaVuelo)
+	fechaVueloPtr, err := utils.ParseDateTime(req.FechaVuelo)
+	var fechaVuelo time.Time
+	if err == nil && fechaVueloPtr != nil {
+		fechaVuelo = *fechaVueloPtr
+	}
 
 	var aerolineaID *string
 	if req.AerolineaID != "" {
@@ -84,7 +89,7 @@ func (s *PasajeService) Create(ctx context.Context, solicitudID string, req dtos
 		pasaje.FechaEmision = &fe
 	}
 
-	err := s.repo.RunTransaction(func(repo *repositories.PasajeRepository, tx *gorm.DB) error {
+	err = s.repo.RunTransaction(func(repo *repositories.PasajeRepository, tx *gorm.DB) error {
 		if err := repo.Create(pasaje); err != nil {
 			return err
 		}
@@ -144,7 +149,9 @@ func (s *PasajeService) UpdateFromRequest(ctx context.Context, req dtos.UpdatePa
 
 	pasaje.Costo = utils.ParseFloat(req.Costo)
 
-	pasaje.FechaVuelo = utils.ParseDate("2006-01-02T15:04", req.FechaVuelo)
+	if fvPtr, err := utils.ParseDateTime(req.FechaVuelo); err == nil && fvPtr != nil {
+		pasaje.FechaVuelo = *fvPtr
+	}
 
 	if req.FechaEmision != "" {
 		fe := utils.ParseDate("2006-01-02", req.FechaEmision)

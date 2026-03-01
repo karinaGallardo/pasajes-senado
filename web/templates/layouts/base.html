@@ -13,19 +13,19 @@
     <script src="/static/lib/polyfills.js"></script>
     <script src="/static/lib/htmx/htmx.min.js"></script>
     <!-- Flatpickr -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/airbnb.css" />
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/confirmDate/confirmDate.css" />
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/es.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/plugins/confirmDate/confirmDate.js"></script>
-    <script>
-      /*
-        document.addEventListener("htmx:configRequest", function(event) {
-          event.detail.headers["X-CSRF-Token"] = "{{ .csrf_token }}";
-        });
-      */
-    </script>
+    <link rel="stylesheet" href="/static/lib/flatpickr/flatpickr.min.css" />
+    <link rel="stylesheet" href="/static/lib/flatpickr/airbnb.css" />
+    <link rel="stylesheet" href="/static/lib/flatpickr/confirmDate.css" />
+    <script src="/static/lib/flatpickr/flatpickr.js"></script>
+    <script src="/static/lib/flatpickr/es.js"></script>
+    <script src="/static/lib/flatpickr/confirmDate.js"></script>
+
+    <!-- UI Libs -->
+    <link rel="stylesheet" type="text/css" href="/static/lib/phosphor/regular/style.css" />
+    <link rel="stylesheet" type="text/css" href="/static/lib/phosphor/bold/style.css" />
+    <link rel="stylesheet" type="text/css" href="/static/lib/phosphor/fill/style.css" />
+    <script src="/static/lib/sweetalert2/sweetalert2.min.js"></script>
+
     <script defer src="/static/lib/alpinejs/alpine.min.js"></script>
     <script>
       document.addEventListener("alpine:init", function () {
@@ -100,11 +100,6 @@
         });
       });
     </script>
-    <link rel="stylesheet" type="text/css" href="/static/lib/phosphor/regular/style.css" />
-    <link rel="stylesheet" type="text/css" href="/static/lib/phosphor/bold/style.css" />
-    <link rel="stylesheet" type="text/css" href="/static/lib/phosphor/fill/style.css" />
-    <!-- <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script> -->
-    <script src="/static/lib/sweetalert2/sweetalert2.min.js"></script>
     <script>
       document.addEventListener("htmx:confirm", function (e) {
         if (!e.detail.question) return;
