@@ -19,6 +19,7 @@ type DescargoOficialController struct {
 	destinoService   *services.DestinoService
 	reportService    *services.ReportService
 	peopleService    *services.PeopleService
+	configService    *services.ConfiguracionService
 }
 
 func NewDescargoOficialController() *DescargoOficialController {
@@ -28,6 +29,7 @@ func NewDescargoOficialController() *DescargoOficialController {
 		destinoService:   services.NewDestinoService(),
 		reportService:    services.NewReportService(),
 		peopleService:    services.NewPeopleService(),
+		configService:    services.NewConfiguracionService(),
 	}
 }
 
@@ -95,6 +97,15 @@ func (ctrl *DescargoOficialController) Create(c *gin.Context) {
 	}
 
 	destinos, _ := ctrl.destinoService.GetAll(c.Request.Context())
+	bancoCuenta := ctrl.configService.GetValue(c.Request.Context(), "BANCO_CUENTA_DEVOLUCION")
+	if bancoCuenta == "" {
+		bancoCuenta = "10000005588211"
+	}
+	bancoNombre := ctrl.configService.GetValue(c.Request.Context(), "BANCO_NOMBRE_DEVOLUCION")
+	if bancoNombre == "" {
+		bancoNombre = "BANCO UNIÓN S.A."
+	}
+
 	utils.Render(c, "descargo/oficial/create", gin.H{
 		"Title":                "Nuevo Descargo (Oficial)",
 		"Solicitud":            solicitud,
@@ -103,6 +114,8 @@ func (ctrl *DescargoOficialController) Create(c *gin.Context) {
 		"HasGastosRep":         hasGastosRep,
 		"Destinos":             destinos,
 		"ZeroFloat":            float64(0),
+		"BancoCuenta":          bancoCuenta,
+		"BancoNombre":          bancoNombre,
 	})
 }
 
@@ -160,9 +173,20 @@ func (ctrl *DescargoOficialController) Show(c *gin.Context) {
 		return
 	}
 
+	bancoCuenta := ctrl.configService.GetValue(c.Request.Context(), "BANCO_CUENTA_DEVOLUCION")
+	if bancoCuenta == "" {
+		bancoCuenta = "10000005588211"
+	}
+	bancoNombre := ctrl.configService.GetValue(c.Request.Context(), "BANCO_NOMBRE_DEVOLUCION")
+	if bancoNombre == "" {
+		bancoNombre = "BANCO UNIÓN S.A."
+	}
+
 	utils.Render(c, "descargo/oficial/show", gin.H{
-		"Title":    "Detalle de Descargo (Oficial)",
-		"Descargo": descargo,
+		"Title":       "Detalle de Descargo (Oficial)",
+		"Descargo":    descargo,
+		"BancoCuenta": bancoCuenta,
+		"BancoNombre": bancoNombre,
 	})
 }
 
@@ -185,11 +209,22 @@ func (ctrl *DescargoOficialController) Edit(c *gin.Context) {
 	}
 
 	destinos, _ := ctrl.destinoService.GetAll(c.Request.Context())
+	bancoCuenta := ctrl.configService.GetValue(c.Request.Context(), "BANCO_CUENTA_DEVOLUCION")
+	if bancoCuenta == "" {
+		bancoCuenta = "10000005588211"
+	}
+	bancoNombre := ctrl.configService.GetValue(c.Request.Context(), "BANCO_NOMBRE_DEVOLUCION")
+	if bancoNombre == "" {
+		bancoNombre = "BANCO UNIÓN S.A."
+	}
+
 	utils.Render(c, "descargo/oficial/edit", gin.H{
 		"Title":       "Editar Descargo (Oficial)",
 		"Descargo":    descargo,
 		"ItemsByType": itemsByType,
 		"Destinos":    destinos,
+		"BancoCuenta": bancoCuenta,
+		"BancoNombre": bancoNombre,
 	})
 }
 

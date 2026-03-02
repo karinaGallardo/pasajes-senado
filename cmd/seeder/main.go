@@ -258,6 +258,8 @@ func seedViaticosAndConfig() {
 		{Clave: "RC_IVA_TASA", Valor: "0.13", Tipo: "FLOAT"},
 		{Clave: "TC_USD_OFICIAL", Valor: "6.96", Tipo: "FLOAT"},
 		{Clave: "GESTION_ACTUAL", Valor: "2026", Tipo: "INT"},
+		{Clave: "BANCO_CUENTA_DEVOLUCION", Valor: "10000005588211", Tipo: "STRING"},
+		{Clave: "BANCO_NOMBRE_DEVOLUCION", Valor: "BANCO UNIÓN S.A.", Tipo: "STRING"},
 	}
 
 	for _, cf := range confList {
