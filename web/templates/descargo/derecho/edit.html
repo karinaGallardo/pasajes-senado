@@ -70,14 +70,10 @@
               <span class="text-sm font-black text-primary-900 leading-tight block">{{ .Descargo.Solicitud.Usuario.GetNombreCompleto }}</span>
             </div>
             <div class="space-y-1">
-              <span class="text-[10px] font-bold text-primary-400 uppercase tracking-tight block">Motivo / Justificación</span>
-              <span class="text-xs font-semibold text-primary-800 leading-tight block">{{ .Descargo.Solicitud.Motivo }}</span>
-            </div>
-            <div class="space-y-1">
               <span class="text-[10px] font-bold text-primary-400 uppercase tracking-tight block">Aerolínea Sugerida</span>
               <span class="text-xs font-black text-primary-900 block">
-                {{ if .Descargo.Solicitud.AerolineaSugerida }}
-                  <i class="ph ph-airplane text-primary-400 mr-1"></i> {{ .Descargo.Solicitud.AerolineaSugerida }}
+                {{ if .AerolineaNombre }}
+                  <i class="ph ph-airplane text-primary-400 mr-1"></i> {{ .AerolineaNombre }}
                 {{ else }}
                   <span class="text-primary-300 italic">No especificada</span>
                 {{ end }}

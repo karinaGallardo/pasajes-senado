@@ -20,6 +20,7 @@ type DescargoDerechoController struct {
 	destinoService   *services.DestinoService
 	reportService    *services.ReportService
 	peopleService    *services.PeopleService
+	aerolineaService *services.AerolineaService
 }
 
 func NewDescargoDerechoController() *DescargoDerechoController {
@@ -29,6 +30,7 @@ func NewDescargoDerechoController() *DescargoDerechoController {
 		destinoService:   services.NewDestinoService(),
 		reportService:    services.NewReportService(),
 		peopleService:    services.NewPeopleService(),
+		aerolineaService: services.NewAerolineaService(),
 	}
 }
 
@@ -88,9 +90,22 @@ func (ctrl *DescargoDerechoController) Create(c *gin.Context) {
 	}
 
 	destinos, _ := ctrl.destinoService.GetAll(c.Request.Context())
+
+	aerolineaNombre := solicitud.AerolineaSugerida
+	if solicitud.AerolineaSugerida != "" {
+		if aereolinea, err := ctrl.aerolineaService.GetByID(c.Request.Context(), solicitud.AerolineaSugerida); err == nil {
+			if aereolinea.Sigla != "" {
+				aerolineaNombre = aereolinea.Sigla
+			} else {
+				aerolineaNombre = aereolinea.Nombre
+			}
+		}
+	}
+
 	utils.Render(c, "descargo/derecho/create", gin.H{
 		"Title":                "Nuevo Descargo (Derecho)",
 		"Solicitud":            solicitud,
+		"AerolineaNombre":      aerolineaNombre,
 		"PasajesOriginales":    pasajesOriginales,
 		"PasajesReprogramados": pasajesReprogramados,
 		"Destinos":             destinos,
@@ -178,11 +193,24 @@ func (ctrl *DescargoDerechoController) Edit(c *gin.Context) {
 	}
 
 	destinos, _ := ctrl.destinoService.GetAll(c.Request.Context())
+
+	aerolineaNombre := descargo.Solicitud.AerolineaSugerida
+	if descargo.Solicitud.AerolineaSugerida != "" {
+		if aereolinea, err := ctrl.aerolineaService.GetByID(c.Request.Context(), descargo.Solicitud.AerolineaSugerida); err == nil {
+			if aereolinea.Sigla != "" {
+				aerolineaNombre = aereolinea.Sigla
+			} else {
+				aerolineaNombre = aereolinea.Nombre
+			}
+		}
+	}
+
 	utils.Render(c, "descargo/derecho/edit", gin.H{
-		"Title":       "Editar Descargo (Derecho)",
-		"Descargo":    descargo,
-		"ItemsByType": itemsByType,
-		"Destinos":    destinos,
+		"Title":           "Editar Descargo (Derecho)",
+		"Descargo":        descargo,
+		"AerolineaNombre": aerolineaNombre,
+		"ItemsByType":     itemsByType,
+		"Destinos":        destinos,
 	})
 }
 
