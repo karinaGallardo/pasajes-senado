@@ -915,9 +915,9 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 
 	cargoStr := ""
 	if personaView != nil && personaView.Cargo != "" {
-		cargoStr = personaView.Cargo
+		cargoStr = utils.CleanName(personaView.Cargo)
 	} else if solicitud.Usuario.Cargo != nil {
-		cargoStr = solicitud.Usuario.Cargo.Descripcion
+		cargoStr = utils.CleanName(solicitud.Usuario.Cargo.Descripcion)
 	}
 
 	pdf.SetLineWidth(0.2)
@@ -1294,7 +1294,7 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 	startY := pdf.GetY()
 	// Celda Izquierda: Información de la cuenta
 	pdf.SetFont("Arial", "B", 9)
-	infoCuenta := fmt.Sprintf("Monto depositado en Bs. en la cuenta de la Cámara de Senadores, N° %s del %s.", bancoCuenta, bancoNombre)
+	infoCuenta := "Monto depositado en Bs. en la CUT – Cuenta Única del Tesoro, Código N° 3987069001, Libreta N° 00099021001."
 
 	// Dibujar rectángulos (Fondo blanco/transparente)
 	pdf.Rect(10, startY, 100, 25, "D")

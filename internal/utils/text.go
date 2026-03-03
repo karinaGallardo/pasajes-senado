@@ -17,7 +17,28 @@ func CleanName(s string) string {
 		return ""
 	}
 	caser := cases.Title(language.Spanish)
-	return caser.String(strings.ToLower(s))
+	words := strings.Fields(s)
+	for i, word := range words {
+		lower := strings.ToLower(word)
+		if isRoman(lower) {
+			words[i] = strings.ToUpper(lower)
+		} else {
+			words[i] = caser.String(lower)
+		}
+	}
+	return strings.Join(words, " ")
+}
+
+func isRoman(w string) bool {
+	w = strings.ToUpper(w)
+	// Números romanos comunes en cargos y niveles (I al XX)
+	romanos := map[string]bool{
+		"I": true, "II": true, "III": true, "IV": true, "V": true,
+		"VI": true, "VII": true, "VIII": true, "IX": true, "X": true,
+		"XI": true, "XII": true, "XIII": true, "XIV": true, "XV": true,
+		"XVI": true, "XVII": true, "XVIII": true, "XIX": true, "XX": true,
+	}
+	return romanos[w]
 }
 
 // CleanString retorna el string con TrimSpace aplicado.
