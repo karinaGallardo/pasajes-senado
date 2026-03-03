@@ -35,11 +35,12 @@ func (s *ReportService) GeneratePV01(ctx context.Context, solicitud *models.Soli
 	tr := pdf.UnicodeTranslatorFromDescriptor("")
 
 	pdf.SetFooterFunc(func() {
-		pdf.SetY(-12)
+		pdf.SetY(-14)
+		pdf.SetX(3)
 		pdf.SetFont("Arial", "I", 6)
 		pdf.SetTextColor(50, 50, 50)
-		disclaimer := tr("Las Senadoras y Senadores, deberan solicitar Pasajes POR DERECHO mediante el formulario respectivo a ser presentado en el área de Pasajes con 48 horas previas al viaje consignando la información correspondiente. Asi mismo, deberán presentar los pases a bordo originales de ida y vuelta del ultimo viaje efectuado mediante formulario respectivo y en el plazo de 8 días.")
-		pdf.MultiCell(190, 3, disclaimer, "", "L", false)
+		disclaimer := tr("La solicitud de pasajes deberá presentarse con una anticipación mínima de cuarenta y ocho (48) horas, conforme al Art. 24 del Reglamento de Pasajes y Viáticos.\nEl descargo deberá efectuarse dentro de los ocho (8) días hábiles posteriores al retorno o finalización del tramo autorizado, adjuntando los pases a bordo originales del/los tramo(s) utilizado(s), en cumplimiento de los Arts. 25 y 48; para pasajes internacionales, el plazo será de cinco (5) días hábiles. Las solicitudes por derecho serán recibidas únicamente previa regularización de descargos pendientes ante el Área Financiera.\nEl incumplimiento dará lugar a las sanciones previstas en la normativa vigente.")
+		pdf.MultiCell(209, 2.5, disclaimer, "", "L", false)
 	})
 
 	pdf.AddPage()
@@ -320,11 +321,12 @@ func (s *ReportService) GeneratePV02(ctx context.Context, solicitud *models.Soli
 	tr := pdf.UnicodeTranslatorFromDescriptor("")
 
 	pdf.SetFooterFunc(func() {
-		pdf.SetY(-12)
+		pdf.SetY(-14)
+		pdf.SetX(3)
 		pdf.SetFont("Arial", "I", 6)
 		pdf.SetTextColor(50, 50, 50)
-		disclaimer := tr("NO SE DARA CURSO AL TRAMITE DE PASAJES Y VIATICOS, EN CASO DE VERIFICARSE QUE LOS DOCUMENTOS DE DECLARATORIA Y/O DESCARGO EN COMISION OFICIAL PRESENTEN ALTERACIONES, BORRONES O ENMIENDAS QUE MODIFIQUEN EL CONTENIDO DE LA MISMA, SIN PERJUICIO DE INICIAR LAS ACCIONES LEGALES QUE CORRESPONDA.")
-		pdf.MultiCell(190, 3, disclaimer, "", "L", false)
+		disclaimer := tr("La solicitud de pasajes deberá presentarse con una anticipación mínima de cuarenta y ocho (48) horas, conforme al Art. 24 del Reglamento de Pasajes y Viáticos.\nEl descargo deberá efectuarse dentro de los ocho (8) días hábiles posteriores al retorno o finalización del tramo autorizado, adjuntando los pases a bordo originales del/los tramo(s) utilizado(s), en cumplimiento de los Arts. 25 y 48; para pasajes internacionales, el plazo será de cinco (5) días hábiles. Las solicitudes por derecho serán recibidas únicamente previa regularización de descargos pendientes ante el Área Financiera.\nEl incumplimiento dará lugar a las sanciones previstas en la normativa vigente.")
+		pdf.MultiCell(209, 2.5, disclaimer, "", "L", false)
 	})
 
 	pdf.AddPage()
