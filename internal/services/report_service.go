@@ -699,7 +699,14 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 	if mainDate != nil {
 		mes = utils.TranslateMonth(mainDate.Month())
 	}
-	drawLabelBox("CORRESPONDIENTE AL MES DE :", mes, 50, 60, false)
+
+	mesLabel := mes
+	if solicitud.CupoDerechoItem != nil {
+		cupoNum := strings.Replace(solicitud.CupoDerechoItem.Semana, "SEMANA", "CUPO", 1)
+		mesLabel = fmt.Sprintf("%s - %s", mes, cupoNum)
+	}
+
+	drawLabelBox("CORRESPONDIENTE AL MES DE :", mesLabel, 50, 60, false)
 	pdf.Ln(2)
 
 	pdf.SetFont("Arial", "B", 10)

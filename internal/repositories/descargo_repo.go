@@ -30,6 +30,7 @@ func (r *DescargoRepository) FindBySolicitudID(solicitudID string) (*models.Desc
 	err := r.db.Preload("Documentos").
 		Preload("DetallesItinerario").
 		Preload("Solicitud").
+		Preload("Solicitud.CupoDerechoItem").
 		Preload("Solicitud.Items").
 		Preload("Solicitud.Items.Origen").
 		Preload("Solicitud.Items.Destino").
@@ -48,6 +49,7 @@ func (r *DescargoRepository) FindByID(id string) (*models.Descargo, error) {
 		Preload("Solicitud.Usuario").
 		Preload("Solicitud.Usuario.Cargo").
 		Preload("Solicitud.Usuario.Oficina").
+		Preload("Solicitud.CupoDerechoItem").
 		Preload("Solicitud.Items").
 		Preload("Solicitud.Items.Origen").
 		Preload("Solicitud.Items.Destino").
@@ -64,6 +66,7 @@ func (r *DescargoRepository) FindAll() ([]models.Descargo, error) {
 	var descargos []models.Descargo
 	err := r.db.Preload("Solicitud").
 		Preload("Solicitud.Usuario").
+		Preload("Solicitud.CupoDerechoItem").
 		Preload("Solicitud.Items").
 		Preload("Solicitud.Items.Origen").
 		Preload("Solicitud.Items.Destino").
