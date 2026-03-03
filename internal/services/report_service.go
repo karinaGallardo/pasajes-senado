@@ -39,7 +39,7 @@ func (s *ReportService) GeneratePV01(ctx context.Context, solicitud *models.Soli
 		pdf.SetX(3)
 		pdf.SetFont("Arial", "I", 6)
 		pdf.SetTextColor(50, 50, 50)
-		disclaimer := tr("La solicitud deberá presentarse con 48 horas de anticipación (Art. 24). El descargo, adjuntando pases a bordo originales del/los tramo(s) utilizado(s), deberá efectuarse dentro de 8 días hábiles posteriores al retorno o finalización del tramo (Arts. 25 y 48); para pasajes internacionales, el plazo será de 5 días hábiles. No se recibirán solicitudes por derecho con descargos anteriores pendientes.\nEl incumplimiento dará lugar a sanciones conforme al Reglamento.")
+		disclaimer := tr("La solicitud deberá presentarse con 48 horas de anticipación (Art. 24). El descargo, adjuntando pases a bordo originales del/los tramo(s) utilizado(s), deberá efectuarse dentro de 8 días hábiles posteriores al retorno o finalización del tramo (Arts. 25 y 48); para pasajes internacionales, el plazo será de 5 días hábiles. No se recibirán solicitudes por derecho con descargos anteriores pendientes.\nEl incumplimiento dará lugar a sanciones conforme al Reglamento de Pasajes y Viáticos.")
 		pdf.MultiCell(209, 2.5, disclaimer, "", "L", false)
 	})
 
@@ -325,7 +325,7 @@ func (s *ReportService) GeneratePV02(ctx context.Context, solicitud *models.Soli
 		pdf.SetX(3)
 		pdf.SetFont("Arial", "I", 6)
 		pdf.SetTextColor(50, 50, 50)
-		disclaimer := tr("La solicitud deberá presentarse con 48 horas de anticipación (Art. 24). El descargo, adjuntando pases a bordo originales del/los tramo(s) utilizado(s), deberá efectuarse dentro de 8 días hábiles posteriores al retorno o finalización del tramo (Arts. 25 y 48); para pasajes internacionales, el plazo será de 5 días hábiles. No se recibirán solicitudes por derecho con descargos anteriores pendientes.\nEl incumplimiento dará lugar a sanciones conforme al Reglamento.")
+		disclaimer := tr("La solicitud deberá presentarse con 48 horas de anticipación (Art. 24). El descargo, adjuntando pases a bordo originales del/los tramo(s) utilizado(s), deberá efectuarse dentro de 8 días hábiles posteriores al retorno o finalización del tramo (Arts. 25 y 48); para pasajes internacionales, el plazo será de 5 días hábiles. No se recibirán solicitudes por derecho con descargos anteriores pendientes.\nEl incumplimiento dará lugar a sanciones conforme al Reglamento de Pasajes y Viáticos.")
 		pdf.MultiCell(209, 2.5, disclaimer, "", "L", false)
 	})
 
