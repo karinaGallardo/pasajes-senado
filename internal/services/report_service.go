@@ -1347,7 +1347,10 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 		pdf.Line(110, sigY+10, 180, sigY+10)
 		pdf.SetXY(110, sigY+12)
 		pdf.SetFont("Arial", "B", 7)
-		pdf.CellFormat(70, 4, tr("FIRMA/RESPONSABLE PRESENTACION DEL DESCARGO"), "", 1, "C", false, 0, "")
+		pdf.CellFormat(70, 4, tr("FIRMA Y SELLO SENADOR(A)"), "", 1, "C", false, 0, "")
+		pdf.SetX(110)
+		pdf.SetFont("Arial", "", 7)
+		pdf.CellFormat(70, 4, tr(solicitud.Usuario.GetNombreCompleto()), "", 1, "C", false, 0, "")
 	} else {
 		// --- Case: NOT SENATOR (Public Servant) ---
 		// Left: FIRMA Y SELLO SERVIDOR PUBLICO
@@ -1357,12 +1360,18 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 		pdf.CellFormat(60, 4, tr("FIRMA Y SELLO SERVIDOR PÚBLICO"), "", 1, "C", false, 0, "")
 		pdf.SetX(35)
 		pdf.SetFont("Arial", "", 7)
+		pdf.CellFormat(60, 4, tr(solicitud.Usuario.GetNombreCompleto()), "", 1, "C", false, 0, "")
 
 		// Right: Vo.Bo. Inmediato Superior
 		pdf.Line(110, sigY+10, 180, sigY+10)
 		pdf.SetXY(110, sigY+12)
 		pdf.SetFont("Arial", "B", 7)
 		pdf.CellFormat(70, 4, tr("Vo.Bo. Inmediato Superior"), "", 1, "C", false, 0, "")
+		if solicitud.Usuario.Encargado != nil {
+			pdf.SetX(110)
+			pdf.SetFont("Arial", "", 7)
+			pdf.CellFormat(70, 4, tr(solicitud.Usuario.Encargado.GetNombreCompleto()), "", 1, "C", false, 0, "")
+		}
 	}
 
 	return pdf

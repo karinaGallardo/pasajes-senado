@@ -35,6 +35,7 @@ func (r *DescargoRepository) FindBySolicitudID(solicitudID string) (*models.Desc
 		Preload("Solicitud.Items.Origen").
 		Preload("Solicitud.Items.Destino").
 		Preload("Solicitud.Items.Pasajes").
+		Preload("Solicitud.Usuario.Encargado").
 		Preload("Oficial").
 		Preload("Oficial.Anexos").
 		Where("solicitud_id = ?", solicitudID).First(&descargo).Error
@@ -54,6 +55,7 @@ func (r *DescargoRepository) FindByID(id string) (*models.Descargo, error) {
 		Preload("Solicitud.Items.Origen").
 		Preload("Solicitud.Items.Destino").
 		Preload("Solicitud.Items.Pasajes").
+		Preload("Solicitud.Usuario.Encargado").
 		Preload("Solicitud.Viaticos").
 		Preload("Solicitud.Viaticos.Detalles").
 		Preload("Oficial").
@@ -71,6 +73,7 @@ func (r *DescargoRepository) FindAll() ([]models.Descargo, error) {
 		Preload("Solicitud.Items.Origen").
 		Preload("Solicitud.Items.Destino").
 		Preload("Solicitud.Items.Pasajes").
+		Preload("Solicitud.Usuario.Encargado").
 		Preload("DetallesItinerario").
 		Preload("Oficial").
 		Preload("Oficial.Anexos").
