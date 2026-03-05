@@ -15,9 +15,9 @@ type OrganigramaController struct {
 	service *services.OrganigramaService
 }
 
-func NewOrganigramaController() *OrganigramaController {
+func NewOrganigramaController(service *services.OrganigramaService) *OrganigramaController {
 	return &OrganigramaController{
-		service: services.NewOrganigramaService(),
+		service: service,
 	}
 }
 

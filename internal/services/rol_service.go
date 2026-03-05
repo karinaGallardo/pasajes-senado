@@ -10,12 +10,12 @@ type RolService struct {
 	repo *repositories.RolRepository
 }
 
-func NewRolService() *RolService {
+func NewRolService(repo *repositories.RolRepository) *RolService {
 	return &RolService{
-		repo: repositories.NewRolRepository(),
+		repo: repo,
 	}
 }
 
 func (s *RolService) GetAll(ctx context.Context) ([]models.Rol, error) {
-	return s.repo.WithContext(ctx).FindAll()
+	return s.repo.FindAll(ctx)
 }

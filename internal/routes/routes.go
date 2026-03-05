@@ -2,25 +2,36 @@ package routes
 
 import (
 	"net/http"
-	"sistema-pasajes/internal/controllers"
+	"sistema-pasajes/internal/app"
 	"sistema-pasajes/internal/middleware"
 	"sistema-pasajes/internal/services"
 
 	"github.com/gin-gonic/gin"
 )
 
-func SetupRoutes(r *gin.Engine) {
-	authCtrl := controllers.NewAuthController()
-	solicitudCtrl := controllers.NewSolicitudController()
-	solicitudDerechoCtrl := controllers.NewSolicitudDerechoController()
-	solicitudOficialCtrl := controllers.NewSolicitudOficialController()
-	pasajeCtrl := controllers.NewPasajeController()
-	dashboardCtrl := controllers.NewDashboardController()
-	perfilCtrl := controllers.NewPerfilController()
-	usuarioCtrl := controllers.NewUsuarioController()
-	cupoCtrl := controllers.NewCupoController()
-	descargoDerechoCtrl := controllers.NewDescargoDerechoController()
-	descargoOficialCtrl := controllers.NewDescargoOficialController()
+func SetupRoutes(r *gin.Engine, container *app.Container) {
+	authCtrl := container.AuthController
+	solicitudCtrl := container.SolicitudController
+	solicitudDerechoCtrl := container.SolicitudDerechoController
+	solicitudOficialCtrl := container.SolicitudOficialController
+	pasajeCtrl := container.PasajeController
+	dashboardCtrl := container.DashboardController
+	perfilCtrl := container.PerfilController
+	usuarioCtrl := container.UsuarioController
+	cupoCtrl := container.CupoController
+	descargoDerechoCtrl := container.DescargoDerechoController
+	descargoOficialCtrl := container.DescargoOficialController
+	compensacionCtrl := container.CompensacionController
+	catalogoCtrl := container.CatalogoController
+	viaticoCtrl := container.ViaticoController
+	aerolineaCtrl := container.AerolineaController
+	agenciaCtrl := container.AgenciaController
+	rutaCtrl := container.RutaController
+	confCtrl := container.ConfiguracionController
+	catCompCtrl := container.CatCompensacionController
+	orgCtrl := container.OrganigramaController
+	catViaticoCtrl := container.CategoriaViaticoController
+	notifCtrl := container.NotificationController
 
 	r.GET("/auth/login", authCtrl.ShowLogin)
 	r.POST("/auth/login", authCtrl.Login)
@@ -111,7 +122,6 @@ func SetupRoutes(r *gin.Engine) {
 		protected.GET("/pasajes/:id/devolver", pasajeCtrl.GetDevolverModal)
 		protected.GET("/pasajes/:id/modal-usado", pasajeCtrl.GetUsadoModal)
 
-		viaticoCtrl := controllers.NewViaticoController()
 		protected.GET("/viaticos", viaticoCtrl.Index)
 		protected.GET("/solicitudes/:id/viaticos/nuevo", viaticoCtrl.Create)
 		protected.POST("/solicitudes/:id/viaticos", viaticoCtrl.Store)
@@ -121,12 +131,9 @@ func SetupRoutes(r *gin.Engine) {
 		protected.GET("/descargos", descargoDerechoCtrl.Index)
 		protected.GET("/preview-file", descargoDerechoCtrl.PreviewFile)
 
-		compCtrl := controllers.NewCompensacionController()
-		protected.GET("/compensaciones", compCtrl.Index)
-		protected.GET("/compensaciones/nueva", compCtrl.Create)
-		protected.POST("/compensaciones", compCtrl.Store)
-
-		catalogoCtrl := controllers.NewCatalogoController()
+		protected.GET("/compensaciones", compensacionCtrl.Index)
+		protected.GET("/compensaciones/nueva", compensacionCtrl.Create)
+		protected.POST("/compensaciones", compensacionCtrl.Store)
 		protected.GET("/catalogos/tipos", catalogoCtrl.GetTipos)
 		protected.GET("/catalogos/ambitos", catalogoCtrl.GetAmbitos)
 
@@ -157,7 +164,6 @@ func SetupRoutes(r *gin.Engine) {
 
 			sysAdmin.POST("/admin/cupos/reset", cupoCtrl.Reset)
 
-			aerolineaCtrl := controllers.NewAerolineaController()
 			sysAdmin.GET("/admin/aerolineas", aerolineaCtrl.Index)
 			sysAdmin.GET("/admin/aerolineas/nueva", aerolineaCtrl.New)
 			sysAdmin.POST("/admin/aerolineas", aerolineaCtrl.Store)
@@ -166,7 +172,6 @@ func SetupRoutes(r *gin.Engine) {
 			sysAdmin.POST("/admin/aerolineas/:id/toggle", aerolineaCtrl.Toggle)
 			sysAdmin.POST("/admin/aerolineas/:id/delete", aerolineaCtrl.Delete)
 
-			agenciaCtrl := controllers.NewAgenciaController()
 			sysAdmin.GET("/admin/agencias", agenciaCtrl.Index)
 			sysAdmin.GET("/admin/agencias/nueva", agenciaCtrl.New)
 			sysAdmin.POST("/admin/agencias", agenciaCtrl.Store)
@@ -175,24 +180,20 @@ func SetupRoutes(r *gin.Engine) {
 			sysAdmin.POST("/admin/agencias/:id/toggle", agenciaCtrl.Toggle)
 			sysAdmin.POST("/admin/agencias/:id/delete", agenciaCtrl.Delete)
 
-			rutaCtrl := controllers.NewRutaController()
 			sysAdmin.GET("/admin/rutas", rutaCtrl.Index)
 			sysAdmin.POST("/admin/rutas", rutaCtrl.Store)
 			sysAdmin.GET("/admin/rutas/modal-contrato", rutaCtrl.GetContractModal)
 			sysAdmin.POST("/admin/rutas/contrato", rutaCtrl.AddContract)
 			sysAdmin.POST("/admin/rutas/contrato/:id/delete", rutaCtrl.DeleteContract)
 
-			confCtrl := controllers.NewConfiguracionController()
 			sysAdmin.GET("/admin/configuracion", confCtrl.Index)
 			sysAdmin.POST("/admin/configuracion", confCtrl.Update)
 			sysAdmin.POST("/admin/configuracion/test-email", confCtrl.TestEmail)
 
-			catCompCtrl := controllers.NewCategoriaCompensacionController()
 			sysAdmin.GET("/admin/compensaciones/categorias", catCompCtrl.Index)
 			sysAdmin.POST("/admin/compensaciones/categorias", catCompCtrl.Store)
 			sysAdmin.POST("/admin/compensaciones/categorias/:id/delete", catCompCtrl.Delete)
 
-			orgCtrl := controllers.NewOrganigramaController()
 			sysAdmin.GET("/admin/cargos", orgCtrl.IndexCargos)
 			sysAdmin.POST("/admin/cargos", orgCtrl.StoreCargo)
 			sysAdmin.POST("/admin/cargos/:id/delete", orgCtrl.DeleteCargo)
@@ -201,13 +202,11 @@ func SetupRoutes(r *gin.Engine) {
 			sysAdmin.POST("/admin/oficinas", orgCtrl.StoreOficina)
 			sysAdmin.POST("/admin/oficinas/:id/delete", orgCtrl.DeleteOficina)
 
-			catViaticoCtrl := controllers.NewCategoriaViaticoController()
 			sysAdmin.GET("/admin/viaticos/categorias", catViaticoCtrl.Index)
 			sysAdmin.POST("/admin/viaticos/categorias", catViaticoCtrl.Store)
 			protected.POST("/admin/viaticos/zonas", catViaticoCtrl.StoreZona)
 		}
 
-		notifCtrl := controllers.NewNotificationController()
 		protected.GET("/api/notifications/recent", notifCtrl.GetRecent)
 		protected.POST("/api/notifications/:id/read", notifCtrl.MarkAsRead)
 		protected.POST("/api/notifications/read-all", notifCtrl.MarkAllAsRead)

@@ -19,10 +19,10 @@ type CompensacionController struct {
 	userService *services.UsuarioService
 }
 
-func NewCompensacionController() *CompensacionController {
+func NewCompensacionController(compService *services.CompensacionService, userService *services.UsuarioService) *CompensacionController {
 	return &CompensacionController{
-		compService: services.NewCompensacionService(),
-		userService: services.NewUsuarioService(),
+		compService: compService,
+		userService: userService,
 	}
 }
 

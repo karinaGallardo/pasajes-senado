@@ -2,7 +2,6 @@ package repositories
 
 import (
 	"context"
-	"sistema-pasajes/internal/configs"
 	"sistema-pasajes/internal/models"
 
 	"gorm.io/gorm"
@@ -12,8 +11,8 @@ type SolicitudRepository struct {
 	db *gorm.DB
 }
 
-func NewSolicitudRepository() *SolicitudRepository {
-	return &SolicitudRepository{db: configs.DB}
+func NewSolicitudRepository(db *gorm.DB) *SolicitudRepository {
+	return &SolicitudRepository{db: db}
 }
 
 func (r *SolicitudRepository) WithTx(tx *gorm.DB) *SolicitudRepository {
@@ -31,13 +30,13 @@ func (r *SolicitudRepository) RunTransaction(fn func(repo *SolicitudRepository, 
 	})
 }
 
-func (r *SolicitudRepository) Create(solicitud *models.Solicitud) error {
-	return r.db.Create(solicitud).Error
+func (r *SolicitudRepository) Create(ctx context.Context, solicitud *models.Solicitud) error {
+	return r.db.WithContext(ctx).Create(solicitud).Error
 }
 
-func (r *SolicitudRepository) FindAll(status string, concepto string) ([]models.Solicitud, error) {
+func (r *SolicitudRepository) FindAll(ctx context.Context, status string, concepto string) ([]models.Solicitud, error) {
 	var solicitudes []models.Solicitud
-	query := r.db.Preload("Usuario").
+	query := r.db.WithContext(ctx).Preload("Usuario").
 		Preload("Items").
 		Preload("Items.Origen").
 		Preload("Items.Destino").
@@ -59,9 +58,9 @@ func (r *SolicitudRepository) FindAll(status string, concepto string) ([]models.
 	return solicitudes, err
 }
 
-func (r *SolicitudRepository) FindByUserID(userID string, status string, concepto string) ([]models.Solicitud, error) {
+func (r *SolicitudRepository) FindByUserID(ctx context.Context, userID string, status string, concepto string) ([]models.Solicitud, error) {
 	var solicitudes []models.Solicitud
-	query := r.db.Preload("Usuario").
+	query := r.db.WithContext(ctx).Preload("Usuario").
 		Preload("Items").
 		Preload("Items.Origen").
 		Preload("Items.Destino").
@@ -83,9 +82,9 @@ func (r *SolicitudRepository) FindByUserID(userID string, status string, concept
 	return solicitudes, err
 }
 
-func (r *SolicitudRepository) FindByCupoDerechoItemID(itemID string) ([]models.Solicitud, error) {
+func (r *SolicitudRepository) FindByCupoDerechoItemID(ctx context.Context, itemID string) ([]models.Solicitud, error) {
 	var solicitudes []models.Solicitud
-	err := r.db.Preload("Usuario").
+	err := r.db.WithContext(ctx).Preload("Usuario").
 		Preload("Usuario.Encargado").
 		Preload("Usuario.Oficina").
 		Preload("Usuario.Departamento").
@@ -102,9 +101,9 @@ func (r *SolicitudRepository) FindByCupoDerechoItemID(itemID string) ([]models.S
 	return solicitudes, err
 }
 
-func (r *SolicitudRepository) FindByUserIdOrAccesibleByEncargadoID(userID string, status string, concepto string) ([]models.Solicitud, error) {
+func (r *SolicitudRepository) FindByUserIdOrAccesibleByEncargadoID(ctx context.Context, userID string, status string, concepto string) ([]models.Solicitud, error) {
 	var solicitudes []models.Solicitud
-	query := r.db.Preload("Usuario").
+	query := r.db.WithContext(ctx).Preload("Usuario").
 		Preload("Items").
 		Preload("Items.Origen").
 		Preload("Items.Destino").
@@ -116,7 +115,7 @@ func (r *SolicitudRepository) FindByUserIdOrAccesibleByEncargadoID(userID string
 			"solicitudes.usuario_id = ? OR solicitudes.created_by = ? OR solicitudes.usuario_id IN (?)",
 			userID,
 			userID,
-			r.db.Table("usuarios").Select("id").Where("encargado_id = ?", userID),
+			r.db.WithContext(ctx).Table("usuarios").Select("id").Where("encargado_id = ?", userID),
 		)
 
 	if status != "" {
@@ -132,9 +131,9 @@ func (r *SolicitudRepository) FindByUserIdOrAccesibleByEncargadoID(userID string
 	return solicitudes, err
 }
 
-func (r *SolicitudRepository) FindByID(id string) (*models.Solicitud, error) {
+func (r *SolicitudRepository) FindByID(ctx context.Context, id string) (*models.Solicitud, error) {
 	var solicitud models.Solicitud
-	err := r.db.Preload("Usuario").
+	err := r.db.WithContext(ctx).Preload("Usuario").
 		Preload("Usuario.Encargado").
 		Preload("Items").
 		Preload("Items.Origen").
@@ -158,27 +157,27 @@ func (r *SolicitudRepository) FindByID(id string) (*models.Solicitud, error) {
 	return &solicitud, nil
 }
 
-func (r *SolicitudRepository) Update(solicitud *models.Solicitud) error {
-	return r.db.Save(solicitud).Error
+func (r *SolicitudRepository) Update(ctx context.Context, solicitud *models.Solicitud) error {
+	return r.db.WithContext(ctx).Save(solicitud).Error
 }
 
-func (r *SolicitudRepository) UpdateStatus(id string, status string) error {
-	return r.db.Model(&models.Solicitud{}).Where("id = ?", id).Update("estado_solicitud_codigo", status).Error
+func (r *SolicitudRepository) UpdateStatus(ctx context.Context, id string, status string) error {
+	return r.db.WithContext(ctx).Model(&models.Solicitud{}).Where("id = ?", id).Update("estado_solicitud_codigo", status).Error
 }
 
-func (r *SolicitudRepository) Delete(id string) error {
-	return r.db.Delete(&models.Solicitud{}, "id = ?", id).Error
+func (r *SolicitudRepository) Delete(ctx context.Context, id string) error {
+	return r.db.WithContext(ctx).Delete(&models.Solicitud{}, "id = ?", id).Error
 }
 
-func (r *SolicitudRepository) ExistsByCodigo(codigo string) (bool, error) {
+func (r *SolicitudRepository) ExistsByCodigo(ctx context.Context, codigo string) (bool, error) {
 	var count int64
-	err := r.db.Unscoped().Model(&models.Solicitud{}).Where("codigo = ?", codigo).Count(&count).Error
+	err := r.db.WithContext(ctx).Unscoped().Model(&models.Solicitud{}).Where("codigo = ?", codigo).Count(&count).Error
 	return count > 0, err
 }
 
-func (r *SolicitudRepository) FindPendientesDeDescargo() ([]models.Solicitud, error) {
+func (r *SolicitudRepository) FindPendientesDeDescargo(ctx context.Context) ([]models.Solicitud, error) {
 	var solicitudes []models.Solicitud
-	err := r.db.Preload("Usuario.Encargado").
+	err := r.db.WithContext(ctx).Preload("Usuario.Encargado").
 		Preload("Items.Pasajes").
 		Joins("LEFT JOIN descargos ON solicitudes.id = descargos.solicitud_id").
 		Where("descargos.id IS NULL").
@@ -188,9 +187,9 @@ func (r *SolicitudRepository) FindPendientesDeDescargo() ([]models.Solicitud, er
 	return solicitudes, err
 }
 
-func (r *SolicitudRepository) FindPendientesDeDescargoUI(userID string, isAdmin bool) ([]models.Solicitud, error) {
+func (r *SolicitudRepository) FindPendientesDeDescargoUI(ctx context.Context, userID string, isAdmin bool) ([]models.Solicitud, error) {
 	var solicitudes []models.Solicitud
-	query := r.db.Preload("Usuario").
+	query := r.db.WithContext(ctx).Preload("Usuario").
 		Preload("Usuario.Rol").
 		Preload("Items.Pasajes").
 		Preload("Items.Origen").
@@ -208,7 +207,7 @@ func (r *SolicitudRepository) FindPendientesDeDescargoUI(userID string, isAdmin 
 			"solicitudes.usuario_id = ? OR solicitudes.created_by = ? OR solicitudes.usuario_id IN (?)",
 			userID,
 			userID,
-			r.db.Table("usuarios").Select("id").Where("encargado_id = ?", userID),
+			r.db.WithContext(ctx).Table("usuarios").Select("id").Where("encargado_id = ?", userID),
 		)
 	}
 

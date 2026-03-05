@@ -12,9 +12,9 @@ type NotificationController struct {
 	service *services.NotificationService
 }
 
-func NewNotificationController() *NotificationController {
+func NewNotificationController(service *services.NotificationService) *NotificationController {
 	return &NotificationController{
-		service: services.NewNotificationService(),
+		service: service,
 	}
 }
 

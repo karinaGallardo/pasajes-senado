@@ -15,18 +15,29 @@ import (
 	"gorm.io/gorm"
 )
 
-func NewSolicitudService() *SolicitudService {
+func NewSolicitudService(
+	repo *repositories.SolicitudRepository,
+	tipoSolicitudRepo *repositories.TipoSolicitudRepository,
+	usuarioRepo *repositories.UsuarioRepository,
+	itemRepo *repositories.CupoDerechoItemRepository,
+	tipoItinRepo *repositories.TipoItinerarioRepository,
+	codigoSecuenciaRepo *repositories.CodigoSecuenciaRepository,
+	solicitudItemRepo *repositories.SolicitudItemRepository,
+	pasajeRepo *repositories.PasajeRepository,
+	emailService *EmailService,
+	notificationService *NotificationService,
+) *SolicitudService {
 	return &SolicitudService{
-		repo:                repositories.NewSolicitudRepository(),
-		tipoSolicitudRepo:   repositories.NewTipoSolicitudRepository(),
-		usuarioRepo:         repositories.NewUsuarioRepository(),
-		itemRepo:            repositories.NewCupoDerechoItemRepository(),
-		tipoItinRepo:        repositories.NewTipoItinerarioRepository(),
-		codigoSecuenciaRepo: repositories.NewCodigoSecuenciaRepository(),
-		solicitudItemRepo:   repositories.NewSolicitudItemRepository(),
-		pasajeRepo:          repositories.NewPasajeRepository(),
-		emailService:        NewEmailService(),
-		notificationService: NewNotificationService(),
+		repo:                repo,
+		tipoSolicitudRepo:   tipoSolicitudRepo,
+		usuarioRepo:         usuarioRepo,
+		itemRepo:            itemRepo,
+		tipoItinRepo:        tipoItinRepo,
+		codigoSecuenciaRepo: codigoSecuenciaRepo,
+		solicitudItemRepo:   solicitudItemRepo,
+		pasajeRepo:          pasajeRepo,
+		emailService:        emailService,
+		notificationService: notificationService,
 	}
 }
 
@@ -66,13 +77,13 @@ func (s *SolicitudService) CreateDerecho(ctx context.Context, req dtos.CreateSol
 	// Resolve TipoItinerario
 	var tipoItin *models.TipoItinerario
 	if req.TipoItinerarioCodigo != "" {
-		tipoItin, _ = s.tipoItinRepo.WithContext(ctx).FindByCodigo(req.TipoItinerarioCodigo)
+		tipoItin, _ = s.tipoItinRepo.FindByCodigo(ctx, req.TipoItinerarioCodigo)
 	}
 	if tipoItin == nil && req.TipoItinerario != "" {
-		tipoItin, _ = s.tipoItinRepo.WithContext(ctx).FindByCodigo(req.TipoItinerario)
+		tipoItin, _ = s.tipoItinRepo.FindByCodigo(ctx, req.TipoItinerario)
 	}
 	if tipoItin == nil {
-		tipoItin, _ = s.tipoItinRepo.WithContext(ctx).FindByCodigo("IDA_VUELTA")
+		tipoItin, _ = s.tipoItinRepo.FindByCodigo(ctx, "IDA_VUELTA")
 	}
 
 	if tipoItin == nil {
@@ -94,13 +105,13 @@ func (s *SolicitudService) CreateDerecho(ctx context.Context, req dtos.CreateSol
 		solicitud.CupoDerechoItemID = &req.CupoDerechoItemID
 	}
 
-	tipoSolicitud, err := s.tipoSolicitudRepo.WithContext(ctx).FindByID(solicitud.TipoSolicitudCodigo)
+	tipoSolicitud, err := s.tipoSolicitudRepo.FindByID(ctx, solicitud.TipoSolicitudCodigo)
 	if err != nil {
 		return nil, errors.New("tipo de solicitud inválido o no encontrado")
 	}
 
 	if tipoSolicitud.ConceptoViaje != nil && tipoSolicitud.ConceptoViaje.Codigo == "DERECHO" {
-		beneficiary, err := s.usuarioRepo.WithContext(ctx).FindByID(solicitud.UsuarioID)
+		beneficiary, err := s.usuarioRepo.FindByID(ctx, solicitud.UsuarioID)
 		if err != nil {
 			return nil, errors.New("usuario beneficiario no encontrado")
 		}
@@ -173,25 +184,25 @@ func (s *SolicitudService) CreateDerecho(ctx context.Context, req dtos.CreateSol
 
 		currentYear := time.Now().Year()
 		for {
-			nextVal, err := s.codigoSecuenciaRepo.WithContext(ctx).GetNext(currentYear, "SPD")
+			nextVal, err := s.codigoSecuenciaRepo.GetNext(ctx, currentYear, "SPD")
 			if err != nil {
 				return errors.New("error generando codigo de secuencia de solicitud")
 			}
 			solicitud.Codigo = fmt.Sprintf("SPD-%d%04d", currentYear%100, nextVal)
 
 			// Verificar si ya existe (incluyendo eliminados) para evitar errores de clave duplicada
-			exists, _ := repoTx.ExistsByCodigo(solicitud.Codigo)
+			exists, _ := repoTx.ExistsByCodigo(ctx, solicitud.Codigo)
 			if !exists {
 				break
 			}
 		}
 
-		if err := repoTx.Create(solicitud); err != nil {
+		if err := repoTx.Create(ctx, solicitud); err != nil {
 			return err
 		}
 
 		if solicitud.CupoDerechoItemID != nil {
-			item, err := itemRepoTx.FindByID(*solicitud.CupoDerechoItemID)
+			item, err := itemRepoTx.FindByID(ctx, *solicitud.CupoDerechoItemID)
 			if err == nil && item != nil {
 				// Validación de periodo vencido: solo ADMIN o RESPONSABLE pueden registrar en periodos pasados
 				if item.IsVencido() && !currentUser.IsAdminOrResponsable() {
@@ -199,7 +210,7 @@ func (s *SolicitudService) CreateDerecho(ctx context.Context, req dtos.CreateSol
 				}
 
 				item.EstadoCupoDerechoCodigo = "RESERVADO"
-				if err := itemRepoTx.Update(item); err != nil {
+				if err := itemRepoTx.Update(ctx, item); err != nil {
 					return err
 				}
 			}
@@ -212,7 +223,7 @@ func (s *SolicitudService) CreateDerecho(ctx context.Context, req dtos.CreateSol
 	}
 
 	// Fetch beneficiary to use abbreviated name in notification
-	beneficiary, _ := s.usuarioRepo.WithContext(ctx).FindByID(solicitud.UsuarioID)
+	beneficiary, _ := s.usuarioRepo.FindByID(ctx, solicitud.UsuarioID)
 	benefName := solicitud.UsuarioID
 	if beneficiary != nil {
 		benefName = beneficiary.GetNombreResumido()
@@ -238,7 +249,7 @@ func (s *SolicitudService) CreateOficial(ctx context.Context, req dtos.CreateSol
 		realSolicitanteID = currentUser.ID
 	}
 
-	tipoItin, err := s.tipoItinRepo.WithContext(ctx).FindByCodigo("IDA_VUELTA")
+	tipoItin, err := s.tipoItinRepo.FindByCodigo(ctx, "IDA_VUELTA")
 	if err != nil || tipoItin == nil {
 		return nil, errors.New("tipo de itinerario no válido")
 	}
@@ -302,20 +313,20 @@ func (s *SolicitudService) CreateOficial(ctx context.Context, req dtos.CreateSol
 	err = s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
 		currentYear := time.Now().Year()
 		for {
-			nextVal, err := s.codigoSecuenciaRepo.WithContext(ctx).GetNext(currentYear, "SOF")
+			nextVal, err := s.codigoSecuenciaRepo.GetNext(ctx, currentYear, "SOF")
 			if err != nil {
 				return errors.New("error generando codigo de secuencia de solicitud oficial")
 			}
 			solicitud.Codigo = fmt.Sprintf("SOF-%d%04d", currentYear%100, nextVal)
 
 			// Verificar duplicados (incluyendo soft-deleted)
-			exists, _ := repoTx.ExistsByCodigo(solicitud.Codigo)
+			exists, _ := repoTx.ExistsByCodigo(ctx, solicitud.Codigo)
 			if !exists {
 				break
 			}
 		}
 
-		if err := repoTx.Create(solicitud); err != nil {
+		if err := repoTx.Create(ctx, solicitud); err != nil {
 			return err
 		}
 		return nil
@@ -326,7 +337,7 @@ func (s *SolicitudService) CreateOficial(ctx context.Context, req dtos.CreateSol
 	}
 
 	// Fetch beneficiary name for notification
-	beneficiary, _ := s.usuarioRepo.WithContext(ctx).FindByID(realSolicitanteID)
+	beneficiary, _ := s.usuarioRepo.FindByID(ctx, realSolicitanteID)
 	benefName := realSolicitanteID
 	if beneficiary != nil {
 		benefName = beneficiary.GetNombreResumido()
@@ -509,38 +520,38 @@ func (s *SolicitudService) sendRevertApprovalEmail(solicitud *models.Solicitud) 
 }
 
 func (s *SolicitudService) GetAll(ctx context.Context, status string, concepto string) ([]models.Solicitud, error) {
-	return s.repo.WithContext(ctx).FindAll(status, concepto)
+	return s.repo.FindAll(ctx, status, concepto)
 }
 
 func (s *SolicitudService) GetByUserID(ctx context.Context, userID string, status string, concepto string) ([]models.Solicitud, error) {
-	return s.repo.WithContext(ctx).FindByUserID(userID, status, concepto)
+	return s.repo.FindByUserID(ctx, userID, status, concepto)
 }
 
 func (s *SolicitudService) GetByUserIdOrAccesibleByEncargadoID(ctx context.Context, userID string, status string, concepto string) ([]models.Solicitud, error) {
-	return s.repo.WithContext(ctx).FindByUserIdOrAccesibleByEncargadoID(userID, status, concepto)
+	return s.repo.FindByUserIdOrAccesibleByEncargadoID(ctx, userID, status, concepto)
 }
 
 func (s *SolicitudService) GetPendientesDescargo(ctx context.Context, userID string, isAdmin bool) ([]models.Solicitud, error) {
-	return s.repo.WithContext(ctx).FindPendientesDeDescargoUI(userID, isAdmin)
+	return s.repo.FindPendientesDeDescargoUI(ctx, userID, isAdmin)
 }
 
 func (s *SolicitudService) GetByCupoDerechoItemID(ctx context.Context, itemID string) ([]models.Solicitud, error) {
-	return s.repo.WithContext(ctx).FindByCupoDerechoItemID(itemID)
+	return s.repo.FindByCupoDerechoItemID(ctx, itemID)
 }
 
 func (s *SolicitudService) GetByID(ctx context.Context, id string) (*models.Solicitud, error) {
-	return s.repo.WithContext(ctx).FindByID(id)
+	return s.repo.FindByID(ctx, id)
 }
 
 func (s *SolicitudService) GetItemByID(ctx context.Context, id string) (*models.SolicitudItem, error) {
-	return s.solicitudItemRepo.FindByID(id)
+	return s.solicitudItemRepo.FindByID(ctx, id)
 }
 
 func (s *SolicitudService) Approve(ctx context.Context, id string) error {
 	return s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
 		itemRepoTx := s.itemRepo.WithTx(tx)
 
-		solicitud, err := repoTx.FindByID(id)
+		solicitud, err := repoTx.FindByID(ctx, id)
 		if err != nil {
 			return err
 		}
@@ -582,15 +593,15 @@ func (s *SolicitudService) Approve(ctx context.Context, id string) error {
 		}
 
 		solicitud.UpdateStatusBasedOnItems()
-		if err := repoTx.Update(solicitud); err != nil {
+		if err := repoTx.Update(ctx, solicitud); err != nil {
 			return err
 		}
 
 		if solicitud.CupoDerechoItemID != nil {
-			item, err := itemRepoTx.FindByID(*solicitud.CupoDerechoItemID)
+			item, err := itemRepoTx.FindByID(ctx, *solicitud.CupoDerechoItemID)
 			if err == nil && item != nil {
 				item.EstadoCupoDerechoCodigo = "RESERVADO"
-				if err := itemRepoTx.Update(item); err != nil {
+				if err := itemRepoTx.Update(ctx, item); err != nil {
 					return err
 				}
 			}
@@ -603,7 +614,7 @@ func (s *SolicitudService) Approve(ctx context.Context, id string) error {
 func (s *SolicitudService) RevertApproval(ctx context.Context, id string) error {
 	var solicitudForEmail *models.Solicitud
 	err := s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
-		solicitud, err := repoTx.FindByID(id)
+		solicitud, err := repoTx.FindByID(ctx, id)
 		if err != nil {
 			return err
 		}
@@ -642,7 +653,7 @@ func (s *SolicitudService) RevertApproval(ctx context.Context, id string) error 
 		}
 
 		solicitud.UpdateStatusBasedOnItems()
-		if err := repoTx.Update(solicitud); err != nil {
+		if err := repoTx.Update(ctx, solicitud); err != nil {
 			return err
 		}
 		solicitudForEmail = solicitud
@@ -660,12 +671,12 @@ func (s *SolicitudService) Finalize(ctx context.Context, id string) error {
 	return s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
 		itemRepoTx := s.itemRepo.WithTx(tx)
 
-		solicitud, err := repoTx.FindByID(id)
+		solicitud, err := repoTx.FindByID(ctx, id)
 		if err != nil {
 			return err
 		}
 
-		if err := repoTx.UpdateStatus(id, "FINALIZADO"); err != nil {
+		if err := repoTx.UpdateStatus(ctx, id, "FINALIZADO"); err != nil {
 			return err
 		}
 
@@ -677,10 +688,10 @@ func (s *SolicitudService) Finalize(ctx context.Context, id string) error {
 		}
 
 		if solicitud.CupoDerechoItemID != nil {
-			item, err := itemRepoTx.FindByID(*solicitud.CupoDerechoItemID)
+			item, err := itemRepoTx.FindByID(ctx, *solicitud.CupoDerechoItemID)
 			if err == nil && item != nil {
 				item.EstadoCupoDerechoCodigo = "USADO"
-				if err := itemRepoTx.Update(item); err != nil {
+				if err := itemRepoTx.Update(ctx, item); err != nil {
 					return err
 				}
 			}
@@ -692,7 +703,7 @@ func (s *SolicitudService) Finalize(ctx context.Context, id string) error {
 
 func (s *SolicitudService) Reject(ctx context.Context, id string) error {
 	return s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
-		solicitud, err := repoTx.FindByID(id)
+		solicitud, err := repoTx.FindByID(ctx, id)
 		if err != nil {
 			return err
 		}
@@ -708,16 +719,16 @@ func (s *SolicitudService) Reject(ctx context.Context, id string) error {
 		}
 
 		solicitud.UpdateStatusBasedOnItems()
-		if err := repoTx.Update(solicitud); err != nil {
+		if err := repoTx.Update(ctx, solicitud); err != nil {
 			return err
 		}
 
 		if solicitud.CupoDerechoItemID != nil {
 			itemRepoTx := s.itemRepo.WithTx(tx)
-			item, err := itemRepoTx.FindByID(*solicitud.CupoDerechoItemID)
+			item, err := itemRepoTx.FindByID(ctx, *solicitud.CupoDerechoItemID)
 			if err == nil && item != nil {
 				item.EstadoCupoDerechoCodigo = "DISPONIBLE"
-				if err := itemRepoTx.Update(item); err != nil {
+				if err := itemRepoTx.Update(ctx, item); err != nil {
 					return err
 				}
 			}
@@ -750,24 +761,24 @@ func (s *SolicitudService) Delete(ctx context.Context, id string) error {
 	return s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
 		itemRepoTx := s.itemRepo.WithTx(tx)
 
-		solicitud, err := repoTx.FindByID(id)
+		solicitud, err := repoTx.FindByID(ctx, id)
 		if err == nil && solicitud != nil && solicitud.CupoDerechoItemID != nil {
-			item, err := itemRepoTx.FindByID(*solicitud.CupoDerechoItemID)
+			item, err := itemRepoTx.FindByID(ctx, *solicitud.CupoDerechoItemID)
 			if err == nil && item != nil {
 				item.EstadoCupoDerechoCodigo = "DISPONIBLE"
-				if err := itemRepoTx.Update(item); err != nil {
+				if err := itemRepoTx.Update(ctx, item); err != nil {
 					return err
 				}
 			}
 		}
 
-		return repoTx.Delete(id)
+		return repoTx.Delete(ctx, id)
 	})
 }
 
 func (s *SolicitudService) ApproveItem(ctx context.Context, solicitudID, itemID string) error {
 	return s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
-		solicitud, err := repoTx.FindByID(solicitudID)
+		solicitud, err := repoTx.FindByID(ctx, solicitudID)
 		if err != nil {
 			return err
 		}
@@ -787,17 +798,17 @@ func (s *SolicitudService) ApproveItem(ctx context.Context, solicitudID, itemID 
 			return fmt.Errorf("item no encontrado")
 		}
 		solicitud.UpdateStatusBasedOnItems()
-		if err := repoTx.Update(solicitud); err != nil {
+		if err := repoTx.Update(ctx, solicitud); err != nil {
 			return err
 		}
 
 		// Si es derecho, marcar como reservado
 		if solicitud.CupoDerechoItemID != nil {
 			itemRepoTx := s.itemRepo.WithTx(tx)
-			item, err := itemRepoTx.FindByID(*solicitud.CupoDerechoItemID)
+			item, err := itemRepoTx.FindByID(ctx, *solicitud.CupoDerechoItemID)
 			if err == nil && item != nil {
 				item.EstadoCupoDerechoCodigo = "RESERVADO"
-				itemRepoTx.Update(item)
+				itemRepoTx.Update(ctx, item)
 			}
 		}
 		return nil
@@ -806,7 +817,7 @@ func (s *SolicitudService) ApproveItem(ctx context.Context, solicitudID, itemID 
 
 func (s *SolicitudService) RejectItem(ctx context.Context, solicitudID, itemID string) error {
 	return s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
-		solicitud, err := repoTx.FindByID(solicitudID)
+		solicitud, err := repoTx.FindByID(ctx, solicitudID)
 		if err != nil {
 			return err
 		}
@@ -826,7 +837,7 @@ func (s *SolicitudService) RejectItem(ctx context.Context, solicitudID, itemID s
 			return fmt.Errorf("item no encontrado")
 		}
 		solicitud.UpdateStatusBasedOnItems()
-		if err := repoTx.Update(solicitud); err != nil {
+		if err := repoTx.Update(ctx, solicitud); err != nil {
 			return err
 		}
 		// Si todos los items activos son rechazados, liberar el cupo
@@ -840,10 +851,10 @@ func (s *SolicitudService) RejectItem(ctx context.Context, solicitudID, itemID s
 		}
 		if allRejected && solicitud.CupoDerechoItemID != nil {
 			itemRepoTx := s.itemRepo.WithTx(tx)
-			item, err := itemRepoTx.FindByID(*solicitud.CupoDerechoItemID)
+			item, err := itemRepoTx.FindByID(ctx, *solicitud.CupoDerechoItemID)
 			if err == nil && item != nil {
 				item.EstadoCupoDerechoCodigo = "DISPONIBLE"
-				itemRepoTx.Update(item)
+				itemRepoTx.Update(ctx, item)
 			}
 		}
 		return nil
@@ -853,7 +864,7 @@ func (s *SolicitudService) RejectItem(ctx context.Context, solicitudID, itemID s
 func (s *SolicitudService) RevertApprovalItem(ctx context.Context, solicitudID, itemID string) error {
 	return s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
 		// 1. Verificar si existe la solicitud
-		sol, err := repoTx.FindByID(solicitudID)
+		sol, err := repoTx.FindByID(ctx, solicitudID)
 		if err != nil {
 			return err
 		}
@@ -885,7 +896,7 @@ func (s *SolicitudService) RevertApprovalItem(ctx context.Context, solicitudID, 
 
 		// Sincronización de estados
 		sol.UpdateStatusBasedOnItems()
-		if err := repoTx.Update(sol); err != nil {
+		if err := repoTx.Update(ctx, sol); err != nil {
 			return err
 		}
 
@@ -951,7 +962,7 @@ func (s *SolicitudService) UpdateOficial(ctx context.Context, id string, req dto
 
 	return s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
 		// 1. Load the existing solicitation
-		solicitud, err := repoTx.FindByID(id)
+		solicitud, err := repoTx.FindByID(ctx, id)
 		if err != nil {
 			return err
 		}
@@ -1067,7 +1078,7 @@ func (s *SolicitudService) RevertFinalize(ctx context.Context, id string) error 
 	return s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
 		itemRepoTx := s.itemRepo.WithTx(tx)
 
-		solicitud, err := repoTx.FindByID(id)
+		solicitud, err := repoTx.FindByID(ctx, id)
 		if err != nil {
 			return err
 		}
@@ -1077,7 +1088,7 @@ func (s *SolicitudService) RevertFinalize(ctx context.Context, id string) error 
 		}
 
 		// Change status back to EMITIDO (since it reached FINALIZADO, it must have been EMITIDO)
-		if err := repoTx.UpdateStatus(id, "EMITIDO"); err != nil {
+		if err := repoTx.UpdateStatus(ctx, id, "EMITIDO"); err != nil {
 			return err
 		}
 
@@ -1089,10 +1100,10 @@ func (s *SolicitudService) RevertFinalize(ctx context.Context, id string) error 
 		}
 
 		if solicitud.CupoDerechoItemID != nil {
-			item, err := itemRepoTx.FindByID(*solicitud.CupoDerechoItemID)
+			item, err := itemRepoTx.FindByID(ctx, *solicitud.CupoDerechoItemID)
 			if err == nil && item != nil {
 				item.EstadoCupoDerechoCodigo = "RESERVADO"
-				if err := itemRepoTx.Update(item); err != nil {
+				if err := itemRepoTx.Update(ctx, item); err != nil {
 					return err
 				}
 			}

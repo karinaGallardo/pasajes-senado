@@ -11,19 +11,19 @@ type RutaService struct {
 	destinoRepo *repositories.DestinoRepository
 }
 
-func NewRutaService() *RutaService {
+func NewRutaService(rutaRepo *repositories.RutaRepository, destinoRepo *repositories.DestinoRepository) *RutaService {
 	return &RutaService{
-		rutaRepo:    repositories.NewRutaRepository(),
-		destinoRepo: repositories.NewDestinoRepository(),
+		rutaRepo:    rutaRepo,
+		destinoRepo: destinoRepo,
 	}
 }
 
 func (s *RutaService) Create(ctx context.Context, origenIATA string, escalasIATA []string, destinoIATA string) (*models.Ruta, error) {
-	origen, err := s.destinoRepo.WithContext(ctx).FindByIATA(origenIATA)
+	origen, err := s.destinoRepo.FindByIATA(ctx, origenIATA)
 	if err != nil {
 		return nil, err
 	}
-	destino, err := s.destinoRepo.WithContext(ctx).FindByIATA(destinoIATA)
+	destino, err := s.destinoRepo.FindByIATA(ctx, destinoIATA)
 	if err != nil {
 		return nil, err
 	}
@@ -33,7 +33,7 @@ func (s *RutaService) Create(ctx context.Context, origenIATA string, escalasIATA
 		if code == "" {
 			continue
 		}
-		e, err := s.destinoRepo.WithContext(ctx).FindByIATA(code)
+		e, err := s.destinoRepo.FindByIATA(ctx, code)
 		if err != nil {
 			return nil, err
 		}
@@ -87,16 +87,16 @@ func (s *RutaService) Create(ctx context.Context, origenIATA string, escalasIATA
 		})
 	}
 
-	err = s.rutaRepo.WithContext(ctx).Create(newRuta)
+	err = s.rutaRepo.Create(ctx, newRuta)
 	return newRuta, err
 }
 
 func (s *RutaService) GetAll(ctx context.Context) ([]models.Ruta, error) {
-	return s.rutaRepo.WithContext(ctx).FindAll()
+	return s.rutaRepo.FindAll(ctx)
 }
 
 func (s *RutaService) GetByID(ctx context.Context, id string) (*models.Ruta, error) {
-	return s.rutaRepo.WithContext(ctx).FindByID(id)
+	return s.rutaRepo.FindByID(ctx, id)
 }
 
 func (s *RutaService) AssignContract(ctx context.Context, rutaID, aerolineaID string, monto float64) error {
@@ -105,13 +105,13 @@ func (s *RutaService) AssignContract(ctx context.Context, rutaID, aerolineaID st
 		AerolineaID:      aerolineaID,
 		MontoReferencial: monto,
 	}
-	return s.rutaRepo.WithContext(ctx).AssignContract(&contrato)
+	return s.rutaRepo.AssignContract(ctx, &contrato)
 }
 
 func (s *RutaService) GetContractsByRuta(ctx context.Context, rutaID string) ([]models.RutaContrato, error) {
-	return s.rutaRepo.WithContext(ctx).GetContractsByRuta(rutaID)
+	return s.rutaRepo.GetContractsByRuta(ctx, rutaID)
 }
 
 func (s *RutaService) RemoveContract(ctx context.Context, id string) error {
-	return s.rutaRepo.WithContext(ctx).DeleteContract(id)
+	return s.rutaRepo.DeleteContract(ctx, id)
 }

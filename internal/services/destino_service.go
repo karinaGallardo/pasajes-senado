@@ -10,20 +10,20 @@ type DestinoService struct {
 	repo *repositories.DestinoRepository
 }
 
-func NewDestinoService() *DestinoService {
+func NewDestinoService(repo *repositories.DestinoRepository) *DestinoService {
 	return &DestinoService{
-		repo: repositories.NewDestinoRepository(),
+		repo: repo,
 	}
 }
 
 func (s *DestinoService) GetAll(ctx context.Context) ([]models.Destino, error) {
-	return s.repo.WithContext(ctx).FindAll()
+	return s.repo.FindAll(ctx)
 }
 
 func (s *DestinoService) GetByAmbito(ctx context.Context, ambito string) ([]models.Destino, error) {
-	return s.repo.WithContext(ctx).FindByAmbito(ambito)
+	return s.repo.FindByAmbito(ctx, ambito)
 }
 
 func (s *DestinoService) GetByIATA(ctx context.Context, iata string) (*models.Destino, error) {
-	return s.repo.WithContext(ctx).FindByIATA(iata)
+	return s.repo.FindByIATA(ctx, iata)
 }

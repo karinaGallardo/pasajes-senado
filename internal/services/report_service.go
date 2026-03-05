@@ -22,11 +22,11 @@ type ReportService struct {
 	configService *ConfiguracionService
 }
 
-func NewReportService() *ReportService {
+func NewReportService(solicitudRepo *repositories.SolicitudRepository, aerolineaRepo *repositories.AerolineaRepository, configService *ConfiguracionService) *ReportService {
 	return &ReportService{
-		solicitudRepo: repositories.NewSolicitudRepository(),
-		aerolineaRepo: repositories.NewAerolineaRepository(),
-		configService: NewConfiguracionService(),
+		solicitudRepo: solicitudRepo,
+		aerolineaRepo: aerolineaRepo,
+		configService: configService,
 	}
 }
 
@@ -41,61 +41,18 @@ func (s *ReportService) GeneratePV01(ctx context.Context, solicitud *models.Soli
 		pdf.SetTextColor(50, 50, 50)
 		disclaimer := tr("La solicitud deberá presentarse con 48 horas de anticipación (Art. 24). El descargo, adjuntando pases a bordo originales del/los tramo(s) utilizado(s), deberá efectuarse dentro de 8 días hábiles posteriores al retorno o finalización del tramo (Arts. 25 y 48); para pasajes internacionales, el plazo será de 5 días hábiles. No se recibirán solicitudes por derecho con descargos anteriores pendientes.\nEl incumplimiento dará lugar a sanciones conforme al Reglamento de Pasajes y Viáticos.")
 		pdf.MultiCell(209, 2.5, disclaimer, "", "L", false)
+		s.drawPageBorder(pdf)
 	})
 
 	pdf.AddPage()
-	pdf.SetFont("Arial", "B", 16)
+	s.drawReportHeader(pdf, tr, "FORM-PV-01", "FORMULARIO DE SOLICITUD", "PASAJES AEREOS PARA SENADORAS Y SENADORES", "GESTION: "+solicitud.CreatedAt.Format("2006"), solicitud.Codigo)
 
-	xHeader, yHeader := 10.0, 10.0
-	hHeader := 22.0
-
-	pdf.SetLineWidth(0.1)
-	pdf.Line(xHeader, yHeader+hHeader, xHeader+167, yHeader+hHeader)
-
-	pdf.SetXY(xHeader, yHeader+3)
-	pdf.SetFont("Arial", "B", 12)
-	pdf.CellFormat(40, 6, "FORM-PV-01", "", 1, "C", false, 0, "")
-
-	pdf.SetX(xHeader)
-	pdf.SetFont("Arial", "B", 11)
-	pdf.CellFormat(40, 8, fmt.Sprintf("%s", solicitud.Codigo), "", 1, "C", false, 0, "")
-	pdf.SetXY(xHeader+40, yHeader+4)
-	pdf.SetFont("Arial", "B", 14)
-	pdf.CellFormat(115, 8, tr("FORMULARIO DE SOLICITUD"), "", 1, "C", false, 0, "")
-
-	pdf.SetXY(xHeader+40, yHeader+11)
-	pdf.SetFont("Arial", "B", 9)
-	pdf.CellFormat(115, 6, tr("PASAJES AEREOS PARA SENADORAS Y SENADORES"), "", 1, "C", false, 0, "")
-
-	pdf.SetXY(xHeader+40, yHeader+16)
-	pdf.SetFont("Arial", "B", 10)
-	pdf.CellFormat(115, 6, fmt.Sprintf("GESTION: %s", solicitud.CreatedAt.Format("2006")), "", 1, "C", false, 0, "")
-
-	pdf.Image("web/static/img/logo_senado.png", xHeader+160, yHeader-6, 30, 0, false, "", 0, "")
-
-	pdf.SetY(40)
 	pdf.SetFont("Arial", "", 10)
 
-	drawLabelBox := func(label, value string, wLabel, wBox float64, sameLine bool) {
-		h := 6.0
-		pdf.SetFont("Arial", "B", 8)
-		pdf.CellFormat(wLabel, h, tr(label), "", 0, "R", false, 0, "")
-
-		pdf.SetFont("Arial", "", 9)
-		if len(value) > 75 {
-			value = value[:72] + "..."
-		}
-		pdf.CellFormat(wBox, h, "  "+tr(value), "1", 0, "L", false, 0, "")
-
-		if !sameLine {
-			pdf.Ln(h + 2)
-		}
-	}
-
 	// Body
-	drawLabelBox("NOMBRE Y APELLIDOS :", solicitud.Usuario.GetNombreCompleto(), 40, 150, false)
-	drawLabelBox("C.I. :", solicitud.Usuario.CI, 40, 60, true)
-	drawLabelBox("TEL. REF :", solicitud.Usuario.Phone, 30, 60, false)
+	s.drawLabelBox(pdf, tr, "NOMBRE Y APELLIDOS :", solicitud.Usuario.GetNombreCompleto(), 40, 150, false)
+	s.drawLabelBox(pdf, tr, "C.I. :", solicitud.Usuario.CI, 40, 60, true)
+	s.drawLabelBox(pdf, tr, "TEL. REF :", solicitud.Usuario.Phone, 30, 60, false)
 
 	origenUser := ""
 	if solicitud.Usuario.Origen != nil {
@@ -122,7 +79,7 @@ func (s *ReportService) GeneratePV01(ctx context.Context, solicitud *models.Soli
 		unit = solicitud.Usuario.Oficina.Detalle
 	}
 
-	drawLabelBox("SENADOR POR EL DPTO. :", origenUser, 40, 60, true)
+	s.drawLabelBox(pdf, tr, "SENADOR POR EL DPTO. :", origenUser, 40, 60, true)
 
 	isTitular := strings.Contains(strings.ToUpper(tipoUsuario), "TITULAR")
 	isSuplente := strings.Contains(strings.ToUpper(tipoUsuario), "SUPLENTE")
@@ -145,12 +102,12 @@ func (s *ReportService) GeneratePV01(ctx context.Context, solicitud *models.Soli
 	}
 	pdf.Ln(8)
 
-	drawLabelBox("UNIDAD FUNCIONAL :", unit, 40, 150, false)
+	s.drawLabelBox(pdf, tr, "UNIDAD FUNCIONAL :", unit, 40, 150, false)
 
 	fechaSol := solicitud.CreatedAt.Format("02/01/2006")
 	horaSol := solicitud.CreatedAt.Format("15:04")
-	drawLabelBox("FECHA DE SOLICITUD :", fechaSol, 40, 60, true)
-	drawLabelBox("HORA :", horaSol, 30, 60, false)
+	s.drawLabelBox(pdf, tr, "FECHA DE SOLICITUD :", fechaSol, 40, 60, true)
+	s.drawLabelBox(pdf, tr, "HORA :", horaSol, 30, 60, false)
 
 	concepto := ""
 	if solicitud.TipoSolicitud != nil {
@@ -162,7 +119,7 @@ func (s *ReportService) GeneratePV01(ctx context.Context, solicitud *models.Soli
 	}
 
 	pdf.SetXY(10, pdf.GetY()+5)
-	drawLabelBox("CONCEPTO DE VIAJE :", concepto, 40, 60, true)
+	s.drawLabelBox(pdf, tr, "CONCEPTO DE VIAJE :", concepto, 40, 60, true)
 
 	mesYNum := ""
 	if strings.Contains(strings.ToUpper(concepto), "DERECHO") {
@@ -176,86 +133,11 @@ func (s *ReportService) GeneratePV01(ctx context.Context, solicitud *models.Soli
 			mesYNum = fmt.Sprintf("%s - %s", monthStr, cupoStr)
 		}
 	}
-	drawLabelBox("MES DE VIAJE :", mesYNum, 40, 50, false)
+	s.drawLabelBox(pdf, tr, "MES DE VIAJE :", mesYNum, 40, 50, false)
 
 	pdf.Ln(5)
 
 	// SEGMENTS LOGIC
-	drawSegment := func(title string, item *models.SolicitudItem) {
-		pdf.SetFont("Arial", "B", 9)
-		pdf.CellFormat(190, 6, tr(" "+title), "B", 1, "L", false, 0, "")
-
-		if item != nil && item.GetEstado() != "PENDIENTE" {
-			fecha := "-"
-			hora := "-"
-			if item.Fecha != nil {
-				fecha = utils.FormatDateShortES(*item.Fecha)
-				if len(fecha) > 5 {
-					fecha = fecha[:len(fecha)-5] // Remove year
-				}
-				hora = item.Fecha.Format("15:04")
-			} else if item.Hora != "" {
-				hora = item.Hora
-			}
-			fechaSol := solicitud.CreatedAt.Format("02/01/2006")
-			horaSol := solicitud.CreatedAt.Format("15:04")
-
-			origenStr := item.OrigenIATA
-			if item.Origen != nil {
-				origenStr = item.Origen.Ciudad
-			}
-			destStr := item.DestinoIATA
-			if item.Destino != nil {
-				destStr = item.Destino.Ciudad
-			}
-
-			rut := fmt.Sprintf("%s  >>  %s", origenStr, destStr)
-
-			// Table Header
-			pdf.SetFont("Arial", "B", 7)
-			pdf.SetFillColor(245, 245, 245)
-
-			// Headers
-			pdf.CellFormat(32, 8, tr("FECHA/HORA SOLICITUD"), "1", 0, "C", true, 0, "")
-			pdf.CellFormat(25, 8, tr("ESTADO"), "1", 0, "C", true, 0, "")
-			pdf.CellFormat(35, 8, tr("AEROLÍNEA"), "1", 0, "C", true, 0, "")
-			pdf.CellFormat(52, 8, tr("RUTA"), "1", 0, "C", true, 0, "")
-			pdf.CellFormat(30, 8, tr("FECHA VIAJE"), "1", 0, "C", true, 0, "")
-			pdf.CellFormat(18, 8, tr("HORA VIAJE"), "1", 1, "C", true, 0, "")
-
-			// Data Row
-			pdf.SetFont("Arial", "", 9)
-
-			pdf.CellFormat(32, 8, fmt.Sprintf("%s %s", fechaSol, horaSol), "1", 0, "C", false, 0, "")
-
-			pdf.SetFont("Arial", "B", 7)
-			pdf.SetTextColor(0, 0, 128)
-			pdf.CellFormat(25, 8, tr(item.GetEstado()), "1", 0, "C", false, 0, "")
-			pdf.SetTextColor(0, 0, 0)
-			pdf.SetFont("Arial", "", 7)
-
-			aerolineaNombre := solicitud.AerolineaSugerida
-			if aerolinea, err := s.aerolineaRepo.FindByID(solicitud.AerolineaSugerida); err == nil {
-				if aerolinea.Sigla != "" {
-					aerolineaNombre = aerolinea.Sigla
-				} else {
-					aerolineaNombre = aerolinea.Nombre
-				}
-			}
-
-			pdf.CellFormat(35, 8, tr(aerolineaNombre), "1", 0, "C", false, 0, "")
-			pdf.CellFormat(52, 8, tr(rut), "1", 0, "C", false, 0, "")
-			pdf.SetFont("Arial", "", 9)
-			pdf.CellFormat(30, 8, tr(fecha), "1", 0, "C", false, 0, "")
-			pdf.CellFormat(18, 8, hora, "1", 1, "C", false, 0, "")
-
-		} else {
-			pdf.SetFont("Arial", "I", 9)
-			pdf.CellFormat(190, 10, tr(" TRAMO NO SOLICITADO"), "", 1, "C", false, 0, "")
-		}
-		pdf.Ln(2)
-	}
-
 	var idaItem, vueltaItem *models.SolicitudItem
 	for i := range solicitud.Items {
 		item := &solicitud.Items[i]
@@ -275,9 +157,9 @@ func (s *ReportService) GeneratePV01(ctx context.Context, solicitud *models.Soli
 	}
 
 	pdf.Ln(2)
-	drawSegment("TRAYECTO DE IDA", idaItem)
+	s.drawSolicitudSegment(ctx, pdf, tr, "TRAYECTO DE IDA", idaItem, solicitud.AerolineaSugerida)
 	pdf.Ln(4)
-	drawSegment("TRAYECTO DE VUELTA", vueltaItem)
+	s.drawSolicitudSegment(ctx, pdf, tr, "TRAYECTO DE VUELTA", vueltaItem, solicitud.AerolineaSugerida)
 
 	pdf.Ln(8)
 
@@ -294,22 +176,8 @@ func (s *ReportService) GeneratePV01(ctx context.Context, solicitud *models.Soli
 
 	pdf.SetY(220)
 
-	// Signatures
 	pdf.SetY(220)
-	pdf.SetFont("Arial", "B", 7)
-
-	// Left (Unidad Solicitante)
-	pdf.Line(35, 230, 95, 230)
-	pdf.SetXY(35, 232)
-	pdf.CellFormat(60, 4, tr("SELLO UNIDAD SOLICITANTE"), "", 1, "C", false, 0, "")
-
-	// Right (Solicitante)
-	pdf.Line(115, 230, 175, 230)
-	pdf.SetXY(115, 232)
-	pdf.SetFont("Arial", "B", 7)
-	pdf.CellFormat(60, 4, tr("FIRMA / SELLO SOLICITANTE"), "", 1, "C", false, 0, "")
-	pdf.SetX(115)
-	pdf.SetFont("Arial", "", 7)
+	s.drawSignatureBlock(pdf, tr, 230, "SELLO UNIDAD SOLICITANTE", "FIRMA / SELLO SOLICITANTE", solicitud.Usuario.GetNombreCompleto())
 
 	return pdf
 }
@@ -327,59 +195,19 @@ func (s *ReportService) GeneratePV02(ctx context.Context, solicitud *models.Soli
 		pdf.SetTextColor(50, 50, 50)
 		disclaimer := tr("La solicitud deberá presentarse con 48 horas de anticipación (Art. 24). El descargo, adjuntando pases a bordo originales del/los tramo(s) utilizado(s), deberá efectuarse dentro de 8 días hábiles posteriores al retorno o finalización del tramo (Arts. 25 y 48); para pasajes internacionales, el plazo será de 5 días hábiles. No se recibirán solicitudes por derecho con descargos anteriores pendientes.\nEl incumplimiento dará lugar a sanciones conforme al Reglamento de Pasajes y Viáticos.")
 		pdf.MultiCell(209, 2.5, disclaimer, "", "L", false)
+		s.drawPageBorder(pdf)
 	})
 
 	pdf.AddPage()
-	pdf.SetFont("Arial", "B", 16)
-
-	xHeader, yHeader := 10.0, 10.0
-	hHeader := 22.0
-
-	pdf.SetLineWidth(0.1)
-	pdf.Line(xHeader, yHeader+hHeader, xHeader+167, yHeader+hHeader)
-
-	pdf.SetXY(xHeader, yHeader+3)
-	pdf.SetFont("Arial", "B", 12)
-	pdf.CellFormat(40, 6, "FORM-PV-02", "", 1, "C", false, 0, "")
-
-	pdf.SetX(xHeader)
-	pdf.SetFont("Arial", "B", 11)
-	pdf.CellFormat(40, 8, fmt.Sprintf("%s", solicitud.Codigo), "", 1, "C", false, 0, "")
-	pdf.SetXY(xHeader+40, yHeader+4)
-	pdf.SetFont("Arial", "B", 14)
-	pdf.CellFormat(115, 8, tr("FORMULARIO DE SOLICITUD"), "", 1, "C", false, 0, "")
-	pdf.SetXY(xHeader+40, yHeader+11)
-	pdf.SetFont("Arial", "B", 9)
-	pdf.CellFormat(115, 6, tr("PASAJES AEREOS PARA FUNCIONARIOS(AS)"), "", 1, "C", false, 0, "")
-	pdf.SetXY(xHeader+40, yHeader+16)
-	pdf.SetFont("Arial", "B", 10)
-	pdf.CellFormat(115, 6, fmt.Sprintf("GESTION: %s", solicitud.CreatedAt.Format("2006")), "", 1, "C", false, 0, "")
-
-	pdf.Image("web/static/img/logo_senado.png", xHeader+160, yHeader-6, 30, 0, false, "", 0, "")
+	s.drawReportHeader(pdf, tr, "FORM-PV-02", "FORMULARIO DE SOLICITUD", "PASAJES AEREOS PARA FUNCIONARIOS(AS)", "GESTION: "+solicitud.CreatedAt.Format("2006"), solicitud.Codigo)
 
 	pdf.SetY(40)
 	pdf.SetFont("Arial", "", 10)
 
-	drawLabelBox := func(label, value string, wLabel, wBox float64, sameLine bool) {
-		h := 6.0
-		pdf.SetFont("Arial", "B", 8)
-		pdf.CellFormat(wLabel, h, tr(label), "", 0, "R", false, 0, "")
-
-		pdf.SetFont("Arial", "", 9)
-		if len(value) > 75 {
-			value = value[:72] + "..."
-		}
-		pdf.CellFormat(wBox, h, "  "+tr(value), "1", 0, "L", false, 0, "")
-
-		if !sameLine {
-			pdf.Ln(h + 2)
-		}
-	}
-
 	// DATOS DEL SUSCRITO
-	drawLabelBox("NOMBRE Y APELLIDOS :", solicitud.Usuario.GetNombreCompleto(), 45, 145, false)
-	drawLabelBox("C.I. :", solicitud.Usuario.CI, 45, 55, true)
-	drawLabelBox("TEL. REF :", solicitud.Usuario.Phone, 35, 55, false)
+	s.drawLabelBox(pdf, tr, "NOMBRE Y APELLIDOS :", solicitud.Usuario.GetNombreCompleto(), 45, 145, false)
+	s.drawLabelBox(pdf, tr, "C.I. :", solicitud.Usuario.CI, 45, 55, true)
+	s.drawLabelBox(pdf, tr, "TEL. REF :", solicitud.Usuario.Phone, 35, 55, false)
 
 	cargoStr := ""
 	if personaView != nil && personaView.Cargo != "" {
@@ -387,7 +215,7 @@ func (s *ReportService) GeneratePV02(ctx context.Context, solicitud *models.Soli
 	} else if solicitud.Usuario.Cargo != nil {
 		cargoStr = solicitud.Usuario.Cargo.Descripcion
 	}
-	drawLabelBox("CARGO :", cargoStr, 45, 145, false)
+	s.drawLabelBox(pdf, tr, "CARGO :", cargoStr, 45, 145, false)
 
 	unidadStr := ""
 	if personaView != nil && personaView.Dependencia != "" {
@@ -395,20 +223,20 @@ func (s *ReportService) GeneratePV02(ctx context.Context, solicitud *models.Soli
 	} else if solicitud.Usuario.Oficina != nil {
 		unidadStr = solicitud.Usuario.Oficina.Detalle
 	}
-	drawLabelBox("UNIDAD FUNCIONAL :", unidadStr, 45, 145, false)
+	s.drawLabelBox(pdf, tr, "UNIDAD FUNCIONAL :", unidadStr, 45, 145, false)
 
 	fechaSol := solicitud.CreatedAt.Format("02/01/2006")
 	horaSol := solicitud.CreatedAt.Format("15:04")
-	drawLabelBox("FECHA DE SOLICITUD :", fechaSol, 45, 55, true)
-	drawLabelBox("HORA :", horaSol, 25, 40, false)
+	s.drawLabelBox(pdf, tr, "FECHA DE SOLICITUD :", fechaSol, 45, 55, true)
+	s.drawLabelBox(pdf, tr, "HORA :", horaSol, 25, 40, false)
 
 	authVal := solicitud.Autorizacion
 	if authVal == "" {
 		authVal = "PD"
 	}
-	drawLabelBox("Nro(Memo/RD/Nota JG/RC) :", authVal, 45, 55, false)
+	s.drawLabelBox(pdf, tr, "Nro(Memo/RD/Nota JG/RC) :", authVal, 45, 55, false)
 
-	drawLabelBox("CONCEPTO DE VIAJE :", "OFICIAL", 45, 55, false)
+	s.drawLabelBox(pdf, tr, "CONCEPTO DE VIAJE :", "OFICIAL", 45, 55, false)
 
 	pdf.Ln(4)
 
@@ -433,7 +261,7 @@ func (s *ReportService) GeneratePV02(ctx context.Context, solicitud *models.Soli
 	aerolineaNombre := solicitud.AerolineaSugerida
 	if aerolineaNombre == "" {
 		aerolineaNombre = "-"
-	} else if aerolinea, err := s.aerolineaRepo.FindByID(aerolineaNombre); err == nil {
+	} else if aerolinea, err := s.aerolineaRepo.FindByID(ctx, aerolineaNombre); err == nil {
 		if aerolinea.Sigla != "" {
 			aerolineaNombre = aerolinea.Sigla
 		} else {
@@ -506,7 +334,7 @@ func (s *ReportService) GeneratePV02(ctx context.Context, solicitud *models.Soli
 		horaSol := solicitud.CreatedAt.Format("15:04")
 		aerolineaNombre := solicitud.AerolineaSugerida
 		if aerolineaNombre != "" {
-			if aerolinea, err := s.aerolineaRepo.FindByID(solicitud.AerolineaSugerida); err == nil {
+			if aerolinea, err := s.aerolineaRepo.FindByID(ctx, solicitud.AerolineaSugerida); err == nil {
 				if aerolinea.Sigla != "" {
 					aerolineaNombre = aerolinea.Sigla
 				} else {
@@ -569,15 +397,8 @@ func (s *ReportService) GeneratePV02(ctx context.Context, solicitud *models.Soli
 	drawRutaSeccion("RUTA DE IDA", itemsIda)
 	drawRutaSeccion("RUTA DE VUELTA", itemsVuelta)
 
-	// Firmas
-	pdf.SetFont("Arial", "B", 7)
-	pdf.Line(25, 248, 95, 248)
-	pdf.SetXY(25, 250)
-	pdf.CellFormat(70, 4, tr("SELLO UNIDAD SOLICITANTE"), "", 1, "C", false, 0, "")
-
-	pdf.Line(115, 248, 175, 248)
-	pdf.SetXY(115, 250)
-	pdf.CellFormat(60, 4, tr("FIRMA / SELLO SOLICITANTE"), "", 1, "C", false, 0, "")
+	pdf.SetY(240)
+	s.drawSignatureBlock(pdf, tr, 248, "SELLO UNIDAD SOLICITANTE", "FIRMA / SELLO SOLICITANTE", solicitud.Usuario.GetNombreCompleto())
 
 	pdf.SetFont("Arial", "I", 8)
 	return pdf
@@ -590,65 +411,23 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 	tr := pdf.UnicodeTranslatorFromDescriptor("")
 
 	pdf.SetFooterFunc(func() {
-		pdf.SetY(-12)
+		pdf.SetY(-10)
 		pdf.SetFont("Arial", "I", 6)
 		pdf.SetTextColor(50, 50, 50)
 		disclaimer := tr("NO SE DARA CURSO AL TRAMITE DE PASAJES Y VIATICOS, EN CASO DE VERIFICARSE QUE LOS DOCUMENTOS DE DECLARATORIA Y/O DESCARGO EN COMISION OFICIAL PRESENTEN ALTERACIONES, BORRONES O ENMIENDAS QUE MODIFIQUEN EL CONTENIDO DE LA MISMA, SIN PERJUICIO DE INICIAR LAS ACCIONES LEGALES QUE CORRESPONDA.")
 		pdf.MultiCell(190, 3, disclaimer, "", "L", false)
+		s.drawPageBorder(pdf)
 	})
 
 	pdf.AddPage()
-	pdf.SetFont("Arial", "B", 16)
-
-	xHeader, yHeader := 10.0, 10.0
-	hHeader := 22.0
-
-	pdf.SetLineWidth(0.1)
-	pdf.Line(xHeader, yHeader+hHeader, xHeader+167, yHeader+hHeader)
-
-	pdf.SetXY(xHeader, yHeader+3)
-	pdf.SetFont("Arial", "B", 12)
-	pdf.CellFormat(40, 6, "FORM-PV-05", "", 1, "C", false, 0, "")
-
-	pdf.SetX(xHeader)
-	pdf.SetFont("Arial", "B", 11)
-	pdf.CellFormat(40, 8, fmt.Sprintf("%s", solicitud.Codigo), "", 1, "C", false, 0, "")
-	pdf.SetXY(xHeader+40, yHeader+4)
-	pdf.SetFont("Arial", "B", 14)
-	pdf.CellFormat(115, 8, tr("FORMULARIO DE DESCARGO"), "", 1, "C", false, 0, "")
-
-	pdf.SetXY(xHeader+40, yHeader+11)
-	pdf.SetFont("Arial", "B", 9)
-	pdf.CellFormat(115, 6, tr("PASAJES AEREOS PARA SENADORAS Y SENADORES"), "", 1, "C", false, 0, "")
-
-	pdf.SetXY(xHeader+40, yHeader+16)
-	pdf.SetFont("Arial", "B", 10)
-	pdf.CellFormat(115, 6, fmt.Sprintf("GESTION: %s", solicitud.CreatedAt.Format("2006")), "", 1, "C", false, 0, "")
-
-	pdf.Image("web/static/img/logo_senado.png", xHeader+160, yHeader-6, 30, 0, false, "", 0, "")
+	s.drawReportHeader(pdf, tr, "FORM-PV-05", "FORMULARIO DE DESCARGO", "PASAJES AEREOS PARA SENADORAS Y SENADORES", "GESTION: "+solicitud.CreatedAt.Format("2006"), solicitud.Codigo)
 
 	pdf.SetY(40)
 	pdf.SetFont("Arial", "", 10)
 
-	drawLabelBox := func(label, value string, wLabel, wBox float64, sameLine bool) {
-		h := 6.0
-		pdf.SetFont("Arial", "B", 8)
-		pdf.CellFormat(wLabel, h, tr(label), "", 0, "R", false, 0, "")
-
-		pdf.SetFont("Arial", "", 9)
-		if len(value) > 75 {
-			value = value[:72] + "..."
-		}
-		pdf.CellFormat(wBox, h, "  "+tr(value), "1", 0, "L", false, 0, "")
-
-		if !sameLine {
-			pdf.Ln(h + 2)
-		}
-	}
-
-	drawLabelBox("NOMBRE Y APELLIDOS :", solicitud.Usuario.GetNombreCompleto(), 40, 150, false)
-	drawLabelBox("C.I. :", solicitud.Usuario.CI, 40, 60, true)
-	drawLabelBox("TEL. REF :", solicitud.Usuario.Phone, 30, 60, false)
+	s.drawLabelBox(pdf, tr, "NOMBRE Y APELLIDOS :", solicitud.Usuario.GetNombreCompleto(), 40, 150, false)
+	s.drawLabelBox(pdf, tr, "C.I. :", solicitud.Usuario.CI, 40, 60, true)
+	s.drawLabelBox(pdf, tr, "TEL. REF :", solicitud.Usuario.Phone, 30, 60, false)
 
 	origenUser := ""
 	if solicitud.Usuario.Origen != nil {
@@ -667,7 +446,7 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 			tipoUsuario = senadorData.Tipo
 		}
 	}
-	drawLabelBox("SENADOR POR EL DPTO. :", origenUser, 40, 60, true)
+	s.drawLabelBox(pdf, tr, "SENADOR POR EL DPTO. :", origenUser, 40, 60, true)
 
 	isTitular := strings.Contains(strings.ToUpper(tipoUsuario), "TITULAR")
 	isSuplente := strings.Contains(strings.ToUpper(tipoUsuario), "SUPLENTE")
@@ -706,11 +485,12 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 		mesLabel = fmt.Sprintf("%s - %s", mes, cupoNum)
 	}
 
-	drawLabelBox("CORRESPONDIENTE AL MES DE :", mesLabel, 50, 60, false)
+	s.drawLabelBox(pdf, tr, "CORRESPONDIENTE AL MES DE :", mesLabel, 50, 60, false)
 	pdf.Ln(2)
 
+	pdf.SetX(3)
 	pdf.SetFont("Arial", "B", 10)
-	pdf.CellFormat(190, 8, tr("DESCARGO DE PASAJES (ADJUNTAR PASES A BORDO)"), "B", 1, "C", false, 0, "")
+	pdf.CellFormat(210, 8, tr("DESCARGO DE PASAJES (ADJUNTAR PASES A BORDO)"), "B", 1, "C", false, 0, "")
 	pdf.Ln(2)
 
 	drawSubTable := func(subTitle string, headerBoleto string, rows []models.DetalleItinerarioDescargo) {
@@ -800,68 +580,24 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 		}
 	}
 
-	drawReturnTable := func(subTitle string, rows []models.DetalleItinerarioDescargo) {
-		if subTitle != "" {
-			pdf.SetFont("Arial", "B", 8)
-			pdf.CellFormat(190, 6, tr(subTitle), "", 1, "L", false, 0, "")
-		}
-		pdf.SetFillColor(240, 240, 240)
-		pdf.SetFont("Arial", "B", 8)
-		pdf.CellFormat(120, 6, tr("RUTA"), "1", 0, "C", true, 0, "")
-		pdf.CellFormat(70, 6, tr("N° BOLETO"), "1", 1, "C", true, 0, "")
-		if len(rows) > 0 {
-			pdf.SetFont("Arial", "", 8)
-			for _, r := range rows {
-				orig, dest := "", ""
-				parts := strings.Split(r.Ruta, "-")
-				if len(parts) >= 2 {
-					orig = strings.TrimSpace(parts[0])
-					dest = strings.TrimSpace(parts[1])
-				} else {
-					orig = r.Ruta
-				}
-				pdf.CellFormat(60, 6, tr(orig), "1", 0, "C", false, 0, "")
-				pdf.CellFormat(60, 6, tr(dest), "1", 0, "C", false, 0, "")
-				pdf.CellFormat(70, 6, tr(r.Boleto), "1", 1, "C", false, 0, "")
-			}
-		} else {
-			pdf.CellFormat(60, 8, "", "1", 0, "C", false, 0, "")
-			pdf.CellFormat(60, 8, "", "1", 0, "C", false, 0, "")
-			pdf.CellFormat(70, 8, "", "1", 1, "C", false, 0, "")
-		}
-	}
-
 	if len(returnsIda) > 0 || len(returnsVuelta) > 0 {
 		if len(returnsIda) > 0 {
-			drawReturnTable("TRAMO DE IDA", returnsIda)
+			s.drawReturnTable(pdf, tr, "TRAMO DE IDA", returnsIda)
 		}
 		if len(returnsVuelta) > 0 {
 			if len(returnsIda) > 0 {
 				pdf.Ln(2)
 			}
-			drawReturnTable("TRAMO DE RETORNO", returnsVuelta)
+			s.drawReturnTable(pdf, tr, "TRAMO DE RETORNO", returnsVuelta)
 		}
 	} else {
-		drawReturnTable("", nil)
+		s.drawReturnTable(pdf, tr, "", nil)
 	}
 	pdf.Ln(10)
 
 	sigY := 220.0
 	pdf.SetY(sigY)
-	pdf.SetFont("Arial", "B", 8)
-	pdf.Line(35, sigY+10, 95, sigY+10)
-	pdf.SetXY(35, sigY+12)
-	pdf.SetFont("Arial", "B", 7)
-	pdf.CellFormat(60, 4, tr("SELLO UNIDAD SOLICITANTE"), "", 1, "C", false, 0, "")
-	pdf.SetX(35)
-
-	pdf.SetX(35)
-	pdf.SetFont("Arial", "I", 6)
-
-	pdf.Line(110, sigY+10, 180, sigY+10)
-	pdf.SetXY(110, sigY+12)
-	pdf.SetFont("Arial", "B", 7)
-	pdf.CellFormat(70, 4, tr("FIRMA/RESPONSABLE PRESENTACION DEL DESCARGO"), "", 1, "C", false, 0, "")
+	s.drawSignatureBlock(pdf, tr, sigY+10, "SELLO UNIDAD SOLICITANTE", "FIRMA/RESPONSABLE PRESENTACION DEL DESCARGO", solicitud.Usuario.GetNombreCompleto())
 
 	return pdf
 }
@@ -873,44 +609,17 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 	tr := pdf.UnicodeTranslatorFromDescriptor("")
 
 	pdf.SetFooterFunc(func() {
-		pdf.SetY(-12)
+		pdf.SetY(-10)
 		pdf.SetFont("Arial", "I", 6)
 		pdf.SetTextColor(50, 50, 50)
 		disclaimer := tr("NO SE DARA CURSO AL TRAMITE DE PASAJES Y VIATICOS, EN CASO DE VERIFICARSE QUE LOS DOCUMENTOS DE DECLARATORIA Y/O DESCARGO EN COMISION OFICIAL PRESENTEN ALTERACIONES, BORRONES O ENMIENDAS QUE MODIFIQUEN EL CONTENIDO DE LA MISMA, SIN PERJUICIO DE INICIAR LAS ACCIONES LEGALES QUE CORRESPONDA.")
 		pdf.MultiCell(190, 3, disclaimer, "", "L", false)
+		s.drawPageBorder(pdf)
 	})
 
 	pdf.AddPage()
-	pdf.SetFont("Arial", "B", 16)
+	s.drawReportHeader(pdf, tr, "FORM-PV-06", "FORMULARIO DE DESCARGO", "PASAJES OFICIALES", "SERVIDORES PÚBLICOS - GESTION: "+solicitud.CreatedAt.Format("2006"), solicitud.Codigo)
 
-	xHeader, yHeader := 10.0, 10.0
-	hHeader := 22.0
-
-	pdf.SetLineWidth(0.1)
-	pdf.Line(xHeader, yHeader+hHeader, xHeader+167, yHeader+hHeader)
-
-	pdf.SetXY(xHeader, yHeader+3)
-	pdf.SetFont("Arial", "B", 12)
-	pdf.CellFormat(40, 6, "FORM-PV-06", "", 1, "C", false, 0, "")
-
-	pdf.SetX(xHeader)
-	pdf.SetFont("Arial", "B", 11)
-	pdf.CellFormat(40, 8, fmt.Sprintf("%s", solicitud.Codigo), "", 1, "C", false, 0, "")
-	pdf.SetXY(xHeader+40, yHeader+4)
-	pdf.SetFont("Arial", "B", 14)
-	pdf.CellFormat(115, 8, tr("FORMULARIO DE DESCARGO"), "", 1, "C", false, 0, "")
-
-	pdf.SetXY(xHeader+40, yHeader+11)
-	pdf.SetFont("Arial", "B", 9)
-	pdf.CellFormat(115, 6, tr("PASAJES OFICIALES"), "", 1, "C", false, 0, "")
-
-	pdf.SetXY(xHeader+40, yHeader+16)
-	pdf.SetFont("Arial", "B", 10)
-	pdf.CellFormat(115, 6, tr("SERVIDORES PÚBLICOS")+" - "+fmt.Sprintf("GESTION: %s", solicitud.CreatedAt.Format("2006")), "", 1, "C", false, 0, "")
-
-	pdf.Image("web/static/img/logo_senado.png", xHeader+160, yHeader-6, 30, 0, false, "", 0, "")
-
-	pdf.SetY(40)
 	pdf.SetFont("Arial", "", 10)
 
 	cargoStr := ""
@@ -923,16 +632,8 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 	pdf.SetLineWidth(0.2)
 	pdf.SetDrawColor(0, 0, 0)
 
-	drawMemoRow := func(label, value string) {
-		h := 7.0
-		pdf.SetFillColor(255, 255, 255) // White background
-		pdf.SetFont("Arial", "B", 10)
-		pdf.CellFormat(30, h, tr(label), "1", 0, "R", true, 0, "")
-
-		pdf.SetFillColor(255, 255, 255)
-		pdf.SetFont("Arial", "", 10)
-		pdf.CellFormat(160, h, "  "+tr(value), "1", 1, "L", false, 0, "")
-	}
+	pdf.SetLineWidth(0.2)
+	pdf.SetDrawColor(0, 0, 0)
 
 	aQuien := ""
 	if descargo.Oficial != nil {
@@ -946,10 +647,10 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 		}
 	}
 
-	drawMemoRow("A :", aQuien)
-	drawMemoRow("De :", solicitud.Usuario.GetNombreCompleto())
-	drawMemoRow("Cargo :", cargoStr)
-	drawMemoRow("Fecha :", solicitud.CreatedAt.Format("02/01/2006"))
+	s.drawMemoRow(pdf, tr, "A :", aQuien)
+	s.drawMemoRow(pdf, tr, "De :", solicitud.Usuario.GetNombreCompleto())
+	s.drawMemoRow(pdf, tr, "Cargo :", cargoStr)
+	s.drawMemoRow(pdf, tr, "Fecha :", solicitud.CreatedAt.Format("02/01/2006"))
 
 	pdf.Ln(4)
 
@@ -1000,8 +701,9 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 	pdf.Ln(2)
 
 	// INFORME DETALLADO PV-06
+	pdf.SetX(3)
 	pdf.SetFont("Arial", "B", 10)
-	pdf.CellFormat(190, 8, tr("INFORME DE COMISIÓN"), "B", 1, "C", false, 0, "")
+	pdf.CellFormat(210, 8, tr("INFORME DE COMISIÓN"), "B", 1, "C", false, 0, "")
 	pdf.Ln(4)
 
 	// Memo y Objetivo
@@ -1059,8 +761,9 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 	// Anexos (Imágenes) - Parte del Informe
 	if descargo.Oficial != nil && len(descargo.Oficial.Anexos) > 0 {
 		pdf.Ln(4)
+		pdf.SetX(3)
 		pdf.SetFont("Arial", "B", 10)
-		pdf.CellFormat(190, 8, tr("ANEXO FOTOGRÁFICO / ACTIVIDADES"), "B", 1, "L", false, 0, "")
+		pdf.CellFormat(210, 8, tr("ANEXO FOTOGRÁFICO / ACTIVIDADES"), "B", 1, "C", false, 0, "")
 		pdf.Ln(2)
 
 		for _, anexo := range descargo.Oficial.Anexos {
@@ -1094,128 +797,23 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 
 	pdf.Ln(6)
 
+	pdf.SetX(3)
 	pdf.SetFont("Arial", "B", 10)
-	pdf.CellFormat(190, 8, tr("DESCARGO DE PASAJES (ADJUNTAR PASES A BORDO)"), "B", 1, "C", false, 0, "")
+	pdf.CellFormat(210, 8, tr("DESCARGO DE PASAJES (ADJUNTAR PASES A BORDO)"), "B", 1, "C", false, 0, "")
 	pdf.Ln(2)
 
-	drawSubTable := func(subTitle string, headerBoleto string, rows []models.DetalleItinerarioDescargo) {
-		if subTitle != "" {
-			pdf.SetFillColor(240, 240, 240)
-			pdf.SetFont("Arial", "B", 8)
-			pdf.CellFormat(190, 5, tr(subTitle), "1", 1, "C", true, 0, "")
-		}
-		pdf.SetFillColor(255, 255, 255)
-		pdf.SetFont("Arial", "B", 7)
-		pdf.CellFormat(70, 5, tr("RUTA"), "1", 0, "C", false, 0, "")
-		pdf.CellFormat(30, 5, tr("FECHA DE VIAJE"), "1", 0, "C", false, 0, "")
-		pdf.CellFormat(50, 5, tr(headerBoleto), "1", 0, "C", false, 0, "")
-		pdf.CellFormat(40, 5, tr("N° PASE A BORDO"), "1", 1, "C", false, 0, "")
-
-		if len(rows) == 0 {
-			pdf.SetFont("Arial", "", 8)
-			pdf.CellFormat(35, 6, "", "1", 0, "C", false, 0, "")
-			pdf.CellFormat(35, 6, "", "1", 0, "C", false, 0, "")
-			pdf.CellFormat(30, 6, "", "1", 0, "C", false, 0, "")
-			pdf.CellFormat(50, 6, "", "1", 0, "C", false, 0, "")
-			pdf.CellFormat(40, 6, "", "1", 1, "C", false, 0, "")
-			return
-		}
-
-		pdf.SetFont("Arial", "", 8)
-		for _, r := range rows {
-			orig, dest := "", ""
-			parts := strings.Split(r.Ruta, "-")
-			if len(parts) >= 2 {
-				orig = strings.TrimSpace(parts[0])
-				dest = strings.TrimSpace(parts[1])
-			} else {
-				orig = r.Ruta
-			}
-			pdf.CellFormat(35, 6, tr(orig), "1", 0, "C", false, 0, "")
-			pdf.CellFormat(35, 6, tr(dest), "1", 0, "C", false, 0, "")
-			fecha := ""
-			if r.Fecha != nil {
-				fecha = r.Fecha.Format("02/01/2006")
-			}
-			pdf.CellFormat(30, 6, tr(fecha), "1", 0, "C", false, 0, "")
-			pdf.CellFormat(50, 6, tr(r.Boleto), "1", 0, "C", false, 0, "")
-			pdf.CellFormat(40, 6, tr(r.NumeroPaseAbordo), "1", 1, "C", false, 0, "")
-		}
-	}
-
-	drawSegmentBlock := func(title string, typeOrig, typeRepro models.TipoDetalleItinerario) {
-		pdf.SetFont("Arial", "B", 9)
-		pdf.CellFormat(190, 6, tr(" "+title), "", 1, "L", false, 0, "")
-		pdf.Ln(1)
-		var origRows, reproRows []models.DetalleItinerarioDescargo
-		for _, d := range descargo.DetallesItinerario {
-			if d.EsDevolucion {
-				continue
-			}
-			switch d.Tipo {
-			case typeOrig:
-				origRows = append(origRows, d)
-			case typeRepro:
-				reproRows = append(reproRows, d)
-			}
-		}
-		drawSubTable("", "N° BOLETO ORIGINAL", origRows)
-		if len(reproRows) > 0 {
-			pdf.Ln(1)
-			drawSubTable("REPROGRAMACIÓN", "N° BOLETO REPROGRAMADO", reproRows)
-		}
-	}
-
-	drawSegmentBlock("TRAMO DE IDA", models.TipoDetalleIdaOriginal, models.TipoDetalleIdaReprogramada)
+	s.drawSegmentBlock(pdf, tr, descargo, "TRAMO DE IDA", models.TipoDetalleIdaOriginal, models.TipoDetalleIdaReprogramada)
 	pdf.Ln(4)
-	drawSegmentBlock("TRAMO DE RETORNO", models.TipoDetalleVueltaOriginal, models.TipoDetalleVueltaReprogramada)
+	s.drawSegmentBlock(pdf, tr, descargo, "TRAMO DE RETORNO", models.TipoDetalleVueltaOriginal, models.TipoDetalleVueltaReprogramada)
 	pdf.Ln(4)
 
 	if len(solicitud.Viaticos) > 0 {
-		pdf.SetFont("Arial", "B", 10)
-		pdf.CellFormat(190, 8, tr("DESCARGO DE VIÁTICOS"), "B", 1, "C", false, 0, "")
-		pdf.Ln(2)
-		for _, v := range solicitud.Viaticos {
-			pdf.SetFont("Arial", "B", 8)
-			pdf.CellFormat(190, 5, tr("N° BOLETO / CÓDIGO VIÁTICO")+" : "+v.Codigo, "", 1, "L", false, 0, "")
-			pdf.SetFillColor(240, 240, 240)
-			pdf.SetFont("Arial", "B", 7)
-			pdf.CellFormat(30, 5, tr("DESDE"), "1", 0, "C", true, 0, "")
-			pdf.CellFormat(30, 5, tr("HASTA"), "1", 0, "C", true, 0, "")
-			pdf.CellFormat(18, 5, tr("DÍAS"), "1", 0, "C", true, 0, "")
-			pdf.CellFormat(45, 5, tr("LUGAR"), "1", 0, "C", true, 0, "")
-			pdf.CellFormat(28, 5, tr("HABER/DÍA"), "1", 0, "C", true, 0, "")
-			pdf.CellFormat(18, 5, "%", "1", 0, "C", true, 0, "")
-			pdf.CellFormat(31, 5, tr("SUBTOTAL"), "1", 1, "C", true, 0, "")
-			pdf.SetFont("Arial", "", 7)
-			for _, d := range v.Detalles {
-				pdf.CellFormat(30, 5, d.FechaDesde.Format("02/01/2006"), "1", 0, "C", false, 0, "")
-				pdf.CellFormat(30, 5, d.FechaHasta.Format("02/01/2006"), "1", 0, "C", false, 0, "")
-				pdf.CellFormat(18, 5, fmt.Sprintf("%.1f", d.Dias), "1", 0, "C", false, 0, "")
-				pdf.CellFormat(45, 5, tr(d.Lugar), "1", 0, "L", false, 0, "")
-				pdf.CellFormat(28, 5, fmt.Sprintf("%.2f", d.MontoDia), "1", 0, "R", false, 0, "")
-				pdf.CellFormat(18, 5, fmt.Sprintf("%d", d.Porcentaje), "1", 0, "C", false, 0, "")
-				pdf.CellFormat(31, 5, fmt.Sprintf("%.2f", d.SubTotal), "1", 1, "R", false, 0, "")
-			}
-			pdf.SetFont("Arial", "B", 8)
-			pdf.CellFormat(169, 6, tr("TOTAL VIÁTICOS LÍQUIDO")+" :", "", 0, "R", false, 0, "")
-			pdf.CellFormat(21, 6, fmt.Sprintf("%.2f", v.MontoLiquido), "1", 1, "R", false, 0, "")
-			pdf.Ln(2)
-			if v.TieneGastosRep && (v.MontoGastosRep > 0 || v.MontoLiquidoGastos > 0) {
-				pdf.SetFont("Arial", "B", 9)
-				pdf.CellFormat(190, 6, tr("GASTOS DE REPRESENTACIÓN"), "B", 1, "L", false, 0, "")
-				pdf.SetFont("Arial", "", 8)
-				pdf.CellFormat(60, 5, tr("Monto asignado")+": "+fmt.Sprintf("%.2f", v.MontoGastosRep), "", 0, "L", false, 0, "")
-				pdf.CellFormat(65, 5, tr("Retención")+": "+fmt.Sprintf("%.2f", v.MontoRetencionGastos), "", 0, "L", false, 0, "")
-				pdf.CellFormat(65, 5, tr("Líquido")+": "+fmt.Sprintf("%.2f", v.MontoLiquidoGastos), "", 1, "L", false, 0, "")
-				pdf.Ln(2)
-			}
-		}
-		pdf.Ln(2)
+		s.drawViaticosTable(pdf, tr, solicitud.Viaticos)
 	}
 
+	pdf.SetX(3)
 	pdf.SetFont("Arial", "B", 9)
-	pdf.CellFormat(190, 6, tr(" DEVOLUCIÓN DE PASAJES (si aplica)"), "B", 1, "L", false, 0, "")
+	pdf.CellFormat(210, 6, tr(" DEVOLUCIÓN DE PASAJES (si aplica)"), "B", 1, "L", false, 0, "")
 	pdf.SetFont("Arial", "", 8)
 	pdf.CellFormat(190, 5, tr(" (En caso de no haber utilizado el boleto emitido o un tramo informar en el siguiente cuadro)"), "", 1, "L", false, 0, "")
 
@@ -1230,50 +828,18 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 		}
 	}
 
-	drawReturnTable := func(subTitle string, rows []models.DetalleItinerarioDescargo) {
-		if subTitle != "" {
-			pdf.SetFont("Arial", "B", 8)
-			pdf.CellFormat(190, 6, tr(subTitle), "", 1, "L", false, 0, "")
-		}
-		pdf.SetFillColor(240, 240, 240)
-		pdf.SetFont("Arial", "B", 8)
-		pdf.CellFormat(120, 6, tr("RUTA"), "1", 0, "C", true, 0, "")
-		pdf.CellFormat(70, 6, tr("N° BOLETO"), "1", 1, "C", true, 0, "")
-		if len(rows) > 0 {
-			pdf.SetFont("Arial", "", 8)
-			for _, r := range rows {
-				orig, dest := "", ""
-				parts := strings.Split(r.Ruta, "-")
-				if len(parts) >= 2 {
-					orig = strings.TrimSpace(parts[0])
-					dest = strings.TrimSpace(parts[1])
-				} else {
-					orig = r.Ruta
-				}
-				pdf.CellFormat(60, 6, tr(orig), "1", 0, "C", false, 0, "")
-				pdf.CellFormat(60, 6, tr(dest), "1", 0, "C", false, 0, "")
-				pdf.CellFormat(70, 6, tr(r.Boleto), "1", 1, "C", false, 0, "")
-			}
-		} else {
-			pdf.SetFont("Arial", "", 8)
-			pdf.CellFormat(60, 8, "", "1", 0, "C", false, 0, "")
-			pdf.CellFormat(60, 8, "", "1", 0, "C", false, 0, "")
-			pdf.CellFormat(70, 8, "", "1", 1, "C", false, 0, "")
-		}
-	}
-
 	if len(returnsIda) > 0 || len(returnsVuelta) > 0 {
 		if len(returnsIda) > 0 {
-			drawReturnTable("TRAMO DE IDA", returnsIda)
+			s.drawReturnTable(pdf, tr, "TRAMO DE IDA", returnsIda)
 		}
 		if len(returnsVuelta) > 0 {
 			if len(returnsIda) > 0 {
 				pdf.Ln(2)
 			}
-			drawReturnTable("TRAMO DE RETORNO", returnsVuelta)
+			s.drawReturnTable(pdf, tr, "TRAMO DE RETORNO", returnsVuelta)
 		}
 	} else {
-		drawReturnTable("", nil)
+		s.drawReturnTable(pdf, tr, "", nil)
 	}
 
 	pdf.Ln(5)
@@ -1282,11 +848,11 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 	pdf.SetFont("Arial", "B", 10)
 	pdf.CellFormat(190, 6, tr("En caso de Devolución de Pasajes y/o Viáticos:"), "", 1, "L", false, 0, "")
 
-	bancoCuenta := s.configService.GetValue(context.Background(), "BANCO_CUENTA_DEVOLUCION")
+	bancoCuenta := s.configService.GetValue(ctx, "BANCO_CUENTA_DEVOLUCION")
 	if bancoCuenta == "" {
 		bancoCuenta = "10000005588211"
 	}
-	bancoNombre := s.configService.GetValue(context.Background(), "BANCO_NOMBRE_DEVOLUCION")
+	bancoNombre := s.configService.GetValue(ctx, "BANCO_NOMBRE_DEVOLUCION")
 	if bancoNombre == "" {
 		bancoNombre = "BANCO UNIÓN S.A."
 	}
@@ -1333,45 +899,19 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 	}
 
 	pdf.SetY(sigY)
-	pdf.SetFont("Arial", "B", 8)
 
 	if solicitud.Usuario.IsSenador() {
-		// --- Case: SENATOR ---
-		// Left: SELLO UNIDAD SOLICITANTE
-		pdf.Line(35, sigY+10, 95, sigY+10)
-		pdf.SetXY(35, sigY+12)
-		pdf.SetFont("Arial", "B", 7)
-		pdf.CellFormat(60, 4, tr("SELLO UNIDAD SOLICITANTE"), "", 1, "C", false, 0, "")
-
-		// Right: FIRMA/RESPONSABLE PRESENTACION
-		pdf.Line(110, sigY+10, 180, sigY+10)
-		pdf.SetXY(110, sigY+12)
-		pdf.SetFont("Arial", "B", 7)
-		pdf.CellFormat(70, 4, tr("FIRMA Y SELLO SENADOR(A)"), "", 1, "C", false, 0, "")
-		pdf.SetX(110)
-		pdf.SetFont("Arial", "", 7)
-		pdf.CellFormat(70, 4, tr(solicitud.Usuario.GetNombreCompleto()), "", 1, "C", false, 0, "")
+		s.drawSignatureBlock(pdf, tr, sigY+10, "SELLO UNIDAD SOLICITANTE", "FIRMA Y SELLO SENADOR(A)", solicitud.Usuario.GetNombreCompleto())
 	} else {
-		// --- Case: NOT SENATOR (Public Servant) ---
-		// Left: FIRMA Y SELLO SERVIDOR PUBLICO
-		pdf.Line(35, sigY+10, 95, sigY+10)
-		pdf.SetXY(35, sigY+12)
-		pdf.SetFont("Arial", "B", 7)
-		pdf.CellFormat(60, 4, tr("FIRMA Y SELLO SERVIDOR PÚBLICO"), "", 1, "C", false, 0, "")
-		pdf.SetX(35)
+		encName := ""
+		if solicitud.Usuario.Encargado != nil {
+			encName = solicitud.Usuario.Encargado.GetNombreCompleto()
+		}
+		s.drawSignatureBlock(pdf, tr, sigY+10, "FIRMA Y SELLO SERVIDOR PÚBLICO", "Vo.Bo. Inmediato Superior", encName)
+		// Small tweak for PV06: servant name is on the left
+		pdf.SetXY(35, sigY+16)
 		pdf.SetFont("Arial", "", 7)
 		pdf.CellFormat(60, 4, tr(solicitud.Usuario.GetNombreCompleto()), "", 1, "C", false, 0, "")
-
-		// Right: Vo.Bo. Inmediato Superior
-		pdf.Line(110, sigY+10, 180, sigY+10)
-		pdf.SetXY(110, sigY+12)
-		pdf.SetFont("Arial", "B", 7)
-		pdf.CellFormat(70, 4, tr("Vo.Bo. Inmediato Superior"), "", 1, "C", false, 0, "")
-		if solicitud.Usuario.Encargado != nil {
-			pdf.SetX(110)
-			pdf.SetFont("Arial", "", 7)
-			pdf.CellFormat(70, 4, tr(solicitud.Usuario.Encargado.GetNombreCompleto()), "", 1, "C", false, 0, "")
-		}
 	}
 
 	return pdf
@@ -1389,7 +929,7 @@ func (s *ReportService) GeneratePV05Complete(ctx context.Context, descargo *mode
 	defer os.Remove(tmpBase.Name())
 
 	if err := pdf.OutputFileAndClose(tmpBase.Name()); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error generating base PDF: %w", err)
 	}
 
 	// 2. Recolectar rutas de archivos que existan (Billetes Electrónicos + Pases a Bordo)
@@ -1420,7 +960,11 @@ func (s *ReportService) GeneratePV05Complete(ctx context.Context, descargo *mode
 
 	// 3. Si solo hay un archivo (el base), retornarlo directamente
 	if len(filesToMerge) == 1 {
-		return os.ReadFile(tmpBase.Name())
+		data, err := os.ReadFile(tmpBase.Name())
+		if err != nil {
+			return nil, fmt.Errorf("error reading base PDF: %w", err)
+		}
+		return data, nil
 	}
 
 	// 4. Unir usando pdftk
@@ -1431,15 +975,19 @@ func (s *ReportService) GeneratePV05Complete(ctx context.Context, descargo *mode
 	defer os.Remove(tmpFinal.Name())
 
 	args := append(filesToMerge, "cat", "output", tmpFinal.Name())
-	cmd := exec.Command("pdftk", args...)
+	cmd := exec.CommandContext(ctx, "pdftk", args...)
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 
 	if err := cmd.Run(); err != nil {
-		return nil, fmt.Errorf("error al unir PDFs con pdftk: %v - %s", err, stderr.String())
+		return nil, fmt.Errorf("error merging PDFs with pdftk: %w - %s", err, stderr.String())
 	}
 
-	return os.ReadFile(tmpFinal.Name())
+	data, err := os.ReadFile(tmpFinal.Name())
+	if err != nil {
+		return nil, fmt.Errorf("error reading final merged PDF: %w", err)
+	}
+	return data, nil
 }
 
 func (s *ReportService) GeneratePV06Complete(ctx context.Context, descargo *models.Descargo, personaView *models.MongoPersonaView) ([]byte, error) {
@@ -1454,7 +1002,7 @@ func (s *ReportService) GeneratePV06Complete(ctx context.Context, descargo *mode
 	defer os.Remove(tmpBase.Name())
 
 	if err := pdf.OutputFileAndClose(tmpBase.Name()); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error generating base PDF: %w", err)
 	}
 
 	// 2. Recolectar rutas de archivos que existan (Billetes Electrónicos + Pases a Bordo)
@@ -1485,7 +1033,11 @@ func (s *ReportService) GeneratePV06Complete(ctx context.Context, descargo *mode
 
 	// 3. Si solo hay un archivo (el base), retornarlo directamente
 	if len(filesToMerge) == 1 {
-		return os.ReadFile(tmpBase.Name())
+		data, err := os.ReadFile(tmpBase.Name())
+		if err != nil {
+			return nil, fmt.Errorf("error reading base PDF: %w", err)
+		}
+		return data, nil
 	}
 
 	// 4. Unir usando pdftk
@@ -1496,13 +1048,451 @@ func (s *ReportService) GeneratePV06Complete(ctx context.Context, descargo *mode
 	defer os.Remove(tmpFinal.Name())
 
 	args := append(filesToMerge, "cat", "output", tmpFinal.Name())
-	cmd := exec.Command("pdftk", args...)
+	cmd := exec.CommandContext(ctx, "pdftk", args...)
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 
 	if err := cmd.Run(); err != nil {
-		return nil, fmt.Errorf("error al unir PDFs con pdftk: %v - %s", err, stderr.String())
+		return nil, fmt.Errorf("error merging PDFs with pdftk: %w - %s", err, stderr.String())
 	}
 
-	return os.ReadFile(tmpFinal.Name())
+	data, err := os.ReadFile(tmpFinal.Name())
+	if err != nil {
+		return nil, fmt.Errorf("error reading final merged PDF: %w", err)
+	}
+	return data, nil
+}
+
+func (s *ReportService) drawLabelBox(pdf *gofpdf.Fpdf, tr func(string) string, label, value string, wLabel, wBox float64, sameLine bool) {
+	h := 6.0
+	pdf.SetFont("Arial", "B", 8)
+	pdf.CellFormat(wLabel, h, tr(label), "", 0, "R", false, 0, "")
+
+	pdf.SetFont("Arial", "", 9)
+	if len(value) > 75 {
+		value = value[:72] + "..."
+	}
+	pdf.CellFormat(wBox, h, "  "+tr(value), "1", 0, "L", false, 0, "")
+
+	if !sameLine {
+		pdf.Ln(h + 2)
+	}
+}
+
+func (s *ReportService) drawReportHeader(pdf *gofpdf.Fpdf, tr func(string) string, formCode, title, subtitle, gestion, code string) {
+	// Adjusting based on border starting at X=3 and ending at X=213 (width 210)
+	yBase := 8.0
+
+	// 1. Logo Position (Right) - Now clearly inside the frame
+	pdf.Image("web/static/img/logo_senado.png", 185, 4, 21, 0, false, "", 0, "")
+
+	// 2. Left Block (Form Code / solicitud Code) - Starting at X=8 (5mm inside border)
+	pdf.SetXY(6, yBase)
+	pdf.SetFont("Arial", "B", 12)
+	pdf.CellFormat(45, 7, formCode, "", 2, "C", false, 0, "")
+	pdf.SetFont("Arial", "B", 10)
+	pdf.CellFormat(45, 6, code, "", 0, "C", false, 0, "")
+
+	// 3. Central Block (Titles) - Mathematically centered on the page (Letter width ~215.9)
+	pdf.SetXY(0, yBase-1)
+	pdf.SetFont("Arial", "B", 14)
+	pdf.CellFormat(215.9, 8, tr(title), "", 2, "C", false, 0, "")
+
+	pdf.SetFont("Arial", "B", 9)
+	pdf.CellFormat(215.9, 5, tr(subtitle), "", 2, "C", false, 0, "")
+
+	pdf.SetFont("Arial", "B", 10)
+	pdf.CellFormat(215.9, 5, tr(gestion), "", 0, "C", false, 0, "")
+
+	// 4. Horizontal Separator - Matching the exact width of top border
+	pdf.SetLineWidth(0.3)
+	pdf.Line(3, yBase+18, 213, yBase+18) // Aligned with the bottom of the header box
+
+	pdf.SetY(yBase + 24)
+}
+
+func (s *ReportService) drawMemoRow(pdf *gofpdf.Fpdf, tr func(string) string, label, value string) {
+	h := 7.0
+	pdf.SetFillColor(255, 255, 255) // White background
+	pdf.SetFont("Arial", "B", 10)
+	pdf.CellFormat(30, h, tr(label), "1", 0, "R", true, 0, "")
+
+	pdf.SetFillColor(255, 255, 255)
+	pdf.SetFont("Arial", "", 10)
+	pdf.CellFormat(160, h, "  "+tr(value), "1", 1, "L", false, 0, "")
+}
+
+func (s *ReportService) drawSubTable(pdf *gofpdf.Fpdf, tr func(string) string, subTitle string, headerBoleto string, rows []models.DetalleItinerarioDescargo) {
+	if subTitle != "" {
+		pdf.SetFillColor(240, 240, 240)
+		pdf.SetFont("Arial", "B", 8)
+		pdf.CellFormat(190, 5, tr(subTitle), "1", 1, "C", true, 0, "")
+	}
+	pdf.SetFillColor(255, 255, 255)
+	pdf.SetFont("Arial", "B", 7)
+	pdf.CellFormat(70, 5, tr("RUTA"), "1", 0, "C", false, 0, "")
+	pdf.CellFormat(30, 5, tr("FECHA DE VIAJE"), "1", 0, "C", false, 0, "")
+	pdf.CellFormat(50, 5, tr(headerBoleto), "1", 0, "C", false, 0, "")
+	pdf.CellFormat(40, 5, tr("N° PASE A BORDO"), "1", 1, "C", false, 0, "")
+
+	if len(rows) == 0 {
+		pdf.SetFont("Arial", "", 8)
+		pdf.CellFormat(35, 6, "", "1", 0, "C", false, 0, "")
+		pdf.CellFormat(35, 6, "", "1", 0, "C", false, 0, "")
+		pdf.CellFormat(30, 6, "", "1", 0, "C", false, 0, "")
+		pdf.CellFormat(50, 6, "", "1", 0, "C", false, 0, "")
+		pdf.CellFormat(40, 6, "", "1", 1, "C", false, 0, "")
+		return
+	}
+
+	pdf.SetFont("Arial", "", 8)
+	for _, r := range rows {
+		orig, dest := "", ""
+		parts := strings.Split(r.Ruta, "-")
+		if len(parts) >= 2 {
+			orig = strings.TrimSpace(parts[0])
+			dest = strings.TrimSpace(parts[1])
+		} else {
+			orig = r.Ruta
+		}
+		pdf.CellFormat(35, 6, tr(orig), "1", 0, "C", false, 0, "")
+		pdf.CellFormat(35, 6, tr(dest), "1", 0, "C", false, 0, "")
+		fecha := ""
+		if r.Fecha != nil {
+			fecha = r.Fecha.Format("02/01/2006")
+		}
+		pdf.CellFormat(30, 6, tr(fecha), "1", 0, "C", false, 0, "")
+		pdf.CellFormat(50, 6, tr(r.Boleto), "1", 0, "C", false, 0, "")
+		pdf.CellFormat(40, 6, tr(r.NumeroPaseAbordo), "1", 1, "C", false, 0, "")
+	}
+}
+
+func (s *ReportService) drawSegmentBlock(pdf *gofpdf.Fpdf, tr func(string) string, descargo *models.Descargo, title string, typeOrig, typeRepro models.TipoDetalleItinerario) {
+	pdf.SetFont("Arial", "B", 9)
+	pdf.CellFormat(190, 6, tr(" "+title), "", 1, "L", false, 0, "")
+	pdf.Ln(1)
+	var origRows, reproRows []models.DetalleItinerarioDescargo
+	for _, d := range descargo.DetallesItinerario {
+		if d.EsDevolucion {
+			continue
+		}
+		switch d.Tipo {
+		case typeOrig:
+			origRows = append(origRows, d)
+		case typeRepro:
+			reproRows = append(reproRows, d)
+		}
+	}
+	s.drawSubTable(pdf, tr, "", "N° BOLETO ORIGINAL", origRows)
+	if len(reproRows) > 0 {
+		pdf.Ln(1)
+		s.drawSubTable(pdf, tr, "REPROGRAMACIÓN", "N° BOLETO REPROGRAMADO", reproRows)
+	}
+}
+
+func (s *ReportService) drawReturnTable(pdf *gofpdf.Fpdf, tr func(string) string, subTitle string, rows []models.DetalleItinerarioDescargo) {
+	if subTitle != "" {
+		pdf.SetFont("Arial", "B", 8)
+		pdf.CellFormat(190, 6, tr(subTitle), "", 1, "L", false, 0, "")
+	}
+	pdf.SetFillColor(240, 240, 240)
+	pdf.SetFont("Arial", "B", 8)
+	pdf.CellFormat(120, 6, tr("RUTA"), "1", 0, "C", true, 0, "")
+	pdf.CellFormat(70, 6, tr("N° BOLETO"), "1", 1, "C", true, 0, "")
+	if len(rows) > 0 {
+		pdf.SetFont("Arial", "", 8)
+		for _, r := range rows {
+			orig, dest := "", ""
+			parts := strings.Split(r.Ruta, "-")
+			if len(parts) >= 2 {
+				orig = strings.TrimSpace(parts[0])
+				dest = strings.TrimSpace(parts[1])
+			} else {
+				orig = r.Ruta
+			}
+			pdf.CellFormat(60, 6, tr(orig), "1", 0, "C", false, 0, "")
+			pdf.CellFormat(60, 6, tr(dest), "1", 0, "C", false, 0, "")
+			pdf.CellFormat(70, 6, tr(r.Boleto), "1", 1, "C", false, 0, "")
+		}
+	} else {
+		pdf.SetFont("Arial", "", 8)
+		pdf.CellFormat(60, 8, "", "1", 0, "C", false, 0, "")
+		pdf.CellFormat(60, 8, "", "1", 0, "C", false, 0, "")
+		pdf.CellFormat(70, 8, "", "1", 1, "C", false, 0, "")
+	}
+}
+
+func (s *ReportService) drawViaticosTable(pdf *gofpdf.Fpdf, tr func(string) string, viaticos []models.Viatico) {
+	pdf.SetX(3)
+	pdf.SetFont("Arial", "B", 10)
+	pdf.CellFormat(210, 8, tr("DESCARGO DE VIÁTICOS"), "B", 1, "C", false, 0, "")
+	pdf.Ln(2)
+	for _, v := range viaticos {
+		pdf.SetFont("Arial", "B", 8)
+		pdf.CellFormat(190, 5, tr("N° BOLETO / CÓDIGO VIÁTICO")+" : "+v.Codigo, "", 1, "L", false, 0, "")
+		pdf.SetFillColor(240, 240, 240)
+		pdf.SetFont("Arial", "B", 7)
+		pdf.CellFormat(30, 5, tr("DESDE"), "1", 0, "C", true, 0, "")
+		pdf.CellFormat(30, 5, tr("HASTA"), "1", 0, "C", true, 0, "")
+		pdf.CellFormat(18, 5, tr("DÍAS"), "1", 0, "C", true, 0, "")
+		pdf.CellFormat(45, 5, tr("LUGAR"), "1", 0, "C", true, 0, "")
+		pdf.CellFormat(28, 5, tr("HABER/DÍA"), "1", 0, "C", true, 0, "")
+		pdf.CellFormat(18, 5, "%", "1", 0, "C", true, 0, "")
+		pdf.CellFormat(31, 5, tr("SUBTOTAL"), "1", 1, "C", true, 0, "")
+		pdf.SetFont("Arial", "", 7)
+		for _, d := range v.Detalles {
+			pdf.CellFormat(30, 5, d.FechaDesde.Format("02/01/2006"), "1", 0, "C", false, 0, "")
+			pdf.CellFormat(30, 5, d.FechaHasta.Format("02/01/2006"), "1", 0, "C", false, 0, "")
+			pdf.CellFormat(18, 5, fmt.Sprintf("%.1f", d.Dias), "1", 0, "C", false, 0, "")
+			pdf.CellFormat(45, 5, tr(d.Lugar), "1", 0, "L", false, 0, "")
+			pdf.CellFormat(28, 5, fmt.Sprintf("%.2f", d.MontoDia), "1", 0, "R", false, 0, "")
+			pdf.CellFormat(18, 5, fmt.Sprintf("%d", d.Porcentaje), "1", 0, "C", false, 0, "")
+			pdf.CellFormat(31, 5, fmt.Sprintf("%.2f", d.SubTotal), "1", 1, "R", false, 0, "")
+		}
+		pdf.SetFont("Arial", "B", 8)
+		pdf.CellFormat(169, 6, tr("TOTAL VIÁTICOS LÍQUIDO")+" :", "", 0, "R", false, 0, "")
+		pdf.CellFormat(21, 6, fmt.Sprintf("%.2f", v.MontoLiquido), "1", 1, "R", false, 0, "")
+		pdf.Ln(2)
+		if v.TieneGastosRep && (v.MontoGastosRep > 0 || v.MontoLiquidoGastos > 0) {
+			pdf.SetX(3)
+			pdf.SetFont("Arial", "B", 9)
+			pdf.CellFormat(210, 6, tr("GASTOS DE REPRESENTACIÓN"), "B", 1, "L", false, 0, "")
+			pdf.SetFont("Arial", "", 8)
+			pdf.CellFormat(60, 5, tr("Monto asignado")+": "+fmt.Sprintf("%.2f", v.MontoGastosRep), "", 0, "L", false, 0, "")
+			pdf.CellFormat(65, 5, tr("Retención")+": "+fmt.Sprintf("%.2f", v.MontoRetencionGastos), "", 0, "L", false, 0, "")
+			pdf.CellFormat(65, 5, tr("Líquido")+": "+fmt.Sprintf("%.2f", v.MontoLiquidoGastos), "", 1, "L", false, 0, "")
+			pdf.Ln(2)
+		}
+	}
+	pdf.Ln(2)
+}
+
+func (s *ReportService) drawSignatureBlock(pdf *gofpdf.Fpdf, tr func(string) string, y float64, leftLabel, rightLabel, rightName string) {
+	pdf.SetLineWidth(0.2)
+	// Left side
+	pdf.Line(35, y, 95, y)
+	pdf.SetXY(35, y+2)
+	pdf.SetFont("Arial", "B", 7)
+	pdf.CellFormat(60, 4, tr(leftLabel), "", 1, "C", false, 0, "")
+
+	// Right side
+	pdf.Line(110, y, 185, y)
+	pdf.SetXY(110, y+2)
+	pdf.SetFont("Arial", "B", 7)
+	pdf.CellFormat(75, 4, tr(rightLabel), "", 1, "C", false, 0, "")
+	if rightName != "" {
+		pdf.SetX(110)
+		pdf.SetFont("Arial", "", 7)
+		pdf.CellFormat(75, 4, tr(rightName), "", 1, "C", false, 0, "")
+	}
+}
+
+func (s *ReportService) GenerateViaticoV1(ctx context.Context, viatico *models.Viatico) *gofpdf.Fpdf {
+	pdf := gofpdf.New("P", "mm", "Letter", "")
+	tr := pdf.UnicodeTranslatorFromDescriptor("")
+
+	pdf.SetFooterFunc(func() {
+		pdf.SetY(-10)
+		pdf.SetX(3)
+		pdf.SetFont("Arial", "I", 6)
+		pdf.SetTextColor(50, 50, 50)
+		disclaimer := tr("(CALCULO DE VIATICOS) Art.13, parr. III, inc. 1 : Cuando el hospedaje sea cubierto por algun organismo financiador u otra entidad publica organizadora, las Senadoras, Senadores o Servidores Públicos, declarados en comisión al interior como exterior del país, percibirán solamente el 70% de los viaticos\nArt.13, parr. III, inc. 2 : Cuando el hospedaje y alimentación, sean cubiertos por algun organismo financiador u otra entidad publica organizadora, percibirán solamente el 25% de los viaticos")
+		pdf.MultiCell(209, 2.8, disclaimer, "", "L", false)
+		s.drawPageBorder(pdf)
+	})
+
+	pdf.AddPage()
+	s.drawReportHeader(pdf, tr, "FORM-V-01", "FORMULARIO DE VIÁTICOS", "CÁMARA DE SENADORES", "GESTIÓN: "+viatico.CreatedAt.Format("2006"), viatico.Codigo)
+
+	pdf.SetY(40)
+	user := viatico.Usuario
+	rolNombre := ""
+	if user.Rol != nil {
+		rolNombre = user.Rol.Nombre
+	}
+	s.drawLabelBox(pdf, tr, "A FAVOR DE :", user.GetNombreCompleto(), 40, 150, false)
+	s.drawLabelBox(pdf, tr, "C.I. :", user.CI, 40, 60, true)
+	s.drawLabelBox(pdf, tr, "CARGO/ROL :", rolNombre, 30, 60, false)
+
+	unidadStr := "Senado Plurinacional"
+	if user.Oficina != nil {
+		unidadStr = user.Oficina.Detalle
+	}
+	s.drawLabelBox(pdf, tr, "UNIDAD :", unidadStr, 40, 150, false)
+
+	pdf.Ln(2)
+
+	if viatico.Solicitud != nil {
+		sol := viatico.Solicitud
+		pdf.SetFont("Arial", "B", 10)
+		pdf.CellFormat(0, 8, tr("DATOS DE LA COMISIÓN"), "B", 1, "L", false, 0, "")
+		pdf.Ln(2)
+
+		fechaSol := "-"
+		if fIda := sol.GetFechaIda(); fIda != nil {
+			fechaSol = fIda.Format("02/01/2006")
+		}
+		s.drawLabelBox(pdf, tr, "SOLICITUD :", sol.Codigo, 40, 60, true)
+		s.drawLabelBox(pdf, tr, "FECHA VIAJE :", fechaSol, 30, 60, false)
+		s.drawLabelBox(pdf, tr, "MOTIVO :", sol.Motivo, 40, 150, false)
+		s.drawLabelBox(pdf, tr, "LUGAR :", fmt.Sprintf("%s - %s", sol.GetOrigenCiudad(), sol.GetDestinoCiudad()), 40, 150, false)
+	}
+
+	pdf.Ln(5)
+	pdf.SetFont("Arial", "B", 10)
+	pdf.CellFormat(0, 8, tr("DETALLE DE VIÁTICOS ASIGNADOS"), "B", 1, "L", false, 0, "")
+	pdf.Ln(2)
+
+	pdf.SetFillColor(240, 240, 240)
+	pdf.SetFont("Arial", "B", 8)
+	pdf.CellFormat(30, 6, tr("Desde"), "1", 0, "C", true, 0, "")
+	pdf.CellFormat(30, 6, tr("Hasta"), "1", 0, "C", true, 0, "")
+	pdf.CellFormat(20, 6, tr("Días"), "1", 0, "C", true, 0, "")
+	pdf.CellFormat(30, 6, tr("Lugar"), "1", 0, "C", true, 0, "")
+	pdf.CellFormat(25, 6, tr("Haber/Día (Bs)"), "1", 0, "C", true, 0, "")
+	pdf.CellFormat(15, 6, "%", "1", 0, "C", true, 0, "")
+	pdf.CellFormat(40, 6, tr("SubTotal (Bs)"), "1", 1, "C", true, 0, "")
+
+	pdf.SetFont("Arial", "", 8)
+	for _, d := range viatico.Detalles {
+		pdf.CellFormat(30, 6, d.FechaDesde.Format("02/01/2006"), "1", 0, "C", false, 0, "")
+		pdf.CellFormat(30, 6, d.FechaHasta.Format("02/01/2006"), "1", 0, "C", false, 0, "")
+		pdf.CellFormat(20, 6, fmt.Sprintf("%.1f", d.Dias), "1", 0, "C", false, 0, "")
+		pdf.CellFormat(30, 6, tr(d.Lugar), "1", 0, "L", false, 0, "")
+		pdf.CellFormat(25, 6, fmt.Sprintf("%.2f", d.MontoDia), "1", 0, "R", false, 0, "")
+		pdf.CellFormat(15, 6, fmt.Sprintf("%d %%", d.Porcentaje), "1", 0, "C", false, 0, "")
+		pdf.CellFormat(40, 6, fmt.Sprintf("%.2f", d.SubTotal), "1", 1, "R", false, 0, "")
+	}
+
+	pdf.Ln(2)
+	xTotals := 130.0
+	wL := 40.0
+	wV := 30.0
+
+	pdf.SetX(xTotals)
+	pdf.SetFont("Arial", "B", 9)
+	pdf.SetFillColor(240, 240, 240)
+	pdf.CellFormat(wL, 6, tr("TOTAL VIATICO :"), "1", 0, "R", true, 0, "")
+	pdf.SetFont("Arial", "", 9)
+	pdf.CellFormat(wV, 6, fmt.Sprintf("%.2f", viatico.MontoTotal), "1", 1, "R", false, 0, "")
+
+	if viatico.TieneGastosRep {
+		pdf.SetX(xTotals)
+		pdf.SetFont("Arial", "B", 9)
+		pdf.CellFormat(wL, 6, tr("GASTOS REP. :"), "1", 0, "R", true, 0, "")
+		pdf.SetFont("Arial", "", 9)
+		pdf.CellFormat(wV, 6, fmt.Sprintf("%.2f", viatico.MontoGastosRep), "1", 1, "R", false, 0, "")
+	}
+
+	pdf.SetX(xTotals)
+	pdf.SetFont("Arial", "B", 9)
+	pdf.CellFormat(wL, 6, tr("RETENCION (13%) :"), "1", 0, "R", true, 0, "")
+	pdf.SetFont("Arial", "", 9)
+	totalRet := viatico.MontoRC_IVA + viatico.MontoRetencionGastos
+	pdf.CellFormat(wV, 6, fmt.Sprintf("%.2f", totalRet), "1", 1, "R", false, 0, "")
+
+	pdf.SetX(xTotals)
+	pdf.SetFont("Arial", "B", 10)
+	pdf.CellFormat(wL, 8, tr("LIQUIDO PAGABLE :"), "1", 0, "R", true, 0, "")
+	pdf.SetFont("Arial", "B", 10)
+	totalLiq := viatico.MontoLiquido + viatico.MontoLiquidoGastos
+	pdf.CellFormat(wV, 8, fmt.Sprintf("%.2f", totalLiq), "1", 1, "R", false, 0, "")
+
+	pdf.Ln(4)
+	pdf.SetX(10)
+	pdf.SetFont("Arial", "I", 9)
+	literal := utils.NumeroALetras(totalLiq)
+	pdf.CellFormat(190, 6, "Son: "+tr(literal)+" Bolivianos", "", 1, "L", false, 0, "")
+
+	// Signatures
+	sigY := pdf.GetY() + 15
+	if sigY < 230 {
+		sigY = 240
+	}
+	s.drawSignatureBlock(pdf, tr, sigY, "RECIBÍ CONFORME", "AUTORIZADO", viatico.Usuario.GetNombreCompleto())
+
+	return pdf
+}
+
+func (s *ReportService) drawSolicitudSegment(ctx context.Context, pdf *gofpdf.Fpdf, tr func(string) string, title string, item *models.SolicitudItem, aerolineaSugerida string) {
+	pdf.SetX(3)
+	pdf.SetFont("Arial", "B", 9)
+	pdf.CellFormat(210, 6, tr(" "+title), "B", 1, "L", false, 0, "")
+
+	if item != nil && item.GetEstado() != "PENDIENTE" {
+		fecha := "-"
+		hora := "-"
+		if item.Fecha != nil {
+			fecha = utils.FormatDateShortES(*item.Fecha)
+			if len(fecha) > 5 {
+				fecha = fecha[:len(fecha)-5] // Remove year
+			}
+			hora = item.Fecha.Format("15:04")
+		} else if item.Hora != "" {
+			hora = item.Hora
+		}
+
+		origenStr := item.OrigenIATA
+		if item.Origen != nil {
+			origenStr = item.Origen.Ciudad
+		}
+		destStr := item.DestinoIATA
+		if item.Destino != nil {
+			destStr = item.Destino.Ciudad
+		}
+
+		rut := fmt.Sprintf("%s  >>  %s", origenStr, destStr)
+
+		// Table Header
+		pdf.SetFont("Arial", "B", 7)
+		pdf.SetFillColor(245, 245, 245)
+
+		// Headers
+		pdf.CellFormat(32, 8, tr("FECHA/HORA"), "1", 0, "C", true, 0, "")
+		pdf.CellFormat(25, 8, tr("ESTADO"), "1", 0, "C", true, 0, "")
+		pdf.CellFormat(35, 8, tr("AEROLÍNEA"), "1", 0, "C", true, 0, "")
+		pdf.CellFormat(52, 8, tr("RUTA"), "1", 0, "C", true, 0, "")
+		pdf.CellFormat(30, 8, tr("FECHA VIAJE"), "1", 0, "C", true, 0, "")
+		pdf.CellFormat(18, 8, tr("HORA VIAJE"), "1", 1, "C", true, 0, "")
+
+		// Data Row
+		pdf.SetFont("Arial", "", 9)
+
+		// We don't have fechaSol/horaSol easily here without passing it, but we can simplify or pass it.
+		// Actually, let's just use what's available.
+		pdf.CellFormat(32, 8, "-", "1", 0, "C", false, 0, "")
+
+		pdf.SetFont("Arial", "B", 7)
+		pdf.SetTextColor(0, 0, 128)
+		pdf.CellFormat(25, 8, tr(item.GetEstado()), "1", 0, "C", false, 0, "")
+		pdf.SetTextColor(0, 0, 0)
+		pdf.SetFont("Arial", "", 7)
+
+		aerolineaNombre := aerolineaSugerida
+		if aerolinea, err := s.aerolineaRepo.FindByID(ctx, aerolineaSugerida); err == nil {
+			if aerolinea.Sigla != "" {
+				aerolineaNombre = aerolinea.Sigla
+			} else {
+				aerolineaNombre = aerolinea.Nombre
+			}
+		}
+
+		pdf.CellFormat(35, 8, tr(aerolineaNombre), "1", 0, "C", false, 0, "")
+		pdf.CellFormat(52, 8, tr(rut), "1", 0, "C", false, 0, "")
+		pdf.SetFont("Arial", "", 9)
+		pdf.CellFormat(30, 8, tr(fecha), "1", 0, "C", false, 0, "")
+		pdf.CellFormat(18, 8, hora, "1", 1, "C", false, 0, "")
+
+	} else {
+		pdf.SetFont("Arial", "I", 9)
+		pdf.CellFormat(190, 10, tr(" TRAMO NO SOLICITADO"), "", 1, "C", false, 0, "")
+	}
+	pdf.Ln(2)
+}
+
+func (s *ReportService) drawPageBorder(pdf *gofpdf.Fpdf) {
+	pdf.SetLineWidth(0.3)
+	pdf.SetDrawColor(0, 0, 0)
+	pdf.Rect(3, 3, 210, 265.5, "D")
+	pdf.Rect(3, 268.5, 210, 9.3, "D")
 }

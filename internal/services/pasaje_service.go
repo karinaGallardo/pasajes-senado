@@ -22,12 +22,17 @@ type PasajeService struct {
 	emailService      *EmailService
 }
 
-func NewPasajeService() *PasajeService {
+func NewPasajeService(
+	repo *repositories.PasajeRepository,
+	solicitudRepo *repositories.SolicitudRepository,
+	solicitudItemRepo *repositories.SolicitudItemRepository,
+	emailService *EmailService,
+) *PasajeService {
 	return &PasajeService{
-		repo:              repositories.NewPasajeRepository(),
-		solicitudRepo:     repositories.NewSolicitudRepository(),
-		solicitudItemRepo: repositories.NewSolicitudItemRepository(),
-		emailService:      NewEmailService(),
+		repo:              repo,
+		solicitudRepo:     solicitudRepo,
+		solicitudItemRepo: solicitudItemRepo,
+		emailService:      emailService,
 	}
 }
 
@@ -51,7 +56,7 @@ func (s *PasajeService) Create(ctx context.Context, solicitudID string, req dtos
 	status := "REGISTRADO"
 
 	if req.NumeroBoleto != "" {
-		existing, _ := s.repo.WithContext(ctx).FindByNumeroBoleto(req.NumeroBoleto)
+		existing, _ := s.repo.FindByNumeroBoleto(ctx, req.NumeroBoleto)
 		if existing != nil && existing.ID != "" {
 			return nil, fmt.Errorf("ya existe un pasaje con el número de boleto %s", req.NumeroBoleto)
 		}
@@ -59,7 +64,7 @@ func (s *PasajeService) Create(ctx context.Context, solicitudID string, req dtos
 
 	// Rule: One active pasaje per item
 	if req.SolicitudItemID != "" {
-		item, err := s.solicitudItemRepo.FindByID(req.SolicitudItemID)
+		item, err := s.solicitudItemRepo.FindByID(ctx, req.SolicitudItemID)
 		if err == nil && item != nil {
 			if item.HasActivePasaje() {
 				return nil, fmt.Errorf("este tramo ya tiene un pasaje activo. Debe anular el anterior antes de asignar uno nuevo.")
@@ -90,7 +95,7 @@ func (s *PasajeService) Create(ctx context.Context, solicitudID string, req dtos
 	}
 
 	err = s.repo.RunTransaction(func(repo *repositories.PasajeRepository, tx *gorm.DB) error {
-		if err := repo.Create(pasaje); err != nil {
+		if err := repo.Create(ctx, pasaje); err != nil {
 			return err
 		}
 
@@ -112,25 +117,25 @@ func (s *PasajeService) Create(ctx context.Context, solicitudID string, req dtos
 }
 
 func (s *PasajeService) GetBySolicitudID(ctx context.Context, solicitudID string) ([]models.Pasaje, error) {
-	return s.repo.WithContext(ctx).FindBySolicitudID(solicitudID)
+	return s.repo.FindBySolicitudID(ctx, solicitudID)
 }
 
 func (s *PasajeService) Delete(ctx context.Context, id uint) error {
-	return s.repo.WithContext(ctx).Delete(id)
+	return s.repo.Delete(ctx, id)
 }
 func (s *PasajeService) GetByID(ctx context.Context, id string) (*models.Pasaje, error) {
-	return s.repo.WithContext(ctx).FindByID(id)
+	return s.repo.FindByID(ctx, id)
 }
 
 func (s *PasajeService) UpdateFromRequest(ctx context.Context, req dtos.UpdatePasajeRequest, archivo string, paseAbordo string) error {
-	pasaje, err := s.repo.WithContext(ctx).FindByID(req.ID)
+	pasaje, err := s.repo.FindByID(ctx, req.ID)
 	if err != nil {
 		return err
 	}
 
 	// Validate duplicate ticket number
 	if req.NumeroBoleto != "" {
-		existing, _ := s.repo.WithContext(ctx).FindByNumeroBoleto(req.NumeroBoleto)
+		existing, _ := s.repo.FindByNumeroBoleto(ctx, req.NumeroBoleto)
 		if existing != nil && existing.ID != "" && existing.ID != req.ID {
 			return fmt.Errorf("ya existe un pasaje con el número de boleto %s", req.NumeroBoleto)
 		}
@@ -172,15 +177,15 @@ func (s *PasajeService) UpdateFromRequest(ctx context.Context, req dtos.UpdatePa
 		return fmt.Errorf("el pasaje debe tener un archivo PDF asociado")
 	}
 
-	return s.repo.WithContext(ctx).Update(pasaje)
+	return s.repo.Update(ctx, pasaje)
 }
 
 func (s *PasajeService) Update(ctx context.Context, pasaje *models.Pasaje) error {
-	return s.repo.WithContext(ctx).Update(pasaje)
+	return s.repo.Update(ctx, pasaje)
 }
 
 func (s *PasajeService) DevolverPasaje(ctx context.Context, req dtos.DevolverPasajeRequest) error {
-	pasaje, err := s.repo.WithContext(ctx).FindByID(req.PasajeID)
+	pasaje, err := s.repo.FindByID(ctx, req.PasajeID)
 	if err != nil {
 		return err
 	}
@@ -195,11 +200,11 @@ func (s *PasajeService) DevolverPasaje(ctx context.Context, req dtos.DevolverPas
 	}
 	pasaje.CostoPenalidad = costoPenalidad
 
-	return s.repo.WithContext(ctx).Update(pasaje)
+	return s.repo.Update(ctx, pasaje)
 }
 
 func (s *PasajeService) UpdateStatus(ctx context.Context, id string, status string, ticketPath string, pasePath string) error {
-	pasaje, err := s.repo.WithContext(ctx).FindByID(id)
+	pasaje, err := s.repo.FindByID(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -212,19 +217,19 @@ func (s *PasajeService) UpdateStatus(ctx context.Context, id string, status stri
 		pasaje.ArchivoPaseAbordo = pasePath
 	}
 
-	if err := s.repo.WithContext(ctx).Update(pasaje); err != nil {
+	if err := s.repo.Update(ctx, pasaje); err != nil {
 		return err
 	}
 
 	// If Pasaje is EMITIDO, also update Request Item state to EMITIDO
 	if status == "EMITIDO" && pasaje.SolicitudItemID != nil {
-		s.solicitudItemRepo.UpdateStatus(*pasaje.SolicitudItemID, "EMITIDO")
+		s.solicitudItemRepo.UpdateStatus(ctx, *pasaje.SolicitudItemID, "EMITIDO")
 
 		// Recalculate Solicitud global status
-		sol, err := s.solicitudRepo.WithContext(ctx).FindByID(pasaje.SolicitudID)
+		sol, err := s.solicitudRepo.FindByID(ctx, pasaje.SolicitudID)
 		if err == nil && sol != nil {
 			sol.UpdateStatusBasedOnItems()
-			s.solicitudRepo.WithContext(ctx).Update(sol)
+			s.solicitudRepo.Update(ctx, sol)
 		}
 	}
 
@@ -251,12 +256,12 @@ func (j *EmissionEmailJob) Name() string {
 
 func (j *EmissionEmailJob) Run(ctx context.Context) error {
 	// Recargamos el pasaje con preloads para tener toda la info (usuario, etc)
-	p, err := j.Service.repo.WithContext(ctx).FindByID(j.PasajeID)
+	p, err := j.Service.repo.WithContext(ctx).FindByID(ctx, j.PasajeID)
 	if err != nil {
 		return err
 	}
 
-	sol, err := j.Service.solicitudRepo.WithContext(ctx).FindByID(p.SolicitudID)
+	sol, err := j.Service.solicitudRepo.WithContext(ctx).FindByID(ctx, p.SolicitudID)
 	if err != nil || sol == nil {
 		return err
 	}

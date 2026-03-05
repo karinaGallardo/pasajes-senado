@@ -10,9 +10,9 @@ type PeopleService struct {
 	repo *repositories.PeopleViewRepository
 }
 
-func NewPeopleService() *PeopleService {
+func NewPeopleService(repo *repositories.PeopleViewRepository) *PeopleService {
 	return &PeopleService{
-		repo: repositories.NewPeopleViewRepository(),
+		repo: repo,
 	}
 }
 

@@ -31,11 +31,15 @@ func (j *AlertaDescargoJob) Run(ctx context.Context) error {
 	return j.Service.ProcesarAlertasDescargo(ctx)
 }
 
-func NewAlertaService() *AlertaService {
+func NewAlertaService(
+	solicitudRepo *repositories.SolicitudRepository,
+	descargoRepo *repositories.DescargoRepository,
+	emailService *EmailService,
+) *AlertaService {
 	return &AlertaService{
-		solicitudRepo: repositories.NewSolicitudRepository(),
-		descargoRepo:  repositories.NewDescargoRepository(),
-		emailService:  NewEmailService(),
+		solicitudRepo: solicitudRepo,
+		descargoRepo:  descargoRepo,
+		emailService:  emailService,
 	}
 }
 
@@ -45,7 +49,7 @@ func (s *AlertaService) ProcesarAlertasDescargo(ctx context.Context) error {
 
 	// 1. Obtener solicitudes que potencialmente necesitan descargo (EMITIDO o FINALIZADO)
 	// Pero que aún NO tienen un descargo registrado.
-	solicitudes, err := s.solicitudRepo.WithContext(ctx).FindPendientesDeDescargo()
+	solicitudes, err := s.solicitudRepo.FindPendientesDeDescargo(ctx)
 	if err != nil {
 		return fmt.Errorf("error al buscar solicitudes pendientes de descargo: %w", err)
 	}

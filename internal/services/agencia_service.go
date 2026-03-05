@@ -10,41 +10,41 @@ type AgenciaService struct {
 	repo *repositories.AgenciaRepository
 }
 
-func NewAgenciaService() *AgenciaService {
+func NewAgenciaService(repo *repositories.AgenciaRepository) *AgenciaService {
 	return &AgenciaService{
-		repo: repositories.NewAgenciaRepository(),
+		repo: repo,
 	}
 }
 
 func (s *AgenciaService) GetAllActive(ctx context.Context) ([]models.Agencia, error) {
-	return s.repo.WithContext(ctx).FindAllActive()
+	return s.repo.FindAllActive(ctx)
 }
 
 func (s *AgenciaService) GetAll(ctx context.Context) ([]models.Agencia, error) {
-	return s.repo.WithContext(ctx).FindAll()
+	return s.repo.FindAll(ctx)
 }
 
 func (s *AgenciaService) GetByID(ctx context.Context, id string) (*models.Agencia, error) {
-	return s.repo.WithContext(ctx).FindByID(id)
+	return s.repo.FindByID(ctx, id)
 }
 
 func (s *AgenciaService) Create(ctx context.Context, agencia *models.Agencia) error {
-	return s.repo.WithContext(ctx).Create(agencia)
+	return s.repo.Create(ctx, agencia)
 }
 
 func (s *AgenciaService) Update(ctx context.Context, agencia *models.Agencia) error {
-	return s.repo.WithContext(ctx).Update(agencia)
+	return s.repo.Update(ctx, agencia)
 }
 
 func (s *AgenciaService) Toggle(ctx context.Context, id string) error {
-	a, err := s.repo.WithContext(ctx).FindByID(id)
+	a, err := s.repo.FindByID(ctx, id)
 	if err != nil {
 		return err
 	}
 	a.Estado = !a.Estado
-	return s.repo.WithContext(ctx).Update(a)
+	return s.repo.Update(ctx, a)
 }
 
 func (s *AgenciaService) Delete(ctx context.Context, id string) error {
-	return s.repo.WithContext(ctx).Delete(id)
+	return s.repo.Delete(ctx, id)
 }

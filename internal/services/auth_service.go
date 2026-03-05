@@ -22,13 +22,19 @@ type AuthService struct {
 	generoRepo *repositories.GeneroRepository
 }
 
-func NewAuthService() *AuthService {
+func NewAuthService(
+	userRepo *repositories.UsuarioRepository,
+	mongoUser *repositories.MongoUserRepository,
+	peopleRepo *repositories.PeopleViewRepository,
+	rolRepo *repositories.RolRepository,
+	generoRepo *repositories.GeneroRepository,
+) *AuthService {
 	return &AuthService{
-		userRepo:   repositories.NewUsuarioRepository(),
-		mongoUser:  repositories.NewMongoUserRepository(),
-		peopleRepo: repositories.NewPeopleViewRepository(),
-		rolRepo:    repositories.NewRolRepository(),
-		generoRepo: repositories.NewGeneroRepository(),
+		userRepo:   userRepo,
+		mongoUser:  mongoUser,
+		peopleRepo: peopleRepo,
+		rolRepo:    rolRepo,
+		generoRepo: generoRepo,
 	}
 }
 
@@ -36,9 +42,12 @@ func (s *AuthService) Authenticate(ctx context.Context, username, password strin
 	var localUser *models.Usuario
 	var err error
 
-	localUser, err = s.userRepo.WithContext(ctx).FindByUsername(strings.ToLower(username))
+	localUser, err = s.userRepo.FindByUsername(ctx, strings.ToLower(username))
 	if err != nil {
-		localUser, err = s.userRepo.WithContext(ctx).FindByCI(username)
+		localUser, err = s.userRepo.FindByCI(ctx, username)
+		if err != nil {
+			return nil, fmt.Errorf("error buscando usuario local: %w", err)
+		}
 	}
 
 	if localUser != nil && localUser.IsBlocked {
@@ -52,10 +61,10 @@ func (s *AuthService) Authenticate(ctx context.Context, username, password strin
 			remaining := 3 - localUser.LoginAttempts
 			if localUser.LoginAttempts >= 3 {
 				localUser.IsBlocked = true
-				s.userRepo.WithContext(ctx).Update(localUser)
+				s.userRepo.Update(ctx, localUser)
 				return nil, errors.New("credenciales inválidas. Su cuenta ha sido bloqueada por demasiados intentos fallidos")
 			}
-			s.userRepo.WithContext(ctx).Update(localUser)
+			s.userRepo.Update(ctx, localUser)
 			return nil, fmt.Errorf("credenciales inválidas. Le quedan %d intentos antes de que su cuenta sea bloqueada", remaining)
 		}
 		return nil, err
@@ -66,9 +75,9 @@ func (s *AuthService) Authenticate(ctx context.Context, username, password strin
 
 	var user *models.Usuario
 	if mongoUsername != "" {
-		user, err = s.userRepo.WithContext(ctx).FindByUsername(mongoUsername)
+		user, err = s.userRepo.FindByUsername(ctx, mongoUsername)
 	} else if mongoCI != "" {
-		user, err = s.userRepo.WithContext(ctx).FindByCI(mongoCI)
+		user, err = s.userRepo.FindByCI(ctx, mongoCI)
 	}
 
 	if err != nil || user == nil {
@@ -78,7 +87,7 @@ func (s *AuthService) Authenticate(ctx context.Context, username, password strin
 	if user.LoginAttempts > 0 {
 		user.LoginAttempts = 0
 		user.IsBlocked = false
-		s.userRepo.WithContext(ctx).Update(user)
+		s.userRepo.Update(ctx, user)
 	}
 
 	return user, nil

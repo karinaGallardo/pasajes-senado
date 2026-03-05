@@ -11,9 +11,9 @@ type PerfilController struct {
 	destinoService *services.DestinoService
 }
 
-func NewPerfilController() *PerfilController {
+func NewPerfilController(destinoService *services.DestinoService) *PerfilController {
 	return &PerfilController{
-		destinoService: services.NewDestinoService(),
+		destinoService: destinoService,
 	}
 }
 

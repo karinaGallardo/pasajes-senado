@@ -14,9 +14,9 @@ type AerolineaController struct {
 	service *services.AerolineaService
 }
 
-func NewAerolineaController() *AerolineaController {
+func NewAerolineaController(service *services.AerolineaService) *AerolineaController {
 	return &AerolineaController{
-		service: services.NewAerolineaService(),
+		service: service,
 	}
 }
 

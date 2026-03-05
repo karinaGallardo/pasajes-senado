@@ -10,16 +10,16 @@ type AmbitoService struct {
 	repo *repositories.AmbitoViajeRepository
 }
 
-func NewAmbitoService() *AmbitoService {
+func NewAmbitoService(repo *repositories.AmbitoViajeRepository) *AmbitoService {
 	return &AmbitoService{
-		repo: repositories.NewAmbitoViajeRepository(),
+		repo: repo,
 	}
 }
 
 func (s *AmbitoService) GetAll(ctx context.Context) ([]models.AmbitoViaje, error) {
-	return s.repo.WithContext(ctx).FindAll()
+	return s.repo.FindAll(ctx)
 }
 
 func (s *AmbitoService) GetByCodigo(ctx context.Context, codigo string) (*models.AmbitoViaje, error) {
-	return s.repo.WithContext(ctx).FindByCodigo(codigo)
+	return s.repo.FindByCodigo(ctx, codigo)
 }

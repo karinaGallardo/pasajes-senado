@@ -4,7 +4,6 @@ import (
 	"context"
 	"sistema-pasajes/internal/models"
 
-	"sistema-pasajes/internal/configs"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -14,8 +13,8 @@ type CupoDerechoItemRepository struct {
 	db *gorm.DB
 }
 
-func NewCupoDerechoItemRepository() *CupoDerechoItemRepository {
-	return &CupoDerechoItemRepository{db: configs.DB}
+func NewCupoDerechoItemRepository(db *gorm.DB) *CupoDerechoItemRepository {
+	return &CupoDerechoItemRepository{db: db}
 }
 
 func (r *CupoDerechoItemRepository) WithTx(tx *gorm.DB) *CupoDerechoItemRepository {
@@ -26,17 +25,17 @@ func (r *CupoDerechoItemRepository) WithContext(ctx context.Context) *CupoDerech
 	return &CupoDerechoItemRepository{db: r.db.WithContext(ctx)}
 }
 
-func (r *CupoDerechoItemRepository) CreateInBatches(items []models.CupoDerechoItem, batchSize int) error {
-	return r.db.CreateInBatches(items, batchSize).Error
+func (r *CupoDerechoItemRepository) CreateInBatches(ctx context.Context, items []models.CupoDerechoItem, batchSize int) error {
+	return r.db.WithContext(ctx).CreateInBatches(items, batchSize).Error
 }
 
-func (r *CupoDerechoItemRepository) Create(item *models.CupoDerechoItem) error {
-	return r.db.Create(item).Error
+func (r *CupoDerechoItemRepository) Create(ctx context.Context, item *models.CupoDerechoItem) error {
+	return r.db.WithContext(ctx).Create(item).Error
 }
 
-func (r *CupoDerechoItemRepository) FindByHolderAndPeriodo(userID string, gestion, mes int) ([]models.CupoDerechoItem, error) {
+func (r *CupoDerechoItemRepository) FindByHolderAndPeriodo(ctx context.Context, userID string, gestion, mes int) ([]models.CupoDerechoItem, error) {
 	var list []models.CupoDerechoItem
-	err := r.db.
+	err := r.db.WithContext(ctx).
 		Preload("Solicitudes.Descargo").
 		Preload("Solicitudes.TipoItinerario").
 		Preload("Solicitudes.Items").
@@ -45,9 +44,9 @@ func (r *CupoDerechoItemRepository) FindByHolderAndPeriodo(userID string, gestio
 	return list, err
 }
 
-func (r *CupoDerechoItemRepository) FindByHolderAndGestion(userID string, gestion int) ([]models.CupoDerechoItem, error) {
+func (r *CupoDerechoItemRepository) FindByHolderAndGestion(ctx context.Context, userID string, gestion int) ([]models.CupoDerechoItem, error) {
 	var list []models.CupoDerechoItem
-	err := r.db.
+	err := r.db.WithContext(ctx).
 		Preload("Solicitudes.Descargo").
 		Preload("Solicitudes.TipoItinerario").
 		Preload("Solicitudes.Items").
@@ -57,17 +56,17 @@ func (r *CupoDerechoItemRepository) FindByHolderAndGestion(userID string, gestio
 	return list, err
 }
 
-func (r *CupoDerechoItemRepository) FindAvailableByHolderAndPeriodo(userID string, gestion, mes int) (*models.CupoDerechoItem, error) {
+func (r *CupoDerechoItemRepository) FindAvailableByHolderAndPeriodo(ctx context.Context, userID string, gestion, mes int) (*models.CupoDerechoItem, error) {
 	var item models.CupoDerechoItem
-	err := r.db.
+	err := r.db.WithContext(ctx).
 		Where("sen_asignado_id = ? AND gestion = ? AND mes = ? AND estado_cupo_derecho_codigo = 'DISPONIBLE'", userID, gestion, mes).
 		First(&item).Error
 	return &item, err
 }
 
-func (r *CupoDerechoItemRepository) FindForTitularByPeriodo(senadorID string, gestion, mes int) ([]models.CupoDerechoItem, error) {
+func (r *CupoDerechoItemRepository) FindForTitularByPeriodo(ctx context.Context, senadorID string, gestion, mes int) ([]models.CupoDerechoItem, error) {
 	var list []models.CupoDerechoItem
-	err := r.db.
+	err := r.db.WithContext(ctx).
 		Preload("SenAsignado").
 		Preload("Solicitudes.Descargo").
 		Preload("Solicitudes.TipoItinerario").
@@ -78,9 +77,9 @@ func (r *CupoDerechoItemRepository) FindForTitularByPeriodo(senadorID string, ge
 	return list, err
 }
 
-func (r *CupoDerechoItemRepository) FindForSuplenteByPeriodo(beneficiarioID string, gestion, mes int) ([]models.CupoDerechoItem, error) {
+func (r *CupoDerechoItemRepository) FindForSuplenteByPeriodo(ctx context.Context, beneficiarioID string, gestion, mes int) ([]models.CupoDerechoItem, error) {
 	var list []models.CupoDerechoItem
-	err := r.db.
+	err := r.db.WithContext(ctx).
 		Preload("Solicitudes.Descargo").
 		Preload("Solicitudes.TipoItinerario").
 		Preload("Solicitudes.Items").
@@ -89,9 +88,9 @@ func (r *CupoDerechoItemRepository) FindForSuplenteByPeriodo(beneficiarioID stri
 	return list, err
 }
 
-func (r *CupoDerechoItemRepository) FindForTitularByGestion(senadorID string, gestion int) ([]models.CupoDerechoItem, error) {
+func (r *CupoDerechoItemRepository) FindForTitularByGestion(ctx context.Context, senadorID string, gestion int) ([]models.CupoDerechoItem, error) {
 	var list []models.CupoDerechoItem
-	err := r.db.
+	err := r.db.WithContext(ctx).
 		Preload("SenAsignado").
 		Preload("Solicitudes.Descargo").
 		Preload("Solicitudes.TipoItinerario").
@@ -102,9 +101,9 @@ func (r *CupoDerechoItemRepository) FindForTitularByGestion(senadorID string, ge
 	return list, err
 }
 
-func (r *CupoDerechoItemRepository) FindForSuplenteByGestion(beneficiarioID string, gestion int) ([]models.CupoDerechoItem, error) {
+func (r *CupoDerechoItemRepository) FindForSuplenteByGestion(ctx context.Context, beneficiarioID string, gestion int) ([]models.CupoDerechoItem, error) {
 	var list []models.CupoDerechoItem
-	err := r.db.
+	err := r.db.WithContext(ctx).
 		Preload("Solicitudes.Descargo").
 		Preload("Solicitudes.TipoItinerario").
 		Preload("Solicitudes.Items").
@@ -114,13 +113,13 @@ func (r *CupoDerechoItemRepository) FindForSuplenteByGestion(beneficiarioID stri
 	return list, err
 }
 
-func (r *CupoDerechoItemRepository) Update(item *models.CupoDerechoItem) error {
-	return r.db.Omit(clause.Associations).Save(item).Error
+func (r *CupoDerechoItemRepository) Update(ctx context.Context, item *models.CupoDerechoItem) error {
+	return r.db.WithContext(ctx).Omit(clause.Associations).Save(item).Error
 }
 
-func (r *CupoDerechoItemRepository) FindByPeriodo(gestion, mes int) ([]models.CupoDerechoItem, error) {
+func (r *CupoDerechoItemRepository) FindByPeriodo(ctx context.Context, gestion, mes int) ([]models.CupoDerechoItem, error) {
 	var list []models.CupoDerechoItem
-	err := r.db.
+	err := r.db.WithContext(ctx).
 		Preload("SenTitular").
 		Preload("SenAsignado").
 		Where("gestion = ? AND mes = ?", gestion, mes).
@@ -128,9 +127,9 @@ func (r *CupoDerechoItemRepository) FindByPeriodo(gestion, mes int) ([]models.Cu
 	return list, err
 }
 
-func (r *CupoDerechoItemRepository) FindByID(id string) (*models.CupoDerechoItem, error) {
+func (r *CupoDerechoItemRepository) FindByID(ctx context.Context, id string) (*models.CupoDerechoItem, error) {
 	var v models.CupoDerechoItem
-	err := r.db.
+	err := r.db.WithContext(ctx).
 		Preload("SenTitular").
 		Preload("SenAsignado").
 		Preload("Solicitudes.Items").
@@ -139,13 +138,13 @@ func (r *CupoDerechoItemRepository) FindByID(id string) (*models.CupoDerechoItem
 	return &v, err
 }
 
-func (r *CupoDerechoItemRepository) DeleteUnscoped(v *models.CupoDerechoItem) error {
-	return r.db.Unscoped().Delete(v).Error
+func (r *CupoDerechoItemRepository) DeleteUnscoped(ctx context.Context, v *models.CupoDerechoItem) error {
+	return r.db.WithContext(ctx).Unscoped().Delete(v).Error
 }
 
-func (r *CupoDerechoItemRepository) FindByCupoDerechoID(cupoDerechoID string) ([]models.CupoDerechoItem, error) {
+func (r *CupoDerechoItemRepository) FindByCupoDerechoID(ctx context.Context, cupoDerechoID string) ([]models.CupoDerechoItem, error) {
 	var list []models.CupoDerechoItem
-	err := r.db.
+	err := r.db.WithContext(ctx).
 		Preload("SenTitular").
 		Preload("SenAsignado").
 		Where("cupo_derecho_id = ?", cupoDerechoID).
@@ -154,6 +153,6 @@ func (r *CupoDerechoItemRepository) FindByCupoDerechoID(cupoDerechoID string) ([
 	return list, err
 }
 
-func (r *CupoDerechoItemRepository) UpdateStatus(id string, status string) error {
-	return r.db.Model(&models.CupoDerechoItem{}).Where("id = ?", id).Update("estado_cupo_derecho_codigo", status).Error
+func (r *CupoDerechoItemRepository) UpdateStatus(ctx context.Context, id string, status string) error {
+	return r.db.WithContext(ctx).Model(&models.CupoDerechoItem{}).Where("id = ?", id).Update("estado_cupo_derecho_codigo", status).Error
 }

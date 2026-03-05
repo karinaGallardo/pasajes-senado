@@ -22,14 +22,21 @@ type DescargoOficialController struct {
 	configService    *services.ConfiguracionService
 }
 
-func NewDescargoOficialController() *DescargoOficialController {
+func NewDescargoOficialController(
+	descargoService *services.DescargoService,
+	solicitudService *services.SolicitudService,
+	destinoService *services.DestinoService,
+	reportService *services.ReportService,
+	peopleService *services.PeopleService,
+	configService *services.ConfiguracionService,
+) *DescargoOficialController {
 	return &DescargoOficialController{
-		descargoService:  services.NewDescargoService(),
-		solicitudService: services.NewSolicitudService(),
-		destinoService:   services.NewDestinoService(),
-		reportService:    services.NewReportService(),
-		peopleService:    services.NewPeopleService(),
-		configService:    services.NewConfiguracionService(),
+		descargoService:  descargoService,
+		solicitudService: solicitudService,
+		destinoService:   destinoService,
+		reportService:    reportService,
+		peopleService:    peopleService,
+		configService:    configService,
 	}
 }
 

@@ -10,27 +10,27 @@ type ConfiguracionService struct {
 	repo *repositories.ConfiguracionRepository
 }
 
-func NewConfiguracionService() *ConfiguracionService {
+func NewConfiguracionService(repo *repositories.ConfiguracionRepository) *ConfiguracionService {
 	return &ConfiguracionService{
-		repo: repositories.NewConfiguracionRepository(),
+		repo: repo,
 	}
 }
 
 func (s *ConfiguracionService) GetAll(ctx context.Context) ([]models.Configuracion, error) {
-	return s.repo.WithContext(ctx).FindAll()
+	return s.repo.FindAll(ctx)
 }
 
 func (s *ConfiguracionService) Update(ctx context.Context, config *models.Configuracion) error {
-	existing, err := s.repo.WithContext(ctx).FindByClave(config.Clave)
+	existing, err := s.repo.FindByClave(ctx, config.Clave)
 	if err != nil {
 		return err
 	}
 	existing.Valor = config.Valor
-	return s.repo.WithContext(ctx).Update(existing)
+	return s.repo.Update(ctx, existing)
 }
 
 func (s *ConfiguracionService) GetValue(ctx context.Context, clave string) string {
-	conf, err := s.repo.WithContext(ctx).FindByClave(clave)
+	conf, err := s.repo.FindByClave(ctx, clave)
 	if err != nil {
 		return ""
 	}

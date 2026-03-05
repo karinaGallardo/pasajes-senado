@@ -22,6 +22,19 @@ func (c *CupoDerecho) AfterFind(tx *gorm.DB) (err error) {
 	return
 }
 
+func (c CupoDerecho) GetSaldo() int {
+	return c.CupoTotal - c.CupoUsado
+}
+
+func (c CupoDerecho) HasAvailableItems() bool {
+	for _, it := range c.Items {
+		if it.IsDisponible() {
+			return true
+		}
+	}
+	return false
+}
+
 func (CupoDerecho) TableName() string {
 	return "cupos_derecho"
 }

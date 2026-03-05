@@ -15,10 +15,10 @@ type ConfiguracionController struct {
 	emailService *services.EmailService
 }
 
-func NewConfiguracionController() *ConfiguracionController {
+func NewConfiguracionController(service *services.ConfiguracionService, emailService *services.EmailService) *ConfiguracionController {
 	return &ConfiguracionController{
-		service:      services.NewConfiguracionService(),
-		emailService: services.NewEmailService(),
+		service:      service,
+		emailService: emailService,
 	}
 }
 

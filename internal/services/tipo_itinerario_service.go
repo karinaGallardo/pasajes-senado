@@ -10,18 +10,18 @@ type TipoItinerarioService struct {
 	repo *repositories.TipoItinerarioRepository
 }
 
-func NewTipoItinerarioService() *TipoItinerarioService {
+func NewTipoItinerarioService(repo *repositories.TipoItinerarioRepository) *TipoItinerarioService {
 	return &TipoItinerarioService{
-		repo: repositories.NewTipoItinerarioRepository(),
+		repo: repo,
 	}
 }
 
 func (s *TipoItinerarioService) GetByCodigo(ctx context.Context, codigo string) (*models.TipoItinerario, error) {
-	return s.repo.WithContext(ctx).FindByCodigo(codigo)
+	return s.repo.FindByCodigo(ctx, codigo)
 }
 
 func (s *TipoItinerarioService) GetAll(ctx context.Context) ([]models.TipoItinerario, error) {
-	return s.repo.WithContext(ctx).FindAll()
+	return s.repo.FindAll(ctx)
 }
 
 func (s *TipoItinerarioService) EnsureDefaults(ctx context.Context) error {
@@ -32,7 +32,7 @@ func (s *TipoItinerarioService) EnsureDefaults(ctx context.Context) error {
 	}
 
 	for _, d := range defaults {
-		if err := s.repo.WithContext(ctx).FirstOrCreate(&d); err != nil {
+		if err := s.repo.FirstOrCreate(ctx, &d); err != nil {
 			return err
 		}
 	}

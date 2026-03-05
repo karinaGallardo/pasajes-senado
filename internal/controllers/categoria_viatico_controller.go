@@ -14,10 +14,10 @@ type CategoriaViaticoController struct {
 	viaticoServ *services.ViaticoService
 }
 
-func NewCategoriaViaticoController() *CategoriaViaticoController {
+func NewCategoriaViaticoController(service *services.CategoriaViaticoService, viaticoServ *services.ViaticoService) *CategoriaViaticoController {
 	return &CategoriaViaticoController{
-		service:     services.NewCategoriaViaticoService(),
-		viaticoServ: services.NewViaticoService(),
+		service:     service,
+		viaticoServ: viaticoServ,
 	}
 }
 

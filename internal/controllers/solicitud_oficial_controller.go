@@ -29,18 +29,29 @@ type SolicitudOficialController struct {
 	descargoService       *services.DescargoService
 }
 
-func NewSolicitudOficialController() *SolicitudOficialController {
+func NewSolicitudOficialController(
+	solicitudService *services.SolicitudService,
+	destinoService *services.DestinoService,
+	tipoSolicitudService *services.TipoSolicitudService,
+	ambitoService *services.AmbitoService,
+	userService *services.UsuarioService,
+	tipoItinerarioService *services.TipoItinerarioService,
+	aerolineaService *services.AerolineaService,
+	reportService *services.ReportService,
+	peopleService *services.PeopleService,
+	descargoService *services.DescargoService,
+) *SolicitudOficialController {
 	return &SolicitudOficialController{
-		solicitudService:      services.NewSolicitudService(),
-		destinoService:        services.NewDestinoService(),
-		tipoSolicitudService:  services.NewTipoSolicitudService(),
-		ambitoService:         services.NewAmbitoService(),
-		userService:           services.NewUsuarioService(),
-		tipoItinerarioService: services.NewTipoItinerarioService(),
-		aerolineaService:      services.NewAerolineaService(),
-		reportService:         services.NewReportService(),
-		peopleService:         services.NewPeopleService(),
-		descargoService:       services.NewDescargoService(),
+		solicitudService:      solicitudService,
+		destinoService:        destinoService,
+		tipoSolicitudService:  tipoSolicitudService,
+		ambitoService:         ambitoService,
+		userService:           userService,
+		tipoItinerarioService: tipoItinerarioService,
+		aerolineaService:      aerolineaService,
+		reportService:         reportService,
+		peopleService:         peopleService,
+		descargoService:       descargoService,
 	}
 }
 

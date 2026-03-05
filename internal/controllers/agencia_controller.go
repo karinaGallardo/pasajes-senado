@@ -14,9 +14,9 @@ type AgenciaController struct {
 	service *services.AgenciaService
 }
 
-func NewAgenciaController() *AgenciaController {
+func NewAgenciaController(service *services.AgenciaService) *AgenciaController {
 	return &AgenciaController{
-		service: services.NewAgenciaService(),
+		service: service,
 	}
 }
 

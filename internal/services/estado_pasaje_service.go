@@ -10,16 +10,16 @@ type EstadoPasajeService struct {
 	repo *repositories.EstadoPasajeRepository
 }
 
-func NewEstadoPasajeService() *EstadoPasajeService {
+func NewEstadoPasajeService(repo *repositories.EstadoPasajeRepository) *EstadoPasajeService {
 	return &EstadoPasajeService{
-		repo: repositories.NewEstadoPasajeRepository(),
+		repo: repo,
 	}
 }
 
 func (s *EstadoPasajeService) GetByCodigo(ctx context.Context, codigo string) (*models.EstadoPasaje, error) {
-	return s.repo.WithContext(ctx).FindByCodigo(codigo)
+	return s.repo.FindByCodigo(ctx, codigo)
 }
 
 func (s *EstadoPasajeService) GetAll(ctx context.Context) ([]models.EstadoPasaje, error) {
-	return s.repo.WithContext(ctx).FindAll()
+	return s.repo.FindAll(ctx)
 }

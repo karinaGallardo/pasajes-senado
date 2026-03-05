@@ -3,11 +3,11 @@ package repositories
 import (
 	"context"
 	"errors"
-	"sistema-pasajes/internal/configs"
 	"time"
 
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
+	"go.mongodb.org/mongo-driver/mongo"
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
@@ -20,23 +20,30 @@ type MongoUser struct {
 }
 
 type MongoUserRepository struct {
+	db  *mongo.Database
 	ctx context.Context
 }
 
-func NewMongoUserRepository() *MongoUserRepository {
-	return &MongoUserRepository{ctx: context.Background()}
+func NewMongoUserRepository(db *mongo.Database) *MongoUserRepository {
+	return &MongoUserRepository{
+		db:  db,
+		ctx: context.Background(),
+	}
 }
 
 func (r *MongoUserRepository) WithContext(ctx context.Context) *MongoUserRepository {
-	return &MongoUserRepository{ctx: ctx}
+	return &MongoUserRepository{
+		db:  r.db,
+		ctx: ctx,
+	}
 }
 
 func (r *MongoUserRepository) FindByUsername(username string) (*MongoUser, error) {
-	if configs.MongoChat == nil {
+	if r.db == nil {
 		return nil, errors.New("conexión a MongoDB no establecida")
 	}
 
-	collection := configs.MongoChat.Collection("users")
+	collection := r.db.Collection("users")
 	var ctx context.Context
 	var cancel context.CancelFunc
 
@@ -58,11 +65,11 @@ func (r *MongoUserRepository) FindByUsername(username string) (*MongoUser, error
 }
 
 func (r *MongoUserRepository) FindByCI(ci string) (*MongoUser, error) {
-	if configs.MongoChat == nil {
+	if r.db == nil {
 		return nil, errors.New("conexión a MongoDB no establecida")
 	}
 
-	collection := configs.MongoChat.Collection("users")
+	collection := r.db.Collection("users")
 	var ctx context.Context
 	var cancel context.CancelFunc
 

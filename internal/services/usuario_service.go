@@ -16,14 +16,21 @@ type UsuarioService struct {
 	oficinaRepo   *repositories.OficinaRepository
 }
 
-func NewUsuarioService() *UsuarioService {
+func NewUsuarioService(
+	repo *repositories.UsuarioRepository,
+	peopleRepo *repositories.PeopleViewRepository,
+	deptoRepo *repositories.DepartamentoRepository,
+	mongoUserRepo *repositories.MongoUserRepository,
+	cargoRepo *repositories.CargoRepository,
+	oficinaRepo *repositories.OficinaRepository,
+) *UsuarioService {
 	return &UsuarioService{
-		repo:          repositories.NewUsuarioRepository(),
-		peopleRepo:    repositories.NewPeopleViewRepository(),
-		deptoRepo:     repositories.NewDepartamentoRepository(),
-		mongoUserRepo: repositories.NewMongoUserRepository(),
-		cargoRepo:     repositories.NewCargoRepository(),
-		oficinaRepo:   repositories.NewOficinaRepository(),
+		repo:          repo,
+		peopleRepo:    peopleRepo,
+		deptoRepo:     deptoRepo,
+		mongoUserRepo: mongoUserRepo,
+		cargoRepo:     cargoRepo,
+		oficinaRepo:   oficinaRepo,
 	}
 }
 
@@ -41,26 +48,26 @@ func (s *UsuarioService) SyncStaff(ctx context.Context) (int, error) {
 		}
 	}
 
-	pgUsers, _ := s.repo.WithContext(ctx).FindByRoleType("FUNCIONARIO")
+	pgUsers, _ := s.repo.FindByRoleType(ctx, "FUNCIONARIO")
 	for _, user := range pgUsers {
 		if user.IsSenador() {
 			continue
 		}
 		if _, exists := mongoMap[user.CI]; !exists {
-			s.repo.Delete(&user)
+			s.repo.Delete(ctx, &user)
 		}
 	}
 
 	count := 0
 	for ci, mStaff := range mongoMap {
-		user, err := s.repo.WithContext(ctx).FindByCIUnscoped(ci)
+		user, err := s.repo.FindByCIUnscoped(ctx, ci)
 		exists := err == nil
 
 		if exists {
 			if user.IsSenador() {
 				continue
 			}
-			s.repo.Restore(user)
+			s.repo.Restore(ctx, user)
 		} else {
 			user = &models.Usuario{}
 			user.CI = ci
@@ -89,23 +96,23 @@ func (s *UsuarioService) SyncStaff(ctx context.Context) (int, error) {
 
 		dept := mStaff.SenadorData.Departamento
 		if dept != "" {
-			if depto, err := s.deptoRepo.WithContext(ctx).FindByNombre(dept); err == nil {
+			if depto, err := s.deptoRepo.FindByNombre(ctx, dept); err == nil {
 				user.DepartamentoCode = &depto.Codigo
 			}
 		}
 
 		cargoName := mStaff.Cargo
 		if cargoName != "" {
-			if cargo, err := s.cargoRepo.WithContext(ctx).FindByDescripcion(cargoName); err == nil {
+			if cargo, err := s.cargoRepo.FindByDescripcion(ctx, cargoName); err == nil {
 				user.CargoID = &cargo.ID
 			} else {
-				if nextCode, err := s.cargoRepo.WithContext(ctx).GetNextCodigo(); err == nil {
+				if nextCode, err := s.cargoRepo.GetNextCodigo(ctx); err == nil {
 					newCargo := &models.Cargo{
 						Codigo:      nextCode,
 						Descripcion: cargoName,
 						Categoria:   0,
 					}
-					if err := s.cargoRepo.WithContext(ctx).Create(newCargo); err == nil {
+					if err := s.cargoRepo.Create(ctx, newCargo); err == nil {
 						user.CargoID = &newCargo.ID
 					}
 				}
@@ -116,15 +123,15 @@ func (s *UsuarioService) SyncStaff(ctx context.Context) (int, error) {
 
 		oficinaName := mStaff.Dependencia
 		if oficinaName != "" {
-			if oficina, err := s.oficinaRepo.WithContext(ctx).FindByDetalle(oficinaName); err == nil {
+			if oficina, err := s.oficinaRepo.FindByDetalle(ctx, oficinaName); err == nil {
 				user.OficinaID = &oficina.ID
 			} else {
-				if nextCode, err := s.oficinaRepo.WithContext(ctx).GetNextCodigo(); err == nil {
+				if nextCode, err := s.oficinaRepo.GetNextCodigo(ctx); err == nil {
 					newOficina := &models.Oficina{
 						Codigo:  nextCode,
 						Detalle: oficinaName,
 					}
-					if err := s.oficinaRepo.WithContext(ctx).Create(newOficina); err == nil {
+					if err := s.oficinaRepo.Create(ctx, newOficina); err == nil {
 						user.OficinaID = &newOficina.ID
 					}
 				}
@@ -138,7 +145,7 @@ func (s *UsuarioService) SyncStaff(ctx context.Context) (int, error) {
 			user.RolCodigo = &rol
 		}
 
-		if err := s.repo.WithContext(ctx).Save(user); err == nil {
+		if err := s.repo.Save(ctx, user); err == nil {
 			count++
 		}
 	}
@@ -163,20 +170,20 @@ func (s *UsuarioService) SyncSenators(ctx context.Context) (int, error) {
 	var count int
 
 	err = s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.UsuarioRepository) error {
-		pgSenators, _ := repoTx.FindAllSenators()
+		pgSenators, _ := repoTx.FindAllSenators(ctx)
 
 		for _, user := range pgSenators {
 			if _, exists := mongoMap[user.CI]; !exists {
-				repoTx.Delete(&user)
+				repoTx.Delete(ctx, &user)
 			}
 		}
 
 		for ci, mSen := range mongoMap {
-			user, err := repoTx.FindByCIUnscoped(ci)
+			user, err := repoTx.FindByCIUnscoped(ctx, ci)
 			exists := err == nil
 
 			if exists {
-				repoTx.Restore(user)
+				repoTx.Restore(ctx, user)
 			} else {
 				user = &models.Usuario{}
 				user.CI = ci
@@ -205,23 +212,23 @@ func (s *UsuarioService) SyncSenators(ctx context.Context) (int, error) {
 
 			dept := mSen.SenadorData.Departamento
 			if dept != "" {
-				if depto, err := s.deptoRepo.WithContext(ctx).FindByNombre(dept); err == nil {
+				if depto, err := s.deptoRepo.FindByNombre(ctx, dept); err == nil {
 					user.DepartamentoCode = &depto.Codigo
 				}
 			}
 
 			cargoName := mSen.Cargo
 			if cargoName != "" {
-				if cargo, err := s.cargoRepo.WithContext(ctx).FindByDescripcion(cargoName); err == nil {
+				if cargo, err := s.cargoRepo.FindByDescripcion(ctx, cargoName); err == nil {
 					user.CargoID = &cargo.ID
 				} else {
-					if nextCode, err := s.cargoRepo.WithContext(ctx).GetNextCodigo(); err == nil {
+					if nextCode, err := s.cargoRepo.GetNextCodigo(ctx); err == nil {
 						newCargo := &models.Cargo{
 							Codigo:      nextCode,
 							Descripcion: cargoName,
 							Categoria:   0,
 						}
-						if err := s.cargoRepo.WithContext(ctx).Create(newCargo); err == nil {
+						if err := s.cargoRepo.Create(ctx, newCargo); err == nil {
 							user.CargoID = &newCargo.ID
 						}
 					}
@@ -232,15 +239,15 @@ func (s *UsuarioService) SyncSenators(ctx context.Context) (int, error) {
 
 			oficinaName := mSen.Dependencia
 			if oficinaName != "" {
-				if oficina, err := s.oficinaRepo.WithContext(ctx).FindByDetalle(oficinaName); err == nil {
+				if oficina, err := s.oficinaRepo.FindByDetalle(ctx, oficinaName); err == nil {
 					user.OficinaID = &oficina.ID
 				} else {
-					if nextCode, err := s.oficinaRepo.WithContext(ctx).GetNextCodigo(); err == nil {
+					if nextCode, err := s.oficinaRepo.GetNextCodigo(ctx); err == nil {
 						newOficina := &models.Oficina{
 							Codigo:  nextCode,
 							Detalle: oficinaName,
 						}
-						if err := s.oficinaRepo.WithContext(ctx).Create(newOficina); err == nil {
+						if err := s.oficinaRepo.Create(ctx, newOficina); err == nil {
 							user.OficinaID = &newOficina.ID
 						}
 					}
@@ -254,7 +261,7 @@ func (s *UsuarioService) SyncSenators(ctx context.Context) (int, error) {
 				user.RolCodigo = &senadorRole
 			}
 
-			if err := repoTx.Save(user); err == nil {
+			if err := repoTx.Save(ctx, user); err == nil {
 				count++
 			}
 		}
@@ -267,7 +274,7 @@ func (s *UsuarioService) SyncSenators(ctx context.Context) (int, error) {
 			}
 
 			ci := utils.CleanString(mSen.CI)
-			user, err := repoTx.FindByCI(ci)
+			user, err := repoTx.FindByCI(ctx, ci)
 			if err != nil {
 				continue
 			}
@@ -276,21 +283,21 @@ func (s *UsuarioService) SyncSenators(ctx context.Context) (int, error) {
 			case "SENADOR_SUPLENTE":
 				titularCI := utils.CleanString(mSen.SenadorData.SuTitularCI)
 				if titularCI != "" {
-					titular, err := repoTx.FindByCI(titularCI)
+					titular, err := repoTx.FindByCI(ctx, titularCI)
 					if err == nil {
 						user.TitularID = &titular.ID
 						user.EncargadoID = titular.EncargadoID
-						repoTx.Save(user)
+						repoTx.Save(ctx, user)
 					}
 				}
 			case "SENADOR_TITULAR":
 				suplenteCI := utils.CleanString(mSen.SenadorData.SuSuplenteCI)
 				if suplenteCI != "" {
-					suplente, err := repoTx.FindByCI(suplenteCI)
+					suplente, err := repoTx.FindByCI(ctx, suplenteCI)
 					if err == nil {
 						suplente.TitularID = &user.ID
 						suplente.EncargadoID = user.EncargadoID
-						repoTx.Save(suplente)
+						repoTx.Save(ctx, suplente)
 					}
 				}
 			}
@@ -306,40 +313,40 @@ func (s *UsuarioService) SyncSenators(ctx context.Context) (int, error) {
 }
 
 func (s *UsuarioService) GetAll(ctx context.Context) ([]models.Usuario, error) {
-	return s.repo.WithContext(ctx).FindAll()
+	return s.repo.FindAll(ctx)
 }
 
 func (s *UsuarioService) GetByRoleType(ctx context.Context, roleType string) ([]models.Usuario, error) {
-	return s.repo.WithContext(ctx).FindByRoleType(roleType)
+	return s.repo.FindByRoleType(ctx, roleType)
 }
 
 func (s *UsuarioService) GetPaginated(ctx context.Context, roleType string, page, limit int, searchTerm string) (*repositories.PaginatedUsers, error) {
-	return s.repo.WithContext(ctx).FindPaginated(roleType, page, limit, searchTerm)
+	return s.repo.FindPaginated(ctx, roleType, page, limit, searchTerm)
 }
 
 func (s *UsuarioService) GetByID(ctx context.Context, id string) (*models.Usuario, error) {
-	return s.repo.WithContext(ctx).FindByID(id)
+	return s.repo.FindByID(ctx, id)
 }
 
 func (s *UsuarioService) GetByIDs(ctx context.Context, ids []string) ([]models.Usuario, error) {
-	return s.repo.WithContext(ctx).FindByIDs(ids)
+	return s.repo.FindByIDs(ctx, ids)
 }
 
 func (s *UsuarioService) UpdateRol(ctx context.Context, id string, rolCodigo string) error {
-	return s.repo.WithContext(ctx).UpdateRol(id, rolCodigo)
+	return s.repo.UpdateRol(ctx, id, rolCodigo)
 }
 
 func (s *UsuarioService) Update(ctx context.Context, usuario *models.Usuario) error {
 	return s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.UsuarioRepository) error {
-		if err := repoTx.Update(usuario); err != nil {
+		if err := repoTx.Update(ctx, usuario); err != nil {
 			return err
 		}
 
 		if usuario.Tipo == "SENADOR_TITULAR" {
-			suplente, err := repoTx.FindSuplenteByTitularID(usuario.ID)
+			suplente, err := repoTx.FindSuplenteByTitularID(ctx, usuario.ID)
 			if err == nil && suplente != nil {
 				suplente.EncargadoID = usuario.EncargadoID
-				if err := repoTx.Update(suplente); err != nil {
+				if err := repoTx.Update(ctx, suplente); err != nil {
 					return err
 				}
 			}
@@ -350,9 +357,9 @@ func (s *UsuarioService) Update(ctx context.Context, usuario *models.Usuario) er
 }
 
 func (s *UsuarioService) GetSenatorsByEncargado(ctx context.Context, encargadoID string) ([]models.Usuario, error) {
-	return s.repo.WithContext(ctx).FindByEncargadoID(encargadoID)
+	return s.repo.FindByEncargadoID(ctx, encargadoID)
 }
 
 func (s *UsuarioService) GetSuplenteByTitularID(ctx context.Context, titularID string) (*models.Usuario, error) {
-	return s.repo.WithContext(ctx).FindSuplenteByTitularID(titularID)
+	return s.repo.FindSuplenteByTitularID(ctx, titularID)
 }

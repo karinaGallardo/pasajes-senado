@@ -16,11 +16,11 @@ type DashboardController struct {
 	usuarioService   *services.UsuarioService
 }
 
-func NewDashboardController() *DashboardController {
+func NewDashboardController(solicitudService *services.SolicitudService, descargoService *services.DescargoService, usuarioService *services.UsuarioService) *DashboardController {
 	return &DashboardController{
-		solicitudService: services.NewSolicitudService(),
-		descargoService:  services.NewDescargoService(),
-		usuarioService:   services.NewUsuarioService(),
+		solicitudService: solicitudService,
+		descargoService:  descargoService,
+		usuarioService:   usuarioService,
 	}
 }
 

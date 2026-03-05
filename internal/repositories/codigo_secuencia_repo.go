@@ -2,7 +2,6 @@ package repositories
 
 import (
 	"context"
-	"sistema-pasajes/internal/configs"
 	"sistema-pasajes/internal/models"
 
 	"gorm.io/gorm"
@@ -13,8 +12,8 @@ type CodigoSecuenciaRepository struct {
 	db *gorm.DB
 }
 
-func NewCodigoSecuenciaRepository() *CodigoSecuenciaRepository {
-	return &CodigoSecuenciaRepository{db: configs.DB}
+func NewCodigoSecuenciaRepository(db *gorm.DB) *CodigoSecuenciaRepository {
+	return &CodigoSecuenciaRepository{db: db}
 }
 
 func (r *CodigoSecuenciaRepository) WithTx(tx *gorm.DB) *CodigoSecuenciaRepository {
@@ -25,7 +24,7 @@ func (r *CodigoSecuenciaRepository) WithContext(ctx context.Context) *CodigoSecu
 	return &CodigoSecuenciaRepository{db: r.db.WithContext(ctx)}
 }
 
-func (r *CodigoSecuenciaRepository) GetNext(gestion int, tipo string) (int, error) {
+func (r *CodigoSecuenciaRepository) GetNext(ctx context.Context, gestion int, tipo string) (int, error) {
 	var nextVal int
 	err := r.db.Transaction(func(tx *gorm.DB) error {
 		var c models.CodigoSecuencia

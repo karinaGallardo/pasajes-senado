@@ -14,10 +14,10 @@ type SolicitudController struct {
 	userService *services.UsuarioService
 }
 
-func NewSolicitudController() *SolicitudController {
+func NewSolicitudController(service *services.SolicitudService, userService *services.UsuarioService) *SolicitudController {
 	return &SolicitudController{
-		service:     services.NewSolicitudService(),
-		userService: services.NewUsuarioService(),
+		service:     service,
+		userService: userService,
 	}
 }
 

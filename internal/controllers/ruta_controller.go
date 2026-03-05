@@ -17,11 +17,15 @@ type RutaController struct {
 	destinoService   *services.DestinoService
 }
 
-func NewRutaController() *RutaController {
+func NewRutaController(
+	rutaService *services.RutaService,
+	aerolineaService *services.AerolineaService,
+	destinoService *services.DestinoService,
+) *RutaController {
 	return &RutaController{
-		rutaService:      services.NewRutaService(),
-		aerolineaService: services.NewAerolineaService(),
-		destinoService:   services.NewDestinoService(),
+		rutaService:      rutaService,
+		aerolineaService: aerolineaService,
+		destinoService:   destinoService,
 	}
 }
 

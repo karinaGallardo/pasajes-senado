@@ -10,16 +10,16 @@ type CategoriaViaticoService struct {
 	repo *repositories.CategoriaViaticoRepository
 }
 
-func NewCategoriaViaticoService() *CategoriaViaticoService {
+func NewCategoriaViaticoService(repo *repositories.CategoriaViaticoRepository) *CategoriaViaticoService {
 	return &CategoriaViaticoService{
-		repo: repositories.NewCategoriaViaticoRepository(),
+		repo: repo,
 	}
 }
 
 func (s *CategoriaViaticoService) GetAll(ctx context.Context) ([]models.CategoriaViatico, error) {
-	return s.repo.WithContext(ctx).FindAll()
+	return s.repo.FindAll(ctx)
 }
 
 func (s *CategoriaViaticoService) Create(ctx context.Context, cat *models.CategoriaViatico) error {
-	return s.repo.WithContext(ctx).Create(cat)
+	return s.repo.Create(ctx, cat)
 }

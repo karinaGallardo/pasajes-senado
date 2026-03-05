@@ -58,3 +58,20 @@ func (p Pasaje) GetEstadoCodigo() string {
 	}
 	return *p.EstadoPasajeCodigo
 }
+
+func (p Pasaje) CanBeEdited(user *Usuario) bool {
+	if !user.IsAdminOrResponsable() {
+		return false
+	}
+	st := p.GetEstadoCodigo()
+	return st == "EMITIDO"
+}
+
+func (p Pasaje) CanBeAnulado(user *Usuario) bool {
+	return user.IsAdminOrResponsable() && p.GetEstadoCodigo() != "ANULADO"
+}
+
+func (p Pasaje) CanMarkUsado(user *Usuario) bool {
+	st := p.GetEstadoCodigo()
+	return (st == "EMITIDO" || st == "USADO")
+}

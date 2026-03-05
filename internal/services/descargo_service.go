@@ -15,15 +15,18 @@ type DescargoService struct {
 	solicitudRepo *repositories.SolicitudRepository
 }
 
-func NewDescargoService() *DescargoService {
+func NewDescargoService(
+	repo *repositories.DescargoRepository,
+	solicitudRepo *repositories.SolicitudRepository,
+) *DescargoService {
 	return &DescargoService{
-		repo:          repositories.NewDescargoRepository(),
-		solicitudRepo: repositories.NewSolicitudRepository(),
+		repo:          repo,
+		solicitudRepo: solicitudRepo,
 	}
 }
 
 func (s *DescargoService) Create(ctx context.Context, req dtos.CreateDescargoRequest, userID string, archivoPaths []string, anexoPaths []string) (*models.Descargo, error) {
-	solicitud, err := s.solicitudRepo.WithContext(ctx).FindByID(req.SolicitudID)
+	solicitud, err := s.solicitudRepo.FindByID(ctx, req.SolicitudID)
 	if err != nil {
 		return nil, err
 	}
@@ -126,7 +129,7 @@ func (s *DescargoService) Create(ctx context.Context, req dtos.CreateDescargoReq
 	}
 	descargo.DetallesItinerario = itinDetalles
 
-	if err := s.repo.WithContext(ctx).Create(descargo); err != nil {
+	if err := s.repo.Create(ctx, descargo); err != nil {
 		return nil, err
 	}
 
@@ -134,23 +137,23 @@ func (s *DescargoService) Create(ctx context.Context, req dtos.CreateDescargoReq
 }
 
 func (s *DescargoService) GetBySolicitudID(ctx context.Context, solicitudID string) (*models.Descargo, error) {
-	return s.repo.WithContext(ctx).FindBySolicitudID(solicitudID)
+	return s.repo.FindBySolicitudID(ctx, solicitudID)
 }
 
 func (s *DescargoService) GetByID(ctx context.Context, id string) (*models.Descargo, error) {
-	return s.repo.WithContext(ctx).FindByID(id)
+	return s.repo.FindByID(ctx, id)
 }
 
 func (s *DescargoService) GetAll(ctx context.Context) ([]models.Descargo, error) {
-	return s.repo.WithContext(ctx).FindAll()
+	return s.repo.FindAll(ctx)
 }
 
 func (s *DescargoService) Update(ctx context.Context, descargo *models.Descargo) error {
-	return s.repo.WithContext(ctx).Update(descargo)
+	return s.repo.Update(ctx, descargo)
 }
 
 func (s *DescargoService) UpdateFull(ctx context.Context, id string, req dtos.CreateDescargoRequest, userID string, archivoPaths []string, anexoPaths []string) error {
-	descargo, err := s.repo.WithContext(ctx).FindByID(id)
+	descargo, err := s.repo.FindByID(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -177,7 +180,7 @@ func (s *DescargoService) UpdateFull(ctx context.Context, id string, req dtos.Cr
 		descargo.Oficial.DirigidoA = req.DirigidoA
 
 		// Explicitly save the official detail to ensure columns are updated correctly
-		if err := s.repo.WithContext(ctx).UpdateOficial(descargo.Oficial); err != nil {
+		if err := s.repo.UpdateOficial(ctx, descargo.Oficial); err != nil {
 			return err
 		}
 
@@ -195,7 +198,7 @@ func (s *DescargoService) UpdateFull(ctx context.Context, id string, req dtos.Cr
 			}
 			// Clear existing ones using oficial ID if exists
 			if descargo.Oficial.ID != "" {
-				if err := s.repo.WithContext(ctx).ClearAnexos(descargo.Oficial.ID); err != nil {
+				if err := s.repo.ClearAnexos(ctx, descargo.Oficial.ID); err != nil {
 					return err
 				}
 			}
@@ -260,16 +263,16 @@ func (s *DescargoService) UpdateFull(ctx context.Context, id string, req dtos.Cr
 		}
 	}
 
-	if err := s.repo.WithContext(ctx).ClearDetalles(id); err != nil {
+	if err := s.repo.ClearDetalles(ctx, id); err != nil {
 		return err
 	}
 
 	descargo.DetallesItinerario = itinDetalles
-	return s.repo.WithContext(ctx).Update(descargo)
+	return s.repo.Update(ctx, descargo)
 }
 
 func (s *DescargoService) RevertApproval(ctx context.Context, id string, userID string) error {
-	descargo, err := s.repo.WithContext(ctx).FindByID(id)
+	descargo, err := s.repo.FindByID(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -281,5 +284,5 @@ func (s *DescargoService) RevertApproval(ctx context.Context, id string, userID 
 	descargo.Estado = "EN_REVISION"
 	descargo.UpdatedBy = &userID
 
-	return s.repo.WithContext(ctx).Update(descargo)
+	return s.repo.Update(ctx, descargo)
 }

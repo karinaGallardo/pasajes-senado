@@ -15,9 +15,9 @@ type CategoriaCompensacionController struct {
 	service *services.CompensacionService
 }
 
-func NewCategoriaCompensacionController() *CategoriaCompensacionController {
+func NewCategoriaCompensacionController(service *services.CompensacionService) *CategoriaCompensacionController {
 	return &CategoriaCompensacionController{
-		service: services.NewCompensacionService(),
+		service: service,
 	}
 }
 

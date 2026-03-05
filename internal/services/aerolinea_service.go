@@ -10,14 +10,14 @@ type AerolineaService struct {
 	repo *repositories.AerolineaRepository
 }
 
-func NewAerolineaService() *AerolineaService {
+func NewAerolineaService(repo *repositories.AerolineaRepository) *AerolineaService {
 	return &AerolineaService{
-		repo: repositories.NewAerolineaRepository(),
+		repo: repo,
 	}
 }
 
 func (s *AerolineaService) GetAllActive(ctx context.Context) ([]models.Aerolinea, error) {
-	return s.repo.WithContext(ctx).FindAllActive()
+	return s.repo.FindAllActive(ctx)
 }
 
 func (s *AerolineaService) GetActiveNames(ctx context.Context) ([]string, error) {
@@ -33,30 +33,30 @@ func (s *AerolineaService) GetActiveNames(ctx context.Context) ([]string, error)
 }
 
 func (s *AerolineaService) GetAll(ctx context.Context) ([]models.Aerolinea, error) {
-	return s.repo.WithContext(ctx).FindAll()
+	return s.repo.FindAll(ctx)
 }
 
 func (s *AerolineaService) GetByID(ctx context.Context, id string) (*models.Aerolinea, error) {
-	return s.repo.WithContext(ctx).FindByID(id)
+	return s.repo.FindByID(ctx, id)
 }
 
 func (s *AerolineaService) Create(ctx context.Context, aerolinea *models.Aerolinea) error {
-	return s.repo.WithContext(ctx).Create(aerolinea)
+	return s.repo.Create(ctx, aerolinea)
 }
 
 func (s *AerolineaService) Update(ctx context.Context, aerolinea *models.Aerolinea) error {
-	return s.repo.WithContext(ctx).Update(aerolinea)
+	return s.repo.Update(ctx, aerolinea)
 }
 
 func (s *AerolineaService) Toggle(ctx context.Context, id string) error {
-	a, err := s.repo.WithContext(ctx).FindByID(id)
+	a, err := s.repo.FindByID(ctx, id)
 	if err != nil {
 		return err
 	}
 	a.Estado = !a.Estado
-	return s.repo.WithContext(ctx).Update(a)
+	return s.repo.Update(ctx, a)
 }
 
 func (s *AerolineaService) Delete(ctx context.Context, id string) error {
-	return s.repo.WithContext(ctx).Delete(id)
+	return s.repo.Delete(ctx, id)
 }

@@ -305,3 +305,37 @@ func (s Solicitud) GetDiasRestantesDescargo() int {
 	}
 	return restantes
 }
+
+// --- Authorization Logic ---
+
+func (s Solicitud) CanView(user *Usuario) bool {
+	if user.IsAdminOrResponsable() {
+		return true
+	}
+	if s.UsuarioID == user.ID {
+		return true
+	}
+	if s.CreatedBy != nil && *s.CreatedBy == user.ID {
+		return true
+	}
+	if s.Usuario.EncargadoID != nil && *s.Usuario.EncargadoID == user.ID {
+		return true
+	}
+	return false
+}
+
+func (s Solicitud) CanEdit(user *Usuario) bool {
+	estado := s.GetEstado()
+	if estado != "SOLICITADO" && estado != "RECHAZADO" {
+		return false
+	}
+	return s.CanView(user)
+}
+
+func (s Solicitud) CanApprove(user *Usuario) bool {
+	if !user.IsAdminOrResponsable() {
+		return false
+	}
+	estado := s.GetEstado()
+	return estado == "SOLICITADO" || estado == "PARCIALMENTE_APROBADO"
+}

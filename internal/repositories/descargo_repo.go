@@ -4,7 +4,6 @@ import (
 	"context"
 	"sistema-pasajes/internal/models"
 
-	"sistema-pasajes/internal/configs"
 
 	"gorm.io/gorm"
 )
@@ -13,21 +12,21 @@ type DescargoRepository struct {
 	db *gorm.DB
 }
 
-func NewDescargoRepository() *DescargoRepository {
-	return &DescargoRepository{db: configs.DB}
+func NewDescargoRepository(db *gorm.DB) *DescargoRepository {
+	return &DescargoRepository{db: db}
 }
 
 func (r *DescargoRepository) WithContext(ctx context.Context) *DescargoRepository {
 	return &DescargoRepository{db: r.db.WithContext(ctx)}
 }
 
-func (r *DescargoRepository) Create(descargo *models.Descargo) error {
-	return r.db.Create(descargo).Error
+func (r *DescargoRepository) Create(ctx context.Context, descargo *models.Descargo) error {
+	return r.db.WithContext(ctx).Create(descargo).Error
 }
 
-func (r *DescargoRepository) FindBySolicitudID(solicitudID string) (*models.Descargo, error) {
+func (r *DescargoRepository) FindBySolicitudID(ctx context.Context, solicitudID string) (*models.Descargo, error) {
 	var descargo models.Descargo
-	err := r.db.Preload("Documentos").
+	err := r.db.WithContext(ctx).Preload("Documentos").
 		Preload("DetallesItinerario").
 		Preload("Solicitud").
 		Preload("Solicitud.CupoDerechoItem").
@@ -42,9 +41,9 @@ func (r *DescargoRepository) FindBySolicitudID(solicitudID string) (*models.Desc
 	return &descargo, err
 }
 
-func (r *DescargoRepository) FindByID(id string) (*models.Descargo, error) {
+func (r *DescargoRepository) FindByID(ctx context.Context, id string) (*models.Descargo, error) {
 	var descargo models.Descargo
-	err := r.db.Preload("Documentos").
+	err := r.db.WithContext(ctx).Preload("Documentos").
 		Preload("DetallesItinerario").
 		Preload("Solicitud").
 		Preload("Solicitud.Usuario").
@@ -64,9 +63,9 @@ func (r *DescargoRepository) FindByID(id string) (*models.Descargo, error) {
 	return &descargo, err
 }
 
-func (r *DescargoRepository) FindAll() ([]models.Descargo, error) {
+func (r *DescargoRepository) FindAll(ctx context.Context) ([]models.Descargo, error) {
 	var descargos []models.Descargo
-	err := r.db.Preload("Solicitud").
+	err := r.db.WithContext(ctx).Preload("Solicitud").
 		Preload("Solicitud.Usuario").
 		Preload("Solicitud.CupoDerechoItem").
 		Preload("Solicitud.Items").
@@ -80,18 +79,18 @@ func (r *DescargoRepository) FindAll() ([]models.Descargo, error) {
 		Order("created_at desc").Find(&descargos).Error
 	return descargos, err
 }
-func (r *DescargoRepository) Update(descargo *models.Descargo) error {
-	return r.db.Session(&gorm.Session{FullSaveAssociations: true}).Save(descargo).Error
+func (r *DescargoRepository) Update(ctx context.Context, descargo *models.Descargo) error {
+	return r.db.WithContext(ctx).Session(&gorm.Session{FullSaveAssociations: true}).Save(descargo).Error
 }
 
-func (r *DescargoRepository) UpdateOficial(oficial *models.DescargoOficial) error {
-	return r.db.Save(oficial).Error
+func (r *DescargoRepository) UpdateOficial(ctx context.Context, oficial *models.DescargoOficial) error {
+	return r.db.WithContext(ctx).Save(oficial).Error
 }
 
-func (r *DescargoRepository) ClearDetalles(descargoID string) error {
-	return r.db.Where("descargo_id = ?", descargoID).Delete(&models.DetalleItinerarioDescargo{}).Error
+func (r *DescargoRepository) ClearDetalles(ctx context.Context, descargoID string) error {
+	return r.db.WithContext(ctx).Where("descargo_id = ?", descargoID).Delete(&models.DetalleItinerarioDescargo{}).Error
 }
 
-func (r *DescargoRepository) ClearAnexos(oficialID string) error {
-	return r.db.Where("descargo_oficial_id = ?", oficialID).Delete(&models.AnexoDescargo{}).Error
+func (r *DescargoRepository) ClearAnexos(ctx context.Context, oficialID string) error {
+	return r.db.WithContext(ctx).Where("descargo_oficial_id = ?", oficialID).Delete(&models.AnexoDescargo{}).Error
 }

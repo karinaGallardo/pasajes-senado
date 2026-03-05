@@ -11,31 +11,31 @@ type NotificationService struct {
 	usuarioRepo *repositories.UsuarioRepository
 }
 
-func NewNotificationService() *NotificationService {
+func NewNotificationService(repo *repositories.NotificationRepository, usuarioRepo *repositories.UsuarioRepository) *NotificationService {
 	return &NotificationService{
-		repo:        repositories.NewNotificationRepository(),
-		usuarioRepo: repositories.NewUsuarioRepository(),
+		repo:        repo,
+		usuarioRepo: usuarioRepo,
 	}
 }
 
 func (s *NotificationService) GetRecentByUserID(ctx context.Context, userID string) ([]models.Notification, error) {
-	return s.repo.FindByUserID(userID, 10)
+	return s.repo.FindByUserID(ctx, userID, 10)
 }
 
 func (s *NotificationService) GetUnreadCount(ctx context.Context, userID string) (int64, error) {
-	return s.repo.CountUnread(userID)
+	return s.repo.CountUnread(ctx, userID)
 }
 
 func (s *NotificationService) MarkAsRead(ctx context.Context, id string) error {
-	return s.repo.MarkAsRead(id)
+	return s.repo.MarkAsRead(ctx, id)
 }
 
 func (s *NotificationService) MarkAllAsRead(ctx context.Context, userID string) error {
-	return s.repo.MarkAllAsRead(userID)
+	return s.repo.MarkAllAsRead(ctx, userID)
 }
 
 func (s *NotificationService) NotifyAdmins(ctx context.Context, title, message, notifType, targetURL string) error {
-	admins, err := s.usuarioRepo.FindAdminsAndResponsables()
+	admins, err := s.usuarioRepo.FindAdminsAndResponsables(ctx)
 	if err != nil {
 		return err
 	}
@@ -48,7 +48,7 @@ func (s *NotificationService) NotifyAdmins(ctx context.Context, title, message, 
 			Type:      notifType,
 			TargetURL: targetURL,
 		}
-		if err := s.repo.Create(&notif); err == nil {
+		if err := s.repo.Create(ctx, &notif); err == nil {
 			// Broadcast via WebSocket
 			Hub.Broadcast(map[string]interface{}{
 				"event":       "refresh_notifications",

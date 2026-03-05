@@ -3,7 +3,6 @@ package repositories
 import (
 	"context"
 	"errors"
-	"sistema-pasajes/internal/configs"
 	"sistema-pasajes/internal/models"
 	"time"
 
@@ -17,9 +16,9 @@ type PeopleViewRepository struct {
 	ctx context.Context
 }
 
-func NewPeopleViewRepository() *PeopleViewRepository {
+func NewPeopleViewRepository(db *mongo.Database) *PeopleViewRepository {
 	return &PeopleViewRepository{
-		db:  configs.MongoRRHH,
+		db:  db,
 		ctx: context.Background(),
 	}
 }

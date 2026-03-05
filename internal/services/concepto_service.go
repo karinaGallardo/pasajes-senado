@@ -10,16 +10,16 @@ type ConceptoService struct {
 	repo *repositories.ConceptoViajeRepository
 }
 
-func NewConceptoService() *ConceptoService {
+func NewConceptoService(repo *repositories.ConceptoViajeRepository) *ConceptoService {
 	return &ConceptoService{
-		repo: repositories.NewConceptoViajeRepository(),
+		repo: repo,
 	}
 }
 
 func (s *ConceptoService) GetAll(ctx context.Context) ([]models.ConceptoViaje, error) {
-	return s.repo.WithContext(ctx).FindConceptos()
+	return s.repo.FindConceptos(ctx)
 }
 
 func (s *ConceptoService) GetByCodigo(ctx context.Context, codigo string) (*models.ConceptoViaje, error) {
-	return s.repo.WithContext(ctx).FindByCodigo(codigo)
+	return s.repo.FindByCodigo(ctx, codigo)
 }

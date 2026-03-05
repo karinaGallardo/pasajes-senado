@@ -9,20 +9,26 @@ import (
 	"sistema-pasajes/internal/utils"
 
 	"github.com/gin-gonic/gin"
-	"github.com/jung-kurt/gofpdf"
 )
 
 type ViaticoController struct {
 	viaticoService   *services.ViaticoService
 	solService       *services.SolicitudService
 	categoriaService *services.CategoriaViaticoService
+	reportService    *services.ReportService
 }
 
-func NewViaticoController() *ViaticoController {
+func NewViaticoController(
+	viaticoService *services.ViaticoService,
+	solService *services.SolicitudService,
+	categoriaService *services.CategoriaViaticoService,
+	reportService *services.ReportService,
+) *ViaticoController {
 	return &ViaticoController{
-		viaticoService:   services.NewViaticoService(),
-		solService:       services.NewSolicitudService(),
-		categoriaService: services.NewCategoriaViaticoService(),
+		viaticoService:   viaticoService,
+		solService:       solService,
+		categoriaService: categoriaService,
+		reportService:    reportService,
 	}
 }
 
@@ -124,184 +130,7 @@ func (ctrl *ViaticoController) Print(c *gin.Context) {
 		return
 	}
 
-	pdf := gofpdf.New("P", "mm", "A4", "")
-	tr := pdf.UnicodeTranslatorFromDescriptor("")
-	pdf.AddPage()
-	pdf.SetFont("Arial", "B", 16)
-
-	xHeader, yHeader := 10.0, 10.0
-	wHeader, hHeader := 190.0, 30.0
-
-	pdf.SetLineWidth(0.5)
-	pdf.Rect(xHeader, yHeader, wHeader, hHeader, "D")
-	pdf.Line(xHeader+50, yHeader, xHeader+50, yHeader+hHeader)
-	pdf.Line(xHeader+150, yHeader, xHeader+150, yHeader+hHeader)
-
-	pdf.SetXY(xHeader, yHeader+6)
-	pdf.SetFont("Arial", "B", 12)
-	pdf.CellFormat(50, 6, "FORM-V-01", "", 1, "C", false, 0, "")
-
-	pdf.SetXY(xHeader, yHeader+16)
-	pdf.SetFont("Arial", "B", 14)
-	pdf.CellFormat(50, 6, viatico.Codigo, "", 1, "C", false, 0, "")
-
-	pdf.SetXY(xHeader+50, yHeader+5)
-	pdf.SetFont("Arial", "B", 16)
-	pdf.CellFormat(100, 10, tr("FORMULARIO DE VIÁTICOS"), "", 1, "C", false, 0, "")
-	pdf.SetXY(xHeader+50, yHeader+15)
-	pdf.SetFont("Arial", "B", 10)
-	pdf.CellFormat(100, 5, tr("CÁMARA DE SENADORES"), "", 1, "C", false, 0, "")
-
-	pdf.Image("web/static/img/logo_senado.png", xHeader+155, yHeader+2, 25, 0, false, "", 0, "")
-
-	pdf.SetY(50)
-	drawLabelBox := func(label, value string, wLabel, wBox float64, sameLine bool) {
-		h := 6.0
-		pdf.SetFont("Arial", "B", 8)
-		pdf.CellFormat(wLabel, h, tr(label), "", 0, "R", false, 0, "")
-
-		pdf.SetFont("Arial", "", 9)
-		if len(value) > 75 {
-			value = value[:72] + "..."
-		}
-		pdf.CellFormat(wBox, h, "  "+tr(value), "1", 0, "L", false, 0, "")
-
-		if !sameLine {
-			pdf.Ln(h + 2)
-		}
-	}
-
-	user := viatico.Usuario
-	rolNombre := ""
-	if user.Rol != nil {
-		rolNombre = user.Rol.Nombre
-	}
-	drawLabelBox(tr("A FAVOR DE :"), tr(user.GetNombreCompleto()), 40, 150, false)
-	drawLabelBox(tr("C.I. :"), tr(user.CI), 40, 60, true)
-	drawLabelBox(tr("CARGO/ROL :"), tr(rolNombre), 30, 60, false)
-	drawLabelBox(tr("UNIDAD :"), tr("Senado Plurinacional"), 40, 150, false)
-
-	pdf.Ln(2)
-
-	if viatico.Solicitud != nil {
-		sol := viatico.Solicitud
-
-		pdf.SetFont("Arial", "B", 10)
-		pdf.CellFormat(0, 8, tr("DATOS DE LA COMISIÓN"), "B", 1, "L", false, 0, "")
-		pdf.Ln(2)
-
-		drawLabelBox(tr("SOLICITUD :"), tr(sol.Codigo), 40, 60, true)
-		fechaSol := "-"
-		if fIda := sol.GetFechaIda(); fIda != nil {
-			fechaSol = fIda.Format("02/01/2006")
-		}
-		drawLabelBox(tr("FECHA VIAJE :"), tr(fechaSol), 30, 60, false)
-		drawLabelBox(tr("MOTIVO :"), tr(sol.Motivo), 40, 150, false)
-		drawLabelBox(tr("LUGAR :"), tr(fmt.Sprintf("%s - %s", sol.GetOrigenCiudad(), sol.GetDestinoCiudad())), 40, 150, false)
-	}
-
-	pdf.Ln(5)
-	pdf.SetFont("Arial", "B", 10)
-	pdf.CellFormat(0, 8, tr("DETALLE DE VIÁTICOS ASIGNADOS"), "B", 1, "L", false, 0, "")
-	pdf.Ln(2)
-
-	pdf.SetFillColor(240, 240, 240)
-	pdf.SetFont("Arial", "B", 8)
-	pdf.CellFormat(30, 6, tr("Desde"), "1", 0, "C", true, 0, "")
-	pdf.CellFormat(30, 6, tr("Hasta"), "1", 0, "C", true, 0, "")
-	pdf.CellFormat(20, 6, tr("Días"), "1", 0, "C", true, 0, "")
-	pdf.CellFormat(30, 6, tr("Lugar"), "1", 0, "C", true, 0, "")
-	pdf.CellFormat(25, 6, tr("Haber/Día (Bs)"), "1", 0, "C", true, 0, "")
-	pdf.CellFormat(15, 6, "%", "1", 0, "C", true, 0, "")
-	pdf.CellFormat(30, 6, tr("SubTotal (Bs)"), "1", 0, "C", true, 0, "")
-	pdf.Ln(6)
-
-	pdf.SetFont("Arial", "", 8)
-	for _, d := range viatico.Detalles {
-		pdf.CellFormat(30, 6, d.FechaDesde.Format("02/01/2006"), "1", 0, "C", false, 0, "")
-		pdf.CellFormat(30, 6, d.FechaHasta.Format("02/01/2006"), "1", 0, "C", false, 0, "")
-		pdf.CellFormat(20, 6, fmt.Sprintf("%.1f", d.Dias), "1", 0, "C", false, 0, "")
-		pdf.CellFormat(30, 6, tr(d.Lugar), "1", 0, "L", false, 0, "")
-		pdf.CellFormat(25, 6, fmt.Sprintf("%.2f", d.MontoDia), "1", 0, "R", false, 0, "")
-		pdf.CellFormat(15, 6, fmt.Sprintf("%d %%", d.Porcentaje), "1", 0, "C", false, 0, "")
-		pdf.CellFormat(30, 6, fmt.Sprintf("%.2f", d.SubTotal), "1", 0, "R", false, 0, "")
-		pdf.Ln(6)
-	}
-
-	pdf.Ln(2)
-
-	xTotals := 130.0
-	wLabel := 40.0
-	wValue := 30.0
-
-	pdf.SetX(xTotals)
-	pdf.SetFont("Arial", "B", 9)
-	pdf.CellFormat(wLabel, 6, tr("TOTAL VIATICO :"), "1", 0, "R", true, 0, "")
-	pdf.SetFont("Arial", "", 9)
-	pdf.CellFormat(wValue, 6, fmt.Sprintf("%.2f", viatico.MontoTotal), "1", 1, "R", false, 0, "")
-
-	if viatico.TieneGastosRep {
-		pdf.SetX(xTotals)
-		pdf.SetFont("Arial", "B", 9)
-		pdf.CellFormat(wLabel, 6, tr("GASTOS REP. :"), "1", 0, "R", true, 0, "")
-		pdf.SetFont("Arial", "", 9)
-		pdf.CellFormat(wValue, 6, fmt.Sprintf("%.2f", viatico.MontoGastosRep), "1", 1, "R", false, 0, "")
-	}
-
-	pdf.SetX(xTotals)
-	pdf.SetFont("Arial", "B", 9)
-	pdf.CellFormat(wLabel, 6, tr("RETENCION (13%) :"), "1", 0, "R", true, 0, "")
-	pdf.SetFont("Arial", "", 9)
-	totalRet := viatico.MontoRC_IVA + viatico.MontoRetencionGastos
-	pdf.CellFormat(wValue, 6, fmt.Sprintf("%.2f", totalRet), "1", 1, "R", false, 0, "")
-
-	pdf.SetX(xTotals)
-	pdf.SetFont("Arial", "B", 10)
-	pdf.CellFormat(wLabel, 8, tr("LIQUIDO PAGABLE :"), "1", 0, "R", true, 0, "")
-	pdf.SetFont("Arial", "B", 10)
-	totalLiq := viatico.MontoLiquido + viatico.MontoLiquidoGastos
-	pdf.CellFormat(wValue, 8, fmt.Sprintf("%.2f", totalLiq), "1", 1, "R", false, 0, "")
-
-	pdf.Ln(4)
-	pdf.SetX(10)
-	pdf.SetFont("Arial", "I", 9)
-	literal := utils.NumeroALetras(totalLiq)
-	pdf.CellFormat(190, 6, "Son: "+tr(literal)+" Bolivianos", "", 1, "L", false, 0, "")
-
-	pdf.Ln(8)
-	pdf.SetFont("Arial", "", 6)
-	pdf.MultiCell(190, 3, tr("(CALCULO DE VIATICOS) Art.13, parr. III, inc. 1 : Cuando el hospedaje sea cubierto por algun organismo financiador u otra entidad publica organizadora, las Senadoras, Senadores o Servidores Públicos, declarados en comisión al interior como exterior del país, percibirán solamente el 70% de los viaticos"), "", "L", false)
-	pdf.Ln(1)
-	pdf.MultiCell(190, 3, tr("(CALCULO DE VIATICOS) Art.13, parr. III, inc. 2 : Cuando el hospedaje y alimentación, sean cubiertos por algun organismo financiador u otra entidad publica organizadora, las Senadoras, Senadores o Servidores Públicos, declarados en comisión al interior como al exterior del país, percibirán solamente el 25% de los viaticos"), "", "L", false)
-
-	pdf.SetY(260)
-
-	ySig := pdf.GetY()
-
-	pdf.SetXY(20, ySig)
-	pdf.Cell(50, 0, "__________________________")
-	pdf.SetXY(20, ySig+2)
-	pdf.SetFont("Arial", "", 8)
-	pdf.CellFormat(50, 4, tr("RECIBÍ CONFORME"), "", 1, "C", false, 0, "")
-	pdf.SetXY(20, ySig+6)
-	pdf.CellFormat(50, 4, tr(user.GetNombreCompleto()), "", 1, "C", false, 0, "")
-
-	pdf.SetXY(80, ySig)
-	pdf.Cell(50, 0, "__________________________")
-	pdf.SetXY(80, ySig+2)
-	pdf.CellFormat(50, 4, tr("ELABORADO POR"), "", 1, "C", false, 0, "")
-	pdf.SetXY(80, ySig+6)
-	authUser := appcontext.AuthUser(c)
-	authUserName := ""
-	if authUser != nil {
-		authUserName = authUser.GetNombreCompleto()
-	}
-	pdf.CellFormat(50, 4, tr(authUserName), "", 1, "C", false, 0, "")
-
-	pdf.SetXY(140, ySig)
-	pdf.Cell(50, 0, "__________________________")
-	pdf.SetXY(140, ySig+2)
-	pdf.CellFormat(50, 4, tr("AUTORIZADO"), "", 1, "C", false, 0, "")
+	pdf := ctrl.reportService.GenerateViaticoV1(c.Request.Context(), viatico)
 
 	c.Header("Content-Type", "application/pdf")
 	filename := fmt.Sprintf("VIATICO-%s.pdf", viatico.Codigo)

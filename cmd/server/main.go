@@ -2,18 +2,21 @@ package main
 
 import (
 	"context"
-	"log"
+	"errors"
+	"log/slog"
 	"net/http"
 	"os"
+	"os/signal"
 	"path/filepath"
-	"strings"
-	"time"
-
+	"sistema-pasajes/internal/app"
 	"sistema-pasajes/internal/configs"
 	"sistema-pasajes/internal/routes"
 	"sistema-pasajes/internal/services"
 	"sistema-pasajes/internal/utils"
 	"sistema-pasajes/internal/worker"
+	"strings"
+	"syscall"
+	"time"
 
 	"github.com/gin-contrib/secure"
 	"github.com/gin-contrib/sessions"
@@ -25,35 +28,45 @@ import (
 )
 
 func main() {
+	// --- POINT 3: Structured Logging (slog) ---
+	opts := &slog.HandlerOptions{
+		Level: slog.LevelInfo,
+	}
+	var handler slog.Handler = slog.NewTextHandler(os.Stdout, opts)
+	if viper.GetString("ENV") == "production" {
+		handler = slog.NewJSONHandler(os.Stdout, opts)
+	}
+	logger := slog.New(handler)
+	slog.SetDefault(logger)
+
 	configs.ConnectDB()
 	services.InitHub()
 
 	// --- Background Workers ---
 	workerPool := worker.GetPool()
 	workerPool.Start(context.Background())
-	defer workerPool.Stop()
+
+	container := app.NewContainer(configs.DB, configs.MongoRRHH, configs.MongoChat)
 
 	// --- Professional Scheduler (robfig/cron) ---
 	c := cron.New(cron.WithLocation(time.Local))
-	alertaService := services.NewAlertaService()
+	alertaService := container.AlertaService
 
 	// "0 7 * * 1-5" means: At 07:00 AM, Mon through Fri
 	_, err := c.AddFunc("0 7 * * 1-5", func() {
-		log.Println("[Scheduler] Ejecutando alertas de descargo programadas (7:00 AM Mon-Fri)...")
+		slog.Info("[Scheduler] Ejecutando alertas de descargo programadas (7:00 AM Mon-Fri)...")
 		workerPool.Submit(&services.AlertaDescargoJob{Service: alertaService})
 	})
 	if err != nil {
-		log.Printf("[Scheduler] ERROR al programar alertas: %v", err)
+		slog.Error("[Scheduler] Error al programar alertas", "error", err)
 	}
 
 	c.Start()
-	defer c.Stop()
+	slog.Info("[Scheduler] Programador iniciado: Alertas diarias Mon-Fri 07:00 AM.")
 
-	log.Println("[Scheduler] Programador iniciado: Alertas diarias Mon-Fri 07:00 AM.")
-
-	itinerarioService := services.NewTipoItinerarioService()
+	itinerarioService := container.TipoItinerarioService
 	if err := itinerarioService.EnsureDefaults(context.Background()); err != nil {
-		log.Printf("Error seeding itineraries: %v", err)
+		slog.Error("Error seeding itineraries", "error", err)
 	}
 
 	isDev := viper.GetString("ENV") != "production"
@@ -112,41 +125,26 @@ func main() {
 		pagination.WithMaxPageSize(100),
 	))
 
-	// r.Use(csrf.Middleware(csrf.Options{
-	// 	Secret: sessionSecret,
-	// 	ErrorFunc: func(c *gin.Context) {
-	// 		log.Printf("[CSRF ERROR] Method: %s, Path: %s, RemoteAddr: %s, HX-Request: %v",
-	// 			c.Request.Method, c.Request.URL.Path, c.ClientIP(), c.GetHeader("HX-Request"))
-
-	// 		if c.GetHeader("HX-Request") == "true" {
-	// 			c.String(400, "CSRF token mismatch - Recargue la página")
-	// 			c.Abort()
-	// 			return
-	// 		}
-	// 		c.String(400, "CSRF token mismatch. Por favor, recargue la página e intente de nuevo.")
-	// 		c.Abort()
-	// 	},
-	// }))
-
 	r.Static("/static", "./web/static")
 	r.Static("/uploads", "./uploads")
 
-	var files []string
+	var templates []string
 	err = filepath.Walk("web/templates", func(path string, info os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
 		if !info.IsDir() && strings.HasSuffix(path, ".html") {
-			files = append(files, path)
+			templates = append(templates, path)
 		}
 		return nil
 	})
 	if err != nil {
-		log.Fatalf("Error finding templates: %v", err)
+		slog.Error("Error finding templates", "error", err)
+		os.Exit(1)
 	}
-	r.LoadHTMLFiles(files...)
+	r.LoadHTMLFiles(templates...)
 
-	routes.SetupRoutes(r)
+	routes.SetupRoutes(r, container)
 
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{
@@ -160,8 +158,43 @@ func main() {
 		port = "8080"
 	}
 
-	log.Printf("Servidor iniciando en http://localhost:%s", port)
-	if err := r.Run(":" + port); err != nil {
-		log.Fatalf("Error iniciando servidor: %v", err)
+	// --- POINT 1: Graceful Shutdown Implementation ---
+	srv := &http.Server{
+		Addr:    ":" + port,
+		Handler: r,
 	}
+
+	// Initializing the server in a goroutine so that
+	// it won't block the graceful shutdown handling below
+	go func() {
+		slog.Info("Servidor iniciando", "url", "http://localhost:"+port)
+		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			slog.Error("Error iniciando servidor", "error", err)
+			os.Exit(1)
+		}
+	}()
+
+	// Wait for interrupt signal to gracefully shutdown the server with
+	// a timeout of 5 seconds.
+	quit := make(chan os.Signal, 1)
+	// kill (no parameter) default send syscall.SIGTERM
+	// kill -2 is syscall.SIGINT
+	// kill -9 is syscall.SIGKILL but can't be caught, so no need to add it
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+	slog.Info("Apagando servidor de forma segura...")
+
+	// The context is used to inform the server it has 5 seconds to finish
+	// the request it is currently handling
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(shutdownCtx); err != nil {
+		slog.Error("Servidor forzado a apagarse", "error", err)
+	}
+
+	// Stop other services
+	c.Stop()
+	workerPool.Stop()
+	slog.Info("Servidor detenido limpiamente.")
 }

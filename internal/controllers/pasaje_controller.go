@@ -20,13 +20,19 @@ type PasajeController struct {
 	aerolineaService *services.AerolineaService
 }
 
-func NewPasajeController() *PasajeController {
+func NewPasajeController(
+	agenciaService *services.AgenciaService,
+	rutaService *services.RutaService,
+	solicitudService *services.SolicitudService,
+	pasajeService *services.PasajeService,
+	aerolineaService *services.AerolineaService,
+) *PasajeController {
 	return &PasajeController{
-		agenciaService:   services.NewAgenciaService(),
-		rutaService:      services.NewRutaService(),
-		solicitudService: services.NewSolicitudService(),
-		pasajeService:    services.NewPasajeService(),
-		aerolineaService: services.NewAerolineaService(),
+		agenciaService:   agenciaService,
+		rutaService:      rutaService,
+		solicitudService: solicitudService,
+		pasajeService:    pasajeService,
+		aerolineaService: aerolineaService,
 	}
 }
 

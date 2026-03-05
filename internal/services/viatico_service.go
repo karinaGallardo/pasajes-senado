@@ -18,13 +18,19 @@ type ViaticoService struct {
 	configService *ConfiguracionService
 }
 
-func NewViaticoService() *ViaticoService {
+func NewViaticoService(
+	repo *repositories.ViaticoRepository,
+	solicitudRepo *repositories.SolicitudRepository,
+	catRepo *repositories.CategoriaViaticoRepository,
+	zonaRepo *repositories.ZonaViaticoRepository,
+	configService *ConfiguracionService,
+) *ViaticoService {
 	return &ViaticoService{
-		repo:          repositories.NewViaticoRepository(),
-		solicitudRepo: repositories.NewSolicitudRepository(),
-		catRepo:       repositories.NewCategoriaViaticoRepository(),
-		zonaRepo:      repositories.NewZonaViaticoRepository(),
-		configService: NewConfiguracionService(),
+		repo:          repo,
+		solicitudRepo: solicitudRepo,
+		catRepo:       catRepo,
+		zonaRepo:      zonaRepo,
+		configService: configService,
 	}
 }
 
@@ -101,7 +107,7 @@ func (s *ViaticoService) RegistrarViatico(ctx context.Context, solicitudID strin
 		Glosa:                "Asignación automática de viáticos",
 	}
 
-	if err := s.repo.WithContext(ctx).Create(viatico); err != nil {
+	if err := s.repo.Create(ctx, viatico); err != nil {
 		return nil, err
 	}
 
@@ -109,28 +115,28 @@ func (s *ViaticoService) RegistrarViatico(ctx context.Context, solicitudID strin
 }
 
 func (s *ViaticoService) GetByContext(ctx context.Context) ([]models.Viatico, error) {
-	return s.repo.WithContext(ctx).FindAll()
+	return s.repo.FindAll(ctx)
 }
 
 func (s *ViaticoService) GetBySolicitud(ctx context.Context, solicitudID string) ([]models.Viatico, error) {
-	return s.repo.WithContext(ctx).FindBySolicitudID(solicitudID)
+	return s.repo.FindBySolicitudID(ctx, solicitudID)
 }
 
 func (s *ViaticoService) GetByID(ctx context.Context, id string) (*models.Viatico, error) {
-	return s.repo.WithContext(ctx).FindByID(id)
+	return s.repo.FindByID(ctx, id)
 }
 
 func (s *ViaticoService) GetCategorias(ctx context.Context) ([]models.CategoriaViatico, error) {
-	return s.catRepo.WithContext(ctx).FindAll()
+	return s.catRepo.FindAll(ctx)
 }
 
 func (s *ViaticoService) GetZonas(ctx context.Context) ([]models.ZonaViatico, error) {
-	return s.zonaRepo.WithContext(ctx).FindAll()
+	return s.zonaRepo.FindAll(ctx)
 }
 
 func (s *ViaticoService) CreateZona(ctx context.Context, nombre string) error {
 	zona := &models.ZonaViatico{
 		Nombre: nombre,
 	}
-	return s.zonaRepo.WithContext(ctx).Create(zona)
+	return s.zonaRepo.Create(ctx, zona)
 }

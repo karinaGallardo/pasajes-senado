@@ -21,12 +21,17 @@ type UsuarioController struct {
 	organigramaService *services.OrganigramaService
 }
 
-func NewUsuarioController() *UsuarioController {
+func NewUsuarioController(
+	userService *services.UsuarioService,
+	rolService *services.RolService,
+	destinoService *services.DestinoService,
+	organigramaService *services.OrganigramaService,
+) *UsuarioController {
 	return &UsuarioController{
-		userService:        services.NewUsuarioService(),
-		rolService:         services.NewRolService(),
-		destinoService:     services.NewDestinoService(),
-		organigramaService: services.NewOrganigramaService(),
+		userService:        userService,
+		rolService:         rolService,
+		destinoService:     destinoService,
+		organigramaService: organigramaService,
 	}
 }
 

@@ -23,14 +23,21 @@ type DescargoDerechoController struct {
 	aerolineaService *services.AerolineaService
 }
 
-func NewDescargoDerechoController() *DescargoDerechoController {
+func NewDescargoDerechoController(
+	descargoService *services.DescargoService,
+	solicitudService *services.SolicitudService,
+	destinoService *services.DestinoService,
+	reportService *services.ReportService,
+	peopleService *services.PeopleService,
+	aerolineaService *services.AerolineaService,
+) *DescargoDerechoController {
 	return &DescargoDerechoController{
-		descargoService:  services.NewDescargoService(),
-		solicitudService: services.NewSolicitudService(),
-		destinoService:   services.NewDestinoService(),
-		reportService:    services.NewReportService(),
-		peopleService:    services.NewPeopleService(),
-		aerolineaService: services.NewAerolineaService(),
+		descargoService:  descargoService,
+		solicitudService: solicitudService,
+		destinoService:   destinoService,
+		reportService:    reportService,
+		peopleService:    peopleService,
+		aerolineaService: aerolineaService,
 	}
 }
 

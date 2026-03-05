@@ -11,9 +11,9 @@ type CatalogoController struct {
 	tipoSolicitudService *services.TipoSolicitudService
 }
 
-func NewCatalogoController() *CatalogoController {
+func NewCatalogoController(tipoSolicitudService *services.TipoSolicitudService) *CatalogoController {
 	return &CatalogoController{
-		tipoSolicitudService: services.NewTipoSolicitudService(),
+		tipoSolicitudService: tipoSolicitudService,
 	}
 }
 

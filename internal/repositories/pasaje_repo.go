@@ -4,7 +4,6 @@ import (
 	"context"
 	"sistema-pasajes/internal/models"
 
-	"sistema-pasajes/internal/configs"
 
 	"gorm.io/gorm"
 )
@@ -13,27 +12,27 @@ type PasajeRepository struct {
 	db *gorm.DB
 }
 
-func NewPasajeRepository() *PasajeRepository {
-	return &PasajeRepository{db: configs.DB}
+func NewPasajeRepository(db *gorm.DB) *PasajeRepository {
+	return &PasajeRepository{db: db}
 }
 
-func (r *PasajeRepository) Create(pasaje *models.Pasaje) error {
-	return r.db.Create(pasaje).Error
+func (r *PasajeRepository) Create(ctx context.Context, pasaje *models.Pasaje) error {
+	return r.db.WithContext(ctx).Create(pasaje).Error
 }
 
-func (r *PasajeRepository) FindBySolicitudID(solicitudID string) ([]models.Pasaje, error) {
+func (r *PasajeRepository) FindBySolicitudID(ctx context.Context, solicitudID string) ([]models.Pasaje, error) {
 	var pasajes []models.Pasaje
-	err := r.db.Where("solicitud_id = ?", solicitudID).Find(&pasajes).Error
+	err := r.db.WithContext(ctx).Where("solicitud_id = ?", solicitudID).Find(&pasajes).Error
 	return pasajes, err
 }
 
-func (r *PasajeRepository) Delete(id uint) error {
-	return r.db.Delete(&models.Pasaje{}, id).Error
+func (r *PasajeRepository) Delete(ctx context.Context, id uint) error {
+	return r.db.WithContext(ctx).Delete(&models.Pasaje{}, id).Error
 }
 
-func (r *PasajeRepository) FindByID(id string) (*models.Pasaje, error) {
+func (r *PasajeRepository) FindByID(ctx context.Context, id string) (*models.Pasaje, error) {
 	var pasaje models.Pasaje
-	err := r.db.Preload("EstadoPasaje").
+	err := r.db.WithContext(ctx).Preload("EstadoPasaje").
 		Preload("Agencia").
 		Preload("Aerolinea").
 		Preload("SolicitudItem").
@@ -41,8 +40,8 @@ func (r *PasajeRepository) FindByID(id string) (*models.Pasaje, error) {
 	return &pasaje, err
 }
 
-func (r *PasajeRepository) Update(pasaje *models.Pasaje) error {
-	return r.db.Save(pasaje).Error
+func (r *PasajeRepository) Update(ctx context.Context, pasaje *models.Pasaje) error {
+	return r.db.WithContext(ctx).Save(pasaje).Error
 }
 
 func (r *PasajeRepository) WithTx(tx *gorm.DB) *PasajeRepository {
@@ -60,8 +59,8 @@ func (r *PasajeRepository) RunTransaction(fn func(repo *PasajeRepository, tx *go
 	})
 }
 
-func (r *PasajeRepository) FindByNumeroBoleto(numeroBoleto string) (*models.Pasaje, error) {
+func (r *PasajeRepository) FindByNumeroBoleto(ctx context.Context, numeroBoleto string) (*models.Pasaje, error) {
 	var pasaje models.Pasaje
-	err := r.db.Where("numero_boleto = ?", numeroBoleto).First(&pasaje).Error
+	err := r.db.WithContext(ctx).Where("numero_boleto = ?", numeroBoleto).First(&pasaje).Error
 	return &pasaje, err
 }

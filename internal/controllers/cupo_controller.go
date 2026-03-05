@@ -22,11 +22,11 @@ type CupoController struct {
 	reportService *services.ReportService
 }
 
-func NewCupoController() *CupoController {
+func NewCupoController(service *services.CupoService, userService *services.UsuarioService, reportService *services.ReportService) *CupoController {
 	return &CupoController{
-		service:       services.NewCupoService(),
-		userService:   services.NewUsuarioService(),
-		reportService: services.NewReportService(),
+		service:       service,
+		userService:   userService,
+		reportService: reportService,
 	}
 }
 

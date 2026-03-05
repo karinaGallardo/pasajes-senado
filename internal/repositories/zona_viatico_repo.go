@@ -4,7 +4,6 @@ import (
 	"context"
 	"sistema-pasajes/internal/models"
 
-	"sistema-pasajes/internal/configs"
 
 	"gorm.io/gorm"
 )
@@ -13,20 +12,20 @@ type ZonaViaticoRepository struct {
 	db *gorm.DB
 }
 
-func NewZonaViaticoRepository() *ZonaViaticoRepository {
-	return &ZonaViaticoRepository{db: configs.DB}
+func NewZonaViaticoRepository(db *gorm.DB) *ZonaViaticoRepository {
+	return &ZonaViaticoRepository{db: db}
 }
 
 func (r *ZonaViaticoRepository) WithContext(ctx context.Context) *ZonaViaticoRepository {
 	return &ZonaViaticoRepository{db: r.db.WithContext(ctx)}
 }
 
-func (r *ZonaViaticoRepository) FindAll() ([]models.ZonaViatico, error) {
+func (r *ZonaViaticoRepository) FindAll(ctx context.Context) ([]models.ZonaViatico, error) {
 	var list []models.ZonaViatico
-	err := r.db.Order("nombre asc").Find(&list).Error
+	err := r.db.WithContext(ctx).Order("nombre asc").Find(&list).Error
 	return list, err
 }
 
-func (r *ZonaViaticoRepository) Create(zona *models.ZonaViatico) error {
-	return r.db.Create(zona).Error
+func (r *ZonaViaticoRepository) Create(ctx context.Context, zona *models.ZonaViatico) error {
+	return r.db.WithContext(ctx).Create(zona).Error
 }

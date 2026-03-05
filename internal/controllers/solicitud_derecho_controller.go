@@ -31,22 +31,37 @@ type SolicitudDerechoController struct {
 	descargoService       *services.DescargoService
 }
 
-func NewSolicitudDerechoController() *SolicitudDerechoController {
+func NewSolicitudDerechoController(
+	solicitudService *services.SolicitudService,
+	destinoService *services.DestinoService,
+	conceptoService *services.ConceptoService,
+	tipoSolicitudService *services.TipoSolicitudService,
+	ambitoService *services.AmbitoService,
+	cupoService *services.CupoService,
+	userService *services.UsuarioService,
+	peopleService *services.PeopleService,
+	reportService *services.ReportService,
+	aerolineaService *services.AerolineaService,
+	agenciaService *services.AgenciaService,
+	tipoItinerarioService *services.TipoItinerarioService,
+	rutaService *services.RutaService,
+	descargoService *services.DescargoService,
+) *SolicitudDerechoController {
 	return &SolicitudDerechoController{
-		solicitudService:      services.NewSolicitudService(),
-		destinoService:        services.NewDestinoService(),
-		conceptoService:       services.NewConceptoService(),
-		tipoSolicitudService:  services.NewTipoSolicitudService(),
-		ambitoService:         services.NewAmbitoService(),
-		cupoService:           services.NewCupoService(),
-		userService:           services.NewUsuarioService(),
-		peopleService:         services.NewPeopleService(),
-		reportService:         services.NewReportService(),
-		aerolineaService:      services.NewAerolineaService(),
-		agenciaService:        services.NewAgenciaService(),
-		tipoItinerarioService: services.NewTipoItinerarioService(),
-		rutaService:           services.NewRutaService(),
-		descargoService:       services.NewDescargoService(),
+		solicitudService:      solicitudService,
+		destinoService:        destinoService,
+		conceptoService:       conceptoService,
+		tipoSolicitudService:  tipoSolicitudService,
+		ambitoService:         ambitoService,
+		cupoService:           cupoService,
+		userService:           userService,
+		peopleService:         peopleService,
+		reportService:         reportService,
+		aerolineaService:      aerolineaService,
+		agenciaService:        agenciaService,
+		tipoItinerarioService: tipoItinerarioService,
+		rutaService:           rutaService,
+		descargoService:       descargoService,
 	}
 }
 
@@ -405,14 +420,7 @@ func (ctrl *SolicitudDerechoController) Show(c *gin.Context) {
 		st = *solicitud.EstadoSolicitudCodigo
 	}
 
-	canView := false
-	if authUser.IsAdminOrResponsable() || solicitud.UsuarioID == authUser.ID || (solicitud.CreatedBy != nil && *solicitud.CreatedBy == authUser.ID) {
-		canView = true
-	} else if solicitud.Usuario.EncargadoID != nil && *solicitud.Usuario.EncargadoID == authUser.ID {
-		canView = true
-	}
-
-	if !canView {
+	if !solicitud.CanView(authUser) {
 		c.String(http.StatusForbidden, "No tiene permiso para ver esta solicitud")
 		return
 	}
@@ -621,12 +629,20 @@ func (ctrl *SolicitudDerechoController) Show(c *gin.Context) {
 
 func (ctrl *SolicitudDerechoController) Approve(c *gin.Context) {
 	id := c.Param("id")
-	authUser := appcontext.AuthUser(c)
-	if authUser == nil || !authUser.CanApproveReject() {
-		c.String(http.StatusForbidden, "No tiene permisos para realizar esta acción")
+	ctx := c.Request.Context()
+	solicitud, err := ctrl.solicitudService.GetByID(ctx, id)
+	if err != nil {
+		c.String(http.StatusNotFound, "Solicitud no encontrada")
 		return
 	}
-	if err := ctrl.solicitudService.Approve(c.Request.Context(), id); err != nil {
+
+	authUser := appcontext.AuthUser(c)
+	if authUser == nil || !solicitud.CanApprove(authUser) {
+		c.String(http.StatusForbidden, "No tiene permisos para aprobar esta solicitud en su estado actual")
+		return
+	}
+
+	if err := ctrl.solicitudService.Approve(ctx, id); err != nil {
 		c.String(http.StatusInternalServerError, "Error al aprobar la solicitud: "+err.Error())
 		return
 	}
@@ -651,12 +667,20 @@ func (ctrl *SolicitudDerechoController) RevertApproval(c *gin.Context) {
 
 func (ctrl *SolicitudDerechoController) Reject(c *gin.Context) {
 	id := c.Param("id")
-	authUser := appcontext.AuthUser(c)
-	if authUser == nil || !authUser.CanApproveReject() {
-		c.String(http.StatusForbidden, "No tiene permisos para realizar esta acción")
+	ctx := c.Request.Context()
+	solicitud, err := ctrl.solicitudService.GetByID(ctx, id)
+	if err != nil {
+		c.String(http.StatusNotFound, "Solicitud no encontrada")
 		return
 	}
-	if err := ctrl.solicitudService.Reject(c.Request.Context(), id); err != nil {
+
+	authUser := appcontext.AuthUser(c)
+	if authUser == nil || !solicitud.CanApprove(authUser) { // Same logic: can only reject if can approve
+		c.String(http.StatusForbidden, "No tiene permisos para rechazar esta solicitud en su estado actual")
+		return
+	}
+
+	if err := ctrl.solicitudService.Reject(ctx, id); err != nil {
 		c.String(http.StatusInternalServerError, "Error al rechazar la solicitud: "+err.Error())
 		return
 	}
