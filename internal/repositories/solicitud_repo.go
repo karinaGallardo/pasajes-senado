@@ -179,8 +179,11 @@ func (r *SolicitudRepository) FindPendientesDeDescargo(ctx context.Context) ([]m
 	var solicitudes []models.Solicitud
 	err := r.db.WithContext(ctx).Preload("Usuario.Encargado").
 		Preload("Items.Pasajes").
+		Preload("TipoSolicitud.ConceptoViaje").
+		Preload("Descargo.DetallesItinerario").
+		Preload("Descargo.Oficial").
 		Joins("LEFT JOIN descargos ON solicitudes.id = descargos.solicitud_id").
-		Where("descargos.id IS NULL").
+		Where("(descargos.id IS NULL OR descargos.estado = 'EN_REVISION')").
 		Where("solicitudes.estado_solicitud_codigo IN (?)", []string{"PARCIALMENTE_APROBADO", "APROBADO", "EMITIDO"}).
 		Where("EXISTS (SELECT 1 FROM pasajes p JOIN solicitud_items si ON p.solicitud_item_id = si.id WHERE si.solicitud_id = solicitudes.id AND p.estado_pasaje_codigo = 'EMITIDO')").
 		Find(&solicitudes).Error
@@ -196,8 +199,10 @@ func (r *SolicitudRepository) FindPendientesDeDescargoUI(ctx context.Context, us
 		Preload("Items.Destino").
 		Preload("TipoSolicitud.ConceptoViaje").
 		Preload("EstadoSolicitud").
+		Preload("Descargo.DetallesItinerario").
+		Preload("Descargo.Oficial").
 		Joins("LEFT JOIN descargos ON solicitudes.id = descargos.solicitud_id").
-		Where("descargos.id IS NULL").
+		Where("(descargos.id IS NULL OR descargos.estado = 'EN_REVISION')").
 		Where("solicitudes.estado_solicitud_codigo IN (?)", []string{"PARCIALMENTE_APROBADO", "APROBADO", "EMITIDO"}).
 		Where("EXISTS (SELECT 1 FROM pasajes p JOIN solicitud_items si ON p.solicitud_item_id = si.id WHERE si.solicitud_id = solicitudes.id AND p.estado_pasaje_codigo = 'EMITIDO')").
 		Order("created_at desc")

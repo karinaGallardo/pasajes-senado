@@ -58,6 +58,11 @@ func (s *AlertaService) ProcesarAlertasDescargo(ctx context.Context) error {
 	alertasEnviadas := 0
 
 	for _, sol := range solicitudes {
+		// Validar si ya tiene un descargo y si está completo
+		if sol.HasCompleteDescargo() {
+			continue // Ya está completo, no necesita alerta
+		}
+
 		maxVuelo := sol.GetMaxFechaVueloEmitida()
 		if maxVuelo == nil {
 			continue

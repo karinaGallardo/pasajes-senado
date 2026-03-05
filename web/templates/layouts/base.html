@@ -26,6 +26,12 @@
     <link rel="stylesheet" type="text/css" href="/static/lib/phosphor/fill/style.css" />
     <script src="/static/lib/sweetalert2/sweetalert2.min.js"></script>
 
+    <!-- Tippy.js (Professional Tooltips) -->
+    <script src="/static/lib/tippy/popper.min.js"></script>
+    <script src="/static/lib/tippy/tippy-bundle.umd.min.js"></script>
+    <link rel="stylesheet" href="/static/lib/tippy/tippy.css" />
+    <link rel="stylesheet" href="/static/lib/tippy/shift-away.css" />
+
     <script defer src="/static/lib/alpinejs/alpine.min.js"></script>
     <script>
       document.addEventListener("alpine:init", function () {
@@ -96,6 +102,22 @@
             if (val && fp.input.value !== val) {
               fp.setDate(val, false);
             }
+          });
+        });
+
+        Alpine.directive("tooltip", (el, { expression, modifiers }) => {
+          let placement = "top";
+          if (modifiers.includes("left")) placement = "left";
+          if (modifiers.includes("right")) placement = "right";
+          if (modifiers.includes("bottom")) placement = "bottom";
+
+          tippy(el, {
+            content: expression,
+            allowHTML: true,
+            animation: "shift-away",
+            theme: "translucent",
+            placement: placement,
+            interactive: true,
           });
         });
       });

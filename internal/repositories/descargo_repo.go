@@ -4,7 +4,6 @@ import (
 	"context"
 	"sistema-pasajes/internal/models"
 
-
 	"gorm.io/gorm"
 )
 
@@ -29,6 +28,7 @@ func (r *DescargoRepository) FindBySolicitudID(ctx context.Context, solicitudID 
 	err := r.db.WithContext(ctx).Preload("Documentos").
 		Preload("DetallesItinerario").
 		Preload("Solicitud").
+		Preload("Solicitud.TipoSolicitud.ConceptoViaje").
 		Preload("Solicitud.CupoDerechoItem").
 		Preload("Solicitud.Items").
 		Preload("Solicitud.Items.Origen").
@@ -46,6 +46,7 @@ func (r *DescargoRepository) FindByID(ctx context.Context, id string) (*models.D
 	err := r.db.WithContext(ctx).Preload("Documentos").
 		Preload("DetallesItinerario").
 		Preload("Solicitud").
+		Preload("Solicitud.TipoSolicitud.ConceptoViaje").
 		Preload("Solicitud.Usuario").
 		Preload("Solicitud.Usuario.Cargo").
 		Preload("Solicitud.Usuario.Oficina").
@@ -66,6 +67,7 @@ func (r *DescargoRepository) FindByID(ctx context.Context, id string) (*models.D
 func (r *DescargoRepository) FindAll(ctx context.Context) ([]models.Descargo, error) {
 	var descargos []models.Descargo
 	err := r.db.WithContext(ctx).Preload("Solicitud").
+		Preload("Solicitud.TipoSolicitud.ConceptoViaje").
 		Preload("Solicitud.Usuario").
 		Preload("Solicitud.CupoDerechoItem").
 		Preload("Solicitud.Items").

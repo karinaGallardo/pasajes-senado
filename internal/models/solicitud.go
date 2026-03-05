@@ -1,6 +1,8 @@
 package models
 
-import "time"
+import (
+	"time"
+)
 
 type Solicitud struct {
 	BaseModel
@@ -338,4 +340,109 @@ func (s Solicitud) CanApprove(user *Usuario) bool {
 	}
 	estado := s.GetEstado()
 	return estado == "SOLICITADO" || estado == "PARCIALMENTE_APROBADO"
+}
+func (s Solicitud) HasCompleteDescargo() bool {
+	if s.Descargo == nil {
+		return false
+	}
+
+	// 1. Validar Itinerario (Boleto, Pase, Archivo)
+	hasItinerary := false
+	for _, it := range s.Descargo.DetallesItinerario {
+		if !it.EsDevolucion {
+			hasItinerary = true
+			if it.Boleto == "" || it.NumeroPaseAbordo == "" || it.ArchivoPaseAbordo == "" {
+				return false
+			}
+		}
+	}
+
+	// Si no tiene itinerario registrado, lo consideramos incompleto (a menos que todo sea devolución)
+	if !hasItinerary && !s.Descargo.allDevolucion() {
+		return false
+	}
+
+	// 2. Validar Informe Oficial (si aplica)
+	if s.GetConceptoCodigo() == "OFICIAL" {
+		if s.Descargo.Oficial == nil {
+			return false
+		}
+		if s.Descargo.Oficial.ObjetivoViaje == "" ||
+			s.Descargo.Oficial.InformeActividades == "" ||
+			s.Descargo.Oficial.ResultadosViaje == "" ||
+			s.Descargo.Oficial.ConclusionesRecomendaciones == "" {
+			return false
+		}
+	}
+
+	return true
+}
+
+func (s Solicitud) GetDescargoMissingItems() string {
+	if s.Descargo == nil {
+		return "No se ha iniciado el descargo"
+	}
+
+	var missing []string
+
+	// Check Itinerary
+	hasItinerary := false
+	missingBoletos := false
+	missingPases := false
+	missingArchivos := false
+
+	for _, it := range s.Descargo.DetallesItinerario {
+		if !it.EsDevolucion {
+			hasItinerary = true
+			if it.Boleto == "" {
+				missingBoletos = true
+			}
+			if it.NumeroPaseAbordo == "" {
+				missingPases = true
+			}
+			if it.ArchivoPaseAbordo == "" {
+				missingArchivos = true
+			}
+		}
+	}
+
+	if !hasItinerary && !s.Descargo.allDevolucion() {
+		missing = append(missing, "Itinerario de viaje")
+	} else {
+		if missingBoletos {
+			missing = append(missing, "N° Boletos")
+		}
+		if missingPases {
+			missing = append(missing, "N° Pases a Bordo")
+		}
+		if missingArchivos {
+			missing = append(missing, "Archivos PDF/Imagen de Pases")
+		}
+	}
+
+	// Check Official Report
+	if s.GetConceptoCodigo() == "OFICIAL" {
+		if s.Descargo.Oficial == nil {
+			missing = append(missing, "Informe Oficial PV-06")
+		} else {
+			if s.Descargo.Oficial.ObjetivoViaje == "" ||
+				s.Descargo.Oficial.InformeActividades == "" ||
+				s.Descargo.Oficial.ResultadosViaje == "" ||
+				s.Descargo.Oficial.ConclusionesRecomendaciones == "" {
+				missing = append(missing, "Campos del Informe Detallado")
+			}
+		}
+	}
+
+	if len(missing) == 0 {
+		return "Datos completos"
+	}
+
+	html := "<div class='text-left'><p class='text-[10px] font-bold border-b border-white/20 pb-1 mb-1'>Pendiente de llenar:</p><ul class='list-inside list-disc space-y-0.5'>"
+	for _, item := range missing {
+		html += "<li class='text-[10px]'>" + item + "</li>"
+	}
+	html += "</ul></div>"
+
+	return html
 }
