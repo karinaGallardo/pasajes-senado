@@ -54,7 +54,8 @@ func (s *AlertaService) ProcesarAlertasDescargo(ctx context.Context) error {
 		return fmt.Errorf("error al buscar solicitudes pendientes de descargo: %w", err)
 	}
 
-	hoy := time.Now().Truncate(24 * time.Hour)
+	now := time.Now()
+	hoy := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.Local)
 	alertasEnviadas := 0
 
 	for _, sol := range solicitudes {
@@ -69,14 +70,22 @@ func (s *AlertaService) ProcesarAlertasDescargo(ctx context.Context) error {
 		}
 		fechaFin := *maxVuelo
 
+		// Truncar fechas al inicio del día para comparaciones exactas
+		y, m, d := fechaFin.Date()
+		fechaFinLocal := time.Date(y, m, d, 0, 0, 0, 0, time.Local)
+		diaDespuesVuelo := fechaFinLocal.AddDate(0, 0, 1)
+
 		// La fecha límite son 8 días hábiles después del fin del viaje
 		fechaLimite := utils.CalcularFechaLimiteDescargo(fechaFin)
 
-		// Iniciar alertas 2 días antes de la fecha límite
-		fechaInicioAlerta := fechaLimite.AddDate(0, 0, -2)
+		// Iniciar alertas críticas 2 días antes de la fecha límite
+		fechaInicioAlertaCritica := fechaLimite.AddDate(0, 0, -2)
 
-		// Alertar si faltan 2 días o menos, o si ya venció (mora)
-		if hoy.After(fechaInicioAlerta) || hoy.Equal(fechaInicioAlerta) {
+		isUnDiaDespues := hoy.Equal(diaDespuesVuelo)
+		isEnZonaCriticaOMora := hoy.Equal(fechaInicioAlertaCritica) || hoy.After(fechaInicioAlertaCritica)
+
+		// Alertar si es exactamente 1 día después del vuelo, o si faltan 2 días o menos para el límite
+		if isUnDiaDespues || isEnZonaCriticaOMora {
 			// Enviar alerta
 			if err := s.enviarAlertaDescargoEmail(sol, fechaLimite); err != nil {
 				log.Printf("[AlertaService] Error enviando email para solicitud %s: %v", sol.Codigo, err)
