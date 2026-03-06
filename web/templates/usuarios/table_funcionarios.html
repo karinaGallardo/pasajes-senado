@@ -61,7 +61,16 @@
         <div class="text-[10px] text-neutral-300 font-bold uppercase tracking-tighter mt-1">{{ $user.Tipo }}</div>
       </td>
       <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-        {{ if $user.IsBlocked }}
+        {{ if $.AuthUser.CanCreateSolicitudFor $user }}
+        <button
+          type="button"
+          class="text-xs text-white font-bold bg-primary hover:bg-primary-600 px-2 py-1 rounded shadow-sm transition-colors cursor-pointer inline-flex items-center gap-1 mr-2"
+          hx-get="/solicitudes/oficial/modal-crear?target_user_id={{ $user.ID }}"
+          hx-target="#modal-container">
+          <i class="ph ph-airplane-tilt text-sm"></i>
+          Solicitud Oficial
+        </button>
+        {{ end }} {{ if $user.IsBlocked }}
         <button
           type="button"
           x-data="{ loading: false }"
