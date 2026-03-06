@@ -9,6 +9,7 @@ import (
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/services"
 	"sistema-pasajes/internal/utils"
+	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -299,10 +300,29 @@ func (ctrl *DescargoDerechoController) Preview(c *gin.Context) {
 }
 
 func (ctrl *DescargoDerechoController) Index(c *gin.Context) {
-	descargos, _ := ctrl.descargoService.GetAll(c.Request.Context())
+	searchTerm := c.Query("q")
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+
+	result, _ := ctrl.descargoService.GetPaginated(c.Request.Context(), page, limit, searchTerm)
+
 	utils.Render(c, "descargo/index", gin.H{
-		"Title":     "Bandeja de Descargos",
-		"Descargos": descargos,
+		"Title":    "Bandeja de Descargos",
+		"Result":   result,
+		"LinkBase": "/descargos",
+	})
+}
+
+func (ctrl *DescargoDerechoController) Table(c *gin.Context) {
+	searchTerm := c.Query("q")
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+
+	result, _ := ctrl.descargoService.GetPaginated(c.Request.Context(), page, limit, searchTerm)
+
+	utils.Render(c, "descargo/table_descargos", gin.H{
+		"Result":   result,
+		"LinkBase": "/descargos",
 	})
 }
 

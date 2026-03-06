@@ -531,8 +531,16 @@ func (s *SolicitudService) GetByUserIdOrAccesibleByEncargadoID(ctx context.Conte
 	return s.repo.FindByUserIdOrAccesibleByEncargadoID(ctx, userID, status, concepto)
 }
 
+func (s *SolicitudService) GetPaginated(ctx context.Context, userID string, isAdmin bool, status string, concepto string, page, limit int, searchTerm string) (*repositories.PaginatedSolicitudes, error) {
+	return s.repo.FindPaginated(ctx, userID, isAdmin, status, concepto, page, limit, searchTerm)
+}
+
 func (s *SolicitudService) GetPendientesDescargo(ctx context.Context, userID string, isAdmin bool) ([]models.Solicitud, error) {
 	return s.repo.FindPendientesDeDescargoUI(ctx, userID, isAdmin)
+}
+
+func (s *SolicitudService) GetPendientesDescargoPaginated(ctx context.Context, userID string, isAdmin bool, page, limit int, searchTerm string) (*repositories.PaginatedSolicitudes, error) {
+	return s.repo.FindPendientesDeDescargoPaginated(ctx, userID, isAdmin, page, limit, searchTerm)
 }
 
 func (s *SolicitudService) GetByCupoDerechoItemID(ctx context.Context, itemID string) ([]models.Solicitud, error) {

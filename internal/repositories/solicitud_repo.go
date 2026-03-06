@@ -3,12 +3,22 @@ package repositories
 import (
 	"context"
 	"sistema-pasajes/internal/models"
+	"strings"
 
 	"gorm.io/gorm"
 )
 
 type SolicitudRepository struct {
 	db *gorm.DB
+}
+
+type PaginatedSolicitudes struct {
+	Solicitudes []models.Solicitud
+	Total       int64
+	Page        int
+	Limit       int
+	TotalPages  int
+	SearchTerm  string
 }
 
 func NewSolicitudRepository(db *gorm.DB) *SolicitudRepository {
@@ -32,6 +42,24 @@ func (r *SolicitudRepository) RunTransaction(fn func(repo *SolicitudRepository, 
 
 func (r *SolicitudRepository) Create(ctx context.Context, solicitud *models.Solicitud) error {
 	return r.db.WithContext(ctx).Create(solicitud).Error
+}
+
+func SearchSolicitud(term string) func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		if term == "" {
+			return db
+		}
+
+		words := strings.Fields(term)
+		for _, word := range words {
+			likeTerm := "%" + word + "%"
+			// Search in Solicitud Codigo or joined Usuario fields
+			db = db.Where("(solicitudes.codigo ILIKE ? OR solicitudes.id::text ILIKE ? OR usuarios.firstname ILIKE ? OR usuarios.lastname ILIKE ? OR usuarios.ci ILIKE ? OR usuarios.username ILIKE ?)",
+				likeTerm, likeTerm, likeTerm, likeTerm, likeTerm, likeTerm)
+		}
+
+		return db
+	}
 }
 
 func (r *SolicitudRepository) FindAll(ctx context.Context, status string, concepto string) ([]models.Solicitud, error) {
@@ -131,6 +159,61 @@ func (r *SolicitudRepository) FindByUserIdOrAccesibleByEncargadoID(ctx context.C
 	return solicitudes, err
 }
 
+func (r *SolicitudRepository) FindPaginated(ctx context.Context, userID string, isAdmin bool, status string, concepto string, page, limit int, searchTerm string) (*PaginatedSolicitudes, error) {
+	var solicitudes []models.Solicitud
+	var total int64
+
+	baseQuery := r.db.WithContext(ctx).Model(&models.Solicitud{}).
+		Joins("LEFT JOIN usuarios ON solicitudes.usuario_id = usuarios.id").
+		Preload("Usuario").
+		Preload("Items").
+		Preload("Items.Origen").
+		Preload("Items.Destino").
+		Preload("Items.Estado").
+		Preload("TipoSolicitud.ConceptoViaje").
+		Preload("EstadoSolicitud").
+		Scopes(SearchSolicitud(searchTerm))
+
+	if !isAdmin {
+		baseQuery = baseQuery.Where(
+			"solicitudes.usuario_id = ? OR solicitudes.created_by = ? OR solicitudes.usuario_id IN (?)",
+			userID,
+			userID,
+			r.db.WithContext(ctx).Table("usuarios").Select("id").Where("encargado_id = ?", userID),
+		)
+	}
+
+	if status != "" {
+		baseQuery = baseQuery.Where("solicitudes.estado_solicitud_codigo = ?", status)
+	}
+
+	if concepto != "" {
+		baseQuery = baseQuery.Joins("JOIN tipo_solicitudes ON solicitudes.tipo_solicitud_codigo = tipo_solicitudes.codigo").
+			Where("tipo_solicitudes.concepto_viaje_codigo = ?", concepto)
+	}
+
+	baseQuery.Count(&total)
+
+	err := baseQuery.
+		Scopes(Paginate(page, limit)).
+		Order("solicitudes.created_at DESC").
+		Find(&solicitudes).Error
+
+	totalPages := 0
+	if limit > 0 {
+		totalPages = int((total + int64(limit) - 1) / int64(limit))
+	}
+
+	return &PaginatedSolicitudes{
+		Solicitudes: solicitudes,
+		Total:       total,
+		Page:        page,
+		Limit:       limit,
+		TotalPages:  totalPages,
+		SearchTerm:  searchTerm,
+	}, err
+}
+
 func (r *SolicitudRepository) FindByID(ctx context.Context, id string) (*models.Solicitud, error) {
 	var solicitud models.Solicitud
 	err := r.db.WithContext(ctx).Preload("Usuario").
@@ -218,4 +301,56 @@ func (r *SolicitudRepository) FindPendientesDeDescargoUI(ctx context.Context, us
 
 	err := query.Find(&solicitudes).Error
 	return solicitudes, err
+}
+
+func (r *SolicitudRepository) FindPendientesDeDescargoPaginated(ctx context.Context, userID string, isAdmin bool, page, limit int, searchTerm string) (*PaginatedSolicitudes, error) {
+	var solicitudes []models.Solicitud
+	var total int64
+
+	baseQuery := r.db.WithContext(ctx).Model(&models.Solicitud{}).
+		Preload("Usuario").
+		Preload("Usuario.Rol").
+		Preload("Items.Pasajes").
+		Preload("Items.Origen").
+		Preload("Items.Destino").
+		Preload("TipoSolicitud.ConceptoViaje").
+		Preload("EstadoSolicitud").
+		Preload("Descargo.DetallesItinerario").
+		Preload("Descargo.Oficial").
+		Joins("LEFT JOIN descargos ON solicitudes.id = descargos.solicitud_id").
+		Joins("LEFT JOIN usuarios ON solicitudes.usuario_id = usuarios.id").
+		Where("(descargos.id IS NULL OR descargos.estado = 'EN_REVISION')").
+		Where("solicitudes.estado_solicitud_codigo IN (?)", []string{"PARCIALMENTE_APROBADO", "APROBADO", "EMITIDO"}).
+		Where("EXISTS (SELECT 1 FROM pasajes p JOIN solicitud_items si ON p.solicitud_item_id = si.id WHERE si.solicitud_id = solicitudes.id AND p.estado_pasaje_codigo = 'EMITIDO')").
+		Scopes(SearchSolicitud(searchTerm))
+
+	if !isAdmin {
+		baseQuery = baseQuery.Where(
+			"solicitudes.usuario_id = ? OR solicitudes.created_by = ? OR solicitudes.usuario_id IN (?)",
+			userID,
+			userID,
+			r.db.WithContext(ctx).Table("usuarios").Select("id").Where("encargado_id = ?", userID),
+		)
+	}
+
+	baseQuery.Count(&total)
+
+	err := baseQuery.
+		Scopes(Paginate(page, limit)).
+		Order("solicitudes.created_at DESC").
+		Find(&solicitudes).Error
+
+	totalPages := 0
+	if limit > 0 {
+		totalPages = int((total + int64(limit) - 1) / int64(limit))
+	}
+
+	return &PaginatedSolicitudes{
+		Solicitudes: solicitudes,
+		Total:       total,
+		Page:        page,
+		Limit:       limit,
+		TotalPages:  totalPages,
+		SearchTerm:  searchTerm,
+	}, err
 }

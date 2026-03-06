@@ -30,7 +30,7 @@
       x-transition:leave="ease-in duration-200"
       x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
       x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95">
-      <form action="/usuarios/sync?rol={{ .Rol }}" method="POST" @submit="syncing = true">
+      <form action="/usuarios/{{ if eq .Rol `SENADOR` }}senadores{{ else }}funcionarios{{ end }}/sync" method="POST" @submit="syncing = true">
         <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
 
         <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">

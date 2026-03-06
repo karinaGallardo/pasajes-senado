@@ -18,6 +18,8 @@ func SetupRoutes(r *gin.Engine, container *app.Container) {
 	dashboardCtrl := container.DashboardController
 	perfilCtrl := container.PerfilController
 	usuarioCtrl := container.UsuarioController
+	senadorCtrl := container.SenadorController
+	funcionarioCtrl := container.FuncionarioController
 	cupoCtrl := container.CupoController
 	descargoDerechoCtrl := container.DescargoDerechoController
 	descargoOficialCtrl := container.DescargoOficialController
@@ -54,8 +56,11 @@ func SetupRoutes(r *gin.Engine, container *app.Container) {
 
 		protected.GET("/solicitudes", solicitudCtrl.Index)
 		protected.GET("/solicitudes/derecho", solicitudCtrl.IndexDerecho)
+		protected.GET("/solicitudes/derecho/table", solicitudCtrl.TableDerecho)
 		protected.GET("/solicitudes/oficial", solicitudCtrl.IndexOficial)
+		protected.GET("/solicitudes/oficial/table", solicitudCtrl.TableOficial)
 		protected.GET("/solicitudes/pendientes-descargo", solicitudCtrl.IndexPendientesDescargo)
+		protected.GET("/solicitudes/pendientes-descargo/table", solicitudCtrl.TablePendientesDescargo)
 
 		// Solicitudes Derecho
 		protected.GET("/solicitudes/derecho/modal-crear/:item_id/:itinerario_code", solicitudDerechoCtrl.GetCreateModal)
@@ -129,6 +134,7 @@ func SetupRoutes(r *gin.Engine, container *app.Container) {
 
 		// Descargos Comunes (Manejados por Derecho Controller para conveniencia)
 		protected.GET("/descargos", descargoDerechoCtrl.Index)
+		protected.GET("/descargos/table", descargoDerechoCtrl.Table)
 		protected.GET("/preview-file", descargoDerechoCtrl.PreviewFile)
 
 		protected.GET("/compensaciones", compensacionCtrl.Index)
@@ -140,11 +146,17 @@ func SetupRoutes(r *gin.Engine, container *app.Container) {
 		adminOnly := protected.Group("/")
 		adminOnly.Use(middleware.RequireRole("ADMIN", "RESPONSABLE"))
 		{
-			adminOnly.GET("/usuarios", usuarioCtrl.Index)
-			adminOnly.GET("/usuarios/table", usuarioCtrl.Table)
-			adminOnly.POST("/usuarios/sync", usuarioCtrl.Sync)
+			adminOnly.GET("/usuarios/senadores", senadorCtrl.Index)
+			adminOnly.GET("/usuarios/senadores/table", senadorCtrl.Table)
+			adminOnly.POST("/usuarios/senadores/sync", senadorCtrl.Sync)
+			adminOnly.GET("/usuarios/senadores/sync-modal", senadorCtrl.GetSyncModal)
+
+			adminOnly.GET("/usuarios/funcionarios", funcionarioCtrl.Index)
+			adminOnly.GET("/usuarios/funcionarios/table", funcionarioCtrl.Table)
+			adminOnly.POST("/usuarios/funcionarios/sync", funcionarioCtrl.Sync)
+			adminOnly.GET("/usuarios/funcionarios/sync-modal", funcionarioCtrl.GetSyncModal)
+
 			adminOnly.POST("/usuarios/:id/unblock", usuarioCtrl.Unblock)
-			adminOnly.GET("/usuarios/sync-modal", usuarioCtrl.GetSyncModal)
 		}
 		protected.GET("/usuarios/:id/modal-editar", usuarioCtrl.GetEditModal)
 		protected.GET("/usuarios/:id/editar", usuarioCtrl.Edit)

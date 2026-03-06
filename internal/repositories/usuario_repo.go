@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"sistema-pasajes/internal/models"
+	"strings"
 
 	"gorm.io/gorm"
 )
@@ -44,7 +45,9 @@ func FilterByRoleType(roleType string) func(db *gorm.DB) *gorm.DB {
 		case "SENADOR":
 			return db.Where("tipo = ?", "SENADOR_TITULAR")
 		case "FUNCIONARIO":
-			return db.Where("tipo IN ?", []string{"FUNCIONARIO", "FUNCIONARIO_PERMANENTE", "FUNCIONARIO_EVENTUAL"})
+			return db.Where("tipo IN ? OR rol_codigo IN ?",
+				[]string{"FUNCIONARIO", "FUNCIONARIO_PERMANENTE", "FUNCIONARIO_EVENTUAL"},
+				[]string{"ADMIN", "TECNICO", "USUARIO", "FUNCIONARIO", "RESPONSABLE"})
 		default:
 			return db
 		}
@@ -56,9 +59,15 @@ func SearchUsuario(term string) func(db *gorm.DB) *gorm.DB {
 		if term == "" {
 			return db
 		}
-		likeTerm := "%" + term + "%"
-		return db.Where("(username ILIKE ? OR ci ILIKE ? OR firstname ILIKE ? OR lastname ILIKE ? OR email ILIKE ?)",
-			likeTerm, likeTerm, likeTerm, likeTerm, likeTerm)
+
+		words := strings.Fields(term)
+		for _, word := range words {
+			likeTerm := "%" + word + "%"
+			db = db.Where("(username ILIKE ? OR ci ILIKE ? OR firstname ILIKE ? OR lastname ILIKE ? OR email ILIKE ?)",
+				likeTerm, likeTerm, likeTerm, likeTerm, likeTerm)
+		}
+
+		return db
 	}
 }
 
@@ -112,7 +121,9 @@ func (r *UsuarioRepository) FindByRoleType(ctx context.Context, roleType string)
 			Order("lastname ASC, firstname ASC")
 	case "FUNCIONARIO":
 		query = query.Preload("Cargo").Preload("Oficina").
-			Where("tipo IN ?", []string{"FUNCIONARIO", "FUNCIONARIO_PERMANENTE", "FUNCIONARIO_EVENTUAL"}).
+			Where("tipo IN ? OR rol_codigo IN ?",
+				[]string{"FUNCIONARIO", "FUNCIONARIO_PERMANENTE", "FUNCIONARIO_EVENTUAL"},
+				[]string{"ADMIN", "TECNICO", "USUARIO", "FUNCIONARIO", "RESPONSABLE"}).
 			Order("lastname ASC, firstname ASC")
 	default:
 		query = query.Order("created_at desc")

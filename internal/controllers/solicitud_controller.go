@@ -5,6 +5,7 @@ import (
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/services"
 	"sistema-pasajes/internal/utils"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -22,7 +23,7 @@ func NewSolicitudController(service *services.SolicitudService, userService *ser
 }
 
 func (ctrl *SolicitudController) Index(c *gin.Context) {
-	ctrl.renderIndex(c, "", "Bandeja de Solicitudes")
+	ctrl.renderIndex(c, "", "Bandeja de Solicitudes", "solicitud/index")
 }
 
 func (ctrl *SolicitudController) IndexPendientesDescargo(c *gin.Context) {
@@ -32,10 +33,16 @@ func (ctrl *SolicitudController) IndexPendientesDescargo(c *gin.Context) {
 		return
 	}
 
-	solicitudes, err := ctrl.service.GetPendientesDescargo(c.Request.Context(), authUser.ID, authUser.IsAdminOrResponsable())
+	searchTerm := c.Query("q")
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+
+	result, err := ctrl.service.GetPendientesDescargoPaginated(c.Request.Context(), authUser.ID, authUser.IsAdminOrResponsable(), page, limit, searchTerm)
 	if err != nil {
-		solicitudes = []models.Solicitud{}
+		// handle empty
 	}
+
+	solicitudes := result.Solicitudes
 
 	// Get users for map
 	userIDsMap := make(map[string]bool)
@@ -61,21 +68,78 @@ func (ctrl *SolicitudController) IndexPendientesDescargo(c *gin.Context) {
 
 	utils.Render(c, "solicitud/pendientes_descargo", gin.H{
 		"Title":              "Solicitudes Pendientes de Descargo",
-		"Solicitudes":        solicitudes,
+		"Result":             result,
 		"Usuarios":           usuariosMap,
 		"PendientesDescargo": true,
+		"LinkBase":           "/solicitudes/pendientes-descargo",
+	})
+}
+
+func (ctrl *SolicitudController) TablePendientesDescargo(c *gin.Context) {
+	authUser := appcontext.AuthUser(c)
+	if authUser == nil {
+		c.Redirect(302, "/auth/login")
+		return
+	}
+
+	searchTerm := c.Query("q")
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+
+	result, err := ctrl.service.GetPendientesDescargoPaginated(c.Request.Context(), authUser.ID, authUser.IsAdminOrResponsable(), page, limit, searchTerm)
+	if err != nil {
+		// handle empty
+	}
+
+	solicitudes := result.Solicitudes
+
+	// Get users for map
+	userIDsMap := make(map[string]bool)
+	for _, s := range solicitudes {
+		if s.CreatedBy != nil {
+			userIDsMap[*s.CreatedBy] = true
+		}
+		if s.UpdatedBy != nil {
+			userIDsMap[*s.UpdatedBy] = true
+		}
+	}
+	var ids []string
+	for id := range userIDsMap {
+		ids = append(ids, id)
+	}
+	usuariosMap := make(map[string]*models.Usuario)
+	if len(ids) > 0 {
+		usuarios, _ := ctrl.userService.GetByIDs(c.Request.Context(), ids)
+		for i := range usuarios {
+			usuariosMap[usuarios[i].ID] = &usuarios[i]
+		}
+	}
+
+	utils.Render(c, "solicitud/table_pendientes_descargo", gin.H{
+		"Result":             result,
+		"Usuarios":           usuariosMap,
+		"PendientesDescargo": true,
+		"LinkBase":           "/solicitudes/pendientes-descargo",
 	})
 }
 
 func (ctrl *SolicitudController) IndexDerecho(c *gin.Context) {
-	ctrl.renderIndex(c, "DERECHO", "Bandeja de Pasajes por Derecho")
+	ctrl.renderIndex(c, "DERECHO", "Bandeja de Pasajes por Derecho", "solicitud/index")
 }
 
 func (ctrl *SolicitudController) IndexOficial(c *gin.Context) {
-	ctrl.renderIndex(c, "OFICIAL", "Bandeja de Comisiones Oficiales")
+	ctrl.renderIndex(c, "OFICIAL", "Bandeja de Comisiones Oficiales", "solicitud/index")
 }
 
-func (ctrl *SolicitudController) renderIndex(c *gin.Context, concepto string, title string) {
+func (ctrl *SolicitudController) TableDerecho(c *gin.Context) {
+	ctrl.renderIndex(c, "DERECHO", "Bandeja de Pasajes por Derecho", "solicitud/table_solicitudes")
+}
+
+func (ctrl *SolicitudController) TableOficial(c *gin.Context) {
+	ctrl.renderIndex(c, "OFICIAL", "Bandeja de Comisiones Oficiales", "solicitud/table_solicitudes")
+}
+
+func (ctrl *SolicitudController) renderIndex(c *gin.Context, concepto string, title string, template string) {
 	authUser := appcontext.AuthUser(c)
 	if authUser == nil {
 		c.Redirect(302, "/auth/login")
@@ -83,19 +147,16 @@ func (ctrl *SolicitudController) renderIndex(c *gin.Context, concepto string, ti
 	}
 
 	status := c.Query("estado")
+	searchTerm := c.Query("q")
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 
-	var solicitudes []models.Solicitud
-	var err error
-
-	if authUser.IsAdminOrResponsable() {
-		solicitudes, err = ctrl.service.GetAll(c.Request.Context(), status, concepto)
-	} else {
-		solicitudes, err = ctrl.service.GetByUserIdOrAccesibleByEncargadoID(c.Request.Context(), authUser.ID, status, concepto)
-	}
-
+	result, err := ctrl.service.GetPaginated(c.Request.Context(), authUser.ID, authUser.IsAdminOrResponsable(), status, concepto, page, limit, searchTerm)
 	if err != nil {
-		solicitudes = []models.Solicitud{}
+		// handle or initialize empty result
 	}
+
+	solicitudes := result.Solicitudes
 
 	userIDsMap := make(map[string]bool)
 	for _, s := range solicitudes {
@@ -128,12 +189,12 @@ func (ctrl *SolicitudController) renderIndex(c *gin.Context, concepto string, ti
 		linkBase = "/solicitudes/oficial"
 	}
 
-	utils.Render(c, "solicitud/index", gin.H{
-		"Title":       title,
-		"Solicitudes": solicitudes,
-		"Usuarios":    usuariosMap,
-		"Status":      status,
-		"Concepto":    concepto,
-		"LinkBase":    linkBase,
+	utils.Render(c, template, gin.H{
+		"Title":    title,
+		"Result":   result,
+		"Usuarios": usuariosMap,
+		"Status":   status,
+		"Concepto": concepto,
+		"LinkBase": linkBase,
 	})
 }

@@ -89,12 +89,21 @@
     </div>
 
     <a
-      href="/usuarios"
-      :title="sidebarCollapsed ? 'Usuarios' : ''"
+      href="/usuarios/senadores"
+      :title="sidebarCollapsed ? 'Senadores' : ''"
       class="group flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap
-     {{ if eq .Title `Gestión de Usuarios` }} bg-primary/10 text-primary {{ else }} text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 {{ end }}">
-      <i class="ph ph-users text-xl mr-3 min-w-[20px] {{ if eq .Title `Gestión de Usuarios` }} text-primary {{ else }} text-neutral-400 group-hover:text-neutral-500 {{ end }}"></i>
-      <span x-show="!sidebarCollapsed" class="transition-opacity duration-300">Usuarios</span>
+     {{ if eq .Title `Senadores` }} bg-primary/10 text-primary {{ else }} text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 {{ end }}">
+      <i class="ph ph-users-three text-xl mr-3 min-w-[20px] {{ if eq .Title `Senadores` }} text-primary {{ else }} text-neutral-400 group-hover:text-neutral-500 {{ end }}"></i>
+      <span x-show="!sidebarCollapsed" class="transition-opacity duration-300">Senadores</span>
+    </a>
+
+    <a
+      href="/usuarios/funcionarios"
+      :title="sidebarCollapsed ? 'Funcionarios' : ''"
+      class="group flex items-center px-4 py-2.5 text-sm font-medium rounded-lg transition-colors whitespace-nowrap
+     {{ if eq .Title `Funcionarios` }} bg-primary/10 text-primary {{ else }} text-neutral-600 hover:bg-neutral-50 hover:text-neutral-900 {{ end }}">
+      <i class="ph ph-user-gear text-xl mr-3 min-w-[20px] {{ if eq .Title `Funcionarios` }} text-primary {{ else }} text-neutral-400 group-hover:text-neutral-500 {{ end }}"></i>
+      <span x-show="!sidebarCollapsed" class="transition-opacity duration-300">Funcionarios</span>
     </a>
 
     <a

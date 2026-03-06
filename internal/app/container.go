@@ -45,6 +45,8 @@ type Container struct {
 	SolicitudOficialController *controllers.SolicitudOficialController
 	SolicitudController        *controllers.SolicitudController
 	UsuarioController          *controllers.UsuarioController
+	SenadorController          *controllers.SenadorController
+	FuncionarioController      *controllers.FuncionarioController
 	DashboardController        *controllers.DashboardController
 	CompensacionController     *controllers.CompensacionController
 	DescargoDerechoController  *controllers.DescargoDerechoController
@@ -197,6 +199,8 @@ func NewContainer(db *gorm.DB, mongoRRHH *mongo.Database, mongoChat *mongo.Datab
 
 	solicitudCtrl := controllers.NewSolicitudController(solicitudService, userService)
 	usuarioCtrl := controllers.NewUsuarioController(userService, rolService, destinoService, organigramaService)
+	senadorCtrl := controllers.NewSenadorController(userService, rolService, destinoService, organigramaService)
+	funcionarioCtrl := controllers.NewFuncionarioController(userService, rolService, destinoService, organigramaService)
 	dashboardCtrl := controllers.NewDashboardController(solicitudService, descargoService, userService)
 	compensacionCtrl := controllers.NewCompensacionController(compensacionService, userService)
 
@@ -268,6 +272,8 @@ func NewContainer(db *gorm.DB, mongoRRHH *mongo.Database, mongoChat *mongo.Datab
 		SolicitudOficialController: solicitudOficialCtrl,
 		SolicitudController:        solicitudCtrl,
 		UsuarioController:          usuarioCtrl,
+		SenadorController:          senadorCtrl,
+		FuncionarioController:      funcionarioCtrl,
 		DashboardController:        dashboardCtrl,
 		CompensacionController:     compensacionCtrl,
 		DescargoDerechoController:  descargoDerechoCtrl,

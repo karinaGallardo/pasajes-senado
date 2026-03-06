@@ -148,6 +148,10 @@ func (s *DescargoService) GetAll(ctx context.Context) ([]models.Descargo, error)
 	return s.repo.FindAll(ctx)
 }
 
+func (s *DescargoService) GetPaginated(ctx context.Context, page, limit int, searchTerm string) (*repositories.PaginatedDescargos, error) {
+	return s.repo.FindPaginated(ctx, page, limit, searchTerm)
+}
+
 func (s *DescargoService) Update(ctx context.Context, descargo *models.Descargo) error {
 	return s.repo.Update(ctx, descargo)
 }

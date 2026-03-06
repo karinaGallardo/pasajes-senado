@@ -1,0 +1,143 @@
+{{ define "descargo/table_descargos" }}
+<table class="min-w-full divide-y divide-gray-200">
+  <thead class="bg-neutral-50">
+    <tr>
+      <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Código</th>
+      <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Solicitud</th>
+      <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Fecha Presentación</th>
+      <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Estado</th>
+      <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Acciones</th>
+    </tr>
+  </thead>
+  <tbody class="bg-white divide-y divide-gray-200">
+    {{ range .Result.Descargos }}
+    <tr class="hover:bg-neutral-50 transition-colors">
+      <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">{{ .Codigo }}</td>
+      <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-700">
+        {{ if .Solicitud }} {{ if eq .Solicitud.GetConceptoCodigo "OFICIAL" }}
+        <a href="/solicitudes/oficial/{{ .Solicitud.ID }}/detalle" class="text-primary-600 hover:underline font-bold">Solicitud #{{ .Solicitud.Codigo }}</a>
+        {{ else }}
+        <a href="/solicitudes/derecho/{{ .Solicitud.ID }}/detalle" class="text-primary-600 hover:underline font-bold">Solicitud #{{ .Solicitud.Codigo }}</a>
+        {{ end }}
+        <div class="text-xs text-neutral-500">{{ .Solicitud.GetOrigenCiudad }} - {{ .Solicitud.GetDestinoCiudad }}</div>
+        {{ else }}
+        <span class="text-neutral-400 italic">Desvinculada</span>
+        {{ end }}
+      </td>
+      <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">{{ .FechaPresentacion.Format "02/01/2006" }}</td>
+      <td class="px-6 py-4 whitespace-nowrap">
+        <div class="flex flex-col gap-1">
+          <span class="px-2 inline-flex text-[10px] leading-5 font-bold rounded-full bg-primary-100 text-primary-800 uppercase w-fit">{{ .Estado }}</span>
+          {{ if not .IsComplete }}
+          <span
+            class="px-1.5 py-0.5 rounded bg-warning-50 text-warning-700 font-black text-[8px] border border-warning-200 uppercase flex items-center gap-0.5 w-fit cursor-help"
+            x-tooltip="'{{ .GetMissingItemsHTML }}'">
+            <i class="ph ph-warning-circle"></i>
+            Datos Incompletos
+          </span>
+          {{ end }}
+        </div>
+      </td>
+      <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+        {{ if and .Solicitud (eq .Solicitud.GetConceptoCodigo "OFICIAL") }}
+        <a href="/descargos/oficial/{{ .ID }}" class="text-primary-600 hover:text-primary-900 flex items-center">
+          <i class="ph ph-eye mr-1"></i>
+          Detalles
+        </a>
+        {{ else }}
+        <a href="/descargos/derecho/{{ .ID }}" class="text-primary-600 hover:text-primary-900 flex items-center">
+          <i class="ph ph-eye mr-1"></i>
+          Detalles
+        </a>
+        {{ end }}
+      </td>
+    </tr>
+    {{ else }}
+    <tr>
+      <td colspan="5" class="px-6 py-10 text-center text-neutral-500">No hay descargos registrados para la búsqueda.</td>
+    </tr>
+    {{ end }}
+  </tbody>
+</table>
+
+{{ if .Result.TotalPages }}
+<div class="px-6 py-4 bg-neutral-50 border-t border-neutral-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+  <!-- Total count -->
+  <div class="text-sm text-neutral-500">
+    Mostrando
+    <span class="font-bold text-neutral-900">{{ len .Result.Descargos }}</span>
+    de
+    <span class="font-bold text-neutral-900">{{ .Result.Total }}</span>
+    resultados {{ if .Result.SearchTerm }} para "
+    <span class="italic">{{ .Result.SearchTerm }}</span>
+    "{{ end }}
+  </div>
+
+  <div class="flex items-center space-x-2">
+    <!-- Items per page selector -->
+    <div class="flex items-center space-x-2 mr-4">
+      <label for="limit" class="text-xs text-neutral-500">Mostrar:</label>
+      <select
+        name="limit"
+        id="limit"
+        class="text-xs border-neutral-300 rounded-md py-1 pl-2 pr-6 focus:ring-primary focus:border-primary shadow-sm"
+        hx-get="{{ $.LinkBase }}/table"
+        hx-include="#global-search-input"
+        hx-target="#main-table"
+        hx-indicator="#table-loader">
+        <option value="5" {{ if eq .Result.Limit 5 }}selected{{ end }}>5</option>
+        <option value="10" {{ if eq .Result.Limit 10 }}selected{{ end }}>10</option>
+        <option value="20" {{ if eq .Result.Limit 20 }}selected{{ end }}>20</option>
+        <option value="50" {{ if eq .Result.Limit 50 }}selected{{ end }}>50</option>
+      </select>
+    </div>
+
+    <!-- Pagination controls -->
+    {{ if gt .Result.Page 1 }}
+    <button
+      type="button"
+      hx-get="{{ $.LinkBase }}/table?page={{ sub .Result.Page 1 }}&q={{ .Result.SearchTerm }}&limit={{ .Result.Limit }}"
+      hx-target="#main-table"
+      hx-indicator="#table-loader"
+      class="p-2 bg-white border border-neutral-300 rounded-md text-neutral-700 hover:bg-neutral-50 transition-colors shadow-sm cursor-pointer"
+      title="Anterior">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
+      </svg>
+    </button>
+    {{ end }}
+
+    <div class="px-2 py-1 bg-white border border-neutral-300 rounded-md text-sm font-bold text-neutral-700 shadow-sm flex items-center">
+      <span class="text-primary-600 mr-2">Pág.</span>
+      <input
+        type="number"
+        name="page"
+        value="{{ .Result.Page }}"
+        min="1"
+        max="{{ .Result.TotalPages }}"
+        class="w-16 h-7 text-center text-sm border-neutral-300 rounded-md focus:ring-primary focus:border-primary p-0 m-0"
+        hx-get="{{ $.LinkBase }}/table"
+        hx-include="#global-search-input, [name='limit']"
+        hx-target="#main-table"
+        hx-indicator="#table-loader"
+        hx-trigger="change delay:300ms, keyup[key=='Enter']" />
+      <span class="text-neutral-400 mx-2">/</span>
+      <span>{{ .Result.TotalPages }}</span>
+    </div>
+
+    {{ if lt .Result.Page .Result.TotalPages }}
+    <button
+      type="button"
+      hx-get="{{ $.LinkBase }}/table?page={{ sum .Result.Page 1 }}&q={{ .Result.SearchTerm }}&limit={{ .Result.Limit }}"
+      hx-target="#main-table"
+      hx-indicator="#table-loader"
+      class="p-2 bg-white border border-neutral-300 rounded-md text-neutral-700 hover:bg-neutral-50 transition-colors shadow-sm cursor-pointer"
+      title="Siguiente">
+      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+      </svg>
+    </button>
+    {{ end }}
+  </div>
+</div>
+{{ end }} {{ end }}

@@ -11,56 +11,22 @@
 
   <!-- Table -->
   <div class="bg-white rounded-lg shadow overflow-hidden border border-neutral-200">
-    <table class="min-w-full divide-y divide-gray-200">
-      <thead class="bg-neutral-50">
-        <tr>
-          <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Código</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Solicitud</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Fecha Presentación</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Estado</th>
-          <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Acciones</th>
-        </tr>
-      </thead>
-      <tbody class="bg-white divide-y divide-gray-200">
-        {{ range .Descargos }}
-        <tr class="hover:bg-neutral-50 transition-colors">
-          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">{{ .Codigo }}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-700">
-            {{ if .Solicitud }}
-            <a href="/solicitudes/{{ .Solicitud.ID }}" class="text-primary-600 hover:underline">Solicitud #{{ .Solicitud.Codigo }}</a>
-            <div class="text-xs text-neutral-500">{{ .Solicitud.GetOrigenCiudad }} - {{ .Solicitud.GetDestinoCiudad }}</div>
-            {{ else }}
-            <span class="text-neutral-400 italic">Desvinculada</span>
-            {{ end }}
-          </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">{{ .FechaPresentacion.Format "02/01/2006" }}</td>
-          <td class="px-6 py-4 whitespace-nowrap">
-            <div class="flex flex-col gap-1">
-              <span class="px-2 inline-flex text-[10px] leading-5 font-bold rounded-full bg-primary-100 text-primary-800 uppercase w-fit">{{ .Estado }}</span>
-              {{ if not .IsComplete }}
-              <span
-                class="px-1.5 py-0.5 rounded bg-warning-50 text-warning-700 font-black text-[8px] border border-warning-200 uppercase flex items-center gap-0.5 w-fit cursor-help"
-                x-tooltip="'{{ .GetMissingItemsHTML }}'">
-                <i class="ph ph-warning-circle"></i>
-                Datos Incompletos
-              </span>
-              {{ end }}
-            </div>
-          </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-            <a href="/descargos/{{ .ID }}" class="text-primary-600 hover:text-primary-900 flex items-center">
-              <i class="ph ph-eye mr-1"></i>
-              Detalles
-            </a>
-          </td>
-        </tr>
-        {{ else }}
-        <tr>
-          <td colspan="5" class="px-6 py-10 text-center text-neutral-500">No hay descargos registrados. Para crear uno, vaya a una Solicitud existente.</td>
-        </tr>
-        {{ end }}
-      </tbody>
-    </table>
+    <!-- Loader indicator -->
+    <div id="table-loader" class="htmx-indicator w-full py-4 flex justify-center items-center">
+      <svg class="animate-spin h-6 w-6 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+    </div>
+
+    <div
+      id="main-table"
+      hx-get="{{ .LinkBase }}/table"
+      hx-trigger="load, reloadTable from:body, keyup delay:500ms changed from:#global-search-input"
+      hx-include="#global-search-input, [name='limit']"
+      hx-indicator="#table-loader">
+      {{ template "descargo/table_descargos" . }}
+    </div>
   </div>
 </div>
 

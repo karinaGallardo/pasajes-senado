@@ -3,12 +3,22 @@ package repositories
 import (
 	"context"
 	"sistema-pasajes/internal/models"
+	"strings"
 
 	"gorm.io/gorm"
 )
 
 type DescargoRepository struct {
 	db *gorm.DB
+}
+
+type PaginatedDescargos struct {
+	Descargos  []models.Descargo
+	Total      int64
+	Page       int
+	Limit      int
+	TotalPages int
+	SearchTerm string
 }
 
 func NewDescargoRepository(db *gorm.DB) *DescargoRepository {
@@ -21,6 +31,23 @@ func (r *DescargoRepository) WithContext(ctx context.Context) *DescargoRepositor
 
 func (r *DescargoRepository) Create(ctx context.Context, descargo *models.Descargo) error {
 	return r.db.WithContext(ctx).Create(descargo).Error
+}
+
+func SearchDescargo(term string) func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		if term == "" {
+			return db
+		}
+
+		words := strings.Fields(term)
+		for _, word := range words {
+			likeTerm := "%" + word + "%"
+			db = db.Where("(descargos.codigo ILIKE ? OR usuarios.firstname ILIKE ? OR usuarios.lastname ILIKE ? OR usuarios.ci ILIKE ? OR solicitudes.codigo ILIKE ?)",
+				likeTerm, likeTerm, likeTerm, likeTerm, likeTerm)
+		}
+
+		return db
+	}
 }
 
 func (r *DescargoRepository) FindBySolicitudID(ctx context.Context, solicitudID string) (*models.Descargo, error) {
@@ -81,6 +108,50 @@ func (r *DescargoRepository) FindAll(ctx context.Context) ([]models.Descargo, er
 		Order("created_at desc").Find(&descargos).Error
 	return descargos, err
 }
+
+func (r *DescargoRepository) FindPaginated(ctx context.Context, page, limit int, searchTerm string) (*PaginatedDescargos, error) {
+	var descargos []models.Descargo
+	var total int64
+
+	baseQuery := r.db.WithContext(ctx).Model(&models.Descargo{}).
+		Joins("LEFT JOIN solicitudes ON descargos.solicitud_id = solicitudes.id").
+		Joins("LEFT JOIN usuarios ON solicitudes.usuario_id = usuarios.id").
+		Preload("Solicitud").
+		Preload("Solicitud.TipoSolicitud.ConceptoViaje").
+		Preload("Solicitud.Usuario").
+		Preload("Solicitud.CupoDerechoItem").
+		Preload("Solicitud.Items").
+		Preload("Solicitud.Items.Origen").
+		Preload("Solicitud.Items.Destino").
+		Preload("Solicitud.Items.Pasajes").
+		Preload("Solicitud.Usuario.Encargado").
+		Preload("DetallesItinerario").
+		Preload("Oficial").
+		Preload("Oficial.Anexos").
+		Scopes(SearchDescargo(searchTerm))
+
+	baseQuery.Count(&total)
+
+	err := baseQuery.
+		Scopes(Paginate(page, limit)).
+		Order("descargos.created_at DESC").
+		Find(&descargos).Error
+
+	totalPages := 0
+	if limit > 0 {
+		totalPages = int((total + int64(limit) - 1) / int64(limit))
+	}
+
+	return &PaginatedDescargos{
+		Descargos:  descargos,
+		Total:      total,
+		Page:       page,
+		Limit:      limit,
+		TotalPages: totalPages,
+		SearchTerm: searchTerm,
+	}, err
+}
+
 func (r *DescargoRepository) Update(ctx context.Context, descargo *models.Descargo) error {
 	return r.db.WithContext(ctx).Session(&gorm.Session{FullSaveAssociations: true}).Save(descargo).Error
 }
