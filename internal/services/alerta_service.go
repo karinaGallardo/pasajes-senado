@@ -54,8 +54,12 @@ func (s *AlertaService) ProcesarAlertasDescargo(ctx context.Context) error {
 		return fmt.Errorf("error al buscar solicitudes pendientes de descargo: %w", err)
 	}
 
-	now := time.Now()
-	hoy := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, time.Local)
+	loc, err := time.LoadLocation("America/La_Paz")
+	if err != nil {
+		loc = time.Local
+	}
+
+	hoy := time.Now().In(loc)
 	alertasEnviadas := 0
 
 	for _, sol := range solicitudes {
@@ -68,30 +72,28 @@ func (s *AlertaService) ProcesarAlertasDescargo(ctx context.Context) error {
 		if maxVuelo == nil {
 			continue
 		}
-		fechaFin := *maxVuelo
-
-		// Truncar fechas al inicio del día para comparaciones exactas
-		y, m, d := fechaFin.Date()
-		fechaFinLocal := time.Date(y, m, d, 0, 0, 0, 0, time.Local)
-		diaDespuesVuelo := fechaFinLocal.AddDate(0, 0, 1)
+		fechaFin := *maxVuelo // Ensure fechaLimite calculation is based on the actual flight date
 
 		// La fecha límite son 8 días hábiles después del fin del viaje
 		fechaLimite := utils.CalcularFechaLimiteDescargo(fechaFin)
 
-		// Iniciar alertas críticas 2 días antes de la fecha límite
-		fechaInicioAlertaCritica := fechaLimite.AddDate(0, 0, -2)
+		// El usuario pidió enviarle a TODOS los que cumplan el filtro (estén pendientes de descargo)
+		// y el vuelo ya haya sido emitido y tengan items.
 
-		isUnDiaDespues := hoy.Equal(diaDespuesVuelo)
-		isEnZonaCriticaOMora := hoy.Equal(fechaInicioAlertaCritica) || hoy.After(fechaInicioAlertaCritica)
+		// Opcional: Solo enviamos a los que ya pasaron su fecha de vuelo
+		y, m, d := fechaFin.Date()
+		fechaFinLocal := time.Date(y, m, d, 0, 0, 0, 0, loc)
 
-		// Alertar si es exactamente 1 día después del vuelo, o si faltan 2 días o menos para el límite
-		if isUnDiaDespues || isEnZonaCriticaOMora {
-			// Enviar alerta
-			if err := s.enviarAlertaDescargoEmail(sol, fechaLimite); err != nil {
-				log.Printf("[AlertaService] Error enviando email para solicitud %s: %v", sol.Codigo, err)
-			} else {
-				alertasEnviadas++
-			}
+		// Si el vuelo ni siquiera ha terminado, no enviar alerta de descargo todavía
+		if hoy.Before(fechaFinLocal.AddDate(0, 0, 1)) {
+			continue
+		}
+
+		// Enviar alerta
+		if err := s.enviarAlertaDescargoEmail(sol, fechaLimite); err != nil {
+			log.Printf("[AlertaService] Error enviando email para solicitud %s: %v", sol.Codigo, err)
+		} else {
+			alertasEnviadas++
 		}
 	}
 

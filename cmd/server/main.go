@@ -49,12 +49,17 @@ func main() {
 	container := app.NewContainer(configs.DB, configs.MongoRRHH, configs.MongoChat)
 
 	// --- Professional Scheduler (robfig/cron) ---
-	c := cron.New(cron.WithLocation(time.Local))
+	loc, err := time.LoadLocation("America/La_Paz")
+	if err != nil {
+		slog.Warn("[Scheduler] Falló al cargar America/La_Paz, usando Local", "error", err)
+		loc = time.Local
+	}
+	c := cron.New(cron.WithLocation(loc))
 	alertaService := container.AlertaService
 
-	// "0 7 * * 1-5" means: At 07:00 AM, Mon through Fri
-	_, err := c.AddFunc("0 7 * * 1-5", func() {
-		slog.Info("[Scheduler] Ejecutando alertas de descargo programadas (7:00 AM Mon-Fri)...")
+	// "0 9 * * 1-5" means: At 09:00 AM, Mon through Fri
+	_, err = c.AddFunc("0 9 * * 1-5", func() {
+		slog.Info("[Scheduler] Ejecutando alertas de descargo programadas (9:00 AM Mon-Fri)...")
 		workerPool.Submit(&services.AlertaDescargoJob{Service: alertaService})
 	})
 	if err != nil {
@@ -62,7 +67,7 @@ func main() {
 	}
 
 	c.Start()
-	slog.Info("[Scheduler] Programador iniciado: Alertas diarias Mon-Fri 07:00 AM.")
+	slog.Info("[Scheduler] Programador iniciado: Alertas diarias Mon-Fri 09:00 AM America/La_Paz.")
 
 	itinerarioService := container.TipoItinerarioService
 	if err := itinerarioService.EnsureDefaults(context.Background()); err != nil {
