@@ -760,22 +760,130 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 
 	// Anexos (Imágenes) - Parte del Informe
 	if descargo.Oficial != nil && len(descargo.Oficial.Anexos) > 0 {
-		pdf.Ln(4)
-		pdf.SetX(3)
-		pdf.SetFont("Arial", "B", 10)
-		pdf.CellFormat(210, 8, tr("ANEXO FOTOGRÁFICO / ACTIVIDADES"), "B", 1, "C", false, 0, "")
-		pdf.Ln(2)
+		const (
+			pageWidth  = 190.0
+			pageHeight = 250.0 // Conservative limit before footer
+			marginSide = 10.0
+			spacing    = 4.0   // Further reduced spacing
+			fullWidth  = 180.0 // Wider for better space usage
+			halfWidth  = 88.0  // Wider for better space usage
+			maxImageH  = 100.0 // Increased slightly to allow clearer detail
+			singleMaxH = 130.0 // Let single images be larger to avoid too much whitespace
+		)
 
-		for _, anexo := range descargo.Oficial.Anexos {
-			if _, err := os.Stat(anexo.Archivo); err == nil {
-				// Evaluar si hay espacio mínimo (ej. 100mm para no dejar una foto muy pequeña al final)
-				if pdf.GetY() > 180 {
-					pdf.AddPage()
-				}
-				// Usamos flow=true (6to parámetro) para que avance el puntero Y automáticamente
-				pdf.Image(anexo.Archivo, 20, -1, 170, 0, true, "", 0, "")
-				pdf.Ln(8)
+		// Check initial space for title
+		if pdf.GetY() > (pageHeight - 30.0) {
+			pdf.AddPage()
+		}
+
+		pdf.Ln(4)
+		pdf.SetX(marginSide)
+		pdf.SetFont("Arial", "B", 10)
+		pdf.CellFormat(210, 8, tr("5. Anexos (Reseña fotográfica)"), "B", 1, "C", false, 0, "")
+		pdf.Ln(4)
+
+		anexos := descargo.Oficial.Anexos
+		i := 0
+		for i < len(anexos) {
+			anexo := anexos[i]
+			if _, err := os.Stat(anexo.Archivo); err != nil {
+				i++
+				continue
 			}
+
+			// Ensure image is registered so we can get its info
+			pdf.RegisterImage(anexo.Archivo, "")
+			info := pdf.GetImageInfo(anexo.Archivo)
+			if info == nil || info.Height() == 0 {
+				i++
+				continue
+			}
+
+			aspect := info.Width() / info.Height()
+			isLandscape := aspect >= 1.4 // Balanced threshold
+
+			// --- Logic for horizontal pairing ---
+			canPair := false
+			var nextAnexo *models.AnexoDescargo
+			if !isLandscape && (i+1) < len(anexos) {
+				next := &anexos[i+1]
+				if _, err := os.Stat(next.Archivo); err == nil {
+					pdf.RegisterImage(next.Archivo, "")
+					nextInfo := pdf.GetImageInfo(next.Archivo)
+					if nextInfo != nil && nextInfo.Height() > 0 {
+						nextAspect := nextInfo.Width() / nextInfo.Height()
+						if nextAspect < 1.4 {
+							canPair = true
+							nextAnexo = next
+						}
+					}
+				}
+			}
+
+			// --- Calculate Heights for the block ---
+			requiredH := 0.0
+			var h1, w1, h2, w2 float64
+
+			if canPair {
+				// Fit both to halfWidth, height is the taller one
+				w1 = halfWidth
+				h1 = halfWidth / aspect
+				nextInfo := pdf.GetImageInfo(nextAnexo.Archivo)
+				nextAspect := nextInfo.Width() / nextInfo.Height()
+				w2 = halfWidth
+				h2 = halfWidth / nextAspect
+
+				requiredH = h1
+				if h2 > requiredH {
+					requiredH = h2
+				}
+				if requiredH > maxImageH {
+					// Scale both down to fit max height
+					factor := maxImageH / requiredH
+					h1 *= factor
+					w1 *= factor
+					h2 *= factor
+					w2 *= factor
+					requiredH = maxImageH
+				}
+			} else {
+				// Fit one to full width or max height
+				w1 = fullWidth
+				h1 = fullWidth / aspect
+				// Use a larger limit for single images
+				if h1 > singleMaxH {
+					h1 = singleMaxH
+					w1 = h1 * aspect
+				}
+				requiredH = h1
+			}
+
+			// --- Page Break Check ---
+			if pdf.GetY()+requiredH+spacing > pageHeight {
+				pdf.AddPage()
+				pdf.SetY(15.0)
+				pdf.SetFont("Arial", "I", 8)
+				pdf.CellFormat(0, 6, tr("5. Anexos (Reseña fotográfica) (Continuación)"), "", 1, "R", false, 0, "")
+				pdf.Ln(4)
+			}
+
+			// --- Render ---
+			currentY := pdf.GetY()
+			if canPair {
+				totalBlockW := w1 + spacing + w2
+				blockStartX := (210.0 - totalBlockW) / 2.0
+
+				// Use 0 in the secondary dimension to force the library to maintain aspect ratio
+				// and match exactly the original file's proportions.
+				pdf.Image(anexo.Archivo, blockStartX, currentY+(requiredH-h1)/2, w1, 0, false, "", 0, "")
+				pdf.Image(nextAnexo.Archivo, blockStartX+w1+spacing, currentY+(requiredH-h2)/2, w2, 0, false, "", 0, "")
+				i += 2
+			} else {
+				pdf.Image(anexo.Archivo, (210.0-w1)/2.0, currentY, w1, 0, false, "", 0, "")
+				i++
+			}
+
+			pdf.SetY(currentY + requiredH + spacing)
 		}
 	}
 
@@ -791,7 +899,7 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 		}
 	}
 	pdf.SetFont("Arial", "B", 9)
-	pdf.CellFormat(50, 6, tr("TRANSPORTE UTILIZADO:"), "", 0, "L", false, 0, "")
+	pdf.CellFormat(50, 6, tr("4. TRANSPORTE UTILIZADO:"), "", 0, "L", false, 0, "")
 	pdf.SetFont("Arial", "", 9)
 	pdf.CellFormat(140, 6, tr(tipoTrans), "", 1, "L", false, 0, "")
 
