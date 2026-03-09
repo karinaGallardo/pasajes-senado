@@ -21,7 +21,10 @@
           return 0;
       },
       loading: false,
-      fileName: ''
+      fileName: '',
+      ruta: '{{ .Form.Ruta }}',
+      aerolinea_id: '{{ .Form.AerolineaID }}',
+      agencia_id: '{{ .Form.AgenciaID }}'
   }"
   x-show="open"
  class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true" style="display: none">
@@ -47,6 +50,13 @@
         x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
         class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-3xl">
         <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+          {{ if .ErrorMessage }}
+          <div class="mb-4 p-3 bg-danger-50 border border-danger-200 rounded-lg flex items-center gap-3 text-danger-700 shadow-sm animate-bounce">
+            <i class="ph ph-warning-circle text-xl shrink-0"></i>
+            <span class="text-xs font-bold">{{ .ErrorMessage }}</span>
+          </div>
+          {{ end }}
+
           <div class="flex items-center justify-between mb-6 border-b pb-3">
             <div class="flex items-center gap-3">
                <div class="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
@@ -94,7 +104,13 @@
              </div>
           </div>
 
-          <form id="createPasajeForm" action="/solicitudes/{{ .Solicitud.ID }}/pasajes" method="POST" enctype="multipart/form-data" @submit="loading = true">
+          <form id="createPasajeForm" 
+                hx-post="/solicitudes/{{ .Solicitud.ID }}/pasajes" 
+                hx-target="#modal-container"
+                hx-swap="innerHTML"
+                method="POST" 
+                enctype="multipart/form-data" 
+                @submit="loading = true">
             <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
             <div class="grid grid-cols-6 gap-6">
               <div class="col-span-6 flex items-stretch gap-3">
@@ -142,8 +158,8 @@
                       { value: '{{ .Tramo }}', label: '{{ .Tramo }}' },
                       {{ end }}
                   ],
-                  initialValue: '',
-                  initialLabel: ''
+                  initialValue: '{{ .Form.Ruta }}',
+                  initialLabel: '{{ .Form.Ruta }}'
                 })"
               x-init="$watch('value', v => { ruta = v })">
                 <label class="block text-sm font-medium text-neutral-700">Ruta (Incluyendo Escalas)</label>
@@ -198,6 +214,8 @@
                        { value: '{{ .ID }}', label: '{{ .Nombre }}' },
                        {{ end }}
                      ],
+                     initialValue: '{{ .Form.AgenciaID }}',
+                     initialLabel: '{{ range .Agencias }}{{ if eq .ID $.Form.AgenciaID }}{{ .Nombre }}{{ end }}{{ end }}',
                      placeholder: '-- Seleccionar --'
                    })"
                 x-init="$watch('value', v => { agencia_id = v })">
@@ -253,6 +271,8 @@
                        { value: '{{ .ID }}', label: '{{ .Nombre }}' },
                        {{ end }}
                      ],
+                     initialValue: '{{ .Form.AerolineaID }}',
+                     initialLabel: '{{ range .Aerolineas }}{{ if eq .ID $.Form.AerolineaID }}{{ .Nombre }}{{ end }}{{ end }}',
                      placeholder: '-- Seleccionar --'
                    })"
                 x-init="$watch('value', v => { aerolinea_id = v })">
@@ -305,6 +325,7 @@
                 <input
                   type="text"
                   name="fecha_emision"
+                  value="{{ .Form.FechaEmision }}"
                   x-flatpickr="{ static: false, enableTime: false, dateFormat: 'Y-m-d', altFormat: 'd/m/Y' }"
                   required
                   class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md border p-2 bg-white"
@@ -316,6 +337,7 @@
                 <input
                   type="text"
                   name="numero_boleto"
+                  value="{{ .Form.NumeroBoleto }}"
                   required
                   class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md border p-2"
                   placeholder="Ej: 93021..." />
@@ -326,6 +348,7 @@
                 <input
                   type="text"
                   name="fecha_vuelo"
+                  value="{{ .Form.FechaVuelo }}"
                   x-flatpickr="{ static: false }"
                   required
                   class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md border p-2 bg-white"
@@ -337,6 +360,7 @@
                 <input
                   type="text"
                   name="numero_vuelo"
+                  value="{{ .Form.NumeroVuelo }}"
                   required
                   class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md border p-2"
                   placeholder="Ej: OB-123" />
@@ -354,6 +378,7 @@
                    type="number"
                    step="0.01"
                    name="costo"
+                   value="{{ .Form.Costo }}"
                    required
                    class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md border p-2" />
                </div>
@@ -367,7 +392,7 @@
                   name="glosa"
                   rows="2"
                   class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md border p-2"
-                  placeholder="Detalles adicionales..."></textarea>
+                  placeholder="Detalles adicionales...">{{ .Form.Glosa }}</textarea>
               </div>
 
               <div class="col-span-6 border-t border-neutral-100 pt-4">

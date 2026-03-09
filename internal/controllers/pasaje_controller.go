@@ -39,7 +39,14 @@ func NewPasajeController(
 func (ctrl *PasajeController) Store(c *gin.Context) {
 	solicitudID := c.Param("id")
 	var req dtos.CreatePasajeRequest
+
+	isHTMX := c.GetHeader("HX-Request") == "true"
+
 	if err := c.ShouldBind(&req); err != nil {
+		if isHTMX {
+			ctrl.renderCreateModalWithError(c, solicitudID, req, "Datos inválidos: verifique los campos obligatorios")
+			return
+		}
 		utils.SetErrorMessage(c, "Datos inválidos")
 		solicitud, _ := ctrl.solicitudService.GetByID(c.Request.Context(), solicitudID)
 		if solicitud != nil && solicitud.GetConceptoCodigo() == "OFICIAL" {
@@ -56,16 +63,47 @@ func (ctrl *PasajeController) Store(c *gin.Context) {
 	}
 
 	if _, err := ctrl.pasajeService.Create(c.Request.Context(), solicitudID, req, filePath); err != nil {
+		if isHTMX {
+			ctrl.renderCreateModalWithError(c, solicitudID, req, "Error al guardar: "+err.Error())
+			return
+		}
 		utils.SetErrorMessage(c, "Error: "+err.Error())
 	} else {
 		utils.SetSuccessMessage(c, "Pasaje registrado correctamente")
 	}
+
 	solicitud, _ := ctrl.solicitudService.GetByID(c.Request.Context(), solicitudID)
+	targetURL := ""
 	if solicitud != nil && solicitud.GetConceptoCodigo() == "OFICIAL" {
-		c.Redirect(http.StatusFound, fmt.Sprintf("/solicitudes/oficial/%s/detalle", solicitudID))
+		targetURL = fmt.Sprintf("/solicitudes/oficial/%s/detalle", solicitudID)
 	} else {
-		c.Redirect(http.StatusFound, fmt.Sprintf("/solicitudes/derecho/%s/detalle", solicitudID))
+		targetURL = fmt.Sprintf("/solicitudes/derecho/%s/detalle", solicitudID)
 	}
+
+	if isHTMX {
+		c.Header("HX-Location", targetURL)
+		c.Status(204)
+		return
+	}
+
+	c.Redirect(http.StatusFound, targetURL)
+}
+
+func (ctrl *PasajeController) renderCreateModalWithError(c *gin.Context, solicitudID string, req dtos.CreatePasajeRequest, errMsg string) {
+	solicitud, _ := ctrl.solicitudService.GetByID(c.Request.Context(), solicitudID)
+	aerolineas, _ := ctrl.aerolineaService.GetAllActive(c.Request.Context())
+	agencias, _ := ctrl.agenciaService.GetAllActive(c.Request.Context())
+	rutas, _ := ctrl.rutaService.GetAll(c.Request.Context())
+
+	utils.Render(c, "solicitud/components/modal_crear_pasaje", gin.H{
+		"Solicitud":       solicitud,
+		"Aerolineas":      aerolineas,
+		"Agencias":        agencias,
+		"Rutas":           rutas,
+		"SolicitudItemID": req.SolicitudItemID,
+		"Form":            req,
+		"ErrorMessage":    errMsg,
+	})
 }
 
 func (ctrl *PasajeController) UpdateStatus(c *gin.Context) {
@@ -89,12 +127,27 @@ func (ctrl *PasajeController) UpdateStatus(c *gin.Context) {
 	}
 
 	if err := ctrl.pasajeService.UpdateStatus(c.Request.Context(), req.ID, req.Status, ticketPath, pasePath); err != nil {
+		if c.GetHeader("HX-Request") == "true" {
+			// Find which modal to re-render based on status
+			if req.Status == "EMITIDO" {
+				// Re-rendering emitir logic might need a separate helper or manual render
+				// For now, simple JSON error is fine if it's handled by alert, but re-render is better.
+			}
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al actualizar estado: " + err.Error()})
+			return
+		}
 		if c.GetHeader("X-Requested-With") == "XMLHttpRequest" {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al actualizar estado"})
 		} else {
 			utils.SetErrorMessage(c, "Error al actualizar el estado")
 			c.Redirect(http.StatusFound, "/solicitudes")
 		}
+		return
+	}
+
+	if c.GetHeader("HX-Request") == "true" {
+		c.Header("HX-Refresh", "true")
+		c.Status(204)
 		return
 	}
 
@@ -134,7 +187,13 @@ func (ctrl *PasajeController) Devolver(c *gin.Context) {
 
 func (ctrl *PasajeController) Update(c *gin.Context) {
 	var req dtos.UpdatePasajeRequest
+	isHTMX := c.GetHeader("HX-Request") == "true"
+
 	if err := c.ShouldBind(&req); err != nil {
+		if isHTMX {
+			ctrl.renderEditModalWithError(c, req.ID, req, "Datos inválidos")
+			return
+		}
 		c.Redirect(http.StatusFound, "/solicitudes")
 		return
 	}
@@ -148,12 +207,38 @@ func (ctrl *PasajeController) Update(c *gin.Context) {
 	}
 
 	if err := ctrl.pasajeService.UpdateFromRequest(c.Request.Context(), req, filePath, pasePath); err != nil {
+		if isHTMX {
+			ctrl.renderEditModalWithError(c, req.ID, req, "Error: "+err.Error())
+			return
+		}
 		utils.SetErrorMessage(c, "Error: "+err.Error())
 	} else {
 		utils.SetSuccessMessage(c, "Datos del pasaje actualizados")
 	}
 
+	if isHTMX {
+		c.Header("HX-Refresh", "true")
+		c.Status(204)
+		return
+	}
+
 	c.Redirect(http.StatusFound, c.Request.Header.Get("Referer"))
+}
+
+func (ctrl *PasajeController) renderEditModalWithError(c *gin.Context, pasajeID string, req dtos.UpdatePasajeRequest, errMsg string) {
+	pasaje, _ := ctrl.pasajeService.GetByID(c.Request.Context(), pasajeID)
+	aerolineas, _ := ctrl.aerolineaService.GetAllActive(c.Request.Context())
+	agencias, _ := ctrl.agenciaService.GetAllActive(c.Request.Context())
+	rutas, _ := ctrl.rutaService.GetAll(c.Request.Context())
+
+	utils.Render(c, "solicitud/components/modal_editar_pasaje", gin.H{
+		"Pasaje":       pasaje,
+		"Aerolineas":   aerolineas,
+		"Agencias":     agencias,
+		"Rutas":        rutas,
+		"Form":         req,
+		"ErrorMessage": errMsg,
+	})
 }
 
 func (ctrl *PasajeController) Preview(c *gin.Context) {

@@ -76,6 +76,8 @@ func (s *Solicitud) UpdateStatusBasedOnItems() {
 		return
 	}
 
+	hasIda := false
+	hasVuelta := false
 	allApproved := true
 	allRejected := true
 	allFinalized := true
@@ -84,6 +86,12 @@ func (s *Solicitud) UpdateStatusBasedOnItems() {
 
 	for _, item := range s.Items {
 		st := item.GetEstado()
+		if item.Tipo == TipoSolicitudItemIda {
+			hasIda = true
+		}
+		if item.Tipo == TipoSolicitudItemVuelta {
+			hasVuelta = true
+		}
 
 		// Consideramos estados de aprobación (Aprobado, Emitido, Finalizado)
 		isApp := (st == "APROBADO" || st == "EMITIDO" || st == "FINALIZADO")
@@ -107,15 +115,18 @@ func (s *Solicitud) UpdateStatusBasedOnItems() {
 		}
 	}
 
+	// Unificamos criterio: Para estar completamente Aprobado/Emitido/Finalizado,
+	// debe tener ambos tramos (Ida y Vuelta). Si falta uno, es Parcial.
+	incompleteSegments := !hasIda || !hasVuelta
 	newState := "SOLICITADO"
 
 	if allFinalized {
 		newState = "FINALIZADO"
-	} else if allEmitidos {
+	} else if allEmitidos && !incompleteSegments {
 		newState = "EMITIDO"
-	} else if allApproved {
+	} else if allApproved && !incompleteSegments {
 		newState = "APROBADO"
-	} else if hasApproved {
+	} else if hasApproved || (allApproved && incompleteSegments) || (allEmitidos && incompleteSegments) {
 		newState = "PARCIALMENTE_APROBADO"
 	} else if allRejected {
 		newState = "RECHAZADO"
@@ -328,7 +339,7 @@ func (s Solicitud) CanView(user *Usuario) bool {
 
 func (s Solicitud) CanEdit(user *Usuario) bool {
 	estado := s.GetEstado()
-	if estado != "SOLICITADO" && estado != "RECHAZADO" {
+	if estado != "SOLICITADO" && estado != "RECHAZADO" && estado != "PARCIALMENTE_APROBADO" && estado != "PENDIENTE" {
 		return false
 	}
 	return s.CanView(user)
