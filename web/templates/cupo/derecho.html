@@ -22,15 +22,27 @@
   </div>
 
   {{ if .AlertaOrigen }}
-  <div class="bg-amber-50 border-l-4 border-amber-400 p-4 rounded-md">
+  <div class="bg-danger-50 border-l-4 border-danger-500 p-4 rounded-md shadow-sm mb-6">
     <div class="flex">
       <div class="flex-shrink-0">
-        <i class="ph ph-warning text-xl text-amber-400"></i>
+        <i class="ph ph-warning-octagon text-xl text-danger-600"></i>
       </div>
       <div class="ml-3">
-        <p class="text-sm text-amber-700 font-medium">
-          {{ .AlertaOrigen }}
-          <a href="/perfil" class="font-bold underline hover:text-amber-800 ml-1">Configurar ahora</a>
+        <p class="text-sm text-danger-800 font-semibold">
+          {{ .AlertaOrigen }} {{ if eq .AuthUser.ID .TargetUser.ID }}
+          <a href="/perfil" class="font-bold underline hover:text-danger-900 ml-1 inline-flex items-center gap-1">
+            Configurar ahora
+            <i class="ph ph-arrow-square-out"></i>
+          </a>
+          {{ else }}
+          <button
+            hx-get="/usuarios/{{ .TargetUser.ID }}/modal-editar"
+            hx-target="#modal-container"
+            class="font-bold underline hover:text-danger-900 ml-1 inline-flex items-center gap-1 cursor-pointer">
+            Configurar ahora
+            <i class="ph ph-pencil-simple"></i>
+          </button>
+          {{ end }}
         </p>
       </div>
     </div>

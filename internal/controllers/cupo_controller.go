@@ -449,6 +449,8 @@ func (ctrl *CupoController) DerechoByYear(c *gin.Context) {
 		idParaCupos = *targetUser.TitularID
 	}
 
+	hasOrigin := targetUser.OrigenIATA != nil && *targetUser.OrigenIATA != ""
+
 	items, _ := ctrl.service.GetCuposDerechoByUsuarioAndGestion(c.Request.Context(), idParaCupos, gestion)
 
 	mesesNames := utils.GetMonthNames()
@@ -532,8 +534,9 @@ func (ctrl *CupoController) DerechoByYear(c *gin.Context) {
 
 				// Creation
 				if sol == nil {
-					if isViewerAdminOrResponsable || (!isVencido && (isOwner || isEncargado)) {
+					if hasOrigin && (isViewerAdminOrResponsable || (!isVencido && (isOwner || isEncargado))) {
 						perms.CanCreate = true
+						perms.CanCreateIdaVuelta = true
 					}
 				} else {
 					// Edit/View permissions
@@ -548,11 +551,6 @@ func (ctrl *CupoController) DerechoByYear(c *gin.Context) {
 						}
 						perms.CanView = true
 					}
-				}
-
-				// Ida y Vuelta (Round Trip) in Single Request
-				if sol == nil && (isViewerAdminOrResponsable || (!isVencido && (isOwner || isEncargado))) {
-					perms.CanCreateIdaVuelta = true
 				}
 			}
 
@@ -636,6 +634,8 @@ func (ctrl *CupoController) DerechoByMonth(c *gin.Context) {
 	if targetUser.TitularID != nil {
 		idParaCupos = *targetUser.TitularID
 	}
+
+	hasOrigin := targetUser.OrigenIATA != nil && *targetUser.OrigenIATA != ""
 
 	items, err := ctrl.service.GetCuposDerechoByUsuario(c.Request.Context(), idParaCupos, gestion, mes)
 	if err != nil {
@@ -721,8 +721,9 @@ func (ctrl *CupoController) DerechoByMonth(c *gin.Context) {
 
 			// Creation
 			if sol == nil {
-				if isViewerAdminOrResponsable || (!isVencido && (isOwner || isEncargado)) {
+				if hasOrigin && (isViewerAdminOrResponsable || (!isVencido && (isOwner || isEncargado))) {
 					perms.CanCreate = true
+					perms.CanCreateIdaVuelta = true
 				}
 			} else {
 				// Edit/View permissions
@@ -738,11 +739,6 @@ func (ctrl *CupoController) DerechoByMonth(c *gin.Context) {
 					perms.CanView = true
 				}
 			}
-
-			// Ida y Vuelta (Round Trip) in Single Request
-			if sol == nil && (isViewerAdminOrResponsable || (!isVencido && (isOwner || isEncargado))) {
-				perms.CanCreateIdaVuelta = true
-			}
 		}
 
 		item.Permissions = perms
@@ -751,10 +747,10 @@ func (ctrl *CupoController) DerechoByMonth(c *gin.Context) {
 	displayMonths := []*MonthGroup{currentMonthGroup}
 
 	utils.Render(c, "cupo/derecho", gin.H{
-		"TargetUser":  targetUser,
+		"TargetUser":   targetUser,
 		"Months":       displayMonths,
-		"Gestion":     gestion,
-		"TargetMonth": mes,
+		"Gestion":      gestion,
+		"TargetMonth":  mes,
 		"AlertaOrigen": alert,
 	})
 }
