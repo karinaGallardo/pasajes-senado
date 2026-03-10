@@ -34,7 +34,7 @@ func (CupoDerechoItem) TableName() string {
 	return "cupo_derecho_items"
 }
 
-func (v CupoDerechoItem) GetSolicitudIda() *Solicitud {
+func (v CupoDerechoItem) getSolicitudIda() *Solicitud {
 	for i := range v.Solicitudes {
 		s := &v.Solicitudes[i]
 		if s.EstadoSolicitudCodigo != nil && *s.EstadoSolicitudCodigo == "RECHAZADO" {
@@ -49,7 +49,7 @@ func (v CupoDerechoItem) GetSolicitudIda() *Solicitud {
 	return nil
 }
 
-func (v CupoDerechoItem) GetSolicitudVuelta() *Solicitud {
+func (v CupoDerechoItem) getSolicitudVuelta() *Solicitud {
 	for i := range v.Solicitudes {
 		s := &v.Solicitudes[i]
 		if s.EstadoSolicitudCodigo != nil && *s.EstadoSolicitudCodigo == "RECHAZADO" {
@@ -62,6 +62,12 @@ func (v CupoDerechoItem) GetSolicitudVuelta() *Solicitud {
 		}
 	}
 	return nil
+}
+func (v CupoDerechoItem) GetSolicitud() *Solicitud {
+	if s := v.getSolicitudIda(); s != nil {
+		return s
+	}
+	return v.getSolicitudVuelta()
 }
 
 func (v CupoDerechoItem) GetDescargo() *Descargo {

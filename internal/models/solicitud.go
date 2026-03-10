@@ -115,18 +115,27 @@ func (s *Solicitud) UpdateStatusBasedOnItems() {
 		}
 	}
 
+	// Update Itinerary Type Informatively (if it was a Derecho)
+	// Generally applicable: if has both, IDA_VUELTA. If only IDA, SOLO_IDA. If only VUELTA, SOLO_VUELTA.
+	if hasIda && hasVuelta {
+		s.TipoItinerarioCodigo = "IDA_VUELTA"
+	} else if hasIda {
+		s.TipoItinerarioCodigo = "SOLO_IDA"
+	} else if hasVuelta {
+		s.TipoItinerarioCodigo = "SOLO_VUELTA"
+	}
+
 	// Unificamos criterio: Para estar completamente Aprobado/Emitido/Finalizado,
 	// debe tener ambos tramos (Ida y Vuelta). Si falta uno, es Parcial.
-	incompleteSegments := !hasIda || !hasVuelta
 	newState := "SOLICITADO"
 
-	if allFinalized {
+	if allFinalized && hasIda && hasVuelta {
 		newState = "FINALIZADO"
-	} else if allEmitidos && !incompleteSegments {
+	} else if allEmitidos && hasIda && hasVuelta {
 		newState = "EMITIDO"
-	} else if allApproved && !incompleteSegments {
+	} else if allApproved && hasIda && hasVuelta {
 		newState = "APROBADO"
-	} else if hasApproved || (allApproved && incompleteSegments) || (allEmitidos && incompleteSegments) {
+	} else if hasApproved || (allApproved && (!hasIda || !hasVuelta)) || (allEmitidos && (!hasIda || !hasVuelta)) {
 		newState = "PARCIALMENTE_APROBADO"
 	} else if allRejected {
 		newState = "RECHAZADO"

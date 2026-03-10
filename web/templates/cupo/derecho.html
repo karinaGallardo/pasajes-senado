@@ -73,7 +73,7 @@
               </tr>
             </thead>
             <tbody class="divide-y divide-gray-200 bg-white">
-              {{ range .Items }}
+              {{ range .Items }} {{ $sol := .GetSolicitud }}
               <tr class="transition-colors {{ if .IsActiveWeek }} bg-primary-50/50 ring-1 ring-inset ring-primary-100 {{ else }} hover:bg-neutral-50 {{ end }}">
                 <!-- Semana -->
                 <td class="whitespace-nowrap py-4 pl-4 pr-3 text-sm font-medium text-neutral-900 sm:pl-6">{{ .Semana }}</td>
@@ -90,16 +90,42 @@
 
                 <!-- Estado -->
                 <td class="whitespace-nowrap px-3 py-4 text-sm">
-                  <div class="flex flex-col">
+                  <div class="flex flex-col gap-1.5">
                     {{ if .EstadoCupoDerecho }}
                     <span class="inline-flex items-center gap-1 rounded-md px-2.5 py-0.5 text-[10px] font-bold uppercase w-fit border status-badge-{{ .EstadoCupoDerecho.Codigo }}">
                       <i class="{{ .EstadoCupoDerecho.Icon }} text-xs"></i>
                       {{ .EstadoCupoDerecho.Nombre }}
                     </span>
-                    {{ else }}
-                    <span class="inline-flex items-center gap-1 rounded-md px-2.5 py-0.5 text-[10px] font-bold uppercase w-fit border bg-neutral-100 text-neutral-600">
-                      {{ .EstadoCupoDerechoCodigo }}
-                    </span>
+                    {{ end }} {{ if $sol }}
+                    <div class="flex flex-col gap-1">
+                      {{ if $sol.EstadoSolicitud }}
+                      <span
+                        class="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[9px] font-bold uppercase w-fit border status-badge-{{ $sol.EstadoSolicitud.Codigo }}"
+                        title="Estado de la Solicitud">
+                        <i class="{{ $sol.EstadoSolicitud.Icon }} text-[10px]"></i>
+                        {{ $sol.EstadoSolicitud.Nombre }}
+                      </span>
+                      {{ else }}
+                      <span
+                        class="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[9px] font-bold uppercase w-fit border bg-neutral-100 text-neutral-600 border-neutral-200">
+                        SOLICITADO
+                      </span>
+                      {{ end }}
+
+                      <!-- Mini tramos status -->
+                      <div class="flex items-center gap-2 px-1">
+                        {{ $ida := $sol.GetItemIda }}{{ if $ida }}
+                        <i
+                          class="{{ if $ida.Estado }}{{ $ida.Estado.Icon }}{{ else }}ph ph-airplane{{ end }} text-[11px] {{ if $ida.Estado }}status-item-text-{{ $ida.Estado.Codigo }}{{ else }}text-neutral-400{{ end }}"
+                          title="Ida: {{ $ida.GetEstado }}"></i>
+                        {{ end }} {{ $vuelta := $sol.GetItemVuelta }}{{ if $vuelta }}
+                        <div class="w-px h-2.5 bg-neutral-200"></div>
+                        <i
+                          class="{{ if $vuelta.Estado }}{{ $vuelta.Estado.Icon }}{{ else }}ph ph-airplane ph-flip-horizontal{{ end }} text-[11px] {{ if $vuelta.Estado }}status-item-text-{{ $vuelta.Estado.Codigo }}{{ else }}text-neutral-400{{ end }}"
+                          title="Vuelta: {{ $vuelta.GetEstado }}"></i>
+                        {{ end }}
+                      </div>
+                    </div>
                     {{ end }}
                   </div>
                 </td>
@@ -162,7 +188,7 @@
                     <!-- Owner Actions (Solicitudes) -->
                     {{ if eq .SenAsignadoID $targetUserID }}
                     <!-- Solicitar Pasaje (Ida o Ida+Vuelta) -->
-                    {{ if .Permissions.CanCreateIda }}
+                    {{ if .Permissions.CanCreate }}
                     <button
                       type="button"
                       hx-get="/solicitudes/derecho/modal-crear/{{ .ID }}/IDA_VUELTA"
@@ -171,36 +197,34 @@
                       <i class="ph ph-paper-plane-tilt mr-1.5 text-xs"></i>
                       Solicitar Pasaje
                     </button>
-                    {{ end }} {{ $solIda := .GetSolicitudIda }} {{ if and .Permissions.CanCreateVuelta $solIda }}
+                    {{ end }} {{ if and .Permissions.CanView $sol }}
+                    <a
+                      href="/solicitudes/derecho/{{ $sol.ID }}/detalle"
+                      class="text-secondary-700 hover:bg-secondary-100 font-bold text-[10px] uppercase border border-secondary-100 bg-secondary-50 rounded-md px-3 py-1.5 transition-colors inline-flex items-center justify-center text-center"
+                      title="Ver Detalle de Solicitud">
+                      <i class="ph ph-eye mr-1.5 text-xs"></i>
+                      Ver
+                    </a>
+                    {{ end }} {{ if and .Permissions.CanEdit $sol }}
                     <button
                       type="button"
-                      hx-get="/solicitudes/derecho/{{ $solIda.ID }}/modal-editar"
-                      hx-target="#modal-container"
-                      class="text-amber-700 hover:bg-amber-100 font-bold text-[10px] uppercase border border-amber-100 bg-amber-50 rounded-md px-3 py-1.5 transition-colors cursor-pointer text-center inline-flex items-center justify-center">
-                      <i class="ph ph-calendar-plus mr-1.5 text-xs"></i>
-                      Editar / Agendar Retorno
-                    </button>
-                    {{ end }} {{ if and .Permissions.CanEditIda $solIda }}
-                    <button
-                      type="button"
-                      hx-get="/solicitudes/derecho/{{ $solIda.ID }}/modal-editar"
+                      hx-get="/solicitudes/derecho/{{ $sol.ID }}/modal-editar"
                       hx-target="#modal-container"
                       class="text-amber-700 hover:bg-amber-100 font-bold text-[10px] uppercase border border-amber-100 bg-amber-50 rounded-md px-3 py-1.5 transition-colors cursor-pointer inline-flex items-center justify-center text-center">
                       <i class="ph ph-pencil-simple mr-1.5 text-xs"></i>
-                      Editar Solicitud
+                      Editar / Agendar Retorno
                     </button>
-                    {{ end }} {{ if .Permissions.CanPrint }} {{ $printSol := .GetSolicitudIda }} {{ if not $printSol }}{{ $printSol = .GetSolicitudVuelta }}{{ end }} {{ if
-                    $printSol }}
+                    {{ end }} {{ if and .Permissions.CanPrint $sol }}
                     <button
                       type="button"
-                      hx-get="/solicitudes/derecho/{{ $printSol.ID }}/print"
+                      hx-get="/solicitudes/derecho/{{ $sol.ID }}/print"
                       hx-target="#modal-container"
                       class="text-neutral-600 hover:text-neutral-900 border border-neutral-200 bg-white font-bold text-[10px] uppercase rounded-sm px-2 py-1 hover:bg-neutral-50 transition-colors inline-flex items-center justify-center gap-1 cursor-pointer"
                       title="Imprimir Solicitud">
                       <i class="ph ph-printer text-sm"></i>
                       <span class="sr-only sm:not-sr-only">Imprimir</span>
                     </button>
-                    {{ end }} {{ end }} {{ end }}
+                    {{ end }} {{ end }}
                   </div>
                   {{ if .EsTransferido }}
                   <div>

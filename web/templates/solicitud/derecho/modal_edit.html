@@ -21,7 +21,7 @@
         {{ $stIda := `` }}{{ if $ida }}{{ $stIda = $ida.GetEstado }}{{ end }}
         {{ $stVuelta := `` }}{{ if $vuelta }}{{ $stVuelta = $vuelta.GetEstado }}{{ end }}
         {{ $canEditIda := true }}{{ if .AuthUser.IsAdminOrResponsable }}{{ $canEditIda = true }}{{ else }}{{ $canEditIda = or (eq $stIda `PENDIENTE`) (eq $stIda `SOLICITADO`) (eq $stIda `RECHAZADO`) }}{{ end }}
-        {{ $canEditVuelta := true }}{{ if .AuthUser.IsAdminOrResponsable }}{{ $canEditVuelta = true }}{{ else }}{{ $canEditVuelta = or (eq $stVuelta `PENDIENTE`) (eq $stVuelta `SOLICITADO`) (eq $stVuelta `RECHAZADO`) }}{{ end }}
+        {{ $canEditVuelta := true }}{{ if .AuthUser.IsAdminOrResponsable }}{{ $canEditVuelta = true }}{{ else }}{{ $canEditVuelta = or (eq $stVuelta ``) (eq $stVuelta `PENDIENTE`) (eq $stVuelta `SOLICITADO`) (eq $stVuelta `RECHAZADO`) }}{{ end }}
 
         selectedDaySalida: '{{ if eq .Itinerario.Codigo `SOLO_VUELTA` }}{{ if .Solicitud.GetFechaVuelta }}{{ .Solicitud.GetFechaVuelta.Format `2006-01-02` }}{{ end }}{{ else }}{{ if .Solicitud.GetFechaIda }}{{ .Solicitud.GetFechaIda.Format `2006-01-02` }}{{ end }}{{ end }}',
         selectedTimeSalida: '{{ if eq .Itinerario.Codigo `SOLO_VUELTA` }}{{ if .Solicitud.GetFechaVuelta }}{{ .Solicitud.GetFechaVuelta.Format `15:04` }}{{ end }}{{ else }}{{ if .Solicitud.GetFechaIda }}{{ .Solicitud.GetFechaIda.Format `15:04` }}{{ end }}{{ end }}',
@@ -36,28 +36,31 @@
         editId: '{{ .Solicitud.ID }}',
         motivo: '{{ .Solicitud.Motivo }}',
         aerolinea: '{{ .Solicitud.AerolineaSugerida }}',
-        selectedWeekLabel: '{{ .Item.Semana }}: del {{ if .Item.FechaDesde }}{{ .Item.FechaDesde.Format `02/01/2006` }}{{ end }} al {{ if .Item.FechaHasta }}{{ .Item.FechaHasta.Format `02/01/2006` }}{{ end }}'
-      }">
-      <div
-        class="flex items-center justify-between mb-4 border-b pb-3"
-        x-effect="
+        selectedWeekLabel: '{{ .Item.Semana }}: del {{ if .Item.FechaDesde }}{{ .Item.FechaDesde.Format `02/01/2006` }}{{ end }} al {{ if .Item.FechaHasta }}{{ .Item.FechaHasta.Format `02/01/2006` }}{{ end }}',
+        validateForm() {
            const now = new Date();
-           const selectedDate = new Date(`${selectedDaySalida}T${selectedTimeSalida}`);
+           const selectedDate = new Date(`${this.selectedDaySalida}T${this.selectedTimeSalida}`);
            const isAdmin = {{ if .AuthUser.IsAdminOrResponsable }}true{{ else }}false{{ end }};
 
-           if (!isAdmin && canEditIda && selectedDate < now) {
-             error = 'La fecha y hora de salida ya ha pasado.';
-           } else {
-             error = '';
+           if (!isAdmin && this.canEditIda && (selectedDate <= now)) {
+             this.error = 'La fecha y hora de salida debe ser futura.';
+             return false;
            }
 
-           if (error === '' && tipoItinerario === 'IDA_VUELTA' && !vueltaPorConfirmar) {
-             const returnDate = new Date(`${selectedDayRetorno}T${selectedTimeRetorno}`);
-             if (canEditVuelta && returnDate <= selectedDate) {
-                error = 'La fecha de retorno debe ser posterior a la de salida.';
+           if (!this.vueltaPorConfirmar) {
+             if (this.selectedDayRetorno && this.selectedTimeRetorno) {
+               const returnDate = new Date(`${this.selectedDayRetorno}T${this.selectedTimeRetorno}`);
+               if (this.canEditVuelta && returnDate <= selectedDate) {
+                  this.error = 'La fecha de retorno debe ser posterior a la de salida.';
+                  return false;
+               }
              }
            }
-        ">
+           this.error = '';
+           return true;
+        }
+      }">
+      <div class="flex items-center justify-between mb-4 border-b pb-3">
         <div class="flex items-center space-x-3">
           <div class="h-10 w-10 rounded-md bg-primary/10 flex items-center justify-center text-primary">
             <i class="ph ph-airplane-tilt text-2xl"></i>
@@ -75,13 +78,11 @@
         </div>
 
         <div class="flex items-center gap-2">
-          <span x-show="error" x-text="error" class="text-xs text-red-500 font-bold hidden sm:inline-block mr-2"></span>
-
           <button
             type="submit"
             form="pasajeForm"
-            :disabled="isSubmitting || error !== ''"
-            :class="(isSubmitting || error !== '') ? 'opacity-50 cursor-not-allowed bg-neutral-400' : 'bg-primary hover:bg-primary-800'"
+            :disabled="isSubmitting"
+            :class="isSubmitting ? 'opacity-50 cursor-not-allowed bg-neutral-400' : 'bg-primary hover:bg-primary-800'"
             class="inline-flex items-center justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-bold rounded-md text-white transition-colors">
             <i x-show="isSubmitting" class="ph ph-spinner animate-spin mr-2"></i>
             <span>Actualizar</span>
@@ -112,13 +113,18 @@
       </div>
       {{ end }}
 
+      <div x-show="error" x-transition class="mx-6 mb-4 p-3 bg-danger-50 border border-danger-200 rounded-lg flex items-center gap-3">
+        <i class="ph ph-warning-circle text-danger-500 text-xl"></i>
+        <span x-text="error" class="text-sm font-bold text-danger-600"></span>
+      </div>
+
       <div id="modal-form-container">
         <form
           id="pasajeForm"
           method="POST"
           :action="isEdit ? ('/solicitudes/derecho/' + editId + '/actualizar') : '/solicitudes/derecho'"
           class="bg-white rounded-md shadow-sm border border-neutral-200 mt-0 p-2 space-y-2"
-          @submit="isSubmitting = true"
+          @submit.prevent="if(validateForm()) { isSubmitting = true; $el.submit(); }"
           x-transition:enter="transition ease-out duration-300"
           x-transition:enter-start="opacity-0 translate-y-4"
           x-transition:enter-end="opacity-100 translate-y-0">
@@ -126,7 +132,6 @@
             <!-- VALORES POR DEFECTO (HIDDEN) -->
             <input type="hidden" name="tipo_solicitud_codigo" value="{{ .TipoSolicitud.Codigo }}" />
             <input type="hidden" name="ambito_viaje_codigo" value="{{ .Ambito.Codigo }}" />
-            <!-- Itinerary Type managed by Switcher below -->
             <input type="hidden" name="cupo_derecho_item_id" value="{{ .Item.ID }}" />
             <input type="hidden" name="target_user_id" value="{{ .TargetUser.ID }}" />
             <input type="hidden" name="return_url" value="{{ .ReturnURL }}" />
@@ -146,8 +151,6 @@
                 <span class="px-2 py-0.5 bg-white border border-neutral-200 rounded text-xs font-bold text-neutral-600">{{ .Ambito.Nombre }}</span>
               </div>
             </section>
-
-            <input type="hidden" name="tipo_itinerario" :value="tipoItinerario" />
 
             <section class="space-y-4">
               <div class="flex items-center mb-2 mt-2">
@@ -209,11 +212,11 @@
 
             <!-- SECCIÓN B: CALENDARIO -->
             <section>
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                 <!-- COLUMN 1: SALIDA -->
                 <div class="space-y-4">
-                  <div class="flex items-center justify-between mb-2 mt-2">
-                    <span class="text-xs font-bold text-secondary uppercase tracking-widest">Fecha y Hora de Salida</span>
+                  <div class="flex items-center flex-1 mb-2">
+                    <span class="text-xs font-bold uppercase tracking-widest transition-colors text-secondary">Fecha y Hora de Salida</span>
                     <div class="flex-1 h-px bg-neutral-100 ml-4"></div>
                   </div>
 
@@ -230,7 +233,7 @@
                         placeholder="Fecha salida..." />
                     </div>
 
-                    <!-- Time Picker (Salida) -->
+                    <!-- Time Picker (Ida) -->
                     <div class="w-36">
                       <div
                         class="w-full"
@@ -250,12 +253,10 @@
                             type="button"
                             @click="if(canEditIda) open = !open"
                             :disabled="!canEditIda"
-                            :class="!canEditIda ? 'bg-neutral-100 cursor-not-allowed opacity-75' : 'bg-white'"
-                            class="w-full flex items-center justify-between px-4 py-2.5 border border-neutral-200 rounded-md shadow-sm focus:ring-2 focus:ring-primary h-[42px] transition-all">
-                            <span class="text-sm font-bold text-neutral-700" x-text="selectedTimeSalida"></span>
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
+                            :class="!canEditIda ? 'bg-neutral-100 cursor-not-allowed opacity-75' : 'bg-white hover:border-neutral-300'"
+                            class="w-full flex items-center justify-between px-4 py-2.5 border border-neutral-200 rounded-md shadow-sm h-[42px] transition-all">
+                            <span class="text-sm font-bold text-neutral-700 font-mono" x-text="selectedTimeSalida || '00:00'"></span>
+                            <i class="ph ph-clock text-neutral-400"></i>
                           </button>
                           <div
                             x-show="open"
@@ -264,7 +265,6 @@
                             x-transition:enter-end="opacity-100 scale-100"
                             class="absolute z-[100] mt-2 p-4 bg-white border border-neutral-200 rounded-2xl shadow-2xl w-64 right-0"
                             x-cloak>
-                            <!-- Time picker logic exactly like create form -->
                             <div class="flex items-center justify-center space-x-4 mb-4 bg-neutral-50 py-3 rounded-xl border border-neutral-100">
                               <button
                                 type="button"
@@ -333,13 +333,13 @@
                               <button
                                 type="button"
                                 @click="setHour(8); setMinute(0)"
-                                class="text-[10px] font-bold py-1.5 bg-neutral-50 text-neutral-600 rounded-md border border-neutral-100 hover:bg-neutral-100 transition-colors focus:outline-none">
+                                class="text-[10px] font-bold py-1.5 bg-neutral-50 text-neutral-600 rounded-lg border border-neutral-100 hover:bg-neutral-100 transition-colors focus:outline-none">
                                 Mañana (08:00)
                               </button>
                               <button
                                 type="button"
                                 @click="setHour(20); setMinute(0)"
-                                class="text-[10px) font-bold py-1.5 bg-neutral-50 text-neutral-600 rounded-md border border-neutral-100 hover:bg-neutral-100 transition-colors focus:outline-none">
+                                class="text-[10px] font-bold py-1.5 bg-neutral-50 text-neutral-600 rounded-lg border border-neutral-100 hover:bg-neutral-100 transition-colors focus:outline-none">
                                 Noche (20:00)
                               </button>
                             </div>
@@ -353,19 +353,23 @@
 
                 <!-- COLUMN 2: RETORNO -->
                 <div class="space-y-4">
-                  <div class="flex items-center justify-between mb-2 mt-2" x-show="tipoItinerario === 'IDA_VUELTA'">
+                  <div class="flex items-center justify-between mb-2 mt-2" x-show="tipoItinerario === 'IDA_VUELTA' || {{ if .IsDerecho }}true{{ else }}false{{ end }}">
                     <div class="flex items-center flex-1">
-                      <span class="text-xs font-bold text-secondary uppercase tracking-widest">Fecha y Hora de Retorno</span>
+                      <span class="text-xs font-bold uppercase tracking-widest transition-colors text-secondary">Fecha y Hora de Retorno</span>
                       <div class="flex-1 h-px bg-neutral-100 ml-4 mr-4"></div>
                     </div>
                     <label class="flex items-center space-x-2 cursor-pointer select-none" x-show="canEditVuelta">
-                      <input type="checkbox" x-model="vueltaPorConfirmar" class="form-checkbox h-4 w-4 text-primary rounded border-neutral-300 focus:ring-primary" />
+                      <input
+                        type="checkbox"
+                        name="vuelta_por_confirmar"
+                        x-model="vueltaPorConfirmar"
+                        class="form-checkbox h-4 w-4 text-primary rounded border-neutral-300 focus:ring-primary" />
                       <span class="text-xs font-bold text-neutral-600">Vuelta por confirmar</span>
                     </label>
                   </div>
 
                   <div
-                    x-show="tipoItinerario === 'IDA_VUELTA' && !vueltaPorConfirmar"
+                    x-show="(tipoItinerario === 'IDA_VUELTA' || {{ if .IsDerecho }}true{{ else }}false{{ end }}) && !vueltaPorConfirmar"
                     x-transition:enter="transition ease-out duration-300"
                     x-transition:enter-start="opacity-0 -translate-y-2"
                     x-transition:enter-end="opacity-100 translate-y-0">
@@ -381,20 +385,19 @@
                           class="w-full px-4 py-2.5 border border-neutral-200 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-bold text-neutral-700 transition-all font-mono"
                           placeholder="Fecha retorno..." />
                       </div>
-
                       <!-- Time Picker (Retorno) -->
                       <div class="w-36">
                         <div
                           class="w-full"
                           x-data="{
-                            open: false,
-                            mode: 'hours',
-                            currentH: '18',
-                            currentM: '00',
-                            setHour(h) { this.currentH = h.toString().padStart(2, '0'); this.mode = 'minutes'; this.sync(); },
-                            setMinute(m) { this.currentM = m.toString().padStart(2, '0'); this.open = false; this.sync(); },
-                            sync() { selectedTimeRetorno = `${this.currentH}:${this.currentM}`; }
-                          }"
+                                        open: false,
+                                        mode: 'hours',
+                                        currentH: '18',
+                                        currentM: '00',
+                                        setHour(h) { this.currentH = h.toString().padStart(2, '0'); this.mode = 'minutes'; this.sync(); },
+                                        setMinute(m) { this.currentM = m.toString().padStart(2, '0'); this.open = false; this.sync(); },
+                                        sync() { selectedTimeRetorno = `${this.currentH}:${this.currentM}`; }
+                                    }"
                           x-effect="if (selectedTimeRetorno) { const parts = selectedTimeRetorno.split(':'); if (parts.length === 2) { currentH = parts[0]; currentM = parts[1]; } }"
                           @click.away="open = false">
                           <div class="relative">
@@ -402,19 +405,17 @@
                               type="button"
                               @click="if(canEditVuelta) open = !open"
                               :disabled="!canEditVuelta"
-                              :class="!canEditVuelta ? 'bg-neutral-100 cursor-not-allowed opacity-75' : 'bg-white'"
-                              class="w-full flex items-center justify-between px-4 py-2.5 border border-neutral-200 rounded-md shadow-sm focus:ring-2 focus:ring-primary h-[42px] transition-all">
-                              <span class="text-sm font-bold text-neutral-700" x-text="selectedTimeRetorno"></span>
-                              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                              </svg>
+                              :class="!canEditVuelta ? 'bg-neutral-100 cursor-not-allowed opacity-75' : 'bg-white hover:border-neutral-300'"
+                              class="w-full flex items-center justify-between px-4 py-2.5 border border-neutral-200 rounded-md shadow-sm h-[42px] transition-all">
+                              <span class="text-sm font-bold text-neutral-700 font-mono" x-text="selectedTimeRetorno || '00:00'"></span>
+                              <i class="ph ph-clock text-neutral-400"></i>
                             </button>
                             <div
                               x-show="open"
                               x-transition:enter="transition ease-out duration-200"
                               x-transition:enter-start="opacity-0 scale-95"
                               x-transition:enter-end="opacity-100 scale-100"
-                              class="absolute z-[100] mt-2 p-4 bg-white border border-neutral-200 rounded-2xl shadow-2xl w-64 -left-1 sm:left-0"
+                              class="absolute z-[100] mt-2 p-4 bg-white border border-neutral-200 rounded-2xl shadow-2xl w-64 right-0"
                               x-cloak>
                               <div class="flex items-center justify-center space-x-4 mb-4 bg-neutral-50 py-3 rounded-xl border border-neutral-100">
                                 <button
@@ -484,13 +485,13 @@
                                 <button
                                   type="button"
                                   @click="setHour(8); setMinute(0)"
-                                  class="text-[10px] font-bold py-1.5 bg-neutral-50 text-neutral-600 rounded-md border border-neutral-100 hover:bg-neutral-100 transition-colors focus:outline-none">
+                                  class="text-[10px] font-bold py-1.5 bg-neutral-50 text-neutral-600 rounded-lg border border-neutral-100 hover:bg-neutral-100 transition-colors focus:outline-none">
                                   Mañana (08:00)
                                 </button>
                                 <button
                                   type="button"
                                   @click="setHour(20); setMinute(0)"
-                                  class="text-[10px] font-bold py-1.5 bg-neutral-50 text-neutral-600 rounded-md border border-neutral-100 hover:bg-neutral-100 transition-colors focus:outline-none">
+                                  class="text-[10px] font-bold py-1.5 bg-neutral-50 text-neutral-600 rounded-lg border border-neutral-100 hover:bg-neutral-100 transition-colors focus:outline-none">
                                   Noche (20:00)
                                 </button>
                               </div>
@@ -498,16 +499,9 @@
                           </div>
                         </div>
                       </div>
-                      <input type="hidden" name="fecha_retorno" :value="vueltaPorConfirmar ? '' : (selectedDayRetorno + 'T' + selectedTimeRetorno)" />
                     </div>
                   </div>
-                  <!-- Vuelta por confirmar info label if view only and confirmed -->
-                  <div x-show="tipoItinerario === 'IDA_VUELTA' && vueltaPorConfirmar" class="p-4 bg-amber-50 rounded-xl border border-amber-200">
-                    <div class="flex items-center space-x-2 text-amber-700">
-                      <i class="ph ph-info font-bold"></i>
-                      <span class="text-xs font-bold uppercase tracking-tight">Retorno por confirmar</span>
-                    </div>
-                  </div>
+                  <input type="hidden" name="fecha_retorno" :value="vueltaPorConfirmar ? '' : (selectedDayRetorno + 'T' + selectedTimeRetorno)" />
                 </div>
               </div>
             </section>
@@ -515,14 +509,9 @@
             <!-- SECCIÓN C: DESTINO Y JUSTIFICACIÓN -->
             <section>
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                <!-- Hidden values for submission -->
-                <input type="hidden" name="origen" value="{{ .Origen.IATA }}" />
-                <input type="hidden" name="destino" value="{{ .Destino.IATA }}" />
-
                 <!-- Hidden fields required for update (always present) -->
                 <input type="hidden" name="origen_cod" value="{{ .Origen.IATA }}" />
                 <input type="hidden" name="destino_cod" value="{{ .Destino.IATA }}" />
-                <input type="hidden" name="tipo_itinerario_codigo" value="{{ .Itinerario.Codigo }}" />
 
                 <div class="md:col-span-2 space-y-1.5">
                   <label class="block text-xs font-bold text-neutral-500 uppercase tracking-tight">Línea Aérea</label>

@@ -4,7 +4,6 @@ import (
 	"context"
 	"sistema-pasajes/internal/models"
 
-
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -38,6 +37,8 @@ func (r *CupoDerechoItemRepository) FindByHolderAndPeriodo(ctx context.Context, 
 	err := r.db.WithContext(ctx).
 		Preload("Solicitudes.Descargo").
 		Preload("Solicitudes.TipoItinerario").
+		Preload("Solicitudes.EstadoSolicitud").
+		Preload("Solicitudes.Items.Estado").
 		Preload("Solicitudes.Items").
 		Where("sen_asignado_id = ? AND gestion = ? AND mes = ?", userID, gestion, mes).
 		Find(&list).Error
@@ -132,6 +133,10 @@ func (r *CupoDerechoItemRepository) FindByID(ctx context.Context, id string) (*m
 	err := r.db.WithContext(ctx).
 		Preload("SenTitular").
 		Preload("SenAsignado").
+		Preload("Solicitudes.Descargo").
+		Preload("Solicitudes.TipoItinerario").
+		Preload("Solicitudes.EstadoSolicitud").
+		Preload("Solicitudes.Items.Estado").
 		Preload("Solicitudes.Items").
 		First(&v, "id = ?", id).
 		Error
@@ -147,6 +152,11 @@ func (r *CupoDerechoItemRepository) FindByCupoDerechoID(ctx context.Context, cup
 	err := r.db.WithContext(ctx).
 		Preload("SenTitular").
 		Preload("SenAsignado").
+		Preload("Solicitudes.Descargo").
+		Preload("Solicitudes.TipoItinerario").
+		Preload("Solicitudes.EstadoSolicitud").
+		Preload("Solicitudes.Items.Estado").
+		Preload("Solicitudes.Items").
 		Where("cupo_derecho_id = ?", cupoDerechoID).
 		Find(&list).
 		Error

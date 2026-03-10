@@ -387,12 +387,12 @@ type Permissions struct {
 	CanPrint           bool
 	CanTomarCupo       bool
 	CanAsignarCupo     bool
-	CanCreateIda       bool
+	CanCreate          bool
 	CanCreateVuelta    bool
 	CanCreateIdaVuelta bool
-	CanEditIda         bool
+	CanEdit            bool
 	CanEditVuelta      bool
-	CanViewIda         bool
+	CanView            bool
 	CanViewVuelta      bool
 	CanDescargo        bool
 }
@@ -429,6 +429,11 @@ func (ctrl *CupoController) DerechoByYear(c *gin.Context) {
 	if authUser == nil {
 		c.Redirect(http.StatusFound, "/auth/login")
 		return
+	}
+
+	var alert string
+	if targetUser.OrigenIATA == nil || *targetUser.OrigenIATA == "" {
+		alert = "No tiene configurada su ciudad de origen."
 	}
 
 	now := time.Now()
@@ -492,7 +497,7 @@ func (ctrl *CupoController) DerechoByYear(c *gin.Context) {
 				if isTransferido && modelItem.CanBeReverted() {
 					perms.CanRevert = true
 				}
-				if modelItem.GetSolicitudIda() != nil || modelItem.GetSolicitudVuelta() != nil {
+				if modelItem.GetSolicitud() != nil {
 					perms.CanPrint = true
 				}
 			}
@@ -523,40 +528,30 @@ func (ctrl *CupoController) DerechoByYear(c *gin.Context) {
 
 			// 4. Solicitudes (Owner, Admin or Encargado)
 			if isOwner || isViewerAdminOrResponsable || isEncargado {
-				solIda := modelItem.GetSolicitudIda()
-				solVuelta := modelItem.GetSolicitudVuelta()
+				sol := modelItem.GetSolicitud()
 
-				// Ida
-				if solIda == nil {
+				// Creation
+				if sol == nil {
 					if isViewerAdminOrResponsable || (!isVencido && (isOwner || isEncargado)) {
-						perms.CanCreateIda = true
+						perms.CanCreate = true
 					}
 				} else {
 					// Edit/View permissions
-					if isOwner || isViewerAdminOrResponsable || solIda.UsuarioID == targetUser.ID {
-						if solIda.GetEstado() == "SOLICITADO" || (isViewerAdminOrResponsable && solIda.GetEstado() == "APROBADO") {
-							perms.CanEditIda = true
+					if isOwner || isViewerAdminOrResponsable || sol.UsuarioID == targetUser.ID {
+						// Permitir editar si es el dueño y está en estado editable (incluyendo Parcialmente Aprobado)
+						st := sol.GetEstado()
+						isEditableState := st == "SOLICITADO" || st == "PARCIALMENTE_APROBADO" || st == "RECHAZADO" || st == "PENDIENTE"
+						if isEditableState && (isOwner || isEncargado) {
+							perms.CanEdit = true
+						} else if isViewerAdminOrResponsable && st == "APROBADO" {
+							perms.CanEdit = true
 						}
-						perms.CanViewIda = true
-					}
-				}
-
-				// Vuelta
-				if solVuelta == nil {
-					if solIda != nil && (isViewerAdminOrResponsable || (!isVencido && (isOwner || isEncargado))) {
-						perms.CanCreateVuelta = true
-					}
-				} else {
-					if isOwner || isViewerAdminOrResponsable || solVuelta.UsuarioID == targetUser.ID {
-						if solVuelta.GetEstado() == "SOLICITADO" || (isViewerAdminOrResponsable && solVuelta.GetEstado() == "APROBADO") {
-							perms.CanEditVuelta = true
-						}
-						perms.CanViewVuelta = true
+						perms.CanView = true
 					}
 				}
 
 				// Ida y Vuelta (Round Trip) in Single Request
-				if solIda == nil && solVuelta == nil && (isViewerAdminOrResponsable || (!isVencido && (isOwner || isEncargado))) {
+				if sol == nil && (isViewerAdminOrResponsable || (!isVencido && (isOwner || isEncargado))) {
 					perms.CanCreateIdaVuelta = true
 				}
 			}
@@ -593,9 +588,10 @@ func (ctrl *CupoController) DerechoByYear(c *gin.Context) {
 	}
 
 	utils.Render(c, "cupo/derecho", gin.H{
-		"TargetUser": targetUser,
-		"Months":     displayMonths,
-		"Gestion":    gestion,
+		"TargetUser":   targetUser,
+		"Months":       displayMonths,
+		"Gestion":      gestion,
+		"AlertaOrigen": alert,
 	})
 }
 
@@ -619,6 +615,11 @@ func (ctrl *CupoController) DerechoByMonth(c *gin.Context) {
 	if authUser == nil {
 		c.Redirect(http.StatusFound, "/auth/login")
 		return
+	}
+
+	var alert string
+	if targetUser.OrigenIATA == nil || *targetUser.OrigenIATA == "" {
+		alert = "No tiene configurada su ciudad de origen."
 	}
 
 	gestion, err := strconv.Atoi(gestionStr)
@@ -685,7 +686,7 @@ func (ctrl *CupoController) DerechoByMonth(c *gin.Context) {
 			if isTransferido && modelItem.CanBeReverted() {
 				perms.CanRevert = true
 			}
-			if modelItem.GetSolicitudIda() != nil || modelItem.GetSolicitudVuelta() != nil {
+			if modelItem.GetSolicitud() != nil {
 				perms.CanPrint = true
 			}
 		}
@@ -716,39 +717,30 @@ func (ctrl *CupoController) DerechoByMonth(c *gin.Context) {
 
 		// 4. Solicitudes (Owner, Admin or Encargado)
 		if isOwner || isViewerAdminOrResponsable || isEncargado {
-			solIda := modelItem.GetSolicitudIda()
-			solVuelta := modelItem.GetSolicitudVuelta()
+			sol := modelItem.GetSolicitud()
 
-			// Ida
-			if solIda == nil {
+			// Creation
+			if sol == nil {
 				if isViewerAdminOrResponsable || (!isVencido && (isOwner || isEncargado)) {
-					perms.CanCreateIda = true
+					perms.CanCreate = true
 				}
 			} else {
-				if isOwner || isViewerAdminOrResponsable || solIda.UsuarioID == targetUser.ID {
-					if solIda.GetEstado() == "SOLICITADO" || (isViewerAdminOrResponsable && solIda.GetEstado() == "APROBADO") {
-						perms.CanEditIda = true
+				// Edit/View permissions
+				if isOwner || isViewerAdminOrResponsable || sol.UsuarioID == targetUser.ID {
+					// Permitir editar si es el dueño y está en estado editable (incluyendo Parcialmente Aprobado)
+					st := sol.GetEstado()
+					isEditableState := st == "SOLICITADO" || st == "PARCIALMENTE_APROBADO" || st == "RECHAZADO" || st == "PENDIENTE"
+					if isEditableState && (isOwner || isEncargado) {
+						perms.CanEdit = true
+					} else if isViewerAdminOrResponsable && st == "APROBADO" {
+						perms.CanEdit = true
 					}
-					perms.CanViewIda = true
-				}
-			}
-
-			// Vuelta
-			if solVuelta == nil {
-				if isViewerAdminOrResponsable || (!isVencido && (isOwner || isEncargado)) {
-					perms.CanCreateVuelta = true
-				}
-			} else {
-				if isOwner || isViewerAdminOrResponsable || solVuelta.UsuarioID == targetUser.ID {
-					if solVuelta.GetEstado() == "SOLICITADO" || (isViewerAdminOrResponsable && solVuelta.GetEstado() == "APROBADO") {
-						perms.CanEditVuelta = true
-					}
-					perms.CanViewVuelta = true
+					perms.CanView = true
 				}
 			}
 
 			// Ida y Vuelta (Round Trip) in Single Request
-			if solIda == nil && solVuelta == nil && (isViewerAdminOrResponsable || (!isVencido && (isOwner || isEncargado))) {
+			if sol == nil && (isViewerAdminOrResponsable || (!isVencido && (isOwner || isEncargado))) {
 				perms.CanCreateIdaVuelta = true
 			}
 		}
@@ -760,8 +752,9 @@ func (ctrl *CupoController) DerechoByMonth(c *gin.Context) {
 
 	utils.Render(c, "cupo/derecho", gin.H{
 		"TargetUser":  targetUser,
-		"Months":      displayMonths,
+		"Months":       displayMonths,
 		"Gestion":     gestion,
 		"TargetMonth": mes,
+		"AlertaOrigen": alert,
 	})
 }

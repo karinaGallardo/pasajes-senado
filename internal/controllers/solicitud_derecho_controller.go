@@ -180,8 +180,10 @@ func (ctrl *SolicitudDerechoController) GetEditModal(c *gin.Context) {
 	userLoc, _ := ctrl.destinoService.GetByIATA(c.Request.Context(), origenIATA)
 	lpbLoc, _ := ctrl.destinoService.GetByIATA(c.Request.Context(), "LPB")
 
+	itin := solicitud.TipoItinerario
+
 	var origen, destino *models.Destino
-	if solicitud.TipoItinerario.Codigo == "SOLO_IDA" || solicitud.TipoItinerario.Codigo == "IDA_VUELTA" {
+	if itin.Codigo == "SOLO_IDA" || itin.Codigo == "IDA_VUELTA" {
 		origen = userLoc
 		destino = lpbLoc
 	} else {
@@ -218,7 +220,7 @@ func (ctrl *SolicitudDerechoController) GetEditModal(c *gin.Context) {
 		"Concepto":      solicitud.TipoSolicitud.ConceptoViaje,
 		"TipoSolicitud": solicitud.TipoSolicitud,
 		"Ambito":        solicitud.AmbitoViaje,
-		"Itinerario":    solicitud.TipoItinerario,
+		"Itinerario":    itin,
 		"ReturnURL":     referer,
 		"Origen":        origen,
 		"Destino":       destino,
@@ -226,6 +228,7 @@ func (ctrl *SolicitudDerechoController) GetEditModal(c *gin.Context) {
 		"MaxDateIda":    maxDateIda,
 		"MinDateVuelta": minDateVuelta,
 		"MaxDateVuelta": maxDateVuelta,
+		"IsDerecho":     solicitud.GetConceptoCodigo() == "DERECHO",
 	})
 }
 
@@ -245,10 +248,14 @@ func (ctrl *SolicitudDerechoController) Update(c *gin.Context) {
 	}
 
 	var fechaVuelta *time.Time
-	if req.FechaVuelta != "" {
+	if req.FechaVuelta != "" && !req.VueltaPorConfirmar {
 		fechaVuelta, err = utils.ParseDateTime(req.FechaVuelta)
 		if err != nil {
 			c.String(http.StatusBadRequest, "Formato fecha retorno inválido")
+			return
+		}
+		if fechaVuelta != nil && fechaIda != nil && !fechaVuelta.After(*fechaIda) {
+			c.String(http.StatusBadRequest, "La fecha de retorno debe ser posterior a la de salida")
 			return
 		}
 	}
@@ -279,6 +286,28 @@ func (ctrl *SolicitudDerechoController) Update(c *gin.Context) {
 
 		orig, _ := ctrl.destinoService.GetByIATA(c.Request.Context(), req.OrigenIATA)
 		dest, _ := ctrl.destinoService.GetByIATA(c.Request.Context(), req.DestinoIATA)
+
+		// Si es Derecho y se proporciona fecha de vuelta o se marca por confirmar, y falta el tramo, lo agregamos
+		hasVueltaDate := req.FechaVuelta != ""
+		if (hasVueltaDate || req.VueltaPorConfirmar) && solicitud.GetItemVuelta() == nil {
+			st := "SOLICITADO"
+			if req.VueltaPorConfirmar {
+				st = "PENDIENTE"
+			}
+			var horaVuelta string
+			if hasVueltaDate && len(req.FechaVuelta) >= 5 {
+				horaVuelta = req.FechaVuelta[len(req.FechaVuelta)-5:]
+			}
+			solicitud.Items = append(solicitud.Items, models.SolicitudItem{
+				SolicitudID:  solicitud.ID,
+				Tipo:         models.TipoSolicitudItemVuelta,
+				OrigenIATA:   req.DestinoIATA,
+				DestinoIATA:  req.OrigenIATA,
+				Fecha:        fechaVuelta,
+				Hora:         horaVuelta,
+				EstadoCodigo: utils.Ptr(st),
+			})
+		}
 
 		// Sync per-item fields
 		for i := range solicitud.Items {
@@ -311,12 +340,18 @@ func (ctrl *SolicitudDerechoController) Update(c *gin.Context) {
 				}
 
 			case models.TipoSolicitudItemVuelta:
-				if req.FechaVuelta != "" {
+				if req.VueltaPorConfirmar {
+					it.EstadoCodigo = utils.Ptr("PENDIENTE")
+					it.Fecha = nil
+					it.Hora = ""
+				} else if req.FechaVuelta != "" {
+					it.EstadoCodigo = utils.Ptr("SOLICITADO")
 					it.Fecha = fechaVuelta
 					if fechaVuelta != nil {
 						it.Hora = fechaVuelta.Format("15:04")
 					}
 				}
+
 				if orig != nil {
 					it.DestinoIATA = orig.IATA
 					it.Destino = orig
@@ -566,7 +601,6 @@ func (ctrl *SolicitudDerechoController) Show(c *gin.Context) {
 			pPerms := PasajePermissions{}
 
 			if item.GetEstado() != "REPROGRAMADO" {
-				// Individual Actions
 				canEmitir := authUser.IsAdminOrResponsable() && pCode == "REGISTRADO"
 				pPerms.CanEdit = authUser.IsAdminOrResponsable() && pCode == "REGISTRADO"
 				pPerms.CanMarkUsado = authUser.CanMarkUsado(*solicitud) && pCode == "EMITIDO"

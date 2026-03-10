@@ -24,7 +24,7 @@ type CreateSolicitudRequest struct {
 type UpdateSolicitudRequest struct {
 	TipoSolicitudCodigo  string `form:"tipo_solicitud_codigo" binding:"required"`
 	AmbitoViajeCodigo    string `form:"ambito_viaje_codigo" binding:"required"`
-	TipoItinerarioCodigo string `form:"tipo_itinerario_codigo" binding:"required"`
+	TipoItinerarioCodigo string `form:"tipo_itinerario_codigo"`
 	OrigenIATA           string `form:"origen_cod" binding:"required"`
 	DestinoIATA          string `form:"destino_cod" binding:"required"`
 	FechaIda             string `form:"fecha_salida"`
@@ -33,4 +33,5 @@ type UpdateSolicitudRequest struct {
 	AerolineaSugerida    string `form:"aerolinea_sugerida"`
 	ActiveTab            string `form:"active_tab"`
 	ReturnURL            string `form:"return_url"`
+	VueltaPorConfirmar   bool   `form:"vuelta_por_confirmar"`
 }

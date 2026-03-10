@@ -198,7 +198,6 @@ func (s *CupoService) TransferirCupoDerecho(ctx context.Context, itemID string, 
 			return errors.New("el cupo no está disponible para transferir")
 		}
 
-		item.EstadoCupoDerechoCodigo = "TRANSFERIDO"
 		item.SenAsignadoID = targetUserID
 		item.EsTransferido = true
 		item.MotivoTransfer = motivo
@@ -220,11 +219,10 @@ func (s *CupoService) RevertirTransferencia(ctx context.Context, itemID string) 
 		if err != nil {
 			return err
 		}
-		if item.EstadoCupoDerechoCodigo != "TRANSFERIDO" {
+		if !item.EsTransferido {
 			return errors.New("el cupo no está en estado transferido")
 		}
 
-		item.EstadoCupoDerechoCodigo = "DISPONIBLE"
 		item.SenAsignadoID = item.SenTitularID
 		item.EsTransferido = false
 		item.MotivoTransfer = ""
