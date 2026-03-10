@@ -34,7 +34,7 @@
                 <strong>{{ .Usuario.GetNombreCompleto }}</strong>
               </p>
 
-              <form hx-post="/usuarios/{{.Usuario.ID}}/actualizar" hx-swap="none" @submit="modalOpen = false">
+              <form hx-post="/usuarios/{{.Usuario.ID}}/actualizar" hx-swap="none" @submit="modalOpen = false" autocomplete="off">
                 <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
 
                 {{ template "usuarios/components/form_fields" . }}

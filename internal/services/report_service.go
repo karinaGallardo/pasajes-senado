@@ -761,13 +761,13 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 	// Anexos (Imágenes) - Parte del Informe
 	if descargo.Oficial != nil && len(descargo.Oficial.Anexos) > 0 {
 		const (
-			pageWidth      = 190.0
-			pageHeight     = 255.0 // Conservative limit before footer
-			marginSide     = 10.0
-			imgSpacing     = 4.0
-			rowSpacing     = 10.0
-			maxRowHeight   = 90.0  // Limit to avoid huge images
-			minImageWidth  = 55.0  // Allow up to 3 columns (~60mm each)
+			pageWidth     = 190.0
+			pageHeight    = 255.0 // Conservative limit before footer
+			marginSide    = 10.0
+			imgSpacing    = 4.0
+			rowSpacing    = 10.0
+			maxRowHeight  = 90.0 // Limit to avoid huge images
+			minImageWidth = 55.0 // Allow up to 3 columns (~60mm each)
 		)
 
 		// Check initial space for title
@@ -805,16 +805,22 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 				// Estimate width if we fit to a reasonable height
 				// If we aim for ~70mm height:
 				estW := 70.0 * aspect
-				if estW > 180.0 { estW = 180.0 }
-				if estW < minImageWidth { estW = minImageWidth }
+				if estW > 180.0 {
+					estW = 180.0
+				}
+				if estW < minImageWidth {
+					estW = minImageWidth
+				}
 
-				if len(rowIndices) > 0 && (currentRowWidth + imgSpacing + estW) > pageWidth {
+				if len(rowIndices) > 0 && (currentRowWidth+imgSpacing+estW) > pageWidth {
 					break // Row is full
 				}
 
 				rowIndices = append(rowIndices, j)
 				currentRowWidth += estW
-				if len(rowIndices) > 1 { currentRowWidth += imgSpacing }
+				if len(rowIndices) > 1 {
+					currentRowWidth += imgSpacing
+				}
 			}
 
 			if len(rowIndices) == 0 {
@@ -848,7 +854,7 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 			}
 
 			// Draw the row
-			startX := marginSide + (pageWidth-(h*totalAspect + float64(len(rowIndices)-1)*imgSpacing))/2.0
+			startX := marginSide + (pageWidth-(h*totalAspect+float64(len(rowIndices)-1)*imgSpacing))/2.0
 			currX := startX
 			currY := pdf.GetY()
 			for _, idx := range rowIndices {
@@ -1500,11 +1506,18 @@ func (s *ReportService) GenerateViaticoV1(ctx context.Context, viatico *models.V
 }
 
 func (s *ReportService) drawSolicitudSegment(ctx context.Context, pdf *gofpdf.Fpdf, tr func(string) string, title string, item *models.SolicitudItem, aerolineaSugerida string) {
-	pdf.SetX(3)
-	pdf.SetFont("Arial", "B", 9)
-	pdf.CellFormat(210, 6, tr(" "+title), "B", 1, "L", false, 0, "")
+	if item == nil {
+		return
+	}
+	// Margen pequeño de 5mm para dar sensación de "borde a borde"
+	const totalWidth = 200.0
+	const startX = 3.0
 
-	if item != nil && item.GetEstado() != "PENDIENTE" {
+	pdf.SetX(startX)
+	pdf.SetFont("Arial", "B", 9)
+	pdf.CellFormat(totalWidth, 6, tr(" "+title), "B", 1, "L", false, 0, "")
+
+	if item.GetEstado() != "PENDIENTE" {
 		fecha := "-"
 		hora := "-"
 		if item.Fecha != nil {
@@ -1529,27 +1542,29 @@ func (s *ReportService) drawSolicitudSegment(ctx context.Context, pdf *gofpdf.Fp
 		rut := fmt.Sprintf("%s  >>  %s", origenStr, destStr)
 
 		// Table Header
+		pdf.SetX(startX)
 		pdf.SetFont("Arial", "B", 7)
 		pdf.SetFillColor(245, 245, 245)
 
+		// Column Widths (Total: 200)
+		w1, w2, w3, w4, w5, w6 := 35.0, 25.0, 40.0, 60.0, 30.0, 20.0
+
 		// Headers
-		pdf.CellFormat(32, 8, tr("FECHA/HORA"), "1", 0, "C", true, 0, "")
-		pdf.CellFormat(25, 8, tr("ESTADO"), "1", 0, "C", true, 0, "")
-		pdf.CellFormat(35, 8, tr("AEROLÍNEA"), "1", 0, "C", true, 0, "")
-		pdf.CellFormat(52, 8, tr("RUTA"), "1", 0, "C", true, 0, "")
-		pdf.CellFormat(30, 8, tr("FECHA VIAJE"), "1", 0, "C", true, 0, "")
-		pdf.CellFormat(18, 8, tr("HORA VIAJE"), "1", 1, "C", true, 0, "")
+		pdf.CellFormat(w1, 8, tr("FECHA/HORA REG."), "1", 0, "C", true, 0, "")
+		pdf.CellFormat(w2, 8, tr("ESTADO"), "1", 0, "C", true, 0, "")
+		pdf.CellFormat(w3, 8, tr("AEROLÍNEA"), "1", 0, "C", true, 0, "")
+		pdf.CellFormat(w4, 8, tr("RUTA"), "1", 0, "C", true, 0, "")
+		pdf.CellFormat(w5, 8, tr("FECHA VIAJE"), "1", 0, "C", true, 0, "")
+		pdf.CellFormat(w6, 8, tr("HORA"), "1", 1, "C", true, 0, "")
 
 		// Data Row
-		pdf.SetFont("Arial", "", 9)
-
-		// We don't have fechaSol/horaSol easily here without passing it, but we can simplify or pass it.
-		// Actually, let's just use what's available.
-		pdf.CellFormat(32, 8, "-", "1", 0, "C", false, 0, "")
+		pdf.SetX(startX)
+		pdf.SetFont("Arial", "", 8)
+		pdf.CellFormat(w1, 8, item.UpdatedAt.Format("02/01/2006 15:04"), "1", 0, "C", false, 0, "")
 
 		pdf.SetFont("Arial", "B", 7)
 		pdf.SetTextColor(0, 0, 128)
-		pdf.CellFormat(25, 8, tr(item.GetEstado()), "1", 0, "C", false, 0, "")
+		pdf.CellFormat(w2, 8, tr(item.GetEstado()), "1", 0, "C", false, 0, "")
 		pdf.SetTextColor(0, 0, 0)
 		pdf.SetFont("Arial", "", 7)
 
@@ -1562,15 +1577,16 @@ func (s *ReportService) drawSolicitudSegment(ctx context.Context, pdf *gofpdf.Fp
 			}
 		}
 
-		pdf.CellFormat(35, 8, tr(aerolineaNombre), "1", 0, "C", false, 0, "")
-		pdf.CellFormat(52, 8, tr(rut), "1", 0, "C", false, 0, "")
+		pdf.CellFormat(w3, 8, tr(aerolineaNombre), "1", 0, "C", false, 0, "")
+		pdf.CellFormat(w4, 8, tr(rut), "1", 0, "C", false, 0, "")
 		pdf.SetFont("Arial", "", 9)
-		pdf.CellFormat(30, 8, tr(fecha), "1", 0, "C", false, 0, "")
-		pdf.CellFormat(18, 8, hora, "1", 1, "C", false, 0, "")
+		pdf.CellFormat(w5, 8, tr(fecha), "1", 0, "C", false, 0, "")
+		pdf.CellFormat(w6, 8, hora, "1", 1, "C", false, 0, "")
 
 	} else {
+		pdf.SetX(startX)
 		pdf.SetFont("Arial", "I", 9)
-		pdf.CellFormat(190, 10, tr(" TRAMO NO SOLICITADO"), "", 1, "C", false, 0, "")
+		pdf.CellFormat(totalWidth, 10, tr(" TRAMO NO SOLICITADO"), "", 1, "C", false, 0, "")
 	}
 	pdf.Ln(2)
 }

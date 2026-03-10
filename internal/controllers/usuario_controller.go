@@ -147,7 +147,7 @@ func (ctrl *UsuarioController) Update(c *gin.Context) {
 
 	if c.GetHeader("HX-Request") == "true" {
 		referer := c.Request.Header.Get("Referer")
-		if strings.Contains(referer, "/perfil") {
+		if strings.Contains(referer, "/perfil") || strings.Contains(referer, "/cupos/derecho") {
 			c.Header("HX-Refresh", "true")
 		} else {
 			c.Header("HX-Trigger", "reloadTable")

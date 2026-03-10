@@ -37,11 +37,11 @@ func ParseDateTime(val string) (*time.Time, error) {
 		return nil, nil
 	}
 	// Formato T (usado en inputs datetime-local o modales específicos)
-	if t, err := time.Parse("2006-01-02T15:04", val); err == nil {
+	if t, err := time.ParseInLocation("2006-01-02T15:04", val, time.Local); err == nil {
 		return &t, nil
 	}
 	// Formato espacio (default de Flatpickr)
-	if t, err := time.Parse("2006-01-02 15:04", val); err == nil {
+	if t, err := time.ParseInLocation("2006-01-02 15:04", val, time.Local); err == nil {
 		return &t, nil
 	}
 	return nil, fmt.Errorf("formato de fecha y hora inválido: %s", val)

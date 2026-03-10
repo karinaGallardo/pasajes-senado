@@ -20,6 +20,12 @@ var MongoChat *mongo.Database
 var MongoRRHH *mongo.Database
 
 func ConnectDB() {
+	// Forzar zona horaria America/La_Paz como default para todo el proceso Go
+	loc, err := time.LoadLocation("America/La_Paz")
+	if err == nil {
+		time.Local = loc
+	}
+
 	viper.SetConfigFile(".env")
 	viper.AutomaticEnv()
 

@@ -41,6 +41,7 @@
       <div
         @click="open = true; $nextTick(function() { $refs.searchInput.focus() })"
         x-show="!open"
+        x-cloak
         class="w-full rounded-md border border-neutral-300 bg-white py-2 px-3 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary sm:text-sm cursor-pointer flex items-center justify-between min-h-[38px]">
         <span x-text="label"></span>
         <i class="ph ph-caret-up-down text-neutral-400"></i>
@@ -48,9 +49,12 @@
 
       <input
         x-ref="searchInput"
+        id="origen_search_input"
         type="text"
         x-model="search"
         x-show="open"
+        x-cloak
+        autocomplete="off"
         @click.away="open = false"
         @keydown.escape="open = false"
         @keydown.enter.prevent="if (filteredItems.length > 0) select(filteredItems[0])"
@@ -100,6 +104,7 @@
       <div
         @click="if (!disabled) { open = true; $nextTick(function() { $refs.searchInput.focus() }) }"
         x-show="!open"
+        x-cloak
         class="w-full rounded-md border border-neutral-300 bg-white py-2.5 pl-3 pr-10 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary sm:text-sm cursor-pointer flex items-center justify-between min-h-[38px]"
         :class="{ 'bg-neutral-100 cursor-not-allowed text-neutral-500': disabled }">
         <span x-text="label"></span>
@@ -108,9 +113,12 @@
 
       <input
         x-ref="searchInput"
+        id="encargado_search_input"
         type="text"
         x-model="search"
         x-show="open"
+        x-cloak
+        autocomplete="off"
         @click.away="open = false"
         @keydown.escape="open = false"
         placeholder="Buscar funcionario..."
@@ -147,6 +155,7 @@
       name="email"
       id="email"
       value="{{ .Usuario.Email }}"
+      autocomplete="off"
       class="mt-1 block w-full py-2.5 px-3 border border-neutral-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
       placeholder="correo@ejemplo.com" />
   </div>
@@ -157,6 +166,7 @@
       name="phone"
       id="phone"
       value="{{ .Usuario.Phone }}"
+      autocomplete="off"
       class="mt-1 block w-full py-2.5 px-3 border border-neutral-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
       placeholder="70000000" />
   </div>

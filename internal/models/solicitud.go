@@ -466,3 +466,29 @@ func (s Solicitud) GetDescargoMissingItems() string {
 
 	return html
 }
+
+// GetChanges compares current solicitud with old state and returns dirty fields map for GORM Updates
+func (s *Solicitud) GetChanges(old Solicitud) map[string]any {
+	changes := make(map[string]any)
+
+	if s.TipoSolicitudCodigo != old.TipoSolicitudCodigo {
+		changes["tipo_solicitud_codigo"] = s.TipoSolicitudCodigo
+	}
+	if s.AmbitoViajeCodigo != old.AmbitoViajeCodigo {
+		changes["ambito_viaje_codigo"] = s.AmbitoViajeCodigo
+	}
+	if s.AerolineaSugerida != old.AerolineaSugerida {
+		changes["aerolinea_sugerida"] = s.AerolineaSugerida
+	}
+	if s.Motivo != old.Motivo {
+		changes["motivo"] = s.Motivo
+	}
+
+	// Comparar estado del padre
+	if (s.EstadoSolicitudCodigo == nil) != (old.EstadoSolicitudCodigo == nil) ||
+		(s.EstadoSolicitudCodigo != nil && old.EstadoSolicitudCodigo != nil && *s.EstadoSolicitudCodigo != *old.EstadoSolicitudCodigo) {
+		changes["estado_solicitud_codigo"] = s.EstadoSolicitudCodigo
+	}
+
+	return changes
+}

@@ -83,3 +83,32 @@ func (t SolicitudItem) GetPasajeReprogramado() *Pasaje {
 	}
 	return latest
 }
+
+// GetChanges compares current item with old state and returns dirty fields map for GORM Updates
+func (t *SolicitudItem) GetChanges(old SolicitudItem) map[string]any {
+	changes := make(map[string]any)
+
+	if t.OrigenIATA != old.OrigenIATA {
+		changes["origen_iata"] = t.OrigenIATA
+	}
+	if t.DestinoIATA != old.DestinoIATA {
+		changes["destino_iata"] = t.DestinoIATA
+	}
+	if t.Hora != old.Hora {
+		changes["hora"] = t.Hora
+	}
+
+	// Comparar estados
+	if (t.EstadoCodigo == nil) != (old.EstadoCodigo == nil) ||
+		(t.EstadoCodigo != nil && old.EstadoCodigo != nil && *t.EstadoCodigo != *old.EstadoCodigo) {
+		changes["estado_item_codigo"] = t.EstadoCodigo
+	}
+
+	// Comparar fechas usando Segundos Unix para evitar líos de precisión
+	if (t.Fecha == nil) != (old.Fecha == nil) ||
+		(t.Fecha != nil && old.Fecha != nil && t.Fecha.Unix() != old.Fecha.Unix()) {
+		changes["fecha"] = t.Fecha
+	}
+
+	return changes
+}

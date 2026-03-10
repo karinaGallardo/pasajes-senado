@@ -747,21 +747,51 @@ func (s *SolicitudService) Reject(ctx context.Context, id string) error {
 
 func (s *SolicitudService) Update(ctx context.Context, solicitud *models.Solicitud) error {
 	return s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
-		// Update parent and its immediate fields
-		if err := tx.Save(solicitud).Error; err != nil {
+		// 1. Obtener el estado ACTUAL de la DB
+		var dbSol models.Solicitud
+		if err := tx.Preload("Items").First(&dbSol, "id = ?", solicitud.ID).Error; err != nil {
 			return err
 		}
 
-		// Update items explicitly to ensure date/time fields are persisted
+		dbItems := make(map[string]models.SolicitudItem)
+		for _, it := range dbSol.Items {
+			dbItems[it.ID] = it
+		}
+
+		// 2. Procesar tramos
 		for i := range solicitud.Items {
-			if err := tx.Save(&solicitud.Items[i]).Error; err != nil {
-				return err
+			item := &solicitud.Items[i]
+			old, exists := dbItems[item.ID]
+
+			if !exists {
+				fmt.Printf("DEBUG: Tramo nuevo detectado ID=%s\n", item.ID)
+				if err := tx.Save(item).Error; err != nil { return err }
+				continue
+			}
+
+			changes := item.GetChanges(old)
+			if len(changes) > 0 {
+				fmt.Printf("DEBUG: Cambios en Tramo %s (%s): %v\n", item.ID, item.Tipo, changes)
+				if err := tx.Model(item).Updates(changes).Error; err != nil {
+					return err
+				}
 			}
 		}
 
+		// 3. Actualizar Solicitud (Padre)
 		solicitud.UpdateStatusBasedOnItems()
-		// Save again to persist status change if items were updated
-		return tx.Save(solicitud).Error
+		parentChanges := solicitud.GetChanges(dbSol)
+
+		if len(parentChanges) > 0 {
+			fmt.Printf("DEBUG: Cambios en Solicitud %s: %v\n", solicitud.Codigo, parentChanges)
+			if err := tx.Model(solicitud).Updates(parentChanges).Error; err != nil {
+				return err
+			}
+		} else {
+			fmt.Printf("DEBUG: No se detectaron cambios en Solicitud %s\n", solicitud.Codigo)
+		}
+
+		return nil
 	})
 }
 
