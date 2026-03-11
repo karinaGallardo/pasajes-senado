@@ -72,26 +72,24 @@ func (ctrl *DescargoDerechoController) Create(c *gin.Context) {
 
 	for _, item := range solicitud.Items {
 		tipo := string(item.Tipo)
-		orig := item.GetPasajeOriginal()
-		if orig != nil {
-			routes := utils.SplitRoute(orig.Ruta)
-			for _, r := range routes {
-				pasajesOriginales[tipo] = append(pasajesOriginales[tipo], ConnectionView{
-					Ruta:   r,
-					Fecha:  orig.FechaVuelo.Format("2006-01-02"),
-					Boleto: orig.NumeroBoleto,
-				})
+		for _, p := range item.Pasajes {
+			st := p.GetEstadoCodigo()
+			if st != "EMITIDO" {
+				continue
 			}
-		}
 
-		repro := item.GetPasajeReprogramado()
-		if repro != nil {
-			routes := utils.SplitRoute(repro.Ruta)
+			// Decide if it's original or repro based on history
+			targetMap := pasajesOriginales
+			if p.PasajeAnteriorID != nil {
+				targetMap = pasajesReprogramados
+			}
+
+			routes := utils.SplitRoute(p.Ruta)
 			for _, r := range routes {
-				pasajesReprogramados[tipo] = append(pasajesReprogramados[tipo], ConnectionView{
+				targetMap[tipo] = append(targetMap[tipo], ConnectionView{
 					Ruta:   r,
-					Fecha:  repro.FechaVuelo.Format("2006-01-02"),
-					Boleto: repro.NumeroBoleto,
+					Fecha:  p.FechaVuelo.Format("2006-01-02"),
+					Boleto: p.NumeroBoleto,
 				})
 			}
 		}
@@ -176,9 +174,57 @@ func (ctrl *DescargoDerechoController) Show(c *gin.Context) {
 		return
 	}
 
+	// Dynamic Sync for Show View (similar to Edit)
+	// We want to show even items that haven't been formally added yet but are EMITIDO
+	itemsByType := make(map[string][]models.DetalleItinerarioDescargo)
+	existingKeys := make(map[string]bool)
+	detalles := descargo.DetallesItinerario
+
+	for _, item := range detalles {
+		itemsByType[string(item.Tipo)] = append(itemsByType[string(item.Tipo)], item)
+		key := fmt.Sprintf("%s_%s_%s", item.Tipo, item.Ruta, item.Boleto)
+		existingKeys[key] = true
+	}
+
+	if descargo.Solicitud != nil {
+		for _, sItem := range descargo.Solicitud.Items {
+			tipoBase := string(sItem.Tipo)
+			for _, p := range sItem.Pasajes {
+				if p.GetEstadoCodigo() != "EMITIDO" {
+					continue
+				}
+
+				tipoTarget := tipoBase + "_ORIGINAL"
+				if p.PasajeAnteriorID != nil {
+					tipoTarget = tipoBase + "_REPRO"
+				}
+
+				routes := utils.SplitRoute(p.Ruta)
+				for _, r := range routes {
+					key := fmt.Sprintf("%s_%s_%s", tipoTarget, r, p.NumeroBoleto)
+					if !existingKeys[key] {
+						tVuelo := p.FechaVuelo
+						newItem := models.DetalleItinerarioDescargo{
+							Tipo:         models.TipoDetalleItinerario(tipoTarget),
+							Ruta:         r,
+							Fecha:        &tVuelo,
+							Boleto:       p.NumeroBoleto,
+							EsDevolucion: false,
+						}
+						// Append to both the general list and the map
+						detalles = append(detalles, newItem)
+						itemsByType[tipoTarget] = append(itemsByType[tipoTarget], newItem)
+						existingKeys[key] = true
+					}
+				}
+			}
+		}
+	}
+
 	utils.Render(c, "descargo/derecho/show", gin.H{
 		"Title":    "Detalle de Descargo (Derecho)",
 		"Descargo": descargo,
+		"Detalles": detalles,
 	})
 }
 
@@ -196,8 +242,47 @@ func (ctrl *DescargoDerechoController) Edit(c *gin.Context) {
 	}
 
 	itemsByType := make(map[string][]models.DetalleItinerarioDescargo)
+	existingKeys := make(map[string]bool)
 	for _, item := range descargo.DetallesItinerario {
 		itemsByType[string(item.Tipo)] = append(itemsByType[string(item.Tipo)], item)
+		// Unique key to avoid duplicates
+		key := fmt.Sprintf("%s_%s_%s", item.Tipo, item.Ruta, item.Boleto)
+		existingKeys[key] = true
+	}
+
+	// Dynamic Sync: Check if new pasajes were issued after descargo creation
+	if descargo.Solicitud != nil {
+		for _, sItem := range descargo.Solicitud.Items {
+			tipoBase := string(sItem.Tipo) // IDA or VUELTA
+			for _, p := range sItem.Pasajes {
+				st := p.GetEstadoCodigo()
+				if st != "EMITIDO" {
+					continue
+				}
+
+				tipoTarget := tipoBase + "_ORIGINAL"
+				if p.PasajeAnteriorID != nil {
+					tipoTarget = tipoBase + "_REPRO"
+				}
+
+				routes := utils.SplitRoute(p.Ruta)
+				for _, r := range routes {
+					key := fmt.Sprintf("%s_%s_%s", tipoTarget, r, p.NumeroBoleto)
+					if !existingKeys[key] {
+						tVuelo := p.FechaVuelo
+						newItem := models.DetalleItinerarioDescargo{
+							Tipo:         models.TipoDetalleItinerario(tipoTarget),
+							Ruta:         r,
+							Fecha:        &tVuelo,
+							Boleto:       p.NumeroBoleto,
+							EsDevolucion: false,
+						}
+						itemsByType[tipoTarget] = append(itemsByType[tipoTarget], newItem)
+						existingKeys[key] = true
+					}
+				}
+			}
+		}
 	}
 
 	destinos, _ := ctrl.destinoService.GetAll(c.Request.Context())

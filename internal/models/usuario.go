@@ -162,12 +162,8 @@ func (u *Usuario) CanMarkUsado(s Solicitud) bool {
 }
 
 func (u *Usuario) CanEditSolicitud(s Solicitud) bool {
-	// 1. Admins and Responsables can correct mistakes at any time
-	if u.IsAdminOrResponsable() {
-		return true
-	}
-
-	// 2. State-based restrictions for regular users and assistants
+	// 0. State-based restrictions: Once approved or beyond, NO ONE should edit directly.
+	// They must revert approval first to return to an editable state (SOLICITADO/PARCIAL).
 	st := s.GetEstado()
 	isEditableState := (st == "SOLICITADO" || st == "PENDIENTE" || st == "RECHAZADO" || st == "PARCIALMENTE_APROBADO")
 
@@ -175,7 +171,12 @@ func (u *Usuario) CanEditSolicitud(s Solicitud) bool {
 		return false
 	}
 
-	// 3. Ownership / Assistant Check
+	// 1. Admins and Responsables can correct mistakes in editable states
+	if u.IsAdminOrResponsable() {
+		return true
+	}
+
+	// 2. Ownership / Assistant Check for regular users and assistants
 	// Owner of the solicitation
 	if u.ID == s.UsuarioID {
 		return true

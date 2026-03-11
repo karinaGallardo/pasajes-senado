@@ -361,6 +361,31 @@ func (s Solicitud) CanApprove(user *Usuario) bool {
 	estado := s.GetEstado()
 	return estado == "SOLICITADO" || estado == "PARCIALMENTE_APROBADO"
 }
+
+func (s Solicitud) HasEmittedPasaje() bool {
+	for _, item := range s.Items {
+		for _, p := range item.Pasajes {
+			if p.GetEstadoCodigo() == "EMITIDO" || p.GetEstadoCodigo() == "USADO" {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func (s Solicitud) CanRevertApproval(user *Usuario) bool {
+	if !user.IsAdminOrResponsable() {
+		return false
+	}
+	st := s.GetEstado()
+	canRevertState := st == "APROBADO" || st == "PARCIALMENTE_APROBADO" || st == "EMITIDO"
+	return canRevertState && !s.HasEmittedPasaje()
+}
+
+func (s Solicitud) CanMakeDescargo() bool {
+	return s.HasEmittedPasaje()
+}
+
 func (s Solicitud) HasCompleteDescargo() bool {
 	if s.Descargo == nil {
 		return false

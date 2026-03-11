@@ -680,10 +680,19 @@ func (s *SolicitudService) Finalize(ctx context.Context, id string) error {
 			return err
 		}
 
-		// Mark all items as FINALIZADO
+		// Mark all items as FINALIZADO and their pasajes as USADO
 		for _, item := range solicitud.Items {
 			if err := tx.Model(&item).Update("estado_codigo", "FINALIZADO").Error; err != nil {
 				return err
+			}
+
+			// Mark only EMITIDO pasajes as USADO
+			for _, p := range item.Pasajes {
+				if p.GetEstadoCodigo() == "EMITIDO" {
+					if err := tx.Model(&p).Update("estado_pasaje_codigo", "USADO").Error; err != nil {
+						return err
+					}
+				}
 			}
 		}
 
@@ -1124,10 +1133,19 @@ func (s *SolicitudService) RevertFinalize(ctx context.Context, id string) error 
 			return err
 		}
 
-		// Revert items to EMITIDO
+		// Revert items to EMITIDO and their pasajes back to EMITIDO
 		for _, item := range solicitud.Items {
 			if err := tx.Model(&item).Update("estado_codigo", "EMITIDO").Error; err != nil {
 				return err
+			}
+
+			// Revert USADO pasajes back to EMITIDO
+			for _, p := range item.Pasajes {
+				if p.GetEstadoCodigo() == "USADO" {
+					if err := tx.Model(&p).Update("estado_pasaje_codigo", "EMITIDO").Error; err != nil {
+						return err
+					}
+				}
 			}
 		}
 

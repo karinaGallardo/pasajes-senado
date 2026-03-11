@@ -464,25 +464,12 @@ func (ctrl *SolicitudDerechoController) Show(c *gin.Context) {
 		return
 	}
 
-	hasEmitted := false
-	for _, item := range solicitud.Items {
-		for _, p := range item.Pasajes {
-			if p.EstadoPasajeCodigo != nil && *p.EstadoPasajeCodigo == "EMITIDO" {
-				hasEmitted = true
-				break
-			}
-		}
-		if hasEmitted {
-			break
-		}
-	}
-
 	perms := SolicitudPermissions{
 		CanEdit:           authUser.CanEditSolicitud(*solicitud),
 		CanApproveReject:  authUser.CanApproveReject(),
-		CanRevertApproval: authUser.IsAdminOrResponsable() && (st == "APROBADO" || st == "PARCIALMENTE_APROBADO" || st == "EMITIDO") && !hasEmitted,
+		CanRevertApproval: solicitud.CanRevertApproval(authUser),
 		CanAssignPasaje:   authUser.IsAdminOrResponsable(),
-		CanMakeDescargo:   hasEmitted,
+		CanMakeDescargo:   solicitud.CanMakeDescargo(),
 		IsAdminOrResp:     authUser.IsAdminOrResponsable(),
 	}
 

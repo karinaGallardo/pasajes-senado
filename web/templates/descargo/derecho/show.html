@@ -145,7 +145,7 @@
           <i class="ph ph-airplane text-neutral-400 text-xl"></i>
         </div>
 
-        {{ if .Descargo.DetallesItinerario }}
+        {{ if .Detalles }}
         <div class="overflow-x-auto">
           <table class="min-w-full divide-y divide-neutral-200 border-separate border-spacing-0">
             <thead class="bg-neutral-50/50">
@@ -157,9 +157,9 @@
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-neutral-100">
-              {{ range .Descargo.DetallesItinerario }}
+              {{ range .Detalles }}
               {{ if not .EsDevolucion }}
-              <tr class="group hover:bg-neutral-50/80 transition-all duration-200">
+              <tr class="group hover:bg-neutral-50/80 transition-all duration-200 {{ if not .ID }}bg-warning-50/30{{ end }}">
                 <!-- Tipo -->
                 <td class="px-6 py-4 whitespace-nowrap align-top">
                   <div class="flex items-center">
@@ -171,6 +171,11 @@
                       {{ if eq .Tipo `VUELTA_ORIGINAL` }}Vuelta Original{{ else }}
                       {{ .Tipo }}{{ end }}{{ end }}
                     </span>
+                    {{ if not .ID }}
+                    <span class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-black bg-warning-100 text-warning-700 border border-warning-200 uppercase tracking-tighter">
+                      Pendiente Registro
+                    </span>
+                    {{ end }}
                   </div>
                 </td>
 
@@ -239,7 +244,7 @@
 
       <!-- Pasajes Devueltos -->
       {{ $hasReturns := false }}
-      {{ range .Descargo.DetallesItinerario }}{{ if .EsDevolucion }}{{ $hasReturns = true }}{{ end }}{{ end }}
+      {{ range .Detalles }}{{ if .EsDevolucion }}{{ $hasReturns = true }}{{ end }}{{ end }}
 
       {{ if $hasReturns }}
       <div class="bg-white shadow rounded-lg overflow-hidden border border-danger-200">
@@ -258,7 +263,7 @@
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-danger-100">
-              {{ range .Descargo.DetallesItinerario }}
+              {{ range .Detalles }}
               {{ if .EsDevolucion }}
               <tr class="hover:bg-danger-50/30 transition-colors">
                 <td class="px-4 py-3 whitespace-nowrap">
