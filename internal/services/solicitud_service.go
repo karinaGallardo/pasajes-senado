@@ -136,48 +136,40 @@ func (s *SolicitudService) CreateDerecho(ctx context.Context, req dtos.CreateSol
 
 	// Build Items
 	var items []models.SolicitudItem
-	itinCode := tipoItin.Codigo
 
-	// Common: Tramo 1 (IDA or VUELTA single)
-	switch itinCode {
-	case "SOLO_IDA", "IDA_VUELTA":
-		items = append(items, models.SolicitudItem{
-			Tipo:         models.TipoSolicitudItemIda,
-			OrigenIATA:   req.OrigenIATA,
-			DestinoIATA:  req.DestinoIATA,
-			Fecha:        fechaIda,
-			Hora:         s.formatTime(fechaIda),
-			EstadoCodigo: utils.Ptr("SOLICITADO"),
-		})
-	case "SOLO_VUELTA":
-		// Assumption: User input for Origin/Dest matches the leg (e.g. Origin=MIA, Dest=VVI for Return)
-		items = append(items, models.SolicitudItem{
-			Tipo:         models.TipoSolicitudItemVuelta,
-			OrigenIATA:   req.OrigenIATA,
-			DestinoIATA:  req.DestinoIATA,
-			Fecha:        fechaIda, // Single date input usually
-			Hora:         s.formatTime(fechaIda),
-			EstadoCodigo: utils.Ptr("SOLICITADO"),
-		})
+	// Sempre creamos los dos tramos (IDA y VUELTA)
+	// Tramo 1: IDA
+	stIda := "SOLICITADO"
+	if req.IdaPorConfirmar {
+		stIda = "PENDIENTE"
+		fechaIda = nil // Forzamos nil si es por confirmar
 	}
+	items = append(items, models.SolicitudItem{
+		Tipo:         models.TipoSolicitudItemIda,
+		OrigenIATA:   req.OrigenIATA,
+		DestinoIATA:  req.DestinoIATA,
+		Fecha:        fechaIda,
+		Hora:         s.formatTime(fechaIda),
+		EstadoCodigo: utils.Ptr(stIda),
+	})
 
-	// Tramo 2: VUELTA (if Round Trip)
-	if itinCode == "IDA_VUELTA" {
-		st := "SOLICITADO"
-		if fechaVuelta == nil {
-			st = "PENDIENTE"
-		}
-		items = append(items, models.SolicitudItem{
-			Tipo:         models.TipoSolicitudItemVuelta,
-			OrigenIATA:   req.DestinoIATA, // Swap
-			DestinoIATA:  req.OrigenIATA,  // Swap
-			Fecha:        fechaVuelta,
-			Hora:         s.formatTime(fechaVuelta),
-			EstadoCodigo: utils.Ptr(st),
-		})
+	// Tramo 2: VUELTA
+	stVuelta := "SOLICITADO"
+	if req.VueltaPorConfirmar {
+		stVuelta = "PENDIENTE"
+		fechaVuelta = nil
 	}
+	items = append(items, models.SolicitudItem{
+		Tipo:         models.TipoSolicitudItemVuelta,
+		OrigenIATA:   req.DestinoIATA, // Intercambiado
+		DestinoIATA:  req.OrigenIATA,  // Intercambiado
+		Fecha:        fechaVuelta,
+		Hora:         s.formatTime(fechaVuelta),
+		EstadoCodigo: utils.Ptr(stVuelta),
+	})
 
 	solicitud.Items = items
+	solicitud.TipoItinerarioCodigo = "IDA_VUELTA" // Forzamos IDA_VUELTA como base
 
 	err = s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
 		itemRepoTx := s.itemRepo.WithTx(tx)
@@ -690,7 +682,7 @@ func (s *SolicitudService) Finalize(ctx context.Context, id string) error {
 
 		// Mark all items as FINALIZADO
 		for _, item := range solicitud.Items {
-			if err := tx.Model(&item).Update("estado_item_codigo", "FINALIZADO").Error; err != nil {
+			if err := tx.Model(&item).Update("estado_codigo", "FINALIZADO").Error; err != nil {
 				return err
 			}
 		}
@@ -765,7 +757,9 @@ func (s *SolicitudService) Update(ctx context.Context, solicitud *models.Solicit
 
 			if !exists {
 				fmt.Printf("DEBUG: Tramo nuevo detectado ID=%s\n", item.ID)
-				if err := tx.Save(item).Error; err != nil { return err }
+				if err := tx.Save(item).Error; err != nil {
+					return err
+				}
 				continue
 			}
 
@@ -1132,7 +1126,7 @@ func (s *SolicitudService) RevertFinalize(ctx context.Context, id string) error 
 
 		// Revert items to EMITIDO
 		for _, item := range solicitud.Items {
-			if err := tx.Model(&item).Update("estado_item_codigo", "EMITIDO").Error; err != nil {
+			if err := tx.Model(&item).Update("estado_codigo", "EMITIDO").Error; err != nil {
 				return err
 			}
 		}

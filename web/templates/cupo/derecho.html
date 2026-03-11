@@ -124,14 +124,17 @@
                       </span>
                       {{ end }}
 
-                      <!-- Mini tramos status -->
                       <div class="flex items-center gap-2 px-1">
-                        {{ $ida := $sol.GetItemIda }}{{ if $ida }}
+                        {{ $ida := $sol.GetItemIda }}
+                        {{ if $ida }}
                         <i
                           class="{{ if $ida.Estado }}{{ $ida.Estado.Icon }}{{ else }}ph ph-airplane{{ end }} text-[11px] {{ if $ida.Estado }}status-item-text-{{ $ida.Estado.Codigo }}{{ else }}text-neutral-400{{ end }}"
                           title="Ida: {{ $ida.GetEstado }}"></i>
-                        {{ end }} {{ $vuelta := $sol.GetItemVuelta }}{{ if $vuelta }}
-                        <div class="w-px h-2.5 bg-neutral-200"></div>
+                        {{ end }}
+
+                        {{ $vuelta := $sol.GetItemVuelta }}
+                        {{ if $vuelta }}
+                          {{ if $ida }}<div class="w-px h-2.5 bg-neutral-200"></div>{{ end }}
                         <i
                           class="{{ if $vuelta.Estado }}{{ $vuelta.Estado.Icon }}{{ else }}ph ph-airplane ph-flip-horizontal{{ end }} text-[11px] {{ if $vuelta.Estado }}status-item-text-{{ $vuelta.Estado.Codigo }}{{ else }}text-neutral-400{{ end }}"
                           title="Vuelta: {{ $vuelta.GetEstado }}"></i>

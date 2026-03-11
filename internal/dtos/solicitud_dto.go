@@ -17,8 +17,10 @@ type CreateSolicitudRequest struct {
 	AerolineaSugerida string `form:"aerolinea"`
 	CupoDerechoItemID string `form:"cupo_derecho_item_id"`
 	ActiveTab         string `form:"active_tab"`
-	Autorizacion      string `form:"autorizacion"`
-	ReturnURL         string `form:"return_url"`
+	Autorizacion        string `form:"autorizacion"`
+	ReturnURL           string `form:"return_url"`
+	IdaPorConfirmar     bool   `form:"ida_por_confirmar"`
+	VueltaPorConfirmar  bool   `form:"vuelta_por_confirmar"`
 }
 
 type UpdateSolicitudRequest struct {
@@ -33,5 +35,6 @@ type UpdateSolicitudRequest struct {
 	AerolineaSugerida    string `form:"aerolinea_sugerida"`
 	ActiveTab            string `form:"active_tab"`
 	ReturnURL            string `form:"return_url"`
+	IdaPorConfirmar      bool   `form:"ida_por_confirmar"`
 	VueltaPorConfirmar   bool   `form:"vuelta_por_confirmar"`
 }

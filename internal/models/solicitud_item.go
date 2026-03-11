@@ -101,7 +101,7 @@ func (t *SolicitudItem) GetChanges(old SolicitudItem) map[string]any {
 	// Comparar estados
 	if (t.EstadoCodigo == nil) != (old.EstadoCodigo == nil) ||
 		(t.EstadoCodigo != nil && old.EstadoCodigo != nil && *t.EstadoCodigo != *old.EstadoCodigo) {
-		changes["estado_item_codigo"] = t.EstadoCodigo
+		changes["estado_codigo"] = t.EstadoCodigo
 	}
 
 	// Comparar fechas usando Segundos Unix para evitar líos de precisión

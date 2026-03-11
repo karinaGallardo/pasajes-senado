@@ -241,10 +241,14 @@ func (ctrl *SolicitudDerechoController) Update(c *gin.Context) {
 		return
 	}
 
-	fechaIda, err := utils.ParseDateTime(req.FechaIda)
-	if err != nil {
-		c.String(http.StatusBadRequest, "Formato fecha salida inválido")
-		return
+	var fechaIda *time.Time
+	var err error
+	if req.FechaIda != "" && !req.IdaPorConfirmar {
+		fechaIda, err = utils.ParseDateTime(req.FechaIda)
+		if err != nil {
+			c.String(http.StatusBadRequest, "Formato fecha salida inválido")
+			return
+		}
 	}
 
 	var fechaVuelta *time.Time
@@ -286,26 +290,23 @@ func (ctrl *SolicitudDerechoController) Update(c *gin.Context) {
 
 		orig, _ := ctrl.destinoService.GetByIATA(c.Request.Context(), req.OrigenIATA)
 		dest, _ := ctrl.destinoService.GetByIATA(c.Request.Context(), req.DestinoIATA)
-
-		// Si es Derecho y se proporciona fecha de vuelta o se marca por confirmar, y falta el tramo, lo agregamos
-		hasVueltaDate := req.FechaVuelta != ""
-		if (hasVueltaDate || req.VueltaPorConfirmar) && solicitud.GetItemVuelta() == nil {
-			st := "SOLICITADO"
-			if req.VueltaPorConfirmar {
-				st = "PENDIENTE"
-			}
-			var horaVuelta string
-			if hasVueltaDate && len(req.FechaVuelta) >= 5 {
-				horaVuelta = req.FechaVuelta[len(req.FechaVuelta)-5:]
-			}
+		// Forzamos que existan ambos tramos para DERECHO
+		if solicitud.GetItemIda() == nil {
+			solicitud.Items = append(solicitud.Items, models.SolicitudItem{
+				SolicitudID:  solicitud.ID,
+				Tipo:         models.TipoSolicitudItemIda,
+				OrigenIATA:   req.OrigenIATA,
+				DestinoIATA:  req.DestinoIATA,
+				EstadoCodigo: utils.Ptr("PENDIENTE"),
+			})
+		}
+		if solicitud.GetItemVuelta() == nil {
 			solicitud.Items = append(solicitud.Items, models.SolicitudItem{
 				SolicitudID:  solicitud.ID,
 				Tipo:         models.TipoSolicitudItemVuelta,
 				OrigenIATA:   req.DestinoIATA,
 				DestinoIATA:  req.OrigenIATA,
-				Fecha:        fechaVuelta,
-				Hora:         horaVuelta,
-				EstadoCodigo: utils.Ptr(st),
+				EstadoCodigo: utils.Ptr("PENDIENTE"),
 			})
 		}
 
@@ -322,29 +323,28 @@ func (ctrl *SolicitudDerechoController) Update(c *gin.Context) {
 				continue
 			}
 
-			switch it.Tipo {
-			case models.TipoSolicitudItemIda:
-				if req.FechaIda != "" {
+			if it.Tipo == models.TipoSolicitudItemIda {
+				it.OrigenIATA = req.OrigenIATA
+				it.DestinoIATA = req.DestinoIATA
+				if req.IdaPorConfirmar {
+					it.EstadoCodigo = utils.Ptr("PENDIENTE")
+					it.Fecha = nil
+					it.Hora = ""
+				} else {
+					it.EstadoCodigo = utils.Ptr("SOLICITADO")
 					it.Fecha = fechaIda
 					if fechaIda != nil {
 						it.Hora = fechaIda.Format("15:04")
 					}
 				}
-				if orig != nil {
-					it.OrigenIATA = orig.IATA
-					it.Origen = orig
-				}
-				if dest != nil {
-					it.DestinoIATA = dest.IATA
-					it.Destino = dest
-				}
-
-			case models.TipoSolicitudItemVuelta:
+			} else if it.Tipo == models.TipoSolicitudItemVuelta {
+				it.OrigenIATA = req.DestinoIATA
+				it.DestinoIATA = req.OrigenIATA
 				if req.VueltaPorConfirmar {
 					it.EstadoCodigo = utils.Ptr("PENDIENTE")
 					it.Fecha = nil
 					it.Hora = ""
-				} else if req.FechaVuelta != "" {
+				} else {
 					it.EstadoCodigo = utils.Ptr("SOLICITADO")
 					it.Fecha = fechaVuelta
 					if fechaVuelta != nil {
