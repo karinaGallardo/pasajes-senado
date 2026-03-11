@@ -20,16 +20,13 @@
         {{ $vuelta := .Solicitud.GetItemVuelta }}
         {{ $stIda := `` }}{{ if $ida }}{{ $stIda = $ida.GetEstado }}{{ end }}
         {{ $stVuelta := `` }}{{ if $vuelta }}{{ $stVuelta = $vuelta.GetEstado }}{{ end }}
-        {{ $canEditIda := true }}{{ if .AuthUser.IsAdminOrResponsable }}{{ $canEditIda = true }}{{ else }}{{ $canEditIda = or (eq $stIda `PENDIENTE`) (eq $stIda `SOLICITADO`) (eq $stIda `RECHAZADO`) }}{{ end }}
-        {{ $canEditVuelta := true }}{{ if .AuthUser.IsAdminOrResponsable }}{{ $canEditVuelta = true }}{{ else }}{{ $canEditVuelta = or (eq $stVuelta ``) (eq $stVuelta `PENDIENTE`) (eq $stVuelta `SOLICITADO`) (eq $stVuelta `RECHAZADO`) }}{{ end }}
 
         fechaIda: '{{ if .Solicitud.GetFechaIda }}{{ .Solicitud.GetFechaIda.Format `2006-01-02 15:04` }}{{ end }}',
         fechaVuelta: '{{ if .Solicitud.GetFechaVuelta }}{{ .Solicitud.GetFechaVuelta.Format `2006-01-02 15:04` }}{{ end }}',
         isSubmitting: false,
         isEdit: true,
-        canEditIda: {{ $canEditIda }},
-        canEditVuelta: {{ $canEditVuelta }},
-        canEditVuelta: {{ $canEditVuelta }},
+        canEditIda: {{ .CanEditIda }},
+        canEditVuelta: {{ .CanEditVuelta }},
         idaProgramada: {{ if and $ida (eq $ida.GetEstado `PENDIENTE`) }}false{{ else }}true{{ end }},
         vueltaProgramada: {{ if and $vuelta (eq $vuelta.GetEstado `PENDIENTE`) }}false{{ else }}true{{ end }},
         tipoItinerario: '{{ .Solicitud.TipoItinerarioCodigo }}',
@@ -236,10 +233,13 @@
                               <i class="ph ph-airplane text-lg transform rotate-45"></i>
                             </div>
                             <div>
-                              <div class="text-sm font-black text-neutral-800 tracking-tight">
-                                {{ .Origen.IATA }}
-                                <i class="ph ph-arrow-right text-[10px] mx-1 text-neutral-400"></i>
-                                {{ .Destino.IATA }}
+                              <div class="flex items-center gap-2">
+                                <div class="text-sm font-black text-neutral-800 tracking-tight">
+                                  {{ .Origen.IATA }}
+                                  <i class="ph ph-arrow-right text-[10px] mx-1 text-neutral-400"></i>
+                                  {{ .Destino.IATA }}
+                                </div>
+                                <span class="px-1.5 py-0.5 rounded-sm bg-primary-100 text-primary-700 text-[8px] font-black uppercase tracking-tighter">IDA</span>
                               </div>
                               <div class="text-[10px] font-bold text-neutral-400 uppercase tracking-tighter">{{ .Origen.Ciudad }} • {{ .Destino.Ciudad }}</div>
                             </div>
@@ -301,10 +301,13 @@
                               <i class="ph ph-airplane text-lg transform -rotate-135"></i>
                             </div>
                             <div>
-                              <div class="text-sm font-black text-neutral-800 tracking-tight">
-                                {{ .Destino.IATA }}
-                                <i class="ph ph-arrow-right text-[10px] mx-1 text-neutral-400"></i>
-                                {{ .Origen.IATA }}
+                              <div class="flex items-center gap-2">
+                                <div class="text-sm font-black text-neutral-800 tracking-tight">
+                                  {{ .Destino.IATA }}
+                                  <i class="ph ph-arrow-right text-[10px] mx-1 text-neutral-400"></i>
+                                  {{ .Origen.IATA }}
+                                </div>
+                                <span class="px-1.5 py-0.5 rounded-sm bg-secondary-100 text-secondary-700 text-[8px] font-black uppercase tracking-tighter">VUELTA</span>
                               </div>
                               <div class="text-[10px] font-bold text-neutral-400 uppercase tracking-tighter">{{ .Destino.Ciudad }} • {{ .Origen.Ciudad }}</div>
                             </div>
@@ -436,28 +439,9 @@
                     <input type="hidden" name="aerolinea_sugerida" :value="aerolinea" />
                   </div>
 
-                  <div class="md:col-span-2 space-y-1.5">
-                    <label class="block text-xs font-bold text-neutral-500 uppercase tracking-tight">Autorización</label>
-                    <input
-                      type="text"
-                      name="autorizacion"
-                      value="{{ if .IsEdit }}{{ .Solicitud.Autorizacion }}{{ else if .Item }}PD{{ end }}"
-                      maxlength="100"
-                      class="w-full px-4 py-2.5 bg-neutral-100 border border-neutral-200 rounded-md shadow-sm text-sm font-bold text-neutral-500 cursor-not-allowed transition-all"
-                      placeholder="Código de autorización"
-                      readonly />
-                  </div>
-
-                  <div class="md:col-span-2 space-y-1.5">
-                    <label class="block text-xs font-bold text-neutral-500 uppercase tracking-tight">Motivo del Viaje</label>
-                    <textarea
-                      name="motivo"
-                      x-model="motivo"
-                      rows="3"
-                      placeholder="Ej: Cumplimiento de funciones legislativas..."
-                      readonly
-                      class="w-full px-4 py-3 bg-neutral-100 border border-neutral-200 rounded-md shadow-sm text-sm font-bold text-neutral-500 cursor-not-allowed transition-all"></textarea>
-                  </div>
+                  <!-- VALORES INMUTABLES EN EDICIÓN (HIDDEN) -->
+                  <input type="hidden" name="autorizacion" value="{{ .Solicitud.Autorizacion }}" />
+                  <input type="hidden" name="motivo" :value="motivo" />
                 </div>
               </section>
             </div>

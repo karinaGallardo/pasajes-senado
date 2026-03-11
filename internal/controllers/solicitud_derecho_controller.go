@@ -207,9 +207,11 @@ func (ctrl *SolicitudDerechoController) GetEditModal(c *gin.Context) {
 	maxDateVuelta := maxDateIda
 
 	referer := c.Request.Referer()
-	if referer == "" {
-		referer = "/cupos/derecho/" + solicitud.Usuario.ID
-	}
+	ida := solicitud.GetItemIda()
+	vuelta := solicitud.GetItemVuelta()
+
+	canEditIda := ida == nil || ida.CanEdit()
+	canEditVuelta := vuelta == nil || vuelta.CanEdit()
 
 	utils.Render(c, "solicitud/derecho/modal_edit", gin.H{
 		"Aerolineas":    aerolineas,
@@ -229,6 +231,8 @@ func (ctrl *SolicitudDerechoController) GetEditModal(c *gin.Context) {
 		"MinDateVuelta": minDateVuelta,
 		"MaxDateVuelta": maxDateVuelta,
 		"IsDerecho":     solicitud.GetConceptoCodigo() == "DERECHO",
+		"CanEditIda":    canEditIda,
+		"CanEditVuelta": canEditVuelta,
 	})
 }
 
@@ -314,16 +318,16 @@ func (ctrl *SolicitudDerechoController) Update(c *gin.Context) {
 		for i := range solicitud.Items {
 			it := &solicitud.Items[i]
 
-			// Solo permitir edición de tramos que NO estén aprobados/emitidos,
-			// a menos que sea Admin o Responsable.
-			canEditItem := authUser.IsAdminOrResponsable() ||
-				(it.EstadoCodigo != nil && (*it.EstadoCodigo == "SOLICITADO" || *it.EstadoCodigo == "RECHAZADO" || *it.EstadoCodigo == "PENDIENTE"))
+			// Solo permitir edición de tramos que NO estén procesados (aprobados/emitidos/etc)
+			// sin importar el rol del usuario.
+			canEditItem := it.CanEdit()
 
 			if !canEditItem {
 				continue
 			}
 
-			if it.Tipo == models.TipoSolicitudItemIda {
+			switch it.Tipo {
+			case models.TipoSolicitudItemIda:
 				it.OrigenIATA = req.OrigenIATA
 				it.DestinoIATA = req.DestinoIATA
 				if req.IdaPorConfirmar {
@@ -337,7 +341,7 @@ func (ctrl *SolicitudDerechoController) Update(c *gin.Context) {
 						it.Hora = fechaIda.Format("15:04")
 					}
 				}
-			} else if it.Tipo == models.TipoSolicitudItemVuelta {
+			case models.TipoSolicitudItemVuelta:
 				it.OrigenIATA = req.DestinoIATA
 				it.DestinoIATA = req.OrigenIATA
 				if req.VueltaPorConfirmar {

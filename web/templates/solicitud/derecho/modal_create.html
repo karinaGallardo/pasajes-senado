@@ -219,10 +219,13 @@
                             <i class="ph ph-airplane text-lg transform rotate-45"></i>
                           </div>
                           <div>
-                            <div class="text-sm font-black text-neutral-800 tracking-tight">
-                              {{ .Origen.IATA }}
-                              <i class="ph ph-arrow-right text-[10px] mx-1 text-neutral-400"></i>
-                              {{ .Destino.IATA }}
+                            <div class="flex items-center gap-2">
+                              <div class="text-sm font-black text-neutral-800 tracking-tight">
+                                {{ .Origen.IATA }}
+                                <i class="ph ph-arrow-right text-[10px] mx-1 text-neutral-400"></i>
+                                {{ .Destino.IATA }}
+                              </div>
+                              <span class="px-1.5 py-0.5 rounded-sm bg-primary-100 text-primary-700 text-[8px] font-black uppercase tracking-tighter">IDA</span>
                             </div>
                             <div class="text-[10px] font-bold text-neutral-400 uppercase tracking-tighter">{{ .Origen.Ciudad }} • {{ .Destino.Ciudad }}</div>
                           </div>
@@ -264,10 +267,13 @@
                             <i class="ph ph-airplane text-lg transform -rotate-135"></i>
                           </div>
                           <div>
-                            <div class="text-sm font-black text-neutral-800 tracking-tight">
-                              {{ .Destino.IATA }}
-                              <i class="ph ph-arrow-right text-[10px] mx-1 text-neutral-400"></i>
-                              {{ .Origen.IATA }}
+                            <div class="flex items-center gap-2">
+                              <div class="text-sm font-black text-neutral-800 tracking-tight">
+                                {{ .Destino.IATA }}
+                                <i class="ph ph-arrow-right text-[10px] mx-1 text-neutral-400"></i>
+                                {{ .Origen.IATA }}
+                              </div>
+                              <span class="px-1.5 py-0.5 rounded-sm bg-secondary-100 text-secondary-700 text-[8px] font-black uppercase tracking-tighter">VUELTA</span>
                             </div>
                             <div class="text-[10px] font-bold text-neutral-400 uppercase tracking-tighter">{{ .Destino.Ciudad }} • {{ .Origen.Ciudad }}</div>
                           </div>

@@ -43,6 +43,11 @@ func (t SolicitudItem) GetEstado() string {
 	return *t.EstadoCodigo
 }
 
+func (t SolicitudItem) CanEdit() bool {
+	st := t.GetEstado()
+	return st == "PENDIENTE" || st == "SOLICITADO" || st == "RECHAZADO"
+}
+
 func (t SolicitudItem) HasActivePasaje() bool {
 	for _, p := range t.Pasajes {
 		if p.EstadoPasajeCodigo != nil && *p.EstadoPasajeCodigo != "ANULADO" {
