@@ -162,16 +162,17 @@ func (u *Usuario) CanMarkUsado(s Solicitud) bool {
 }
 
 func (u *Usuario) CanEditSolicitud(s Solicitud) bool {
-	// 0. State-based restrictions: Once approved or beyond, NO ONE should edit directly.
-	// They must revert approval first to return to an editable state (SOLICITADO/PARCIAL).
 	st := s.GetEstado()
-	isEditableState := (st == "SOLICITADO" || st == "PENDIENTE" || st == "RECHAZADO" || st == "PARCIALMENTE_APROBADO")
+
+	// All users (including Admin) must follow the state rules for editing.
+	// Only editable in these specific states.
+	isEditableState := (st == "SOLICITADO" || st == "RECHAZADO" || st == "PARCIALMENTE_APROBADO")
 
 	if !isEditableState {
 		return false
 	}
 
-	// 1. Admins and Responsables can correct mistakes in editable states
+	// 1. Admins and Responsables can edit any request in an editable state
 	if u.IsAdminOrResponsable() {
 		return true
 	}

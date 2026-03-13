@@ -4,7 +4,7 @@
       open: true,
       id: '{{ .SolicitudItem.ID }}',
       fecha: '{{ if .SolicitudItem.Fecha }}{{ .SolicitudItem.Fecha.Format `2006-01-02` }}{{ end }}',
-      hora: '{{ .SolicitudItem.Hora }}',
+      hora: '{{ if .SolicitudItem.Fecha }}{{ .SolicitudItem.Fecha.Format `15:04` }}{{ end }}',
       motivo: '',
       loading: false
   }"

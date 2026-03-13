@@ -540,16 +540,12 @@ func (ctrl *CupoController) DerechoByYear(c *gin.Context) {
 					}
 				} else {
 					// Edit/View permissions
-					if isOwner || isViewerAdminOrResponsable || sol.UsuarioID == targetUser.ID {
-						// Permitir editar si es el dueño y está en estado editable (incluyendo Parcialmente Aprobado)
-						st := sol.GetEstado()
-						isEditableState := st == "SOLICITADO" || st == "PARCIALMENTE_APROBADO" || st == "RECHAZADO" || st == "PENDIENTE"
-						if isEditableState && (isOwner || isEncargado) {
-							perms.CanEdit = true
-						} else if isViewerAdminOrResponsable && st == "APROBADO" {
-							perms.CanEdit = true
-						}
+					if sol.CanEdit(authUser) {
+						perms.CanEdit = true
+					}
+					if sol.CanView(authUser) {
 						perms.CanView = true
+						perms.CanPrint = true
 					}
 				}
 			}
@@ -727,16 +723,12 @@ func (ctrl *CupoController) DerechoByMonth(c *gin.Context) {
 				}
 			} else {
 				// Edit/View permissions
-				if isOwner || isViewerAdminOrResponsable || sol.UsuarioID == targetUser.ID {
-					// Permitir editar si es el dueño y está en estado editable (incluyendo Parcialmente Aprobado)
-					st := sol.GetEstado()
-					isEditableState := st == "SOLICITADO" || st == "PARCIALMENTE_APROBADO" || st == "RECHAZADO" || st == "PENDIENTE"
-					if isEditableState && (isOwner || isEncargado) {
-						perms.CanEdit = true
-					} else if isViewerAdminOrResponsable && st == "APROBADO" {
-						perms.CanEdit = true
-					}
+				if sol.CanEdit(authUser) {
+					perms.CanEdit = true
+				}
+				if sol.CanView(authUser) {
 					perms.CanView = true
+					perms.CanPrint = true
 				}
 			}
 		}

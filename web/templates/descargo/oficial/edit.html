@@ -1,6 +1,36 @@
 {{ define "descargo/oficial/edit" }} {{ template "layout_start" . }}
 
-<div class="max-w-4xl mx-auto" x-data="{ canSubmit: false, submitting: false }" x-init="canSubmit = $refs.form.checkValidity()">
+<div class="max-w-4xl mx-auto" 
+     x-data="{ 
+       canSubmit: false, 
+       submitting: false,
+       processingImages: false,
+       async handleBoardingPass(el) {
+         const file = el.files[0];
+         if (!file) return;
+         if (!window.checkFileSize(file)) {
+           el.value = '';
+           return '';
+         }
+         if (file.type.startsWith('image/')) {
+           this.processingImages = true;
+           try {
+             const resized = await window.resizeImage(file);
+             const dt = new DataTransfer();
+             dt.items.add(resized);
+             el.files = dt.files;
+             return resized.name;
+           } catch (err) {
+             console.error('Error resizing boarding pass image:', err);
+             return file.name;
+           } finally {
+             this.processingImages = false;
+           }
+         }
+         return file.name;
+       }
+     }" 
+     x-init="canSubmit = $refs.form.checkValidity()">
   <div class="md:flex md:items-center md:justify-between mb-6">
     <div class="flex-1 min-w-0">
       <h2 class="text-2xl font-black text-neutral-900 tracking-tight">Editar Descargo #{{ .Descargo.Codigo }}</h2>
@@ -21,19 +51,19 @@
       <button
         type="submit"
         form="descargo-form"
-        :disabled="submitting"
-        :class="(!submitting) ? 'bg-success-600 hover:bg-success-700 shadow-lg scale-100' : 'bg-neutral-100 text-neutral-400 cursor-not-allowed'"
+        :disabled="submitting || processingImages"
+        :class="(!submitting && !processingImages) ? 'bg-success-600 hover:bg-success-700 shadow-lg scale-100' : 'bg-neutral-100 text-neutral-400 cursor-not-allowed'"
         class="inline-flex items-center px-8 py-2.5 border border-transparent shadow-sm text-xs font-black rounded-lg text-white focus:outline-none transition-all active:scale-95 uppercase tracking-widest min-w-[180px] justify-center">
-        <span x-show="!submitting" class="flex items-center">
+        <span x-show="!submitting && !processingImages" class="flex items-center">
           <i class="ph ph-check-circle mr-2 text-lg"></i>
           Actualizar Descargo
         </span>
-        <span x-show="submitting" x-cloak class="flex items-center text-white">
+        <span x-show="submitting || processingImages" x-cloak class="flex items-center text-white">
           <svg class="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
-          Guardando...
+          <span x-text="processingImages ? 'Procesando Imágenes...' : 'Guardando...'"></span>
         </span>
       </button>
     </div>
@@ -161,14 +191,18 @@
                       this.newAnexos.splice(index, 1);
                       this.syncFiles();
                   },
-                  handleFiles(event) {
+                  async handleFiles(event) {
                       const files = Array.from(event.target.files);
-                      files.forEach(file => {
+                      for (const file of files) {
+                          if (!window.checkFileSize(file)) continue;
+                           // Reducir tamaño antes de agregar
+                          const processedFile = await window.resizeImage(file);
+                          if (!processedFile) continue;
                           this.newAnexos.push({
-                              file: file,
-                              url: URL.createObjectURL(file)
+                              file: processedFile,
+                              url: URL.createObjectURL(processedFile)
                           });
-                      });
+                      }
                       this.syncFiles();
                   },
                   syncFiles() {
@@ -274,13 +308,13 @@
                         <td class="px-2 py-1" :class="{ 'opacity-50': devuelto || modificado }">
                           <input type="text" name="itin_pase_numero[]" value="{{ .NumeroPaseAbordo }}" :readonly="devuelto || modificado" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2 min-w-[20px] max-w-[60px]" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto || modificado }" />
                         </td>
-                        <td class="px-2 py-1 text-center" :class="{ 'opacity-50': devuelto || modificado }" x-data="{ fileName: '' }">
+                        <td class="px-2 py-1 text-center" :class="{ 'opacity-50': devuelto || modificado }" x-data="{ fileName: '{{ .ArchivoPaseAbordo }}' }">
                           <input type="hidden" name="itin_archivo_existente_io_{{ $i }}" value="{{ .ArchivoPaseAbordo }}" />
                           <div class="flex items-center justify-center gap-1">
-                            <label class="cursor-pointer flex items-center justify-center py-0.5 px-1.5 rounded border transition-colors hover:bg-neutral-100 border-neutral-200" 
+                            <label class="cursor-pointer flex items-center justify-center py-0.5 px-1.5 rounded border transition-colors hover:bg-neutral-100 border-neutral-200"
                                   :class="(fileName || '{{ .ArchivoPaseAbordo }}') ? 'bg-success-50 border-success-200 text-success-700' : 'bg-neutral-50 text-neutral-500'"
-                                  title="{{ if .ArchivoPaseAbordo }}Archivo actual: {{ .ArchivoPaseAbordo }}{{ else }}Subir PDF (Opcional){{ end }}">
-                              <input type="file" :disabled="devuelto || modificado" name="itin_archivo_io_{{ $i }}" class="hidden" accept=".pdf,application/pdf" @change="fileName = $el.files[0] ? $el.files[0].name : ''" />
+                                  title="{{ if .ArchivoPaseAbordo }}Archivo actual: {{ .ArchivoPaseAbordo }}{{ else }}Subir PDF o Imagen (Opcional){{ end }}">
+                              <input type="file" :disabled="devuelto || modificado" name="itin_archivo_io_{{ $i }}" class="hidden" accept=".pdf,application/pdf,image/*" @change="fileName = await handleBoardingPass($el)" />
                               <i class="ph text-base" :class="(fileName || '{{ .ArchivoPaseAbordo }}') ? 'ph-file-pdf' : 'ph-upload-simple'"></i>
                             </label>
                             {{ if .ArchivoPaseAbordo }}
@@ -324,7 +358,7 @@
                     <tbody id="itin-ida-repro-container" class="bg-white divide-y divide-neutral-100">
                       {{ range $i, $p := (index .ItemsByType "IDA_REPRO") }}
                       <tr x-data="{ devuelto: {{ if .EsDevolucion }}true{{ else }}false{{ end }}, modificado: {{ if .EsModificacion }}true{{ else }}false{{ end }}, route: '{{ .Ruta }}' }"
-                          @route-picked.window="if($event.detail.rowId == 'ir_{{ $i }}') { 
+                          @route-picked.window="if($event.detail.rowId == 'ir_{{ $i }}') {
                             route = $event.detail.orig.cityName + ' - ' + $event.detail.dest.cityName;
                           }">
                         <td class="px-2 py-1 text-center">
@@ -337,7 +371,7 @@
                         </td>
                         <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
                           <div class="relative min-w-[250px]">
-                            <input type="text" readonly 
+                            <input type="text" readonly
                                    :value="route"
                                    @click="if(!devuelto) $dispatch('open-route-picker', { rowId: 'ir_{{ $i }}' })"
                                    placeholder="Seleccionar Ruta"
@@ -354,13 +388,13 @@
                         <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
                           <input type="text" name="itin_pase_numero[]" value="{{ .NumeroPaseAbordo }}" :readonly="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2 min-w-[20px] max-w-[60px]" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto }" />
                         </td>
-                        <td class="px-2 py-1 text-center" :class="{ 'opacity-50': devuelto }" x-data="{ fileName: '' }">
+                        <td class="px-2 py-1 text-center" :class="{ 'opacity-50': devuelto }" x-data="{ fileName: '{{ .ArchivoPaseAbordo }}' }">
                           <input type="hidden" name="itin_archivo_existente_ir_{{ $i }}" value="{{ .ArchivoPaseAbordo }}" />
                           <div class="flex items-center justify-center gap-1">
-                            <label class="cursor-pointer flex items-center justify-center py-0.5 px-1.5 rounded border transition-colors hover:bg-neutral-100 border-neutral-200" 
+                            <label class="cursor-pointer flex items-center justify-center py-0.5 px-1.5 rounded border transition-colors hover:bg-neutral-100 border-neutral-200"
                                   :class="(fileName || '{{ .ArchivoPaseAbordo }}') ? 'bg-success-50 border-success-200 text-success-700' : 'bg-neutral-50 text-neutral-500'"
-                                  title="{{ if .ArchivoPaseAbordo }}Archivo actual: {{ .ArchivoPaseAbordo }}{{ else }}Subir PDF (Opcional){{ end }}">
-                              <input type="file" :disabled="devuelto" name="itin_archivo_ir_{{ $i }}" class="hidden" accept=".pdf,application/pdf" @change="fileName = $el.files[0] ? $el.files[0].name : ''" />
+                                  title="{{ if .ArchivoPaseAbordo }}Archivo actual: {{ .ArchivoPaseAbordo }}{{ else }}Subir PDF o Imagen (Opcional){{ end }}">
+                              <input type="file" :disabled="devuelto" name="itin_archivo_ir_{{ $i }}" class="hidden" accept=".pdf,application/pdf,image/*" @change="fileName = await handleBoardingPass($el)" />
                               <i class="ph text-base" :class="(fileName || '{{ .ArchivoPaseAbordo }}') ? 'ph-file-pdf' : 'ph-upload-simple'"></i>
                             </label>
                             {{ if .ArchivoPaseAbordo }}
@@ -436,13 +470,13 @@
                       <td class="px-2 py-1" :class="{ 'opacity-50': devuelto || modificado }">
                         <input type="text" name="itin_pase_numero[]" value="{{ .NumeroPaseAbordo }}" :readonly="devuelto || modificado" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2 min-w-[20px] max-w-[60px]" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto || modificado }" />
                       </td>
-                      <td class="px-2 py-1 text-center" :class="{ 'opacity-50': devuelto || modificado }" x-data="{ fileName: '' }">
+                      <td class="px-2 py-1 text-center" :class="{ 'opacity-50': devuelto || modificado }" x-data="{ fileName: '{{ .ArchivoPaseAbordo }}' }">
                         <input type="hidden" name="itin_archivo_existente_vo_{{ $i }}" value="{{ .ArchivoPaseAbordo }}" />
                         <div class="flex items-center justify-center gap-1">
-                          <label class="cursor-pointer flex items-center justify-center py-0.5 px-1.5 rounded border transition-colors hover:bg-neutral-100 border-neutral-200" 
+                          <label class="cursor-pointer flex items-center justify-center py-0.5 px-1.5 rounded border transition-colors hover:bg-neutral-100 border-neutral-200"
                                 :class="(fileName || '{{ .ArchivoPaseAbordo }}') ? 'bg-success-50 border-success-200 text-success-700' : 'bg-neutral-50 text-neutral-500'"
-                                title="{{ if .ArchivoPaseAbordo }}Archivo actual: {{ .ArchivoPaseAbordo }}{{ else }}Subir PDF (Opcional){{ end }}">
-                            <input type="file" :disabled="devuelto || modificado" name="itin_archivo_vo_{{ $i }}" class="hidden" accept=".pdf,application/pdf" @change="fileName = $el.files[0] ? $el.files[0].name : ''" />
+                                title="{{ if .ArchivoPaseAbordo }}Archivo actual: {{ .ArchivoPaseAbordo }}{{ else }}Subir PDF o Imagen (Opcional){{ end }}">
+                            <input type="file" :disabled="devuelto || modificado" name="itin_archivo_vo_{{ $i }}" class="hidden" accept=".pdf,application/pdf,image/*" @change="fileName = await handleBoardingPass($el)" />
                             <i class="ph text-base" :class="(fileName || '{{ .ArchivoPaseAbordo }}') ? 'ph-file-pdf' : 'ph-upload-simple'"></i>
                           </label>
                           {{ if .ArchivoPaseAbordo }}
@@ -486,7 +520,7 @@
                   <tbody id="itin-vuelta-repro-container" class="bg-white divide-y divide-neutral-100">
                     {{ range $i, $p := (index .ItemsByType "VUELTA_REPRO") }}
                     <tr x-data="{ devuelto: {{ if .EsDevolucion }}true{{ else }}false{{ end }}, modificado: {{ if .EsModificacion }}true{{ else }}false{{ end }}, route: '{{ .Ruta }}' }"
-                        @route-picked.window="if($event.detail.rowId == 'vr_{{ $i }}') { 
+                        @route-picked.window="if($event.detail.rowId == 'vr_{{ $i }}') {
                           route = $event.detail.orig.cityName + ' - ' + $event.detail.dest.cityName;
                         }">
                       <td class="px-2 py-1 text-center">
@@ -499,7 +533,7 @@
                       </td>
                       <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
                         <div class="relative min-w-[250px]">
-                          <input type="text" readonly 
+                          <input type="text" readonly
                                  :value="route"
                                  @click="if(!devuelto) $dispatch('open-route-picker', { rowId: 'vr_{{ $i }}' })"
                                  placeholder="Seleccionar Ruta"
@@ -516,13 +550,13 @@
                       <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
                         <input type="text" name="itin_pase_numero[]" value="{{ .NumeroPaseAbordo }}" :readonly="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2 min-w-[20px] max-w-[60px]" :class="{ 'bg-neutral-100 cursor-not-allowed': devuelto }" />
                       </td>
-                      <td class="px-2 py-1 text-center" :class="{ 'opacity-50': devuelto }" x-data="{ fileName: '' }">
+                      <td class="px-2 py-1 text-center" :class="{ 'opacity-50': devuelto }" x-data="{ fileName: '{{ .ArchivoPaseAbordo }}' }">
                         <input type="hidden" name="itin_archivo_existente_vr_{{ $i }}" value="{{ .ArchivoPaseAbordo }}" />
                         <div class="flex items-center justify-center gap-1">
-                          <label class="cursor-pointer flex items-center justify-center py-0.5 px-1.5 rounded border transition-colors hover:bg-neutral-100 border-neutral-200" 
+                          <label class="cursor-pointer flex items-center justify-center py-0.5 px-1.5 rounded border transition-colors hover:bg-neutral-100 border-neutral-200"
                                 :class="(fileName || '{{ .ArchivoPaseAbordo }}') ? 'bg-success-50 border-success-200 text-success-700' : 'bg-neutral-50 text-neutral-500'"
-                                title="{{ if .ArchivoPaseAbordo }}Archivo actual: {{ .ArchivoPaseAbordo }}{{ else }}Subir PDF (Opcional){{ end }}">
-                            <input type="file" :disabled="devuelto" name="itin_archivo_vr_{{ $i }}" class="hidden" accept=".pdf,application/pdf" @change="fileName = $el.files[0] ? $el.files[0].name : ''" />
+                                title="{{ if .ArchivoPaseAbordo }}Archivo actual: {{ .ArchivoPaseAbordo }}{{ else }}Subir PDF o Imagen (Opcional){{ end }}">
+                            <input type="file" :disabled="devuelto" name="itin_archivo_vr_{{ $i }}" class="hidden" accept=".pdf,application/pdf,image/*" @change="fileName = await handleBoardingPass($el)" />
                             <i class="ph text-base" :class="(fileName || '{{ .ArchivoPaseAbordo }}') ? 'ph-file-pdf' : 'ph-upload-simple'"></i>
                           </label>
                           {{ if .ArchivoPaseAbordo }}
@@ -604,7 +638,7 @@
                     <label class="block text-[10px] font-black text-primary-700 uppercase tracking-widest mb-2">Monto Depositado (Bs.)</label>
                     <div class="relative">
                       <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-primary-600 font-bold">Bs.</span>
-                      <input type="number" step="0.01" name="monto_devolucion" value="{{ if .Descargo.Oficial }}{{ .Descargo.Oficial.MontoDevolucion }}{{ end }}" 
+                      <input type="number" step="0.01" name="monto_devolucion" value="{{ if .Descargo.Oficial }}{{ .Descargo.Oficial.MontoDevolucion }}{{ end }}"
                         class="block w-full pl-10 pr-4 py-3 bg-white border-2 border-primary-100 rounded-lg text-lg font-black text-neutral-800 focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all outline-none" placeholder="0.00" />
                     </div>
                   </div>
@@ -619,7 +653,7 @@
               <!-- Lado derecho: Boleta -->
               <div class="p-6 flex flex-col justify-center bg-neutral-50/30">
                 <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest mb-2">Nº de Boleta de Depósito</label>
-                <input type="text" name="nro_boleta_deposito" value="{{ if .Descargo.Oficial }}{{ .Descargo.Oficial.NroBoletaDeposito }}{{ end }}" 
+                <input type="text" name="nro_boleta_deposito" value="{{ if .Descargo.Oficial }}{{ .Descargo.Oficial.NroBoletaDeposito }}{{ end }}"
                   class="block w-full px-4 py-3 bg-white border-2 border-neutral-200 rounded-lg text-lg font-bold text-neutral-800 focus:ring-4 focus:ring-neutral-100 focus:border-neutral-400 transition-all outline-none" placeholder="Ej. 12345678" />
                 <p class="text-[9px] text-neutral-400 italic mt-3 flex items-center gap-1">
                   <i class="ph ph-info"></i>
@@ -662,7 +696,7 @@
           if (!this.searchOrig) return this.items;
           var q = this.searchOrig.toLowerCase();
           return this.items.filter(function(i) {
-            return i.label.toLowerCase().includes(q) || 
+            return i.label.toLowerCase().includes(q) ||
                    i.cityName.toLowerCase().includes(q);
           });
         },
@@ -671,7 +705,7 @@
           if (!this.searchDest) return this.items;
           var q = this.searchDest.toLowerCase();
           return this.items.filter(function(i) {
-            return i.label.toLowerCase().includes(q) || 
+            return i.label.toLowerCase().includes(q) ||
                    i.cityName.toLowerCase().includes(q);
           });
         },
@@ -703,6 +737,36 @@
 
   let itinCounter = 1000;
 
+  // Global state for file processing
+  window.isProcessingFile = false;
+
+  // Global function to handle boarding pass file processing
+  window.handleBoardingPass = async function(el) {
+    const file = el.files[0];
+    if (!file) {
+      window.isProcessingFile = false;
+      return '';
+    }
+
+    window.isProcessingFile = true;
+    let processedFileName = file.name;
+
+    if (file.type.startsWith('image/')) {
+      try {
+        const resized = await window.resizeImage(file);
+        const dt = new DataTransfer();
+        dt.items.add(resized);
+        el.files = dt.files;
+        processedFileName = resized.name;
+      } catch (error) {
+        console.error("Error resizing image:", error);
+        // Optionally, revert to original file or show error
+      }
+    }
+    window.isProcessingFile = false;
+    return processedFileName;
+  };
+
   // Attach to window so it's globally available to Alpine @click handlers
   window.addItinRow = function(type) {
     const containerId = type === "IDA_REPRO" ? "itin-ida-repro-container" : "itin-vuelta-repro-container";
@@ -710,12 +774,12 @@
     if (!container) return;
 
     const index = itinCounter++;
-    const xData = `{ devuelto: false, modificado: false, route: '' }`;
-    
+    const xData = `{ devuelto: false, modificado: false, route: '', fileName: '' }`;
+
     const rowHtml = `
-      <tr x-data="${xData}" 
+      <tr x-data="${xData}"
           class="border-b border-neutral-100 last:border-0 hover:bg-neutral-50/50 transition-colors"
-          @route-picked.window="if($event.detail.rowId == ${index}) { 
+          @route-picked.window="if($event.detail.rowId == ${index}) {
             route = $event.detail.orig.cityName + ' - ' + $event.detail.dest.cityName;
           }">
         <td class="px-2 py-1 text-center">
@@ -728,7 +792,7 @@
         </td>
         <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
           <div class="relative min-w-[250px]">
-            <input type="text" readonly 
+            <input type="text" readonly
                    :value="route"
                    @click="if(!devuelto) $dispatch('open-route-picker', { rowId: ${index} })"
                    placeholder="Seleccionar Ruta (Origen - Destino)"
@@ -745,11 +809,11 @@
         <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
           <input type="text" name="itin_pase_numero[]" placeholder="Pase" :readonly="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2 focus:ring-secondary focus:border-secondary min-w-[20px] max-w-[60px]">
         </td>
-        <td class="px-2 py-1 text-center" :class="{ 'opacity-50': devuelto }" x-data="{ fileName: '' }">
-          <label class="cursor-pointer flex items-center justify-center py-0.5 px-1.5 rounded border transition-colors hover:bg-neutral-100 border-neutral-200 bg-neutral-50 text-neutral-500" 
+        <td class="px-2 py-1 text-center" :class="{ 'opacity-50': devuelto }">
+          <label class="cursor-pointer flex items-center justify-center py-0.5 px-1.5 rounded border transition-colors hover:bg-neutral-100 border-neutral-200 bg-neutral-50 text-neutral-500"
                   :class="fileName ? 'bg-success-50 border-success-200 text-success-700' : ''"
-                  :title="fileName ? fileName : 'Subir PDF (Opcional)'">
-            <input type="file" :disabled="devuelto" name="itin_archivo_${index}" class="hidden" accept=".pdf,application/pdf" @change="fileName = $el.files[0] ? $el.files[0].name : ''" />
+                  :title="fileName ? fileName : 'Subir PDF o Imagen (Opcional)'">
+            <input type="file" :disabled="devuelto" name="itin_archivo_${index}" class="hidden" accept=".pdf,application/pdf,image/*" @change="fileName = await handleBoardingPass($el)" />
             <i class="ph text-base" :class="fileName ? 'ph-file-pdf' : 'ph-upload-simple'"></i>
           </label>
         </td>

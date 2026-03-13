@@ -23,8 +23,6 @@ type SolicitudItem struct {
 	Destino     *Destino `gorm:"foreignKey:DestinoIATA;references:IATA"`
 
 	Fecha *time.Time `gorm:"type:timestamp"`
-	Hora  string     `gorm:"size:5"`
-
 	EstadoCodigo *string              `gorm:"size:20;index;default:'SOLICITADO'"`
 	Estado       *EstadoSolicitudItem `gorm:"foreignKey:EstadoCodigo;references:Codigo;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;<-:false"`
 
@@ -63,11 +61,18 @@ func (t SolicitudItem) GetPasajeOriginal() *Pasaje {
 	}
 	// The original is usually the first one or the one without PasajeAnteriorID
 	for i := range t.Pasajes {
-		if t.Pasajes[i].PasajeAnteriorID == nil {
-			return &t.Pasajes[i]
+		p := &t.Pasajes[i]
+		if p.PasajeAnteriorID == nil && (p.EstadoPasajeCodigo == nil || *p.EstadoPasajeCodigo != "ANULADO") {
+			return p
 		}
 	}
-	return &t.Pasajes[0]
+	if len(t.Pasajes) > 0 {
+		p := &t.Pasajes[0]
+		if p.EstadoPasajeCodigo == nil || *p.EstadoPasajeCodigo != "ANULADO" {
+			return p
+		}
+	}
+	return nil
 }
 
 func (t SolicitudItem) GetPasajeReprogramado() *Pasaje {
@@ -98,9 +103,6 @@ func (t *SolicitudItem) GetChanges(old SolicitudItem) map[string]any {
 	}
 	if t.DestinoIATA != old.DestinoIATA {
 		changes["destino_iata"] = t.DestinoIATA
-	}
-	if t.Hora != old.Hora {
-		changes["hora"] = t.Hora
 	}
 
 	// Comparar estados

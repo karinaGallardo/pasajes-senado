@@ -348,7 +348,9 @@ func (s Solicitud) CanView(user *Usuario) bool {
 
 func (s Solicitud) CanEdit(user *Usuario) bool {
 	estado := s.GetEstado()
-	if estado != "SOLICITADO" && estado != "RECHAZADO" && estado != "PARCIALMENTE_APROBADO" && estado != "PENDIENTE" {
+
+	// All users (including Admin) must follow the state rules for editing.
+	if estado != "SOLICITADO" && estado != "RECHAZADO" && estado != "PARCIALMENTE_APROBADO" {
 		return false
 	}
 	return s.CanView(user)

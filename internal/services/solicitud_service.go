@@ -101,6 +101,7 @@ func (s *SolicitudService) CreateDerecho(ctx context.Context, req dtos.CreateSol
 		AerolineaSugerida:    req.AerolineaSugerida,
 	}
 
+
 	if req.CupoDerechoItemID != "" {
 		solicitud.CupoDerechoItemID = &req.CupoDerechoItemID
 	}
@@ -144,14 +145,14 @@ func (s *SolicitudService) CreateDerecho(ctx context.Context, req dtos.CreateSol
 		stIda = "PENDIENTE"
 		fechaIda = nil // Forzamos nil si es por confirmar
 	}
-	items = append(items, models.SolicitudItem{
+	ida := models.SolicitudItem{
 		Tipo:         models.TipoSolicitudItemIda,
 		OrigenIATA:   req.OrigenIATA,
 		DestinoIATA:  req.DestinoIATA,
 		Fecha:        fechaIda,
-		Hora:         s.formatTime(fechaIda),
 		EstadoCodigo: utils.Ptr(stIda),
-	})
+	}
+	items = append(items, ida)
 
 	// Tramo 2: VUELTA
 	stVuelta := "SOLICITADO"
@@ -159,14 +160,14 @@ func (s *SolicitudService) CreateDerecho(ctx context.Context, req dtos.CreateSol
 		stVuelta = "PENDIENTE"
 		fechaVuelta = nil
 	}
-	items = append(items, models.SolicitudItem{
+	vuelta := models.SolicitudItem{
 		Tipo:         models.TipoSolicitudItemVuelta,
 		OrigenIATA:   req.DestinoIATA, // Intercambiado
 		DestinoIATA:  req.OrigenIATA,  // Intercambiado
 		Fecha:        fechaVuelta,
-		Hora:         s.formatTime(fechaVuelta),
 		EstadoCodigo: utils.Ptr(stVuelta),
-	})
+	}
+	items = append(items, vuelta)
 
 	solicitud.Items = items
 	solicitud.TipoItinerarioCodigo = "IDA_VUELTA" // Forzamos IDA_VUELTA como base
@@ -260,6 +261,7 @@ func (s *SolicitudService) CreateOficial(ctx context.Context, req dtos.CreateSol
 		EstadoSolicitudCodigo: utils.Ptr("SOLICITADO"),
 	}
 
+
 	// Build Items
 	var items []models.SolicitudItem
 
@@ -286,14 +288,16 @@ func (s *SolicitudService) CreateOficial(ctx context.Context, req dtos.CreateSol
 			st = "PENDIENTE"
 		}
 
-		items = append(items, models.SolicitudItem{
+		item := models.SolicitudItem{
 			Tipo:         tipoItem,
 			OrigenIATA:   orig,
 			DestinoIATA:  dest,
 			Fecha:        fSalida,
-			Hora:         s.formatTime(fSalida),
 			EstadoCodigo: utils.Ptr(st),
-		})
+		}
+
+
+		items = append(items, item)
 	}
 
 	if len(items) == 0 {
@@ -350,12 +354,6 @@ func (s *SolicitudService) CreateOficial(ctx context.Context, req dtos.CreateSol
 }
 
 // Helper locally if not in utils
-func (SolicitudService) formatTime(t *time.Time) string {
-	if t == nil {
-		return ""
-	}
-	return t.Format("15:04")
-}
 
 func (s *SolicitudService) sendCreationEmail(solicitud *models.Solicitud) {
 	fullSol, err := s.GetByID(context.Background(), solicitud.ID)
@@ -948,7 +946,12 @@ func (s *SolicitudService) RevertApprovalItem(ctx context.Context, solicitudID, 
 func (s *SolicitudService) ReprogramarItem(ctx context.Context, req dtos.ReprogramarSolicitudItemRequest) error {
 	stateReprog := "REPROGRAMADO"
 	pasajeAnulado := "ANULADO"
-	fecha := utils.ParseDate("2006-01-02", req.Fecha)
+	// Combine Fecha(2006-01-02) and Hora(15:04) into a single timestamp
+	fechaStr := req.Fecha + " " + req.Hora
+	fecha, err := utils.ParseDateTime(fechaStr)
+	if err != nil {
+		return fmt.Errorf("formato de fecha/hora inválido: %v", err)
+	}
 
 	return s.repo.RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
 		// 1. Find old Item
@@ -983,8 +986,7 @@ func (s *SolicitudService) ReprogramarItem(ctx context.Context, req dtos.Reprogr
 			Tipo:         oldItem.Tipo,
 			OrigenIATA:   oldItem.OrigenIATA,
 			DestinoIATA:  oldItem.DestinoIATA,
-			Fecha:        &fecha,
-			Hora:         req.Hora,
+			Fecha:        fecha,
 			EstadoCodigo: utils.Ptr("SOLICITADO"),
 		}
 
@@ -1009,12 +1011,15 @@ func (s *SolicitudService) UpdateOficial(ctx context.Context, id string, req dto
 		}
 
 		// 2. Update parent fields using Updates to avoid side effects on associations
-		if err := tx.Model(solicitud).Updates(map[string]interface{}{
+		updates := map[string]interface{}{
 			"motivo":              req.Motivo,
 			"autorizacion":        req.Autorizacion,
 			"ambito_viaje_codigo": req.AmbitoViajeCodigo,
 			"aerolinea_sugerida":  req.AerolineaSugerida,
-		}).Error; err != nil {
+		}
+
+
+		if err := tx.Model(solicitud).Updates(updates).Error; err != nil {
 			return err
 		}
 
@@ -1050,7 +1055,6 @@ func (s *SolicitudService) UpdateOficial(ctx context.Context, id string, req dto
 						existing.OrigenIATA = orig
 						existing.DestinoIATA = dest
 						existing.Fecha = fSalida
-						existing.Hora = s.formatTime(fSalida)
 
 						// Clear relations to force GORM to use the new IATA codes
 						existing.Origen = nil
@@ -1061,6 +1065,7 @@ func (s *SolicitudService) UpdateOficial(ctx context.Context, id string, req dto
 						} else {
 							existing.Tipo = models.TipoSolicitudItemIda
 						}
+
 
 						if err := tx.Save(existing).Error; err != nil {
 							return err
@@ -1084,9 +1089,9 @@ func (s *SolicitudService) UpdateOficial(ctx context.Context, id string, req dto
 					OrigenIATA:   orig,
 					DestinoIATA:  dest,
 					Fecha:        fSalida,
-					Hora:         s.formatTime(fSalida),
 					EstadoCodigo: utils.Ptr(st),
 				}
+
 				if err := tx.Create(&newItem).Error; err != nil {
 					return err
 				}

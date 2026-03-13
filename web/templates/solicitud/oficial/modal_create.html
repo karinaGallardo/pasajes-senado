@@ -139,7 +139,7 @@
                       <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase tracking-widest pl-10 w-[35%]">Origen</th>
                       <th class="px-2 py-1 text-center text-[9px] font-black text-neutral-400 uppercase tracking-widest w-[5%]"></th>
                       <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase tracking-widest w-[35%]">Destino</th>
-                      <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase tracking-widest w-[20%]">Salida (Fecha/Hora)</th>
+                      <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase tracking-widest w-[18%]">Salida (Fecha/Hora)</th>
                       <th class="px-4 py-1 text-right text-[9px] font-black text-neutral-400 uppercase tracking-widest w-[5%]"></th>
                     </tr>
                   </thead>
@@ -291,7 +291,7 @@
                       <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase tracking-widest pl-10 w-[35%]">Origen</th>
                       <th class="px-2 py-1 text-center text-[9px] font-black text-neutral-400 uppercase tracking-widest w-[5%]"></th>
                       <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase tracking-widest w-[35%]">Destino</th>
-                      <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase tracking-widest w-[20%]">Salida (Fecha/Hora)</th>
+                      <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase tracking-widest w-[18%]">Salida (Fecha/Hora)</th>
                       <th class="px-4 py-1 text-right text-[9px] font-black text-neutral-400 uppercase tracking-widest w-[5%]"></th>
                     </tr>
                   </thead>
@@ -438,12 +438,14 @@
       return {
         open: true,
         loading: false,
-        ambito: '',
+        ambito: 'NACIONAL',
         motivo: '',
-        autorizacion: '',
+        autorizacion: 'COMISION',
         aerolinea: '',
         allDestinos: [
-          {{ range $i, $d := .Destinos }}{{ if $i }},{{ end }}{ value: '{{ $d.IATA }}', label: '{{ $d.GetLabel }}', ambito: '{{ $d.AmbitoCodigo }}' }{{ end }}
+          {{ range $i, $d := .Destinos }}{{ if $i }},{{ end }}
+          { value: '{{ $d.IATA }}', label: '{{ $d.GetLabel }}', ambito: '{{ $d.AmbitoCodigo }}' }
+          {{ end }}
         ],
         tramos: [],
 

@@ -1,7 +1,33 @@
 {{ define "descargo/derecho/create" }} {{ template "layout_start" . }}
 
 <div class="max-w-4xl mx-auto" 
-     x-data="{ canSubmit: false, submitting: false }" 
+     x-data="{ 
+       canSubmit: false, 
+       submitting: false,
+       processingImages: false,
+       async handleFile(event) {
+         const input = event.target;
+         if (!input.files || input.files.length === 0) return;
+                  const file = input.files[0];
+          if (!window.checkFileSize(file)) {
+            input.value = '';
+            return;
+          }
+          if (file.type.startsWith('image/')) {
+           this.processingImages = true;
+           try {
+             const resizedFile = await window.resizeImage(file);
+             const dataTransfer = new DataTransfer();
+             dataTransfer.items.add(resizedFile);
+             input.files = dataTransfer.files;
+           } catch (err) {
+             console.error('Error resizing image:', err);
+           } finally {
+             this.processingImages = false;
+           }
+         }
+       }
+     }" 
      x-init="canSubmit = $refs.form.checkValidity()">
   <div class="md:flex md:items-center md:justify-between mb-6">
     <div class="flex-1 min-w-0">
@@ -23,19 +49,19 @@
       <button
         type="submit"
         form="descargo-form"
-        :disabled="submitting"
-        :class="(!submitting) ? 'bg-success-600 hover:bg-success-700 shadow-lg scale-100' : 'bg-neutral-100 text-neutral-400 cursor-not-allowed'"
+        :disabled="submitting || processingImages"
+        :class="(!submitting && !processingImages) ? 'bg-success-600 hover:bg-success-700 shadow-lg scale-100' : 'bg-neutral-100 text-neutral-400 cursor-not-allowed'"
         class="inline-flex items-center px-8 py-2.5 border border-transparent shadow-sm text-xs font-black rounded-lg text-white focus:outline-none transition-all active:scale-95 uppercase tracking-widest min-w-[180px] justify-center">
-        <span x-show="!submitting" class="flex items-center">
+        <span x-show="!submitting && !processingImages" class="flex items-center">
           <i class="ph ph-check-circle mr-2 text-md"></i>
           Registrar Descargo
         </span>
-        <span x-show="submitting" x-cloak class="flex items-center text-white">
+        <span x-show="submitting || processingImages" x-cloak class="flex items-center text-white">
           <svg class="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24">
             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
             <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
           </svg>
-          Guardando...
+          <span x-text="processingImages ? 'Procesando Imágenes...' : 'Guardando...'"></span>
         </span>
       </button>
     </div>
@@ -140,7 +166,7 @@
                         <td class="px-2 py-1 text-center" :class="{ 'opacity-50': devuelto || modificado }" x-data="{ fileName: '' }">
                           <label class="cursor-pointer flex items-center justify-center py-0.5 px-1.5 rounded border transition-colors hover:bg-neutral-100" 
                                 :class="fileName ? 'bg-success-50 border-success-200 text-success-700' : 'bg-neutral-50 border-neutral-200 text-neutral-500'">
-                            <input type="file" :disabled="devuelto || modificado" name="itin_archivo_io_{{ $i }}" class="hidden" accept=".pdf,application/pdf" @change="fileName = $el.files[0] ? $el.files[0].name : ''" />
+                            <input type="file" :disabled="devuelto || modificado" name="itin_archivo_io_{{ $i }}" class="hidden" accept=".pdf,application/pdf,image/*" @change="await handleFile($event); fileName = $el.files[0] ? $el.files[0].name : ''" />
                             <i class="ph text-base" :class="fileName ? 'ph-file-pdf' : 'ph-upload-simple'"></i>
                           </label>
                         </td>
@@ -211,7 +237,7 @@
                         <td class="px-2 py-1 text-center" :class="{ 'opacity-50': devuelto }" x-data="{ fileName: '' }">
                           <label class="cursor-pointer flex items-center justify-center py-0.5 px-1.5 rounded border transition-colors hover:bg-neutral-100" 
                                 :class="fileName ? 'bg-success-50 border-success-200 text-success-700' : 'bg-neutral-50 border-neutral-200 text-neutral-500'">
-                            <input type="file" :disabled="devuelto" name="itin_archivo_ir_{{ $i }}" class="hidden" accept=".pdf,application/pdf" @change="fileName = $el.files[0] ? $el.files[0].name : ''" />
+                            <input type="file" :disabled="devuelto" name="itin_archivo_ir_{{ $i }}" class="hidden" accept=".pdf,application/pdf,image/*" @change="await handleFile($event); fileName = $el.files[0] ? $el.files[0].name : ''" />
                             <i class="ph text-base" :class="fileName ? 'ph-file-pdf' : 'ph-upload-simple'"></i>
                           </label>
                         </td>
@@ -283,7 +309,7 @@
                         <td class="px-2 py-1 text-center" :class="{ 'opacity-50': devuelto || modificado }" x-data="{ fileName: '' }">
                           <label class="cursor-pointer flex items-center justify-center py-0.5 px-1.5 rounded border transition-colors hover:bg-neutral-100" 
                                 :class="fileName ? 'bg-success-50 border-success-200 text-success-700' : 'bg-neutral-50 border-neutral-200 text-neutral-500'">
-                            <input type="file" :disabled="devuelto || modificado" name="itin_archivo_vo_{{ $i }}" class="hidden" accept=".pdf,application/pdf" @change="fileName = $el.files[0] ? $el.files[0].name : ''" />
+                            <input type="file" :disabled="devuelto || modificado" name="itin_archivo_vo_{{ $i }}" class="hidden" accept=".pdf,application/pdf,image/*" @change="await handleFile($event); fileName = $el.files[0] ? $el.files[0].name : ''" />
                             <i class="ph text-base" :class="fileName ? 'ph-file-pdf' : 'ph-upload-simple'"></i>
                           </label>
                         </td>
@@ -354,7 +380,7 @@
                         <td class="px-2 py-1 text-center" :class="{ 'opacity-50': devuelto }" x-data="{ fileName: '' }">
                           <label class="cursor-pointer flex items-center justify-center py-0.5 px-1.5 rounded border transition-colors hover:bg-neutral-100" 
                                 :class="fileName ? 'bg-success-50 border-success-200 text-success-700' : 'bg-neutral-50 border-neutral-200 text-neutral-500'">
-                            <input type="file" :disabled="devuelto" name="itin_archivo_vr_{{ $i }}" class="hidden" accept=".pdf,application/pdf" @change="fileName = $el.files[0] ? $el.files[0].name : ''" />
+                            <input type="file" :disabled="devuelto" name="itin_archivo_vr_{{ $i }}" class="hidden" accept=".pdf,application/pdf,image/*" @change="await handleFile($event); fileName = $el.files[0] ? $el.files[0].name : ''" />
                             <i class="ph text-base" :class="fileName ? 'ph-file-pdf' : 'ph-upload-simple'"></i>
                           </label>
                         </td>
@@ -490,7 +516,7 @@
           <label class="cursor-pointer flex items-center justify-center py-0.5 px-1.5 rounded border transition-colors hover:bg-neutral-100 border-neutral-200 bg-neutral-50 text-neutral-500" 
                  :class="fileName ? 'bg-success-50 border-success-200 text-success-700' : ''"
                  :title="fileName ? fileName : 'Subir PDF (Opcional)'">
-            <input type="file" :disabled="devuelto" name="itin_archivo_${index}" class="hidden" accept=".pdf,application/pdf" @change="fileName = $el.files[0] ? $el.files[0].name : ''" />
+            <input type="file" :disabled="devuelto" name="itin_archivo_${index}" class="hidden" accept=".pdf,application/pdf,image/*" @change="await handleFile($event); fileName = $el.files[0] ? $el.files[0].name : ''" />
             <i class="ph text-base" :class="fileName ? 'ph-file-pdf' : 'ph-upload-simple'"></i>
           </label>
         </td>

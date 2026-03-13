@@ -190,7 +190,8 @@ func (ctrl *DescargoDerechoController) Show(c *gin.Context) {
 		for _, sItem := range descargo.Solicitud.Items {
 			tipoBase := string(sItem.Tipo)
 			for _, p := range sItem.Pasajes {
-				if p.GetEstadoCodigo() != "EMITIDO" {
+				st := p.GetEstadoCodigo()
+				if st != "EMITIDO" && st != "USADO" {
 					continue
 				}
 
@@ -256,7 +257,7 @@ func (ctrl *DescargoDerechoController) Edit(c *gin.Context) {
 			tipoBase := string(sItem.Tipo) // IDA or VUELTA
 			for _, p := range sItem.Pasajes {
 				st := p.GetEstadoCodigo()
-				if st != "EMITIDO" {
+				if st != "EMITIDO" && st != "USADO" {
 					continue
 				}
 

@@ -34,8 +34,30 @@ func (s *ReportService) GeneratePV01(ctx context.Context, solicitud *models.Soli
 	pdf := gofpdf.New("P", "mm", "Letter", "")
 	tr := pdf.UnicodeTranslatorFromDescriptor("")
 
+	// Logic to calculate deadline
+	var masReciente time.Time
+	for _, it := range solicitud.Items {
+		if it.Fecha != nil {
+			if masReciente.IsZero() || it.Fecha.After(masReciente) {
+				masReciente = *it.Fecha
+			}
+		}
+	}
+
+	fechaLimiteStr := ""
+	if !masReciente.IsZero() {
+		limite := utils.CalcularFechaLimiteDescargo(masReciente)
+		fechaLimiteStr = limite.Format("02/01/2006")
+	}
+
 	pdf.SetFooterFunc(func() {
-		pdf.SetY(-10)
+		pdf.SetY(-15)
+		pdf.SetX(3)
+		if fechaLimiteStr != "" {
+			pdf.SetFont("Arial", "B", 7)
+			pdf.SetTextColor(0, 0, 0)
+			pdf.CellFormat(0, 4.5, tr("PLAZO DE PRESENTACION DESCARGO HASTA EL: "+fechaLimiteStr), "", 1, "L", false, 0, "")
+		}
 		pdf.SetX(3)
 		pdf.SetFont("Arial", "I", 6)
 		pdf.SetTextColor(50, 50, 50)
@@ -188,8 +210,30 @@ func (s *ReportService) GeneratePV02(ctx context.Context, solicitud *models.Soli
 	pdf := gofpdf.New("P", "mm", "Letter", "")
 	tr := pdf.UnicodeTranslatorFromDescriptor("")
 
+	// Logic to calculate deadline
+	var masReciente time.Time
+	for _, it := range solicitud.Items {
+		if it.Fecha != nil {
+			if masReciente.IsZero() || it.Fecha.After(masReciente) {
+				masReciente = *it.Fecha
+			}
+		}
+	}
+
+	fechaLimiteStr := ""
+	if !masReciente.IsZero() {
+		limite := utils.CalcularFechaLimiteDescargo(masReciente)
+		fechaLimiteStr = limite.Format("02/01/2006")
+	}
+
 	pdf.SetFooterFunc(func() {
-		pdf.SetY(-10)
+		pdf.SetY(-15)
+		pdf.SetX(3)
+		if fechaLimiteStr != "" {
+			pdf.SetFont("Arial", "B", 7)
+			pdf.SetTextColor(0, 0, 0)
+			pdf.CellFormat(0, 4.5, tr("PLAZO DE PRESENTACION DESCARGO HASTA EL: "+fechaLimiteStr), "", 1, "L", false, 0, "")
+		}
 		pdf.SetX(3)
 		pdf.SetFont("Arial", "I", 6)
 		pdf.SetTextColor(50, 50, 50)
@@ -373,8 +417,6 @@ func (s *ReportService) GeneratePV02(ctx context.Context, solicitud *models.Soli
 					fecha = fecha[:len(fecha)-5]
 				}
 				hora = item.Fecha.Format("15:04")
-			} else if item.Hora != "" {
-				hora = item.Hora
 			}
 
 			pdf.SetFont("Arial", "", 9)
@@ -1526,8 +1568,6 @@ func (s *ReportService) drawSolicitudSegment(ctx context.Context, pdf *gofpdf.Fp
 				fecha = fecha[:len(fecha)-5] // Remove year
 			}
 			hora = item.Fecha.Format("15:04")
-		} else if item.Hora != "" {
-			hora = item.Hora
 		}
 
 		origenStr := item.OrigenIATA

@@ -125,16 +125,13 @@
                       {{ end }}
 
                       <div class="flex items-center gap-2 px-1">
-                        {{ $ida := $sol.GetItemIda }}
-                        {{ if $ida }}
+                        {{ $ida := $sol.GetItemIda }} {{ if $ida }}
                         <i
                           class="{{ if $ida.Estado }}{{ $ida.Estado.Icon }}{{ else }}ph ph-airplane{{ end }} text-[11px] {{ if $ida.Estado }}status-item-text-{{ $ida.Estado.Codigo }}{{ else }}text-neutral-400{{ end }}"
                           title="Ida: {{ $ida.GetEstado }}"></i>
+                        {{ end }} {{ $vuelta := $sol.GetItemVuelta }} {{ if $vuelta }} {{ if $ida }}
+                        <div class="w-px h-2.5 bg-neutral-200"></div>
                         {{ end }}
-
-                        {{ $vuelta := $sol.GetItemVuelta }}
-                        {{ if $vuelta }}
-                          {{ if $ida }}<div class="w-px h-2.5 bg-neutral-200"></div>{{ end }}
                         <i
                           class="{{ if $vuelta.Estado }}{{ $vuelta.Estado.Icon }}{{ else }}ph ph-airplane ph-flip-horizontal{{ end }} text-[11px] {{ if $vuelta.Estado }}status-item-text-{{ $vuelta.Estado.Codigo }}{{ else }}text-neutral-400{{ end }}"
                           title="Vuelta: {{ $vuelta.GetEstado }}"></i>
@@ -227,7 +224,7 @@
                       hx-target="#modal-container"
                       class="text-amber-700 hover:bg-amber-100 font-bold text-[10px] uppercase border border-amber-100 bg-amber-50 rounded-md px-3 py-1.5 transition-colors cursor-pointer inline-flex items-center justify-center text-center">
                       <i class="ph ph-pencil-simple mr-1.5 text-xs"></i>
-                      Editar / Agendar Retorno
+                      Editar
                     </button>
                     {{ end }} {{ if and .Permissions.CanPrint $sol }}
                     <button

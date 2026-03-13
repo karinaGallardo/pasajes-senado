@@ -333,13 +333,9 @@ func (ctrl *SolicitudDerechoController) Update(c *gin.Context) {
 				if req.IdaPorConfirmar {
 					it.EstadoCodigo = utils.Ptr("PENDIENTE")
 					it.Fecha = nil
-					it.Hora = ""
 				} else {
 					it.EstadoCodigo = utils.Ptr("SOLICITADO")
 					it.Fecha = fechaIda
-					if fechaIda != nil {
-						it.Hora = fechaIda.Format("15:04")
-					}
 				}
 			case models.TipoSolicitudItemVuelta:
 				it.OrigenIATA = req.DestinoIATA
@@ -347,13 +343,9 @@ func (ctrl *SolicitudDerechoController) Update(c *gin.Context) {
 				if req.VueltaPorConfirmar {
 					it.EstadoCodigo = utils.Ptr("PENDIENTE")
 					it.Fecha = nil
-					it.Hora = ""
 				} else {
 					it.EstadoCodigo = utils.Ptr("SOLICITADO")
 					it.Fecha = fechaVuelta
-					if fechaVuelta != nil {
-						it.Hora = fechaVuelta.Format("15:04")
-					}
 				}
 
 				if orig != nil {

@@ -31,39 +31,65 @@
       x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
       x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
       class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
-      <form method="POST" action="/pasajes/update-status" enctype="multipart/form-data" x-data="{ fileName: '' }">
+      <form
+        method="POST"
+        action="/pasajes/update-status"
+        enctype="multipart/form-data"
+        x-data="{
+          fileName: '',
+          async handleFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            if (!window.checkFileSize(file)) {
+              event.target.value = '';
+              this.fileName = '';
+              return;
+            }
+
+            this.fileName = file.name;
+
+            // Si es imagen, redimensionar
+            if (file.type.startsWith('image/')) {
+              const resized = await window.resizeImage(file);
+              const dt = new DataTransfer();
+              dt.items.add(resized);
+              event.target.files = dt.files;
+            }
+          }
+        }">
         <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
         <input type="hidden" name="id" value="{{ .Pasaje.ID }}" />
         <input type="hidden" name="status" value="VALIDANDO_USO" />
 
         <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
           <div class="flex items-center justify-between mb-6 border-b pb-3">
-             <div class="flex items-center gap-3">
-               <div class="h-10 w-10 rounded-lg bg-success-100 flex items-center justify-center text-success-600">
-                 <i class="ph ph-check-circle text-2xl"></i>
-               </div>
-               <h3 class="text-lg font-bold text-neutral-900">Marcar como Usado</h3>
-             </div>
-             <button @click="open = false" type="button" class="text-neutral-400 hover:text-neutral-600 transition-colors cursor-pointer p-1">
-               <i class="ph ph-x text-2xl"></i>
-             </button>
+            <div class="flex items-center gap-3">
+              <div class="h-10 w-10 rounded-lg bg-success-100 flex items-center justify-center text-success-600">
+                <i class="ph ph-check-circle text-2xl"></i>
+              </div>
+              <h3 class="text-lg font-bold text-neutral-900">Marcar como Usado</h3>
+            </div>
+            <button @click="open = false" type="button" class="text-neutral-400 hover:text-neutral-600 transition-colors cursor-pointer p-1">
+              <i class="ph ph-x text-2xl"></i>
+            </button>
           </div>
           <p class="text-sm text-neutral-500 mb-4 italic">Para marcar el pasaje como usado, por favor suba el pase a bordo escaneado.</p>
 
-              <!-- Form Fields -->
-              <div class="mt-4 grid grid-cols-1 gap-y-4">
-                <div>
-                  <label for="archivo_pase_abordo" class="block text-sm font-medium text-neutral-700 mb-2">Pase a Bordo (PDF o Imagen)</label>
-                  <div
-                    class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-neutral-300 border-dashed rounded-md bg-white hover:bg-neutral-50 transition-colors cursor-pointer relative group">
-                    <input
-                      type="file"
-                      name="archivo_pase_abordo"
-                      id="archivo_pase_abordo"
-                      accept=".pdf,image/*"
-                      class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                      @change="if($event.target.files.length > 0) { fileName = $event.target.files[0].name }"
-                      required />
+          <!-- Form Fields -->
+          <div class="mt-4 grid grid-cols-1 gap-y-4">
+            <div>
+              <label for="archivo_pase_abordo" class="block text-sm font-medium text-neutral-700 mb-2">Pase a Bordo (PDF o Imagen)</label>
+              <div
+                class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-neutral-300 border-dashed rounded-md bg-white hover:bg-neutral-50 transition-colors cursor-pointer relative group">
+                <input
+                  type="file"
+                  name="archivo_pase_abordo"
+                  id="archivo_pase_abordo"
+                  accept=".pdf,image/*"
+                  class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                  @change="handleFile($event)"
+                  required />
 
                     <div class="space-y-1 text-center" x-show="!fileName">
                       <svg class="mx-auto h-12 w-12 text-neutral-400 group-hover:text-neutral-500 transition-colors" stroke="currentColor" fill="none" viewBox="0 0 48 48">

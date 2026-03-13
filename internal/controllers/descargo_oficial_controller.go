@@ -180,6 +180,52 @@ func (ctrl *DescargoOficialController) Show(c *gin.Context) {
 		return
 	}
 
+	// Dynamic Sync for Show View (similar to Edit)
+	itemsByType := make(map[string][]models.DetalleItinerarioDescargo)
+	existingKeys := make(map[string]bool)
+	detalles := descargo.DetallesItinerario
+
+	for _, item := range detalles {
+		itemsByType[string(item.Tipo)] = append(itemsByType[string(item.Tipo)], item)
+		key := fmt.Sprintf("%s_%s_%s", item.Tipo, item.Ruta, item.Boleto)
+		existingKeys[key] = true
+	}
+
+	if descargo.Solicitud != nil {
+		for _, sItem := range descargo.Solicitud.Items {
+			tipoBase := string(sItem.Tipo)
+			for _, p := range sItem.Pasajes {
+				st := p.GetEstadoCodigo()
+				if st != "EMITIDO" && st != "USADO" {
+					continue
+				}
+
+				tipoTarget := tipoBase + "_ORIGINAL"
+				if p.PasajeAnteriorID != nil {
+					tipoTarget = tipoBase + "_REPRO"
+				}
+
+				routes := utils.SplitRoute(p.Ruta)
+				for _, r := range routes {
+					key := fmt.Sprintf("%s_%s_%s", tipoTarget, r, p.NumeroBoleto)
+					if !existingKeys[key] {
+						tVuelo := p.FechaVuelo
+						newItem := models.DetalleItinerarioDescargo{
+							Tipo:         models.TipoDetalleItinerario(tipoTarget),
+							Ruta:         r,
+							Fecha:        &tVuelo,
+							Boleto:       p.NumeroBoleto,
+							EsDevolucion: false,
+						}
+						detalles = append(detalles, newItem)
+						itemsByType[tipoTarget] = append(itemsByType[tipoTarget], newItem)
+						existingKeys[key] = true
+					}
+				}
+			}
+		}
+	}
+
 	bancoCuenta := ctrl.configService.GetValue(c.Request.Context(), "BANCO_CUENTA_DEVOLUCION")
 	if bancoCuenta == "" {
 		bancoCuenta = "10000005588211"
@@ -192,6 +238,7 @@ func (ctrl *DescargoOficialController) Show(c *gin.Context) {
 	utils.Render(c, "descargo/oficial/show", gin.H{
 		"Title":       "Detalle de Descargo (Oficial)",
 		"Descargo":    descargo,
+		"Detalles":    detalles,
 		"BancoCuenta": bancoCuenta,
 		"BancoNombre": bancoNombre,
 	})
@@ -211,8 +258,46 @@ func (ctrl *DescargoOficialController) Edit(c *gin.Context) {
 	}
 
 	itemsByType := make(map[string][]models.DetalleItinerarioDescargo)
+	existingKeys := make(map[string]bool)
 	for _, item := range descargo.DetallesItinerario {
 		itemsByType[string(item.Tipo)] = append(itemsByType[string(item.Tipo)], item)
+		key := fmt.Sprintf("%s_%s_%s", item.Tipo, item.Ruta, item.Boleto)
+		existingKeys[key] = true
+	}
+
+	// Dynamic Sync: Check if new pasajes were issued after descargo creation
+	if descargo.Solicitud != nil {
+		for _, sItem := range descargo.Solicitud.Items {
+			tipoBase := string(sItem.Tipo)
+			for _, p := range sItem.Pasajes {
+				st := p.GetEstadoCodigo()
+				if st != "EMITIDO" && st != "USADO" {
+					continue
+				}
+
+				tipoTarget := tipoBase + "_ORIGINAL"
+				if p.PasajeAnteriorID != nil {
+					tipoTarget = tipoBase + "_REPRO"
+				}
+
+				routes := utils.SplitRoute(p.Ruta)
+				for _, r := range routes {
+					key := fmt.Sprintf("%s_%s_%s", tipoTarget, r, p.NumeroBoleto)
+					if !existingKeys[key] {
+						tVuelo := p.FechaVuelo
+						newItem := models.DetalleItinerarioDescargo{
+							Tipo:         models.TipoDetalleItinerario(tipoTarget),
+							Ruta:         r,
+							Fecha:        &tVuelo,
+							Boleto:       p.NumeroBoleto,
+							EsDevolucion: false,
+						}
+						itemsByType[tipoTarget] = append(itemsByType[tipoTarget], newItem)
+						existingKeys[key] = true
+					}
+				}
+			}
+		}
 	}
 
 	destinos, _ := ctrl.destinoService.GetAll(c.Request.Context())

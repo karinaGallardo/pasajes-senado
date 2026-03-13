@@ -147,8 +147,7 @@
                       <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase tracking-widest pl-10 w-[35%]">Origen</th>
                       <th class="px-2 py-1 text-center text-[9px] font-black text-neutral-400 uppercase tracking-widest w-[5%]"></th>
                       <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase tracking-widest w-[35%]">Destino</th>
-                      <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase tracking-widest w-[20%]">Salida (Fecha/Hora)</th>
-                      <th class="px-4 py-1 text-right text-[9px] font-black text-neutral-400 uppercase tracking-widest w-[5%]"></th>
+                      <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase tracking-widest w-[18%]">Salida (Fecha/Hora)</th>
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-neutral-100">
@@ -310,8 +309,7 @@
                       <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase tracking-widest pl-10 w-[35%]">Origen</th>
                       <th class="px-2 py-1 text-center text-[9px] font-black text-neutral-400 uppercase tracking-widest w-[5%]"></th>
                       <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase tracking-widest w-[35%]">Destino</th>
-                      <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase tracking-widest w-[20%]">Salida (Fecha/Hora)</th>
-                      <th class="px-4 py-1 text-right text-[9px] font-black text-neutral-400 uppercase tracking-widest w-[5%]"></th>
+                      <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase tracking-widest w-[18%]">Salida (Fecha/Hora)</th>
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-neutral-100">
@@ -433,7 +431,7 @@
                             placeholder="Seleccione fecha..." />
                         </td>
 
-                        <td class="px-4 py-1.5 text-right">
+                        <td class="px-4 py-1.5">
                           <button
                             type="button"
                             @click="removeTramo(item.index)"
@@ -538,7 +536,6 @@
         canRemoveTramo(index) {
           if (this.isAdmin) return true;
           var tramo = this.tramos[index];
-          // Si el tramo ya no está en SOLICITADO o RECHAZADO, no se puede eliminar por asistente
           if (tramo.estado && tramo.estado !== "SOLICITADO" && tramo.estado !== "RECHAZADO") return false;
 
           if (tramo.tipo === "IDA")
