@@ -536,6 +536,9 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 	pdf.Ln(2)
 
 	drawSubTable := func(subTitle string, headerBoleto string, rows []models.DetalleItinerarioDescargo) {
+		if len(rows) == 0 {
+			return
+		}
 		if subTitle != "" {
 			pdf.SetFillColor(240, 240, 240)
 			pdf.SetFont("Arial", "B", 8)
@@ -547,16 +550,6 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 		pdf.CellFormat(30, 5, tr("FECHA DE VIAJE"), "1", 0, "C", false, 0, "")
 		pdf.CellFormat(50, 5, tr(headerBoleto), "1", 0, "C", false, 0, "")
 		pdf.CellFormat(40, 5, tr("N° PASE A BORDO"), "1", 1, "C", false, 0, "")
-
-		if len(rows) == 0 {
-			pdf.SetFont("Arial", "", 8)
-			pdf.CellFormat(35, 6, "", "1", 0, "C", false, 0, "")
-			pdf.CellFormat(35, 6, "", "1", 0, "C", false, 0, "")
-			pdf.CellFormat(30, 6, "", "1", 0, "C", false, 0, "")
-			pdf.CellFormat(50, 6, "", "1", 0, "C", false, 0, "")
-			pdf.CellFormat(40, 6, "", "1", 1, "C", false, 0, "")
-			return
-		}
 
 		pdf.SetFont("Arial", "", 8)
 		for _, r := range rows {
@@ -576,64 +569,133 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 			}
 			pdf.CellFormat(30, 6, tr(fecha), "1", 0, "C", false, 0, "")
 			pdf.CellFormat(50, 6, tr(r.Boleto), "1", 0, "C", false, 0, "")
-			pdf.CellFormat(40, 6, tr(r.NumeroPaseAbordo), "1", 1, "C", false, 0, "")
+
+			paseVal := r.NumeroPaseAbordo
+			if r.EsDevolucion {
+				pdf.SetTextColor(200, 0, 0)
+				pdf.SetFont("Arial", "B", 7)
+				paseVal = "DEVUELTO"
+			}
+			pdf.CellFormat(40, 6, tr(paseVal), "1", 1, "C", false, 0, "")
+			pdf.SetTextColor(0, 0, 0)
+			pdf.SetFont("Arial", "", 8)
 		}
 	}
 
-	drawSegmentBlock := func(title string, typeOrig, typeRepro models.TipoDetalleItinerario) {
-		pdf.SetFont("Arial", "B", 9)
-		pdf.CellFormat(190, 6, tr(" "+title), "", 1, "L", false, 0, "")
-		pdf.Ln(1)
+	// Group by Ticket consolidate devo/mod status
+	type TicketRepGroup struct {
+		Boleto       string
+		Detalles     []models.DetalleItinerarioDescargo
+		EsDevolucion bool
+	}
+	ticketsMap := make(map[string]*TicketRepGroup)
+	var ticketsOrder []string
+
+	for _, d := range descargo.DetallesItinerario {
+		key := d.Boleto
+		if key == "" {
+			key = "SN-" + d.Ruta
+		}
+		if _, ok := ticketsMap[key]; !ok {
+			ticketsMap[key] = &TicketRepGroup{Boleto: d.Boleto}
+			ticketsOrder = append(ticketsOrder, key)
+		}
+		if d.EsDevolucion {
+			ticketsMap[key].EsDevolucion = true
+		}
+		ticketsMap[key].Detalles = append(ticketsMap[key].Detalles, d)
+	}
+
+	drawSegmentBlock := func(title string, typeOrig, typeRepro models.TipoDetalleItinerario, tMap map[string]*TicketRepGroup, tOrder []string) {
 		var origRows, reproRows []models.DetalleItinerarioDescargo
-		for _, d := range descargo.DetallesItinerario {
-			if d.EsDevolucion {
-				continue
-			}
-			switch d.Tipo {
-			case typeOrig:
-				origRows = append(origRows, d)
-			case typeRepro:
-				reproRows = append(reproRows, d)
+
+		for _, key := range tOrder {
+			g := tMap[key]
+			for _, d := range g.Detalles {
+				// Propagate group return status to individual segment for display
+				if g.EsDevolucion {
+					d.EsDevolucion = true
+				}
+				switch d.Tipo {
+				case typeOrig:
+					origRows = append(origRows, d)
+				case typeRepro:
+					reproRows = append(reproRows, d)
+				}
 			}
 		}
-		drawSubTable("", "N° BOLETO ORIGINAL", origRows)
-		if len(reproRows) > 0 {
+
+		if len(origRows) > 0 || len(reproRows) > 0 {
+			pdf.SetFont("Arial", "B", 9)
+			pdf.CellFormat(190, 6, tr(" "+title), "", 1, "L", false, 0, "")
 			pdf.Ln(1)
-			drawSubTable("REPROGRAMACIÓN", "N° BOLETO REPROGRAMADO", reproRows)
+			drawSubTable("", "N° BOLETO ORIGINAL", origRows)
+			if len(reproRows) > 0 {
+				pdf.Ln(1)
+				drawSubTable("REPROGRAMACIÓN", "N° BOLETO REPROGRAMADO", reproRows)
+			}
 		}
 	}
 
-	drawSegmentBlock("TRAMO DE IDA", models.TipoDetalleIdaOriginal, models.TipoDetalleIdaReprogramada)
+	drawSegmentBlock("TRAMO DE IDA", models.TipoDetalleIdaOriginal, models.TipoDetalleIdaReprogramada, ticketsMap, ticketsOrder)
 	pdf.Ln(4)
-	drawSegmentBlock("TRAMO DE RETORNO", models.TipoDetalleVueltaOriginal, models.TipoDetalleVueltaReprogramada)
+	drawSegmentBlock("TRAMO DE RETORNO", models.TipoDetalleVueltaOriginal, models.TipoDetalleVueltaReprogramada, ticketsMap, ticketsOrder)
 	pdf.Ln(4)
 
 	pdf.SetFont("Arial", "B", 9)
 	pdf.CellFormat(190, 6, tr(" PASAJE ABIERTO-OPEN TICKET"), "B", 1, "L", false, 0, "")
 
-	var returnsIda, returnsVuelta []models.DetalleItinerarioDescargo
-	for _, d := range descargo.DetallesItinerario {
-		if d.EsDevolucion {
-			if strings.Contains(string(d.Tipo), "IDA") {
-				returnsIda = append(returnsIda, d)
-			} else if strings.Contains(string(d.Tipo), "VUELTA") {
-				returnsVuelta = append(returnsVuelta, d)
+	hasReturns := false
+	for _, key := range ticketsOrder {
+		g := ticketsMap[key]
+		if g.EsDevolucion {
+			hasReturns = true
+			tipoStr := "TRAMO"
+			if len(g.Detalles) > 0 {
+				if strings.Contains(string(g.Detalles[0].Tipo), "IDA") {
+					tipoStr = "TRAMO DE IDA"
+				} else {
+					tipoStr = "TRAMO DE RETORNO"
+				}
 			}
+
+			// Find cost and full route from Pasaje
+			cost := 0.0
+			fullRoute := ""
+			if descargo.Solicitud != nil {
+				for _, item := range descargo.Solicitud.Items {
+					for _, p := range item.Pasajes {
+						if p.NumeroBoleto == g.Boleto && g.Boleto != "" {
+							cost = p.Costo
+							fullRoute = p.Ruta
+							break
+						}
+					}
+				}
+			}
+
+			// Fallback route reconstruction if not found in Pasaje
+			if fullRoute == "" && len(g.Detalles) > 0 {
+				var routeParts []string
+				for i, det := range g.Detalles {
+					parts := strings.Split(det.Ruta, "-")
+					if i == 0 {
+						routeParts = append(routeParts, strings.TrimSpace(parts[0]))
+					}
+					if len(parts) >= 2 {
+						routeParts = append(routeParts, strings.TrimSpace(parts[1]))
+					}
+				}
+				fullRoute = strings.Join(routeParts, " - ")
+			}
+
+			s.drawReturnTableSummarized(pdf, tr, tipoStr, g.Boleto, fullRoute, cost)
+			pdf.Ln(1)
 		}
 	}
 
-	if len(returnsIda) > 0 || len(returnsVuelta) > 0 {
-		if len(returnsIda) > 0 {
-			s.drawReturnTable(pdf, tr, "TRAMO DE IDA", returnsIda)
-		}
-		if len(returnsVuelta) > 0 {
-			if len(returnsIda) > 0 {
-				pdf.Ln(2)
-			}
-			s.drawReturnTable(pdf, tr, "TRAMO DE RETORNO", returnsVuelta)
-		}
-	} else {
-		s.drawReturnTable(pdf, tr, "", nil)
+	if !hasReturns {
+		s.drawReturnTableSummarized(pdf, tr, "", "", "", 0)
 	}
 	pdf.Ln(10)
 
@@ -950,29 +1012,79 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 	pdf.SetFont("Arial", "", 8)
 	pdf.CellFormat(190, 5, tr(" (En caso de no haber utilizado el boleto emitido o un tramo informar en el siguiente cuadro)"), "", 1, "L", false, 0, "")
 
-	var returnsIda, returnsVuelta []models.DetalleItinerarioDescargo
+	// Group by Ticket consolidate devo/mod status
+	type TicketRepGroup struct {
+		Boleto       string
+		Detalles     []models.DetalleItinerarioDescargo
+		EsDevolucion bool
+	}
+	ticketsMap := make(map[string]*TicketRepGroup)
+	var ticketsOrder []string
+
 	for _, d := range descargo.DetallesItinerario {
+		key := d.Boleto
+		if key == "" {
+			key = "SN-" + d.Ruta
+		}
+		if _, ok := ticketsMap[key]; !ok {
+			ticketsMap[key] = &TicketRepGroup{Boleto: d.Boleto}
+			ticketsOrder = append(ticketsOrder, key)
+		}
 		if d.EsDevolucion {
-			if strings.Contains(string(d.Tipo), "IDA") {
-				returnsIda = append(returnsIda, d)
-			} else if strings.Contains(string(d.Tipo), "VUELTA") {
-				returnsVuelta = append(returnsVuelta, d)
+			ticketsMap[key].EsDevolucion = true
+		}
+		ticketsMap[key].Detalles = append(ticketsMap[key].Detalles, d)
+	}
+
+	hasReturns := false
+	for _, key := range ticketsOrder {
+		g := ticketsMap[key]
+		if g.EsDevolucion {
+			hasReturns = true
+			tipoStr := "TRAMO"
+			if len(g.Detalles) > 0 {
+				if strings.Contains(string(g.Detalles[0].Tipo), "IDA") {
+					tipoStr = "TRAMO DE IDA"
+				} else {
+					tipoStr = "TRAMO DE RETORNO"
+				}
 			}
+
+			// Find cost and full route from Pasaje
+			cost := 0.0
+			fullRoute := ""
+			if descargo.Solicitud != nil {
+				for _, item := range descargo.Solicitud.Items {
+					for _, p := range item.Pasajes {
+						if p.NumeroBoleto == g.Boleto && g.Boleto != "" {
+							cost = p.Costo
+							fullRoute = p.Ruta
+							break
+						}
+					}
+				}
+			}
+			if fullRoute == "" && len(g.Detalles) > 0 {
+				var routeParts []string
+				for i, det := range g.Detalles {
+					parts := strings.Split(det.Ruta, "-")
+					if i == 0 {
+						routeParts = append(routeParts, strings.TrimSpace(parts[0]))
+					}
+					if len(parts) >= 2 {
+						routeParts = append(routeParts, strings.TrimSpace(parts[1]))
+					}
+				}
+				fullRoute = strings.Join(routeParts, " - ")
+			}
+
+			s.drawReturnTableSummarized(pdf, tr, tipoStr, g.Boleto, fullRoute, cost)
+			pdf.Ln(1)
 		}
 	}
 
-	if len(returnsIda) > 0 || len(returnsVuelta) > 0 {
-		if len(returnsIda) > 0 {
-			s.drawReturnTable(pdf, tr, "TRAMO DE IDA", returnsIda)
-		}
-		if len(returnsVuelta) > 0 {
-			if len(returnsIda) > 0 {
-				pdf.Ln(2)
-			}
-			s.drawReturnTable(pdf, tr, "TRAMO DE RETORNO", returnsVuelta)
-		}
-	} else {
-		s.drawReturnTable(pdf, tr, "", nil)
+	if !hasReturns {
+		s.drawReturnTableSummarized(pdf, tr, "", "", "", 0)
 	}
 
 	pdf.Ln(5)
@@ -1323,35 +1435,27 @@ func (s *ReportService) drawSegmentBlock(pdf *gofpdf.Fpdf, tr func(string) strin
 	}
 }
 
-func (s *ReportService) drawReturnTable(pdf *gofpdf.Fpdf, tr func(string) string, subTitle string, rows []models.DetalleItinerarioDescargo) {
+func (s *ReportService) drawReturnTableSummarized(pdf *gofpdf.Fpdf, tr func(string) string, subTitle string, boleto, ruta string, costo float64) {
 	if subTitle != "" {
 		pdf.SetFont("Arial", "B", 8)
 		pdf.CellFormat(190, 6, tr(subTitle), "", 1, "L", false, 0, "")
 	}
 	pdf.SetFillColor(240, 240, 240)
 	pdf.SetFont("Arial", "B", 8)
-	pdf.CellFormat(120, 6, tr("RUTA"), "1", 0, "C", true, 0, "")
-	pdf.CellFormat(70, 6, tr("N° BOLETO"), "1", 1, "C", true, 0, "")
-	if len(rows) > 0 {
-		pdf.SetFont("Arial", "", 8)
-		for _, r := range rows {
-			orig, dest := "", ""
-			parts := strings.Split(r.Ruta, "-")
-			if len(parts) >= 2 {
-				orig = strings.TrimSpace(parts[0])
-				dest = strings.TrimSpace(parts[1])
-			} else {
-				orig = r.Ruta
-			}
-			pdf.CellFormat(60, 6, tr(orig), "1", 0, "C", false, 0, "")
-			pdf.CellFormat(60, 6, tr(dest), "1", 0, "C", false, 0, "")
-			pdf.CellFormat(70, 6, tr(r.Boleto), "1", 1, "C", false, 0, "")
-		}
+	pdf.CellFormat(90, 6, tr("RUTA COMPLETA"), "1", 0, "C", true, 0, "")
+	pdf.CellFormat(50, 6, tr("N° BOLETO"), "1", 0, "C", true, 0, "")
+	pdf.CellFormat(50, 6, tr("COSTO TOTAL (Bs.)"), "1", 1, "C", true, 0, "")
+
+	pdf.SetFont("Arial", "", 8)
+	if boleto != "" || ruta != "" {
+		pdf.CellFormat(90, 8, tr(ruta), "1", 0, "C", false, 0, "")
+		pdf.CellFormat(50, 8, tr(boleto), "1", 0, "C", false, 0, "")
+		costoStr := fmt.Sprintf("%.2f", costo)
+		pdf.CellFormat(50, 8, tr(costoStr), "1", 1, "C", false, 0, "")
 	} else {
-		pdf.SetFont("Arial", "", 8)
-		pdf.CellFormat(60, 8, "", "1", 0, "C", false, 0, "")
-		pdf.CellFormat(60, 8, "", "1", 0, "C", false, 0, "")
-		pdf.CellFormat(70, 8, "", "1", 1, "C", false, 0, "")
+		pdf.CellFormat(90, 8, "", "1", 0, "C", false, 0, "")
+		pdf.CellFormat(50, 8, "", "1", 0, "C", false, 0, "")
+		pdf.CellFormat(50, 8, "", "1", 1, "C", false, 0, "")
 	}
 }
 

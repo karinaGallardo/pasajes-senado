@@ -27,7 +27,9 @@
       <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">{{ .FechaPresentacion.Format "02/01/2006" }}</td>
       <td class="px-6 py-4 whitespace-nowrap">
         <div class="flex flex-col gap-1">
-          <span class="px-2 inline-flex text-[10px] leading-5 font-bold rounded-full bg-primary-100 text-primary-800 uppercase w-fit">{{ .Estado }}</span>
+          <span class="px-2 inline-flex text-[10px] leading-5 font-bold rounded-full uppercase w-fit {{ .GetEstadoBadgeClass }}">
+            {{ .GetEstadoLabel }}
+          </span>
           {{ if not .IsComplete }}
           <span
             class="px-1.5 py-0.5 rounded bg-warning-50 text-warning-700 font-black text-[8px] border border-warning-200 uppercase flex items-center gap-0.5 w-fit cursor-help"

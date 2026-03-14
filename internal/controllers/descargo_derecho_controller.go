@@ -65,10 +65,16 @@ func (ctrl *DescargoDerechoController) Create(c *gin.Context) {
 		Ruta   string
 		Fecha  string
 		Boleto string
+		Index  string
 	}
 
-	pasajesOriginales := make(map[string][]ConnectionView)
-	pasajesReprogramados := make(map[string][]ConnectionView)
+	type TicketView struct {
+		Boleto string
+		Scales []ConnectionView
+	}
+
+	pasajesOriginales := make(map[string][]TicketView)
+	pasajesReprogramados := make(map[string][]TicketView)
 
 	for _, item := range solicitud.Items {
 		tipo := string(item.Tipo)
@@ -78,20 +84,27 @@ func (ctrl *DescargoDerechoController) Create(c *gin.Context) {
 				continue
 			}
 
-			// Decide if it's original or repro based on history
 			targetMap := pasajesOriginales
+			prefix := "io"
 			if p.PasajeAnteriorID != nil {
 				targetMap = pasajesReprogramados
+				prefix = "ir"
+			}
+
+			ticket := TicketView{
+				Boleto: p.NumeroBoleto,
 			}
 
 			routes := utils.SplitRoute(p.Ruta)
-			for _, r := range routes {
-				targetMap[tipo] = append(targetMap[tipo], ConnectionView{
+			for j, r := range routes {
+				ticket.Scales = append(ticket.Scales, ConnectionView{
 					Ruta:   r,
 					Fecha:  p.FechaVuelo.Format("2006-01-02"),
 					Boleto: p.NumeroBoleto,
+					Index:  fmt.Sprintf("%s_%s_%d", prefix, item.ID, j), // Fixed type to %s for item.ID
 				})
 			}
+			targetMap[tipo] = append(targetMap[tipo], ticket)
 		}
 	}
 
@@ -222,10 +235,47 @@ func (ctrl *DescargoDerechoController) Show(c *gin.Context) {
 		}
 	}
 
+	type TicketGroup struct {
+		Boleto         string
+		Detalles       []models.DetalleItinerarioDescargo
+		EsDevolucion   bool
+		EsModificacion bool
+	}
+
+	ticketsMap := make(map[string]*TicketGroup)
+	var ticketsOrder []string
+
+	for _, d := range detalles {
+		boletoKey := d.Boleto
+		if boletoKey == "" {
+			boletoKey = "SIN_BOLETO"
+		}
+		if _, ok := ticketsMap[boletoKey]; !ok {
+			ticketsMap[boletoKey] = &TicketGroup{Boleto: d.Boleto}
+			ticketsOrder = append(ticketsOrder, boletoKey)
+		}
+
+		// If any scale in the ticket is marked, the whole ticket group is marked
+		if d.EsDevolucion {
+			ticketsMap[boletoKey].EsDevolucion = true
+		}
+		if d.EsModificacion {
+			ticketsMap[boletoKey].EsModificacion = true
+		}
+
+		ticketsMap[boletoKey].Detalles = append(ticketsMap[boletoKey].Detalles, d)
+	}
+
+	var tickets []TicketGroup
+	for _, key := range ticketsOrder {
+		tickets = append(tickets, *ticketsMap[key])
+	}
+
 	utils.Render(c, "descargo/derecho/show", gin.H{
 		"Title":    "Detalle de Descargo (Derecho)",
 		"Descargo": descargo,
 		"Detalles": detalles,
+		"Tickets":  tickets,
 	})
 }
 
@@ -237,7 +287,7 @@ func (ctrl *DescargoDerechoController) Edit(c *gin.Context) {
 		return
 	}
 
-	if descargo.Estado != "EN_REVISION" {
+	if descargo.Estado != models.EstadoDescargoBorrador && descargo.Estado != models.EstadoDescargoRechazado {
 		c.Redirect(http.StatusFound, "/descargos/derecho/"+id)
 		return
 	}
@@ -286,6 +336,89 @@ func (ctrl *DescargoDerechoController) Edit(c *gin.Context) {
 		}
 	}
 
+	// Group by ticket structure for the template
+	type ConnectionView struct {
+		Ruta    string
+		Fecha   string
+		Boleto  string
+		Index   string
+		Pase    string
+		Archivo string
+	}
+
+	type TicketView struct {
+		Boleto         string
+		Scales         []ConnectionView
+		EsDevolucion   bool
+		EsModificacion bool
+	}
+
+	pasajesOriginales := make(map[string][]TicketView)
+	pasajesReprogramados := make(map[string][]TicketView)
+
+	for tipo, items := range itemsByType {
+		ticketMap := make(map[string]*TicketView)
+		var orderedTickets []*TicketView
+
+		for i, item := range items {
+			key := item.Boleto
+			if key == "" {
+				key = fmt.Sprintf("SN-%v-%d", item.Tipo, i)
+			}
+
+			if _, ok := ticketMap[key]; !ok {
+				t := &TicketView{
+					Boleto:         item.Boleto,
+					EsDevolucion:   item.EsDevolucion,
+					EsModificacion: item.EsModificacion,
+				}
+				ticketMap[key] = t
+				orderedTickets = append(orderedTickets, t)
+			}
+
+			p := "io"
+			if strings.HasSuffix(tipo, "REPRO") {
+				p = "ir"
+			}
+			if strings.HasPrefix(tipo, "VUELTA") {
+				p = "vo"
+			}
+			if strings.HasPrefix(tipo, "VUELTA") && strings.HasSuffix(tipo, "REPRO") {
+				p = "vr"
+			}
+
+			idx := fmt.Sprintf("%s_%s_%d", p, id, i)
+
+			ticketMap[key].Scales = append(ticketMap[key].Scales, ConnectionView{
+				Ruta:    item.Ruta,
+				Fecha:   item.Fecha.Format("2006-01-02"),
+				Boleto:  item.Boleto,
+				Index:   idx,
+				Pase:    item.NumeroPaseAbordo,
+				Archivo: item.ArchivoPaseAbordo,
+			})
+		}
+
+		deref := make([]TicketView, len(orderedTickets))
+		for i, t := range orderedTickets {
+			deref[i] = *t
+		}
+
+		if strings.HasPrefix(tipo, "IDA") {
+			if strings.HasSuffix(tipo, "ORIGINAL") {
+				pasajesOriginales["IDA"] = append(pasajesOriginales["IDA"], deref...)
+			} else {
+				pasajesReprogramados["IDA"] = append(pasajesReprogramados["IDA"], deref...)
+			}
+		} else {
+			if strings.HasSuffix(tipo, "ORIGINAL") {
+				pasajesOriginales["VUELTA"] = append(pasajesOriginales["VUELTA"], deref...)
+			} else {
+				pasajesReprogramados["VUELTA"] = append(pasajesReprogramados["VUELTA"], deref...)
+			}
+		}
+	}
+
 	destinos, _ := ctrl.destinoService.GetAll(c.Request.Context())
 
 	aerolineaNombre := descargo.Solicitud.AerolineaSugerida
@@ -300,16 +433,30 @@ func (ctrl *DescargoDerechoController) Edit(c *gin.Context) {
 	}
 
 	utils.Render(c, "descargo/derecho/edit", gin.H{
-		"Title":           "Editar Descargo (Derecho)",
-		"Descargo":        descargo,
-		"AerolineaNombre": aerolineaNombre,
-		"ItemsByType":     itemsByType,
-		"Destinos":        destinos,
+		"Title":                "Editar Descargo (Derecho)",
+		"Descargo":             descargo,
+		"Solicitud":            descargo.Solicitud,
+		"AerolineaNombre":      aerolineaNombre,
+		"PasajesOriginales":    pasajesOriginales,
+		"PasajesReprogramados": pasajesReprogramados,
+		"Destinos":             destinos,
 	})
 }
 
 func (ctrl *DescargoDerechoController) Update(c *gin.Context) {
 	id := c.Param("id")
+
+	descargo, err := ctrl.descargoService.GetByID(c.Request.Context(), id)
+	if err != nil {
+		c.Redirect(http.StatusFound, "/descargos")
+		return
+	}
+
+	if descargo.Estado != models.EstadoDescargoBorrador && descargo.Estado != models.EstadoDescargoRechazado {
+		c.Redirect(http.StatusFound, "/descargos/derecho/"+id+"?error=EstadoNoPermitido")
+		return
+	}
+
 	var req dtos.CreateDescargoRequest
 	if err := c.ShouldBind(&req); err != nil {
 		c.Redirect(http.StatusFound, "/descargos/derecho/"+id+"/editar?error=DatosInvalidos")
@@ -412,27 +559,52 @@ func (ctrl *DescargoDerechoController) Table(c *gin.Context) {
 	})
 }
 
-func (ctrl *DescargoDerechoController) Approve(c *gin.Context) {
+func (ctrl *DescargoDerechoController) Submit(c *gin.Context) {
 	id := c.Param("id")
-	descargo, err := ctrl.descargoService.GetByID(c.Request.Context(), id)
-	if err != nil {
-		log.Printf("Error aprobando descargo derecho: %v", err)
-		c.Redirect(http.StatusFound, "/descargos")
-		return
-	}
-
-	descargo.Estado = "APROBADO"
 	authUser := appcontext.AuthUser(c)
 	if authUser == nil {
 		c.Redirect(http.StatusFound, "/auth/login")
 		return
 	}
-	descargo.UpdatedBy = &authUser.ID
 
-	ctrl.descargoService.Update(c.Request.Context(), descargo)
+	if err := ctrl.descargoService.Submit(c.Request.Context(), id, authUser.ID); err != nil {
+		log.Printf("Error enviando descargo derecho: %v", err)
+		c.Redirect(http.StatusFound, "/descargos/derecho/"+id+"?error=ErrorEnvio")
+		return
+	}
 
-	if descargo.SolicitudID != "" {
-		ctrl.solicitudService.Finalize(c.Request.Context(), descargo.SolicitudID)
+	c.Redirect(http.StatusFound, "/descargos/derecho/"+id)
+}
+
+func (ctrl *DescargoDerechoController) Approve(c *gin.Context) {
+	id := c.Param("id")
+	authUser := appcontext.AuthUser(c)
+	if authUser == nil || !authUser.IsAdminOrResponsable() {
+		c.Redirect(http.StatusFound, "/auth/login")
+		return
+	}
+
+	if err := ctrl.descargoService.Approve(c.Request.Context(), id, authUser.ID); err != nil {
+		log.Printf("Error aprobando descargo derecho: %v", err)
+		c.Redirect(http.StatusFound, "/descargos/derecho/"+id+"?error=ErrorAprobacion")
+		return
+	}
+
+	c.Redirect(http.StatusFound, "/descargos/derecho/"+id)
+}
+
+func (ctrl *DescargoDerechoController) Reject(c *gin.Context) {
+	id := c.Param("id")
+	authUser := appcontext.AuthUser(c)
+	if authUser == nil || !authUser.IsAdminOrResponsable() {
+		c.Redirect(http.StatusFound, "/auth/login")
+		return
+	}
+
+	if err := ctrl.descargoService.Reject(c.Request.Context(), id, authUser.ID); err != nil {
+		log.Printf("Error rechazando descargo derecho: %v", err)
+		c.Redirect(http.StatusFound, "/descargos/derecho/"+id+"?error=ErrorRechazo")
+		return
 	}
 
 	c.Redirect(http.StatusFound, "/descargos/derecho/"+id)
@@ -446,16 +618,9 @@ func (ctrl *DescargoDerechoController) RevertApproval(c *gin.Context) {
 		return
 	}
 
-	if err := ctrl.descargoService.RevertApproval(c.Request.Context(), id, authUser.ID); err != nil {
+	if err := ctrl.descargoService.RevertToDraft(c.Request.Context(), id, authUser.ID); err != nil {
 		c.String(http.StatusInternalServerError, "Error revirtiendo aprobación: "+err.Error())
 		return
-	}
-
-	descargo, _ := ctrl.descargoService.GetByID(c.Request.Context(), id)
-	if descargo != nil && descargo.SolicitudID != "" {
-		if err := ctrl.solicitudService.RevertFinalize(c.Request.Context(), descargo.SolicitudID); err != nil {
-			log.Printf("Warning: error reverting solicitud finalization: %v", err)
-		}
 	}
 
 	c.Redirect(http.StatusFound, "/descargos/derecho/"+id)

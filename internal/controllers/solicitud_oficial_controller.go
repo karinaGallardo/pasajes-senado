@@ -315,7 +315,7 @@ func (ctrl *SolicitudOficialController) Show(c *gin.Context) {
 	var descargoEstado string
 	if descargo, _ := ctrl.descargoService.GetBySolicitudID(c.Request.Context(), id); descargo != nil && descargo.ID != "" {
 		descargoID = descargo.ID
-		descargoEstado = descargo.Estado
+		descargoEstado = string(descargo.Estado)
 	}
 
 	utils.Render(c, "solicitud/oficial/show", gin.H{

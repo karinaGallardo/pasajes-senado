@@ -78,6 +78,8 @@ func SetupRoutes(r *gin.Engine, container *app.Container) {
 		protected.GET("/descargos/derecho/:id/imprimir", descargoDerechoCtrl.Print)
 		protected.GET("/descargos/derecho/:id/previsualizar", descargoDerechoCtrl.Preview)
 		protected.POST("/descargos/derecho/:id/aprobar", descargoDerechoCtrl.Approve)
+		protected.POST("/descargos/derecho/:id/rechazar", descargoDerechoCtrl.Reject)
+		protected.POST("/descargos/derecho/:id/enviar", descargoDerechoCtrl.Submit)
 		protected.POST("/descargos/derecho/:id/revertir-aprobacion", descargoDerechoCtrl.RevertApproval)
 
 		protected.POST("/solicitudes/derecho/:id/actualizar", solicitudDerechoCtrl.Update)
@@ -105,6 +107,8 @@ func SetupRoutes(r *gin.Engine, container *app.Container) {
 		protected.GET("/descargos/oficial/:id/imprimir", descargoOficialCtrl.Print)
 		protected.GET("/descargos/oficial/:id/previsualizar", descargoOficialCtrl.Preview)
 		protected.POST("/descargos/oficial/:id/aprobar", descargoOficialCtrl.Approve)
+		protected.POST("/descargos/oficial/:id/rechazar", descargoOficialCtrl.Reject)
+		protected.POST("/descargos/oficial/:id/enviar", descargoOficialCtrl.Submit)
 		protected.POST("/descargos/oficial/:id/revertir-aprobacion", descargoOficialCtrl.RevertApproval)
 
 		protected.POST("/solicitudes/oficial/:id/actualizar", solicitudOficialCtrl.Update)

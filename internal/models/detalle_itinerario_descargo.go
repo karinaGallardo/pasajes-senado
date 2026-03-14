@@ -28,3 +28,29 @@ type DetalleItinerarioDescargo struct {
 func (DetalleItinerarioDescargo) TableName() string {
 	return "detalle_itinerario_descargos"
 }
+
+func (d DetalleItinerarioDescargo) GetTipoDisplay() string {
+	switch d.Tipo {
+	case TipoDetalleIdaOriginal:
+		return "IDA Original"
+	case TipoDetalleVueltaOriginal:
+		return "Vuelta Original"
+	case TipoDetalleIdaReprogramada:
+		return "IDA Repro"
+	case TipoDetalleVueltaReprogramada:
+		return "Vuelta Repro"
+	default:
+		return string(d.Tipo)
+	}
+}
+
+func (d DetalleItinerarioDescargo) GetTipoColorClass() string {
+	switch d.Tipo {
+	case TipoDetalleIdaOriginal:
+		return "bg-blue-50 text-blue-700 border-blue-100"
+	case TipoDetalleVueltaOriginal:
+		return "bg-indigo-50 text-indigo-700 border-indigo-100"
+	default:
+		return "bg-amber-50 text-amber-700 border-amber-100"
+	}
+}

@@ -226,6 +226,27 @@ func (ctrl *DescargoOficialController) Show(c *gin.Context) {
 		}
 	}
 
+	// Group by Ticket for the Template
+	type TicketGroup struct {
+		Boleto   string
+		Detalles []models.DetalleItinerarioDescargo
+	}
+
+	ticketsMap := make(map[string]*TicketGroup)
+	var ticketsOrder []string
+
+	for _, d := range detalles {
+		boletoKey := d.Boleto
+		if boletoKey == "" {
+			boletoKey = "SIN_BOLETO"
+		}
+		if _, ok := ticketsMap[boletoKey]; !ok {
+			ticketsMap[boletoKey] = &TicketGroup{Boleto: d.Boleto}
+			ticketsOrder = append(ticketsOrder, boletoKey)
+		}
+		ticketsMap[boletoKey].Detalles = append(ticketsMap[boletoKey].Detalles, d)
+	}
+
 	bancoCuenta := ctrl.configService.GetValue(c.Request.Context(), "BANCO_CUENTA_DEVOLUCION")
 	if bancoCuenta == "" {
 		bancoCuenta = "10000005588211"
@@ -235,10 +256,16 @@ func (ctrl *DescargoOficialController) Show(c *gin.Context) {
 		bancoNombre = "BANCO UNIÓN S.A."
 	}
 
+	var tickets []TicketGroup
+	for _, key := range ticketsOrder {
+		tickets = append(tickets, *ticketsMap[key])
+	}
+
 	utils.Render(c, "descargo/oficial/show", gin.H{
 		"Title":       "Detalle de Descargo (Oficial)",
 		"Descargo":    descargo,
 		"Detalles":    detalles,
+		"Tickets":     tickets,
 		"BancoCuenta": bancoCuenta,
 		"BancoNombre": bancoNombre,
 	})
@@ -252,7 +279,7 @@ func (ctrl *DescargoOficialController) Edit(c *gin.Context) {
 		return
 	}
 
-	if descargo.Estado != "EN_REVISION" {
+	if descargo.Estado != models.EstadoDescargoBorrador && descargo.Estado != models.EstadoDescargoRechazado {
 		c.Redirect(http.StatusFound, "/descargos/oficial/"+id)
 		return
 	}
@@ -322,6 +349,18 @@ func (ctrl *DescargoOficialController) Edit(c *gin.Context) {
 
 func (ctrl *DescargoOficialController) Update(c *gin.Context) {
 	id := c.Param("id")
+
+	descargo, err := ctrl.descargoService.GetByID(c.Request.Context(), id)
+	if err != nil {
+		c.Redirect(http.StatusFound, "/descargos")
+		return
+	}
+
+	if descargo.Estado != models.EstadoDescargoBorrador && descargo.Estado != models.EstadoDescargoRechazado {
+		c.Redirect(http.StatusFound, "/descargos/oficial/"+id+"?error=EstadoNoPermitido")
+		return
+	}
+
 	var req dtos.CreateDescargoRequest
 	if err := c.ShouldBind(&req); err != nil {
 		c.Redirect(http.StatusFound, "/descargos/oficial/"+id+"/editar?error=DatosInvalidos")
@@ -397,27 +436,52 @@ func (ctrl *DescargoOficialController) Preview(c *gin.Context) {
 	})
 }
 
-func (ctrl *DescargoOficialController) Approve(c *gin.Context) {
+func (ctrl *DescargoOficialController) Submit(c *gin.Context) {
 	id := c.Param("id")
-	descargo, err := ctrl.descargoService.GetByID(c.Request.Context(), id)
-	if err != nil {
-		log.Printf("Error aprobando descargo oficial: %v", err)
-		c.Redirect(http.StatusFound, "/descargos")
-		return
-	}
-
-	descargo.Estado = "APROBADO"
 	authUser := appcontext.AuthUser(c)
 	if authUser == nil {
 		c.Redirect(http.StatusFound, "/auth/login")
 		return
 	}
-	descargo.UpdatedBy = &authUser.ID
 
-	ctrl.descargoService.Update(c.Request.Context(), descargo)
+	if err := ctrl.descargoService.Submit(c.Request.Context(), id, authUser.ID); err != nil {
+		log.Printf("Error enviando descargo oficial: %v", err)
+		c.Redirect(http.StatusFound, "/descargos/oficial/"+id+"?error=ErrorEnvio")
+		return
+	}
 
-	if descargo.SolicitudID != "" {
-		ctrl.solicitudService.Finalize(c.Request.Context(), descargo.SolicitudID)
+	c.Redirect(http.StatusFound, "/descargos/oficial/"+id)
+}
+
+func (ctrl *DescargoOficialController) Approve(c *gin.Context) {
+	id := c.Param("id")
+	authUser := appcontext.AuthUser(c)
+	if authUser == nil || !authUser.IsAdminOrResponsable() {
+		c.Redirect(http.StatusFound, "/auth/login")
+		return
+	}
+
+	if err := ctrl.descargoService.Approve(c.Request.Context(), id, authUser.ID); err != nil {
+		log.Printf("Error aprobando descargo oficial: %v", err)
+		c.Redirect(http.StatusFound, "/descargos/oficial/"+id+"?error=ErrorAprobacion")
+		return
+	}
+
+	c.Redirect(http.StatusFound, "/descargos/oficial/"+id)
+}
+
+func (ctrl *DescargoOficialController) Reject(c *gin.Context) {
+	id := c.Param("id")
+	authUser := appcontext.AuthUser(c)
+	if authUser == nil || !authUser.IsAdminOrResponsable() {
+		c.Redirect(http.StatusFound, "/auth/login")
+		return
+	}
+
+	if err := ctrl.descargoService.Reject(c.Request.Context(), id, authUser.ID); err != nil {
+		log.Printf("Error rechazando descargo oficial: %v", err)
+		c.Redirect(http.StatusFound, "/descargos/oficial/"+id+"?error=ErrorRechazo")
+		return
 	}
 
 	c.Redirect(http.StatusFound, "/descargos/oficial/"+id)
@@ -431,16 +495,9 @@ func (ctrl *DescargoOficialController) RevertApproval(c *gin.Context) {
 		return
 	}
 
-	if err := ctrl.descargoService.RevertApproval(c.Request.Context(), id, authUser.ID); err != nil {
+	if err := ctrl.descargoService.RevertToDraft(c.Request.Context(), id, authUser.ID); err != nil {
 		c.String(http.StatusInternalServerError, "Error revirtiendo aprobación: "+err.Error())
 		return
-	}
-
-	descargo, _ := ctrl.descargoService.GetByID(c.Request.Context(), id)
-	if descargo != nil && descargo.SolicitudID != "" {
-		if err := ctrl.solicitudService.RevertFinalize(c.Request.Context(), descargo.SolicitudID); err != nil {
-			log.Printf("Warning: error reverting solicitud finalization: %v", err)
-		}
 	}
 
 	c.Redirect(http.StatusFound, "/descargos/oficial/"+id)

@@ -140,37 +140,42 @@
                         <th class="px-2 py-1 text-center text-[9px] font-bold text-neutral-400 uppercase">PDF</th>
                       </tr>
                     </thead>
-                    <tbody class="bg-white divide-y divide-neutral-100">
-                      {{ range $i, $p := (index .PasajesOriginales "IDA") }}
-                      <tr x-data="{ devuelto: false, modificado: false }">
-                        <td class="px-2 py-1 text-center">
-                          <input type="hidden" name="itin_tipo[]" value="IDA_ORIGINAL" />
-                          <input type="hidden" name="itin_index[]" value="io_{{ $i }}" />
-                          <input type="checkbox" name="itin_devolucion[]" value="io_{{ $i }}" x-model="devuelto" @change="if(devuelto) modificado = false" title="Devolver" class="h-4 w-4 text-danger-600 border-neutral-300 rounded focus:ring-danger-500">
-                        </td>
-                        <td class="px-2 py-1 text-center">
-                          <input type="checkbox" name="itin_modificacion[]" value="io_{{ $i }}" x-model="modificado" @change="if(modificado) devuelto = false" title="Modificar" class="h-4 w-4 text-amber-600 border-neutral-300 rounded focus:ring-amber-500">
-                        </td>
-                        <td class="px-2 py-1" :class="{ 'opacity-50': devuelto || modificado }">
-                          <input type="text" name="itin_ruta[]" value="{{ .Ruta }}" required class="block w-full text-[11px] border-neutral-200 rounded py-0.5 px-2 bg-neutral-50 min-w-[250px]" readonly />
-                        </td>
-                        <td class="px-2 py-1" :class="{ 'opacity-50': devuelto || modificado }">
-                          <input type="date" name="itin_fecha[]" value="{{ .Fecha }}" required class="block w-full text-[11px] border-neutral-200 rounded py-0.5 px-1 bg-neutral-50" readonly />
-                        </td>
-                        <td class="px-2 py-1" :class="{ 'opacity-50': devuelto || modificado }">
-                          <input type="text" name="itin_boleto[]" value="{{ .Boleto }}" :readonly="devuelto || modificado" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" />
-                        </td>
-                        <td class="px-2 py-1" :class="{ 'opacity-50': devuelto || modificado }">
-                          <input type="text" name="itin_pase_numero[]" :readonly="devuelto || modificado" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2 min-w-[20px] max-w-[60px]" placeholder="Pase" />
-                        </td>
-                        <td class="px-2 py-1 text-center" :class="{ 'opacity-50': devuelto || modificado }" x-data="{ fileName: '' }">
-                          <label class="cursor-pointer flex items-center justify-center py-0.5 px-1.5 rounded border transition-colors hover:bg-neutral-100" 
-                                :class="fileName ? 'bg-success-50 border-success-200 text-success-700' : 'bg-neutral-50 border-neutral-200 text-neutral-500'">
-                            <input type="file" :disabled="devuelto || modificado" name="itin_archivo_io_{{ $i }}" class="hidden" accept=".pdf,application/pdf,image/*" @change="await handleFile($event); fileName = $el.files[0] ? $el.files[0].name : ''" />
-                            <i class="ph text-base" :class="fileName ? 'ph-file-pdf' : 'ph-upload-simple'"></i>
-                          </label>
-                        </td>
-                      </tr>
+                    <tbody class="bg-white divide-y divide-neutral-100 border-b border-neutral-200">
+                      {{ range $i, $ticket := (index .PasajesOriginales "IDA") }}
+                        {{ range $j, $scale := .Scales }}
+                        <tr x-data="{ devuelto: false, modificado: false }">
+                          {{ if eq $j 0 }}
+                          <td class="px-2 py-1 text-center border-r border-neutral-100 bg-neutral-50/30" rowspan="{{ len $ticket.Scales }}">
+                            <input type="checkbox" name="itin_devolucion[]" value="{{ $scale.Index }}" x-model="devuelto" @change="if(devuelto) modificado = false" title="Devolver Ticket Completo" class="h-4 w-4 text-danger-600 border-neutral-300 rounded focus:ring-danger-500">
+                          </td>
+                          <td class="px-2 py-1 text-center border-r border-neutral-100 bg-neutral-50/30" rowspan="{{ len $ticket.Scales }}">
+                            <input type="checkbox" name="itin_modificacion[]" value="{{ $scale.Index }}" x-model="modificado" @change="if(modificado) devuelto = false" title="Modificar Ticket" class="h-4 w-4 text-amber-600 border-neutral-300 rounded focus:ring-amber-500">
+                          </td>
+                          {{ end }}
+                          
+                          <td class="px-2 py-1" :class="{ 'opacity-50 grayscale bg-neutral-50': devuelto || modificado }">
+                            <input type="hidden" name="itin_tipo[]" value="IDA_ORIGINAL" />
+                            <input type="hidden" name="itin_index[]" value="{{ $scale.Index }}" />
+                            <input type="text" name="itin_ruta[]" value="{{ $scale.Ruta }}" required class="block w-full text-[11px] border-neutral-200 rounded py-0.5 px-2 bg-neutral-50 min-w-[250px]" readonly />
+                          </td>
+                          <td class="px-2 py-1" :class="{ 'opacity-50 grayscale bg-neutral-50': devuelto || modificado }">
+                            <input type="date" name="itin_fecha[]" value="{{ $scale.Fecha }}" required class="block w-full text-[11px] border-neutral-200 rounded py-0.5 px-1 bg-neutral-50" readonly />
+                          </td>
+                          <td class="px-2 py-1" :class="{ 'opacity-50 grayscale bg-neutral-50': devuelto || modificado }">
+                            <input type="text" name="itin_boleto[]" value="{{ $scale.Boleto }}" readonly class="block w-full text-[11px] border-neutral-200 rounded py-0.5 px-2 bg-neutral-50" />
+                          </td>
+                          <td class="px-2 py-1" :class="{ 'opacity-50 grayscale bg-neutral-50': devuelto || modificado }">
+                            <input type="text" name="itin_pase_numero[]" :required="!devuelto && !modificado" :readonly="devuelto || modificado" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2 min-w-[20px] max-w-[60px]" placeholder="Pase" />
+                          </td>
+                          <td class="px-2 py-1 text-center" :class="{ 'opacity-50 grayscale bg-neutral-50': devuelto || modificado }" x-data="{ fileName: '' }">
+                            <label class="cursor-pointer flex items-center justify-center py-0.5 px-1.5 rounded border transition-colors hover:bg-neutral-100" 
+                                  :class="fileName ? 'bg-success-50 border-success-200 text-success-700' : 'bg-neutral-50 border-neutral-200 text-neutral-500'">
+                              <input type="file" :required="!devuelto && !modificado && $j === 0" :disabled="devuelto || modificado" name="itin_archivo_{{ $scale.Index }}" class="hidden" accept=".pdf,application/pdf,image/*" @change="await handleFile($event); fileName = $el.files[0] ? $el.files[0].name : ''" />
+                              <i class="ph text-base" :class="fileName ? 'ph-file-pdf' : 'ph-upload-simple'"></i>
+                            </label>
+                          </td>
+                        </tr>
+                        {{ end }}
                       {{ end }}
                     </tbody>
                   </table>
@@ -201,52 +206,54 @@
                         <th class="px-2 py-1 text-right"></th>
                       </tr>
                     </thead>
-                    <tbody id="itin-ida-repro-container" class="bg-white divide-y divide-neutral-100">
-                      {{ range $i, $p := (index .PasajesReprogramados "IDA") }}
-                      <tr x-data="{ devuelto: false, modificado: false, route: '{{ .Ruta }}' }"
-                          @route-picked.window="if($event.detail.rowId == 'ir_{{ $i }}') {
-                            route = $event.detail.orig.cityName + ' - ' + $event.detail.dest.cityName;
-                          }">
-                        <td class="px-2 py-1 text-center">
-                          <input type="hidden" name="itin_tipo[]" value="IDA_REPRO" />
-                          <input type="hidden" name="itin_index[]" value="ir_{{ $i }}" />
-                          <input type="checkbox" name="itin_devolucion[]" value="ir_{{ $i }}" x-model="devuelto" disabled title="No aplica" class="h-4 w-4 text-neutral-300 border-neutral-300 rounded cursor-not-allowed">
-                        </td>
-                        <td class="px-2 py-1 text-center">
-                          <input type="checkbox" name="itin_modificacion[]" value="ir_{{ $i }}" x-model="modificado" disabled title="No aplica" class="h-4 w-4 text-neutral-300 border-neutral-300 rounded cursor-not-allowed">
-                        </td>
-                        <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
-                          <div class="relative min-w-[250px]">
-                            <input type="text" readonly
-                                   :value="route"
-                                   @click="if(!devuelto) $dispatch('open-route-picker', { rowId: 'ir_{{ $i }}' })"
-                                   placeholder="Seleccionar Ruta"
-                                   class="w-full bg-white border border-neutral-300 rounded px-2 py-1 text-[10px] cursor-pointer focus:outline-none focus:ring-1 focus:ring-secondary">
-                            <input type="hidden" name="itin_ruta[]" :value="route" :required="!devuelto" />
-                          </div>
-                        </td>
-                        <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
-                          <input type="date" name="itin_fecha[]" value="{{ .Fecha }}" :required="!devuelto" :readonly="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" />
-                        </td>
-                        <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
-                          <input type="text" name="itin_boleto[]" value="{{ .Boleto }}" :readonly="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" />
-                        </td>
-                        <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
-                          <input type="text" name="itin_pase_numero[]" :readonly="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2 min-w-[20px] max-w-[60px]" />
-                        </td>
-                        <td class="px-2 py-1 text-center" :class="{ 'opacity-50': devuelto }" x-data="{ fileName: '' }">
-                          <label class="cursor-pointer flex items-center justify-center py-0.5 px-1.5 rounded border transition-colors hover:bg-neutral-100" 
-                                :class="fileName ? 'bg-success-50 border-success-200 text-success-700' : 'bg-neutral-50 border-neutral-200 text-neutral-500'">
-                            <input type="file" :disabled="devuelto" name="itin_archivo_ir_{{ $i }}" class="hidden" accept=".pdf,application/pdf,image/*" @change="await handleFile($event); fileName = $el.files[0] ? $el.files[0].name : ''" />
-                            <i class="ph text-base" :class="fileName ? 'ph-file-pdf' : 'ph-upload-simple'"></i>
-                          </label>
-                        </td>
-                        <td class="px-2 py-1 text-right">
-                          <button type="button" @click="$el.closest('tr').remove(); $dispatch('input')" class="text-neutral-400 hover:text-danger-600 transition-colors">
-                            <i class="ph ph-trash"></i>
-                          </button>
-                        </td>
-                      </tr>
+                    <tbody id="itin-ida-repro-container" class="bg-white divide-y divide-neutral-100 border-b border-neutral-200">
+                      {{ range $i, $ticket := (index .PasajesReprogramados "IDA") }}
+                        {{ range $j, $scale := .Scales }}
+                        <tr x-data="{ devuelto: false, modificado: false, route: '{{ $scale.Ruta }}' }">
+                          {{ if eq $j 0 }}
+                          <td class="px-2 py-1 text-center border-r border-neutral-100 bg-neutral-50/30" rowspan="{{ len $ticket.Scales }}">
+                            <input type="checkbox" name="itin_devolucion[]" value="{{ $scale.Index }}" x-model="devuelto" disabled title="No aplica" class="h-4 w-4 text-neutral-300 border-neutral-300 rounded cursor-not-allowed">
+                          </td>
+                          <td class="px-2 py-1 text-center border-r border-neutral-100 bg-neutral-50/30" rowspan="{{ len $ticket.Scales }}">
+                            <input type="checkbox" name="itin_modificacion[]" value="{{ $scale.Index }}" x-model="modificado" disabled title="No aplica" class="h-4 w-4 text-neutral-300 border-neutral-300 rounded cursor-not-allowed">
+                          </td>
+                          {{ end }}
+                          
+                          <td class="px-2 py-1" :class="{ 'opacity-50 grayscale bg-neutral-50': devuelto }">
+                            <input type="hidden" name="itin_tipo[]" value="IDA_REPRO" />
+                            <input type="hidden" name="itin_index[]" value="{{ $scale.Index }}" />
+                            <div class="relative min-w-[250px]">
+                              <input type="text" readonly
+                                     :value="route"
+                                     @click="if(!devuelto) $dispatch('open-route-picker', { rowId: '{{ $scale.Index }}' })"
+                                     placeholder="Seleccionar Ruta"
+                                     class="w-full bg-white border border-neutral-300 rounded px-2 py-1 text-[10px] cursor-pointer focus:outline-none focus:ring-1 focus:ring-secondary">
+                              <input type="hidden" name="itin_ruta[]" :value="route" :required="!devuelto" />
+                            </div>
+                          </td>
+                          <td class="px-2 py-1" :class="{ 'opacity-50 grayscale bg-neutral-50': devuelto }">
+                            <input type="date" name="itin_fecha[]" value="{{ $scale.Fecha }}" :required="!devuelto" :readonly="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" />
+                          </td>
+                          <td class="px-2 py-1" :class="{ 'opacity-50 grayscale bg-neutral-50': devuelto }">
+                            <input type="text" name="itin_boleto[]" value="{{ $scale.Boleto }}" :readonly="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" />
+                          </td>
+                          <td class="px-2 py-1" :class="{ 'opacity-50 grayscale bg-neutral-50': devuelto }">
+                            <input type="text" name="itin_pase_numero[]" :readonly="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2 min-w-[20px] max-w-[60px]" />
+                          </td>
+                          <td class="px-2 py-1 text-center" :class="{ 'opacity-50 grayscale bg-neutral-50': devuelto }" x-data="{ fileName: '' }">
+                            <label class="cursor-pointer flex items-center justify-center py-0.5 px-1.5 rounded border transition-colors hover:bg-neutral-100" 
+                                  :class="fileName ? 'bg-success-50 border-success-200 text-success-700' : 'bg-neutral-50 border-neutral-200 text-neutral-500'">
+                              <input type="file" :disabled="devuelto" name="itin_archivo_{{ $scale.Index }}" class="hidden" accept=".pdf,application/pdf,image/*" @change="await handleFile($event); fileName = $el.files[0] ? $el.files[0].name : ''" />
+                              <i class="ph text-base" :class="fileName ? 'ph-file-pdf' : 'ph-upload-simple'"></i>
+                            </label>
+                          </td>
+                          <td class="px-2 py-1 text-right">
+                            <button type="button" @click="$el.closest('tr').remove(); $dispatch('input')" class="text-neutral-400 hover:text-danger-600 transition-colors">
+                              <i class="ph ph-trash"></i>
+                            </button>
+                          </td>
+                        </tr>
+                        {{ end }}
                       {{ end }}
                     </tbody>
                   </table>
@@ -283,37 +290,42 @@
                         <th class="px-2 py-1 text-center text-[9px] font-bold text-neutral-400 uppercase">PDF</th>
                       </tr>
                     </thead>
-                    <tbody class="bg-white divide-y divide-neutral-100">
-                      {{ range $i, $p := (index .PasajesOriginales "VUELTA") }}
-                      <tr x-data="{ devuelto: false, modificado: false }">
-                        <td class="px-2 py-1 text-center">
-                          <input type="hidden" name="itin_tipo[]" value="VUELTA_ORIGINAL" />
-                          <input type="hidden" name="itin_index[]" value="vo_{{ $i }}" />
-                          <input type="checkbox" name="itin_devolucion[]" value="vo_{{ $i }}" x-model="devuelto" @change="if(devuelto) modificado = false" title="Devolver" class="h-4 w-4 text-danger-600 border-neutral-300 rounded focus:ring-danger-500">
-                        </td>
-                        <td class="px-2 py-1 text-center">
-                          <input type="checkbox" name="itin_modificacion[]" value="vo_{{ $i }}" x-model="modificado" @change="if(modificado) devuelto = false" title="Modificar" class="h-4 w-4 text-amber-600 border-neutral-300 rounded focus:ring-amber-500">
-                        </td>
-                        <td class="px-2 py-1" :class="{ 'opacity-50': devuelto || modificado }">
-                          <input type="text" name="itin_ruta[]" value="{{ .Ruta }}" required class="block w-full text-[11px] border-neutral-200 rounded py-0.5 px-2 bg-neutral-50 min-w-[250px]" readonly />
-                        </td>
-                        <td class="px-2 py-1" :class="{ 'opacity-50': devuelto || modificado }">
-                          <input type="date" name="itin_fecha[]" value="{{ .Fecha }}" required class="block w-full text-[11px] border-neutral-200 rounded py-0.5 px-1 bg-neutral-50" readonly />
-                        </td>
-                        <td class="px-2 py-1" :class="{ 'opacity-50': devuelto || modificado }">
-                          <input type="text" name="itin_boleto[]" value="{{ .Boleto }}" :readonly="devuelto || modificado" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" />
-                        </td>
-                        <td class="px-2 py-1" :class="{ 'opacity-50': devuelto || modificado }">
-                          <input type="text" name="itin_pase_numero[]" :readonly="devuelto || modificado" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2 min-w-[20px] max-w-[60px]" placeholder="Pase" />
-                        </td>
-                        <td class="px-2 py-1 text-center" :class="{ 'opacity-50': devuelto || modificado }" x-data="{ fileName: '' }">
-                          <label class="cursor-pointer flex items-center justify-center py-0.5 px-1.5 rounded border transition-colors hover:bg-neutral-100" 
-                                :class="fileName ? 'bg-success-50 border-success-200 text-success-700' : 'bg-neutral-50 border-neutral-200 text-neutral-500'">
-                            <input type="file" :disabled="devuelto || modificado" name="itin_archivo_vo_{{ $i }}" class="hidden" accept=".pdf,application/pdf,image/*" @change="await handleFile($event); fileName = $el.files[0] ? $el.files[0].name : ''" />
-                            <i class="ph text-base" :class="fileName ? 'ph-file-pdf' : 'ph-upload-simple'"></i>
-                          </label>
-                        </td>
-                      </tr>
+                    <tbody class="bg-white divide-y divide-neutral-100 border-b border-neutral-200">
+                      {{ range $i, $ticket := (index .PasajesOriginales "VUELTA") }}
+                        {{ range $j, $scale := .Scales }}
+                        <tr x-data="{ devuelto: false, modificado: false }">
+                          {{ if eq $j 0 }}
+                          <td class="px-2 py-1 text-center border-r border-neutral-100 bg-neutral-50/30" rowspan="{{ len $ticket.Scales }}">
+                            <input type="checkbox" name="itin_devolucion[]" value="{{ $scale.Index }}" x-model="devuelto" @change="if(devuelto) modificado = false" title="Devolver Ticket Completo" class="h-4 w-4 text-danger-600 border-neutral-300 rounded focus:ring-danger-500">
+                          </td>
+                          <td class="px-2 py-1 text-center border-r border-neutral-100 bg-neutral-50/30" rowspan="{{ len $ticket.Scales }}">
+                            <input type="checkbox" name="itin_modificacion[]" value="{{ $scale.Index }}" x-model="modificado" @change="if(modificado) devuelto = false" title="Modificar Ticket" class="h-4 w-4 text-amber-600 border-neutral-300 rounded focus:ring-amber-500">
+                          </td>
+                          {{ end }}
+                          
+                          <td class="px-2 py-1" :class="{ 'opacity-50 grayscale bg-neutral-50': devuelto || modificado }">
+                            <input type="hidden" name="itin_tipo[]" value="VUELTA_ORIGINAL" />
+                            <input type="hidden" name="itin_index[]" value="{{ $scale.Index }}" />
+                            <input type="text" name="itin_ruta[]" value="{{ $scale.Ruta }}" required class="block w-full text-[11px] border-neutral-200 rounded py-0.5 px-2 bg-neutral-50 min-w-[250px]" readonly />
+                          </td>
+                          <td class="px-2 py-1" :class="{ 'opacity-50 grayscale bg-neutral-50': devuelto || modificado }">
+                            <input type="date" name="itin_fecha[]" value="{{ $scale.Fecha }}" required class="block w-full text-[11px] border-neutral-200 rounded py-0.5 px-1 bg-neutral-50" readonly />
+                          </td>
+                          <td class="px-2 py-1" :class="{ 'opacity-50 grayscale bg-neutral-50': devuelto || modificado }">
+                            <input type="text" name="itin_boleto[]" value="{{ $scale.Boleto }}" readonly class="block w-full text-[11px] border-neutral-200 rounded py-0.5 px-2 bg-neutral-50" />
+                          </td>
+                          <td class="px-2 py-1" :class="{ 'opacity-50 grayscale bg-neutral-50': devuelto || modificado }">
+                            <input type="text" name="itin_pase_numero[]" :required="!devuelto && !modificado" :readonly="devuelto || modificado" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2 min-w-[20px] max-w-[60px]" placeholder="Pase" />
+                          </td>
+                          <td class="px-2 py-1 text-center" :class="{ 'opacity-50 grayscale bg-neutral-50': devuelto || modificado }" x-data="{ fileName: '' }">
+                            <label class="cursor-pointer flex items-center justify-center py-0.5 px-1.5 rounded border transition-colors hover:bg-neutral-100" 
+                                  :class="fileName ? 'bg-success-50 border-success-200 text-success-700' : 'bg-neutral-50 border-neutral-200 text-neutral-500'">
+                              <input type="file" :required="!devuelto && !modificado && $j === 0" :disabled="devuelto || modificado" name="itin_archivo_{{ $scale.Index }}" class="hidden" accept=".pdf,application,pdf,image/*" @change="await handleFile($event); fileName = $el.files[0] ? $el.files[0].name : ''" />
+                              <i class="ph text-base" :class="fileName ? 'ph-file-pdf' : 'ph-upload-simple'"></i>
+                            </label>
+                          </td>
+                        </tr>
+                        {{ end }}
                       {{ end }}
                     </tbody>
                   </table>
@@ -344,52 +356,54 @@
                         <th class="px-2 py-1 text-right"></th>
                       </tr>
                     </thead>
-                    <tbody id="itin-vuelta-repro-container" class="bg-white divide-y divide-neutral-100">
-                      {{ range $i, $p := (index .PasajesReprogramados "VUELTA") }}
-                      <tr x-data="{ devuelto: false, modificado: false, route: '{{ .Ruta }}' }"
-                          @route-picked.window="if($event.detail.rowId == 'vr_{{ $i }}') { 
-                            route = $event.detail.orig.cityName + ' - ' + $event.detail.dest.cityName;
-                          }">
-                        <td class="px-2 py-1 text-center">
-                          <input type="hidden" name="itin_tipo[]" value="VUELTA_REPRO" />
-                          <input type="hidden" name="itin_index[]" value="vr_{{ $i }}" />
-                          <input type="checkbox" name="itin_devolucion[]" value="vr_{{ $i }}" x-model="devuelto" disabled title="No aplica" class="h-4 w-4 text-neutral-300 border-neutral-300 rounded cursor-not-allowed">
-                        </td>
-                        <td class="px-2 py-1 text-center">
-                          <input type="checkbox" name="itin_modificacion[]" value="vr_{{ $i }}" x-model="modificado" disabled title="No aplica" class="h-4 w-4 text-neutral-300 border-neutral-300 rounded cursor-not-allowed">
-                        </td>
-                        <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
-                          <div class="relative min-w-[250px]">
-                            <input type="text" readonly 
-                                   :value="route"
-                                   @click="if(!devuelto) $dispatch('open-route-picker', { rowId: 'vr_{{ $i }}' })"
-                                   placeholder="Seleccionar Ruta"
-                                   class="w-full bg-white border border-neutral-300 rounded px-2 py-1 text-[10px] cursor-pointer focus:outline-none focus:ring-1 focus:ring-secondary">
-                            <input type="hidden" name="itin_ruta[]" :value="route" :required="!devuelto" />
-                          </div>
-                        </td>
-                        <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
-                          <input type="date" name="itin_fecha[]" value="{{ .Fecha }}" :required="!devuelto" :readonly="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" />
-                        </td>
-                        <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
-                          <input type="text" name="itin_boleto[]" value="{{ .Boleto }}" :readonly="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" />
-                        </td>
-                        <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
-                          <input type="text" name="itin_pase_numero[]" :readonly="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2 min-w-[20px] max-w-[60px]" />
-                        </td>
-                        <td class="px-2 py-1 text-center" :class="{ 'opacity-50': devuelto }" x-data="{ fileName: '' }">
-                          <label class="cursor-pointer flex items-center justify-center py-0.5 px-1.5 rounded border transition-colors hover:bg-neutral-100" 
-                                :class="fileName ? 'bg-success-50 border-success-200 text-success-700' : 'bg-neutral-50 border-neutral-200 text-neutral-500'">
-                            <input type="file" :disabled="devuelto" name="itin_archivo_vr_{{ $i }}" class="hidden" accept=".pdf,application/pdf,image/*" @change="await handleFile($event); fileName = $el.files[0] ? $el.files[0].name : ''" />
-                            <i class="ph text-base" :class="fileName ? 'ph-file-pdf' : 'ph-upload-simple'"></i>
-                          </label>
-                        </td>
-                        <td class="px-2 py-1 text-right">
-                          <button type="button" @click="$el.closest('tr').remove(); $dispatch('input')" class="text-neutral-400 hover:text-danger-600 transition-colors">
-                            <i class="ph ph-trash"></i>
-                          </button>
-                        </td>
-                      </tr>
+                    <tbody id="itin-vuelta-repro-container" class="bg-white divide-y divide-neutral-100 border-b border-neutral-200">
+                      {{ range $i, $ticket := (index .PasajesReprogramados "VUELTA") }}
+                        {{ range $j, $scale := .Scales }}
+                        <tr x-data="{ devuelto: false, modificado: false, route: '{{ $scale.Ruta }}' }">
+                          {{ if eq $j 0 }}
+                          <td class="px-2 py-1 text-center border-r border-neutral-100 bg-neutral-50/30" rowspan="{{ len $ticket.Scales }}">
+                            <input type="checkbox" name="itin_devolucion[]" value="{{ $scale.Index }}" x-model="devuelto" disabled title="No aplica" class="h-4 w-4 text-neutral-300 border-neutral-300 rounded cursor-not-allowed">
+                          </td>
+                          <td class="px-2 py-1 text-center border-r border-neutral-100 bg-neutral-50/30" rowspan="{{ len $ticket.Scales }}">
+                            <input type="checkbox" name="itin_modificacion[]" value="{{ $scale.Index }}" x-model="modificado" disabled title="No aplica" class="h-4 w-4 text-neutral-300 border-neutral-300 rounded cursor-not-allowed">
+                          </td>
+                          {{ end }}
+                          
+                          <td class="px-2 py-1" :class="{ 'opacity-50 grayscale bg-neutral-50': devuelto }">
+                            <input type="hidden" name="itin_tipo[]" value="VUELTA_REPRO" />
+                            <input type="hidden" name="itin_index[]" value="{{ $scale.Index }}" />
+                            <div class="relative min-w-[250px]">
+                              <input type="text" readonly 
+                                     :value="route"
+                                     @click="if(!devuelto) $dispatch('open-route-picker', { rowId: '{{ $scale.Index }}' })"
+                                     placeholder="Seleccionar Ruta"
+                                     class="w-full bg-white border border-neutral-300 rounded px-2 py-1 text-[10px] cursor-pointer focus:outline-none focus:ring-1 focus:ring-secondary">
+                              <input type="hidden" name="itin_ruta[]" :value="route" :required="!devuelto" />
+                            </div>
+                          </td>
+                          <td class="px-2 py-1" :class="{ 'opacity-50 grayscale bg-neutral-50': devuelto }">
+                            <input type="date" name="itin_fecha[]" value="{{ $scale.Fecha }}" :required="!devuelto" :readonly="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" />
+                          </td>
+                          <td class="px-2 py-1" :class="{ 'opacity-50 grayscale bg-neutral-50': devuelto }">
+                            <input type="text" name="itin_boleto[]" value="{{ $scale.Boleto }}" :readonly="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" />
+                          </td>
+                          <td class="px-2 py-1" :class="{ 'opacity-50 grayscale bg-neutral-50': devuelto }">
+                            <input type="text" name="itin_pase_numero[]" :readonly="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2 min-w-[20px] max-w-[60px]" />
+                          </td>
+                          <td class="px-2 py-1 text-center" :class="{ 'opacity-50 grayscale bg-neutral-50': devuelto }" x-data="{ fileName: '' }">
+                            <label class="cursor-pointer flex items-center justify-center py-0.5 px-1.5 rounded border transition-colors hover:bg-neutral-100" 
+                                  :class="fileName ? 'bg-success-50 border-success-200 text-success-700' : 'bg-neutral-50 border-neutral-200 text-neutral-500'">
+                              <input type="file" :disabled="devuelto" name="itin_archivo_{{ $scale.Index }}" class="hidden" accept=".pdf,application/pdf,image/*" @change="await handleFile($event); fileName = $el.files[0] ? $el.files[0].name : ''" />
+                              <i class="ph text-base" :class="fileName ? 'ph-file-pdf' : 'ph-upload-simple'"></i>
+                            </label>
+                          </td>
+                          <td class="px-2 py-1 text-right">
+                            <button type="button" @click="$el.closest('tr').remove(); $dispatch('input')" class="text-neutral-400 hover:text-danger-600 transition-colors">
+                              <i class="ph ph-trash"></i>
+                            </button>
+                          </td>
+                        </tr>
+                        {{ end }}
                       {{ end }}
                     </tbody>
                   </table>

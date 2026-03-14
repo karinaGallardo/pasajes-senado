@@ -14,24 +14,18 @@
   </div>
 
   <!-- Status Banner -->
-  <div class="bg-white shadow rounded-lg px-6 py-4 border-l-4 {{ if eq .Descargo.Estado `EN_REVISION` }}border-warning-400{{ else }}border-success-400{{ end }}">
+  <div class="bg-white shadow rounded-lg px-6 py-4 border-l-4 {{ .Descargo.GetEstadoColorClass }}">
     <div class="flex items-center justify-between">
       <div>
         <p class="text-[10px] font-black text-neutral-400 uppercase tracking-widest leading-none mb-1">Estado del Trámite</p>
-        <h3 class="text-xl font-black text-neutral-800 tracking-tight">{{ .Descargo.Estado }}</h3>
+        <h3 class="text-xl font-black text-neutral-800 tracking-tight leading-none">{{ .Descargo.GetEstadoLabel }}</h3>
+        <p class="text-[10px] text-neutral-500 mt-1 max-w-sm">{{ .Descargo.GetEstadoDescripcion }}</p>
       </div>
       <div>
-        {{ if eq .Descargo.Estado `EN_REVISION` }}
-        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black bg-warning-50 text-warning-700 border border-warning-100 uppercase tracking-tighter">
-          <i class="ph ph-clock mr-1 text-sm"></i>
-          Pendiente de Aprobación
+        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black {{ .Descargo.GetEstadoBadgeClass }} uppercase tracking-tighter">
+          <i class="{{ .Descargo.GetEstadoIcon }} mr-1 text-sm"></i>
+          {{ .Descargo.GetEstadoLabel }}
         </span>
-        {{ else }}
-        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black bg-success-50 text-success-700 border border-success-100 uppercase tracking-tighter">
-          <i class="ph ph-check-circle mr-1 text-sm"></i>
-          Procesado / Finalizado
-        </span>
-        {{ end }}
       </div>
     </div>
   </div>
@@ -78,8 +72,23 @@
       <div class="bg-white shadow rounded-lg p-6 border border-neutral-200">
         <h3 class="text-[10px] font-black text-neutral-400 uppercase mb-4 tracking-widest border-b pb-2">Acciones del Descargo</h3>
         <div class="space-y-3">
-          <!-- Finalize Action (Primary if pending) -->
-          {{ if and (eq .Descargo.Estado "EN_REVISION") .AuthUser.IsAdminOrResponsable }}
+          <!-- User Actions: BORRADOR / RECHAZADO -->
+          {{ if .Descargo.CanSubmit .AuthUser }}
+          <form action="/descargos/oficial/{{ .Descargo.ID }}/enviar" method="POST" x-data="{ loading: false }" @submit="loading = true">
+            <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
+            <button
+              type="submit"
+              :disabled="loading"
+              class="w-full inline-flex justify-center items-center px-4 py-2.5 border border-transparent text-xs font-black rounded-md text-white bg-primary hover:bg-primary-600 transition-all shadow-md active:scale-95 disabled:opacity-50 uppercase tracking-tight cursor-pointer">
+              <i class="ph ph-paper-plane-tilt mr-2 text-lg" x-show="!loading"></i>
+              <span x-show="!loading">Enviar a Revisión</span>
+              <span x-show="loading">Enviando...</span>
+            </button>
+          </form>
+          {{ end }}
+
+          <!-- Admin Actions: EN_REVISION -->
+          {{ if .Descargo.CanApprove .AuthUser }}
           <form action="/descargos/oficial/{{ .Descargo.ID }}/aprobar" method="POST" x-data="{ loading: false }" @submit="loading = true">
             <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
             <button
@@ -93,6 +102,20 @@
           </form>
           {{ end }}
 
+          {{ if .Descargo.CanReject .AuthUser }}
+          <form action="/descargos/oficial/{{ .Descargo.ID }}/rechazar" method="POST" x-data="{ loading: false }" @submit="loading = true">
+            <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
+            <button
+              type="submit"
+              :disabled="loading"
+              class="w-full inline-flex justify-center items-center px-4 py-2.5 border border-danger-200 text-xs font-black rounded-md text-danger-700 bg-danger-50 hover:bg-danger-100 transition-all active:scale-95 disabled:opacity-50 uppercase tracking-tight cursor-pointer">
+              <i class="ph ph-warning-circle mr-2 text-lg" x-show="!loading"></i>
+              <span x-show="!loading">Observar / Rechazar</span>
+              <span x-show="loading">Procesando...</span>
+            </button>
+          </form>
+          {{ end }}
+
           <button
             hx-get="/descargos/oficial/{{ .Descargo.ID }}/previsualizar"
             hx-target="#modal-container"
@@ -101,7 +124,7 @@
             Ver / Imprimir PV-06
           </button>
 
-          {{ if and (eq .Descargo.Estado "APROBADO") .AuthUser.IsAdminOrResponsable }}
+          {{ if .Descargo.CanRevert .AuthUser }}
           <form action="/descargos/oficial/{{ .Descargo.ID }}/revertir-aprobacion" method="POST" x-data="{ loading: false }" @submit="loading = true">
             <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
             <button
@@ -115,7 +138,7 @@
           </form>
           {{ end }}
 
-          {{ if and (eq .Descargo.Estado "EN_REVISION") (or .AuthUser.IsAdminOrResponsable (eq .AuthUser.ID (deref .Descargo.CreatedBy))) }}
+          {{ if .Descargo.CanEdit .AuthUser }}
           <a
             href="/descargos/oficial/{{ .Descargo.ID }}/editar"
             class="w-full inline-flex justify-center items-center px-4 py-2 border border-neutral-200 text-xs font-black rounded-md text-neutral-600 bg-white hover:bg-neutral-50 transition-all shadow-sm active:scale-95 uppercase tracking-tight">
@@ -148,31 +171,31 @@
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <h4 class="text-xs font-black text-neutral-400 uppercase tracking-widest mb-1">N° Memorándum / Resolución</h4>
-              <p class="text-sm font-bold text-neutral-900">{{ if .Descargo.Oficial }}{{ if .Descargo.Oficial.NroMemorandum }}{{ .Descargo.Oficial.NroMemorandum }}{{ else }} - {{ end }}{{ else }} - {{ end }}</p>
+              <p class="text-sm font-bold text-neutral-900">{{ .Descargo.GetMemorandum }}</p>
             </div>
             <div>
               <h4 class="text-xs font-black text-neutral-400 uppercase tracking-widest mb-1">Objetivo del Viaje</h4>
-              <p class="text-sm text-neutral-900">{{ if .Descargo.Oficial }}{{ if .Descargo.Oficial.ObjetivoViaje }}{{ .Descargo.Oficial.ObjetivoViaje }}{{ else }}{{ .Descargo.Solicitud.Motivo }}{{ end }}{{ else }}{{ .Descargo.Solicitud.Motivo }}{{ end }}</p>
+              <p class="text-sm text-neutral-900">{{ .Descargo.GetObjetivo }}</p>
             </div>
           </div>
 
           <div class="border-t border-neutral-100 pt-4">
             <h4 class="text-xs font-black text-neutral-400 uppercase tracking-widest mb-2">Actividades Realizadas</h4>
-            <div class="bg-neutral-50 p-4 rounded-lg prose prose-sm max-w-none text-neutral-800 whitespace-pre-wrap">{{ if .Descargo.Oficial }}{{ .Descargo.Oficial.InformeActividades }}{{ end }}</div>
+            <div class="bg-neutral-50 p-4 rounded-lg prose prose-sm max-w-none text-neutral-800 whitespace-pre-wrap">{{ .Descargo.GetActividades }}</div>
           </div>
 
           {{ if .Descargo.Oficial }}
           {{ if .Descargo.Oficial.ResultadosViaje }}
           <div class="border-t border-neutral-100 pt-4">
             <h4 class="text-xs font-black text-neutral-400 uppercase tracking-widest mb-2">Resultados Obtenidos</h4>
-            <div class="bg-primary-50/30 p-4 rounded-lg text-sm text-neutral-800 whitespace-pre-wrap">{{ .Descargo.Oficial.ResultadosViaje }}</div>
+            <div class="bg-primary-50/30 p-4 rounded-lg text-sm text-neutral-800 whitespace-pre-wrap">{{ .Descargo.GetResultados }}</div>
           </div>
           {{ end }}
 
           {{ if .Descargo.Oficial.ConclusionesRecomendaciones }}
           <div class="border-t border-neutral-100 pt-4">
             <h4 class="text-xs font-black text-neutral-400 uppercase tracking-widest mb-2">Conclusiones y Recomendaciones</h4>
-            <div class="bg-indigo-50/30 p-4 rounded-lg text-sm text-neutral-800 whitespace-pre-wrap">{{ .Descargo.Oficial.ConclusionesRecomendaciones }}</div>
+            <div class="bg-indigo-50/30 p-4 rounded-lg text-sm text-neutral-800 whitespace-pre-wrap">{{ .Descargo.GetConclusiones }}</div>
           </div>
           {{ end }}
 
@@ -196,12 +219,7 @@
               <h4 class="text-[10px] font-black text-neutral-400 uppercase tracking-widest">Transporte Utilizado</h4>
               <p class="text-sm font-bold text-neutral-900 flex items-center gap-2">
                 <i class="ph ph-truck text-primary-500 text-lg"></i>
-                {{ if .Descargo.Oficial }}
-                  {{ if eq .Descargo.Oficial.TipoTransporte "AEREO" }}Aéreo
-                  {{ else if eq .Descargo.Oficial.TipoTransporte "TERRESTRE_PUBLICO" }}Público Terrestre
-                  {{ else if eq .Descargo.Oficial.TipoTransporte "VEHICULO_OFICIAL" }}Vehículo Oficial (Placa: {{ .Descargo.Oficial.PlacaVehiculo }})
-                  {{ else }} - {{ end }}
-                {{ else }} - {{ end }}
+                {{ .Descargo.GetTransporteDisplay }}
               </p>
             </div>
 
@@ -258,13 +276,8 @@
                 <!-- Tipo -->
                 <td class="px-6 py-4 whitespace-nowrap align-top">
                   <div class="flex items-center">
-                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-bold border 
-                      {{ if eq .Tipo `IDA_ORIGINAL` }} bg-blue-50 text-blue-700 border-blue-100 
-                      {{ else if eq .Tipo `VUELTA_ORIGINAL` }} bg-indigo-50 text-indigo-700 border-indigo-100 
-                      {{ else }} bg-amber-50 text-amber-700 border-amber-100 {{ end }}">
-                      {{ if eq .Tipo `IDA_ORIGINAL` }}IDA Original{{ else }}
-                      {{ if eq .Tipo `VUELTA_ORIGINAL` }}Vuelta Original{{ else }}
-                      {{ .Tipo }}{{ end }}{{ end }}
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-bold border {{ .GetTipoColorClass }}">
+                      {{ .GetTipoDisplay }}
                     </span>
                   </div>
                 </td>
@@ -285,7 +298,14 @@
 
                 <!-- Documentación -->
                 <td class="px-6 py-4 whitespace-nowrap align-top">
-                  <div class="flex flex-col space-y-1.5">
+                  <div class="flex flex-col">
+                    <div class="flex items-center gap-2 mb-2">
+                        <i class="{{ .Descargo.GetEstadoIcon }} text-xl"></i>
+                        <span class="font-bold uppercase tracking-wider">{{ .Descargo.GetEstadoLabel }}</span>
+                    </div>
+                    <p class="text-xs opacity-80 mt-1 font-normal leading-tight mb-2">
+                        {{ .Descargo.GetEstadoDescripcion }}
+                    </p>
                     <div class="flex items-center text-xs text-neutral-700">
                       <span class="w-12 font-semibold text-neutral-400 uppercase text-[9px] tracking-wide">Boleto</span>
                       <span class="font-mono text-neutral-900 font-medium ml-2">{{ if .Boleto }}{{ .Boleto }}{{ else }} - {{ end }}</span>

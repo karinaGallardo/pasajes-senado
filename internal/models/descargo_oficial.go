@@ -23,3 +23,20 @@ type DescargoOficial struct {
 func (DescargoOficial) TableName() string {
 	return "descargos_oficiales"
 }
+
+func (d DescargoOficial) GetTipoTransporteDisplay() string {
+	switch d.TipoTransporte {
+	case "AEREO":
+		return "Aéreo"
+	case "TERRESTRE_PUBLICO":
+		return "Público Terrestre"
+	case "VEHICULO_OFICIAL":
+		res := "Vehículo Oficial"
+		if d.PlacaVehiculo != "" {
+			res += " (Placa: " + d.PlacaVehiculo + ")"
+		}
+		return res
+	default:
+		return d.TipoTransporte
+	}
+}
