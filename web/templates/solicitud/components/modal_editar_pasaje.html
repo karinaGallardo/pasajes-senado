@@ -108,7 +108,7 @@
           </button>
         </div>
 
-        <form hx-post="/pasajes/update" hx-target="#modal-container" hx-swap="innerHTML" method="POST" enctype="multipart/form-data" @submit="loading = true">
+        <form hx-post="/pasajes/update" hx-target="#modal-container" hx-swap="innerHTML" method="POST" enctype="multipart/form-data" @submit="loading = true" autocomplete="off">
           <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
           <input type="hidden" name="id" x-model="id" />
 
@@ -356,12 +356,12 @@
               <label class="block text-sm font-medium text-neutral-700 mb-2">Reemplazar Billete (PDF) - Opcional</label>
               <div
                 class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-neutral-300 border-dashed rounded-md bg-white hover:bg-neutral-50 transition-colors cursor-pointer relative group">
-                  <input
-                    type="file"
-                    name="archivo"
-                    accept=".pdf,application/pdf,image/*"
-                    class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
-                    @change="await handleFile($event)" />
+                <input
+                  type="file"
+                  name="archivo"
+                  accept=".pdf,application/pdf,image/*"
+                  class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
+                  @change="await handleFile($event)" />
 
                 <div class="space-y-1 text-center" x-show="!fileName">
                   <svg class="mx-auto h-12 w-12 text-neutral-400 group-hover:text-neutral-500 transition-colors" stroke="currentColor" fill="none" viewBox="0 0 48 48">
@@ -374,7 +374,7 @@
                   <div class="flex text-sm text-neutral-600 justify-center">
                     <span class="font-bold text-secondary group-hover:underline">Cargar Nuevo Pasaje</span>
                   </div>
-                    <p class="text-xs text-neutral-500">PDF o Imagen (Opcional)</p>
+                  <p class="text-xs text-neutral-500">PDF o Imagen (Opcional)</p>
                 </div>
 
                 <div class="space-y-1 text-center" x-show="fileName" x-cloak>

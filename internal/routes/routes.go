@@ -61,6 +61,7 @@ func SetupRoutes(r *gin.Engine, container *app.Container) {
 		protected.GET("/solicitudes/oficial/table", solicitudCtrl.TableOficial)
 		protected.GET("/solicitudes/pendientes-descargo", solicitudCtrl.IndexPendientesDescargo)
 		protected.GET("/solicitudes/pendientes-descargo/table", solicitudCtrl.TablePendientesDescargo)
+		protected.GET("/api/solicitudes/pending-stats", solicitudCtrl.GetPendingStats)
 
 		// Solicitudes Derecho
 		protected.GET("/solicitudes/derecho/modal-crear/:item_id/:itinerario_code", solicitudDerechoCtrl.GetCreateModal)

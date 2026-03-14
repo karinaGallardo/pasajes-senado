@@ -1,0 +1,32 @@
+{{ define "layouts/components/pending_stats" }}
+<div class="flex items-center gap-2">
+  <!-- Requests Pending -->
+  {{ if gt .PendingRequests 0 }}
+  <a
+    href="/solicitudes?estado=SOLICITADO"
+    class="flex items-center gap-1.5 px-3 py-1.5 bg-warning-50 text-warning-700 rounded-lg border border-warning-100 hover:bg-warning-100 transition-colors group w-32 justify-center"
+    title="Solicitudes sin atender">
+    <i class="ph ph-clock-counter-clockwise text-lg"></i>
+    <span class="text-xs font-bold w-5 text-center">{{ .PendingRequests }}</span>
+    <span class="hidden xl:inline text-[10px] font-bold uppercase tracking-wider">Pendientes</span>
+  </a>
+  {{ end }}
+
+  <!-- Discharges Pending -->
+  {{ if gt .PendingDescargos 0 }}
+  <a
+    href="/solicitudes/pendientes-descargo"
+    class="flex items-center gap-1.5 px-3 py-1.5 bg-danger-50 text-danger-700 rounded-lg border border-danger-100 hover:bg-danger-100 transition-colors group w-32 justify-center"
+    title="Descargos pendientes de presentar">
+    <i class="ph ph-article text-lg"></i>
+    <span class="text-xs font-bold w-5 text-center">{{ .PendingDescargos }}</span>
+    <span class="hidden xl:inline text-[10px] font-bold uppercase tracking-wider">Descargos</span>
+  </a>
+  {{ end }} {{ if eq .TotalPending 0 }}
+  <div class="flex items-center gap-1.5 px-3 py-1.5 bg-success-50 text-success-700 rounded-lg border border-success-100 opacity-60 w-32 justify-center">
+    <i class="ph ph-check-circle text-lg"></i>
+    <span class="hidden xl:inline text-[10px] font-bold uppercase tracking-wider">Todo al día</span>
+  </div>
+  {{ end }}
+</div>
+{{ end }}

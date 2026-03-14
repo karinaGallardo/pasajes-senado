@@ -198,3 +198,19 @@ func (ctrl *SolicitudController) renderIndex(c *gin.Context, concepto string, ti
 		"LinkBase": linkBase,
 	})
 }
+func (ctrl *SolicitudController) GetPendingStats(c *gin.Context) {
+	authUser := appcontext.AuthUser(c)
+	if authUser == nil {
+		c.Status(401)
+		return
+	}
+
+	pendingRequests, _ := ctrl.service.GetPendingCount(c.Request.Context(), authUser.ID, authUser.IsAdminOrResponsable())
+	pendingDescargos, _ := ctrl.service.GetPendientesDescargo(c.Request.Context(), authUser.ID, authUser.IsAdminOrResponsable())
+
+	utils.Render(c, "layouts/components/pending_stats", gin.H{
+		"PendingRequests":  pendingRequests,
+		"PendingDescargos": len(pendingDescargos),
+		"TotalPending":     pendingRequests + int64(len(pendingDescargos)),
+	})
+}

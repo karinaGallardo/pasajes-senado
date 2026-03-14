@@ -35,358 +35,61 @@
       [x-cloak] {
         display: none !important;
       }
+      /* Prevent sidebar flickering of width on load */
+      .sidebar-collapsed aside {
+        width: 5rem !important;
+      }
+      .sidebar-expanded aside {
+        width: 16rem !important;
+      }
+
+      /* Only transition after initial load to avoid jumpy animations */
+      .ready-to-animate aside,
+      .ready-to-animate span,
+      .ready-to-animate aside i {
+        transition-property: all;
+        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        transition-duration: 300ms;
+      }
     </style>
 
+    <script>
+      // Apply correct sidebar width before Alpine/DOM finishes loading to avoid flicker
+      (function () {
+        const collapsed = localStorage.getItem("sidebarCollapsed") === "true";
+        document.documentElement.classList.add(collapsed ? "sidebar-collapsed" : "sidebar-expanded");
+      })();
+    </script>
+
     <script defer src="/static/lib/alpinejs/alpine.min.js"></script>
-    <script>
-      document.addEventListener("alpine:init", function () {
-        Alpine.data("searchableSelect", function (config) {
-          return {
-            open: false,
-            search: "",
-            disabled: config.disabled || false,
-            value: config.initialValue || "",
-            label: config.initialLabel || config.placeholder || "Seleccione una opción",
-            placeholder: config.placeholder || "Seleccione una opción",
-            items: config.items || [],
-
-            get filteredItems() {
-              if (this.search === "") return this.items;
-              const q = this.search.toLowerCase();
-              return this.items.filter(function (i) {
-                return (i.label && i.label.toLowerCase().includes(q)) || (i.value && i.value.toLowerCase().includes(q)) || (i.extra && i.extra.toLowerCase().includes(q));
-              });
-            },
-
-            select: function (item) {
-              this.value = item ? item.value : "";
-              this.label = item ? item.label : this.placeholder;
-              this.open = false;
-              this.search = "";
-            },
-          };
-        });
-
-        Alpine.directive("flatpickr", (el, { expression }, { evaluate }) => {
-          let options = {};
-          if (typeof expression === "string" && expression.trim() !== "") {
-            options = evaluate(expression) || {};
-          }
-          const defaultOptions = {
-            locale: "es",
-            dateFormat: "Y-m-d H:i", // Keep server format in 24h
-            enableTime: true,
-            time_24hr: false, // Enable AM/PM toggle
-            altInput: true,
-            altFormat: "d/m/Y h:i K", // Formato estándar Bolivia: 01/03/2026 02:30 PM
-            allowInput: true,
-            static: true, // Crucial for components inside modals
-            position: "auto right",
-            plugins: [
-              new confirmDatePlugin({
-                confirmText: "Aceptar",
-                showAlways: false,
-                theme: "light",
-              }),
-            ],
-          };
-
-          const fp = flatpickr(el, {
-            ...defaultOptions,
-            ...options,
-            onChange: (selectedDates, dateStr) => {
-              el.value = dateStr;
-              el.dispatchEvent(new Event("input", { bubbles: true }));
-              el.dispatchEvent(new Event("change", { bubbles: true }));
-            },
-          });
-
-          // Watch for external value changes
-          el._fp_cleanup = Alpine.effect(() => {
-            const val = el.getAttribute("value") || el.value;
-            if (val && fp.input.value !== val) {
-              fp.setDate(val, false);
-            }
-          });
-        });
-
-        Alpine.directive("tooltip", (el, { expression, modifiers }) => {
-          let placement = "top";
-          if (modifiers.includes("left")) placement = "left";
-          if (modifiers.includes("right")) placement = "right";
-          if (modifiers.includes("bottom")) placement = "bottom";
-
-          tippy(el, {
-            content: expression,
-            allowHTML: true,
-            animation: "shift-away",
-            theme: "translucent",
-            placement: placement,
-            interactive: true,
-          });
-        });
-      });
-    </script>
-    <script>
-      document.addEventListener("htmx:confirm", function (e) {
-        if (!e.detail.question) return;
-
-        e.preventDefault();
-
-        Swal.fire({
-          title: "¿Estás seguro?",
-          text: e.detail.question,
-          icon: "warning",
-          showCancelButton: true,
-          confirmButtonColor: "#03738C",
-          cancelButtonColor: "#ef4444",
-          confirmButtonText: "Sí, proceder",
-          cancelButtonText: "Cancelar",
-          reverseButtons: true,
-          customClass: {
-            popup: "rounded-xl font-sans",
-            title: "text-lg font-bold text-neutral-900",
-            htmlContainer: "text-sm text-neutral-600",
-            confirmButton: "rounded-lg px-4 py-2 text-sm font-medium shadow-sm transition-all duration-200",
-            cancelButton: "rounded-lg px-4 py-2 text-sm font-medium shadow-sm transition-all duration-200",
-          },
-        }).then(function (result) {
-          if (result.isConfirmed) {
-            e.detail.issueRequest(true);
-          }
-        });
-      });
-
-      // Global event listener for showAlert trigger
-      document.addEventListener("showAlert", function (evt) {
-        const data = evt.detail;
-        Swal.fire({
-          icon: data.icon || "info",
-          title: data.title || "",
-          text: data.text || "",
-          confirmButtonColor: "#03738C",
-          customClass: {
-            popup: "rounded-xl font-sans",
-            confirmButton: "rounded-lg px-4 py-2 text-sm font-medium shadow-sm",
-          },
-        });
-      });
-    </script>
-
+    <script src="/static/js/app.js"></script>
     <script src="/static/lib/tailwindcss/tailwindcss_plugins.js"></script>
-    <script>
-      tailwind.config = {
-        theme: {
-          colors: {
-            transparent: "transparent",
-            current: "currentColor",
-            black: "#000000",
-            white: "#ffffff",
-            primary: {
-              50: "#e6f1f3",
-              100: "#cfe4e8",
-              200: "#9fc9d1",
-              300: "#6faeba",
-              400: "#3f94a3",
-              DEFAULT: "#03738C",
-              500: "#03738C",
-              600: "#025c70",
-              700: "#024554",
-              800: "#012e38",
-              900: "#01171c",
-            },
-            secondary: {
-              50: "#e6f5f6",
-              100: "#ceebed",
-              200: "#9dd7db",
-              300: "#6cc3ca",
-              400: "#3bafb8",
-              DEFAULT: "#0396A6",
-              500: "#0396A6",
-              600: "#027885",
-              700: "#025a64",
-              800: "#013c42",
-              900: "#011e21",
-            },
-            gold: {
-              50: "#fef5ea",
-              100: "#fdebd5",
-              200: "#fbd7ab",
-              300: "#f9c381",
-              400: "#f7af57",
-              DEFAULT: "#F29A2E",
-              500: "#F29A2E",
-              600: "#c27b25",
-              700: "#915c1c",
-              800: "#613e13",
-              900: "#301f09",
-            },
-            salmon: {
-              50: "#fef3ed",
-              100: "#fde7dc",
-              200: "#fbcfb9",
-              300: "#f9b796",
-              400: "#f79f73",
-              DEFAULT: "#F2884B",
-              500: "#F2884B",
-              600: "#c26d3c",
-              700: "#91522d",
-              800: "#61361e",
-              900: "#301b0f",
-            },
-            accent: {
-              50: "#feeeec",
-              100: "#fddbd9",
-              200: "#fbb7b3",
-              300: "#f9938d",
-              400: "#f76f67",
-              DEFAULT: "#F2490C",
-              500: "#F2490C",
-              600: "#c23a0a",
-              700: "#912c07",
-              800: "#611d05",
-              900: "#300f02",
-            },
-            neutral: {
-              50: "#f9f9f9",
-              100: "#f3f3f3",
-              200: "#e7e7e7",
-              300: "#d1d1d1",
-              400: "#a3a3a3",
-              DEFAULT: "#575756",
-              500: "#575756",
-              600: "#464645",
-              700: "#343434",
-              800: "#232322",
-              900: "#111111",
-            },
-            violet: {
-              50: "#f5f3ff",
-              100: "#ede9fe",
-              200: "#ddd6fe",
-              300: "#c4b5fd",
-              400: "#a78bfa",
-              DEFAULT: "#8b5cf6",
-              500: "#8b5cf6",
-              600: "#7c3aed",
-              700: "#6d28d9",
-              800: "#5b21b6",
-              900: "#4c1d95",
-            },
-            // Semantics for states
-            success: {
-              50: "#ecfdf5",
-              100: "#d1fae5",
-              200: "#a7f3d0",
-              300: "#6ee7b7",
-              400: "#34d399",
-              DEFAULT: "#10b981",
-              500: "#10b981",
-              600: "#059669",
-              700: "#047857",
-              800: "#065f46",
-              900: "#064e3b",
-            },
-            warning: {
-              50: "#fffbeb",
-              100: "#fef3c7",
-              200: "#fde68a",
-              300: "#fcd34d",
-              400: "#fbbf24",
-              DEFAULT: "#f59e0b",
-              500: "#f59e0b",
-              600: "#d97706",
-              700: "#b45309",
-              800: "#92400e",
-              900: "#78350f",
-            },
-            danger: {
-              50: "#fef2f2",
-              100: "#fee2e2",
-              200: "#fecaca",
-              300: "#fca5a5",
-              400: "#f87171",
-              DEFAULT: "#ef4444",
-              500: "#ef4444",
-              600: "#dc2626",
-              700: "#b91c1c",
-              800: "#991b1b",
-              900: "#7f1d1d",
-            },
-          },
-          fontFamily: {
-            sans: ["Inter", "ui-sans-serif", "system-ui"],
-            brand: ["Montserrat", "sans-serif"],
-          },
-          borderRadius: {
-            none: "0",
-            sm: "4px",
-            md: "8px",
-            lg: "12px",
-            xl: "16px",
-            "2xl": "24px",
-            full: "9999px",
-          },
-          borderColor: function (theme) {
-            return Object.assign({}, theme("colors"), {
-              DEFAULT: theme("colors.neutral.200", "#e7e7e7"),
-            });
-          },
-          ringColor: function (theme) {
-            return Object.assign({}, theme("colors"), {
-              DEFAULT: theme("colors.primary.DEFAULT", "#03738C"),
-            });
-          },
-          transitionTimingFunction: {
-            DEFAULT: "cubic-bezier(0.4, 0, 0.2, 1)",
-            premium: "cubic-bezier(0.34, 1.56, 0.64, 1)",
-          },
-          transitionDuration: {
-            DEFAULT: "200ms",
-            fast: "150ms",
-            slow: "400ms",
-          },
-          boxShadow: {
-            sm: "0 1px 2px 0 rgba(0, 0, 0, 0.05)",
-            DEFAULT: "0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)",
-            md: "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)",
-            soft: "0 4px 20px -2px rgba(0, 0, 0, 0.05), 0 2px 12px -2px rgba(0, 0, 0, 0.03)",
-            premium: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
-          },
-          extend: {
-            fontSize: {
-              xxs: "0.625rem",
-              tiny: "0.5rem",
-            },
-            animation: {
-              "fade-in-down": "fadeInDown 0.3s ease-out",
-              "fade-in": "fadeIn 0.2s ease-in",
-            },
-            keyframes: {
-              fadeInDown: {
-                "0%": { opacity: "0", transform: "translateY(-10px)" },
-                "100%": { opacity: "1", transform: "translateY(0)" },
-              },
-              fadeIn: {
-                "0%": { opacity: "0" },
-                "100%": { opacity: "1" },
-              },
-            },
-          },
-        },
-      };
-    </script>
+    <script src="/static/js/tailwind.config.js"></script>
+
     {{ block "header_scripts" . }}{{ end }}
     <link rel="stylesheet" href="/static/css/styles.css" />
     {{ block "header_styles" . }}{{ end }}
   </head>
 
-  <body class="bg-neutral-50 font-sans antialiased text-neutral-900" x-data="{ sidebarOpen: false, sidebarCollapsed: false }">
+  <body
+    class="bg-neutral-50 font-sans antialiased text-neutral-900"
+    :class="{ 'ready-to-animate': true }"
+    x-data="{ 
+      sidebarOpen: false, 
+      sidebarCollapsed: localStorage.getItem('sidebarCollapsed') === 'true',
+      toggleSidebar() {
+        this.sidebarCollapsed = !this.sidebarCollapsed;
+        localStorage.setItem('sidebarCollapsed', this.sidebarCollapsed);
+        document.documentElement.classList.toggle('sidebar-collapsed', this.sidebarCollapsed);
+        document.documentElement.classList.toggle('sidebar-expanded', !this.sidebarCollapsed);
+      }
+    }"
+    x-init="$nextTick(() => document.documentElement.classList.add('ready-to-animate'))">
     <div class="flex h-screen overflow-hidden">
       <!-- SIDEBAR -->
       {{ if .AuthUser }}
       <aside
-        class="flex flex-col bg-white border-r border-neutral-200 transition-all duration-300 transform lg:translate-x-0 lg:static fixed z-30 h-full"
+        class="flex flex-col bg-white border-r border-neutral-200 transform lg:translate-x-0 lg:static fixed z-30 h-full"
         :class="{
             'translate-x-0': sidebarOpen,
             '-translate-x-full': !sidebarOpen,
@@ -396,7 +99,7 @@
         <!-- Logo Area -->
         <div class="flex items-center h-16 px-6 border-b border-neutral-100 overflow-hidden whitespace-nowrap">
           <img src="/static/img/logo_simple.png" alt="Logo Pasajes GO" class="h-10 w-auto mr-2 min-w-[32px]" />
-          <span class="text-xl font-brand font-bold text-neutral-800 tracking-tight transition-opacity duration-300" x-show="!sidebarCollapsed" x-transition>Pasajes GO</span>
+          <span class="text-xl font-brand font-bold text-neutral-800 tracking-tight" x-show="!sidebarCollapsed" x-transition>Pasajes GO</span>
         </div>
 
         <!-- Navigation -->
@@ -405,12 +108,10 @@
         <!-- Bottom Actions -->
         <div class="p-4 border-t border-neutral-200">
           <button
-            @click="sidebarCollapsed = !sidebarCollapsed"
+            @click="toggleSidebar()"
             class="flex items-center justify-center w-full px-4 py-2 text-sm font-medium text-neutral-600 hover:text-primary transition-colors focus:outline-none">
-            <i
-              class="ph ph-caret-left mr-3 text-xl min-w-[20px] transform transition-transform duration-300"
-              :class="{ 'rotate-180': sidebarCollapsed, 'mr-0': sidebarCollapsed }"></i>
-            <span class="text-xs transition-opacity duration-300 whitespace-nowrap" x-show="!sidebarCollapsed">Colapsar</span>
+            <i class="ph ph-caret-left mr-3 text-xl min-w-[20px]" :class="{ 'rotate-180': sidebarCollapsed, 'mr-0': sidebarCollapsed }"></i>
+            <span class="text-xs whitespace-nowrap" x-show="!sidebarCollapsed">Colapsar</span>
           </button>
         </div>
       </aside>
@@ -420,7 +121,7 @@
       <div class="flex-1 flex flex-col overflow-hidden relative">
         <!-- HEADER -->
         {{ if .AuthUser }}
-        <header class="h-20 bg-white border-b border-neutral-200 flex items-center justify-between px-6 lg:px-8 flex-shrink-0">
+        <header class="h-16 bg-white border-b border-neutral-200 flex items-center justify-between px-6 lg:px-8 flex-shrink-0">
           <!-- Search Bar -->
           <div class="flex-1 max-w-lg flex items-center">
             <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden mr-4 text-neutral-500 hover:text-neutral-700">
@@ -436,7 +137,7 @@
                 name="q"
                 value="{{ .SearchTerm }}"
                 autocomplete="off"
-                class="block w-full pl-10 pr-3 py-2 border border-neutral-200 rounded-lg leading-5 bg-neutral-50 placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:border-primary focus:ring-1 focus:ring-primary sm:text-sm transition duration-150 ease-in-out"
+                class="block w-full pl-10 pr-3 py-2 border border-neutral-200 rounded-lg leading-5 bg-neutral-50 placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:border-primary focus:ring-1 focus:ring-primary sm:text-sm"
                 placeholder="Buscar trámites, personas..."
                 @keydown.enter="$event.preventDefault()" />
             </div>
@@ -444,103 +145,56 @@
 
           <!-- Right Header Actions -->
           <div class="ml-4 flex items-center space-x-4">
-            <!-- Notifications Dropdown -->
+            <!-- Clock and Date -->
             <div
-              class="relative"
-              x-data="{
-                open: false,
-                notifications: [],
-                unreadCount: 0,
-                async fetchNotifications() {
-                  const res = await fetch('/api/notifications/recent');
-                  const data = await res.json();
-                  this.notifications = data.notifications || [];
-                  this.unreadCount = data.unread_count || 0;
-                },
-                async markAsRead(id, url) {
-                  await fetch(`/api/notifications/${id}/read`, { method: 'POST' });
-                  window.location.href = url;
-                },
-                async markAllAsRead() {
-                  await fetch('/api/notifications/read-all', { method: 'POST' });
-                  this.fetchNotifications();
+              class="hidden lg:flex items-center space-x-3 px-4 py-2 bg-neutral-50 rounded-xl border border-neutral-100 text-neutral-600 shadow-sm"
+              x-data="{ 
+                time: '', 
+                date: '',
+                updateTime() {
+                  const now = new Date();
+                  const optionsDate = { weekday: 'short', day: '2-digit', month: 'short', year: 'numeric' };
+                  this.time = now.toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+                  this.date = now.toLocaleDateString('es-ES', optionsDate).replace('.', '');
                 }
               }"
-              x-init="
-                fetchNotifications();
-                window.addEventListener('refresh_notifications', (e) => {
-                   if (e.detail.target_user === '{{ .AuthUser.ID }}') {
-                      fetchNotifications();
-                   }
-                });
-              ">
-              <button @click="open = !open; if(open) fetchNotifications()" class="p-2 text-neutral-400 hover:text-primary transition-colors focus:outline-none relative">
-                <i class="ph ph-bell text-2xl"></i>
-                <span
-                  x-show="unreadCount > 0"
-                  class="absolute top-1 right-1 flex h-4 w-4 items-center justify-center rounded-full bg-danger-500 text-[10px] font-bold text-white shadow-sm"
-                  x-text="unreadCount"></span>
-              </button>
+              x-init="updateTime(); setInterval(() => updateTime(), 1000)">
+              <div class="flex items-center">
+                <i class="ph ph-calendar-blank mr-2 text-primary text-lg"></i>
+                <span class="text-[11px] font-black uppercase tracking-widest" x-text="date"></span>
+              </div>
+              <div class="h-4 w-px bg-neutral-200"></div>
+              <div class="flex items-center">
+                <i class="ph ph-clock mr-2 text-primary text-lg"></i>
+                <span class="text-xs font-mono font-black tracking-widest text-neutral-800" x-text="time"></span>
+              </div>
+            </div>
 
-              <div
-                x-show="open"
-                @click.away="open = false"
-                x-transition:enter="transition ease-out duration-100"
-                x-transition:enter-start="opacity-0 scale-95"
-                x-transition:enter-end="opacity-100 scale-100"
-                class="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-premium border border-neutral-200 z-50 overflow-hidden"
-                style="display: none">
-                <div class="p-4 border-b border-neutral-100 flex items-center justify-between bg-neutral-50/50">
-                  <h3 class="text-sm font-bold text-neutral-800">Notificaciones</h3>
-                  <button @click="markAllAsRead" class="text-xs font-semibold text-primary hover:text-primary-600">Marcar todo leido</button>
+            <!-- Solicitudes No Atendidas (Auto-update every 5 mins) -->
+            <div hx-get="/api/solicitudes/pending-stats" hx-trigger="load, every 300s, refresh-stats from:body" class="flex items-center">
+              <!-- Skeleton Loader (High Fidelity Match) -->
+              <div class="flex items-center gap-2 animate-pulse">
+                <!-- Requests Pending Skeleton -->
+                <div class="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-50 text-neutral-300 rounded-lg border border-neutral-100 w-32 justify-center">
+                  <i class="ph ph-clock-counter-clockwise text-lg opacity-40"></i>
+                  <span class="text-xs font-bold w-5 text-center text-neutral-200">00</span>
+                  <span class="hidden xl:inline text-[10px] font-bold uppercase tracking-wider text-neutral-200">Pendientes</span>
                 </div>
 
-                <div class="max-h-96 overflow-y-auto">
-                  <template x-if="notifications.length === 0">
-                    <div class="p-8 text-center">
-                      <i class="ph ph-bell-slash text-4xl text-neutral-200 mb-2"></i>
-                      <p class="text-xs text-neutral-400">No tienes notificaciones</p>
-                    </div>
-                  </template>
-
-                  <template x-for="n in notifications" :key="n.id">
-                    <div
-                      @click="markAsRead(n.id, n.target_url)"
-                      class="p-4 border-b border-neutral-50 hover:bg-neutral-50 cursor-pointer transition-colors relative group"
-                      :class="{ 'bg-primary-50/30': !n.is_read }">
-                      <div class="flex items-start">
-                        <div class="h-2 w-2 rounded-full bg-primary mt-1.5 mr-3 flex-shrink-0" x-show="!n.is_read"></div>
-                        <div class="flex-1">
-                          <p class="text-sm font-bold text-neutral-800 mb-0.5" x-text="n.title"></p>
-                          <div class="text-[11px] text-neutral-500 leading-relaxed" x-html="n.message"></div>
-                        </div>
-                      </div>
-                    </div>
-                  </template>
+                <!-- Discharges Pending Skeleton -->
+                <div class="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-50 text-neutral-300 rounded-lg border border-neutral-100 w-32 justify-center">
+                  <i class="ph ph-article text-lg opacity-40"></i>
+                  <span class="text-xs font-bold w-5 text-center text-neutral-200">00</span>
+                  <span class="hidden xl:inline text-[10px] font-bold uppercase tracking-wider text-neutral-200">Descargos</span>
                 </div>
               </div>
             </div>
+
+            <!-- Notifications Dropdown -->
+            {{ template "layouts/components/notifications" . }}
 
             <!-- User Profile -->
-            <div class="flex items-center pl-4 border-l border-neutral-200" x-data="{ open: false }">
-              <div class="flex items-center cursor-pointer" @click="open = !open">
-                <div class="text-right mr-3 hidden md:block">
-                  <div class="text-sm font-medium text-neutral-900">{{ .AuthUser.GetNombreCompleto }}</div>
-                  <div class="text-xs text-neutral-500">{{ .AuthUser.Rol.Codigo }}</div>
-                </div>
-                <div class="h-10 w-10 rounded-full bg-primary flex items-center justify-center text-white font-bold shadow-sm">{{ printf "%.1s" .AuthUser.GetNombreCompleto }}</div>
-              </div>
-              <div
-                x-show="open"
-                @click.away="open = false"
-                class="origin-top-right absolute right-6 top-16 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-40"
-                style="display: none">
-                <div class="py-1">
-                  <a href="/perfil" class="block px-4 py-2 text-sm text-neutral-700 hover:bg-neutral-100">Mi Perfil</a>
-                  <a href="/auth/logout" class="block px-4 py-2 text-sm text-danger-600 hover:bg-neutral-100">Cerrar Sesión</a>
-                </div>
-              </div>
-            </div>
+            {{ template "layouts/components/user_profile" . }}
           </div>
         </header>
 
@@ -648,7 +302,7 @@
         return true;
       };
     </script>
-    {{ if .AuthUser }} {{ if or (eq .AuthUser.Rol.Codigo "ADMIN") (eq .AuthUser.Rol.Codigo "RESPONSABLE") }}
+    {{ if .AuthUser }}
     <script>
       (function () {
         const audio = new Audio("/static/sounds/magic-notification-ring.wav");
@@ -663,7 +317,11 @@
               const data = JSON.parse(event.data);
 
               if (data.event === "refresh_notifications" && data.target_user === "{{ .AuthUser.ID }}") {
+                // Refresh Notification Dropdown
                 window.dispatchEvent(new CustomEvent("refresh_notifications", { detail: data }));
+
+                // Refresh Pending Stats Indicator (HTMX)
+                document.body.dispatchEvent(new CustomEvent("refresh-stats"));
 
                 if (data.type === "new_solicitud") {
                   audio.play().catch((e) => console.log("Permiso de audio requerido:", e));
@@ -688,7 +346,7 @@
         connect();
       })();
     </script>
-    {{ end }} {{ end }} {{ block "footer_scripts" . }}{{ end }}
+    {{ end }} {{ block "footer_scripts" . }}{{ end }}
   </body>
 </html>
 {{ end }}

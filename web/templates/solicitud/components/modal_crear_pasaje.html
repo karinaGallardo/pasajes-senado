@@ -138,11 +138,12 @@
 
           <form id="createPasajeForm" 
                 hx-post="/solicitudes/{{ .Solicitud.ID }}/pasajes" 
-                hx-target="#modal-container"
-                hx-swap="innerHTML"
+                hx-target="#modal-container" 
+                hx-swap="innerHTML" 
                 method="POST" 
                 enctype="multipart/form-data" 
-                @submit="loading = true">
+                @submit="loading = true" 
+                autocomplete="off">
             <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
             <div class="grid grid-cols-6 gap-6">
               <div class="col-span-6 flex items-stretch gap-3">

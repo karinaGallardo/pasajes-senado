@@ -354,3 +354,19 @@ func (r *SolicitudRepository) FindPendientesDeDescargoPaginated(ctx context.Cont
 		SearchTerm:  searchTerm,
 	}, err
 }
+func (r *SolicitudRepository) CountPending(ctx context.Context, userID string, isAdmin bool) (int64, error) {
+	var count int64
+	baseQuery := r.db.WithContext(ctx).Model(&models.Solicitud{})
+
+	if !isAdmin {
+		baseQuery = baseQuery.Where(
+			"solicitudes.usuario_id = ? OR solicitudes.created_by = ? OR solicitudes.usuario_id IN (?)",
+			userID,
+			userID,
+			r.db.WithContext(ctx).Table("usuarios").Select("id").Where("encargado_id = ?", userID),
+		)
+	}
+
+	err := baseQuery.Where("solicitudes.estado_solicitud_codigo = ?", "SOLICITADO").Count(&count).Error
+	return count, err
+}

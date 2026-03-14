@@ -1167,3 +1167,6 @@ func (s *SolicitudService) RevertFinalize(ctx context.Context, id string) error 
 		return nil
 	})
 }
+func (s *SolicitudService) GetPendingCount(ctx context.Context, userID string, isAdmin bool) (int64, error) {
+	return s.repo.CountPending(ctx, userID, isAdmin)
+}
