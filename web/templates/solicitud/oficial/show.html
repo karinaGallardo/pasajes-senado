@@ -14,10 +14,23 @@
         {{ end }}
       </div>
       <div class="flex flex-col space-y-0.5 mt-1">
-        <p class="text-xs text-neutral-400">
-          <span class="font-bold uppercase tracking-tighter mr-1">Creado:</span>
-          {{ fechaHora .Solicitud.CreatedAt }} por
-          <span class="font-semibold text-neutral-600 tracking-tight">{{ .Solicitud.Usuario.GetNombreCompleto }}</span>
+        <p class="text-xs text-neutral-400 flex items-center gap-1.5">
+          <span>
+            <span class="font-bold uppercase tracking-tighter mr-1">Creado:</span>
+            {{ fechaHora .Solicitud.CreatedAt }} por
+            <span class="font-semibold text-neutral-600 tracking-tight">{{ .Solicitud.Usuario.GetNombreCompleto }}</span>
+          </span>
+          {{ if .Perms.IsAdminOrResp }}
+          <button
+            hx-get="/solicitudes/{{ .Solicitud.ID }}/regularizacion-modal"
+            hx-target="body"
+            hx-swap="beforeend"
+            class="ml-1 px-1.5 py-0.5 bg-amber-50 border border-amber-200 rounded text-[9px] font-black text-amber-700 hover:bg-amber-100 transition-all cursor-pointer flex items-center gap-1 uppercase tracking-wider shadow-sm"
+            title="Regularizar fecha sistema solicitud">
+            <i class="ph ph-clock-counter-clockwise font-bold"></i>
+            Regularizar
+          </button>
+          {{ end }}
         </p>
         {{ if .Solicitud.UpdatedBy }}
         <p class="text-xs text-neutral-400">
@@ -195,7 +208,20 @@
                   <i class="ph ph-arrow-right mx-1 text-neutral-300"></i>
                   {{ if .Destino }}{{ .Destino.Ciudad }} ({{ .Destino.IATA }}){{ else }}{{ .DestinoIATA }}{{ end }}
                 </h4>
-                <p class="text-[11px] text-neutral-500 font-medium">{{ if .Fecha }}{{ fechaHora .Fecha }}{{ else }}Fecha no programada{{ end }}</p>
+                <p class="text-[11px] text-neutral-500 font-medium flex items-center gap-1.5">
+                  <span>{{ if .Fecha }}{{ fechaHora .Fecha }}{{ else }}Fecha no programada{{ end }}</span>
+                  {{ if $.Perms.IsAdminOrResp }}
+                  <button
+                    hx-get="/solicitudes/{{ $.Solicitud.ID }}/items/{{ .ID }}/regularizacion-modal"
+                    hx-target="body"
+                    hx-swap="beforeend"
+                    class="ml-2 px-1.5 py-0.5 bg-amber-50 border border-amber-100 rounded text-[9px] font-black text-amber-600 hover:bg-amber-100 transition-all cursor-pointer flex items-center gap-1 uppercase tracking-wider"
+                    title="Regularizar fecha sistema">
+                    <i class="ph ph-clock-counter-clockwise font-bold"></i>
+                    REG
+                  </button>
+                  {{ end }}
+                </p>
               </div>
             </div>
 
@@ -247,103 +273,143 @@
           {{ if .Pasajes }}
           <div class="mt-4 ml-14 space-y-3">
             {{ range .Pasajes }}
-            <div class="bg-neutral-50 border border-neutral-200 rounded-xl p-3 flex flex-col sm:flex-row justify-between gap-4 relative" x-data="{ openMenu: false }">
-              <div class="flex-1">
-                <div class="flex items-center gap-3 mb-3">
-                  <span
-                    class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-tight {{ if eq .GetEstado `EMITIDO` }} bg-success-100 text-success-800 {{ else if eq .GetEstado `ANULADO` }} bg-neutral-200 text-neutral-600 {{ else if eq .GetEstado `REGISTRADO` }} bg-neutral-100 text-neutral-800 {{ else if eq .GetEstado `USADO` }} bg-primary-100 text-primary-800 {{ else }} bg-neutral-100 text-neutral-800 {{ end }}">
-                    {{ .GetEstado }}
-                  </span>
-                  <div class="h-1 w-1 rounded-full bg-neutral-300"></div>
-                  <span class="text-[10px] text-neutral-500 font-bold uppercase tracking-widest">Detalle del Pasaje</span>
+            <div
+              class="group relative bg-white border border-neutral-200 rounded-md transition-all duration-300 hover:shadow-lg flex flex-col overflow-hidden"
+              x-data="{ openMenu: false }">
+              <!-- Ticket Header (Formal Label with Split Design) -->
+              <div class="text-[10px] font-black uppercase tracking-[0.2em] flex items-stretch shrink-0 w-full border-b border-neutral-100">
+                <!-- Section 1: Official Label -->
+                <div class="bg-primary-50 px-4 py-2.5 flex items-center gap-2.5 flex-1 relative border-l-4 border-primary">
+                  <i class="ph ph-ticket font-bold text-primary-600 text-xs"></i>
+                  <span class="text-primary-900/70">PASAJE COMPRADO</span>
                 </div>
-                <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 text-[11px] text-neutral-600">
-                  <div>
-                    <span class="block text-neutral-400 uppercase font-bold tracking-tighter">Fecha/Hora Vuelo</span>
-                    <span class="font-bold text-primary-700">{{ fechaHora .FechaVuelo }}</span>
-                  </div>
-                  <div>
-                    <span class="block text-neutral-400 uppercase font-bold tracking-tighter">Ruta</span>
-                    <span class="font-bold text-neutral-900">{{ .Ruta }}</span>
-                  </div>
-                  <div>
-                    <span class="block text-neutral-400 uppercase font-bold tracking-tighter">Aerolínea</span>
-                    <span class="font-bold text-neutral-900">
-                      {{ if .Aerolinea }}{{ if .Aerolinea.Sigla }}{{ .Aerolinea.Sigla }}{{ else }}{{ .Aerolinea.Nombre }}{{ end }}{{ else }}N/A{{ end }}
-                    </span>
-                  </div>
-                  <div>
-                    <span class="block text-neutral-400 uppercase font-bold tracking-tighter">Nº Boleto</span>
-                    <span class="font-bold text-neutral-900">{{ .NumeroBoleto }}</span>
-                  </div>
-                  <div>
-                    <span class="block text-neutral-400 uppercase font-bold tracking-tighter">Nº Vuelo</span>
-                    <span class="font-bold text-neutral-900">{{ .NumeroVuelo }}</span>
-                  </div>
-                  <div>
-                    <span class="block text-neutral-400 uppercase font-bold tracking-tighter">Costo</span>
-                    <span class="font-bold text-secondary-600">Bs {{ printf "%.2f" .Costo }}</span>
-                  </div>
+
+                <!-- Section 2: Dynamic Status Banner -->
+                <div
+                  class="px-6 py-2.5 flex items-center text-white transition-colors duration-500 {{ if eq .GetEstado `EMITIDO` }} bg-success-600 {{ else if eq .GetEstado `ANULADO` }} bg-neutral-600 {{ else if eq .GetEstado `USADO` }} bg-primary-600 {{ else }} bg-secondary-600 {{ end }}">
+                  <span class="select-all tracking-widest font-black">{{ .GetEstado }}</span>
                 </div>
               </div>
 
-              <!-- Actions inside sub-item -->
-              <div class="flex items-center gap-2">
-                {{ if .Archivo }}
-                <button
-                  type="button"
-                  hx-get="/pasajes/{{ .ID }}/preview?tipo=boleto"
-                  hx-target="#modal-container"
-                  class="p-1.5 rounded-md hover:bg-neutral-200 text-danger-600 transition-colors cursor-pointer"
-                  title="Ver PDF">
-                  <i class="ph ph-file-pdf text-xl"></i>
-                </button>
-                {{ end }} {{ if and $.Perms.IsAdminOrResp (ne .GetEstado "ANULADO") }}
-                <!-- Dropdown -->
-                <div class="relative">
-                  <button
-                    type="button"
-                    @click="openMenu = !openMenu"
-                    class="p-2 rounded-lg border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-600 transition-all shadow-sm flex items-center justify-center cursor-pointer"
-                    title="Acciones del Pasaje">
-                    <i class="ph ph-dots-three-vertical text-lg font-bold"></i>
-                  </button>
-                  <!-- Dropdown Menu -->
-                  <div
-                    x-show="openMenu"
-                    @click.away="openMenu = false"
-                    x-transition:enter="transition ease-out duration-100"
-                    x-transition:enter-start="transform opacity-0 scale-95"
-                    x-transition:enter-end="transform opacity-100 scale-100"
-                    class="absolute right-0 mt-2 w-56 bg-white border border-neutral-200 rounded-xl shadow-[0_10px_25px_-5px_rgba(0,0,0,0.1),0_8px_10px_-6px_rgba(0,0,0,0.1)] z-50 py-2 divide-y divide-neutral-100"
-                    x-cloak>
-                    {{ if eq .GetEstado "REGISTRADO" }}
-                    <button
-                      type="button"
-                      @click="$dispatch('pasaje-action', { action: 'emitir', id: '{{.ID}}' })"
-                      class="block w-full text-left px-4 py-2 text-xs text-secondary-600 hover:bg-secondary-50 font-bold cursor-pointer">
-                      <i class="ph ph-airplane-tilt mr-2"></i>
-                      Enviar Pasaje
-                    </button>
-                    {{ end }} {{ if eq .GetEstado "REGISTRADO" }}
-                    <button
-                      type="button"
-                      hx-get="/pasajes/{{ .ID }}/editar"
-                      hx-target="#modal-container"
-                      class="block w-full text-left px-4 py-2 text-xs hover:bg-neutral-50 cursor-pointer">
-                      Editar
-                    </button>
-                    {{ end }}
-
-                    <button
-                      type="button"
-                      @click="$dispatch('pasaje-action', { action: 'anular', id: '{{.ID}}' })"
-                      class="block w-full text-left px-4 py-2 text-xs text-danger-600 hover:bg-danger-50 cursor-pointer">
-                      Anular
-                    </button>
+              <div class="flex flex-col lg:flex-row flex-1 rounded-b-sm overflow-hidden">
+                <!-- Left "Stub" - Air Identity -->
+                <div
+                  class="lg:w-32 bg-neutral-50 px-4 py-3 flex flex-col items-center justify-center border-b lg:border-b-0 lg:border-r border-dashed border-neutral-200 relative shrink-0">
+                  <div class="text-center space-y-2">
+                    <div
+                      class="w-10 h-10 rounded-xl bg-white shadow-sm border border-neutral-100 flex items-center justify-center text-primary-600 mx-auto transition-transform group-hover:scale-105">
+                      <i class="ph ph-airplane text-2xl font-bold"></i>
+                    </div>
+                    <p class="text-[11px] font-black text-neutral-900 uppercase tracking-tighter">
+                      {{ if .Aerolinea }}{{ if .Aerolinea.Sigla }}{{ .Aerolinea.Sigla }}{{ else }}{{ .Aerolinea.Nombre }}{{ end }}{{ else }}Oficial{{ end }}
+                    </p>
                   </div>
                 </div>
-                {{ end }}
+
+                <!-- Main Content -->
+                <div class="flex-1 flex flex-col md:flex-row items-center px-6 py-4 gap-6">
+                  <div class="flex-1 grid grid-cols-2 md:grid-cols-6 gap-6 w-full">
+                    <!-- Date -->
+                    <div class="space-y-1">
+                      <span class="text-[8px] font-black uppercase tracking-widest text-neutral-400 block">Salida</span>
+                      <div class="leading-tight">
+                        <p class="text-[12px] font-bold text-neutral-900">{{ if .FechaVuelo }}{{ .FechaVuelo.Format "02/01/2006" }}{{ else }}-{{ end }}</p>
+                        <p class="text-[10px] font-bold text-primary-600">{{ if .FechaVuelo }}{{ .FechaVuelo.Format "15:04" }} hrs{{ else }}-{{ end }}</p>
+                      </div>
+                    </div>
+
+                    <!-- Trayecto -->
+                    <div class="space-y-1">
+                      <span class="text-[8px] font-black uppercase tracking-widest text-neutral-400 block">Trayecto</span>
+                      <p class="text-[12px] font-black text-neutral-800 uppercase tracking-tight leading-tight">{{ .Ruta }}</p>
+                    </div>
+
+                    <!-- Boleto -->
+                    <div class="space-y-1">
+                      <span class="text-[8px] font-black uppercase tracking-widest text-neutral-400 block">N° Boleto</span>
+                      <p class="text-[12px] font-black text-neutral-900 leading-none uppercase select-all tracking-tight">
+                        {{ if .NumeroBoleto }}{{ .NumeroBoleto }}{{ else }}---{{ end }}
+                      </p>
+                    </div>
+
+                    <!-- PNR -->
+                    <div class="space-y-1">
+                      <span class="text-[8px] font-black uppercase tracking-widest text-neutral-400 block">Reserva (PNR)</span>
+                      <p class="text-[12px] font-black text-neutral-900 leading-none uppercase select-all tracking-tight">
+                        {{ if .CodigoReserva }}{{ .CodigoReserva }}{{ else }}---{{ end }}
+                      </p>
+                    </div>
+
+                    <!-- Vuelo -->
+                    <div class="space-y-1">
+                      <span class="text-[8px] font-black uppercase tracking-widest text-neutral-400 block">Vuelo</span>
+                      <p class="text-[12px] font-black text-neutral-900 leading-none uppercase tracking-tight">{{ if .NumeroVuelo }}{{ .NumeroVuelo }}{{ else }}---{{ end }}</p>
+                    </div>
+
+                    <!-- Costo -->
+                    <div class="space-y-px text-right">
+                      <span class="text-[8px] font-black uppercase tracking-widest text-neutral-400 block">Costo</span>
+                      <p class="text-xl font-black text-secondary-600 leading-none">
+                        <span class="text-[10px] font-bold mr-0.5">Bs</span>
+                        {{ printf "%.2f" .Costo }}
+                      </p>
+                    </div>
+                  </div>
+
+                  <!-- Inline Actions -->
+                  <div class="flex items-center gap-2 md:pl-6 md:border-l border-neutral-100 shrink-0">
+                    {{ if .Archivo }}
+                    <button
+                      type="button"
+                      hx-get="/pasajes/{{ .ID }}/preview?tipo=boleto"
+                      hx-target="#modal-container"
+                      class="w-9 h-9 flex items-center justify-center rounded-lg bg-danger-50 text-danger-600 hover:bg-danger-100 transition-colors cursor-pointer border border-danger-100"
+                      title="Ver Boleto">
+                      <i class="ph ph-file-pdf text-xl"></i>
+                    </button>
+                    {{ end }} {{ if and $.Perms.IsAdminOrResp (ne .GetEstado "ANULADO") }}
+                    <div class="relative" x-data="{ openMenu: false }">
+                      <button
+                        type="button"
+                        @click="openMenu = !openMenu"
+                        class="w-9 h-9 flex items-center justify-center rounded-lg bg-white border border-neutral-200 text-neutral-400 hover:text-neutral-600 hover:border-neutral-300 transition-all shadow-sm cursor-pointer">
+                        <i class="ph ph-dots-three-vertical text-xl font-bold"></i>
+                      </button>
+                      <div
+                        x-show="openMenu"
+                        @click.away="openMenu = false"
+                        x-transition
+                        class="absolute right-0 mt-2 w-48 bg-white border border-neutral-200 rounded-xl shadow-xl z-50 py-2"
+                        x-cloak>
+                        {{ if eq .GetEstado "REGISTRADO" }}
+                        <button
+                          type="button"
+                          @click="$dispatch('pasaje-action', { action: 'emitir', id: '{{.ID}}' })"
+                          class="block w-full text-left px-4 py-2 text-xs text-secondary-600 hover:bg-secondary-50 font-bold cursor-pointer">
+                          <i class="ph ph-paper-plane mr-2"></i>
+                          Enviar Pasaje
+                        </button>
+                        <button
+                          type="button"
+                          hx-get="/pasajes/{{ .ID }}/editar"
+                          hx-target="#modal-container"
+                          class="block w-full text-left px-4 py-2 text-xs hover:bg-neutral-50 cursor-pointer">
+                          <i class="ph ph-pencil-simple mr-2"></i>
+                          Editar
+                        </button>
+                        {{ end }}
+                        <button
+                          type="button"
+                          @click="$dispatch('pasaje-action', { action: 'anular', id: '{{.ID}}' })"
+                          class="block w-full text-left px-4 py-2 text-xs text-danger-600 hover:bg-danger-50 cursor-pointer">
+                          <i class="ph ph-trash mr-2"></i>
+                          Anular
+                        </button>
+                      </div>
+                    </div>
+                    {{ end }}
+                  </div>
+                </div>
               </div>
             </div>
             {{ end }}

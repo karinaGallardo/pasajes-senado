@@ -1170,3 +1170,31 @@ func (s *SolicitudService) RevertFinalize(ctx context.Context, id string) error 
 func (s *SolicitudService) GetPendingCount(ctx context.Context, userID string, isAdmin bool) (int64, error) {
 	return s.repo.CountPending(ctx, userID, isAdmin)
 }
+
+func (s *SolicitudService) UpdateSolicitudDates(ctx context.Context, id string, createdAt, updatedAt string) error {
+	cA, err := utils.ParseDateTime(createdAt)
+	if err != nil {
+		return fmt.Errorf("fecha de creación inválida: %w", err)
+	}
+
+	uA, err := utils.ParseDateTime(updatedAt)
+	if err != nil {
+		return fmt.Errorf("fecha de actualización inválida: %w", err)
+	}
+
+	return s.repo.UpdateTimestamps(ctx, id, cA, uA)
+}
+
+func (s *SolicitudService) UpdateSolicitudItemDates(ctx context.Context, id string, createdAt, updatedAt string) error {
+	cA, err := utils.ParseDateTime(createdAt)
+	if err != nil {
+		return fmt.Errorf("fecha de creación inválida: %w", err)
+	}
+
+	uA, err := utils.ParseDateTime(updatedAt)
+	if err != nil {
+		return fmt.Errorf("fecha de actualización inválida: %w", err)
+	}
+
+	return s.solicitudItemRepo.UpdateTimestamps(ctx, id, cA, uA)
+}

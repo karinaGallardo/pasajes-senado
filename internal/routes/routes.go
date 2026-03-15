@@ -162,6 +162,12 @@ func SetupRoutes(r *gin.Engine, container *app.Container) {
 			adminOnly.GET("/usuarios/funcionarios/sync-modal", funcionarioCtrl.GetSyncModal)
 
 			adminOnly.POST("/usuarios/:id/unblock", usuarioCtrl.Unblock)
+			
+			// Regularización de fechas
+			adminOnly.GET("/solicitudes/:id/regularizacion-modal", solicitudCtrl.GetRegularizacionModal)
+			adminOnly.POST("/solicitudes/:id/regularizar-fechas", solicitudCtrl.UpdateRegularizacionDates)
+			adminOnly.GET("/solicitudes/:id/items/:item_id/regularizacion-modal", solicitudDerechoCtrl.GetItemRegularizacionModal)
+			adminOnly.POST("/solicitudes/:id/items/:item_id/regularizar-fechas", solicitudDerechoCtrl.UpdateItemRegularizacionDates)
 		}
 		protected.GET("/usuarios/:id/modal-editar", usuarioCtrl.GetEditModal)
 		protected.GET("/usuarios/:id/editar", usuarioCtrl.Edit)

@@ -13,11 +13,7 @@ document.addEventListener("alpine:init", function () {
         if (this.search === "") return this.items;
         const q = this.search.toLowerCase();
         return this.items.filter(function (i) {
-          return (
-            (i.label && i.label.toLowerCase().includes(q)) ||
-            (i.value && i.value.toLowerCase().includes(q)) ||
-            (i.extra && i.extra.toLowerCase().includes(q))
-          );
+          return (i.label && i.label.toLowerCase().includes(q)) || (i.value && i.value.toLowerCase().includes(q)) || (i.extra && i.extra.toLowerCase().includes(q));
         });
       },
 

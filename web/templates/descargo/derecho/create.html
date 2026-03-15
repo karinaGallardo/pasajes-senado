@@ -152,7 +152,7 @@
                             <input type="checkbox" name="itin_modificacion[]" value="{{ $scale.Index }}" x-model="modificado" @change="if(modificado) devuelto = false" title="Modificar Ticket" class="h-4 w-4 text-amber-600 border-neutral-300 rounded focus:ring-amber-500">
                           </td>
                           {{ end }}
-                          
+
                           <td class="px-2 py-1" :class="{ 'opacity-50 grayscale bg-neutral-50': devuelto || modificado }">
                             <input type="hidden" name="itin_tipo[]" value="IDA_ORIGINAL" />
                             <input type="hidden" name="itin_index[]" value="{{ $scale.Index }}" />

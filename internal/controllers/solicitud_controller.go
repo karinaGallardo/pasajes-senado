@@ -190,12 +190,13 @@ func (ctrl *SolicitudController) renderIndex(c *gin.Context, concepto string, ti
 	}
 
 	utils.Render(c, template, gin.H{
-		"Title":    title,
-		"Result":   result,
-		"Usuarios": usuariosMap,
-		"Status":   status,
-		"Concepto": concepto,
-		"LinkBase": linkBase,
+		"Title":                title,
+		"Result":               result,
+		"Usuarios":             usuariosMap,
+		"Status":               status,
+		"Concepto":             concepto,
+		"LinkBase":             linkBase,
+		"IsAdminOrResponsable": authUser.IsAdminOrResponsable(),
 	})
 }
 func (ctrl *SolicitudController) GetPendingStats(c *gin.Context) {
@@ -213,4 +214,31 @@ func (ctrl *SolicitudController) GetPendingStats(c *gin.Context) {
 		"PendingDescargos": len(pendingDescargos),
 		"TotalPending":     pendingRequests + int64(len(pendingDescargos)),
 	})
+}
+
+func (ctrl *SolicitudController) GetRegularizacionModal(c *gin.Context) {
+	id := c.Param("id")
+	solicitud, err := ctrl.service.GetByID(c.Request.Context(), id)
+	if err != nil {
+		c.String(404, "Solicitud no encontrada")
+		return
+	}
+
+	utils.Render(c, "solicitud/components/modal_regularizacion", gin.H{
+		"Solicitud": solicitud,
+	})
+}
+
+func (ctrl *SolicitudController) UpdateRegularizacionDates(c *gin.Context) {
+	id := c.Param("id")
+	fecha := c.PostForm("fecha_regularizacion")
+
+	if err := ctrl.service.UpdateSolicitudDates(c.Request.Context(), id, fecha, fecha); err != nil {
+		c.String(400, err.Error())
+		return
+	}
+
+	// Trigger full page refresh to show updated dates
+	c.Header("HX-Refresh", "true")
+	c.Status(200)
 }

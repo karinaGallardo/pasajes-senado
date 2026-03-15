@@ -799,6 +799,33 @@ func (ctrl *SolicitudDerechoController) RevertApprovalItem(c *gin.Context) {
 	c.Redirect(http.StatusFound, "/solicitudes/derecho/"+id+"/detalle")
 }
 
+func (ctrl *SolicitudDerechoController) GetItemRegularizacionModal(c *gin.Context) {
+	itemID := c.Param("item_id")
+	item, err := ctrl.solicitudService.GetItemByID(c.Request.Context(), itemID)
+	if err != nil {
+		c.String(404, "Tramo no encontrado")
+		return
+	}
+
+	utils.Render(c, "solicitud/derecho/modal_regularizacion_item", gin.H{
+		"Item":      item,
+		"Solicitud": item.Solicitud,
+	})
+}
+
+func (ctrl *SolicitudDerechoController) UpdateItemRegularizacionDates(c *gin.Context) {
+	itemID := c.Param("item_id")
+	fecha := c.PostForm("fecha_regularizacion")
+
+	if err := ctrl.solicitudService.UpdateSolicitudItemDates(c.Request.Context(), itemID, fecha, fecha); err != nil {
+		c.String(400, err.Error())
+		return
+	}
+
+	c.Header("HX-Refresh", "true")
+	c.Status(200)
+}
+
 func (ctrl *SolicitudDerechoController) GetReprogramarModalSolicitudItem(c *gin.Context) {
 	id := c.Param("id")
 	item, err := ctrl.solicitudService.GetItemByID(c.Request.Context(), id)

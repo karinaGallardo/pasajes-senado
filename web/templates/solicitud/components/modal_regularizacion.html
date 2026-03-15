@@ -1,0 +1,80 @@
+{{ define "solicitud/components/modal_regularizacion" }}
+<div id="modal-container" class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200 border border-neutral-200">
+        <!-- Header -->
+        <div class="bg-primary-900 px-6 py-4 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="p-2 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
+                    <i class="ph ph-calendar-check text-yellow-500 text-xl font-bold"></i>
+                </div>
+                <div>
+                    <h3 class="text-white font-bold text-lg leading-tight uppercase tracking-tight">Regularizar Fecha</h3>
+                    <p class="text-neutral-400 text-xs font-semibold">{{ .Solicitud.Codigo }}</p>
+                </div>
+            </div>
+            <button onclick="document.getElementById('modal-container').remove()" class="text-neutral-500 hover:text-white transition-colors cursor-pointer p-1">
+                <i class="ph ph-x text-2xl"></i>
+            </button>
+        </div>
+
+        <!-- Body -->
+        <form hx-post="/solicitudes/{{ .Solicitud.ID }}/regularizar-fechas" 
+              hx-target="#modal-container" 
+              hx-swap="delete"
+              hx-indicator="#submit-btn"
+              class="p-6 space-y-6">
+            
+            <div class="bg-blue-50 border border-blue-100 rounded-xl p-4 flex gap-3 shadow-inner">
+                <i class="ph ph-info text-blue-600 text-2xl flex-shrink-0 mt-0.5 font-bold"></i>
+                <p class="text-[13px] text-blue-900 leading-relaxed font-semibold">
+                    Esta acción actualizará las columnas <code class="bg-blue-100 px-1 rounded text-blue-700">created_at</code> y <code class="bg-blue-100 px-1 rounded text-blue-700">updated_at</code> con la fecha seleccionada.
+                </p>
+            </div>
+
+            <div class="space-y-4">
+                <!-- Single Date Input -->
+                <div class="space-y-2">
+                    <label class="text-xs font-bold text-neutral-500 uppercase tracking-widest flex items-center gap-2">
+                        <i class="ph ph-calendar-plus text-base text-blue-600"></i>
+                        Fecha de Registro Manual
+                    </label>
+                    <div class="relative">
+                        <input type="datetime-local" 
+                               name="fecha_regularizacion" 
+                               value="{{ .Solicitud.CreatedAt.Format "2006-01-02T15:04" }}"
+                               class="w-full bg-neutral-50 border-2 border-neutral-200 rounded-xl px-4 py-3 text-sm font-bold text-neutral-800 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-600 transition-all outline-none"
+                               required>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="flex items-center gap-3 pt-2">
+                <button type="button" 
+                        onclick="document.getElementById('modal-container').remove()"
+                        class="flex-1 px-4 py-3 rounded-xl border-2 border-neutral-300 text-neutral-600 text-sm font-bold uppercase transition-all hover:bg-neutral-100 active:scale-[0.98] cursor-pointer">
+                    Cancelar
+                </button>
+                
+                <!-- Botón Corregido -->
+                <button id="submit-btn"
+                        type="submit" 
+                        class="flex-1 px-4 py-3 rounded-xl bg-primary text-white text-sm font-bold uppercase shadow-lg shadow-primary-900/20 transition-all hover:bg-primary-700 active:scale-[0.95] flex items-center justify-center gap-2 cursor-pointer group disabled:opacity-50 disabled:cursor-not-allowed">
+                    
+                    <!-- Icono y Texto Normal -->
+                    <span class="group-[.htmx-request]:hidden flex items-center justify-center gap-2">
+                        <i class="ph ph-floppy-disk text-xl italic"></i>
+                        Confirmar
+                    </span>
+
+                    <!-- Icono y Texto Procesando -->
+                    <span class="hidden group-[.htmx-request]:flex items-center justify-center gap-2">
+                        <i class="ph ph-circle-notch animate-spin text-xl"></i>
+                        Procesando
+                    </span>
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{{ end }}

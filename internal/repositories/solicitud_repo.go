@@ -370,3 +370,10 @@ func (r *SolicitudRepository) CountPending(ctx context.Context, userID string, i
 	err := baseQuery.Where("solicitudes.estado_solicitud_codigo = ?", "SOLICITADO").Count(&count).Error
 	return count, err
 }
+
+func (r *SolicitudRepository) UpdateTimestamps(ctx context.Context, id string, createdAt, updatedAt any) error {
+	return r.db.WithContext(ctx).Model(&models.Solicitud{}).Where("id = ?", id).Updates(map[string]interface{}{
+		"created_at": createdAt,
+		"updated_at": updatedAt,
+	}).Error
+}
