@@ -126,7 +126,7 @@ func NewContainer(db *gorm.DB, mongoRRHH *mongo.Database, mongoChat *mongo.Datab
 	)
 
 	compensacionService := services.NewCompensacionService(compensacionRepo, catCompensacionRepo)
-	descargoService := services.NewDescargoService(descargoRepo, solicitudService)
+	descargoService := services.NewDescargoService(descargoRepo, solicitudService, userService)
 	rolService := services.NewRolService(rolRepo)
 	destinoService := services.NewDestinoService(destinoRepo)
 	organigramaService := services.NewOrganigramaService(cargoRepo, oficinaRepo)
@@ -211,6 +211,7 @@ func NewContainer(db *gorm.DB, mongoRRHH *mongo.Database, mongoChat *mongo.Datab
 		reportService,
 		peopleService,
 		aerolineaService,
+		userService,
 	)
 
 	descargoOficialCtrl := controllers.NewDescargoOficialController(

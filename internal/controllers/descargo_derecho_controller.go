@@ -31,6 +31,7 @@ func NewDescargoDerechoController(
 	reportService *services.ReportService,
 	peopleService *services.PeopleService,
 	aerolineaService *services.AerolineaService,
+	usuarioService *services.UsuarioService,
 ) *DescargoDerechoController {
 	return &DescargoDerechoController{
 		descargoService:  descargoService,
@@ -533,11 +534,17 @@ func (ctrl *DescargoDerechoController) Preview(c *gin.Context) {
 }
 
 func (ctrl *DescargoDerechoController) Index(c *gin.Context) {
+	authUser := appcontext.AuthUser(c)
+	if authUser == nil {
+		c.Redirect(http.StatusFound, "/auth/login")
+		return
+	}
+
 	searchTerm := c.Query("q")
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 
-	result, _ := ctrl.descargoService.GetPaginated(c.Request.Context(), page, limit, searchTerm)
+	result, _ := ctrl.descargoService.GetPaginatedScoped(c.Request.Context(), authUser, page, limit, searchTerm)
 
 	utils.Render(c, "descargo/index", gin.H{
 		"Title":    "Bandeja de Descargos",
@@ -547,11 +554,17 @@ func (ctrl *DescargoDerechoController) Index(c *gin.Context) {
 }
 
 func (ctrl *DescargoDerechoController) Table(c *gin.Context) {
+	authUser := appcontext.AuthUser(c)
+	if authUser == nil {
+		c.Redirect(http.StatusFound, "/auth/login")
+		return
+	}
+
 	searchTerm := c.Query("q")
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 
-	result, _ := ctrl.descargoService.GetPaginated(c.Request.Context(), page, limit, searchTerm)
+	result, _ := ctrl.descargoService.GetPaginatedScoped(c.Request.Context(), authUser, page, limit, searchTerm)
 
 	utils.Render(c, "descargo/table_descargos", gin.H{
 		"Result":   result,

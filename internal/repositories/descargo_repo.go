@@ -109,7 +109,16 @@ func (r *DescargoRepository) FindAll(ctx context.Context) ([]models.Descargo, er
 	return descargos, err
 }
 
-func (r *DescargoRepository) FindPaginated(ctx context.Context, page, limit int, searchTerm string) (*PaginatedDescargos, error) {
+func (r *DescargoRepository) FindCountByUserIDs(ctx context.Context, userIDs []string) (int64, error) {
+	var count int64
+	err := r.db.WithContext(ctx).Model(&models.Descargo{}).
+		Joins("LEFT JOIN solicitudes ON descargos.solicitud_id = solicitudes.id").
+		Where("solicitudes.usuario_id IN ?", userIDs).
+		Count(&count).Error
+	return count, err
+}
+
+func (r *DescargoRepository) FindPaginated(ctx context.Context, page, limit int, searchTerm string, userIDs []string) (*PaginatedDescargos, error) {
 	var descargos []models.Descargo
 	var total int64
 
@@ -129,6 +138,11 @@ func (r *DescargoRepository) FindPaginated(ctx context.Context, page, limit int,
 		Preload("Oficial").
 		Preload("Oficial.Anexos").
 		Scopes(SearchDescargo(searchTerm))
+
+	// Scope by user IDs when provided (non-admin)
+	if len(userIDs) > 0 {
+		baseQuery = baseQuery.Where("solicitudes.usuario_id IN ?", userIDs)
+	}
 
 	baseQuery.Count(&total)
 

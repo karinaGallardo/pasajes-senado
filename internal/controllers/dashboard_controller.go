@@ -26,25 +26,50 @@ func NewDashboardController(solicitudService *services.SolicitudService, descarg
 
 func (ctrl *DashboardController) Index(c *gin.Context) {
 	authUser := appcontext.AuthUser(c)
-	var senadoresCalculados []models.Usuario
-
-	if authUser != nil {
-		assigned, err := ctrl.usuarioService.GetSenatorsByEncargado(c.Request.Context(), authUser.ID)
-		if err == nil && len(assigned) > 0 {
-			senadoresCalculados = assigned
-		}
+	if authUser == nil {
+		c.Redirect(302, "/auth/login")
+		return
 	}
 
+	// --- Construir el scope de usuarios según el rol ---
+	//
+	// ADMIN / RESPONSABLE_PASAJES → ve todo (sin filtro)
+	// ENCARGADO_PASAJES           → ve sus propias solicitudes + las de sus senadores asignados
+	// SENADOR / FUNCIONARIO       → solo sus propias solicitudes
+
+	isAdminOrResp := authUser.IsAdminOrResponsable()
+
+	// Senadores que atiende este usuario (encargado)
+	var senadoresCalculados []models.Usuario
+	if assigned, err := ctrl.usuarioService.GetSenatorsByEncargado(c.Request.Context(), authUser.ID); err == nil && len(assigned) > 0 {
+		senadoresCalculados = assigned
+	}
+
+	// Obtener solicitudes según el scope
 	var solicitudes []models.Solicitud
-	if authUser != nil && authUser.IsAdminOrResponsable() {
+	if isAdminOrResp {
 		solicitudes, _ = ctrl.solicitudService.GetAll(c.Request.Context(), "", "")
-	} else if authUser != nil {
+	} else {
 		solicitudes, _ = ctrl.solicitudService.GetByUserIdOrAccesibleByEncargadoID(c.Request.Context(), authUser.ID, "", "")
 	}
 
-	descargos, _ := ctrl.descargoService.GetAll(c.Request.Context())
+	// Construir lista de user IDs para el conteo de descargos
+	// Para admins: nil → GetAll; para el resto: los IDs del scope
+	var descargoCount int64
+	if isAdminOrResp {
+		descargos, _ := ctrl.descargoService.GetAll(c.Request.Context())
+		descargoCount = int64(len(descargos))
+	} else {
+		// IDs en scope: el propio usuario + sus senadores asignados
+		scopeIDs := []string{authUser.ID}
+		for _, s := range senadoresCalculados {
+			scopeIDs = append(scopeIDs, s.ID)
+		}
+		descargoCount = ctrl.descargoService.GetCountByUserIDs(c.Request.Context(), scopeIDs)
+	}
 
-	var pendientes, aprobados, finalizados int
+	// Contar estados en las solicitudes del scope
+	var pendientes, aprobados int
 	for _, s := range solicitudes {
 		st := "SOLICITADO"
 		if s.EstadoSolicitudCodigo != nil {
@@ -55,8 +80,6 @@ func (ctrl *DashboardController) Index(c *gin.Context) {
 			pendientes++
 		case "APROBADO":
 			aprobados++
-		case "FINALIZADO":
-			finalizados++
 		}
 	}
 
@@ -65,7 +88,7 @@ func (ctrl *DashboardController) Index(c *gin.Context) {
 		"Title":               "Panel de Control",
 		"Pendientes":          pendientes,
 		"Aprobados":           aprobados,
-		"Descargos":           len(descargos),
+		"Descargos":           descargoCount,
 		"Recent":              solicitudes,
 		"SenadoresEncargados": senadoresCalculados,
 		"Gestion":             now.Year(),

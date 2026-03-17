@@ -15,15 +15,18 @@ import (
 type DescargoService struct {
 	repo             *repositories.DescargoRepository
 	solicitudService *SolicitudService
+	usuarioService   *UsuarioService
 }
 
 func NewDescargoService(
 	repo *repositories.DescargoRepository,
 	solicitudService *SolicitudService,
+	usuarioService *UsuarioService,
 ) *DescargoService {
 	return &DescargoService{
 		repo:             repo,
 		solicitudService: solicitudService,
+		usuarioService:   usuarioService,
 	}
 }
 
@@ -168,8 +171,32 @@ func (s *DescargoService) GetAll(ctx context.Context) ([]models.Descargo, error)
 	return s.repo.FindAll(ctx)
 }
 
-func (s *DescargoService) GetPaginated(ctx context.Context, page, limit int, searchTerm string) (*repositories.PaginatedDescargos, error) {
-	return s.repo.FindPaginated(ctx, page, limit, searchTerm)
+func (s *DescargoService) GetCountByUserIDs(ctx context.Context, userIDs []string) int64 {
+	count, _ := s.repo.FindCountByUserIDs(ctx, userIDs)
+	return count
+}
+
+func (s *DescargoService) GetPaginated(ctx context.Context, page, limit int, searchTerm string, userIDs []string) (*repositories.PaginatedDescargos, error) {
+	return s.repo.FindPaginated(ctx, page, limit, searchTerm, userIDs)
+}
+
+// GetPaginatedScoped resuelve la visibilidad según el rol del usuario:
+// Admin/Responsable → ve todos los descargos del sistema
+// Encargado         → ve los suyos + los de sus senadores asignados
+// Cualquier otro   → solo los propios
+func (s *DescargoService) GetPaginatedScoped(ctx context.Context, authUser *models.Usuario, page, limit int, searchTerm string) (*repositories.PaginatedDescargos, error) {
+	if authUser.IsAdminOrResponsable() {
+		return s.repo.FindPaginated(ctx, page, limit, searchTerm, nil)
+	}
+
+	ids := []string{authUser.ID}
+	if senators, err := s.usuarioService.GetSenatorsByEncargado(ctx, authUser.ID); err == nil {
+		for _, sen := range senators {
+			ids = append(ids, sen.ID)
+		}
+	}
+
+	return s.repo.FindPaginated(ctx, page, limit, searchTerm, ids)
 }
 
 func (s *DescargoService) Update(ctx context.Context, descargo *models.Descargo) error {
