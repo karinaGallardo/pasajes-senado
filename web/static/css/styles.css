@@ -2,25 +2,35 @@
 
 :root {
   /* =========================================
-     1. PALETA CORE (Tus colores originales)
+     1. PALETA CORE - Institucional
      ========================================= */
-  --brand-primary: #03738c;
-  --brand-secondary: #0396a6;
-  --brand-gold: #f29a2e;
+  --brand-primary: #913023;        /* Cinnabar 800 */
+  --brand-primary-vivid: #e1503d;  /* Cinnabar 500 */
+  --brand-secondary: #e15c15;      /* Jaffa 600 */
+  --brand-secondary-dark: #411509;  /* Jaffa 950 */
+  --brand-secondary-light: #f8ba79; /* Jaffa 300 */
+  --brand-gold: #f38e3a;           /* Jaffa 400 */
+  --brand-info: #9a5391;           /* Púrpura 600 */
   --brand-salmon: #f2884b;
   --brand-accent: #f2490c;
-  --brand-neutral: #575756;
+  --brand-neutral: #5c5753;        /* Plomo cálido */
 
   /* =========================================
      2. ESCALA PRIMARIA (Sincronizado con Tailwind)
      ========================================= */
-  --primary-50: #eef9fb;
-  --primary-100: #d6eff4;
+  --primary-50: #fdf4f3;
+  --primary-100: #fce7e4;
   --primary-500: var(--brand-primary);
-  --primary-600: #025a6e;
-  --primary-700: #024a5a;
-  --primary-800: #024655;
-  --primary-900: #01323d;
+  --primary-600: #d04432;
+  --primary-700: #af3626;
+  --primary-800: #913023;
+  --primary-900: #792d23;
+
+  --info-50: #fbf7fb;
+  --info-100: #f8eff7;
+  --info-500: var(--brand-info);
+  --info-600: #9a5391;
+  --info-700: #7f4476;
 
   /* =========================================
      3. ALIASES SEMÁNTICOS
@@ -31,17 +41,17 @@
   --accent: var(--brand-accent);
   --neutral: var(--brand-neutral);
 
-  /* Fondos y Texto */
-  --bg-app: #f9f9f9; /* neutral-50 */
-  --bg-sidebar: var(--primary-900);
-  --text-main: #232322; /* neutral-800 */
+  /* Fondos y Texto (Tokens Semánticos) */
+  --bg-app: var(--neutral-50);
+  --bg-sidebar: var(--brand-secondary-dark);
+  --text-main: var(--neutral-800);
   --text-muted: var(--brand-neutral);
 
   /* Fuentes */
   --font-sans: "Inter", sans-serif;
   --font-brand: "Montserrat", sans-serif;
 
-  /* Sombras (Sincronizado con Tailwind) */
+  /* Sombras */
   --shadow-soft: 0 4px 20px -2px rgba(0, 0, 0, 0.05), 0 2px 12px -2px rgba(0, 0, 0, 0.03);
   --shadow-premium: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
 
@@ -78,7 +88,7 @@ h3,
   border: 3px solid #f5f5f5;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background-color: #03738c;
+  background-color: var(--brand-primary);
 }
 
 /* Alpine.js cloak */
@@ -113,7 +123,7 @@ button.htmx-request .button-loading {
   color: #a3a3a3;
 }
 .status-item-text-SOLICITADO {
-  color: #f59e0b;
+  color: var(--brand-gold);
 }
 .status-item-text-APROBADO {
   color: #10b981;
@@ -122,13 +132,13 @@ button.htmx-request .button-loading {
   color: #f43f5e;
 }
 .status-item-text-EMITIDO {
-  color: #0ea5e9;
+  color: var(--brand-info);
 }
 .status-item-text-REPROGRAMADO {
   color: #eab308;
 }
 .status-item-text-FINALIZADO {
-  color: #525252;
+  color: var(--brand-neutral);
 }
 .status-item-text-CANCELADO {
   color: #ef4444;
@@ -141,14 +151,14 @@ button.htmx-request .button-loading {
 
 /* Main Status Badges */
 .status-badge-SOLICITADO {
-  background-color: #f59e0b15;
-  color: #f59e0b;
-  border-color: #f59e0b33;
+  background-color: color-mix(in srgb, var(--brand-secondary), transparent 85%);
+  color: var(--brand-secondary);
+  border-color: color-mix(in srgb, var(--brand-secondary), transparent 70%);
 }
 .status-badge-PARCIALMENTE_APROBADO {
-  background-color: #8b5cf615;
-  color: #8b5cf6;
-  border-color: #8b5cf633;
+  background-color: color-mix(in srgb, var(--brand-info), transparent 85%);
+  color: var(--brand-info);
+  border-color: color-mix(in srgb, var(--brand-info), transparent 70%);
 }
 .status-badge-APROBADO {
   background-color: #10b98115;
@@ -161,31 +171,33 @@ button.htmx-request .button-loading {
   border-color: #f43f5e33;
 }
 .status-badge-FINALIZADO {
-  background-color: #52525215;
-  color: #525252;
-  border-color: #52525233;
-}
-.status-badge-EMITIDO {
-  background-color: #0ea5e915;
-  color: #0ea5e9;
-  border-color: #0ea5e933;
-}
-.status-badge-default {
-  background-color: #73737315;
-  color: #737373;
-  border-color: #73737333;
+  background-color: color-mix(in srgb, var(--brand-neutral), transparent 85%);
+  color: var(--brand-neutral);
+  border-color: color-mix(in srgb, var(--brand-neutral), transparent 70%);
 }
 
-/* Ticket Status Badges */
-.status-badge-REGISTRADO {
-  background-color: #6366f115;
-  color: #6366f1;
-  border-color: #6366f133;
+.status-badge-EMITIDO {
+  background-color: color-mix(in srgb, var(--brand-info), transparent 85%);
+  color: var(--brand-info);
+  border-color: color-mix(in srgb, var(--brand-info), transparent 70%);
 }
+.status-badge-default {
+  background-color: color-mix(in srgb, var(--brand-neutral), transparent 85%);
+  color: var(--brand-neutral);
+  border-color: color-mix(in srgb, var(--brand-neutral), transparent 70%);
+}
+
+/* Estado REGISTRADO — Cinnabar (Primario) */
+.status-badge-REGISTRADO {
+  background-color: color-mix(in srgb, var(--brand-primary), transparent 85%);
+  color: var(--brand-primary);
+  border-color: color-mix(in srgb, var(--brand-primary), transparent 70%);
+}
+/* Estado USADO — Lead (Neutral) */
 .status-badge-USADO {
-  background-color: #3b82f615;
-  color: #3b82f6;
-  border-color: #3b82f633;
+  background-color: color-mix(in srgb, var(--brand-neutral), transparent 85%);
+  color: var(--brand-neutral);
+  border-color: color-mix(in srgb, var(--brand-neutral), transparent 70%);
 }
 .status-badge-ANULADO {
   background-color: #ef444415;

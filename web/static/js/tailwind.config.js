@@ -1,3 +1,18 @@
+// =============================================================================
+// 🎨 ENTERPRISE DESIGN TOKENS (Base)
+// Cambia esto para cambiar la identidad visual completa del sistema.
+// =============================================================================
+const PALETTE = {
+  cinnabar: { 50: "#fdf4f3", 100: "#fce7e4", 500: "#e1503d", 600: "#d04432", 700: "#af3626", 800: "#913023", 950: "#41140e" },
+  jaffa: { 50: "#fef7ee", 100: "#fdedd7", 300: "#f8ba79", 600: "#e15c15", 950: "#411509" },
+  plum: { 50: "#fbf7fb", 100: "#f8eff7", 500: "#b972b2", 600: "#9a5391" },
+  lead: { 50: "#f7f6f6", 100: "#eeedec", 200: "#dedbd9", 500: "#5C5753", 800: "#262320" },
+  success: { 50: "#ecfdf5", 500: "#10b981", 600: "#059669" },
+  warning: { 50: "#fffbeb", 500: "#f59e0b", 600: "#d97706" },
+  danger: { 50: "#fef2f2", 500: "#ef4444", 600: "#dc2626" },
+  accents: { gold: "#F29A2E", salmon: "#F2884B", bright: "#F2490C" },
+};
+
 tailwind.config = {
   theme: {
     colors: {
@@ -5,136 +20,60 @@ tailwind.config = {
       current: "currentColor",
       black: "#000000",
       white: "#ffffff",
+
+      // 1. BRAND (Identidad)
       primary: {
-        50: "#e6f1f3",
-        100: "#cfe4e8",
-        200: "#9fc9d1",
-        300: "#6faeba",
-        400: "#3f94a3",
-        DEFAULT: "#03738C",
-        500: "#03738C",
-        600: "#025c70",
-        700: "#024554",
-        800: "#012e38",
-        900: "#01171c",
+        ...PALETTE.cinnabar,
+        DEFAULT: PALETTE.cinnabar[800],
       },
       secondary: {
-        50: "#e6f5f6",
-        100: "#ceebed",
-        200: "#9dd7db",
-        300: "#6cc3ca",
-        400: "#3bafb8",
-        DEFAULT: "#0396A6",
-        500: "#0396A6",
-        600: "#027885",
-        700: "#025a64",
-        800: "#013c42",
-        900: "#011e21",
+        ...PALETTE.jaffa,
+        DEFAULT: PALETTE.jaffa[600],
       },
-      gold: {
-        50: "#fef5ea",
-        100: "#fdebd5",
-        200: "#fbd7ab",
-        300: "#f9c381",
-        400: "#f7af57",
-        DEFAULT: "#F29A2E",
-        500: "#F29A2E",
-        600: "#c27b25",
-        700: "#915c1c",
-        800: "#613e13",
-        900: "#301f09",
-      },
-      salmon: {
-        50: "#fef3ed",
-        100: "#fde7dc",
-        200: "#fbcfb9",
-        300: "#f9b796",
-        400: "#f79f73",
-        DEFAULT: "#F2884B",
-        500: "#F2884B",
-        600: "#c26d3c",
-        700: "#91522d",
-        800: "#61361e",
-        900: "#301b0f",
-      },
+
+      // 2. ACCENTS (Énfasis)
       accent: {
-        50: "#feeeec",
-        100: "#fddbd9",
-        200: "#fbb7b3",
-        300: "#f9938d",
-        400: "#f76f67",
-        DEFAULT: "#F2490C",
-        500: "#F2490C",
-        600: "#c23a0a",
-        700: "#912c07",
-        800: "#611d05",
-        900: "#300f02",
+        soft: PALETTE.accents.gold,
+        warm: PALETTE.accents.salmon,
+        bright: PALETTE.accents.bright,
       },
+
+      // 3. NEUTRALS & SURFACE (Jerarquía)
       neutral: {
-        50: "#f9f9f9",
-        100: "#f3f3f3",
-        200: "#e7e7e7",
-        300: "#d1d1d1",
-        400: "#a3a3a3",
-        DEFAULT: "#575756",
-        500: "#575756",
-        600: "#464645",
-        700: "#343434",
-        800: "#232322",
-        900: "#111111",
+        ...PALETTE.lead,
+        surface: {
+          app: PALETTE.lead[50],
+          card: "#ffffff",
+          sidebar: PALETTE.jaffa[950],
+          muted: PALETTE.lead[100],
+        },
+        content: {
+          main: PALETTE.lead[800],
+          muted: PALETTE.lead[500],
+          inverse: "#ffffff",
+        },
       },
-      violet: {
-        50: "#f5f3ff",
-        100: "#ede9fe",
-        200: "#ddd6fe",
-        300: "#c4b5fd",
-        400: "#a78bfa",
-        DEFAULT: "#8b5cf6",
-        500: "#8b5cf6",
-        600: "#7c3aed",
-        700: "#6d28d9",
-        800: "#5b21b6",
-        900: "#4c1d95",
+
+      // 4. STATUS (Feedback funcional)
+      status: {
+        info: { ...PALETTE.plum, DEFAULT: PALETTE.plum[600] },
+        success: { ...PALETTE.success, DEFAULT: PALETTE.success[500] },
+        warning: { ...PALETTE.warning, DEFAULT: PALETTE.warning[500] },
+        danger: { ...PALETTE.danger, DEFAULT: PALETTE.danger[500] },
       },
-      success: {
-        50: "#ecfdf5",
-        100: "#d1fae5",
-        200: "#a7f3d0",
-        300: "#6ee7b7",
-        400: "#34d399",
-        DEFAULT: "#10b981",
-        500: "#10b981",
-        600: "#059669",
-        700: "#047857",
-        800: "#065f46",
-        900: "#064e3b",
+
+      // 5. INTERACTIVE (Acciones)
+      action: {
+        hover: "rgba(0, 0, 0, 0.05)",
+        active: "rgba(0, 0, 0, 0.1)",
+        disabled: PALETTE.lead[200],
       },
-      warning: {
-        50: "#fffbeb",
-        100: "#fef3c7",
-        200: "#fde68a",
-        300: "#fcd34d",
-        400: "#fbbf24",
-        DEFAULT: "#f59e0b",
-        500: "#f59e0b",
-        600: "#d97706",
-        700: "#b45309",
-        800: "#92400e",
-        900: "#78350f",
-      },
-      danger: {
-        50: "#fef2f2",
-        100: "#fee2e2",
-        200: "#fecaca",
-        300: "#fca5a5",
-        400: "#f87171",
-        DEFAULT: "#ef4444",
-        500: "#ef4444",
-        600: "#dc2626",
-        700: "#b91c1c",
-        800: "#991b1b",
-        900: "#7f1d1d",
-      },
+
+      // ALIASES (Compatibilidad total)
+      info: { ...PALETTE.plum, DEFAULT: PALETTE.plum[600] },
+      success: { ...PALETTE.success, DEFAULT: PALETTE.success[500] },
+      warning: { ...PALETTE.warning, DEFAULT: PALETTE.warning[500] },
+      danger: { ...PALETTE.danger, DEFAULT: PALETTE.danger[500] },
     },
     fontFamily: {
       sans: ["Inter", "ui-sans-serif", "system-ui"],
@@ -156,7 +95,7 @@ tailwind.config = {
     },
     ringColor: function (theme) {
       return Object.assign({}, theme("colors"), {
-        DEFAULT: theme("colors.primary.DEFAULT", "#03738C"),
+        DEFAULT: theme("colors.primary.DEFAULT"),
       });
     },
     transitionTimingFunction: {
@@ -176,10 +115,7 @@ tailwind.config = {
       premium: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
     },
     extend: {
-      fontSize: {
-        xxs: "0.625rem",
-        tiny: "0.5rem",
-      },
+      fontSize: { xxs: "0.625rem", tiny: "0.5rem" },
       animation: {
         "fade-in-down": "fadeInDown 0.3s ease-out",
         "fade-in": "fadeIn 0.2s ease-in",
@@ -189,10 +125,7 @@ tailwind.config = {
           "0%": { opacity: "0", transform: "translateY(-10px)" },
           "100%": { opacity: "1", transform: "translateY(0)" },
         },
-        fadeIn: {
-          "0%": { opacity: "0" },
-          "100%": { opacity: "1" },
-        },
+        fadeIn: { "0%": { opacity: "0" }, "100%": { opacity: "1" } },
       },
     },
   },
