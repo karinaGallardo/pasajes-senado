@@ -10,10 +10,11 @@ type TramoOficialRequest struct {
 }
 
 type CreateSolicitudOficialRequest struct {
-	AmbitoViajeCodigo string                `form:"ambito_viaje_codigo" binding:"required"`
-	TargetUserID      string                `form:"target_user_id"`
-	Motivo            string                `form:"motivo"`
-	Autorizacion      string                `form:"autorizacion"`
-	AerolineaSugerida string                `form:"aerolinea"`
-	Tramos            []TramoOficialRequest `form:"-"`
+	TipoSolicitudCodigo string                `form:"tipo_solicitud_codigo" binding:"required"`
+	AmbitoViajeCodigo   string                `form:"ambito_viaje_codigo" binding:"required"`
+	TargetUserID        string                `form:"target_user_id"`
+	Motivo              string                `form:"motivo"`
+	Autorizacion        string                `form:"autorizacion"`
+	AerolineaSugerida   string                `form:"aerolinea"`
+	Tramos              []TramoOficialRequest `form:"-"`
 }

@@ -124,19 +124,19 @@ func (ctrl *SolicitudController) TablePendientesDescargo(c *gin.Context) {
 }
 
 func (ctrl *SolicitudController) IndexDerecho(c *gin.Context) {
-	ctrl.renderIndex(c, "DERECHO", "Bandeja de Pasajes por Derecho", "solicitud/index")
+	ctrl.renderIndex(c, "DERECHO", "Solicitudes por Derecho", "solicitud/index")
 }
 
 func (ctrl *SolicitudController) IndexOficial(c *gin.Context) {
-	ctrl.renderIndex(c, "OFICIAL", "Bandeja de Comisiones Oficiales", "solicitud/index")
+	ctrl.renderIndex(c, "OFICIAL", "Solicitudes Oficiales", "solicitud/index")
 }
 
 func (ctrl *SolicitudController) TableDerecho(c *gin.Context) {
-	ctrl.renderIndex(c, "DERECHO", "Bandeja de Pasajes por Derecho", "solicitud/table_solicitudes")
+	ctrl.renderIndex(c, "DERECHO", "Solicitudes por Derecho", "solicitud/table_solicitudes")
 }
 
 func (ctrl *SolicitudController) TableOficial(c *gin.Context) {
-	ctrl.renderIndex(c, "OFICIAL", "Bandeja de Comisiones Oficiales", "solicitud/table_solicitudes")
+	ctrl.renderIndex(c, "OFICIAL", "Solicitudes Oficiales", "solicitud/table_solicitudes")
 }
 
 func (ctrl *SolicitudController) renderIndex(c *gin.Context, concepto string, title string, template string) {

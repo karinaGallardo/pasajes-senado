@@ -64,6 +64,13 @@ func (s Solicitud) GetConceptoNombre() string {
 	return ""
 }
 
+func (s Solicitud) GetTipoNombre() string {
+	if s.TipoSolicitud != nil {
+		return s.TipoSolicitud.Nombre
+	}
+	return ""
+}
+
 func (s Solicitud) GetConceptoCodigo() string {
 	if s.TipoSolicitud != nil && s.TipoSolicitud.ConceptoViaje != nil {
 		return s.TipoSolicitud.ConceptoViaje.Codigo

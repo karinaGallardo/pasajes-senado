@@ -335,6 +335,7 @@ func seedCatalogosViaje() {
 	}
 	configs.DB.FirstOrCreate(&tipoComision, models.TipoSolicitud{Codigo: "COMISION"})
 	configs.DB.Model(&tipoComision).Association("Ambitos").Append(&ambitoNac, &ambitoInt)
+
 	tipoInvitacion := models.TipoSolicitud{
 		Codigo:              "INVITACION",
 		Nombre:              "Invitación Institucional",
@@ -342,6 +343,39 @@ func seedCatalogosViaje() {
 	}
 	configs.DB.FirstOrCreate(&tipoInvitacion, models.TipoSolicitud{Codigo: "INVITACION"})
 	configs.DB.Model(&tipoInvitacion).Association("Ambitos").Append(&ambitoNac, &ambitoInt)
+
+	// New Oficial types requested
+	tipoConvocatoria := models.TipoSolicitud{
+		Codigo:              "CONVOCATORIA",
+		Nombre:              "Convocatoria",
+		ConceptoViajeCodigo: conceptoOfi.Codigo,
+	}
+	configs.DB.FirstOrCreate(&tipoConvocatoria, models.TipoSolicitud{Codigo: "CONVOCATORIA"})
+	configs.DB.Model(&tipoConvocatoria).Association("Ambitos").Append(&ambitoNac, &ambitoInt)
+
+	tipoEfemery := models.TipoSolicitud{
+		Codigo:              "EFEMERIDE",
+		Nombre:              "Efeméride",
+		ConceptoViajeCodigo: conceptoOfi.Codigo,
+	}
+	configs.DB.FirstOrCreate(&tipoEfemery, models.TipoSolicitud{Codigo: "EFEMERIDE"})
+	configs.DB.Model(&tipoEfemery).Association("Ambitos").Append(&ambitoNac, &ambitoInt)
+
+	tipoExtra := models.TipoSolicitud{
+		Codigo:              "EXTRAORDINARIO",
+		Nombre:              "Extraordinario",
+		ConceptoViajeCodigo: conceptoOfi.Codigo,
+	}
+	configs.DB.FirstOrCreate(&tipoExtra, models.TipoSolicitud{Codigo: "EXTRAORDINARIO"})
+	configs.DB.Model(&tipoExtra).Association("Ambitos").Append(&ambitoNac, &ambitoInt)
+
+	tipoProgramado := models.TipoSolicitud{
+		Codigo:              "VIAJE_PROGRAMADO",
+		Nombre:              "Viaje Programado",
+		ConceptoViajeCodigo: conceptoOfi.Codigo,
+	}
+	configs.DB.FirstOrCreate(&tipoProgramado, models.TipoSolicitud{Codigo: "VIAJE_PROGRAMADO"})
+	configs.DB.Model(&tipoProgramado).Association("Ambitos").Append(&ambitoNac, &ambitoInt)
 
 	itinIdaVuelta := models.TipoItinerario{Codigo: "IDA_VUELTA", Nombre: "Ida y Vuelta"}
 	itinSoloIda := models.TipoItinerario{Codigo: "SOLO_IDA", Nombre: "Solo Ida"}

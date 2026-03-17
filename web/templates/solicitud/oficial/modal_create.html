@@ -23,7 +23,6 @@
         x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
         class="relative transform rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-6xl">
         <form x-ref="form" @submit.prevent="submitForm" action="/solicitudes/oficial" method="POST" autocomplete="off">
-          <input type="hidden" name="tipo_solicitud_codigo" value="COMISION" />
           <input type="hidden" name="tramos_json" id="tramos_json_input" value="" />
           <input type="hidden" name="target_user_id" value="{{ .TargetUser.ID }}" />
 
@@ -34,7 +33,7 @@
                 <i class="ph ph-airplane-tilt text-2xl"></i>
               </div>
               <div class="ml-4 text-left">
-                <h3 class="text-lg font-bold text-neutral-900">Nueva Solicitud de Comisión Oficial</h3>
+                <h3 class="text-lg font-bold text-neutral-900">Nueva Solicitud Oficial</h3>
                 <p class="text-sm text-neutral-500">Itinerario para {{ .TargetUser.GetNombreCompleto }}</p>
               </div>
             </div>
@@ -56,8 +55,20 @@
           <div class="px-6 py-6 space-y-6 bg-neutral-50/30">
             <!-- 1. GENERAL INFO SECTION -->
             <div class="bg-white rounded-xl shadow-sm border border-neutral-200 p-4">
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <!-- Row 1: Triple inputs -->
+              <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <!-- Row 1: Quad inputs -->
+                <div class="space-y-1">
+                  <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">Tipo de Solicitud</label>
+                  <select
+                    name="tipo_solicitud_codigo"
+                    x-model="tipo"
+                    required
+                    class="w-full rounded-md border-neutral-300 text-sm focus:ring-primary focus:border-primary transition-all">
+                    {{ range .Tipos }}
+                    <option value="{{ .Codigo }}">{{ .Nombre }}</option>
+                    {{ end }}
+                  </select>
+                </div>
                 <div class="space-y-1">
                   <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">Ámbito</label>
                   <select
@@ -93,7 +104,7 @@
                 </div>
 
                 <!-- Row 2: Full width textarea -->
-                <div class="md:col-span-3 space-y-1">
+                <div class="md:col-span-4 space-y-1">
                   <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">
                     Motivo de la Comisión {{ if .TargetUser.IsSenador }}
                     <span class="text-neutral-400 font-normal lowercase opacity-70 italic">(Opcional para Senadores)</span>
@@ -438,6 +449,7 @@
       return {
         open: true,
         loading: false,
+        tipo: 'COMISION',
         ambito: 'NACIONAL',
         motivo: '',
         autorizacion: 'COMISION',

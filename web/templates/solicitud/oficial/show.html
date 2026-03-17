@@ -6,6 +6,9 @@
     <div>
       <div class="flex items-center gap-3">
         <h2 class="text-2xl font-black text-neutral-900 tracking-tight">{{ .Solicitud.Codigo }}</h2>
+        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-100 text-purple-700 border border-purple-200 shadow-sm">
+          {{ .Solicitud.GetTipoNombre }}
+        </span>
         {{ if .Solicitud.EstadoSolicitud }}
         <span class="px-2 py-0.5 inline-flex items-center gap-1 text-[10px] font-black rounded-full border status-badge-{{ .Solicitud.EstadoSolicitud.Codigo }}">
           <i class="{{ .Solicitud.EstadoSolicitud.Icon }}"></i>
@@ -489,7 +492,7 @@
           <!-- Motivo y Autorización -->
           <div class="bg-white shadow-sm rounded-xl border border-neutral-200 overflow-hidden">
             <div class="bg-neutral-50 px-6 py-3 border-b border-neutral-200">
-              <h3 class="text-[10px] font-black text-neutral-800 uppercase tracking-widest">Detalles de la Comisión</h3>
+              <h3 class="text-[10px] font-black text-neutral-800 uppercase tracking-widest">Detalles de la {{ .Solicitud.GetTipoNombre }}</h3>
             </div>
             <div class="p-4 space-y-4">
               <div>
@@ -535,6 +538,10 @@
                   <span class="text-neutral-400 italic">Sin preferencia</span>
                   {{ end }}
                 </p>
+              </div>
+              <div>
+                <p class="text-[10px] text-neutral-400 uppercase font-bold">Tipo de Solicitud</p>
+                <p class="text-sm font-medium text-neutral-800">{{ .Solicitud.GetTipoNombre }}</p>
               </div>
               <div>
                 <p class="text-[10px] text-neutral-400 uppercase font-bold">Tipo Itinerario</p>

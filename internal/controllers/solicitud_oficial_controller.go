@@ -62,6 +62,7 @@ func (ctrl *SolicitudOficialController) GetCreateModal(c *gin.Context) {
 	aerolineas, _ := ctrl.aerolineaService.GetAllActive(c.Request.Context())
 	ambitos, _ := ctrl.ambitoService.GetAll(c.Request.Context())
 	destinos, _ := ctrl.destinoService.GetAll(c.Request.Context())
+	tipos, _ := ctrl.tipoSolicitudService.GetByConcepto(c.Request.Context(), "OFICIAL")
 
 	// Default target user is the logged in user
 	targetUser := authUser
@@ -85,6 +86,7 @@ func (ctrl *SolicitudOficialController) GetCreateModal(c *gin.Context) {
 		"Aerolineas":  aerolineas,
 		"Ambitos":     ambitos,
 		"Destinos":    destinos,
+		"Tipos":       tipos,
 		"IsAdmin":     authUser.IsAdminOrResponsable() || (targetUser != nil && authUser.ID != targetUser.ID),
 		"DefaultDate": dateIda,
 	})
@@ -478,6 +480,7 @@ func (ctrl *SolicitudOficialController) GetEditModal(c *gin.Context) {
 	aerolineas, _ := ctrl.aerolineaService.GetAllActive(c.Request.Context())
 	ambitos, _ := ctrl.ambitoService.GetAll(c.Request.Context())
 	destinos, _ := ctrl.destinoService.GetAll(c.Request.Context())
+	tipos, _ := ctrl.tipoSolicitudService.GetByConcepto(c.Request.Context(), "OFICIAL")
 
 	// Ordenar ítems: IDA primero, luego VUELTA, por fecha
 	sort.Slice(solicitud.Items, func(i, j int) bool {
@@ -534,6 +537,7 @@ func (ctrl *SolicitudOficialController) GetEditModal(c *gin.Context) {
 	tramosJSON, _ := json.Marshal(tramosIniciales)
 	editFormData, _ := json.Marshal(map[string]string{
 		"ambito":       solicitud.AmbitoViajeCodigo,
+		"tipo":         solicitud.TipoSolicitudCodigo,
 		"motivo":       solicitud.Motivo,
 		"autorizacion": solicitud.Autorizacion,
 		"aerolinea":    solicitud.AerolineaSugerida,
@@ -554,6 +558,7 @@ func (ctrl *SolicitudOficialController) GetEditModal(c *gin.Context) {
 		"Aerolineas":   aerolineas,
 		"Ambitos":      ambitos,
 		"Destinos":     destinos,
+		"Tipos":        tipos,
 		"TramosJSON":   template.JS(tramosJSON),
 		"EditFormData": template.JS(editFormData),
 		"DestinosJSON": template.JS(destinosJSON),

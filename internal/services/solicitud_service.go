@@ -101,7 +101,6 @@ func (s *SolicitudService) CreateDerecho(ctx context.Context, req dtos.CreateSol
 		AerolineaSugerida:    req.AerolineaSugerida,
 	}
 
-
 	if req.CupoDerechoItemID != "" {
 		solicitud.CupoDerechoItemID = &req.CupoDerechoItemID
 	}
@@ -247,7 +246,10 @@ func (s *SolicitudService) CreateOficial(ctx context.Context, req dtos.CreateSol
 		return nil, errors.New("tipo de itinerario no válido")
 	}
 
-	tipoSolicitudCode := "COMISION"
+	tipoSolicitudCode := req.TipoSolicitudCodigo
+	if tipoSolicitudCode == "" {
+		tipoSolicitudCode = "COMISION"
+	}
 
 	solicitud := &models.Solicitud{
 		BaseModel:             models.BaseModel{CreatedBy: &currentUser.ID},
@@ -260,7 +262,6 @@ func (s *SolicitudService) CreateOficial(ctx context.Context, req dtos.CreateSol
 		AerolineaSugerida:     req.AerolineaSugerida,
 		EstadoSolicitudCodigo: utils.Ptr("SOLICITADO"),
 	}
-
 
 	// Build Items
 	var items []models.SolicitudItem
@@ -295,7 +296,6 @@ func (s *SolicitudService) CreateOficial(ctx context.Context, req dtos.CreateSol
 			Fecha:        fSalida,
 			EstadoCodigo: utils.Ptr(st),
 		}
-
 
 		items = append(items, item)
 	}
@@ -1011,13 +1011,13 @@ func (s *SolicitudService) UpdateOficial(ctx context.Context, id string, req dto
 		}
 
 		// 2. Update parent fields using Updates to avoid side effects on associations
-		updates := map[string]interface{}{
-			"motivo":              req.Motivo,
-			"autorizacion":        req.Autorizacion,
-			"ambito_viaje_codigo": req.AmbitoViajeCodigo,
-			"aerolinea_sugerida":  req.AerolineaSugerida,
+		updates := map[string]any{
+			"tipo_solicitud_codigo": req.TipoSolicitudCodigo,
+			"motivo":                req.Motivo,
+			"autorizacion":          req.Autorizacion,
+			"ambito_viaje_codigo":   req.AmbitoViajeCodigo,
+			"aerolinea_sugerida":    req.AerolineaSugerida,
 		}
-
 
 		if err := tx.Model(solicitud).Updates(updates).Error; err != nil {
 			return err
@@ -1065,7 +1065,6 @@ func (s *SolicitudService) UpdateOficial(ctx context.Context, id string, req dto
 						} else {
 							existing.Tipo = models.TipoSolicitudItemIda
 						}
-
 
 						if err := tx.Save(existing).Error; err != nil {
 							return err

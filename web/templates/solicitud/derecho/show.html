@@ -4,7 +4,12 @@
   <!-- Header -->
   <div class="mb-6 flex items-center justify-between">
     <div>
-      <h2 class="text-3xl font-bold text-neutral-900">{{ .Solicitud.Codigo }}</h2>
+      <div class="flex items-center gap-3">
+        <h2 class="text-3xl font-bold text-neutral-900 leading-none">{{ .Solicitud.Codigo }}</h2>
+        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-primary-50 text-primary-700 border border-primary-200 shadow-sm">
+          {{ .Solicitud.GetTipoNombre }}
+        </span>
+      </div>
       <div class="flex flex-col space-y-0.5 mt-1">
         <p class="text-xs text-neutral-400 flex items-center gap-1.5">
           <span>
@@ -432,9 +437,13 @@
                   </svg>
                 </div>
                 <div>
-                  <p class="text-[10px] font-bold text-neutral-500 uppercase tracking-wide">Fecha Salida</p>
-                  <p class="text-sm font-bold text-neutral-900 mt-0.5">{{ if .Solicitud.GetFechaIda }}{{ fechaHora .Solicitud.GetFechaIda }}{{ else }} - {{ end }}</p>
-                </div>
+                <p class="text-[10px] text-neutral-400 uppercase font-bold">Tipo de Solicitud</p>
+                <p class="text-sm font-medium text-neutral-800">{{ .Solicitud.GetTipoNombre }}</p>
+              </div>
+              <div>
+                <p class="text-[10px] text-neutral-400 uppercase font-bold">Tipo Itinerario</p>
+                <p class="text-sm font-medium text-neutral-800">{{ if eq .Solicitud.TipoItinerarioCodigo "IDA_VUELTA" }}Ida y Vuelta{{ else }}Solo Ida{{ end }}</p>
+              </div>
               </div>
 
               <!-- Return -->

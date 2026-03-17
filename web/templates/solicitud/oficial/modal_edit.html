@@ -42,7 +42,7 @@
                 <i class="ph ph-note-pencil text-2xl"></i>
               </div>
               <div class="ml-4 text-left">
-                <h3 class="text-lg font-bold text-neutral-900">Editar Solicitud de Comisión Oficial</h3>
+                <h3 class="text-lg font-bold text-neutral-900">Editar Solicitud Oficial</h3>
                 <p class="text-sm text-neutral-500">Solicitud {{ .Solicitud.Codigo }}</p>
               </div>
             </div>
@@ -64,8 +64,20 @@
           <div class="px-6 py-6 space-y-6 bg-neutral-50/30">
             <!-- 1. GENERAL INFO SECTION -->
             <div class="bg-white rounded-xl shadow-sm border border-neutral-200 p-4">
-              <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <!-- Row 1: Triple inputs -->
+              <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <!-- Row 1: Quad inputs -->
+                <div class="space-y-1">
+                  <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">Tipo de Solicitud</label>
+                  <select
+                    name="tipo_solicitud_codigo"
+                    x-model="tipo"
+                    required
+                    class="w-full rounded-md border-neutral-300 text-sm focus:ring-primary focus:border-primary transition-all">
+                    {{ range .Tipos }}
+                    <option value="{{ .Codigo }}">{{ .Nombre }}</option>
+                    {{ end }}
+                  </select>
+                </div>
                 <div class="space-y-1">
                   <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">Ámbito</label>
                   <select
@@ -101,7 +113,7 @@
                 </div>
 
                 <!-- Row 2: Full width textarea -->
-                <div class="md:col-span-3 space-y-1">
+                <div class="md:col-span-4 space-y-1">
                   <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">
                     Motivo de la Comisión {{ if .Solicitud.Usuario.IsSenador }}
                     <span class="text-neutral-400 font-normal lowercase opacity-70 italic">(Opcional para Senadores)</span>
@@ -468,6 +480,7 @@
         open: true,
         loading: false,
         ambito: "",
+        tipo: "",
         motivo: "",
         autorizacion: "",
         aerolinea: "",
@@ -495,6 +508,7 @@
             try {
               var d = JSON.parse(formEl.textContent);
               this.ambito = d.ambito || "";
+              this.tipo = d.tipo || "";
               this.motivo = d.motivo || "";
               this.autorizacion = d.autorizacion || "";
               this.aerolinea = d.aerolinea || "";
