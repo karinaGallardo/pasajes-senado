@@ -176,6 +176,17 @@ func (r *UsuarioRepository) FindByCIUnscoped(ctx context.Context, ci string) (*m
 	return &usuario, err
 }
 
+func (r *UsuarioRepository) FindByUsernameUnscoped(ctx context.Context, username string) (*models.Usuario, error) {
+	var user models.Usuario
+	err := r.db.WithContext(ctx).
+		Unscoped().
+		Preload("Rol").
+		Where("username = ?", username).
+		First(&user).
+		Error
+	return &user, err
+}
+
 func (r *UsuarioRepository) Save(ctx context.Context, usuario *models.Usuario) error {
 	return r.db.WithContext(ctx).Save(usuario).Error
 }
@@ -186,7 +197,14 @@ func (r *UsuarioRepository) Refresh(ctx context.Context, usuario *models.Usuario
 
 func (r *UsuarioRepository) FindByEncargadoID(ctx context.Context, encargadoID string) ([]models.Usuario, error) {
 	var usuarios []models.Usuario
-	err := r.db.WithContext(ctx).Preload("Rol").Preload("Genero").Preload("Origen").Preload("Cargo").Where("encargado_id = ?", encargadoID).Find(&usuarios).Error
+	err := r.db.WithContext(ctx).
+		Preload("Rol").
+		Preload("Genero").
+		Preload("Origen").
+		Preload("Cargo").
+		Where("encargado_id = ?", encargadoID).
+		Find(&usuarios).
+		Error
 	return usuarios, err
 }
 

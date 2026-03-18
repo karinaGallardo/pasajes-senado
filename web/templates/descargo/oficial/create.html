@@ -297,7 +297,7 @@
                           x-model="modificado"
                           @change="if(modificado) devuelto = false"
                           title="Modificar"
-                          class="h-4 w-4 text-amber-600 border-neutral-300 rounded focus:ring-amber-500" />
+                          class="h-4 w-4 text-warning-600 border-neutral-300 rounded focus:ring-warning-500" />
                       </td>
                       <td class="px-2 py-1" :class="{ 'opacity-50': devuelto || modificado }">
                         <input
@@ -527,7 +527,7 @@
                           x-model="modificado"
                           @change="if(modificado) devuelto = false"
                           title="Modificar"
-                          class="h-4 w-4 text-amber-600 border-neutral-300 rounded focus:ring-amber-500" />
+                          class="h-4 w-4 text-warning-600 border-neutral-300 rounded focus:ring-warning-500" />
                       </td>
                       <td class="px-2 py-1" :class="{ 'opacity-50': devuelto || modificado }">
                         <input
@@ -755,7 +755,7 @@
           3. Gastos de Representación
         </h3>
         {{ if .HasGastosRep }} {{ range .Solicitud.Viaticos }} {{ if and .TieneGastosRep (or (gt .MontoGastosRep $.ZeroFloat) (gt .MontoLiquidoGastos $.ZeroFloat)) }}
-        <div class="border border-neutral-200 rounded-lg p-4 bg-amber-50/50">
+        <div class="border border-neutral-200 rounded-lg p-4 bg-warning-50/50">
           <p class="text-xs font-bold text-neutral-600 mb-2">Viático {{ .Codigo }}</p>
           <div class="grid grid-cols-3 gap-4 text-sm">
             <div>
@@ -823,7 +823,7 @@
           5. En caso de Devolución de Pasajes y/o Viáticos:
         </h3>
 
-        <div class="bg-amber-50/30 border border-amber-100 rounded-xl p-6 shadow-sm">
+        <div class="bg-warning-50/30 border border-warning-100 rounded-xl p-6 shadow-sm">
           <label class="flex items-center space-x-3 cursor-pointer mb-6 group w-fit">
             <input type="checkbox" x-model="hasDevo" class="h-5 w-5 rounded border-2 border-neutral-300 text-primary-600 focus:ring-primary-500 transition-all cursor-pointer" />
             <span class="text-sm font-bold text-neutral-700 uppercase tracking-tight group-hover:text-primary-700 transition-colors">¿Existió Devolución de Pasajes/Viáticos?</span>

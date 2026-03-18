@@ -6,6 +6,7 @@ import (
 	"sistema-pasajes/internal/services"
 	"sistema-pasajes/internal/utils"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -79,24 +80,37 @@ func (ctrl *FuncionarioController) Table(c *gin.Context) {
 
 func (ctrl *FuncionarioController) Sync(c *gin.Context) {
 	authUser := appcontext.AuthUser(c)
-	if authUser == nil || !authUser.IsAdmin() {
+	if authUser == nil || !authUser.IsAdminOrResponsable() {
 		c.String(http.StatusForbidden, "No autorizado")
 		return
 	}
 
-	count, err := ctrl.userService.SyncStaff(c.Request.Context())
+	result, err := ctrl.userService.SyncStaff(c.Request.Context())
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Error sincronizando: "+err.Error())
 		return
 	}
 
-	utils.SetSuccessMessage(c, "Sincronizados "+strconv.Itoa(count)+" registros")
+	utils.SetSuccessMessage(c, "Sincronizados "+strconv.Itoa(result.Count)+" registros")
+
+	if len(result.Conflicts) > 0 {
+		var msg strings.Builder
+		msg.WriteString("Se detectaron conflictos de unicidad: ")
+		for i, cnf := range result.Conflicts {
+			if i > 0 {
+				msg.WriteString(" | ")
+			}
+			msg.WriteString(cnf)
+		}
+		utils.SetErrorMessage(c, msg.String())
+	}
+
 	c.Redirect(http.StatusFound, "/usuarios/funcionarios")
 }
 
 func (ctrl *FuncionarioController) GetSyncModal(c *gin.Context) {
 	authUser := appcontext.AuthUser(c)
-	if authUser == nil || !authUser.IsAdmin() {
+	if authUser == nil || !authUser.IsAdminOrResponsable() {
 		c.String(http.StatusForbidden, "No autorizado")
 		return
 	}

@@ -26,9 +26,9 @@
           De:
           <strong class="text-neutral-900">{{ .Senador.GetNombreCompleto }}</strong>
           {{ if eq .Senador.Tipo "SENADOR_TITULAR" }}
-          <span class="inline-flex items-center rounded-md bg-purple-50 px-2 py-0.5 text-xs font-medium text-purple-700 ring-1 ring-inset ring-purple-700/10 mb-1">Titular</span>
+          <span class="inline-flex items-center rounded-md bg-info-50 px-2 py-0.5 text-xs font-medium text-info-700 ring-1 ring-inset ring-info-700/10 mb-1">Titular</span>
           {{ else if eq .Senador.Tipo "SENADOR_SUPLENTE" }}
-          <span class="inline-flex items-center rounded-md bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10 mb-1">Suplente</span>
+          <span class="inline-flex items-center rounded-md bg-info-50 px-2 py-0.5 text-xs font-medium text-info-700 ring-1 ring-inset ring-info-700/10 mb-1">Suplente</span>
           {{ end }}
           <br />
           <br />
@@ -49,11 +49,11 @@
                 <div class="text-sm font-black text-primary-900">{{ $dest.GetNombreCompleto }}</div>
                 <div class="text-[10px] text-primary-400 font-bold uppercase">
                   {{ if eq $dest.Tipo "SENADOR_TITULAR" }}
-                  <span class="inline-flex items-center rounded-md bg-purple-50 px-2 py-0.5 text-[10px] font-medium text-purple-700 ring-1 ring-inset ring-purple-700/10">
+                  <span class="inline-flex items-center rounded-md bg-info-50 px-2 py-0.5 text-[10px] font-medium text-info-700 ring-1 ring-inset ring-info-700/10">
                     Titular
                   </span>
                   {{ else if eq $dest.Tipo "SENADOR_SUPLENTE" }}
-                  <span class="inline-flex items-center rounded-md bg-blue-50 px-2 py-0.5 text-[10px] font-medium text-blue-700 ring-1 ring-inset ring-blue-700/10">Suplente</span>
+                  <span class="inline-flex items-center rounded-md bg-info-50 px-2 py-0.5 text-[10px] font-medium text-info-700 ring-1 ring-inset ring-info-700/10">Suplente</span>
                   {{ else }} {{ $dest.Tipo }} {{ end }}
                 </div>
               </div>

@@ -1,5 +1,5 @@
 {{ define "solicitud/table_solicitudes" }}
-<table class="min-w-full divide-y divide-gray-200">
+<table class="min-w-full divide-y divide-neutral-200">
   <thead class="bg-neutral-50">
     <tr>
       <th scope="col" class="px-3 py-3 text-left text-xs font-bold text-neutral-500 uppercase tracking-wider hidden md:table-cell">CÓDIGO</th>
@@ -12,7 +12,7 @@
       <th scope="col" class="px-3 py-3 text-right text-xs font-bold text-neutral-500 uppercase tracking-wider">Acciones</th>
     </tr>
   </thead>
-  <tbody class="bg-white divide-y divide-gray-200">
+  <tbody class="bg-white divide-y divide-neutral-200">
     {{ range .Result.Solicitudes }}
     <tr class="hover:bg-neutral-50 transition-colors">
       <td class="px-3 py-3 whitespace-nowrap text-xs font-medium text-neutral-900 hidden md:table-cell">
@@ -28,7 +28,7 @@
           <!-- Mobile Only Info -->
           <div class="md:hidden mt-1 space-y-0.5">
             {{ if eq .GetConceptoCodigo "OFICIAL" }}
-            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-purple-100 text-purple-800 border border-purple-200">{{ .GetTipoNombre }}</span>
+            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-info-100 text-info-800 border border-info-200">{{ .GetTipoNombre }}</span>
             {{ else }}
             <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-primary-50 text-primary border border-primary-100">Derecho</span>
             {{ end }}
@@ -49,7 +49,7 @@
       </td>
       <td class="px-3 py-3 whitespace-nowrap text-xs text-neutral-500 text-center hidden md:table-cell">
         {{ if eq .GetConceptoCodigo "OFICIAL" }}
-        <span class="inline-flex items-center px-2 py-0.5 rounded-full font-bold bg-purple-100 text-purple-800 border border-purple-200">{{ .GetTipoNombre }}</span>
+        <span class="inline-flex items-center px-2 py-0.5 rounded-full font-bold bg-info-100 text-info-800 border border-info-200">{{ .GetTipoNombre }}</span>
         {{ else }}
         <span class="inline-flex items-center px-2 py-0.5 rounded-full font-bold bg-primary-50 text-primary border border-primary-100">{{ .GetTipoNombre }}</span>
         {{ end }}

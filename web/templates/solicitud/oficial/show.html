@@ -6,7 +6,7 @@
     <div>
       <div class="flex items-center gap-3">
         <h2 class="text-2xl font-black text-neutral-900 tracking-tight">{{ .Solicitud.Codigo }}</h2>
-        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-purple-100 text-purple-700 border border-purple-200 shadow-sm">
+        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-info-100 text-info-700 border border-info-200 shadow-sm">
           {{ .Solicitud.GetTipoNombre }}
         </span>
         {{ if .Solicitud.EstadoSolicitud }}
@@ -28,7 +28,7 @@
             hx-get="/solicitudes/{{ .Solicitud.ID }}/regularizacion-modal"
             hx-target="body"
             hx-swap="beforeend"
-            class="ml-1 px-1.5 py-0.5 bg-amber-50 border border-amber-200 rounded text-[9px] font-black text-amber-700 hover:bg-amber-100 transition-all cursor-pointer flex items-center gap-1 uppercase tracking-wider shadow-sm"
+            class="ml-1 px-1.5 py-0.5 bg-warning-50 border border-warning-200 rounded text-[9px] font-black text-warning-700 hover:bg-warning-100 transition-all cursor-pointer flex items-center gap-1 uppercase tracking-wider shadow-sm"
             title="Regularizar fecha sistema solicitud">
             <i class="ph ph-clock-counter-clockwise font-bold"></i>
             Regularizar
@@ -218,7 +218,7 @@
                     hx-get="/solicitudes/{{ $.Solicitud.ID }}/items/{{ .ID }}/regularizacion-modal"
                     hx-target="body"
                     hx-swap="beforeend"
-                    class="ml-2 px-1.5 py-0.5 bg-amber-50 border border-amber-100 rounded text-[9px] font-black text-amber-600 hover:bg-amber-100 transition-all cursor-pointer flex items-center gap-1 uppercase tracking-wider"
+                    class="ml-2 px-1.5 py-0.5 bg-warning-50 border border-warning-100 rounded text-[9px] font-black text-warning-600 hover:bg-warning-100 transition-all cursor-pointer flex items-center gap-1 uppercase tracking-wider"
                     title="Regularizar fecha sistema">
                     <i class="ph ph-clock-counter-clockwise font-bold"></i>
                     REG
@@ -500,7 +500,7 @@
                   <i class="ph ph-file-text"></i>
                   Motivo / Justificación
                 </dt>
-                <div class="bg-yellow-50/50 p-4 rounded-lg border border-yellow-100">
+                <div class="bg-warning-50/50 p-4 rounded-lg border border-warning-100">
                   <p class="text-sm text-neutral-700 leading-relaxed italic">"{{ .Solicitud.Motivo }}"</p>
                 </div>
               </div>

@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"log/slog"
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
 	"sistema-pasajes/internal/utils"
@@ -14,6 +15,11 @@ type UsuarioService struct {
 	mongoUserRepo *repositories.MongoUserRepository
 	cargoRepo     *repositories.CargoRepository
 	oficinaRepo   *repositories.OficinaRepository
+}
+
+type SyncResult struct {
+	Count     int
+	Conflicts []string
 }
 
 func NewUsuarioService(
@@ -34,10 +40,10 @@ func NewUsuarioService(
 	}
 }
 
-func (s *UsuarioService) SyncStaff(ctx context.Context) (int, error) {
+func (s *UsuarioService) SyncStaff(ctx context.Context) (SyncResult, error) {
 	mongoStaff, err := s.peopleRepo.WithContext(ctx).FindAllActiveStaff()
 	if err != nil {
-		return 0, err
+		return SyncResult{}, err
 	}
 
 	mongoMap := make(map[string]models.MongoPersonaView)
@@ -58,10 +64,29 @@ func (s *UsuarioService) SyncStaff(ctx context.Context) (int, error) {
 		}
 	}
 
-	count := 0
+	var result SyncResult
 	for ci, mStaff := range mongoMap {
 		user, err := s.repo.FindByCIUnscoped(ctx, ci)
 		exists := err == nil
+
+		// Obtener el username objetivo desde Mongo
+		mongoUser, _ := s.mongoUserRepo.WithContext(ctx).FindByCI(ci)
+		targetUsername := ci
+		if mongoUser != nil && mongoUser.Username != "" {
+			targetUsername = mongoUser.Username
+		}
+
+		// VALIDACIÓN DE SEGURIDAD: Evitar colisión de Username con otro CI
+		checkUser, _ := s.repo.FindByUsernameUnscoped(ctx, targetUsername)
+		if checkUser != nil && checkUser.CI != ci {
+			msg := "CONFLICTO DE UNICIDAD: El username ya está registrado con otro CI en Postgres. Saltando usuario para evitar corrupción."
+			slog.Error("[Sync] "+msg,
+				"username", targetUsername,
+				"ci_mongo", ci,
+				"ci_postgres", checkUser.CI)
+			result.Conflicts = append(result.Conflicts, msg+" username="+targetUsername+" ci_mongo="+ci+" ci_postgres="+checkUser.CI)
+			continue
+		}
 
 		if exists {
 			if user.IsSenador() {
@@ -74,12 +99,7 @@ func (s *UsuarioService) SyncStaff(ctx context.Context) (int, error) {
 			user.ID = mStaff.ID.Hex()
 		}
 
-		mongoUser, _ := s.mongoUserRepo.WithContext(ctx).FindByCI(ci)
-		if mongoUser != nil && mongoUser.Username != "" {
-			user.Username = mongoUser.Username
-		} else {
-			user.Username = ci
-		}
+		user.Username = targetUsername
 
 		user.Firstname = utils.CleanName(mStaff.Firstname)
 		user.Secondname = utils.CleanName(mStaff.Secondname)
@@ -146,17 +166,17 @@ func (s *UsuarioService) SyncStaff(ctx context.Context) (int, error) {
 		}
 
 		if err := s.repo.Save(ctx, user); err == nil {
-			count++
+			result.Count++
 		}
 	}
 
-	return count, nil
+	return result, nil
 }
 
-func (s *UsuarioService) SyncSenators(ctx context.Context) (int, error) {
+func (s *UsuarioService) SyncSenators(ctx context.Context) (SyncResult, error) {
 	mongoSenators, err := s.peopleRepo.WithContext(ctx).FindAllActiveSenators()
 	if err != nil {
-		return 0, err
+		return SyncResult{}, err
 	}
 
 	mongoMap := make(map[string]models.MongoPersonaView)
@@ -167,7 +187,7 @@ func (s *UsuarioService) SyncSenators(ctx context.Context) (int, error) {
 		}
 	}
 
-	var count int
+	var result SyncResult
 
 	err = s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.UsuarioRepository) error {
 		pgSenators, _ := repoTx.FindAllSenators(ctx)
@@ -182,6 +202,24 @@ func (s *UsuarioService) SyncSenators(ctx context.Context) (int, error) {
 			user, err := repoTx.FindByCIUnscoped(ctx, ci)
 			exists := err == nil
 
+			// Fallback por Username si no existe por CI (Validación de colisión)
+			mongoUser, _ := s.mongoUserRepo.WithContext(ctx).FindByCI(ci)
+			targetUsername := ci
+			if mongoUser != nil && mongoUser.Username != "" {
+				targetUsername = mongoUser.Username
+			}
+
+			checkUser, _ := repoTx.FindByUsernameUnscoped(ctx, targetUsername)
+			if checkUser != nil && checkUser.CI != ci {
+				msg := "CONFLICTO DE UNICIDAD: El username de este senador ya está en uso por otro CI."
+				slog.Error("[SyncSenators] "+msg,
+					"username", targetUsername,
+					"ci_mongo", ci,
+					"ci_postgres", checkUser.CI)
+				result.Conflicts = append(result.Conflicts, msg+" username="+targetUsername+" ci_mongo="+ci+" ci_postgres="+checkUser.CI)
+				continue
+			}
+
 			if exists {
 				repoTx.Restore(ctx, user)
 			} else {
@@ -190,12 +228,7 @@ func (s *UsuarioService) SyncSenators(ctx context.Context) (int, error) {
 				user.ID = mSen.ID.Hex()
 			}
 
-			mongoUser, _ := s.mongoUserRepo.WithContext(ctx).FindByCI(ci)
-			if mongoUser != nil && mongoUser.Username != "" {
-				user.Username = mongoUser.Username
-			} else {
-				user.Username = ci
-			}
+			user.Username = targetUsername
 
 			user.Firstname = utils.CleanName(mSen.Firstname)
 			user.Secondname = utils.CleanName(mSen.Secondname)
@@ -262,7 +295,7 @@ func (s *UsuarioService) SyncSenators(ctx context.Context) (int, error) {
 			}
 
 			if err := repoTx.Save(ctx, user); err == nil {
-				count++
+				result.Count++
 			}
 		}
 
@@ -306,10 +339,10 @@ func (s *UsuarioService) SyncSenators(ctx context.Context) (int, error) {
 	})
 
 	if err != nil {
-		return 0, err
+		return SyncResult{}, err
 	}
 
-	return count, nil
+	return result, nil
 }
 
 func (s *UsuarioService) GetAll(ctx context.Context) ([]models.Usuario, error) {

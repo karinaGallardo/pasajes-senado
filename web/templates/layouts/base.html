@@ -31,27 +31,6 @@
     <script src="/static/lib/tippy/tippy-bundle.umd.min.js"></script>
     <link rel="stylesheet" href="/static/lib/tippy/tippy.css" />
     <link rel="stylesheet" href="/static/lib/tippy/shift-away.css" />
-    <style>
-      [x-cloak] {
-        display: none !important;
-      }
-      /* Prevent sidebar flickering of width on load */
-      .sidebar-collapsed aside {
-        width: 5rem !important;
-      }
-      .sidebar-expanded aside {
-        width: 16rem !important;
-      }
-
-      /* Only transition after initial load to avoid jumpy animations */
-      .ready-to-animate aside,
-      .ready-to-animate span,
-      .ready-to-animate aside i {
-        transition-property: all;
-        transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
-        transition-duration: 300ms;
-      }
-    </style>
 
     <script>
       // Apply correct sidebar width before Alpine/DOM finishes loading to avoid flicker
@@ -62,17 +41,14 @@
     </script>
 
     <script defer src="/static/lib/alpinejs/alpine.min.js"></script>
+    <link rel="stylesheet" href="/static/css/tailwind-dist.css" />
     <script src="/static/js/app.js"></script>
-    <script src="/static/lib/tailwindcss/tailwindcss_plugins.js"></script>
-    <script src="/static/js/tailwind.config.js"></script>
 
-    {{ block "header_scripts" . }}{{ end }}
-    <link rel="stylesheet" href="/static/css/styles.css" />
-    {{ block "header_styles" . }}{{ end }}
+    {{ block "header_scripts" . }}{{ end }} {{ block "header_styles" . }}{{ end }}
   </head>
 
   <body
-    class="bg-neutral-50 font-sans antialiased text-neutral-900"
+    class="bg-app font-sans antialiased text-main"
     :class="{ 'ready-to-animate': true }"
     x-data="{ 
       sidebarOpen: false, 
@@ -89,7 +65,7 @@
       <!-- SIDEBAR -->
       {{ if .AuthUser }}
       <aside
-        class="flex flex-col bg-white border-r border-neutral-200 transform lg:translate-x-0 lg:static fixed z-30 h-full"
+        class="flex flex-col bg-sidebar border-r border-base transform lg:translate-x-0 lg:static fixed z-30 h-full"
         :class="{
             'translate-x-0': sidebarOpen,
             '-translate-x-full': !sidebarOpen,
@@ -97,7 +73,7 @@
             'w-20': sidebarCollapsed
         }">
         <!-- Logo Area -->
-        <div class="flex items-center h-16 px-6 border-b border-neutral-100 overflow-hidden whitespace-nowrap">
+        <div class="flex items-center h-16 px-6 border-b border-base/50 overflow-hidden whitespace-nowrap">
           <img src="/static/img/logo_simple.png" alt="Logo Pasajes GO" class="h-10 w-auto mr-2 min-w-[32px]" />
           <span class="text-xl font-brand font-bold text-neutral-800 tracking-tight" x-show="!sidebarCollapsed" x-transition>Pasajes GO</span>
         </div>
@@ -106,7 +82,7 @@
         {{ template "layouts/components/sidebar_navigation" . }}
 
         <!-- Bottom Actions -->
-        <div class="p-4 border-t border-neutral-200">
+        <div class="p-4 border-t border-base/50">
           <button
             @click="toggleSidebar()"
             class="flex items-center justify-center w-full px-4 py-2 text-sm font-medium text-neutral-600 hover:text-primary transition-colors focus:outline-none">
@@ -121,7 +97,7 @@
       <div class="flex-1 flex flex-col overflow-hidden relative">
         <!-- HEADER -->
         {{ if .AuthUser }}
-        <header class="h-16 bg-white border-b border-neutral-200 flex items-center justify-between px-6 lg:px-8 flex-shrink-0">
+        <header class="h-16 bg-card border-b border-base flex items-center justify-between px-6 lg:px-8 flex-shrink-0">
           <!-- Search Bar -->
           <div class="flex-1 max-w-lg flex items-center">
             <button @click="sidebarOpen = !sidebarOpen" class="lg:hidden mr-4 text-neutral-500 hover:text-neutral-700">
@@ -137,7 +113,7 @@
                 name="q"
                 value="{{ .SearchTerm }}"
                 autocomplete="off"
-                class="block w-full pl-10 pr-3 py-2 border border-neutral-200 rounded-lg leading-5 bg-neutral-50 placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:border-primary focus:ring-1 focus:ring-primary sm:text-sm"
+                class="block w-full pl-10 pr-3 py-2 border border-base rounded-lg leading-5 bg-muted placeholder-neutral-500 focus:outline-none focus:placeholder-neutral-400 focus:border-primary focus:ring-1 focus:ring-primary sm:text-sm"
                 placeholder="Buscar trámites, personas..."
                 @keydown.enter="$event.preventDefault()" />
             </div>
@@ -147,7 +123,7 @@
           <div class="ml-4 flex items-center space-x-4">
             <!-- Clock and Date -->
             <div
-              class="hidden lg:flex items-center space-x-3 px-4 py-2 bg-neutral-50 rounded-xl border border-neutral-100 text-neutral-600 shadow-sm"
+              class="hidden lg:flex items-center space-x-3 px-4 py-2 bg-muted rounded-xl border border-base/50 text-main shadow-sm"
               x-data="{ 
                 time: '', 
                 date: '',

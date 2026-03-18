@@ -149,7 +149,7 @@
                             <input type="checkbox" name="itin_devolucion[]" value="{{ $scale.Index }}" x-model="devuelto" @change="if(devuelto) modificado = false" title="Devolver Ticket Completo" class="h-4 w-4 text-danger-600 border-neutral-300 rounded focus:ring-danger-500">
                           </td>
                           <td class="px-2 py-1 text-center border-r border-neutral-100 bg-neutral-50/30" rowspan="{{ len $ticket.Scales }}">
-                            <input type="checkbox" name="itin_modificacion[]" value="{{ $scale.Index }}" x-model="modificado" @change="if(modificado) devuelto = false" title="Modificar Ticket" class="h-4 w-4 text-amber-600 border-neutral-300 rounded focus:ring-amber-500">
+                            <input type="checkbox" name="itin_modificacion[]" value="{{ $scale.Index }}" x-model="modificado" @change="if(modificado) devuelto = false" title="Modificar Ticket" class="h-4 w-4 text-warning-600 border-neutral-300 rounded focus:ring-warning-500">
                           </td>
                           {{ end }}
 
@@ -299,7 +299,7 @@
                             <input type="checkbox" name="itin_devolucion[]" value="{{ $scale.Index }}" x-model="devuelto" @change="if(devuelto) modificado = false" title="Devolver Ticket Completo" class="h-4 w-4 text-danger-600 border-neutral-300 rounded focus:ring-danger-500">
                           </td>
                           <td class="px-2 py-1 text-center border-r border-neutral-100 bg-neutral-50/30" rowspan="{{ len $ticket.Scales }}">
-                            <input type="checkbox" name="itin_modificacion[]" value="{{ $scale.Index }}" x-model="modificado" @change="if(modificado) devuelto = false" title="Modificar Ticket" class="h-4 w-4 text-amber-600 border-neutral-300 rounded focus:ring-amber-500">
+                            <input type="checkbox" name="itin_modificacion[]" value="{{ $scale.Index }}" x-model="modificado" @change="if(modificado) devuelto = false" title="Modificar Ticket" class="h-4 w-4 text-warning-600 border-neutral-300 rounded focus:ring-warning-500">
                           </td>
                           {{ end }}
                           

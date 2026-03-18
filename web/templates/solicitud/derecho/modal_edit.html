@@ -114,11 +114,11 @@
         </div>
 
         {{ if .AlertaOrigen }}
-        <div class="bg-amber-50 border-l-4 border-amber-400 p-3 rounded-md mb-4 flex items-center gap-3">
-          <i class="ph ph-warning text-amber-500 text-xl"></i>
-          <p class="text-xs text-amber-700 font-medium">
+        <div class="bg-warning-50 border-l-4 border-warning-400 p-3 rounded-md mb-4 flex items-center gap-3">
+          <i class="ph ph-warning text-warning-500 text-xl"></i>
+          <p class="text-xs text-warning-700 font-medium">
             {{ .AlertaOrigen }}
-            <a href="{{ if eq .AuthUser.ID .TargetUser.ID }}/perfil{{ else }}/usuarios/{{ .TargetUser.ID }}/editar{{ end }}" class="font-bold underline hover:text-amber-800 ml-1">
+            <a href="{{ if eq .AuthUser.ID .TargetUser.ID }}/perfil{{ else }}/usuarios/{{ .TargetUser.ID }}/editar{{ end }}" class="font-bold underline hover:text-warning-800 ml-1">
               Configurar ahora
             </a>
           </p>

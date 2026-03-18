@@ -1,18 +1,18 @@
 {{ define "solicitud/derecho/modal_regularizacion_item" }}
-<div id="modal-container" class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200">
+<div class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60 backdrop-blur-md animate-in fade-in duration-200">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden animate-in zoom-in-95 duration-200 border border-neutral-200">
         <!-- Header -->
         <div class="bg-primary-900 px-6 py-4 flex items-center justify-between">
             <div class="flex items-center gap-3">
-                <div class="p-2 bg-yellow-500/10 rounded-lg border border-yellow-500/20">
-                    <i class="ph ph-clock-counter-clockwise text-yellow-500 text-xl font-bold"></i>
+                <div class="p-2 bg-warning-500/10 rounded-lg border border-warning-500/20">
+                    <i class="ph ph-clock-counter-clockwise text-warning-500 text-xl font-bold"></i>
                 </div>
                 <div>
                     <h3 class="text-white font-bold text-base leading-tight uppercase tracking-tight">Regularizar Tramo</h3>
                     <p class="text-neutral-400 text-[10px] font-semibold uppercase tracking-wider">{{ .Item.Tipo }} - {{ .Solicitud.Codigo }}</p>
                 </div>
             </div>
-            <button onclick="document.getElementById('modal-container').remove()" class="text-neutral-500 hover:text-white transition-colors cursor-pointer p-1">
+            <button onclick="document.getElementById('modal-container').innerHTML = ''" class="text-neutral-500 hover:text-white transition-colors cursor-pointer p-1">
                 <i class="ph ph-x text-2xl"></i>
             </button>
         </div>
@@ -24,10 +24,10 @@
               hx-indicator="#submit-btn"
               class="p-6 space-y-6">
             
-            <div class="bg-amber-50 border border-amber-100 rounded-xl p-4 flex gap-3 shadow-inner">
-                <i class="ph ph-warning-circle text-amber-600 text-2xl flex-shrink-0 mt-0.5 font-bold"></i>
-                <p class="text-[12px] text-amber-900 leading-relaxed font-semibold">
-                    Esta acción actualizará manualmente las columnas <code class="bg-amber-100 px-1 rounded text-amber-700">created_at</code> y <code class="bg-amber-100 px-1 rounded text-amber-700">updated_at</code> específicamente para este tramo.
+            <div class="bg-warning-50 border border-warning-100 rounded-xl p-4 flex gap-3 shadow-inner">
+                <i class="ph ph-warning-circle text-warning-600 text-2xl flex-shrink-0 mt-0.5 font-bold"></i>
+                <p class="text-[12px] text-warning-900 leading-relaxed font-semibold">
+                    Esta acción actualizará manualmente las columnas <code class="bg-warning-100 px-1 rounded text-warning-700">created_at</code> y <code class="bg-warning-100 px-1 rounded text-warning-700">updated_at</code> específicamente para este tramo.
                 </p>
             </div>
 
@@ -50,7 +50,7 @@
             <!-- Footer -->
             <div class="flex items-center gap-3 pt-2">
                 <button type="button" 
-                        onclick="document.getElementById('modal-container').remove()"
+                        onclick="document.getElementById('modal-container').innerHTML = ''"
                         class="flex-1 px-4 py-3 rounded-xl border border-neutral-200 text-neutral-600 text-xs font-black uppercase tracking-widest transition-all hover:bg-neutral-100 active:scale-[0.98] cursor-pointer">
                     Cancelar
                 </button>

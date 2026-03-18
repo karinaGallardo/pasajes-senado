@@ -1,13 +1,13 @@
 {{ define "usuarios/table_senadores" }}
-<table class="min-w-full divide-y divide-gray-200">
-  <thead class="bg-neutral-50">
+<table class="min-w-full divide-y divide-neutral-200">
+  <thead class="bg-muted">
     <tr>
       <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider w-10">#</th>
       <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Senador Titular</th>
       <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Senador Suplente</th>
     </tr>
   </thead>
-  <tbody class="divide-y divide-gray-200 bg-white">
+  <tbody class="divide-y divide-neutral-200 bg-white">
     {{ range $index, $user := .Usuarios }}
     <tr>
       <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500 font-medium">{{ inc $index }}</td>
@@ -15,7 +15,7 @@
         <div class="flex items-center gap-2">
           <div class="text-sm text-neutral-900 font-bold">{{ $user.GetNombreCompleto }}</div>
           {{ if $user.IsBlocked }}
-          <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-red-100 text-red-800">BLOQUEADO</span>
+          <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-danger-100 text-danger-800">BLOQUEADO</span>
           {{ end }}
         </div>
         <div class="text-[11px] text-neutral-500 font-medium">CI: {{ $user.CI }}</div>
@@ -66,7 +66,7 @@
           {{ if $user.IsBlocked }}
           <button
             type="button"
-            class="text-[10px] text-red-600 hover:text-red-900 font-bold bg-red-50 px-1.5 py-0.5 rounded border border-red-100 transition-colors cursor-pointer"
+            class="text-[10px] text-danger-600 hover:text-danger-900 font-bold bg-danger-50 px-1.5 py-0.5 rounded border border-danger-100 transition-colors cursor-pointer"
             hx-post="/usuarios/{{ $user.ID }}/unblock"
             hx-confirm="¿Desbloquear titular?">
             Desbloquear
@@ -79,7 +79,7 @@
         <div class="flex items-center gap-2">
           <div class="text-sm text-neutral-900 font-bold">{{ $suplente.GetNombreCompleto }}</div>
           {{ if $suplente.IsBlocked }}
-          <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-red-100 text-red-800">BLOQUEADO</span>
+          <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-danger-100 text-danger-800">BLOQUEADO</span>
           {{ end }}
         </div>
         <div class="text-[11px] text-neutral-500 font-medium">CI: {{ $suplente.CI }}</div>
@@ -130,7 +130,7 @@
           {{ if $suplente.IsBlocked }}
           <button
             type="button"
-            class="text-[10px] text-red-600 hover:text-red-900 font-bold bg-red-50 px-1.5 py-0.5 rounded border border-red-100 transition-colors cursor-pointer"
+            class="text-[10px] text-danger-600 hover:text-danger-900 font-bold bg-danger-50 px-1.5 py-0.5 rounded border border-danger-100 transition-colors cursor-pointer"
             hx-post="/usuarios/{{ $suplente.ID }}/unblock"
             hx-confirm="¿Desbloquear suplente?">
             Desbloquear

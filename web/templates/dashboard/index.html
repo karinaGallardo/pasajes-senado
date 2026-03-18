@@ -92,7 +92,7 @@
             {{ if eq .Tipo "SENADOR_TITULAR" }}
             <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-primary-100 text-primary-700">TITULAR</span>
             {{ else if eq .Tipo "SENADOR_SUPLENTE" }}
-            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-cyan-100 text-cyan-700">SUPLENTE</span>
+            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-info-100 text-info-700">SUPLENTE</span>
             {{ end }}
           </div>
           <p class="text-xs text-neutral-500 truncate mb-1">{{ .CI }}</p>
@@ -130,7 +130,7 @@
       <!-- <a href="/solicitudes/nueva" class="text-sm font-medium text-secondary hover:text-primary-900">+ Nueva Solicitud</a> -->
     </div>
     <div class="overflow-x-auto">
-      <table class="min-w-full divide-y divide-gray-200">
+      <table class="min-w-full divide-y divide-neutral-200">
         <thead class="bg-neutral-50">
           <tr>
             <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">CÓDIGO</th>
@@ -140,7 +140,7 @@
             <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider"></th>
           </tr>
         </thead>
-        <tbody class="bg-white divide-y divide-gray-200">
+        <tbody class="bg-white divide-y divide-neutral-200">
           {{ range .Recent }}
           <tr class="hover:bg-neutral-50 transition-colors">
             <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-900 font-bold">

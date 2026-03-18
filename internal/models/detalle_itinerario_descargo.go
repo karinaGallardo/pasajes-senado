@@ -54,3 +54,17 @@ func (d DetalleItinerarioDescargo) GetTipoColorClass() string {
 		return "bg-amber-50 text-amber-700 border-amber-100"
 	}
 }
+func (d DetalleItinerarioDescargo) GetPasajeCorrespondiente(s *Solicitud) *Pasaje {
+	if s == nil {
+		return nil
+	}
+	for _, item := range s.Items {
+		for i := range item.Pasajes {
+			p := &item.Pasajes[i]
+			if p.NumeroBoleto == d.Boleto && p.NumeroBoleto != "" {
+				return p
+			}
+		}
+	}
+	return nil
+}

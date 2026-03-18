@@ -1,0 +1,87 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Montserrat:wght@400;600;700;800&display=swap");
+
+/* Globales usando los valores del config */
+body {
+  background-color: theme('backgroundColor.app');
+  font-family: theme('fontFamily.sans');
+  color: theme('textColor.main');
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3 {
+  font-family: theme('fontFamily.brand');
+}
+
+/* Custom scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  height: 10px;
+  width: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f5f5f5;
+  border-radius: 0 0 8px 8px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: theme('colors.neutral.300');
+  border-radius: 20px;
+  border: 3px solid #f5f5f5;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background-color: theme('colors.primary.DEFAULT');
+}
+
+[x-cloak] { display: none !important; }
+
+.htmx-indicator {
+  opacity: 0;
+  transition: opacity 200ms ease-in-out;
+}
+.htmx-request .htmx-indicator {
+  opacity: 1;
+}
+
+/* Badges de Estado - Mapeados al config */
+.status-badge-SOLICITADO {
+  background-color: theme('colors.secondary.100');
+  color: theme('colors.secondary.600');
+  border: 1px solid theme('colors.secondary.700');
+  @apply px-2 py-0.5 rounded-full text-[10px] font-bold uppercase;
+}
+
+.status-badge-APROBADO {
+  background-color: theme('colors.success.100');
+  color: theme('colors.success.600');
+  border: 1px solid theme('colors.success.500');
+  @apply px-2 py-0.5 rounded-full text-[10px] font-bold uppercase;
+}
+
+.status-badge-RECHAZADO {
+  background-color: theme('colors.danger.100');
+  color: theme('colors.danger.600');
+  border: 1px solid theme('colors.danger.500');
+  @apply px-2 py-0.5 rounded-full text-[10px] font-bold uppercase;
+}
+
+.status-badge-EMITIDO {
+  background-color: theme('colors.info.100');
+  color: theme('colors.info.DEFAULT');
+  border: 1px solid theme('colors.info.500');
+  @apply px-2 py-0.5 rounded-full text-[10px] font-bold uppercase;
+}
+
+.status-badge-REGISTRADO {
+  background-color: theme('colors.primary.100');
+  color: theme('colors.primary.DEFAULT');
+  border: 1px solid theme('colors.primary.200');
+  @apply px-2 py-0.5 rounded-full text-[10px] font-bold uppercase;
+}
+
+/* Overrides de librerías externas */
+.flatpickr-day.selected {
+  background: theme('colors.primary.DEFAULT') !important;
+  border-color: theme('colors.primary.DEFAULT') !important;
+}

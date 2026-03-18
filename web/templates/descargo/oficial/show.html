@@ -121,7 +121,7 @@
             hx-target="#modal-container"
             class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-xs font-black rounded-md text-white bg-primary hover:bg-primary-600 transition-all shadow-sm active:scale-95 uppercase tracking-tight cursor-pointer">
             <i class="ph ph-file-pdf mr-2 text-lg"></i>
-            Ver / Imprimir PV-06
+              Ver / Imprimir PV-06
           </button>
 
           {{ if .Descargo.CanRevert .AuthUser }}
@@ -195,7 +195,7 @@
           {{ if .Descargo.Oficial.ConclusionesRecomendaciones }}
           <div class="border-t border-neutral-100 pt-4">
             <h4 class="text-xs font-black text-neutral-400 uppercase tracking-widest mb-2">Conclusiones y Recomendaciones</h4>
-            <div class="bg-indigo-50/30 p-4 rounded-lg text-sm text-neutral-800 whitespace-pre-wrap">{{ .Descargo.GetConclusiones }}</div>
+            <div class="bg-info-50/30 p-4 rounded-lg text-sm text-neutral-800 whitespace-pre-wrap">{{ .Descargo.GetConclusiones }}</div>
           </div>
           {{ end }}
 
@@ -224,16 +224,16 @@
             </div>
 
             {{ if and .Descargo.Oficial (gt .Descargo.Oficial.MontoDevolucion 0.0) }}
-            <div class="bg-amber-50 border border-amber-200 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div class="bg-warning-50 border border-warning-200 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
               <div class="space-y-1">
-                <h4 class="text-[10px] font-black text-amber-600 uppercase tracking-widest">Devolución de Pasajes/Viáticos</h4>
+                <h4 class="text-[10px] font-black text-warning-600 uppercase tracking-widest">Devolución de Pasajes/Viáticos</h4>
                 <div class="flex items-baseline gap-2">
-                  <span class="text-2xl font-black text-amber-700">Bs. {{ printf "%.2f" .Descargo.Oficial.MontoDevolucion }}</span>
-                  <span class="text-[10px] text-amber-500 font-bold uppercase tracking-tighter">(Boleta N° {{ .Descargo.Oficial.NroBoletaDeposito }})</span>
+                  <span class="text-2xl font-black text-warning-700">Bs. {{ printf "%.2f" .Descargo.Oficial.MontoDevolucion }}</span>
+                  <span class="text-[10px] text-warning-500 font-bold uppercase tracking-tighter">(Boleta N° {{ .Descargo.Oficial.NroBoletaDeposito }})</span>
                 </div>
               </div>
-              <div class="px-3 py-2 bg-white/60 rounded-lg border border-amber-200">
-                <p class="text-[9px] text-amber-800 leading-tight font-medium">
+              <div class="px-3 py-2 bg-white/60 rounded-lg border border-warning-200">
+                <p class="text-[9px] text-warning-800 leading-tight font-medium">
                   Monto depositado en la cuenta <br/>
                   <strong>{{ .BancoCuenta }}</strong> del <strong>{{ .BancoNombre }}</strong>.
                 </p>
@@ -300,11 +300,11 @@
                 <td class="px-6 py-4 whitespace-nowrap align-top">
                   <div class="flex flex-col">
                     <div class="flex items-center gap-2 mb-2">
-                        <i class="{{ .Descargo.GetEstadoIcon }} text-xl"></i>
-                        <span class="font-bold uppercase tracking-wider">{{ .Descargo.GetEstadoLabel }}</span>
+                        <i class="{{ $.Descargo.GetEstadoIcon }} text-xl"></i>
+                        <span class="font-bold uppercase tracking-wider">{{ $.Descargo.GetEstadoLabel }}</span>
                     </div>
                     <p class="text-xs opacity-80 mt-1 font-normal leading-tight mb-2">
-                        {{ .Descargo.GetEstadoDescripcion }}
+                        {{ $.Descargo.GetEstadoDescripcion }}
                     </p>
                     <div class="flex items-center text-xs text-neutral-700">
                       <span class="w-12 font-semibold text-neutral-400 uppercase text-[9px] tracking-wide">Boleto</span>

@@ -182,7 +182,7 @@
             <tbody class="bg-white divide-y divide-neutral-100">
               {{ range $t := .Tickets }}
                 {{ range $i, $d := .Detalles }}
-                <tr class="group hover:bg-neutral-50/80 transition-all duration-200 {{ if not .ID }}bg-warning-50/30{{ end }} {{ if or .EsDevolucion $t.EsDevolucion }}opacity-60 bg-danger-50/40 grayscale{{ end }} {{ if or .EsModificacion $t.EsModificacion }}bg-amber-50/20{{ end }}">
+                <tr class="group hover:bg-neutral-50/80 transition-all duration-200 {{ if not .ID }}bg-warning-50/30{{ end }} {{ if or .EsDevolucion $t.EsDevolucion }}opacity-60 bg-danger-50/40 grayscale{{ end }} {{ if or .EsModificacion $t.EsModificacion }}bg-warning-50/20{{ end }}">
                   <!-- Tipo -->
                   <td class="px-6 py-4 whitespace-nowrap align-top">
                     {{ if eq $i 0 }}
@@ -197,7 +197,7 @@
                         </span>
                         {{ end }}
                         {{ if .EsModificacion }}
-                        <span class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-black bg-amber-100 text-amber-700 border border-amber-200 uppercase tracking-tighter">
+                        <span class="ml-2 inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-black bg-warning-100 text-warning-700 border border-warning-200 uppercase tracking-tighter">
                           Modificado
                         </span>
                         {{ end }}
