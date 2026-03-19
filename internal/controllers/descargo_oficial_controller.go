@@ -478,7 +478,9 @@ func (ctrl *DescargoOficialController) Reject(c *gin.Context) {
 		return
 	}
 
-	if err := ctrl.descargoService.Reject(c.Request.Context(), id, authUser.ID); err != nil {
+	observaciones := c.PostForm("observaciones")
+
+	if err := ctrl.descargoService.Reject(c.Request.Context(), id, authUser.ID, observaciones); err != nil {
 		log.Printf("Error rechazando descargo oficial: %v", err)
 		c.Redirect(http.StatusFound, "/descargos/oficial/"+id+"?error=ErrorRechazo")
 		return

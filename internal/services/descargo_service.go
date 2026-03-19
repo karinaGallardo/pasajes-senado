@@ -371,7 +371,7 @@ func (s *DescargoService) Approve(ctx context.Context, id string, userID string)
 	return nil
 }
 
-func (s *DescargoService) Reject(ctx context.Context, id string, userID string) error {
+func (s *DescargoService) Reject(ctx context.Context, id string, userID string, observaciones string) error {
 	descargo, err := s.repo.FindByID(ctx, id)
 	if err != nil {
 		return err
@@ -382,12 +382,13 @@ func (s *DescargoService) Reject(ctx context.Context, id string, userID string) 
 	}
 
 	descargo.Estado = models.EstadoDescargoRechazado
+	descargo.Observaciones = observaciones
 	descargo.UpdatedBy = &userID
 	if err := s.repo.Update(ctx, descargo); err != nil {
 		return err
 	}
 
-	slog.Info("Descargo rechazado (observado)", "id", id, "codigo", descargo.Codigo, "user_id", userID)
+	slog.Info("Descargo rechazado (observado)", "id", id, "codigo", descargo.Codigo, "user_id", userID, "observaciones", observaciones)
 	return nil
 }
 

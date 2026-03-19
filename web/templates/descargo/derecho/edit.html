@@ -60,6 +60,20 @@
     <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
     <input type="hidden" name="solicitud_id" value="{{ .Descargo.SolicitudID }}" />
 
+    {{ if .Descargo.Observaciones }}
+    <div class="px-6 pt-6">
+      <div class="p-4 bg-danger-50 border border-danger-200 rounded-xl shadow-sm animate-pulse">
+        <div class="flex items-start">
+          <i class="ph ph-warning-circle text-danger-500 text-xl mr-3 mt-0.5"></i>
+          <div>
+            <h4 class="text-[10px] font-black text-danger-700 uppercase tracking-widest mb-1">Motivo de la Observación (Corregir)</h4>
+            <p class="text-xs text-danger-900 font-bold leading-relaxed">{{ .Descargo.Observaciones }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    {{ end }}
+
     <div class="p-6 space-y-6">
       <div class="grid grid-cols-1 gap-y-6 gap-x-4 sm:grid-cols-6">
         <div class="sm:col-span-6 bg-primary-50 p-5 rounded-xl border border-primary-100 shadow-sm relative overflow-hidden">
