@@ -20,8 +20,8 @@
       <!-- Volver -->
       <a
         href="/descargos/derecho/{{ .Descargo.ID }}"
-        class="inline-flex items-center px-5 py-2 border border-neutral-300 shadow-sm text-xs font-bold rounded-lg text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none transition-all active:scale-95 uppercase tracking-wider">
-        <i class="ph ph-arrow-left mr-1.5 text-base text-neutral-400"></i>
+        class="inline-flex items-center px-3.5 py-1.5 border border-neutral-300 shadow-sm text-[11px] font-bold rounded-sm text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none transition-all active:scale-95 uppercase tracking-wide">
+        <i class="ph ph-arrow-left mr-1.5 text-sm text-neutral-400"></i>
         Volver
       </a>
 
@@ -31,7 +31,7 @@
         form="descargo-form"
         :disabled="submitting || processingImages"
         :class="(!submitting && !processingImages) ? 'bg-success-600 hover:bg-success-700 shadow-lg scale-100' : 'bg-neutral-100 text-neutral-400 cursor-not-allowed'"
-        class="inline-flex items-center px-4 py-1 border border-transparent shadow-sm text-xs font-black rounded-md text-white focus:outline-none transition-all active:scale-95 uppercase tracking-widest min-w-[180px] justify-center">
+        class="inline-flex items-center px-4 py-1.5 border border-transparent shadow-sm text-[11px] font-bold rounded-md text-white focus:outline-none transition-all active:scale-95 uppercase tracking-wide justify-center">
         <span x-show="!submitting && !processingImages" class="flex items-center">
           <i class="ph ph-check-circle mr-2 text-lg"></i>
           Actualizar Descargo

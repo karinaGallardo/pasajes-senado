@@ -64,6 +64,7 @@ func (r *DescargoRepository) FindBySolicitudID(ctx context.Context, solicitudID 
 		Preload("Solicitud.Usuario.Encargado").
 		Preload("Oficial").
 		Preload("Oficial.Anexos").
+		Preload("Oficial.TransportesTerrestres").
 		Where("solicitud_id = ?", solicitudID).First(&descargo).Error
 	return &descargo, err
 }
@@ -87,6 +88,7 @@ func (r *DescargoRepository) FindByID(ctx context.Context, id string) (*models.D
 		Preload("Solicitud.Viaticos.Detalles").
 		Preload("Oficial").
 		Preload("Oficial.Anexos").
+		Preload("Oficial.TransportesTerrestres").
 		First(&descargo, "id = ?", id).Error
 	return &descargo, err
 }
@@ -105,6 +107,7 @@ func (r *DescargoRepository) FindAll(ctx context.Context) ([]models.Descargo, er
 		Preload("DetallesItinerario").
 		Preload("Oficial").
 		Preload("Oficial.Anexos").
+		Preload("Oficial.TransportesTerrestres").
 		Order("created_at desc").Find(&descargos).Error
 	return descargos, err
 }
@@ -137,6 +140,7 @@ func (r *DescargoRepository) FindPaginated(ctx context.Context, page, limit int,
 		Preload("DetallesItinerario").
 		Preload("Oficial").
 		Preload("Oficial.Anexos").
+		Preload("Oficial.TransportesTerrestres").
 		Scopes(SearchDescargo(searchTerm))
 
 	// Scope by user IDs when provided (non-admin)
@@ -180,4 +184,8 @@ func (r *DescargoRepository) ClearDetalles(ctx context.Context, descargoID strin
 
 func (r *DescargoRepository) ClearAnexos(ctx context.Context, oficialID string) error {
 	return r.db.WithContext(ctx).Where("descargo_oficial_id = ?", oficialID).Delete(&models.AnexoDescargo{}).Error
+}
+
+func (r *DescargoRepository) ClearTransportesTerrestres(ctx context.Context, oficialID string) error {
+	return r.db.WithContext(ctx).Where("descargo_oficial_id = ?", oficialID).Delete(&models.TransporteTerrestreDescargo{}).Error
 }

@@ -18,6 +18,11 @@ type CreateDescargoRequest struct {
 	MontoDevolucion   float64 `form:"monto_devolucion"`
 	NroBoletaDeposito string  `form:"nro_boleta_deposito"`
 
+	// Transporte Terrestre Público
+	TransporteTerrestreFecha   []string `form:"terrestre_fecha[]"`
+	TransporteTerrestreFactura []string `form:"terrestre_factura[]"`
+	TransporteTerrestreImporte  []string `form:"terrestre_importe[]"`
+
 	// Detalles Itinerario (FV-05) - Arreglos paralelos para conexiones
 	ItinTipo         []string                `form:"itin_tipo[]"` // IDA_ORIGINAL, IDA_REPRO, VUELTA_ORIGINAL, VUELTA_REPRO
 	ItinIndex        []string                `form:"itin_index[]"`

@@ -74,6 +74,22 @@ func (s *DescargoService) Create(ctx context.Context, req dtos.CreateDescargoReq
 			}
 		}
 		oficial.Anexos = anexos
+
+		// Mapear Transporte Terrestre
+		var terrestres []models.TransporteTerrestreDescargo
+		for i := range req.TransporteTerrestreFecha {
+			if i < len(req.TransporteTerrestreFactura) && i < len(req.TransporteTerrestreImporte) && req.TransporteTerrestreFecha[i] != "" {
+				importe := utils.ParseFloat(req.TransporteTerrestreImporte[i])
+				t := utils.ParseDate("2006-01-02", req.TransporteTerrestreFecha[i])
+				terrestres = append(terrestres, models.TransporteTerrestreDescargo{
+					Fecha:      t,
+					NroFactura: req.TransporteTerrestreFactura[i],
+					Importe:    importe,
+				})
+			}
+		}
+		oficial.TransportesTerrestres = terrestres
+
 		descargo.Oficial = oficial
 	}
 
@@ -258,6 +274,30 @@ func (s *DescargoService) UpdateFull(ctx context.Context, id string, req dtos.Cr
 				}
 			}
 			descargo.Oficial.Anexos = anexos
+		}
+
+		// Mapear Transporte Terrestre
+		if len(req.TransporteTerrestreFecha) > 0 {
+			var terrestres []models.TransporteTerrestreDescargo
+			for i := range req.TransporteTerrestreFecha {
+				if i < len(req.TransporteTerrestreFactura) && i < len(req.TransporteTerrestreImporte) && req.TransporteTerrestreFecha[i] != "" {
+					importe := utils.ParseFloat(req.TransporteTerrestreImporte[i])
+					t := utils.ParseDate("2006-01-02", req.TransporteTerrestreFecha[i])
+					terrestres = append(terrestres, models.TransporteTerrestreDescargo{
+						DescargoOficialID: descargo.Oficial.ID,
+						Fecha:             t,
+						NroFactura:        req.TransporteTerrestreFactura[i],
+						Importe:           importe,
+					})
+				}
+			}
+			// Clear existing ones
+			if descargo.Oficial.ID != "" {
+				if err := s.repo.ClearTransportesTerrestres(ctx, descargo.Oficial.ID); err != nil {
+					return err
+				}
+			}
+			descargo.Oficial.TransportesTerrestres = terrestres
 		}
 	}
 

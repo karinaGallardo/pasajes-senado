@@ -17,7 +17,8 @@ type DescargoOficial struct {
 	NroBoletaDeposito string  `gorm:"size:100"`
 	DirigidoA         string  `gorm:"size:255"`
 
-	Anexos []AnexoDescargo `gorm:"foreignKey:DescargoOficialID"`
+	Anexos                []AnexoDescargo              `gorm:"foreignKey:DescargoOficialID"`
+	TransportesTerrestres []TransporteTerrestreDescargo `gorm:"foreignKey:DescargoOficialID"`
 }
 
 func (DescargoOficial) TableName() string {
