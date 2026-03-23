@@ -701,7 +701,7 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 
 	sigY := 220.0
 	pdf.SetY(sigY)
-	s.drawSignatureBlock(pdf, tr, sigY+10, "SELLO UNIDAD SOLICITANTE", "FIRMA/RESPONSABLE PRESENTACION DEL DESCARGO", solicitud.Usuario.GetNombreCompleto())
+	s.drawSignatureBlock(pdf, tr, sigY+10, "SELLO UNIDAD SOLICITANTE", "FIRMA/RESPONSABLE PRESENTACION DEL DESCARGO", "")
 
 	return pdf
 }
@@ -1146,17 +1146,9 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 	pdf.SetY(sigY)
 
 	if solicitud.Usuario.IsSenador() {
-		s.drawSignatureBlock(pdf, tr, sigY+10, "SELLO UNIDAD SOLICITANTE", "FIRMA Y SELLO SENADOR(A)", solicitud.Usuario.GetNombreCompleto())
+		s.drawSignatureBlock(pdf, tr, sigY+10, "SELLO UNIDAD SOLICITANTE", "FIRMA Y SELLO SENADOR(A)", "")
 	} else {
-		encName := ""
-		if solicitud.Usuario.Encargado != nil {
-			encName = solicitud.Usuario.Encargado.GetNombreCompleto()
-		}
-		s.drawSignatureBlock(pdf, tr, sigY+10, "FIRMA Y SELLO SERVIDOR PÚBLICO", "Vo.Bo. Inmediato Superior", encName)
-		// Small tweak for PV06: servant name is on the left
-		pdf.SetXY(35, sigY+16)
-		pdf.SetFont("Arial", "", 7)
-		pdf.CellFormat(60, 4, tr(solicitud.Usuario.GetNombreCompleto()), "", 1, "C", false, 0, "")
+		s.drawSignatureBlock(pdf, tr, sigY+10, "FIRMA Y SELLO SERVIDOR PÚBLICO", "Vo.Bo. Inmediato Superior", "")
 	}
 
 	return pdf
