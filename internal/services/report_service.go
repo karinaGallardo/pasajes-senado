@@ -199,7 +199,7 @@ func (s *ReportService) GeneratePV01(ctx context.Context, solicitud *models.Soli
 	pdf.SetY(220)
 
 	pdf.SetY(220)
-	s.drawSignatureBlock(pdf, tr, 230, "SELLO UNIDAD SOLICITANTE", "FIRMA / SELLO SOLICITANTE", solicitud.Usuario.GetNombreCompleto())
+	s.drawSignatureBlock(pdf, tr, 230, "SELLO UNIDAD SOLICITANTE", "FIRMA / SELLO SOLICITANTE", "")
 
 	return pdf
 }
@@ -440,7 +440,7 @@ func (s *ReportService) GeneratePV02(ctx context.Context, solicitud *models.Soli
 	drawRutaSeccion("RUTA DE VUELTA", itemsVuelta)
 
 	pdf.SetY(240)
-	s.drawSignatureBlock(pdf, tr, 248, "SELLO UNIDAD SOLICITANTE", "FIRMA / SELLO SOLICITANTE", solicitud.Usuario.GetNombreCompleto())
+	s.drawSignatureBlock(pdf, tr, 248, "SELLO UNIDAD SOLICITANTE", "FIRMA / SELLO SOLICITANTE", "")
 
 	pdf.SetFont("Arial", "I", 8)
 	return pdf
