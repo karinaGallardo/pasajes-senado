@@ -76,16 +76,17 @@ func (s *UsuarioService) SyncStaff(ctx context.Context) (SyncResult, error) {
 			targetUsername = mongoUser.Username
 		}
 
-		// VALIDACIÓN DE SEGURIDAD: Evitar colisión de Username con otro CI
+		// 3. Resolución de conflicto de Username (Prioridad absoluta al CI)
 		checkUser, _ := s.repo.FindByUsernameUnscoped(ctx, targetUsername)
 		if checkUser != nil && checkUser.CI != ci {
-			msg := "CONFLICTO DE UNICIDAD: El username ya está registrado con otro CI en Postgres. Saltando usuario para evitar corrupción."
-			slog.Error("[Sync] "+msg,
+			// El nombre de usuario está tomado por OTRO CI.
+			// Seguimos con el CI actual pero le marcamos el username como observado.
+			slog.Warn("[Sync] Username colisionado con otro CI. Marcando como observado.",
 				"username", targetUsername,
-				"ci_mongo", ci,
-				"ci_postgres", checkUser.CI)
-			result.Conflicts = append(result.Conflicts, msg+" username="+targetUsername+" ci_mongo="+ci+" ci_postgres="+checkUser.CI)
-			continue
+				"ci", ci,
+				"ci_en_uso_por", checkUser.CI)
+
+			targetUsername = targetUsername + "_observado"
 		}
 
 		if exists {
@@ -202,22 +203,24 @@ func (s *UsuarioService) SyncSenators(ctx context.Context) (SyncResult, error) {
 			user, err := repoTx.FindByCIUnscoped(ctx, ci)
 			exists := err == nil
 
-			// Fallback por Username si no existe por CI (Validación de colisión)
+			// Obtener el username objetivo desde Mongo
 			mongoUser, _ := s.mongoUserRepo.WithContext(ctx).FindByCI(ci)
 			targetUsername := ci
 			if mongoUser != nil && mongoUser.Username != "" {
 				targetUsername = mongoUser.Username
 			}
 
+			// 3. Resolución de conflicto de Username (Prioridad absoluta al CI)
 			checkUser, _ := repoTx.FindByUsernameUnscoped(ctx, targetUsername)
 			if checkUser != nil && checkUser.CI != ci {
-				msg := "CONFLICTO DE UNICIDAD: El username de este senador ya está en uso por otro CI."
-				slog.Error("[SyncSenators] "+msg,
+				// El nombre de usuario está tomado por OTRO CI.
+				// Seguimos con el CI actual pero le marcamos el username como observado.
+				slog.Warn("[SyncSenators] Username colisionado con otro CI. Marcando como observado.",
 					"username", targetUsername,
-					"ci_mongo", ci,
-					"ci_postgres", checkUser.CI)
-				result.Conflicts = append(result.Conflicts, msg+" username="+targetUsername+" ci_mongo="+ci+" ci_postgres="+checkUser.CI)
-				continue
+					"ci", ci,
+					"ci_en_uso_por", checkUser.CI)
+
+				targetUsername = targetUsername + "_observado"
 			}
 
 			if exists {
