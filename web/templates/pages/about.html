@@ -1,0 +1,294 @@
+{{ define "pages/about" }} {{ template "layout_start" . }}
+
+<style>
+  /* Glassmorphism Effect */
+  .glass {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+
+  /* Text Gradients */
+  .gradient-text {
+    background: linear-gradient(135deg, #893026 0%, #e8620b 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+  }
+
+  /* Custom Page Background */
+  .hero-gradient {
+    background:
+      radial-gradient(circle at 10% 20%, rgba(252, 232, 230, 0.4) 0%, transparent 40%), radial-gradient(circle at 90% 80%, rgba(255, 247, 237, 0.4) 0%, transparent 40%), #f9fafb;
+  }
+
+  /* Tailwind Missing Utilities Patch */
+  .mb-24 {
+    margin-bottom: 6rem;
+  }
+  .mb-12 {
+    margin-bottom: 3rem;
+  }
+  .gap-20 {
+    gap: 5rem;
+  }
+  .gap-10 {
+    gap: 2.5rem;
+  }
+  .rounded-3xl {
+    border-radius: 1.5rem;
+  }
+  .text-balance {
+    text-wrap: balance;
+  }
+  .leading-\[1\.1\] {
+    line-height: 1.1;
+  }
+
+  @media (min-width: 768px) {
+    .md\:grid-cols-12 {
+      grid-template-columns: repeat(12, minmax(0, 1fr));
+    }
+    .md\:col-span-4 {
+      grid-column: span 4 / span 4;
+    }
+    .md\:col-span-5 {
+      grid-column: span 5 / span 5;
+    }
+    .md\:col-span-7 {
+      grid-column: span 7 / span 7;
+    }
+    .md\:col-span-8 {
+      grid-column: span 8 / span 8;
+    }
+    .md\:grid-cols-4 {
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+    }
+    .md\:pr-10 {
+      padding-right: 2.5rem;
+    }
+  }
+
+  /* Smooth scroll and interactions */
+  html {
+    scroll-behavior: smooth;
+  }
+  .hover-lift {
+    transition: transform 0.2s ease-out;
+  }
+  .hover-lift:hover {
+    transform: translateY(-4px);
+  }
+</style>
+
+<div class="hero-gradient min-h-screen -mt-6 -mx-4 sm:-mx-6 lg:-mx-8 px-6 py-12 antialiased overflow-x-hidden">
+  <!-- Navbar -->
+  <nav class="fixed top-0 left-0 w-full z-50 glass border-b border-neutral-200/50 px-6 py-4">
+    <div class="max-w-7xl mx-auto flex justify-between items-center">
+      <div class="flex items-center gap-3">
+        <div class="w-10 h-10 bg-white rounded-xl flex items-center justify-center shadow-sm overflow-hidden border border-neutral-100 p-1">
+          <img src="/static/img/logo_senado.png" alt="Bolivia" class="h-full object-contain" />
+        </div>
+        <div>
+          <h1 class="text-lg font-bold text-neutral-900 leading-tight">Cámara de Senadores de Bolivia</h1>
+          <p class="text-[10px] text-neutral-500 font-medium uppercase tracking-widest">Sistema de Gestión de Pasajes</p>
+        </div>
+      </div>
+      <div class="flex gap-4">
+        <a href="/auth/login" class="px-5 py-2.5 bg-neutral-900 text-white rounded-xl text-sm font-bold shadow-xl shadow-neutral-200 hover:scale-105 transition-all">
+          Entrar al Sistema
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="pt-24 pb-2" style="margin-top: 50px">
+    <div class="max-w-7xl mx-auto">
+      <!-- Hero Section (Realistic Focus) -->
+      <div class="grid grid-cols-1 md:grid-cols-12 gap-20 items-center mb-24">
+        <!-- Columna 1: Solo Logo -->
+        <div class="md:col-span-5 flex justify-center md:justify-end pr-0 md:pr-10">
+          <img src="/static/img/logo.png" alt="Pasajes GO" class="drop-shadow-2xl" style="height: 400px" />
+        </div>
+
+        <!-- Columna 2: Textos Orientados -->
+        <div class="md:col-span-7 text-left space-y-6">
+          <h2 class="text-5xl md:text-6xl font-black text-neutral-900 tracking-tighter leading-[1.1]">
+            Gestión y Seguimiento de
+            <br />
+            <span class="gradient-text italic font-black">Pasajes Oficiales y por Derecho</span>
+          </h2>
+          <p class="text-xl text-neutral-500 font-medium leading-relaxed">
+            Una herramienta integral diseñada para facilitar el llenado, control y seguimiento de las solicitudes de pasajes oficiales, permitiendo a los usuarios generar
+            documentos normativos precisos para su presentación administrativa ante el Senado.
+          </p>
+        </div>
+      </div>
+
+      <!-- Core Features Grid -->
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-8 mb-24 text-left">
+        <div class="glass p-8 rounded-3xl group hover:bg-white transition-all hover:shadow-xl hover-lift">
+          <div class="w-14 h-14 bg-primary-50 text-primary-600 rounded-2xl flex items-center justify-center mb-6">
+            <i class="ph ph-note-pencil text-3xl font-bold"></i>
+          </div>
+          <h3 class="text-2xl font-bold text-neutral-900 mb-3 text-left">Facilitación de Trámites</h3>
+          <p class="text-neutral-500 leading-relaxed text-left">
+            Simplifica la creación de los formularios PV-01 al PV-06 mediante una interfaz intuitiva, asegurando que los datos capturados cumplan con los requisitos del área de
+            pasajes.
+          </p>
+        </div>
+        <div class="glass p-8 rounded-3xl group hover:bg-white transition-all hover:shadow-xl hover-lift">
+          <div class="w-14 h-14 bg-secondary-50 text-secondary-600 rounded-2xl flex items-center justify-center mb-6">
+            <i class="ph ph-shield-check text-3xl font-bold"></i>
+          </div>
+          <h3 class="text-2xl font-bold text-neutral-900 mb-3 text-left">Control & Integridad</h3>
+          <p class="text-neutral-500 leading-relaxed text-left">
+            Garantiza la trazabilidad de cada solicitud vinculada al CI del solicitante, evitando errores manuales y duplicidad de información en los registros institucionales.
+          </p>
+        </div>
+        <div class="glass p-8 rounded-3xl group hover:bg-white transition-all hover:shadow-xl hover-lift">
+          <div class="w-14 h-14 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mb-6">
+            <i class="ph ph-database text-3xl font-bold"></i>
+          </div>
+          <h3 class="text-2xl font-bold text-neutral-900 mb-3 text-left">Información Validada</h3>
+          <p class="text-neutral-500 leading-relaxed text-left">
+            Al estar sincronizado con la base de datos de personal, el sistema asegura que los datos del beneficiario sean siempre los oficiales al momento de emitir la solicitud.
+          </p>
+        </div>
+      </div>
+
+      <!-- Lifecycle Workflow Section -->
+      <div class="mb-24">
+        <h3 class="text-3xl font-black text-neutral-900 mb-12 text-center text-balance">Ciclo de Vida de la Gestión de Pasajes</h3>
+        <div class="relative">
+          <!-- Connector Line (Desktop) -->
+          <div class="hidden md:block absolute top-1/2 left-0 w-full h-0.5 bg-neutral-100 -translate-y-1/2 z-0"></div>
+
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-8 relative z-10">
+            <!-- Step 1: Solicitud -->
+            <div class="flex flex-col items-center group">
+              <div
+                class="w-16 h-16 bg-white border-4 border-neutral-50 rounded-2xl shadow-sm flex items-center justify-center mb-6 group-hover:border-primary-100 group-hover:shadow-lg hover-lift transition-all">
+                <i class="ph ph-note-pencil text-3xl text-primary-600"></i>
+              </div>
+              <div class="text-center">
+                <h4 class="font-black text-neutral-900 mb-2 uppercase tracking-tight text-left">1. Solicitud</h4>
+                <p class="text-md text-neutral-500 font-medium leading-relaxed text-left">
+                  Registro en sistema de itinerarios (PV-01/02) y generación de formulario para impresión.
+                </p>
+              </div>
+            </div>
+
+            <!-- Step 2: Emisión -->
+            <div class="flex flex-col items-center group">
+              <div
+                class="w-16 h-16 bg-white border-4 border-neutral-50 rounded-2xl shadow-sm flex items-center justify-center mb-6 group-hover:border-primary-100 group-hover:shadow-lg hover-lift transition-all">
+                <i class="ph ph-ticket text-3xl text-primary-600"></i>
+              </div>
+              <div class="text-center">
+                <h4 class="font-black text-neutral-900 mb-2 uppercase tracking-tight text-left">2. Reserva y Emisión</h4>
+                <p class="text-md text-neutral-500 font-medium leading-relaxed text-left">
+                  Validación por el área de pasajes, asignación de código reserva (PNR) y carga digital del boleto.
+                </p>
+              </div>
+            </div>
+
+            <!-- Step 3: Descargo -->
+            <div class="flex flex-col items-center group">
+              <div
+                class="w-16 h-16 bg-white border-4 border-neutral-50 rounded-2xl shadow-sm flex items-center justify-center mb-6 group-hover:border-primary-100 group-hover:shadow-lg hover-lift transition-all">
+                <i class="ph ph-repeat text-3xl text-primary-600"></i>
+              </div>
+              <div class="text-center">
+                <h4 class="font-black text-neutral-900 mb-2 uppercase tracking-tight text-left">3. Descargo (PV-05/06)</h4>
+                <p class="text-md text-neutral-500 font-medium leading-relaxed text-left">
+                  Registro de viaje realizado, escalas y carga de pases a bordo para conciliación administrativa.
+                </p>
+              </div>
+            </div>
+
+            <!-- Step 4: Cierre -->
+            <div class="flex flex-col items-center group">
+              <div
+                class="w-16 h-16 bg-white border-4 border-neutral-50 rounded-2xl shadow-sm flex items-center justify-center mb-6 group-hover:border-primary-100 group-hover:shadow-lg hover-lift transition-all">
+                <i class="ph ph-check-circle text-3xl text-primary-600"></i>
+              </div>
+              <div class="text-center">
+                <h4 class="font-black text-neutral-900 mb-2 uppercase tracking-tight text-left">4. Cierre del Trámite</h4>
+                <p class="text-md text-neutral-500 font-medium leading-relaxed text-left">
+                  Consolidación del historial de movilidad del beneficiario y archivo digital del expediente.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Capabilities Section -->
+      <div class="mb-24">
+        <h3 class="text-3xl font-black text-neutral-900 mb-12 text-center">Alcance de la Herramienta</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-10">
+          <!-- Item 1 -->
+          <div class="bg-white p-6 rounded-3xl border border-neutral-100 shadow-sm hover-lift flex gap-6">
+            <div class="flex-none w-14 h-14 bg-primary-50 rounded-2xl flex items-center justify-center text-primary-600">
+              <i class="ph ph-file-text text-3xl"></i>
+            </div>
+            <div class="space-y-2">
+              <h4 class="text-lg font-black text-neutral-900 text-left">Formularios de Solicitud (PV-01 / PV-02)</h4>
+              <p class="text-base text-neutral-500 leading-relaxed font-medium text-left">
+                Carga estructurada de itinerarios y generación automática de la solicitud oficial para su posterior impresión y firma institucional.
+              </p>
+            </div>
+          </div>
+
+          <!-- Item 2 -->
+          <div class="bg-white p-6 rounded-3xl border border-neutral-100 shadow-sm hover-lift flex gap-6">
+            <div class="flex-none w-14 h-14 bg-primary-50 rounded-2xl flex items-center justify-center text-primary-600">
+              <i class="ph ph-repeat text-3xl"></i>
+            </div>
+            <div class="space-y-2">
+              <h4 class="text-lg font-black text-neutral-900 text-left">Formularios de Descargo (PV-05 / PV-06)</h4>
+              <p class="text-base text-neutral-500 leading-relaxed font-medium text-left">
+                Herramienta para el retorno de información sobre pases a bordo y escalas, facilitando la conciliación y liquidación final del trámite.
+              </p>
+            </div>
+          </div>
+
+          <!-- Item 3 -->
+          <div class="bg-white p-6 rounded-3xl border border-neutral-100 shadow-sm hover-lift flex gap-6">
+            <div class="flex-none w-14 h-14 bg-primary-50 rounded-2xl flex items-center justify-center text-primary-600">
+              <i class="ph ph-users text-3xl"></i>
+            </div>
+            <div class="space-y-2">
+              <h4 class="text-lg font-black text-neutral-900 text-left">Vuelos de Comisión (PV-02)</h4>
+              <p class="text-base text-neutral-500 leading-relaxed font-medium text-left">
+                Gestión guiada para solicitudes vinculadas a viajes en comisión parlamentaria, asegurando el cumplimiento de la normativa.
+              </p>
+            </div>
+          </div>
+
+          <!-- Item 4 -->
+          <div class="bg-white p-6 rounded-3xl border border-neutral-100 shadow-sm hover-lift flex gap-6">
+            <div class="flex-none w-14 h-14 bg-primary-50 rounded-2xl flex items-center justify-center text-primary-600">
+              <i class="ph ph-printer text-3xl"></i>
+            </div>
+            <div class="space-y-2">
+              <h4 class="text-lg font-black text-neutral-900 text-left">Impresión con Formato Oficial</h4>
+              <p class="text-base text-neutral-500 leading-relaxed font-medium text-left">
+                Garantiza que el documento resultante sea una copia fiel (1:1) del estándar requerido para su presentación física administrativa.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer class="bg-white border-t border-neutral-100 py-10 px-6 text-center rounded-3xl shadow-sm">
+    <p class="text-md text-neutral-400 font-medium italic">© 2026 Cámara de Senadores - Estado Plurinacional de Bolivia</p>
+  </footer>
+</div>
+
+{{ template "layout_end" . }} {{ end }}

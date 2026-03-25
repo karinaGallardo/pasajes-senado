@@ -64,6 +64,7 @@ type Container struct {
 	OrganigramaController      *controllers.OrganigramaController
 	CategoriaViaticoController *controllers.CategoriaViaticoController
 	NotificationController     *controllers.NotificationController
+	LandingController          *controllers.LandingController
 }
 
 // NewContainer initializes the graph of dependencies
@@ -237,6 +238,7 @@ func NewContainer(db *gorm.DB, mongoRRHH *mongo.Database, mongoChat *mongo.Datab
 	orgCtrl := controllers.NewOrganigramaController(organigramaService)
 	catViaticoCtrl := controllers.NewCategoriaViaticoController(catViaticoService, viaticoService)
 	notifCtrl := controllers.NewNotificationController(notifService)
+	landingCtrl := controllers.NewLandingController()
 
 	return &Container{
 		// Services
@@ -292,5 +294,6 @@ func NewContainer(db *gorm.DB, mongoRRHH *mongo.Database, mongoChat *mongo.Datab
 		OrganigramaController:      orgCtrl,
 		CategoriaViaticoController: catViaticoCtrl,
 		NotificationController:     notifCtrl,
+		LandingController:          landingCtrl,
 	}
 }
