@@ -21,11 +21,23 @@ func SetUser(c *gin.Context, user *models.Usuario) {
 	// Guardar en el Contexto de la Request (para Servicios)
 	ctx := context.WithValue(c.Request.Context(), authUserKey, user)
 
-	// Capturar Metadatos de Red
-	ctx = context.WithValue(ctx, userIPKey, c.ClientIP())
-	ctx = context.WithValue(ctx, userAgentKey, c.Request.UserAgent())
+	// Capturar Metadatos (usamos el helper)
+	ctx = ExtractMetadata(c, ctx)
 
 	c.Request = c.Request.WithContext(ctx)
+}
+
+// SetMetadata captura solo IP/UA en el contexto (útil para rutas sin login como /login)
+func SetMetadata(c *gin.Context) {
+	ctx := ExtractMetadata(c, c.Request.Context())
+	c.Request = c.Request.WithContext(ctx)
+}
+
+// ExtractMetadata es interno para inyectar IP/UA en un contexto Go huyendo de gin.Context si es necesario
+func ExtractMetadata(c *gin.Context, ctx context.Context) context.Context {
+	ctx = context.WithValue(ctx, userIPKey, c.ClientIP())
+	ctx = context.WithValue(ctx, userAgentKey, c.Request.UserAgent())
+	return ctx
 }
 
 func AuthUser(c *gin.Context) *models.Usuario {

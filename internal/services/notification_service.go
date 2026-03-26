@@ -9,12 +9,14 @@ import (
 type NotificationService struct {
 	repo        *repositories.NotificationRepository
 	usuarioRepo *repositories.UsuarioRepository
+	pushService *PushService
 }
 
-func NewNotificationService(repo *repositories.NotificationRepository, usuarioRepo *repositories.UsuarioRepository) *NotificationService {
+func NewNotificationService(repo *repositories.NotificationRepository, usuarioRepo *repositories.UsuarioRepository, pushService *PushService) *NotificationService {
 	return &NotificationService{
 		repo:        repo,
 		usuarioRepo: usuarioRepo,
+		pushService: pushService,
 	}
 }
 
@@ -58,6 +60,9 @@ func (s *NotificationService) NotifyAdmins(ctx context.Context, title, message, 
 				"type":        notifType,
 				"url":         targetURL,
 			})
+
+			// Enviar Push a móvil (nuevo)
+			s.pushService.SendToUser(ctx, admin.ID, title, message, targetURL)
 		}
 	}
 	return nil

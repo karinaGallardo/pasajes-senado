@@ -1,0 +1,74 @@
+{{ define "admin/audit/index" }} {{ template "layout_start" . }}
+
+<div
+  class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
+  x-data="{
+    filters: {
+        action: '{{ index .CurrentFilters `action` }}',
+        entity_type: '{{ index .CurrentFilters `entity_type` }}'
+    },
+    updateTable() {
+        const params = new URLSearchParams(this.filters);
+        const url = `/admin/auditoria/table?${params.toString()}`;
+        htmx.ajax('GET', url, '#audit-table-container');
+    }
+}">
+  <div class="flex justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-neutral-200 mb-6">
+    <div>
+      <h2 class="text-xl font-bold text-neutral-800 tracking-tight">Registro de Auditoría</h2>
+      <p class="text-sm text-neutral-500 mt-1">Historial completo de acciones y cambios en el sistema</p>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="bg-white rounded-lg shadow-sm border border-neutral-200 p-4 mb-6">
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div>
+        <label class="block text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-2">Acción</label>
+        <select
+          x-model="filters.action"
+          @change="updateTable()"
+          class="w-full bg-neutral-50 border border-neutral-300 rounded-lg px-3 py-1.5 text-xs focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all">
+          <option value="">Todas las acciones</option>
+          {{ range .AvailableActions }}
+          <option value="{{ . }}">{{ . }}</option>
+          {{ end }}
+        </select>
+      </div>
+      <div>
+        <label class="block text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-2">Módulo / Entidad</label>
+        <select
+          x-model="filters.entity_type"
+          @change="updateTable()"
+          class="w-full bg-neutral-50 border border-neutral-300 rounded-lg px-3 py-1.5 text-xs focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all">
+          <option value="">Todos los módulos</option>
+          {{ range .AvailableEntities }}
+          <option value="{{ . }}">{{ . }}</option>
+          {{ end }}
+        </select>
+      </div>
+      <div class="flex items-end">
+        <button
+          @click="filters = { action: '', entity_type: '' }; updateTable()"
+          class="btn-sm btn-white">
+          <i class="ph ph-arrow-counter-clockwise"></i>
+          <span>Limpiar</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tabla -->
+  <div class="bg-white rounded-lg shadow overflow-x-auto border border-neutral-200">
+    <div id="table-loader" class="htmx-indicator w-full py-4 flex justify-center items-center">
+      <svg class="animate-spin h-6 w-6 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+      </svg>
+    </div>
+
+    <div id="audit-table-container" hx-get="/admin/auditoria/table" hx-trigger="load" hx-indicator="#table-loader">{{ template "admin/audit/table" . }}</div>
+  </div>
+</div>
+
+{{ template "layout_end" . }} {{ end }}

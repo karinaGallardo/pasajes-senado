@@ -75,3 +75,8 @@ func FormatDateTimeShortES(t time.Time) string {
 
 	return fmt.Sprintf("%s %s %s %d %s", day, dayNum, month, year, timeStr)
 }
+
+// FormatDateFilename devuelve la fecha actual en formato YYYYMMDD_HHMMSS.
+func FormatDateFilename() string {
+	return time.Now().Format("20060102_150405")
+}

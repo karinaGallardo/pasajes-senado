@@ -517,8 +517,13 @@ func (ctrl *DescargoDerechoController) Print(c *gin.Context) {
 		return
 	}
 
-	c.Header("Content-Disposition", "inline; filename=PV5_"+descargo.Codigo+".pdf")
+	disposition := "inline"
+	if utils.IsMobileBrowser(c) {
+		disposition = "attachment"
+	}
+
 	c.Header("Content-Type", "application/pdf")
+	c.Header("Content-Disposition", fmt.Sprintf("%s; filename=\"FORM-PV05-%s.pdf\"", disposition, descargo.ID))
 	c.Writer.Write(pdfReader)
 }
 

@@ -2,8 +2,8 @@ package repositories
 
 import (
 	"context"
+	"sistema-pasajes/internal/dtos"
 	"sistema-pasajes/internal/models"
-
 
 	"gorm.io/gorm"
 )
@@ -63,4 +63,44 @@ func (r *PasajeRepository) FindByNumeroBoleto(ctx context.Context, numeroBoleto 
 	var pasaje models.Pasaje
 	err := r.db.WithContext(ctx).Where("numero_boleto = ?", numeroBoleto).First(&pasaje).Error
 	return &pasaje, err
+}
+func (r *PasajeRepository) FindConsolidado(ctx context.Context, filter dtos.ReportFilterRequest) ([]models.Pasaje, error) {
+	var pasajes []models.Pasaje
+	query := r.db.WithContext(ctx).Model(&models.Pasaje{}).
+		Preload("EstadoPasaje").
+		Preload("Aerolinea").
+		Preload("Agencia").
+		Preload("SolicitudItem").
+		Joins("INNER JOIN solicitudes ON solicitudes.id = pasajes.solicitud_id").
+		Joins("INNER JOIN usuarios ON usuarios.id = solicitudes.usuario_id").
+		Preload("SolicitudItem.Solicitud.Usuario").
+		Preload("SolicitudItem.Solicitud.TipoSolicitud.ConceptoViaje").
+		Order("pasajes.fecha_emision DESC")
+
+	if filter.FechaDesde != "" {
+		query = query.Where("pasajes.fecha_emision >= ?", filter.FechaDesde)
+	}
+	if filter.FechaHasta != "" {
+		query = query.Where("pasajes.fecha_emision <= ?", filter.FechaHasta)
+	}
+	if filter.AerolineaID != "" {
+		query = query.Where("pasajes.aerolinea_id = ?", filter.AerolineaID)
+	}
+	if filter.AgenciaID != "" {
+		query = query.Where("pasajes.agencia_id = ?", filter.AgenciaID)
+	}
+	if filter.Estado != "" && filter.Estado != "ALL" {
+		query = query.Where("pasajes.estado_pasaje_codigo = ?", filter.Estado)
+	}
+
+	if filter.Concepto != "" && filter.Concepto != "ALL" {
+		// DERECHO or OFICIAL
+		// We join with tipo_solicitudes to check ConceptoViaje
+		query = query.Joins("INNER JOIN tipo_solicitudes ts ON ts.codigo = solicitudes.tipo_solicitud_codigo").
+			Joins("INNER JOIN concepto_viajes cv ON cv.codigo = ts.concepto_viaje_codigo").
+			Where("cv.codigo = ?", filter.Concepto)
+	}
+
+	err := query.Find(&pasajes).Error
+	return pasajes, err
 }

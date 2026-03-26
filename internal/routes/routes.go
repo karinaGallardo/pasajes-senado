@@ -166,6 +166,14 @@ func SetupRoutes(r *gin.Engine, container *app.Container, loginLimiter *middlewa
 
 			adminOnly.POST("/usuarios/:id/unblock", usuarioCtrl.Unblock)
 
+			// Registro de Auditoría
+			adminOnly.GET("/admin/auditoria", container.AuditController.Index)
+			adminOnly.GET("/admin/auditoria/table", container.AuditController.Table)
+
+			// Reportes
+			adminOnly.GET("/admin/reports", container.ReportController.Index)
+			adminOnly.GET("/admin/reports/consolidado-excel", container.ReportController.DownloadConsolidadoExcel)
+
 			// Regularización de fechas
 			adminOnly.GET("/solicitudes/:id/regularizacion-modal", solicitudCtrl.GetRegularizacionModal)
 			adminOnly.POST("/solicitudes/:id/regularizar-fechas", solicitudCtrl.UpdateRegularizacionDates)
@@ -233,6 +241,7 @@ func SetupRoutes(r *gin.Engine, container *app.Container, loginLimiter *middlewa
 			protected.POST("/admin/viaticos/zonas", catViaticoCtrl.StoreZona)
 		}
 
+		protected.POST("/api/notifications/subscribe", notifCtrl.SubscribePush)
 		protected.GET("/api/notifications/recent", notifCtrl.GetRecent)
 		protected.POST("/api/notifications/:id/read", notifCtrl.MarkAsRead)
 		protected.POST("/api/notifications/read-all", notifCtrl.MarkAllAsRead)

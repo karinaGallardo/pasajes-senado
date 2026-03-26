@@ -466,15 +466,20 @@ func (ctrl *DescargoOficialController) Print(c *gin.Context) {
 	}
 
 	personaView, _ := ctrl.peopleService.GetSenatorDataByCI(c.Request.Context(), descargo.Solicitud.Usuario.CI)
-	pdfReader, err := ctrl.reportService.GeneratePV06Complete(c.Request.Context(), descargo, personaView)
+	pdf, err := ctrl.reportService.GeneratePV06Complete(c.Request.Context(), descargo, personaView)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Error generando PDF")
 		return
 	}
 
-	c.Header("Content-Disposition", "inline; filename=PV6_"+descargo.Codigo+".pdf")
+	disposition := "inline"
+	if utils.IsMobileBrowser(c) {
+		disposition = "attachment"
+	}
+
 	c.Header("Content-Type", "application/pdf")
-	c.Writer.Write(pdfReader)
+	c.Header("Content-Disposition", fmt.Sprintf("%s; filename=\"FORM-PV06-%s.pdf\"", disposition, descargo.ID))
+	c.Writer.Write(pdf)
 }
 
 func (ctrl *DescargoOficialController) Preview(c *gin.Context) {

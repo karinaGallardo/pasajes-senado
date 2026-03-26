@@ -117,11 +117,27 @@
 
         <div class="mt-2 w-full h-[70vh] bg-neutral-100 rounded border border-neutral-200 overflow-hidden">
           {{ if .IsPDF }}
-          <iframe src="{{ .FilePath }}" class="w-full h-full" frameborder="0"></iframe>
+            {{ if .IsMobile }}
+              <div class="w-full h-full flex flex-col items-center justify-center p-6 text-center space-y-4">
+                <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm text-primary-500">
+                   <i class="ph ph-file-pdf text-4xl"></i>
+                </div>
+                <div>
+                  <h4 class="font-bold text-neutral-900">Vista previa limitada en móvil</h4>
+                  <p class="text-xs text-neutral-500 max-w-xs mt-1">Para una mejor visualización, abra el documento en una nueva pestaña del navegador.</p>
+                </div>
+                <a href="{{ .FilePath }}" target="_blank" class="btn-md btn-primary">
+                  <i class="ph ph-arrow-square-out mr-2"></i>
+                  Abrir PDF ahora
+                </a>
+              </div>
+            {{ else }}
+              <iframe src="{{ .FilePath }}" class="w-full h-full" frameborder="0"></iframe>
+            {{ end }}
           {{ else }}
-          <div class="w-full h-full flex items-center justify-center p-4">
-            <img src="{{ .FilePath }}" class="max-w-full max-h-full object-contain" alt="Vista previa" />
-          </div>
+            <div class="w-full h-full flex items-center justify-center p-4">
+              <img src="{{ .FilePath }}" class="max-w-full max-h-full object-contain" alt="Vista previa" />
+            </div>
           {{ end }}
         </div>
       </div>

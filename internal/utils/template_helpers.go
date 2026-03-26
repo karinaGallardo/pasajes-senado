@@ -33,6 +33,7 @@ func TemplateFuncs() template.FuncMap {
 		"abs":              Abs,
 		"lower":            strings.ToLower,
 		"checked":          Checked,
+		"deviceIcon":       DeviceIcon,
 	}
 }
 
@@ -279,4 +280,16 @@ func Checked(b bool) template.HTMLAttr {
 		return template.HTMLAttr("checked")
 	}
 	return template.HTMLAttr("")
+}
+
+// DeviceIcon determina el icono según el UserAgent.
+func DeviceIcon(ua string) string {
+	ua = strings.ToLower(ua)
+	if strings.Contains(ua, "ipad") || strings.Contains(ua, "tablet") {
+		return "ph ph-device-tablet"
+	}
+	if strings.Contains(ua, "mobi") || strings.Contains(ua, "android") || strings.Contains(ua, "iphone") {
+		return "ph ph-device-mobile"
+	}
+	return "ph ph-desktop"
 }

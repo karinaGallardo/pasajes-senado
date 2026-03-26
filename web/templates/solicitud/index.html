@@ -12,7 +12,7 @@
       type="button"
       hx-get="/solicitudes/oficial/modal-crear"
       hx-target="#modal-container"
-      class="px-4 py-2 bg-secondary text-white rounded-md text-sm font-bold shadow hover:bg-secondary-600 transition-colors flex items-center gap-2">
+      class="btn-md btn-secondary">
       <i class="ph ph-plus-circle text-lg"></i>
       <span>Nueva Solicitud Oficial</span>
     </button>
@@ -23,32 +23,32 @@
   <div class="flex flex-wrap gap-2 pb-2 border-b border-neutral-100">
     <a
       href="{{ .LinkBase }}"
-      class="px-3 py-1.5 text-xs font-medium rounded-full {{ if eq .Status `` }}bg-neutral-800 text-white{{ else }}bg-white text-neutral-600 border border-neutral-200 hover:bg-neutral-50{{ end }}">
+      class="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-full transition-all {{ if eq .Status `` }}bg-neutral-800 text-white shadow-sm{{ else }}bg-white text-neutral-500 border border-neutral-200 hover:bg-neutral-50{{ end }}">
       Todos
     </a>
     <a
       href="{{ .LinkBase }}?estado=SOLICITADO"
-      class="px-3 py-1.5 text-xs font-medium rounded-full {{ if eq .Status `SOLICITADO` }}bg-primary text-white{{ else }}bg-white text-neutral-600 border border-neutral-200 hover:bg-neutral-50{{ end }}">
+      class="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-full transition-all {{ if eq .Status `SOLICITADO` }}bg-primary text-white shadow-sm{{ else }}bg-white text-neutral-500 border border-neutral-200 hover:bg-neutral-50{{ end }}">
       Solicitados
     </a>
     <a
       href="{{ .LinkBase }}?estado=APROBADO"
-      class="px-3 py-1.5 text-xs font-medium rounded-full {{ if eq .Status `APROBADO` }}bg-success-600 text-white{{ else }}bg-white text-neutral-600 border border-neutral-200 hover:bg-neutral-50{{ end }}">
+      class="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-full transition-all {{ if eq .Status `APROBADO` }}bg-success-600 text-white shadow-sm{{ else }}bg-white text-neutral-500 border border-neutral-200 hover:bg-neutral-50{{ end }}">
       Aprobados
     </a>
     <a
       href="{{ .LinkBase }}?estado=EMITIDO"
-      class="px-3 py-1.5 text-xs font-medium rounded-full {{ if eq .Status `EMITIDO` }}bg-secondary text-white{{ else }}bg-white text-neutral-600 border border-neutral-200 hover:bg-neutral-50{{ end }}">
+      class="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-full transition-all {{ if eq .Status `EMITIDO` }}bg-secondary text-white shadow-sm{{ else }}bg-white text-neutral-500 border border-neutral-200 hover:bg-neutral-50{{ end }}">
       Emitidos
     </a>
     <a
       href="{{ .LinkBase }}?estado=RECHAZADO"
-      class="px-3 py-1.5 text-xs font-medium rounded-full {{ if eq .Status `RECHAZADO` }}bg-danger-600 text-white{{ else }}bg-white text-neutral-600 border border-neutral-200 hover:bg-neutral-50{{ end }}">
+      class="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-full transition-all {{ if eq .Status `RECHAZADO` }}bg-danger-600 text-white shadow-sm{{ else }}bg-white text-neutral-500 border border-neutral-200 hover:bg-neutral-50{{ end }}">
       Rechazados
     </a>
     <a
       href="{{ .LinkBase }}?estado=FINALIZADO"
-      class="px-3 py-1.5 text-xs font-medium rounded-full {{ if eq .Status `FINALIZADO` }}bg-neutral-600 text-white{{ else }}bg-white text-neutral-600 border border-neutral-200 hover:bg-neutral-50{{ end }}">
+      class="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-full transition-all {{ if eq .Status `FINALIZADO` }}bg-neutral-600 text-white shadow-sm{{ else }}bg-white text-neutral-500 border border-neutral-200 hover:bg-neutral-50{{ end }}">
       Finalizados
     </a>
   </div>

@@ -7,6 +7,7 @@ import (
 
 	"os"
 	"os/exec"
+	"sistema-pasajes/internal/dtos"
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
 	"sistema-pasajes/internal/utils"
@@ -14,18 +15,29 @@ import (
 	"time"
 
 	"github.com/jung-kurt/gofpdf"
+	"github.com/xuri/excelize/v2"
 )
 
 type ReportService struct {
 	solicitudRepo *repositories.SolicitudRepository
 	aerolineaRepo *repositories.AerolineaRepository
+	pasajeRepo    *repositories.PasajeRepository
+	agenciaRepo   *repositories.AgenciaRepository
 	configService *ConfiguracionService
 }
 
-func NewReportService(solicitudRepo *repositories.SolicitudRepository, aerolineaRepo *repositories.AerolineaRepository, configService *ConfiguracionService) *ReportService {
+func NewReportService(
+	solicitudRepo *repositories.SolicitudRepository,
+	aerolineaRepo *repositories.AerolineaRepository,
+	pasajeRepo *repositories.PasajeRepository,
+	agenciaRepo *repositories.AgenciaRepository,
+	configService *ConfiguracionService,
+) *ReportService {
 	return &ReportService{
 		solicitudRepo: solicitudRepo,
 		aerolineaRepo: aerolineaRepo,
+		pasajeRepo:    pasajeRepo,
+		agenciaRepo:   agenciaRepo,
 		configService: configService,
 	}
 }
@@ -1732,4 +1744,110 @@ func (s *ReportService) drawPageBorder(pdf *gofpdf.Fpdf) {
 	pdf.SetDrawColor(0, 0, 0)
 	pdf.Rect(3, 3, 210, 265.5, "D")
 	pdf.Rect(3, 268.5, 210, 9.3, "D")
+}
+func (s *ReportService) GenerateConsolidadoPasajesExcel(ctx context.Context, filter dtos.ReportFilterRequest) (*excelize.File, error) {
+	pasajes, err := s.pasajeRepo.FindConsolidado(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	f := excelize.NewFile()
+	sheet := "Reporte de Pasajes"
+	f.SetSheetName("Sheet1", sheet)
+
+	// Estilos
+	headerStyle, _ := f.NewStyle(&excelize.Style{
+		Font: &excelize.Font{Bold: true, Color: "FFFFFF"},
+		Fill: excelize.Fill{Type: "pattern", Color: []string{"03738C"}, Pattern: 1},
+		Alignment: &excelize.Alignment{Horizontal: "center"},
+		Border: []excelize.Border{
+			{Type: "left", Color: "000000", Style: 1},
+			{Type: "top", Color: "000000", Style: 1},
+			{Type: "bottom", Color: "000000", Style: 1},
+			{Type: "right", Color: "000000", Style: 1},
+		},
+	})
+
+	rowStyle, _ := f.NewStyle(&excelize.Style{
+		Border: []excelize.Border{
+			{Type: "left", Color: "CCCCCC", Style: 1},
+			{Type: "top", Color: "CCCCCC", Style: 1},
+			{Type: "bottom", Color: "CCCCCC", Style: 1},
+			{Type: "right", Color: "CCCCCC", Style: 1},
+		},
+	})
+
+	// Encabezados
+	headers := []string{"N°", "FECHA EMISIÓN", "CÓDIGO SOL.", "CONCEPTO", "BENEFICIARIO", "RUTA / TRAMOS", "AEROLÍNEA", "AGENCIA", "NRO. BOLETO", "COSTO (BS)", "ESTADO"}
+	for i, h := range headers {
+		cell, _ := excelize.CoordinatesToCellName(i+1, 1)
+		f.SetCellValue(sheet, cell, h)
+		f.SetCellStyle(sheet, cell, cell, headerStyle)
+	}
+
+	totalCosto := 0.0
+	for i, p := range pasajes {
+		row := i + 2
+		concepto := "DERECHO"
+		codigoSolicitud := p.SolicitudID
+		if p.SolicitudItem != nil && p.SolicitudItem.Solicitud != nil {
+			concepto = p.SolicitudItem.Solicitud.GetConceptoCodigo()
+			codigoSolicitud = p.SolicitudItem.Solicitud.Codigo
+		}
+
+		beneficiario := "-"
+		if p.SolicitudItem != nil && p.SolicitudItem.Solicitud != nil {
+			beneficiario = p.SolicitudItem.Solicitud.Usuario.GetNombreCompleto()
+		}
+
+		f.SetCellValue(sheet, fmt.Sprintf("A%d", row), i+1)
+		if p.FechaEmision != nil {
+			f.SetCellValue(sheet, fmt.Sprintf("B%d", row), p.FechaEmision.Format("02/01/2006"))
+		}
+		f.SetCellValue(sheet, fmt.Sprintf("C%d", row), codigoSolicitud)
+		f.SetCellValue(sheet, fmt.Sprintf("D%d", row), concepto)
+		f.SetCellValue(sheet, fmt.Sprintf("E%d", row), beneficiario)
+		f.SetCellValue(sheet, fmt.Sprintf("F%d", row), p.Ruta)
+		if p.Aerolinea != nil {
+			f.SetCellValue(sheet, fmt.Sprintf("G%d", row), p.Aerolinea.Nombre)
+		}
+		if p.Agencia != nil {
+			f.SetCellValue(sheet, fmt.Sprintf("H%d", row), p.Agencia.Nombre)
+		}
+		f.SetCellValue(sheet, fmt.Sprintf("I%d", row), p.NumeroBoleto)
+		f.SetCellValue(sheet, fmt.Sprintf("J%d", row), p.Costo)
+		f.SetCellValue(sheet, fmt.Sprintf("K%d", row), p.GetEstado())
+
+		totalCosto += p.Costo
+
+		// Aplicar estilo de borde a la fila
+		lastCell, _ := excelize.CoordinatesToCellName(len(headers), row)
+		f.SetCellStyle(sheet, fmt.Sprintf("A%d", row), lastCell, rowStyle)
+	}
+
+	// Fila de Totales
+	totalRow := len(pasajes) + 2
+	f.SetCellValue(sheet, fmt.Sprintf("I%d", totalRow), "TOTAL GENERAL:")
+	f.SetCellValue(sheet, fmt.Sprintf("J%d", totalRow), totalCosto)
+	
+	totalStyle, _ := f.NewStyle(&excelize.Style{
+		Font: &excelize.Font{Bold: true},
+		Fill: excelize.Fill{Type: "pattern", Color: []string{"F3F4F6"}, Pattern: 1},
+	})
+	f.SetCellStyle(sheet, fmt.Sprintf("I%d", totalRow), fmt.Sprintf("J%d", totalRow), totalStyle)
+
+	// Autoajustar anchos (aproximado)
+	f.SetColWidth(sheet, "A", "A", 5)
+	f.SetColWidth(sheet, "B", "B", 15)
+	f.SetColWidth(sheet, "C", "C", 15)
+	f.SetColWidth(sheet, "D", "D", 12)
+	f.SetColWidth(sheet, "E", "E", 35)
+	f.SetColWidth(sheet, "F", "F", 40)
+	f.SetColWidth(sheet, "G", "G", 15)
+	f.SetColWidth(sheet, "H", "H", 15)
+	f.SetColWidth(sheet, "I", "I", 20)
+	f.SetColWidth(sheet, "J", "J", 15)
+	f.SetColWidth(sheet, "K", "K", 12)
+
+	return f, nil
 }

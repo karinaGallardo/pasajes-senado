@@ -1,73 +1,94 @@
 {{ define "admin/oficinas" }} {{ template "layout_start" . }}
 
-<div class="max-w-4xl mx-auto mt-8">
-  <div class="flex justify-between items-center mb-6">
-    <h1 class="text-2xl font-bold text-primary-800 flex items-center">
-      <i class="ph ph-building text-3xl mr-2 text-primary-500"></i>
+<div class="max-w-6xl mx-auto py-8 px-4">
+  <div class="mb-8">
+    <h1 class="text-3xl font-bold text-neutral-900 tracking-tight flex items-center gap-3">
+      <i class="ph ph-buildings text-primary"></i>
       Gestión de Oficinas
     </h1>
+    <p class="text-sm text-neutral-500 mt-1">Administre las dependencias y áreas de trabajo del Senado.</p>
   </div>
 
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-    <div class="bg-white rounded-lg shadow p-6 h-fit">
-      <h2 class="text-lg font-bold text-primary-800 mb-4 border-b pb-2">Nueva Oficina</h2>
-      <form action="/admin/oficinas" method="POST" class="space-y-4">
+  <div class="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+    <!-- Formulario -->
+    <div class="lg:col-span-4 bg-white rounded-xl shadow-premium border border-neutral-100 p-6 sticky top-8">
+      <h2 class="text-sm font-black text-neutral-400 uppercase tracking-widest mb-6 border-b border-neutral-50 pb-3 flex items-center gap-2">
+        <i class="ph ph-plus-circle"></i>
+        Nueva Oficina
+      </h2>
+      
+      <form action="/admin/oficinas" method="POST" class="space-y-5">
         <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
-        <div>
-          <label class="block text-sm font-medium text-neutral-700">Código</label>
-          <input type="number" name="codigo" class="mt-1 block w-full rounded-md border-neutral-300 shadow-sm focus:border-primary-500 focus:ring-primary-500" required />
+        
+        <div class="space-y-1.5">
+          <label class="block text-[10px] font-bold uppercase tracking-widest text-neutral-500">Código</label>
+          <input type="number" name="codigo" placeholder="Ej. 101" 
+                 class="block w-full px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none" required />
         </div>
-        <div>
-          <label class="block text-sm font-medium text-neutral-700">Nombre / Detalle</label>
-          <input type="text" name="detalle" class="mt-1 block w-full rounded-md border-neutral-300 shadow-sm focus:border-primary-500 focus:ring-primary-500" required />
+
+        <div class="space-y-1.5">
+          <label class="block text-[10px] font-bold uppercase tracking-widest text-neutral-500">Nombre / Detalle</label>
+          <input type="text" name="detalle" placeholder="Nombre completo de la oficina"
+                 class="block w-full px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none" required />
         </div>
-        <div>
-          <label class="block text-sm font-medium text-neutral-700">Área</label>
-          <input type="text" name="area" class="mt-1 block w-full rounded-md border-neutral-300 shadow-sm focus:border-primary-500 focus:ring-primary-500" />
+
+        <div class="space-y-1.5">
+          <label class="block text-[10px] font-bold uppercase tracking-widest text-neutral-500">Área</label>
+          <input type="text" name="area" placeholder="Ej. Área Administrativa"
+                 class="block w-full px-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none" />
         </div>
-        <div>
-          <label class="block text-sm font-medium text-neutral-700">Presupuesto (Bs)</label>
-          <input
-            type="number"
-            step="0.01"
-            name="presupuesto"
-            value="0"
-            class="mt-1 block w-full rounded-md border-neutral-300 shadow-sm focus:border-primary-500 focus:ring-primary-500" />
+
+        <div class="space-y-1.5">
+          <label class="block text-[10px] font-bold uppercase tracking-widest text-neutral-500">Presupuesto (Bs)</label>
+          <div class="relative">
+             <span class="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-400 text-xs font-bold">Bs</span>
+             <input type="number" step="0.01" name="presupuesto" value="0"
+                    class="block w-full pl-10 pr-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-lg text-sm font-bold focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none" />
+          </div>
         </div>
-        <button type="submit" class="w-full bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700 font-medium">Guardar</button>
+
+        <button type="submit" class="btn-md btn-primary w-full mt-4">
+          <i class="ph ph-floppy-disk"></i>
+          <span>Guardar Oficina</span>
+        </button>
       </form>
     </div>
 
-    <div class="md:col-span-2 bg-white rounded-lg shadow overflow-hidden">
-      <div class="bg-primary-50 px-6 py-4 border-b border-neutral-200">
-        <h2 class="text-lg font-bold text-primary-800">Listado de Oficinas</h2>
-      </div>
-      <div class="overflow-y-auto max-h-[600px]">
-        <table class="min-w-full divide-y divide-neutral-200">
-          <thead class="bg-neutral-50 sticky top-0">
+    <!-- Tabla -->
+    <div class="lg:col-span-8 flex flex-col gap-4">
+      <div class="table-container shadow-premium">
+        <table class="table-ui">
+          <thead>
             <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Código</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Detalle</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Área</th>
-              <th class="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">Acciones</th>
+              <th scope="col" class="w-20">Código</th>
+              <th scope="col">Detalle de Oficina</th>
+              <th scope="col" class="hidden md:table-cell">Área</th>
+              <th scope="col" class="text-right w-10">Acciones</th>
             </tr>
           </thead>
-          <tbody class="bg-white divide-y divide-neutral-200">
+          <tbody>
             {{ range .Oficinas }}
             <tr>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">{{ .Codigo }}</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">{{ .Detalle }}</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">{{ .Area }}</td>
-              <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+              <td class="font-mono font-bold text-neutral-400 text-xs">{{ .Codigo }}</td>
+              <td>
+                <div class="text-sm font-bold text-neutral-800 uppercase tracking-tight">{{ .Detalle }}</div>
+                <div class="md:hidden text-[10px] text-neutral-400 mt-0.5">{{ .Area }}</div>
+              </td>
+              <td class="hidden md:table-cell text-xs text-neutral-500">{{ .Area }}</td>
+              <td class="text-right">
                 <button
                   hx-post="/admin/oficinas/{{ .ID }}/delete"
-                  hx-confirm="¿Está seguro de que desea eliminar la oficina '{{ .Detalle }}'?"
+                  hx-confirm="¿Está seguro de eliminar '{{ .Detalle }}'?"
                   hx-target="body"
-                  class="text-danger-600 hover:text-danger-900 transition-colors"
+                  class="w-8 h-8 flex items-center justify-center rounded-lg hover:bg-danger-50 text-danger-400 hover:text-danger-600 transition-colors"
                   title="Eliminar">
-                  <i class="ph ph-trash text-xl"></i>
+                  <i class="ph ph-trash text-lg"></i>
                 </button>
               </td>
+            </tr>
+            {{ else }}
+            <tr>
+              <td colspan="4" class="py-20 text-center text-neutral-400 italic">No hay oficinas registradas</td>
             </tr>
             {{ end }}
           </tbody>

@@ -9,55 +9,83 @@ import (
 )
 
 type NotificationController struct {
-	service *services.NotificationService
+	service     *services.NotificationService
+	pushService *services.PushService
 }
 
-func NewNotificationController(service *services.NotificationService) *NotificationController {
+func NewNotificationController(service *services.NotificationService, pushService *services.PushService) *NotificationController {
 	return &NotificationController{
-		service: service,
+		service:     service,
+		pushService: pushService,
 	}
 }
 
-func (c *NotificationController) GetRecent(ctx *gin.Context) {
-	user := appcontext.AuthUser(ctx)
+func (ctrl *NotificationController) GetPendingStats(c *gin.Context) {
+	// ... Logic for pending stats (FV-01, FV-05) ...
+	// (Si es necesario implementarlo aquí o en otro lugar)
+}
+
+func (ctrl *NotificationController) SubscribePush(c *gin.Context) {
+	user := appcontext.AuthUser(c)
 	if user == nil {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Usuario no autenticado"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
-	userID := user.ID
-	notifications, err := c.service.GetRecentByUserID(ctx, userID)
+
+	var dto services.PushSubscriptionDTO
+	if err := c.ShouldBindJSON(&dto); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	if err := ctrl.pushService.Subscribe(c.Request.Context(), user.ID, dto); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"message": "Suscrito correctamente"})
+}
+
+func (ctrl *NotificationController) GetRecent(c *gin.Context) {
+	user := appcontext.AuthUser(c)
+	if user == nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
+		return
+	}
+
+	notifs, err := ctrl.service.GetRecentByUserID(c.Request.Context(), user.ID)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
 
-	unreadCount, _ := c.service.GetUnreadCount(ctx, userID)
+	unreadCount, _ := ctrl.service.GetUnreadCount(c.Request.Context(), user.ID)
 
-	ctx.JSON(http.StatusOK, gin.H{
-		"notifications": notifications,
+	c.JSON(http.StatusOK, gin.H{
+		"notifications": notifs,
 		"unread_count":  unreadCount,
 	})
 }
 
-func (c *NotificationController) MarkAsRead(ctx *gin.Context) {
-	id := ctx.Param("id")
-	if err := c.service.MarkAsRead(ctx, id); err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+func (ctrl *NotificationController) MarkAsRead(c *gin.Context) {
+	id := c.Param("id")
+	if err := ctrl.service.MarkAsRead(c.Request.Context(), id); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{"message": "Notificación marcada como leída"})
+	c.Status(http.StatusOK)
 }
 
-func (c *NotificationController) MarkAllAsRead(ctx *gin.Context) {
-	user := appcontext.AuthUser(ctx)
+func (ctrl *NotificationController) MarkAllAsRead(c *gin.Context) {
+	user := appcontext.AuthUser(c)
 	if user == nil {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "Usuario no autenticado"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Unauthorized"})
 		return
 	}
-	userID := user.ID
-	if err := c.service.MarkAllAsRead(ctx, userID); err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+
+	if err := ctrl.service.MarkAllAsRead(c.Request.Context(), user.ID); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
 	}
-	ctx.JSON(http.StatusOK, gin.H{"message": "Todas las notificaciones marcadas como leídas"})
+	c.Status(http.StatusOK)
 }

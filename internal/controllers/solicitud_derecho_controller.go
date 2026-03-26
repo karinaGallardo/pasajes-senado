@@ -487,7 +487,7 @@ func (ctrl *SolicitudDerechoController) Show(c *gin.Context) {
 	steps := make(map[string]StepView)
 
 	// Step 1: Solicitado (Always active/completed) (Blue -> Primary)
-	steps["Solicitado"] = makeStep(true, true, "primary", "ph ph-file-text text-lg", "Solicitado")
+	steps["Solicitado"] = makeStep(true, true, "secondary", "ph ph-file-text text-lg", "Solicitado")
 
 	// Step 2: Aprobado / Parcial / Rechazado
 	rejected := st == "RECHAZADO"
@@ -729,8 +729,13 @@ func (ctrl *SolicitudDerechoController) Print(c *gin.Context) {
 	mode := c.Query("mode")
 	pdf := ctrl.reportService.GeneratePV01(c.Request.Context(), solicitud, personaView, mode)
 
+	disposition := "inline"
+	if utils.IsMobileBrowser(c) {
+		disposition = "attachment"
+	}
+
 	c.Header("Content-Type", "application/pdf")
-	c.Header("Content-Disposition", fmt.Sprintf("inline; filename=FORM-PV01-%s.pdf", solicitud.ID))
+	c.Header("Content-Disposition", fmt.Sprintf("%s; filename=\"FORM-PV01-%s.pdf\"", disposition, solicitud.ID))
 	pdf.Output(c.Writer)
 }
 

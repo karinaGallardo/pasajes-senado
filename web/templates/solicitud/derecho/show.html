@@ -41,44 +41,44 @@
         {{ end }}
       </div>
     </div>
-    <div class="flex space-x-3">
+    <div class="flex flex-wrap items-center gap-2">
       {{ if .Perms.CanEdit }}
       <button
         type="button"
         hx-get="/solicitudes/derecho/{{ .Solicitud.ID }}/modal-editar"
         hx-target="#modal-container"
-        class="inline-flex items-center px-1.5 py-0.5 border border-primary-200 shadow-sm text-xs font-bold rounded-sm text-primary-700 bg-primary-50 hover:bg-primary-100 focus:outline-none cursor-pointer transition-all active:scale-95 leading-none">
-        <i class="ph ph-pencil-simple mr-1.5 text-base"></i>
-        Editar
+        class="btn-sm btn-white">
+        <i class="ph ph-pencil-simple text-sm"></i>
+        <span>Editar</span>
       </button>
       {{ end }}
       <button
         type="button"
         hx-get="/solicitudes/derecho/{{ .Solicitud.ID }}/print"
         hx-target="#modal-container"
-        class="inline-flex items-center px-4 py-1 border border-neutral-300 shadow-sm text-sm font-medium rounded-md text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none cursor-pointer">
-        <i class="ph ph-printer mr-2 text-lg"></i>
-        Imprimir
+        class="btn-sm btn-white border-neutral-300">
+        <i class="ph ph-printer text-sm"></i>
+        <span>Imprimir</span>
       </button>
       {{ if .DescargoID }}
       <a
         href="/descargos/derecho/{{ .DescargoID }}"
-        class="inline-flex items-center px-4 py-1 border border-primary-600 shadow-sm text-sm font-medium rounded-md text-primary-600 bg-white hover:bg-primary-50 focus:outline-none transition-all active:scale-95">
-        <i class="ph ph-eye mr-2 text-lg"></i>
-        Ver Descargo
+        class="btn-sm btn-primary">
+        <i class="ph ph-eye text-sm"></i>
+        <span>Ver Descargo</span>
       </a>
       {{ else if .Perms.CanMakeDescargo }}
       <a
         href="/descargos/derecho/nuevo/{{ .Solicitud.ID }}"
-        class="inline-flex items-center px-4 py-1 border border-primary-600 shadow-sm text-sm font-medium rounded-md text-primary-600 bg-white hover:bg-primary-50 focus:outline-none transition-all active:scale-95">
-        <i class="ph ph-file-plus mr-2 text-lg"></i>
-        Crear Descargo
+        class="btn-sm btn-primary">
+        <i class="ph ph-file-plus text-sm"></i>
+        <span>Crear Descargo</span>
       </a>
       {{ end }}
       <a
         href="/solicitudes?estado={{ .Solicitud.EstadoSolicitud.Codigo }}"
-        class="inline-flex items-center px-4 py-1 border border-neutral-300 shadow-sm text-sm font-medium rounded-md text-neutral-700 bg-white hover:bg-neutral-50 focus:outline-none">
-        Volver a Solicitudes
+        class="btn-sm btn-white border-neutral-300">
+        Volver
       </a>
     </div>
   </div>
@@ -146,8 +146,8 @@
           hx-post="/solicitudes/derecho/{{ .Solicitud.ID }}/revertir-aprobacion"
           hx-confirm="¿Está seguro de que desea REVERTIR la aprobación? Volverá a estado SOLICITADO."
           hx-target="body"
-          class="inline-flex items-center px-3 py-1.5 border border-warning-300 rounded-md text-xs font-bold text-warning-700 bg-white hover:bg-warning-50 transition-colors shadow-sm cursor-pointer">
-          <i class="ph ph-arrow-u-up-left mr-1.5"></i>
+          class="btn-xs btn-white text-warning-700 border-warning-200">
+          <i class="ph ph-arrow-u-up-left"></i>
           Revertir Aprobación Global
         </button>
         {{ end }}
@@ -207,7 +207,7 @@
                   hx-post="/solicitudes/derecho/{{ $.Solicitud.ID }}/items/{{ .ID }}/aprobar"
                   hx-confirm="¿Aprobar este tramo?"
                   hx-target="body"
-                  class="px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-success-600 hover:bg-success-700 transition-all shadow-sm flex items-center gap-1.5 cursor-pointer">
+                  class="btn-sm btn-success">
                   <i class="ph ph-check-circle"></i>
                   Aprobar
                 </button>
@@ -216,7 +216,7 @@
                   hx-post="/solicitudes/derecho/{{ $.Solicitud.ID }}/items/{{ .ID }}/rechazar"
                   hx-confirm="¿Rechazar este tramo?"
                   hx-target="body"
-                  class="px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-danger-600 hover:bg-danger-700 transition-all shadow-sm flex items-center gap-1.5 cursor-pointer">
+                  class="btn-sm btn-danger">
                   <i class="ph ph-x-circle"></i>
                   Rechazar
                 </button>
@@ -226,7 +226,7 @@
                   hx-post="/solicitudes/derecho/{{ $.Solicitud.ID }}/items/{{ .ID }}/revertir-aprobacion"
                   hx-confirm="¿Revertir aprobación?"
                   hx-target="body"
-                  class="px-3 py-1.5 border border-warning-200 rounded-lg text-xs font-bold text-warning-700 bg-warning-50 hover:bg-warning-100 transition-all flex items-center gap-1.5 cursor-pointer">
+                  class="btn-sm btn-white text-warning-700 border-warning-200">
                   <i class="ph ph-arrow-counter-clockwise"></i>
                   Revertir
                 </button>
@@ -234,7 +234,7 @@
                   type="button"
                   hx-get="/solicitudes/{{ $.Solicitud.ID }}/pasajes/nuevo?item_id={{ .ID }}"
                   hx-target="#modal-container"
-                  class="px-3 py-1.5 rounded-lg text-xs font-bold text-white bg-secondary hover:bg-primary transition-all shadow-md flex items-center gap-1.5 cursor-pointer uppercase">
+                  class="btn-sm btn-secondary uppercase">
                   <i class="ph ph-ticket"></i>
                   Asignar Pasaje
                 </button>

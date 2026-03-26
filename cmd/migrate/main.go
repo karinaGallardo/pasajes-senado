@@ -69,6 +69,7 @@ func main() {
 		&models.TransporteTerrestreDescargo{},
 		&models.Notification{},
 		&models.AuditLog{},
+		&models.PushSubscription{},
 	)
 
 	if err != nil {

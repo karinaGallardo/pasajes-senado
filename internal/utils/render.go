@@ -8,7 +8,11 @@ import (
 	// csrf "github.com/utrack/gin-csrf"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
+	"github.com/spf13/viper"
+	"regexp"
 )
+
+var bootTime = time.Now().Unix()
 
 // Render procesa plantillas HTML inyectando tokens CSRF, contexto del usuario, roles y mensajes flash.
 func Render(c *gin.Context, templateName string, data gin.H) {
@@ -17,6 +21,25 @@ func Render(c *gin.Context, templateName string, data gin.H) {
 	}
 
 	data["CurrentYear"] = time.Now().Year()
+	data["VapidPublicKey"] = viper.GetString("VAPID_PUBLIC_KEY")
+
+	// Detección simple de móvil para ajustes de UI
+	ua := c.GetHeader("User-Agent")
+	isMobile := false
+	mobileRegex := regexp.MustCompile(`(?i)Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini`)
+	if mobileRegex.MatchString(ua) {
+		isMobile = true
+	}
+	data["IsMobile"] = isMobile
+
+	// Estrategia de Cache Busting:
+	// - En Desarrollo: Cambia en cada render (máxima frescura)
+	// - En Producción: Cambia solo al reiniciar el servidor (mejor performance)
+	if viper.GetString("ENV") != "production" {
+		data["StaticVersion"] = time.Now().Unix()
+	} else {
+		data["StaticVersion"] = bootTime
+	}
 
 	// data["csrf_token"] = csrf.GetToken(c)
 
@@ -64,4 +87,11 @@ func SetErrorMessage(c *gin.Context, message string) {
 	session := sessions.Default(c)
 	session.AddFlash(message, "error")
 	session.Save()
+}
+
+// IsMobileBrowser detecta si el User-Agent corresponde a un dispositivo móvil.
+func IsMobileBrowser(c *gin.Context) bool {
+	ua := c.GetHeader("User-Agent")
+	mobileRegex := regexp.MustCompile(`(?i)Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini`)
+	return mobileRegex.MatchString(ua)
 }

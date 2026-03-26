@@ -11,6 +11,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// MetadataMiddleware inyecta IP y UserAgent en el contexto de CADA petición (incluso públicas)
+func MetadataMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		appcontext.SetMetadata(c)
+		c.Next()
+	}
+}
+
 func AuthRequired() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		session := sessions.Default(c)

@@ -2,6 +2,12 @@
 
 module.exports = {
   content: ["./web/templates/**/*.html", "./web/static/js/**/*.js"],
+  safelist: [
+    {
+      pattern: /(bg|text|border)-(primary|secondary|success|danger|warning|info|neutral|violet)-(500|600|700)/,
+    },
+    'border-none',
+  ],
   theme: {
     extend: {
       colors: {
@@ -147,6 +153,7 @@ module.exports = {
       boxShadow: {
         soft: "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
         premium: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 10px 10px -5px rgb(0 0 0 / 0.04)",
+        "button-primary": "0 2px 4px -1px rgba(137, 48, 38, 0.2), 0 4px 6px -1px rgba(137, 48, 38, 0.1)",
       },
     },
   },

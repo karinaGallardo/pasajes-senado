@@ -262,7 +262,7 @@ func (ctrl *PasajeController) Preview(c *gin.Context) {
 		return
 	}
 
-	c.HTML(http.StatusOK, "solicitud/components/modal_preview_archivo", gin.H{
+	utils.Render(c, "solicitud/components/modal_preview_archivo", gin.H{
 		"Title":    title,
 		"FilePath": "/" + filePath,
 		"IsPDF":    strings.HasSuffix(strings.ToLower(filePath), ".pdf"),

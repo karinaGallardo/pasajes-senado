@@ -1,0 +1,103 @@
+{{ define "admin/audit/table" }}
+<div class="table-container">
+  <table class="table-ui">
+    <thead>
+      <tr>
+        <th scope="col" class="w-24">Fecha / Hora</th>
+        <th scope="col">Usuario / IP</th>
+        <th scope="col" class="text-center">Acción</th>
+        <th scope="col" class="text-center hidden md:table-cell">Módulo</th>
+        <th scope="col" class="hidden lg:table-cell">Detalles del Cambio</th>
+        <th scope="col" class="text-right w-10">D.</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{ range .Logs }}
+      <tr>
+        <td class="font-mono">
+          <div class="flex flex-col">
+            <span class="font-bold text-neutral-800">{{ .CreatedAt.Format "02/01/24" }}</span>
+            <span class="text-[9px] text-neutral-400 font-medium">{{ .CreatedAt.Format "15:04:05" }}</span>
+          </div>
+        </td>
+        <td>
+          <div class="flex flex-col leading-tight">
+            <span class="font-bold text-neutral-700 italic truncate max-w-[120px]">{{ if .Usuario }}{{ .Usuario.GetNombreCompleto }}{{ else }}Sistema{{ end }}</span>
+            <span class="text-[10px] text-neutral-400 font-medium">{{ .IP }}</span>
+          </div>
+        </td>
+        <td class="text-center">
+          <span class="px-2 py-0.5 inline-flex text-[8px] font-black rounded-full border uppercase tracking-widest
+            {{ if eq .Action `LOGIN` }} bg-success-50 text-success-700 border-success-200
+            {{ else if eq .Action `LOGOUT` }} bg-neutral-100 text-neutral-600 border-neutral-200
+            {{ else if eq .Action `RECHAZAR_SOLICITUD` }} bg-danger-50 text-danger-700 border-danger-200
+            {{ else }} bg-primary-50 text-primary-700 border-primary-200 {{ end }}">
+            {{ .Action }}
+          </span>
+        </td>
+        <td class="text-center hidden md:table-cell opacity-60">
+           <div class="flex items-center justify-center gap-1.5">
+             <i class="ph {{ if eq .EntityType `solicitud` }}ph-file-text{{ else if eq .EntityType `pasaje` }}ph-ticket{{ else if eq .EntityType `descargo` }}ph-article{{ else }}ph-cpu{{ end }} text-sm"></i>
+             <span class="text-[9px] font-bold uppercase tracking-tighter">{{ .EntityType }}</span>
+           </div>
+        </td>
+        <td class="hidden lg:table-cell max-w-[250px]">
+          <div class="flex flex-col gap-0.5 overflow-hidden">
+            <div class="flex items-center gap-1">
+               <span class="text-[9px] font-black text-neutral-300 uppercase italic">ID:</span>
+               <span class="font-mono text-[9px] bg-neutral-50 px-1 rounded truncate">{{ .EntityID }}</span>
+            </div>
+            {{ if .NewValue }}
+            <div class="flex items-center gap-1 text-[10px] mt-0.5 overflow-hidden">
+              <span class="truncate text-neutral-400 max-w-[100px]" title="{{ .OldValue }}">{{ if .OldValue }}{{ .OldValue }}{{ else }}vacío{{ end }}</span>
+              <i class="ph ph-arrow-right text-[10px] text-neutral-200"></i>
+              <span class="font-bold text-neutral-600 truncate max-w-[100px]" title="{{ .NewValue }}">{{ .NewValue }}</span>
+            </div>
+            {{ end }}
+          </div>
+        </td>
+        <td class="text-right">
+           <i class="{{ deviceIcon .UserAgent }} text-lg text-neutral-300" title="{{ .UserAgent }}"></i>
+        </td>
+      </tr>
+      {{ else }}
+      <tr>
+        <td colspan="6" class="py-12 text-center text-neutral-400 italic">No hay registros de auditoría</td>
+      </tr>
+      {{ end }}
+    </tbody>
+  </table>
+</div>
+
+{{ if gt .TotalPages 1 }}
+<div class="table-pagination">
+  <div class="text-[11px] text-neutral-500 font-medium">
+    Página <span class="font-bold text-neutral-900">{{ .Page }}</span> de <span class="font-bold text-neutral-900">{{ .TotalPages }}</span> <span class="mx-1 text-neutral-300">|</span> Total: {{ .Total }}
+  </div>
+
+  <div class="flex items-center gap-2">
+    {{ if gt .Page 1 }}
+    <button type="button" 
+      hx-get="/admin/auditoria/table?page={{ sub .Page 1 }}&action={{ index .CurrentFilters `action` }}&entity_type={{ index .CurrentFilters `entity_type` }}" 
+      hx-target="#audit-table-container"
+      class="w-8 h-8 flex items-center justify-center rounded border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-600 transition-colors">
+      <i class="ph ph-caret-left font-bold"></i>
+    </button>
+    {{ end }}
+
+    <div class="px-3 h-8 flex items-center bg-white border border-neutral-200 rounded text-xs font-bold text-neutral-700">
+      {{ .Page }} / {{ .TotalPages }}
+    </div>
+
+    {{ if lt .Page .TotalPages }}
+    <button type="button" 
+      hx-get="/admin/auditoria/table?page={{ add .Page 1 }}&action={{ index .CurrentFilters `action` }}&entity_type={{ index .CurrentFilters `entity_type` }}" 
+      hx-target="#audit-table-container"
+      class="w-8 h-8 flex items-center justify-center rounded border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-600 transition-colors">
+      <i class="ph ph-caret-right font-bold"></i>
+    </button>
+    {{ end }}
+  </div>
+</div>
+{{ end }}
+{{ end }}

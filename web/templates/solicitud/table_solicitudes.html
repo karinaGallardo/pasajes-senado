@@ -1,206 +1,154 @@
 {{ define "solicitud/table_solicitudes" }}
-<table class="min-w-full divide-y divide-neutral-200">
-  <thead class="bg-neutral-50">
-    <tr>
-      <th scope="col" class="px-3 py-3 text-left text-xs font-bold text-neutral-500 uppercase tracking-wider hidden md:table-cell">CÓDIGO</th>
-      <th scope="col" class="px-3 py-3 text-left text-xs font-bold text-neutral-500 uppercase tracking-wider">Solicitante</th>
-      <th scope="col" class="px-3 py-3 text-left text-xs font-bold text-neutral-500 uppercase tracking-wider hidden xl:table-cell" title="Registrado Por">REG.</th>
-      <th scope="col" class="px-3 py-3 text-center text-xs font-bold text-neutral-500 uppercase tracking-wider hidden md:table-cell">Tipo</th>
-      <th scope="col" class="px-3 py-3 text-left text-xs font-bold text-neutral-500 uppercase tracking-wider">Ruta</th>
-      <th scope="col" class="px-3 py-3 text-center text-xs font-bold text-neutral-500 uppercase tracking-wider hidden md:table-cell">Fecha Salida</th>
-      <th scope="col" class="px-3 py-3 text-center text-xs font-bold text-neutral-500 uppercase tracking-wider">Estado</th>
-      <th scope="col" class="px-3 py-3 text-right text-xs font-bold text-neutral-500 uppercase tracking-wider">Acciones</th>
-    </tr>
-  </thead>
-  <tbody class="bg-white divide-y divide-neutral-200">
-    {{ range .Result.Solicitudes }}
-    <tr class="hover:bg-neutral-50 transition-colors">
-      <td class="px-3 py-3 whitespace-nowrap text-xs font-medium text-neutral-900 hidden md:table-cell">
-        {{ if .Codigo }}
-        <span class="font-mono bg-neutral-100 px-1.5 py-0.5 rounded">{{ .Codigo }}</span>
-        {{ else }}
-        <span class="text-neutral-400">#{{ .ID }}</span>
-        {{ end }}
-      </td>
-      <td class="px-3 py-3 text-xs text-neutral-700">
-        <div class="flex flex-col">
-          <span class="font-bold line-clamp-1" title="{{ .Usuario.GetNombreCompleto }}">{{ .Usuario.GetNombreResumido }}</span>
-          <!-- Mobile Only Info -->
-          <div class="md:hidden mt-1 space-y-0.5">
-            {{ if eq .GetConceptoCodigo "OFICIAL" }}
-            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-info-100 text-info-800 border border-info-200">{{ .GetTipoNombre }}</span>
-            {{ else }}
-            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-primary-50 text-primary border border-primary-100">Derecho</span>
-            {{ end }}
-            <span class="text-[10px] text-neutral-500 block">{{ fechaHora .GetFechaIda }}</span>
+<div class="table-container shadow-premium">
+  <table class="table-ui">
+    <thead>
+      <tr>
+        <th scope="col" class="w-20 hidden md:table-cell">CÓDIGO</th>
+        <th scope="col">Solicitante</th>
+        <th scope="col" class="hidden xl:table-cell text-center w-10">REG.</th>
+        <th scope="col" class="text-center hidden md:table-cell">Tipo</th>
+        <th scope="col">Ruta</th>
+        <th scope="col" class="text-center hidden md:table-cell">Fecha Salida</th>
+        <th scope="col" class="text-center">Estado</th>
+        <th scope="col" class="text-right w-10">Ver</th>
+      </tr>
+    </thead>
+    <tbody>
+      {{ range .Result.Solicitudes }}
+      <tr>
+        <td class="hidden md:table-cell">
+          {{ if .Codigo }}
+          <span class="font-mono bg-neutral-100 px-1.5 py-0.5 rounded text-[10px] text-neutral-600 border border-neutral-200">{{ .Codigo }}</span>
+          {{ else }}
+          <span class="text-neutral-300 italic">#{{ .ID }}</span>
+          {{ end }}
+        </td>
+        <td>
+          <div class="flex flex-col">
+            <span class="font-bold text-neutral-800 tracking-tight line-clamp-1" title="{{ .Usuario.GetNombreCompleto }}">{{ .Usuario.GetNombreResumido }}</span>
+            <div class="md:hidden mt-0.5 flex flex-wrap gap-1">
+              {{ if eq .GetConceptoCodigo "OFICIAL" }}
+              <span class="px-1 py-0.5 rounded text-[8px] font-black bg-info-50 text-info-700 border border-info-100 uppercase">{{ .GetTipoNombre }}</span>
+              {{ else }}
+              <span class="px-1 py-0.5 rounded text-[8px] font-black bg-primary-50 text-primary-700 border border-primary-100 uppercase">Derecho</span>
+              {{ end }}
+              <span class="text-[9px] text-neutral-400 font-medium">{{ fechaHora .GetFechaIda }}</span>
+            </div>
           </div>
-        </div>
-      </td>
-      <td class="px-3 py-3 text-xs text-neutral-500 text-center hidden lg:table-cell">
-        {{ $creator := index $.Usuarios (deref .CreatedBy) }} {{ if $creator }}
-        <span
-          class="inline-flex items-center justify-center bg-neutral-100 text-neutral-600 rounded-md px-2 py-0.5 font-bold border border-neutral-200"
-          title="{{ $creator.GetNombreCompleto }}">
-          {{ $creator.GetInitials }}
-        </span>
-        {{ else }}
-        <span class="italic text-neutral-300">Sistema</span>
-        {{ end }}
-      </td>
-      <td class="px-3 py-3 whitespace-nowrap text-xs text-neutral-500 text-center hidden md:table-cell">
-        {{ if eq .GetConceptoCodigo "OFICIAL" }}
-        <span class="inline-flex items-center px-2 py-0.5 rounded-full font-bold bg-info-100 text-info-800 border border-info-200">{{ .GetTipoNombre }}</span>
-        {{ else }}
-        <span class="inline-flex items-center px-2 py-0.5 rounded-full font-bold bg-primary-50 text-primary border border-primary-100">{{ .GetTipoNombre }}</span>
-        {{ end }}
-      </td>
-      <td class="px-3 py-3 text-xs text-neutral-700 font-medium">
-        <div class="flex flex-col xl:flex-row xl:items-center">
-          <span>{{ .GetOrigenCiudad }}</span>
-          <span class="text-neutral-400 mx-1 hidden xl:inline">&rarr;</span>
-          <span class="text-neutral-400 xl:hidden text-[10px] my-0.5">a</span>
-          <span>{{ .GetDestinoCiudad }}</span>
-        </div>
-      </td>
-      <td class="px-3 py-3 whitespace-nowrap text-xs text-neutral-500 text-center uppercase hidden md:table-cell">{{ fechaHora .GetFechaIda }}</td>
-      <td class="px-3 py-3 whitespace-nowrap text-center">
-        <div class="flex flex-col items-center justify-center space-y-1">
-          <!-- Main Status Badge -->
-          {{ if .EstadoSolicitud }}
-          <span class="px-2.5 py-0.5 inline-flex items-center gap-1 text-xs leading-4 font-bold rounded-full border status-badge-{{ .EstadoSolicitud.Codigo }}">
-            <i class="{{ .EstadoSolicitud.Icon }} text-sm"></i>
-            {{ .EstadoSolicitud.Nombre }}
+        </td>
+        <td class="hidden lg:table-cell text-center">
+          {{ $creator := index $.Usuarios (deref .CreatedBy) }} {{ if $creator }}
+          <span class="inline-flex items-center justify-center bg-neutral-50 text-neutral-400 rounded-md w-7 h-7 text-[10px] font-black border border-neutral-100" title="{{ $creator.GetNombreCompleto }}">
+            {{ $creator.GetInitials }}
           </span>
           {{ else }}
-          <span class="px-2.5 py-0.5 inline-flex items-center gap-1 text-xs leading-4 font-bold rounded-full border bg-neutral-50 text-neutral-600 border-neutral-200">
-            <i class="ph ph-clock text-sm"></i>
-            SOLICITADO
-          </span>
+          <span class="italic text-[10px] text-neutral-200">SYS</span>
           {{ end }}
-
-          <!-- Detailed Segments -->
-          <div class="flex items-center gap-2 text-[10px]">
-            {{ $ida := .GetItemIda }}{{ if $ida }}
-            <div
-              class="flex items-center gap-1 {{ if $ida.Estado }}status-item-text-{{ $ida.Estado.Codigo }}{{ else }}status-item-text-default{{ end }}"
-              title="Ida: {{ $ida.GetEstado }}">
-              <span class="font-bold uppercase tracking-wider text-[9px] opacity-70">Ida</span>
-              <i class="{{ if $ida.Estado }}{{ $ida.Estado.Icon }}{{ else }}ph ph-circle{{ end }} text-[11px]"></i>
-            </div>
-            {{ end }} {{ $vuelta := .GetItemVuelta }}{{ if $vuelta }}
-            <div class="w-px h-3 bg-neutral-200"></div>
-            <div
-              class="flex items-center gap-1 {{ if $vuelta.Estado }}status-item-text-{{ $vuelta.Estado.Codigo }}{{ else }}status-item-text-default{{ end }}"
-              title="Vuelta: {{ $vuelta.GetEstado }}">
-              <span class="font-bold uppercase tracking-wider text-[9px] opacity-70">Vta</span>
-              <i class="{{ if $vuelta.Estado }}{{ $vuelta.Estado.Icon }}{{ else }}ph ph-circle{{ end }} text-[11px]"></i>
-            </div>
-            {{ end }}
-          </div>
-        </div>
-      </td>
-      <td class="px-3 py-3 whitespace-nowrap text-xs font-medium text-right">
-        <div class="flex flex-row justify-end items-center gap-2">
+        </td>
+        <td class="hidden md:table-cell text-center">
           {{ if eq .GetConceptoCodigo "OFICIAL" }}
-          <a href="/solicitudes/oficial/{{ .ID }}/detalle" class="text-white bg-secondary hover:bg-primary px-3 py-1 rounded shadow-sm font-bold uppercase transition-colors">
-            Ver
-          </a>
+          <span class="px-2 py-0.5 rounded-full text-[9px] font-black bg-info-50 text-info-700 border border-info-100 uppercase tracking-wider">{{ .GetTipoNombre }}</span>
           {{ else }}
-          <a href="/solicitudes/derecho/{{ .ID }}/detalle" class="text-white bg-secondary hover:bg-primary px-3 py-1 rounded shadow-sm font-bold uppercase transition-colors">
-            Ver
-          </a>
+          <span class="px-2 py-0.5 rounded-full text-[9px] font-black bg-primary-50 text-primary-700 border border-primary-100 uppercase tracking-wider">{{ .GetTipoNombre }}</span>
           {{ end }}
-        </div>
-      </td>
-    </tr>
-    {{ else }}
-    <tr>
-      <td colspan="8" class="px-6 py-10 text-center text-neutral-500">
-        <p class="mb-2 text-sm">No hay solicitudes registradas.</p>
-      </td>
-    </tr>
-    {{ end }}
-  </tbody>
-</table>
+        </td>
+        <td class="font-medium text-neutral-600">
+          <div class="flex flex-col">
+            <span class="leading-none">{{ .GetOrigenCiudad }}</span>
+            <div class="flex items-center gap-1 mt-0.5 text-[10px] text-neutral-400">
+               <i class="ph ph-arrow-right"></i>
+               <span>{{ .GetDestinoCiudad }}</span>
+            </div>
+          </div>
+        </td>
+        <td class="hidden md:table-cell text-center font-mono text-neutral-500 text-[10px]">{{ fechaHora .GetFechaIda }}</td>
+        <td class="text-center">
+           <div class="flex flex-col items-center gap-1">
+              {{ if .EstadoSolicitud }}
+              <span class="px-2 py-0.5 inline-flex items-center gap-1 text-[10px] font-black rounded-full border status-badge-{{ .EstadoSolicitud.Codigo }}">
+                <i class="{{ .EstadoSolicitud.Icon }} text-sm"></i>
+                {{ .EstadoSolicitud.Nombre }}
+              </span>
+              {{ else }}
+              <span class="px-2 py-0.5 inline-flex items-center gap-1 text-[10px] font-black rounded-full border bg-neutral-50 text-neutral-400 border-neutral-200 uppercase">Solicitado</span>
+              {{ end }}
+              
+              <div class="flex items-center gap-2 text-[9px] opacity-70 font-bold uppercase tracking-tighter">
+                {{ $ida := .GetItemIda }}{{ if $ida }}
+                <span class="{{ if $ida.Estado }}status-item-text-{{ $ida.Estado.Codigo }}{{ else }}text-neutral-300{{ end }}">Ida</span>
+                {{ end }}
+                {{ $vuelta := .GetItemVuelta }}
+                {{ if $vuelta }}
+                <span class="text-neutral-200">/</span>
+                <span class="{{ if $vuelta.Estado }}status-item-text-{{ $vuelta.Estado.Codigo }}{{ else }}text-neutral-300{{ end }}">Vta</span>
+                {{ end }}
+              </div>
+           </div>
+        </td>
+        <td class="text-right">
+          {{ if eq .GetConceptoCodigo "OFICIAL" }}
+          <a href="/solicitudes/oficial/{{ .ID }}/detalle" class="btn-xs btn-white">Ver</a>
+          {{ else }}
+          <a href="/solicitudes/derecho/{{ .ID }}/detalle" class="btn-xs btn-white">Ver</a>
+          {{ end }}
+        </td>
+      </tr>
+      {{ else }}
+      <tr>
+        <td colspan="8" class="py-16 text-center">
+          <p class="text-neutral-400 italic text-sm">No se encontraron solicitudes registradas</p>
+        </td>
+      </tr>
+      {{ end }}
+    </tbody>
+  </table>
+</div>
 
 {{ if .Result.TotalPages }}
-<div class="px-6 py-4 bg-neutral-50 border-t border-neutral-200 flex flex-col sm:flex-row items-center justify-between gap-4">
-  <!-- Total count -->
-  <div class="text-sm text-neutral-500">
-    Mostrando
-    <span class="font-bold text-neutral-900">{{ len .Result.Solicitudes }}</span>
-    de
-    <span class="font-bold text-neutral-900">{{ .Result.Total }}</span>
-    resultados {{ if .Result.SearchTerm }} para "
-    <span class="italic">{{ .Result.SearchTerm }}</span>
-    "{{ end }}
+<div class="table-pagination">
+  <div class="text-[11px] text-neutral-500 font-medium">
+    Mostrando <span class="font-bold text-neutral-900">{{ len .Result.Solicitudes }}</span> de <span class="font-bold text-neutral-900">{{ .Result.Total }}</span>
   </div>
 
-  <div class="flex items-center space-x-2">
-    <!-- Items per page selector -->
-    <div class="flex items-center space-x-2 mr-4">
-      <label for="limit" class="text-xs text-neutral-500">Mostrar:</label>
+  <div class="flex items-center gap-4">
+    <div class="flex items-center gap-2">
+      <span class="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Ver:</span>
       <select
         name="limit"
-        id="limit"
-        class="text-xs border-neutral-300 rounded-md py-1 pl-2 pr-6 focus:ring-primary focus:border-primary shadow-sm"
+        class="text-xs bg-white border border-neutral-200 rounded px-2 py-1 outline-none"
         hx-get="{{ $.LinkBase }}/table"
         hx-include="#global-search-input"
-        hx-target="#main-table"
-        hx-indicator="#table-loader">
-        <option value="5" {{ if eq .Result.Limit 5 }}selected{{ end }}>5</option>
+        hx-target="#main-table">
         <option value="10" {{ if eq .Result.Limit 10 }}selected{{ end }}>10</option>
         <option value="20" {{ if eq .Result.Limit 20 }}selected{{ end }}>20</option>
         <option value="50" {{ if eq .Result.Limit 50 }}selected{{ end }}>50</option>
       </select>
     </div>
 
-    <!-- Pagination controls -->
-    {{ if gt .Result.Page 1 }}
-    <button
-      type="button"
-      hx-get="{{ $.LinkBase }}/table?page={{ sub .Result.Page 1 }}&q={{ .Result.SearchTerm }}&limit={{ .Result.Limit }}&estado={{ $.Status }}"
-      hx-target="#main-table"
-      hx-indicator="#table-loader"
-      class="p-2 bg-white border border-neutral-300 rounded-md text-neutral-700 hover:bg-neutral-50 transition-colors shadow-sm cursor-pointer"
-      title="Anterior">
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-      </svg>
-    </button>
-    {{ end }}
-
-    <div class="px-2 py-1 bg-white border border-neutral-300 rounded-md text-sm font-bold text-neutral-700 shadow-sm flex items-center">
-      <span class="text-primary-600 mr-2">Pág.</span>
-      <input
-        type="number"
-        name="page"
-        value="{{ .Result.Page }}"
-        min="1"
-        max="{{ .Result.TotalPages }}"
-        class="w-16 h-7 text-center text-sm border-neutral-300 rounded-md focus:ring-primary focus:border-primary p-0 m-0"
-        hx-get="{{ $.LinkBase }}/table"
-        hx-include="#global-search-input, [name='limit']"
+    <div class="flex items-center gap-1">
+      {{ if gt .Result.Page 1 }}
+      <button
+        hx-get="{{ $.LinkBase }}/table?page={{ sub .Result.Page 1 }}&q={{ .Result.SearchTerm }}&limit={{ .Result.Limit }}&estado={{ $.Status }}"
         hx-target="#main-table"
-        hx-indicator="#table-loader"
-        hx-trigger="change delay:300ms, keyup[key=='Enter']" />
-      <span class="text-neutral-400 mx-2">/</span>
-      <span>{{ .Result.TotalPages }}</span>
-    </div>
+        class="w-8 h-8 flex items-center justify-center rounded border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-600 transition-colors">
+        <i class="ph ph-caret-left font-bold"></i>
+      </button>
+      {{ end }}
 
-    {{ if lt .Result.Page .Result.TotalPages }}
-    <button
-      type="button"
-      hx-get="{{ $.LinkBase }}/table?page={{ sum .Result.Page 1 }}&q={{ .Result.SearchTerm }}&limit={{ .Result.Limit }}&estado={{ $.Status }}"
-      hx-target="#main-table"
-      hx-indicator="#table-loader"
-      class="p-2 bg-white border border-neutral-300 rounded-md text-neutral-700 hover:bg-neutral-50 transition-colors shadow-sm cursor-pointer"
-      title="Siguiente">
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-      </svg>
-    </button>
-    {{ end }}
+      <div class="px-3 h-8 flex items-center bg-white border border-neutral-200 rounded text-xs font-bold text-neutral-700">
+        {{ .Result.Page }} / {{ .Result.TotalPages }}
+      </div>
+
+      {{ if lt .Result.Page .Result.TotalPages }}
+      <button
+        hx-get="{{ $.LinkBase }}/table?page={{ sum .Result.Page 1 }}&q={{ .Result.SearchTerm }}&limit={{ .Result.Limit }}&estado={{ $.Status }}"
+        hx-target="#main-table"
+        class="w-8 h-8 flex items-center justify-center rounded border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-600 transition-colors">
+        <i class="ph ph-caret-right font-bold"></i>
+      </button>
+      {{ end }}
+    </div>
   </div>
 </div>
-{{ end }} {{ end }}
+{{ end }}
+{{ end }}

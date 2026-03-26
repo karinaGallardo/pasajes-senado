@@ -82,6 +82,8 @@ func main() {
 
 	r := gin.Default()
 
+	r.Use(middleware.MetadataMiddleware())
+
 	r.ForwardedByClientIP = true
 	r.SetTrustedProxies([]string{"127.0.0.1", "10.0.0.0/8", "172.16.0.0/12", "192.168.0.0/16", "192.168.20.0/16"})
 
@@ -133,6 +135,11 @@ func main() {
 
 	r.Static("/static", "./web/static")
 	r.Static("/uploads", "./uploads")
+
+	// PWA Routes
+	r.StaticFile("/sw.js", "./web/static/sw.js")
+	r.StaticFile("/manifest.json", "./web/static/img/site.webmanifest")
+	r.StaticFile("/favicon.ico", "./web/static/img/favicon.ico")
 
 	var templates []string
 	err = filepath.Walk("web/templates", func(path string, info os.FileInfo, err error) error {

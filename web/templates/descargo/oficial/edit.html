@@ -762,11 +762,10 @@
   </form>
 </div>
 <script>
-  var destinos = [
-    {{ range .Destinos }}
-    { iata: "{{ .IATA }}", nombre: "{{ .Ciudad }}" },
-    {{ end }}
-  ];
+  var destinos = [];
+  {{ range .Destinos }}
+  destinos.push({ iata: "{{ .IATA }}", nombre: "{{ .Ciudad }}" });
+  {{ end }}
 </script>
 <script>
   document.addEventListener("alpine:init", function() {

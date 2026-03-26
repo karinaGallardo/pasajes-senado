@@ -210,7 +210,7 @@ func (ctrl *SolicitudOficialController) Show(c *gin.Context) {
 	}
 
 	steps := make(map[string]StepView)
-	steps["Solicitado"] = makeStep(true, true, "primary", "ph ph-file-text text-lg", "Solicitado")
+	steps["Solicitado"] = makeStep(true, true, "secondary", "ph ph-file-text text-lg", "Solicitado")
 
 	rejected := st == "RECHAZADO"
 	parcial := st == "PARCIALMENTE_APROBADO"
@@ -458,8 +458,13 @@ func (ctrl *SolicitudOficialController) Print(c *gin.Context) {
 
 	personaView, _ := ctrl.peopleService.GetSenatorDataByCI(c.Request.Context(), solicitud.Usuario.CI)
 	pdf := ctrl.reportService.GeneratePV02(c.Request.Context(), solicitud, personaView)
+	disposition := "inline"
+	if utils.IsMobileBrowser(c) {
+		disposition = "attachment"
+	}
+
 	c.Header("Content-Type", "application/pdf")
-	c.Header("Content-Disposition", fmt.Sprintf("inline; filename=FORM-PV02-%s.pdf", solicitud.Codigo))
+	c.Header("Content-Disposition", fmt.Sprintf("%s; filename=\"FORM-PV02-%s.pdf\"", disposition, solicitud.ID))
 	pdf.Output(c.Writer)
 }
 

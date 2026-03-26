@@ -28,3 +28,28 @@ func (r *AuditRepository) FindByEntity(ctx context.Context, entityType, entityID
 		Find(&logs).Error
 	return logs, err
 }
+
+func (r *AuditRepository) FindAll(ctx context.Context, filters map[string]string, limit, offset int) ([]models.AuditLog, int64, error) {
+	var logs []models.AuditLog
+	var total int64
+
+	query := r.db.WithContext(ctx).Model(&models.AuditLog{}).Preload("Usuario")
+
+	if val, ok := filters["action"]; ok && val != "" {
+		query = query.Where("action = ?", val)
+	}
+	if val, ok := filters["entity_type"]; ok && val != "" {
+		query = query.Where("entity_type = ?", val)
+	}
+	if val, ok := filters["user_id"]; ok && val != "" {
+		query = query.Where("user_id = ?", val)
+	}
+
+	err := query.Count(&total).Error
+	if err != nil {
+		return nil, 0, err
+	}
+
+	err = query.Order("created_at DESC").Limit(limit).Offset(offset).Find(&logs).Error
+	return logs, total, err
+}
