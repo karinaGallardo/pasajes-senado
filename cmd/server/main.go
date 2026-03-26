@@ -10,6 +10,7 @@ import (
 	"path/filepath"
 	"sistema-pasajes/internal/app"
 	"sistema-pasajes/internal/configs"
+	"sistema-pasajes/internal/middleware"
 	"sistema-pasajes/internal/routes"
 	"sistema-pasajes/internal/services"
 	"sistema-pasajes/internal/utils"
@@ -149,7 +150,10 @@ func main() {
 	}
 	r.LoadHTMLFiles(templates...)
 
-	routes.SetupRoutes(r, container)
+	// Hardening: Rate Limiting para Login (5 peticiones por minuto por IP)
+	loginLimiter := middleware.NewIPRateLimiter(5.0/60.0, 5)
+
+	routes.SetupRoutes(r, container, loginLimiter)
 
 	r.GET("/health", func(c *gin.Context) {
 		c.JSON(200, gin.H{

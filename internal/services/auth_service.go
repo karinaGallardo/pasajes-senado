@@ -4,12 +4,15 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
+	// "fmt"
 	"strings"
 
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
 	"sistema-pasajes/internal/utils"
 
+	"github.com/spf13/viper"
 	"go.mongodb.org/mongo-driver/bson"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -57,9 +60,14 @@ func (s *AuthService) Authenticate(ctx context.Context, username, password strin
 	mongoData, err := s.verifyMongoCredentials(ctx, username, password)
 	if err != nil {
 		if err.Error() == "credenciales inválidas" && localUser != nil {
+			maxAttempts := viper.GetInt("AUTH_MAX_ATTEMPTS")
+			if maxAttempts == 0 {
+				maxAttempts = 5 // Default
+			}
+
 			localUser.LoginAttempts++
-			remaining := 3 - localUser.LoginAttempts
-			if localUser.LoginAttempts >= 3 {
+			remaining := maxAttempts - localUser.LoginAttempts
+			if localUser.LoginAttempts >= maxAttempts {
 				localUser.IsBlocked = true
 				s.userRepo.Update(ctx, localUser)
 				return nil, errors.New("credenciales inválidas. Su cuenta ha sido bloqueada por demasiados intentos fallidos")

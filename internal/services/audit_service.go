@@ -17,7 +17,15 @@ func NewAuditService(repo *repositories.AuditRepository) *AuditService {
 
 func (s *AuditService) Log(ctx context.Context, action, entityType, entityID, oldVal, newVal, ip, userAgent string) error {
 	userID := appcontext.GetUserIDFromContext(ctx)
-	
+
+	// Fallback a contexto si no se proveen explícitamente
+	if ip == "" {
+		ip = appcontext.GetIPFromContext(ctx)
+	}
+	if userAgent == "" {
+		userAgent = appcontext.GetUserAgentFromContext(ctx)
+	}
+
 	entry := &models.AuditLog{
 		Action:     action,
 		EntityType: entityType,

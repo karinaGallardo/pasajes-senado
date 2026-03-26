@@ -9,8 +9,9 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func SetupRoutes(r *gin.Engine, container *app.Container) {
+func SetupRoutes(r *gin.Engine, container *app.Container, loginLimiter *middleware.IPRateLimiter) {
 	authCtrl := container.AuthController
+	// ... (las otras asignaciones se mantienen igual)
 	solicitudCtrl := container.SolicitudController
 	solicitudDerechoCtrl := container.SolicitudDerechoController
 	solicitudOficialCtrl := container.SolicitudOficialController
@@ -37,7 +38,7 @@ func SetupRoutes(r *gin.Engine, container *app.Container) {
 	landingCtrl := container.LandingController
 
 	r.GET("/auth/login", authCtrl.ShowLogin)
-	r.POST("/auth/login", authCtrl.Login)
+	r.POST("/auth/login", middleware.RateLimitMiddleware(loginLimiter), authCtrl.Login)
 	r.GET("/auth/logout", authCtrl.Logout)
 	r.GET("/acerca-de", landingCtrl.ShowAbout)
 

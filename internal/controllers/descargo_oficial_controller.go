@@ -9,6 +9,7 @@ import (
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/services"
 	"sistema-pasajes/internal/utils"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -327,6 +328,54 @@ func (ctrl *DescargoOficialController) Edit(c *gin.Context) {
 		}
 	}
 
+	// Group by ticket structure for the template
+	type ConnectionView struct {
+		Ruta           string
+		Fecha          string
+		Boleto         string
+		Index          string
+		Pase           string
+		Archivo        string
+		EsDevolucion   bool
+		EsModificacion bool
+	}
+
+	pasajesOriginales := make(map[string][]ConnectionView)
+	pasajesReprogramados := make(map[string][]ConnectionView)
+
+	for tipo, items := range itemsByType {
+		for i, item := range items {
+			prefix := "io" // ida original
+			if tipo == "IDA_REPRO" {
+				prefix = "ir"
+			} else if tipo == "VUELTA_ORIGINAL" {
+				prefix = "vo"
+			} else if tipo == "VUELTA_REPRO" {
+				prefix = "vr"
+			}
+
+			view := ConnectionView{
+				Ruta:           item.Ruta,
+				Fecha:          "",
+				Boleto:         item.Boleto,
+				Index:          fmt.Sprintf("%s_%d", prefix, i),
+				Pase:           item.NumeroPaseAbordo,
+				Archivo:        item.ArchivoPaseAbordo,
+				EsDevolucion:   item.EsDevolucion,
+				EsModificacion: item.EsModificacion,
+			}
+			if item.Fecha != nil {
+				view.Fecha = item.Fecha.Format("2006-01-02")
+			}
+
+			if strings.HasSuffix(tipo, "_ORIGINAL") {
+				pasajesOriginales[tipo] = append(pasajesOriginales[tipo], view)
+			} else {
+				pasajesReprogramados[tipo] = append(pasajesReprogramados[tipo], view)
+			}
+		}
+	}
+
 	destinos, _ := ctrl.destinoService.GetAll(c.Request.Context())
 	bancoCuenta := ctrl.configService.GetValue(c.Request.Context(), "BANCO_CUENTA_DEVOLUCION")
 	if bancoCuenta == "" {
@@ -338,12 +387,13 @@ func (ctrl *DescargoOficialController) Edit(c *gin.Context) {
 	}
 
 	utils.Render(c, "descargo/oficial/edit", gin.H{
-		"Title":       "Editar Descargo (Oficial)",
-		"Descargo":    descargo,
-		"ItemsByType": itemsByType,
-		"Destinos":    destinos,
-		"BancoCuenta": bancoCuenta,
-		"BancoNombre": bancoNombre,
+		"Title":                "Editar Descargo (Oficial)",
+		"Descargo":             descargo,
+		"PasajesOriginales":    pasajesOriginales,
+		"PasajesReprogramados": pasajesReprogramados,
+		"Destinos":             destinos,
+		"BancoCuenta":          bancoCuenta,
+		"BancoNombre":          bancoNombre,
 	})
 }
 

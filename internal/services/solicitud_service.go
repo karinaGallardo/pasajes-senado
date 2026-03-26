@@ -608,8 +608,7 @@ func (s *SolicitudService) Approve(ctx context.Context, id string) error {
 			}
 		}
 
-        s.auditService.Log(ctx, "APROBAR_SOLICITUD", "solicitud", solicitud.ID, "SOLICITADO", "APROBADO", "", "")
-		return nil
+		return s.auditService.Log(ctx, "APROBAR_SOLICITUD", "solicitud", solicitud.ID, "SOLICITADO", "APROBADO", "", "")
 	})
 }
 
@@ -659,8 +658,7 @@ func (s *SolicitudService) RevertApproval(ctx context.Context, id string) error 
 			return err
 		}
 		solicitudForEmail = solicitud
-		s.auditService.Log(ctx, "REVERTIR_APROBACION", "solicitud", solicitud.ID, st, "SOLICITADO", "", "")
-		return nil
+		return s.auditService.Log(ctx, "REVERTIR_APROBACION", "solicitud", solicitud.ID, st, "SOLICITADO", "", "")
 	})
 
 	if err == nil && solicitudForEmail != nil {
@@ -745,8 +743,7 @@ func (s *SolicitudService) Reject(ctx context.Context, id string) error {
 				}
 			}
 		}
-		s.auditService.Log(ctx, "RECHAZAR_SOLICITUD", "solicitud", solicitud.ID, "SOLICITADO", "RECHAZADO", "", "")
-		return nil
+		return s.auditService.Log(ctx, "RECHAZAR_SOLICITUD", "solicitud", solicitud.ID, "SOLICITADO", "RECHAZADO", "", "")
 	})
 }
 

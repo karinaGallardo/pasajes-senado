@@ -349,7 +349,12 @@ func (s *DescargoService) UpdateFull(ctx context.Context, id string, req dtos.Cr
 	}
 
 	descargo.DetallesItinerario = itinDetalles
-	return s.repo.Update(ctx, descargo)
+	if err := s.repo.Update(ctx, descargo); err != nil {
+		return err
+	}
+
+	s.auditService.Log(ctx, "ACTUALIZAR_DESCARGO", "descargo", id, "", "", "", "")
+	return nil
 }
 
 func (s *DescargoService) Submit(ctx context.Context, id, userID string) error {
