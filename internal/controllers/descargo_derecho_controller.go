@@ -656,12 +656,24 @@ func (ctrl *DescargoDerechoController) PreviewFile(c *gin.Context) {
 		fullPath = "/" + path
 	}
 
-	isPDF := strings.HasSuffix(strings.ToLower(path), ".pdf")
+	lowerPath := strings.ToLower(path)
+	isPDF := strings.HasSuffix(lowerPath, ".pdf")
+	isImage := strings.HasSuffix(lowerPath, ".jpg") ||
+		strings.HasSuffix(lowerPath, ".jpeg") ||
+		strings.HasSuffix(lowerPath, ".png") ||
+		strings.HasSuffix(lowerPath, ".gif") ||
+		strings.HasSuffix(lowerPath, ".webp")
 
-	c.HTML(http.StatusOK, "solicitud/components/modal_preview_archivo", gin.H{
-		"Title":                "Previsualización de Documento",
+	title := "Previsualización de Documento"
+	if isImage {
+		title = "Previsualización de Imagen"
+	}
+
+	utils.Render(c, "solicitud/components/modal_preview_archivo", gin.H{
+		"Title":                title,
 		"FilePath":             fullPath,
 		"IsPDF":                isPDF,
+		"IsImage":              isImage,
 		"InfoRuta":             c.Query("ruta"),
 		"InfoFecha":            c.Query("fecha"),
 		"InfoBoleto":           c.Query("boleto"),
@@ -670,5 +682,6 @@ func (ctrl *DescargoDerechoController) PreviewFile(c *gin.Context) {
 		"InfoFechaRegistrada":  c.Query("info_fecha_registrada"),
 		"InfoBoletoRegistrado": c.Query("info_boleto_registrado"),
 		"InfoPaseRegistrado":   c.Query("info_pase_registrado"),
+		"IsMobile":             utils.IsMobileBrowser(c),
 	})
 }
