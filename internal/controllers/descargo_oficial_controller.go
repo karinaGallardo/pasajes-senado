@@ -61,9 +61,14 @@ func (ctrl *DescargoOficialController) Create(c *gin.Context) {
 	}
 
 	type ConnectionView struct {
-		Ruta   string
-		Fecha  string
-		Boleto string
+		Ruta              string
+		Fecha             string
+		Boleto            string
+		Index             string
+		NumeroPaseAbordo  string
+		ArchivoPaseAbordo string
+		EsDevolucion      bool
+		EsModificacion    bool
 	}
 
 	pasajesOriginales := make(map[string][]ConnectionView)
@@ -74,11 +79,12 @@ func (ctrl *DescargoOficialController) Create(c *gin.Context) {
 		orig := item.GetPasajeOriginal()
 		if orig != nil {
 			routes := utils.SplitRoute(orig.Ruta)
-			for _, r := range routes {
+			for i, r := range routes {
 				pasajesOriginales[tipo] = append(pasajesOriginales[tipo], ConnectionView{
 					Ruta:   r,
 					Fecha:  orig.FechaVuelo.Format("2006-01-02"),
 					Boleto: orig.NumeroBoleto,
+					Index:  fmt.Sprintf("io_%s_%d", item.ID, i),
 				})
 			}
 		}
@@ -86,11 +92,12 @@ func (ctrl *DescargoOficialController) Create(c *gin.Context) {
 		repro := item.GetPasajeReprogramado()
 		if repro != nil {
 			routes := utils.SplitRoute(repro.Ruta)
-			for _, r := range routes {
+			for i, r := range routes {
 				pasajesReprogramados[tipo] = append(pasajesReprogramados[tipo], ConnectionView{
 					Ruta:   r,
 					Fecha:  repro.FechaVuelo.Format("2006-01-02"),
 					Boleto: repro.NumeroBoleto,
+					Index:  fmt.Sprintf("ir_%s_%d", item.ID, i),
 				})
 			}
 		}
