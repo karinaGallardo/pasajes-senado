@@ -144,14 +144,12 @@
                       {{ range $i, $ticket := (index .PasajesOriginales "IDA") }}
                         {{ range $j, $scale := .Scales }}
                         <tr x-data="{ devuelto: false, modificado: false }">
-                          {{ if eq $j 0 }}
-                          <td class="px-2 py-1 text-center border-r border-neutral-100 bg-neutral-50/30" rowspan="{{ len $ticket.Scales }}">
-                            <input type="checkbox" name="itin_devolucion[]" value="{{ $scale.Index }}" x-model="devuelto" @change="if(devuelto) modificado = false" title="Devolver Ticket Completo" class="h-4 w-4 text-danger-600 border-neutral-300 rounded focus:ring-danger-500">
+                          <td class="px-2 py-1 text-center border-r border-neutral-100 bg-neutral-50/30">
+                            <input type="checkbox" name="itin_devolucion[]" value="{{ $scale.Index }}" x-model="devuelto" @change="if(devuelto) modificado = false" title="Devolver Conexión" class="h-4 w-4 text-danger-600 border-neutral-300 rounded focus:ring-danger-500">
                           </td>
-                          <td class="px-2 py-1 text-center border-r border-neutral-100 bg-neutral-50/30" rowspan="{{ len $ticket.Scales }}">
-                            <input type="checkbox" name="itin_modificacion[]" value="{{ $scale.Index }}" x-model="modificado" @change="if(modificado) devuelto = false" title="Modificar Ticket" class="h-4 w-4 text-warning-600 border-neutral-300 rounded focus:ring-warning-500">
+                          <td class="px-2 py-1 text-center border-r border-neutral-100 bg-neutral-50/30">
+                            <input type="checkbox" name="itin_modificacion[]" value="{{ $scale.Index }}" x-model="modificado" @change="if(modificado) devuelto = false" title="Modificar Conexión" class="h-4 w-4 text-warning-600 border-neutral-300 rounded focus:ring-warning-500">
                           </td>
-                          {{ end }}
 
                           <td class="px-2 py-1" :class="{ 'opacity-50 grayscale bg-neutral-50': devuelto || modificado }">
                             <input type="hidden" name="itin_tipo[]" value="IDA_ORIGINAL" />
@@ -210,14 +208,12 @@
                       {{ range $i, $ticket := (index .PasajesReprogramados "IDA") }}
                         {{ range $j, $scale := .Scales }}
                         <tr x-data="{ devuelto: false, modificado: false, route: '{{ $scale.Ruta }}' }">
-                          {{ if eq $j 0 }}
-                          <td class="px-2 py-1 text-center border-r border-neutral-100 bg-neutral-50/30" rowspan="{{ len $ticket.Scales }}">
+                          <td class="px-2 py-1 text-center border-r border-neutral-100 bg-neutral-50/30">
                             <input type="checkbox" name="itin_devolucion[]" value="{{ $scale.Index }}" x-model="devuelto" disabled title="No aplica" class="h-4 w-4 text-neutral-300 border-neutral-300 rounded cursor-not-allowed">
                           </td>
-                          <td class="px-2 py-1 text-center border-r border-neutral-100 bg-neutral-50/30" rowspan="{{ len $ticket.Scales }}">
+                          <td class="px-2 py-1 text-center border-r border-neutral-100 bg-neutral-50/30">
                             <input type="checkbox" name="itin_modificacion[]" value="{{ $scale.Index }}" x-model="modificado" disabled title="No aplica" class="h-4 w-4 text-neutral-300 border-neutral-300 rounded cursor-not-allowed">
                           </td>
-                          {{ end }}
                           
                           <td class="px-2 py-1" :class="{ 'opacity-50 grayscale bg-neutral-50': devuelto }">
                             <input type="hidden" name="itin_tipo[]" value="IDA_REPRO" />
@@ -294,14 +290,12 @@
                       {{ range $i, $ticket := (index .PasajesOriginales "VUELTA") }}
                         {{ range $j, $scale := .Scales }}
                         <tr x-data="{ devuelto: false, modificado: false }">
-                          {{ if eq $j 0 }}
-                          <td class="px-2 py-1 text-center border-r border-neutral-100 bg-neutral-50/30" rowspan="{{ len $ticket.Scales }}">
-                            <input type="checkbox" name="itin_devolucion[]" value="{{ $scale.Index }}" x-model="devuelto" @change="if(devuelto) modificado = false" title="Devolver Ticket Completo" class="h-4 w-4 text-danger-600 border-neutral-300 rounded focus:ring-danger-500">
+                          <td class="px-2 py-1 text-center border-r border-neutral-100 bg-neutral-50/30">
+                            <input type="checkbox" name="itin_devolucion[]" value="{{ $scale.Index }}" x-model="devuelto" @change="if(devuelto) modificado = false" title="Devolver Conexión" class="h-4 w-4 text-danger-600 border-neutral-300 rounded focus:ring-danger-500">
                           </td>
-                          <td class="px-2 py-1 text-center border-r border-neutral-100 bg-neutral-50/30" rowspan="{{ len $ticket.Scales }}">
-                            <input type="checkbox" name="itin_modificacion[]" value="{{ $scale.Index }}" x-model="modificado" @change="if(modificado) devuelto = false" title="Modificar Ticket" class="h-4 w-4 text-warning-600 border-neutral-300 rounded focus:ring-warning-500">
+                          <td class="px-2 py-1 text-center border-r border-neutral-100 bg-neutral-50/30">
+                            <input type="checkbox" name="itin_modificacion[]" value="{{ $scale.Index }}" x-model="modificado" @change="if(modificado) devuelto = false" title="Modificar Conexión" class="h-4 w-4 text-warning-600 border-neutral-300 rounded focus:ring-warning-500">
                           </td>
-                          {{ end }}
                           
                           <td class="px-2 py-1" :class="{ 'opacity-50 grayscale bg-neutral-50': devuelto || modificado }">
                             <input type="hidden" name="itin_tipo[]" value="VUELTA_ORIGINAL" />
@@ -360,14 +354,12 @@
                       {{ range $i, $ticket := (index .PasajesReprogramados "VUELTA") }}
                         {{ range $j, $scale := .Scales }}
                         <tr x-data="{ devuelto: false, modificado: false, route: '{{ $scale.Ruta }}' }">
-                          {{ if eq $j 0 }}
-                          <td class="px-2 py-1 text-center border-r border-neutral-100 bg-neutral-50/30" rowspan="{{ len $ticket.Scales }}">
+                          <td class="px-2 py-1 text-center border-r border-neutral-100 bg-neutral-50/30">
                             <input type="checkbox" name="itin_devolucion[]" value="{{ $scale.Index }}" x-model="devuelto" disabled title="No aplica" class="h-4 w-4 text-neutral-300 border-neutral-300 rounded cursor-not-allowed">
                           </td>
-                          <td class="px-2 py-1 text-center border-r border-neutral-100 bg-neutral-50/30" rowspan="{{ len $ticket.Scales }}">
+                          <td class="px-2 py-1 text-center border-r border-neutral-100 bg-neutral-50/30">
                             <input type="checkbox" name="itin_modificacion[]" value="{{ $scale.Index }}" x-model="modificado" disabled title="No aplica" class="h-4 w-4 text-neutral-300 border-neutral-300 rounded cursor-not-allowed">
                           </td>
-                          {{ end }}
                           
                           <td class="px-2 py-1" :class="{ 'opacity-50 grayscale bg-neutral-50': devuelto }">
                             <input type="hidden" name="itin_tipo[]" value="VUELTA_REPRO" />

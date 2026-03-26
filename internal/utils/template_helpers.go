@@ -32,6 +32,7 @@ func TemplateFuncs() template.FuncMap {
 		"formatCurrency":   FormatCurrency,
 		"abs":              Abs,
 		"lower":            strings.ToLower,
+		"checked":          Checked,
 	}
 }
 
@@ -270,4 +271,12 @@ func Abs(i int) int {
 		return -i
 	}
 	return i
+}
+
+// Checked retorna "checked" si el booleano es verdadero, útil para checkboxes.
+func Checked(b bool) template.HTMLAttr {
+	if b {
+		return template.HTMLAttr("checked")
+	}
+	return template.HTMLAttr("")
 }

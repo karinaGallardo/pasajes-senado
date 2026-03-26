@@ -256,13 +256,7 @@ func (ctrl *DescargoDerechoController) Show(c *gin.Context) {
 			ticketsOrder = append(ticketsOrder, boletoKey)
 		}
 
-		// If any scale in the ticket is marked, the whole ticket group is marked
-		if d.EsDevolucion {
-			ticketsMap[boletoKey].EsDevolucion = true
-		}
-		if d.EsModificacion {
-			ticketsMap[boletoKey].EsModificacion = true
-		}
+		// Individual connection state is preserved in Detalles
 
 		ticketsMap[boletoKey].Detalles = append(ticketsMap[boletoKey].Detalles, d)
 	}
@@ -339,12 +333,14 @@ func (ctrl *DescargoDerechoController) Edit(c *gin.Context) {
 
 	// Group by ticket structure for the template
 	type ConnectionView struct {
-		Ruta    string
-		Fecha   string
-		Boleto  string
-		Index   string
-		Pase    string
-		Archivo string
+		Ruta           string
+		Fecha          string
+		Boleto         string
+		Index          string
+		Pase           string
+		Archivo        string
+		EsDevolucion   bool
+		EsModificacion bool
 	}
 
 	type TicketView struct {
@@ -391,12 +387,14 @@ func (ctrl *DescargoDerechoController) Edit(c *gin.Context) {
 			idx := fmt.Sprintf("%s_%s_%d", p, id, i)
 
 			ticketMap[key].Scales = append(ticketMap[key].Scales, ConnectionView{
-				Ruta:    item.Ruta,
-				Fecha:   item.Fecha.Format("2006-01-02"),
-				Boleto:  item.Boleto,
-				Index:   idx,
-				Pase:    item.NumeroPaseAbordo,
-				Archivo: item.ArchivoPaseAbordo,
+				Ruta:           item.Ruta,
+				Fecha:          item.Fecha.Format("2006-01-02"),
+				Boleto:         item.Boleto,
+				Index:          idx,
+				Pase:           item.NumeroPaseAbordo,
+				Archivo:        item.ArchivoPaseAbordo,
+				EsDevolucion:   item.EsDevolucion,
+				EsModificacion: item.EsModificacion,
 			})
 		}
 

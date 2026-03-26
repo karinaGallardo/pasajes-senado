@@ -38,6 +38,7 @@ type Container struct {
 	AlertaService         *services.AlertaService
 	ConceptoService       *services.ConceptoService
 	EstadoPasajeService   *services.EstadoPasajeService
+	AuditService          *services.AuditService
 
 	// Controllers
 	CupoController             *controllers.CupoController
@@ -101,6 +102,7 @@ func NewContainer(db *gorm.DB, mongoRRHH *mongo.Database, mongoChat *mongo.Datab
 	rutaRepo := repositories.NewRutaRepository(db)
 	notifRepo := repositories.NewNotificationRepository(db)
 	estadoPasajeRepo := repositories.NewEstadoPasajeRepository(db)
+	auditRepo := repositories.NewAuditRepository(db)
 
 	// 2. Initialize Services (Business Layer) - Injecting Repos and simple services
 	emailService := services.NewEmailService()
@@ -108,6 +110,7 @@ func NewContainer(db *gorm.DB, mongoRRHH *mongo.Database, mongoChat *mongo.Datab
 	configService := services.NewConfiguracionService(configRepo)
 	peopleService := services.NewPeopleService(peopleRepo)
 	estadoPasajeService := services.NewEstadoPasajeService(estadoPasajeRepo)
+	auditService := services.NewAuditService(auditRepo)
 
 	reportService := services.NewReportService(solicitudRepo, aerolineaRepo, configService)
 	cupoService := services.NewCupoService(cupoRepo, userRepo, itemRepo, solicitudRepo)
@@ -124,10 +127,11 @@ func NewContainer(db *gorm.DB, mongoRRHH *mongo.Database, mongoChat *mongo.Datab
 		pasajeRepo,
 		emailService,
 		notifService,
+		auditService,
 	)
 
 	compensacionService := services.NewCompensacionService(compensacionRepo, catCompensacionRepo)
-	descargoService := services.NewDescargoService(descargoRepo, solicitudService, userService)
+	descargoService := services.NewDescargoService(descargoRepo, solicitudService, userService, auditService)
 	rolService := services.NewRolService(rolRepo)
 	destinoService := services.NewDestinoService(destinoRepo)
 	organigramaService := services.NewOrganigramaService(cargoRepo, oficinaRepo)
@@ -152,6 +156,7 @@ func NewContainer(db *gorm.DB, mongoRRHH *mongo.Database, mongoChat *mongo.Datab
 		solicitudRepo,
 		solicitudItemRepo,
 		emailService,
+		auditService,
 	)
 
 	viaticoService := services.NewViaticoService(
@@ -268,6 +273,7 @@ func NewContainer(db *gorm.DB, mongoRRHH *mongo.Database, mongoChat *mongo.Datab
 		AlertaService:         alertaService,
 		ConceptoService:       conceptoService,
 		EstadoPasajeService:   estadoPasajeService,
+		AuditService:          auditService,
 
 		// Controllers
 		CupoController:             cupoCtrl,

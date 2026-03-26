@@ -26,6 +26,7 @@ func NewSolicitudService(
 	pasajeRepo *repositories.PasajeRepository,
 	emailService *EmailService,
 	notificationService *NotificationService,
+	auditService *AuditService,
 ) *SolicitudService {
 	return &SolicitudService{
 		repo:                repo,
@@ -38,6 +39,7 @@ func NewSolicitudService(
 		pasajeRepo:          pasajeRepo,
 		emailService:        emailService,
 		notificationService: notificationService,
+		auditService:        auditService,
 	}
 }
 
@@ -52,19 +54,20 @@ type SolicitudService struct {
 	pasajeRepo          *repositories.PasajeRepository
 	emailService        *EmailService
 	notificationService *NotificationService
+	auditService        *AuditService
 }
 
 func (s *SolicitudService) CreateDerecho(ctx context.Context, req dtos.CreateSolicitudRequest, currentUser *models.Usuario) (*models.Solicitud, error) {
 	fechaIda, err := utils.ParseDateTime(req.FechaIda)
 	if err != nil {
-		return nil, fmt.Errorf("error en fecha de ida: %v", err)
+		return nil, fmt.Errorf("error en fecha de ida: %w", err)
 	}
 
 	var fechaVuelta *time.Time
 	if req.TipoItinerarioCodigo != "SOLO_IDA" {
 		t, err := utils.ParseDateTime(req.FechaVuelta)
 		if err != nil {
-			return nil, fmt.Errorf("error en fecha de vuelta: %v", err)
+			return nil, fmt.Errorf("error en fecha de vuelta: %w", err)
 		}
 		fechaVuelta = t
 	}
@@ -276,7 +279,7 @@ func (s *SolicitudService) CreateOficial(ctx context.Context, req dtos.CreateSol
 
 		fSalida, err := utils.ParseDateTime(t.FechaSalida)
 		if err != nil {
-			return nil, fmt.Errorf("error en fecha del tramo #%d: %v", i+1, err)
+			return nil, fmt.Errorf("error en fecha del tramo #%d: %w", i+1, err)
 		}
 
 		tipoItem := models.TipoSolicitudItemIda
@@ -605,6 +608,7 @@ func (s *SolicitudService) Approve(ctx context.Context, id string) error {
 			}
 		}
 
+        s.auditService.Log(ctx, "APROBAR_SOLICITUD", "solicitud", solicitud.ID, "SOLICITADO", "APROBADO", "", "")
 		return nil
 	})
 }
@@ -655,6 +659,7 @@ func (s *SolicitudService) RevertApproval(ctx context.Context, id string) error 
 			return err
 		}
 		solicitudForEmail = solicitud
+		s.auditService.Log(ctx, "REVERTIR_APROBACION", "solicitud", solicitud.ID, st, "SOLICITADO", "", "")
 		return nil
 	})
 
@@ -740,6 +745,7 @@ func (s *SolicitudService) Reject(ctx context.Context, id string) error {
 				}
 			}
 		}
+		s.auditService.Log(ctx, "RECHAZAR_SOLICITUD", "solicitud", solicitud.ID, "SOLICITADO", "RECHAZADO", "", "")
 		return nil
 	})
 }
@@ -950,19 +956,19 @@ func (s *SolicitudService) ReprogramarItem(ctx context.Context, req dtos.Reprogr
 	fechaStr := req.Fecha + " " + req.Hora
 	fecha, err := utils.ParseDateTime(fechaStr)
 	if err != nil {
-		return fmt.Errorf("formato de fecha/hora inválido: %v", err)
+		return fmt.Errorf("formato de fecha/hora inválido: %w", err)
 	}
 
 	return s.repo.RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
 		// 1. Find old Item
 		var oldItem models.SolicitudItem
 		if err := tx.First(&oldItem, "id = ?", req.SolicitudItemID).Error; err != nil {
-			return fmt.Errorf("item de solicitud no encontrado: %v", err)
+			return fmt.Errorf("item de solicitud no encontrado: %w", err)
 		}
 
 		// 2. Mark old item as REPROGRAMADO
 		if err := tx.Model(&oldItem).Update("estado_codigo", stateReprog).Error; err != nil {
-			return fmt.Errorf("error marcando item anterior como reprogramado: %v", err)
+			return fmt.Errorf("error marcando item anterior como reprogramado: %w", err)
 		}
 
 		// 3. Find and annul any associated Pasajes (issued tickets)
@@ -975,7 +981,7 @@ func (s *SolicitudService) ReprogramarItem(ctx context.Context, req dtos.Reprogr
 					p.Glosa += " | Reprogramado. Motivo: " + req.Motivo
 				}
 				if err := tx.Save(p).Error; err != nil {
-					return fmt.Errorf("error anulando pasaje: %v", err)
+					return fmt.Errorf("error anulando pasaje: %w", err)
 				}
 			}
 		}
@@ -991,7 +997,7 @@ func (s *SolicitudService) ReprogramarItem(ctx context.Context, req dtos.Reprogr
 		}
 
 		if err := tx.Create(&newItem).Error; err != nil {
-			return fmt.Errorf("error creando nuevo item de solicitud: %v", err)
+			return fmt.Errorf("error creando nuevo item de solicitud: %w", err)
 		}
 
 		return nil
@@ -1041,7 +1047,7 @@ func (s *SolicitudService) UpdateOficial(ctx context.Context, id string, req dto
 
 			fSalida, err := utils.ParseDateTime(t.FechaSalida)
 			if err != nil {
-				return fmt.Errorf("error en fecha del tramo #%d: %v", i+1, err)
+				return fmt.Errorf("error en fecha del tramo #%d: %w", i+1, err)
 			}
 
 			if t.ID != "" {

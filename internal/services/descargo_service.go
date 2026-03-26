@@ -16,17 +16,20 @@ type DescargoService struct {
 	repo             *repositories.DescargoRepository
 	solicitudService *SolicitudService
 	usuarioService   *UsuarioService
+	auditService     *AuditService
 }
 
 func NewDescargoService(
 	repo *repositories.DescargoRepository,
 	solicitudService *SolicitudService,
 	usuarioService *UsuarioService,
+	auditService *AuditService,
 ) *DescargoService {
 	return &DescargoService{
 		repo:             repo,
 		solicitudService: solicitudService,
 		usuarioService:   usuarioService,
+		auditService:     auditService,
 	}
 }
 
@@ -94,35 +97,14 @@ func (s *DescargoService) Create(ctx context.Context, req dtos.CreateDescargoReq
 	}
 
 	// Mapear Detalles de Itinerario
-	devoBoletos := make(map[string]bool)
-	modBoletos := make(map[string]bool)
+	devolucionMap := make(map[string]bool)
+	for _, idx := range req.ItinDevolucion {
+		devolucionMap[idx] = true
+	}
 
-	// First pass: identify which Boletos are marked for devo/mod
-	for i := range req.ItinTipo {
-		idx := req.ItinIndex[i]
-		boleto := req.ItinBoleto[i]
-
-		isDevo := false
-		isMod := false
-		for _, dIdx := range req.ItinDevolucion {
-			if dIdx == idx {
-				isDevo = true
-				break
-			}
-		}
-		for _, mIdx := range req.ItinModificacion {
-			if mIdx == idx {
-				isMod = true
-				break
-			}
-		}
-
-		if isDevo && boleto != "" {
-			devoBoletos[boleto] = true
-		}
-		if isMod && boleto != "" {
-			modBoletos[boleto] = true
-		}
+	modificacionMap := make(map[string]bool)
+	for _, idx := range req.ItinModificacion {
+		modificacionMap[idx] = true
 	}
 
 	var itinDetalles []models.DetalleItinerarioDescargo
@@ -149,9 +131,13 @@ func (s *DescargoService) Create(ctx context.Context, req dtos.CreateDescargoReq
 				archivoPath = archivoPaths[i]
 			}
 
-			// All scales of the same ticket share the same devo/mod status
-			esDevo := devoBoletos[boleto]
-			esMod := modBoletos[boleto]
+			esDevo := false
+			esMod := false
+			if i < len(req.ItinIndex) {
+				idx := req.ItinIndex[i]
+				esDevo = devolucionMap[idx]
+				esMod = modificacionMap[idx]
+			}
 
 			itinDetalles = append(itinDetalles, models.DetalleItinerarioDescargo{
 				Tipo:              models.TipoDetalleItinerario(req.ItinTipo[i]),
@@ -382,6 +368,7 @@ func (s *DescargoService) Submit(ctx context.Context, id, userID string) error {
 		return err
 	}
 
+	s.auditService.Log(ctx, "ENVIAR_DESCARGO", "descargo", id, string(models.EstadoDescargoBorrador), string(models.EstadoDescargoEnRevision), "", "")
 	slog.Info("Descargo enviado a revisión", "id", id, "codigo", descargo.Codigo, "user_id", userID)
 	return nil
 }
@@ -402,6 +389,7 @@ func (s *DescargoService) Approve(ctx context.Context, id string, userID string)
 		return err
 	}
 
+	s.auditService.Log(ctx, "APROBAR_DESCARGO", "descargo", id, string(models.EstadoDescargoEnRevision), string(models.EstadoDescargoAprobado), "", "")
 	slog.Info("Descargo aprobado", "id", id, "codigo", descargo.Codigo, "user_id", userID)
 
 	if descargo.SolicitudID != "" {
@@ -428,6 +416,7 @@ func (s *DescargoService) Reject(ctx context.Context, id string, userID string, 
 		return err
 	}
 
+	s.auditService.Log(ctx, "RECHAZAR_DESCARGO", "descargo", id, string(models.EstadoDescargoEnRevision), string(models.EstadoDescargoRechazado), "", "")
 	slog.Info("Descargo rechazado (observado)", "id", id, "codigo", descargo.Codigo, "user_id", userID, "observaciones", observaciones)
 	return nil
 }

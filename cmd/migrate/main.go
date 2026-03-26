@@ -68,6 +68,7 @@ func main() {
 		&models.DetalleItinerarioDescargo{},
 		&models.TransporteTerrestreDescargo{},
 		&models.Notification{},
+		&models.AuditLog{},
 	)
 
 	if err != nil {

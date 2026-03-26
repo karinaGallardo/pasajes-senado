@@ -20,6 +20,7 @@ type PasajeService struct {
 	solicitudRepo     *repositories.SolicitudRepository
 	solicitudItemRepo *repositories.SolicitudItemRepository
 	emailService      *EmailService
+	auditService      *AuditService
 }
 
 func NewPasajeService(
@@ -27,12 +28,14 @@ func NewPasajeService(
 	solicitudRepo *repositories.SolicitudRepository,
 	solicitudItemRepo *repositories.SolicitudItemRepository,
 	emailService *EmailService,
+	auditService *AuditService,
 ) *PasajeService {
 	return &PasajeService{
 		repo:              repo,
 		solicitudRepo:     solicitudRepo,
 		solicitudItemRepo: solicitudItemRepo,
 		emailService:      emailService,
+		auditService:      auditService,
 	}
 }
 
@@ -220,6 +223,8 @@ func (s *PasajeService) UpdateStatus(ctx context.Context, id string, status stri
 	if err := s.repo.Update(ctx, pasaje); err != nil {
 		return err
 	}
+
+	s.auditService.Log(ctx, "CAMBIAR_ESTADO_PASAJE", "pasaje", id, "", status, "", "")
 
 	// If Pasaje is EMITIDO, also update Request Item state to EMITIDO
 	if status == "EMITIDO" && pasaje.SolicitudItemID != nil {
