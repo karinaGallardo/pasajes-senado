@@ -366,50 +366,39 @@
                       type="button"
                       hx-get="/pasajes/{{ .ID }}/preview?tipo=boleto"
                       hx-target="#modal-container"
-                      class="w-9 h-9 flex items-center justify-center rounded-lg bg-danger-50 text-danger-600 hover:bg-danger-100 transition-colors cursor-pointer border border-danger-100"
-                      title="Ver Boleto">
-                      <i class="ph ph-file-pdf text-xl"></i>
+                      class="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-danger-100 text-danger-500 hover:bg-danger-600 hover:text-white transition-all shadow-sm cursor-pointer"
+                      title="Ver PDF">
+                      <i class="ph ph-file-pdf text-lg font-bold"></i>
                     </button>
-                    {{ end }} {{ if and $.Perms.IsAdminOrResp (ne .GetEstado "ANULADO") }}
-                    <div class="relative" x-data="{ openMenu: false }">
+                    {{ end }} 
+                    
+                    {{ if and $.Perms.IsAdminOrResp (ne .GetEstado "ANULADO") }}
+                      {{ if eq .GetEstado "REGISTRADO" }}
                       <button
                         type="button"
-                        @click="openMenu = !openMenu"
-                        class="w-9 h-9 flex items-center justify-center rounded-lg bg-white border border-neutral-200 text-neutral-400 hover:text-neutral-600 hover:border-neutral-300 transition-all shadow-sm cursor-pointer">
-                        <i class="ph ph-dots-three-vertical text-xl font-bold"></i>
+                        @click="$dispatch('pasaje-action', { action: 'emitir', id: '{{.ID}}' })"
+                        class="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-secondary-100 text-secondary-600 hover:bg-secondary-600 hover:text-white transition-all shadow-sm cursor-pointer"
+                        title="Enviar">
+                        <i class="ph ph-paper-plane-right text-lg font-bold"></i>
                       </button>
-                      <div
-                        x-show="openMenu"
-                        @click.away="openMenu = false"
-                        x-transition
-                        class="absolute right-0 mt-2 w-48 bg-white border border-neutral-200 rounded-xl shadow-xl z-50 py-2"
-                        x-cloak>
-                        {{ if eq .GetEstado "REGISTRADO" }}
-                        <button
-                          type="button"
-                          @click="$dispatch('pasaje-action', { action: 'emitir', id: '{{.ID}}' })"
-                          class="block w-full text-left px-4 py-2 text-xs text-secondary-600 hover:bg-secondary-50 font-bold cursor-pointer">
-                          <i class="ph ph-paper-plane mr-2"></i>
-                          Enviar Pasaje
-                        </button>
-                        <button
-                          type="button"
-                          hx-get="/pasajes/{{ .ID }}/editar"
-                          hx-target="#modal-container"
-                          class="block w-full text-left px-4 py-2 text-xs hover:bg-neutral-50 cursor-pointer">
-                          <i class="ph ph-pencil-simple mr-2"></i>
-                          Editar
-                        </button>
-                        {{ end }}
-                        <button
-                          type="button"
-                          @click="$dispatch('pasaje-action', { action: 'anular', id: '{{.ID}}' })"
-                          class="block w-full text-left px-4 py-2 text-xs text-danger-600 hover:bg-danger-50 cursor-pointer">
-                          <i class="ph ph-trash mr-2"></i>
-                          Anular
-                        </button>
-                      </div>
-                    </div>
+
+                      <button
+                        type="button"
+                        hx-get="/pasajes/{{ .ID }}/editar"
+                        hx-target="#modal-container"
+                        class="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-neutral-200 text-neutral-500 hover:bg-neutral-800 hover:text-white transition-all shadow-sm cursor-pointer"
+                        title="Editar">
+                        <i class="ph ph-pencil-simple text-lg font-bold"></i>
+                      </button>
+                      {{ end }}
+
+                      <button
+                        type="button"
+                        @click="$dispatch('pasaje-action', { action: 'anular', id: '{{.ID}}' })"
+                        class="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-danger-50 text-danger-300 hover:bg-danger-600 hover:text-white transition-all shadow-sm cursor-pointer"
+                        title="Anular">
+                        <i class="ph ph-trash-simple text-lg font-bold"></i>
+                      </button>
                     {{ end }}
                   </div>
                 </div>
@@ -560,17 +549,26 @@
   (function () {
     document.addEventListener("pasaje-action", function (e) {
       const { action, id } = e.detail;
+
       let title, text, confirmButtonText, confirmButtonColor, newStatus;
 
       if (action === "emitir") {
         Swal.fire({
           title: "Enviar Pasaje?",
-          text: "Se enviará el boleto al beneficiario.",
+          text: "Confirma que los datos son correctos. Se enviará la notificación de emisión.",
           icon: "info",
           showCancelButton: true,
           confirmButtonColor: "#0396A6",
-          confirmButtonText: "Sí, enviar",
+          cancelButtonColor: "#6b7280",
+          confirmButtonText: "Sí, emitir",
           cancelButtonText: "Cancelar",
+          customClass: {
+            popup: "rounded-xl font-sans",
+            title: "text-lg font-bold text-neutral-900",
+            htmlContainer: "text-sm text-neutral-600",
+            confirmButton: "rounded-lg px-4 py-2 text-sm font-medium shadow-sm",
+            cancelButton: "rounded-lg px-4 py-2 text-sm font-medium shadow-sm hover:bg-neutral-100 text-neutral-700 bg-white border border-neutral-300",
+          },
         }).then(function (result) {
           if (result.isConfirmed) {
             updatePasajeStatus(id, "EMITIDO");
@@ -579,12 +577,16 @@
         return;
       }
 
-      if (action === "anular") {
-        title = "¿Anular Pasaje?";
-        text = "Esta acción no se puede deshacer.";
-        confirmButtonText = "Sí, anular";
-        confirmButtonColor = "#ef4444";
-        newStatus = "ANULADO";
+      switch (action) {
+        case "anular":
+          title = "¿Anular Pasaje?";
+          text = "Esta acción no se puede deshacer.";
+          confirmButtonText = "Sí, anular";
+          confirmButtonColor = "#ef4444"; // Danger
+          newStatus = "ANULADO";
+          break;
+        default:
+          return;
       }
 
       Swal.fire({
@@ -593,8 +595,16 @@
         icon: "warning",
         showCancelButton: true,
         confirmButtonColor: confirmButtonColor,
+        cancelButtonColor: "#6b7280",
         confirmButtonText: confirmButtonText,
         cancelButtonText: "Cancelar",
+        customClass: {
+          popup: "rounded-xl font-sans",
+          title: "text-lg font-bold text-neutral-900",
+          htmlContainer: "text-sm text-neutral-600",
+          confirmButton: "rounded-lg px-4 py-2 text-sm font-medium shadow-sm",
+          cancelButton: "rounded-lg px-4 py-2 text-sm font-medium shadow-sm hover:bg-neutral-100 text-neutral-700 bg-white border border-neutral-300",
+        },
       }).then(function (result) {
         if (result.isConfirmed) {
           updatePasajeStatus(id, newStatus);
@@ -610,14 +620,31 @@
       fetch("/pasajes/update-status", {
         method: "POST",
         body: formData,
-        headers: { "X-Requested-With": "XMLHttpRequest" },
-      }).then(function (response) {
-        if (response.ok) {
-          window.location.reload();
-        } else {
-          Swal.fire("Error", "No se pudo actualizar el pasaje", "error");
-        }
-      });
+        headers: {
+          "X-Requested-With": "XMLHttpRequest",
+        },
+      })
+        .then(function (response) {
+          if (response.ok) {
+            window.location.reload();
+          } else {
+            Swal.fire({
+              title: "Error",
+              text: "No se pudo actualizar el estado del pasaje.",
+              icon: "error",
+              confirmButtonColor: "#ef4444",
+            });
+          }
+        })
+        .catch(function (error) {
+          console.error("Error:", error);
+          Swal.fire({
+            title: "Error de Conexión",
+            text: "Verifique su conexión a internet.",
+            icon: "error",
+            confirmButtonColor: "#ef4444",
+          });
+        });
     }
   })();
 </script>
