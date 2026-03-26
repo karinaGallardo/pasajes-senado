@@ -989,18 +989,60 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 	// --- Nueva Página para Tramos e Itinerario ---
 	pdf.AddPage()
 
-	// Transporte y Devolución
-	tipoTrans := "No especificado"
-	if descargo.Oficial != nil && descargo.Oficial.TipoTransporte != "" {
-		tipoTrans = descargo.Oficial.TipoTransporte
-		if descargo.Oficial.PlacaVehiculo != "" {
-			tipoTrans += " (Placa: " + descargo.Oficial.PlacaVehiculo + ")"
-		}
-	}
+	// Transporte y Devoluciones
 	pdf.SetFont("Arial", "B", 9)
-	pdf.CellFormat(50, 6, tr("4. TRANSPORTE UTILIZADO:"), "", 0, "L", false, 0, "")
-	pdf.SetFont("Arial", "", 9)
-	pdf.CellFormat(140, 6, tr(tipoTrans), "", 1, "L", false, 0, "")
+	pdf.CellFormat(50, 6, tr("4. TRANSPORTE UTILIZADO:"), "", 1, "L", false, 0, "")
+
+	if descargo.Oficial != nil {
+		pdf.SetFont("Arial", "", 9)
+
+		// Caso Aéreo
+		if descargo.Oficial.HasTransportType("AEREO") {
+			pdf.SetX(15)
+			pdf.CellFormat(140, 6, tr("- Transporte Aéreo"), "", 1, "L", false, 0, "")
+		}
+
+		// Caso Terrestre Público
+		if descargo.Oficial.HasTransportType("TERRESTRE_PUBLICO") {
+			pdf.SetX(15)
+			pdf.CellFormat(140, 6, tr("- Transporte Terrestre Público"), "", 1, "L", false, 0, "")
+			if len(descargo.Oficial.TransportesTerrestres) > 0 {
+				pdf.Ln(1)
+				pdf.SetX(15)
+				pdf.SetFillColor(240, 240, 240)
+				pdf.SetFont("Arial", "B", 7)
+				pdf.CellFormat(30, 6, tr("FECHA"), "1", 0, "C", true, 0, "")
+				pdf.CellFormat(30, 6, tr("SENTIDO"), "1", 0, "C", true, 0, "")
+				pdf.CellFormat(50, 6, tr("N° FACTURA"), "1", 0, "C", true, 0, "")
+				pdf.CellFormat(40, 6, tr("IMPORTE (Bs.)"), "1", 1, "C", true, 0, "")
+
+				pdf.SetFont("Arial", "", 8)
+				for _, tt := range descargo.Oficial.TransportesTerrestres {
+					pdf.SetX(15)
+					pdf.CellFormat(30, 6, tt.Fecha.Format("02/01/2006"), "1", 0, "C", false, 0, "")
+					pdf.CellFormat(30, 6, tr(tt.Tipo), "1", 0, "C", false, 0, "")
+					pdf.CellFormat(50, 6, tr(tt.NroFactura), "1", 0, "C", false, 0, "")
+					pdf.CellFormat(40, 6, fmt.Sprintf("%.2f", tt.Importe), "1", 1, "R", false, 0, "")
+				}
+				pdf.Ln(2)
+			}
+		}
+
+		// Caso Vehículo Oficial
+		if descargo.Oficial.HasTransportType("VEHICULO_OFICIAL") {
+			pdf.SetX(15)
+			pdf.SetFont("Arial", "", 9)
+			msg := "- Uso de Vehículo Oficial"
+			if descargo.Oficial.PlacaVehiculo != "" {
+				msg += fmt.Sprintf(" (N° de Placa: %s)", descargo.Oficial.PlacaVehiculo)
+			}
+			pdf.CellFormat(140, 6, tr(msg), "", 1, "L", false, 0, "")
+		}
+	} else {
+		pdf.SetX(15)
+		pdf.SetFont("Arial", "", 9)
+		pdf.CellFormat(140, 6, tr("No especificado"), "", 1, "L", false, 0, "")
+	}
 
 	pdf.Ln(6)
 
@@ -1757,8 +1799,8 @@ func (s *ReportService) GenerateConsolidadoPasajesExcel(ctx context.Context, fil
 
 	// Estilos
 	headerStyle, _ := f.NewStyle(&excelize.Style{
-		Font: &excelize.Font{Bold: true, Color: "FFFFFF"},
-		Fill: excelize.Fill{Type: "pattern", Color: []string{"03738C"}, Pattern: 1},
+		Font:      &excelize.Font{Bold: true, Color: "FFFFFF"},
+		Fill:      excelize.Fill{Type: "pattern", Color: []string{"03738C"}, Pattern: 1},
 		Alignment: &excelize.Alignment{Horizontal: "center"},
 		Border: []excelize.Border{
 			{Type: "left", Color: "000000", Style: 1},
@@ -1829,7 +1871,7 @@ func (s *ReportService) GenerateConsolidadoPasajesExcel(ctx context.Context, fil
 	totalRow := len(pasajes) + 2
 	f.SetCellValue(sheet, fmt.Sprintf("I%d", totalRow), "TOTAL GENERAL:")
 	f.SetCellValue(sheet, fmt.Sprintf("J%d", totalRow), totalCosto)
-	
+
 	totalStyle, _ := f.NewStyle(&excelize.Style{
 		Font: &excelize.Font{Bold: true},
 		Fill: excelize.Fill{Type: "pattern", Color: []string{"F3F4F6"}, Pattern: 1},

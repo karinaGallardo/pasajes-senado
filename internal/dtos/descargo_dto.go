@@ -21,7 +21,8 @@ type CreateDescargoRequest struct {
 	// Transporte Terrestre Público
 	TransporteTerrestreFecha   []string `form:"terrestre_fecha[]"`
 	TransporteTerrestreFactura []string `form:"terrestre_factura[]"`
-	TransporteTerrestreImporte  []string `form:"terrestre_importe[]"`
+	TransporteTerrestreImporte []string `form:"terrestre_importe[]"`
+	TransporteTerrestreTipo    []string `form:"terrestre_tipo[]"`
 
 	// Detalles Itinerario (FV-05) - Arreglos paralelos para conexiones
 	ItinTipo         []string                `form:"itin_tipo[]"` // IDA_ORIGINAL, IDA_REPRO, VUELTA_ORIGINAL, VUELTA_REPRO

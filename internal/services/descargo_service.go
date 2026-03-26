@@ -84,10 +84,15 @@ func (s *DescargoService) Create(ctx context.Context, req dtos.CreateDescargoReq
 			if i < len(req.TransporteTerrestreFactura) && i < len(req.TransporteTerrestreImporte) && req.TransporteTerrestreFecha[i] != "" {
 				importe := utils.ParseFloat(req.TransporteTerrestreImporte[i])
 				t := utils.ParseDate("2006-01-02", req.TransporteTerrestreFecha[i])
+				tipo := "IDA"
+				if i < len(req.TransporteTerrestreTipo) {
+					tipo = req.TransporteTerrestreTipo[i]
+				}
 				terrestres = append(terrestres, models.TransporteTerrestreDescargo{
 					Fecha:      t,
 					NroFactura: req.TransporteTerrestreFactura[i],
 					Importe:    importe,
+					Tipo:       tipo,
 				})
 			}
 		}
@@ -269,11 +274,16 @@ func (s *DescargoService) UpdateFull(ctx context.Context, id string, req dtos.Cr
 				if i < len(req.TransporteTerrestreFactura) && i < len(req.TransporteTerrestreImporte) && req.TransporteTerrestreFecha[i] != "" {
 					importe := utils.ParseFloat(req.TransporteTerrestreImporte[i])
 					t := utils.ParseDate("2006-01-02", req.TransporteTerrestreFecha[i])
+					tipo := "IDA"
+					if i < len(req.TransporteTerrestreTipo) {
+						tipo = req.TransporteTerrestreTipo[i]
+					}
 					terrestres = append(terrestres, models.TransporteTerrestreDescargo{
 						DescargoOficialID: descargo.Oficial.ID,
 						Fecha:             t,
 						NroFactura:        req.TransporteTerrestreFactura[i],
 						Importe:           importe,
+						Tipo:              tipo,
 					})
 				}
 			}

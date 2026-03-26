@@ -1,5 +1,9 @@
 package models
 
+import (
+	"strings"
+)
+
 type DescargoOficial struct {
 	BaseModel
 	DescargoID string `gorm:"size:36;not null;uniqueIndex"`
@@ -17,7 +21,7 @@ type DescargoOficial struct {
 	NroBoletaDeposito string  `gorm:"size:100"`
 	DirigidoA         string  `gorm:"size:255"`
 
-	Anexos                []AnexoDescargo              `gorm:"foreignKey:DescargoOficialID"`
+	Anexos                []AnexoDescargo               `gorm:"foreignKey:DescargoOficialID"`
 	TransportesTerrestres []TransporteTerrestreDescargo `gorm:"foreignKey:DescargoOficialID"`
 }
 
@@ -26,18 +30,40 @@ func (DescargoOficial) TableName() string {
 }
 
 func (d DescargoOficial) GetTipoTransporteDisplay() string {
-	switch d.TipoTransporte {
-	case "AEREO":
-		return "Aéreo"
-	case "TERRESTRE_PUBLICO":
-		return "Público Terrestre"
-	case "VEHICULO_OFICIAL":
-		res := "Vehículo Oficial"
-		if d.PlacaVehiculo != "" {
-			res += " (Placa: " + d.PlacaVehiculo + ")"
-		}
-		return res
-	default:
-		return d.TipoTransporte
+	if d.TipoTransporte == "" {
+		return "No especificado"
 	}
+
+	parts := strings.Split(d.TipoTransporte, ",")
+	var displays []string
+
+	for _, p := range parts {
+		p = strings.TrimSpace(p)
+		switch p {
+		case "AEREO":
+			displays = append(displays, "Aéreo")
+		case "TERRESTRE_PUBLICO":
+			displays = append(displays, "Público Terrestre")
+		case "VEHICULO_OFICIAL":
+			res := "Vehículo Oficial"
+			if d.PlacaVehiculo != "" {
+				res += " (Placa: " + d.PlacaVehiculo + ")"
+			}
+			displays = append(displays, res)
+		default:
+			displays = append(displays, p)
+		}
+	}
+
+	return strings.Join(displays, ", ")
+}
+
+func (d DescargoOficial) HasTransportType(t string) bool {
+	parts := strings.Split(d.TipoTransporte, ",")
+	for _, p := range parts {
+		if strings.TrimSpace(p) == t {
+			return true
+		}
+	}
+	return false
 }
