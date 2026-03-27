@@ -168,7 +168,7 @@
                           <td class="px-2 py-1 text-center" :class="{ 'opacity-50 grayscale bg-neutral-50': devuelto || modificado }" x-data="{ fileName: '' }">
                             <label class="cursor-pointer flex items-center justify-center py-0.5 px-1.5 rounded border transition-colors hover:bg-neutral-100" 
                                   :class="fileName ? 'bg-success-50 border-success-200 text-success-700' : 'bg-neutral-50 border-neutral-200 text-neutral-500'">
-                              <input type="file" :required="!devuelto && !modificado && $j === 0" :disabled="devuelto || modificado" name="itin_archivo_{{ $scale.Index }}" class="hidden" accept=".pdf,application/pdf,image/*" @change="await handleFile($event); fileName = $el.files[0] ? $el.files[0].name : ''" />
+                              <input type="file" :disabled="devuelto || modificado" name="itin_archivo_{{ $scale.Index }}" class="hidden" accept=".pdf,application/pdf,image/*" @change="await handleFile($event); fileName = $el.files[0] ? $el.files[0].name : ''" />
                               <i class="ph text-base" :class="fileName ? 'ph-file-pdf' : 'ph-upload-simple'"></i>
                             </label>
                           </td>
@@ -296,7 +296,7 @@
                           <td class="px-2 py-1 text-center border-r border-neutral-100 bg-neutral-50/30">
                             <input type="checkbox" name="itin_modificacion[]" value="{{ $scale.Index }}" x-model="modificado" @change="if(modificado) devuelto = false" title="Modificar Conexión" class="h-4 w-4 text-warning-600 border-neutral-300 rounded focus:ring-warning-500">
                           </td>
-                          
+
                           <td class="px-2 py-1" :class="{ 'opacity-50 grayscale bg-neutral-50': devuelto || modificado }">
                             <input type="hidden" name="itin_tipo[]" value="VUELTA_ORIGINAL" />
                             <input type="hidden" name="itin_index[]" value="{{ $scale.Index }}" />
@@ -314,7 +314,7 @@
                           <td class="px-2 py-1 text-center" :class="{ 'opacity-50 grayscale bg-neutral-50': devuelto || modificado }" x-data="{ fileName: '' }">
                             <label class="cursor-pointer flex items-center justify-center py-0.5 px-1.5 rounded border transition-colors hover:bg-neutral-100" 
                                   :class="fileName ? 'bg-success-50 border-success-200 text-success-700' : 'bg-neutral-50 border-neutral-200 text-neutral-500'">
-                              <input type="file" :required="!devuelto && !modificado && $j === 0" :disabled="devuelto || modificado" name="itin_archivo_{{ $scale.Index }}" class="hidden" accept=".pdf,application,pdf,image/*" @change="await handleFile($event); fileName = $el.files[0] ? $el.files[0].name : ''" />
+                              <input type="file" :disabled="devuelto || modificado" name="itin_archivo_{{ $scale.Index }}" class="hidden" accept=".pdf,application,pdf,image/*" @change="await handleFile($event); fileName = $el.files[0] ? $el.files[0].name : ''" />
                               <i class="ph text-base" :class="fileName ? 'ph-file-pdf' : 'ph-upload-simple'"></i>
                             </label>
                           </td>

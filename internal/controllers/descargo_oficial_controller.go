@@ -61,14 +61,14 @@ func (ctrl *DescargoOficialController) Create(c *gin.Context) {
 	}
 
 	type ConnectionView struct {
-		Ruta              string
-		Fecha             string
-		Boleto            string
-		Index             string
-		NumeroPaseAbordo  string
-		ArchivoPaseAbordo string
-		EsDevolucion      bool
-		EsModificacion    bool
+		Ruta           string
+		Fecha          string
+		Boleto         string
+		Index          string
+		Pase           string
+		Archivo        string
+		EsDevolucion   bool
+		EsModificacion bool
 	}
 
 	pasajesOriginales := make(map[string][]ConnectionView)
