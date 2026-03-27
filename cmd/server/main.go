@@ -19,6 +19,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/gin-contrib/gzip"
 	"github.com/gin-contrib/secure"
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-contrib/sessions/cookie"
@@ -82,6 +83,7 @@ func main() {
 
 	r := gin.Default()
 
+	r.Use(gzip.Gzip(gzip.DefaultCompression))
 	r.Use(middleware.MetadataMiddleware())
 
 	r.ForwardedByClientIP = true

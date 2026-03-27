@@ -173,6 +173,9 @@ func SetupRoutes(r *gin.Engine, container *app.Container, loginLimiter *middlewa
 			// Reportes
 			adminOnly.GET("/admin/reports", container.ReportController.Index)
 			adminOnly.GET("/admin/reports/consolidado-excel", container.ReportController.DownloadConsolidadoExcel)
+			adminOnly.GET("/admin/reports/morosidad-excel", container.ReportController.DownloadMorosidadExcel)
+			adminOnly.GET("/admin/reports/cupos-excel", container.ReportController.DownloadUsoCuposExcel)
+			adminOnly.GET("/admin/reports/aerolineas-excel", container.ReportController.DownloadEstadisticasAerolineaExcel)
 
 			// Regularización de fechas
 			adminOnly.GET("/solicitudes/:id/regularizacion-modal", solicitudCtrl.GetRegularizacionModal)

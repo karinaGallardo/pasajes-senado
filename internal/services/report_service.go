@@ -23,6 +23,7 @@ type ReportService struct {
 	aerolineaRepo *repositories.AerolineaRepository
 	pasajeRepo    *repositories.PasajeRepository
 	agenciaRepo   *repositories.AgenciaRepository
+	cupoRepo      *repositories.CupoDerechoRepository
 	configService *ConfiguracionService
 }
 
@@ -31,6 +32,7 @@ func NewReportService(
 	aerolineaRepo *repositories.AerolineaRepository,
 	pasajeRepo *repositories.PasajeRepository,
 	agenciaRepo *repositories.AgenciaRepository,
+	cupoRepo *repositories.CupoDerechoRepository,
 	configService *ConfiguracionService,
 ) *ReportService {
 	return &ReportService{
@@ -38,6 +40,7 @@ func NewReportService(
 		aerolineaRepo: aerolineaRepo,
 		pasajeRepo:    pasajeRepo,
 		agenciaRepo:   agenciaRepo,
+		cupoRepo:      cupoRepo,
 		configService: configService,
 	}
 }
@@ -1893,3 +1896,142 @@ func (s *ReportService) GenerateConsolidadoPasajesExcel(ctx context.Context, fil
 
 	return f, nil
 }
+
+func (s *ReportService) GenerateMorosidadDescargosExcel(ctx context.Context) (*excelize.File, error) {
+	solicitudes, err := s.solicitudRepo.FindPendientesDeDescargo(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	f := excelize.NewFile()
+	sheet := "Morosidad de Descargos"
+	f.SetSheetName("Sheet1", sheet)
+
+	headerStyle, _ := f.NewStyle(&excelize.Style{
+		Font:      &excelize.Font{Bold: true, Color: "FFFFFF"},
+		Fill:      excelize.Fill{Type: "pattern", Color: []string{"893026"}, Pattern: 1},
+		Alignment: &excelize.Alignment{Horizontal: "center"},
+	})
+
+	headers := []string{"NOMBRE COMPLETO", "CÓDIGO SOLICITUD", "MOTIVO / CONCEPTO", "ÚLTIMO VUELO", "DÍAS DE MORA"}
+	for i, h := range headers {
+		cell, _ := excelize.CoordinatesToCellName(i+1, 1)
+		f.SetCellValue(sheet, cell, h)
+		f.SetCellStyle(sheet, cell, cell, headerStyle)
+	}
+
+	rowIndex := 2
+	for _, sol := range solicitudes {
+		diasMora := sol.GetDiasRestantesDescargo()
+		if diasMora >= 0 {
+			continue // Solo morosos
+		}
+
+		f.SetCellValue(sheet, fmt.Sprintf("A%d", rowIndex), sol.Usuario.GetNombreCompleto())
+		f.SetCellValue(sheet, fmt.Sprintf("B%d", rowIndex), sol.Codigo)
+		f.SetCellValue(sheet, fmt.Sprintf("C%d", rowIndex), sol.GetConceptoNombre())
+		f.SetCellValue(sheet, fmt.Sprintf("D%d", rowIndex), sol.GetUltimoVueloFecha())
+		f.SetCellValue(sheet, fmt.Sprintf("E%d", rowIndex), -diasMora)
+		rowIndex++
+	}
+
+	f.SetColWidth(sheet, "A", "A", 40)
+	f.SetColWidth(sheet, "B", "B", 20)
+	f.SetColWidth(sheet, "C", "C", 30)
+	f.SetColWidth(sheet, "D", "D", 15)
+	f.SetColWidth(sheet, "E", "E", 15)
+
+	return f, nil
+}
+
+func (s *ReportService) GenerateUsoCuposExcel(ctx context.Context, anio, mes int) (*excelize.File, error) {
+	cupos, err := s.cupoRepo.FindByPeriodo(ctx, anio, mes)
+	if err != nil {
+		return nil, err
+	}
+
+	f := excelize.NewFile()
+	sheet := "Uso de Cupos"
+	f.SetSheetName("Sheet1", sheet)
+
+	headerStyle, _ := f.NewStyle(&excelize.Style{
+		Font:      &excelize.Font{Bold: true, Color: "FFFFFF"},
+		Fill:      excelize.Fill{Type: "pattern", Color: []string{"2A3B56"}, Pattern: 1},
+		Alignment: &excelize.Alignment{Horizontal: "center"},
+	})
+
+	headers := []string{"SENADOR(A)", "GESTIÓN", "MES", "LÍMITE MENSUAL", "USADOS", "DISPONIBLES"}
+	for i, h := range headers {
+		cell, _ := excelize.CoordinatesToCellName(i+1, 1)
+		f.SetCellValue(sheet, cell, h)
+		f.SetCellStyle(sheet, cell, cell, headerStyle)
+	}
+
+	for i, c := range cupos {
+		row := i + 2
+		f.SetCellValue(sheet, fmt.Sprintf("A%d", row), c.SenTitular.GetNombreCompleto())
+		f.SetCellValue(sheet, fmt.Sprintf("B%d", row), c.Gestion)
+		f.SetCellValue(sheet, fmt.Sprintf("C%d", row), utils.TranslateMonth(time.Month(c.Mes)))
+		f.SetCellValue(sheet, fmt.Sprintf("D%d", row), c.CupoTotal)
+		f.SetCellValue(sheet, fmt.Sprintf("E%d", row), c.CupoUsado)
+		f.SetCellValue(sheet, fmt.Sprintf("F%d", row), c.CupoTotal-c.CupoUsado)
+	}
+
+	f.SetColWidth(sheet, "A", "A", 40)
+	f.SetColWidth(sheet, "B", "F", 15)
+
+	return f, nil
+}
+
+func (s *ReportService) GenerateEstadisticasAerolineaExcel(ctx context.Context, filter dtos.ReportFilterRequest) (*excelize.File, error) {
+	pasajes, err := s.pasajeRepo.FindConsolidado(ctx, filter)
+	if err != nil {
+		return nil, err
+	}
+
+	stats := make(map[string]struct {
+		Count int
+		Total float64
+	})
+
+	for _, p := range pasajes {
+		name := "OTRA / DESCONOCIDA"
+		if p.Aerolinea != nil {
+			name = p.Aerolinea.Nombre
+		}
+		curr := stats[name]
+		curr.Count++
+		curr.Total += p.Costo
+		stats[name] = curr
+	}
+
+	f := excelize.NewFile()
+	sheet := "Estadísticas por Aerolínea"
+	f.SetSheetName("Sheet1", sheet)
+
+	headerStyle, _ := f.NewStyle(&excelize.Style{
+		Font: &excelize.Font{Bold: true, Color: "FFFFFF"},
+		Fill: excelize.Fill{Type: "pattern", Color: []string{"0F7654"}, Pattern: 1},
+	})
+
+	headers := []string{"AEROLÍNEA", "CANTIDAD PASAJES", "INVERSIÓN TOTAL (BS)"}
+	for i, h := range headers {
+		cell, _ := excelize.CoordinatesToCellName(i+1, 1)
+		f.SetCellValue(sheet, cell, h)
+		f.SetCellStyle(sheet, cell, cell, headerStyle)
+	}
+
+	rowIndex := 2
+	for name, data := range stats {
+		f.SetCellValue(sheet, fmt.Sprintf("A%d", rowIndex), name)
+		f.SetCellValue(sheet, fmt.Sprintf("B%d", rowIndex), data.Count)
+		f.SetCellValue(sheet, fmt.Sprintf("C%d", rowIndex), data.Total)
+		rowIndex++
+	}
+
+	f.SetColWidth(sheet, "A", "A", 30)
+	f.SetColWidth(sheet, "B", "C", 20)
+
+	return f, nil
+}
+

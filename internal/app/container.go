@@ -117,7 +117,7 @@ func NewContainer(db *gorm.DB, mongoRRHH *mongo.Database, mongoChat *mongo.Datab
 	peopleService := services.NewPeopleService(peopleRepo)
 	estadoPasajeService := services.NewEstadoPasajeService(estadoPasajeRepo)
 
-	reportService := services.NewReportService(solicitudRepo, aerolineaRepo, pasajeRepo, agenciaRepo, configService)
+	reportService := services.NewReportService(solicitudRepo, aerolineaRepo, pasajeRepo, agenciaRepo, cupoRepo, configService)
 	cupoService := services.NewCupoService(cupoRepo, userRepo, itemRepo, solicitudRepo)
 	userService := services.NewUsuarioService(userRepo, peopleRepo, deptoRepo, mongoUserRepo, cargoRepo, oficinaRepo)
 

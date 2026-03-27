@@ -77,7 +77,8 @@
     class="bg-white shadow rounded-lg border border-neutral-200"
     @input.debounce.50ms="canSubmit = $refs.form.checkValidity()"
     @change.debounce.50ms="canSubmit = $refs.form.checkValidity()"
-    @submit="submitting = true">
+    @submit="submitting = true"
+    autocomplete="off">
     <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
     <input type="hidden" name="solicitud_id" value="{{ .Solicitud.ID }}" />
 

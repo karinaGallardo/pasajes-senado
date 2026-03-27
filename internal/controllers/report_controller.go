@@ -58,3 +58,52 @@ func (ctrl *ReportController) DownloadConsolidadoExcel(c *gin.Context) {
 		// Too late to redirect if headers sent
 	}
 }
+
+func (ctrl *ReportController) DownloadMorosidadExcel(c *gin.Context) {
+	f, err := ctrl.reportService.GenerateMorosidadDescargosExcel(c.Request.Context())
+	if err != nil {
+		utils.SetErrorMessage(c, "Error generando reporte: "+err.Error())
+		c.Redirect(http.StatusFound, "/admin/reports")
+		return
+	}
+
+	fileName := fmt.Sprintf("Reporte_Morosidad_%s.xlsx", utils.FormatDateFilename())
+	c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+	c.Header("Content-Disposition", "attachment; filename="+fileName)
+	_ = f.Write(c.Writer)
+}
+
+func (ctrl *ReportController) DownloadUsoCuposExcel(c *gin.Context) {
+	anio := utils.StrToInt(c.Query("anio"), 2026)
+	mes := utils.StrToInt(c.Query("mes"), 3)
+
+	f, err := ctrl.reportService.GenerateUsoCuposExcel(c.Request.Context(), anio, mes)
+	if err != nil {
+		utils.SetErrorMessage(c, "Error generando reporte: "+err.Error())
+		c.Redirect(http.StatusFound, "/admin/reports")
+		return
+	}
+
+	fileName := fmt.Sprintf("Reporte_Cupos_%d_%d.xlsx", anio, mes)
+	c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+	c.Header("Content-Disposition", "attachment; filename="+fileName)
+	_ = f.Write(c.Writer)
+}
+
+func (ctrl *ReportController) DownloadEstadisticasAerolineaExcel(c *gin.Context) {
+	var filter dtos.ReportFilterRequest
+	_ = c.ShouldBindQuery(&filter)
+
+	f, err := ctrl.reportService.GenerateEstadisticasAerolineaExcel(c.Request.Context(), filter)
+	if err != nil {
+		utils.SetErrorMessage(c, "Error generando reporte: "+err.Error())
+		c.Redirect(http.StatusFound, "/admin/reports")
+		return
+	}
+
+	fileName := fmt.Sprintf("Estadisticas_Aerolineas_%s.xlsx", utils.FormatDateFilename())
+	c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+	c.Header("Content-Disposition", "attachment; filename="+fileName)
+	_ = f.Write(c.Writer)
+}
+

@@ -46,3 +46,13 @@ func ParseDateTime(val string) (*time.Time, error) {
 	}
 	return nil, fmt.Errorf("formato de fecha y hora inválido: %s", val)
 }
+func StrToInt(s string, def int) int {
+	if s == "" {
+		return def
+	}
+	val, err := strconv.Atoi(s)
+	if err != nil {
+		return def
+	}
+	return val
+}

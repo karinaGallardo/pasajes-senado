@@ -60,7 +60,7 @@
           </button>
         </div>
 
-        <form action="/solicitud-items/reprogramar" method="POST" @submit="loading = true">
+        <form action="/solicitud-items/reprogramar" method="POST" @submit="loading = true" autocomplete="off">
           <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
           <input type="hidden" name="solicitud_item_id" x-model="id" />
 
