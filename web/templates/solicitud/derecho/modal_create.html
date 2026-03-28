@@ -22,8 +22,8 @@
         isEdit: false,
         canEditIda: true,
         canEditVuelta: true,
-        idaProgramada: true,
-        vueltaProgramada: true,
+        idaProgramada: {{ if eq .Itinerario.Codigo `SOLO_VUELTA` }}false{{ else }}true{{ end }},
+        vueltaProgramada: {{ if eq .Itinerario.Codigo `SOLO_IDA` }}false{{ else }}true{{ end }},
         editId: '',
         motivo: '',
         aerolinea: '',
@@ -36,6 +36,24 @@
         destinoCiudad: '{{ .Destino.Ciudad }}',
         destinoIATA: '{{ .Destino.IATA }}',
         destinoAero: '{{ .Destino.Aeropuerto }}',
+        origenesAutorizados: {{ json .OrigenesAutorizados }},
+        showOrigenSelector: false,
+
+        setOrigen(dest) {
+          if (this.tipoItinerario === 'SOLO_IDA' || this.tipoItinerario === 'IDA_VUELTA') {
+             this.origenCiudad = dest.ciudad;
+             this.origenIATA = dest.iata;
+             this.origenAero = dest.aeropuerto;
+             // LPB remains fixed as destination in these cases
+          } else if (this.tipoItinerario === 'SOLO_VUELTA') {
+             // Return only, base is THE destination (LPB -> Base)
+             this.destinoCiudad = dest.ciudad;
+             this.destinoIATA = dest.iata;
+             this.destinoAero = dest.aeropuerto;
+             // LPB remains fixed as origin
+          }
+          this.showOrigenSelector = false;
+        },
 
         validateForm() {
           return this.error === '';
@@ -78,23 +96,16 @@
               <span class="text-primary-600 font-bold ml-1">{{ rangoSemana .Item.FechaDesde .Item.FechaHasta }}</span>
             </p>
           </div>
-        </div>        <div class="flex items-center gap-3">
+        </div>
+        <div class="flex items-center gap-3">
           <span x-show="error" x-text="error" class="text-xs text-danger-500 font-bold hidden sm:inline-block mr-2"></span>
 
-          <button
-            type="submit"
-            form="pasajeForm"
-            :disabled="isSubmitting || error !== ''"
-            class="btn-md btn-primary min-w-[120px]"
-            :class="isSubmitting ? 'loading' : ''">
+          <button type="submit" form="pasajeForm" :disabled="isSubmitting || error !== ''" class="btn-md btn-primary min-w-[120px]" :class="isSubmitting ? 'loading' : ''">
             <i x-show="!isSubmitting" class="ph ph-check-circle"></i>
             <span>Guardar Solicitud</span>
           </button>
 
-          <button
-            @click="open = false"
-            type="button"
-            class="btn-md btn-white">
+          <button @click="open = false" type="button" class="btn-md btn-white">
             <i class="ph ph-x"></i>
             <span>Cerrar</span>
           </button>
@@ -152,15 +163,58 @@
 
               <div class="relative flex items-center justify-between gap-4">
                 <!-- ORIGEN -->
-                <div class="flex-1">
+                <div class="flex-1 relative">
                   <div class="flex items-center space-x-3">
                     <div class="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary shadow-inner">
                       <i class="ph ph-map-pin text-2xl"></i>
                     </div>
-                    <div>
-                      <h4 class="text-xs font-black text-primary uppercase tracking-widest mb-0.5">Origen</h4>
-                      <div class="text-2xl font-black text-neutral-800 tracking-tighter leading-none" x-text="origenCiudad"></div>
-                      <div class="text-[10px] font-bold text-neutral-400 mt-1 uppercase truncate max-w-[150px]" x-text="origenAero"></div>
+                    <div class="flex-1 min-w-0">
+                      <div class="flex items-center gap-1.5">
+                        <h4 class="text-xs font-black text-primary uppercase tracking-widest mb-0.5" x-text="(tipoItinerario === 'SOLO_VUELTA' ? 'Destino' : 'Origen')"></h4>
+                        <template x-if="origenesAutorizados && origenesAutorizados.length > 0">
+                          <button
+                            type="button"
+                            @click="showOrigenSelector = !showOrigenSelector"
+                            class="p-0.5 hover:bg-primary-50 text-neutral-400 hover:text-primary rounded transition-colors"
+                            title="Cambiar origen autorizado">
+                            <i class="ph ph-note-pencil text-xs"></i>
+                          </button>
+                        </template>
+                      </div>
+                      <div
+                        class="text-2xl font-black text-neutral-800 tracking-tighter leading-none truncate"
+                        x-text="(tipoItinerario === 'SOLO_VUELTA' ? destinoCiudad : origenCiudad)"></div>
+                      <div
+                        class="text-[10px] font-bold text-neutral-400 mt-1 uppercase truncate max-w-[150px]"
+                        x-text="(tipoItinerario === 'SOLO_VUELTA' ? destinoAero : origenAero)"></div>
+                    </div>
+                  </div>
+
+                  <!-- Dropdown selector de orígenes autorizados -->
+                  <div
+                    x-show="showOrigenSelector"
+                    @click.away="showOrigenSelector = false"
+                    class="absolute top-full left-0 mt-2 w-64 bg-white border border-neutral-200 rounded-lg shadow-xl z-50 overflow-hidden"
+                    x-cloak
+                    x-transition>
+                    <div class="bg-neutral-50 px-3 py-2 border-b border-neutral-100">
+                      <span class="text-[10px] font-black text-neutral-500 uppercase">Seleccionar Origen Autorizado</span>
+                    </div>
+                    <div class="max-h-48 overflow-y-auto">
+                      <template x-for="dest in origenesAutorizados" :key="dest.iata">
+                        <button
+                          type="button"
+                          @click="setOrigen(dest)"
+                          class="w-full text-left px-3 py-2 hover:bg-primary-50 transition-colors border-b border-neutral-50 last:border-0 group">
+                          <div class="flex items-center justify-between">
+                            <span class="text-sm font-bold text-neutral-700 group-hover:text-primary" x-text="dest.ciudad"></span>
+                            <span
+                              class="text-[10px] font-black text-neutral-400 bg-neutral-100 px-1.5 rounded group-hover:bg-primary/20 group-hover:text-primary"
+                              x-text="dest.iata"></span>
+                          </div>
+                          <div class="text-[9px] text-neutral-400 group-hover:text-primary/70 truncate" x-text="dest.aeropuerto"></div>
+                        </button>
+                      </template>
                     </div>
                   </div>
                 </div>
@@ -221,13 +275,17 @@
                           <div>
                             <div class="flex items-center gap-2">
                               <div class="text-sm font-black text-neutral-800 tracking-tight">
-                                {{ .Origen.IATA }}
+                                <span x-text="origenIATA"></span>
                                 <i class="ph ph-arrow-right text-[10px] mx-1 text-neutral-400"></i>
-                                {{ .Destino.IATA }}
+                                <span x-text="destinoIATA"></span>
                               </div>
                               <span class="px-1.5 py-0.5 rounded-sm bg-primary-100 text-primary-700 text-[8px] font-black uppercase tracking-tighter">IDA</span>
                             </div>
-                            <div class="text-[10px] font-bold text-neutral-400 uppercase tracking-tighter">{{ .Origen.Ciudad }} • {{ .Destino.Ciudad }}</div>
+                            <div class="text-[10px] font-bold text-neutral-400 uppercase tracking-tighter">
+                              <span x-text="origenCiudad"></span>
+                              •
+                              <span x-text="destinoCiudad"></span>
+                            </div>
                           </div>
                         </div>
                       </td>
@@ -269,13 +327,17 @@
                           <div>
                             <div class="flex items-center gap-2">
                               <div class="text-sm font-black text-neutral-800 tracking-tight">
-                                {{ .Destino.IATA }}
+                                <span x-text="destinoIATA"></span>
                                 <i class="ph ph-arrow-right text-[10px] mx-1 text-neutral-400"></i>
-                                {{ .Origen.IATA }}
+                                <span x-text="origenIATA"></span>
                               </div>
                               <span class="px-1.5 py-0.5 rounded-sm bg-secondary-100 text-secondary-700 text-[8px] font-black uppercase tracking-tighter">VUELTA</span>
                             </div>
-                            <div class="text-[10px] font-bold text-neutral-400 uppercase tracking-tighter">{{ .Destino.Ciudad }} • {{ .Origen.Ciudad }}</div>
+                            <div class="text-[10px] font-bold text-neutral-400 uppercase tracking-tighter">
+                              <span x-text="destinoCiudad"></span>
+                              •
+                              <span x-text="origenCiudad"></span>
+                            </div>
                           </div>
                         </div>
                       </td>
@@ -417,7 +479,6 @@
                     disabled
                     class="w-full px-4 py-3 bg-white border border-neutral-200 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-bold text-neutral-700 transition-all placeholder:text-neutral-400 placeholder:font-medium disabled:bg-neutral-100 disabled:text-neutral-500"></textarea>
                 </div>
-
               </div>
             </section>
           </div>

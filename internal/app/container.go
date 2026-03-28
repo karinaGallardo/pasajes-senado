@@ -119,7 +119,7 @@ func NewContainer(db *gorm.DB, mongoRRHH *mongo.Database, mongoChat *mongo.Datab
 
 	reportService := services.NewReportService(solicitudRepo, aerolineaRepo, pasajeRepo, agenciaRepo, cupoRepo, configService)
 	cupoService := services.NewCupoService(cupoRepo, userRepo, itemRepo, solicitudRepo)
-	userService := services.NewUsuarioService(userRepo, peopleRepo, deptoRepo, mongoUserRepo, cargoRepo, oficinaRepo)
+	userService := services.NewUsuarioService(userRepo, peopleRepo, deptoRepo, mongoUserRepo, rolRepo, destinoRepo, cargoRepo, oficinaRepo)
 
 	solicitudService := services.NewSolicitudService(
 		solicitudRepo,
@@ -209,9 +209,9 @@ func NewContainer(db *gorm.DB, mongoRRHH *mongo.Database, mongoChat *mongo.Datab
 	)
 
 	solicitudCtrl := controllers.NewSolicitudController(solicitudService, userService)
-	usuarioCtrl := controllers.NewUsuarioController(userService, rolService, destinoService, organigramaService)
-	senadorCtrl := controllers.NewSenadorController(userService, rolService, destinoService, organigramaService)
-	funcionarioCtrl := controllers.NewFuncionarioController(userService, rolService, destinoService, organigramaService)
+	usuarioCtrl := controllers.NewUsuarioController(userService, auditService)
+	senadorCtrl := controllers.NewSenadorController(userService, auditService)
+	funcionarioCtrl := controllers.NewFuncionarioController(userService, auditService)
 	dashboardCtrl := controllers.NewDashboardController(solicitudService, descargoService, userService)
 	compensacionCtrl := controllers.NewCompensacionController(compensacionService, userService)
 
@@ -237,7 +237,7 @@ func NewContainer(db *gorm.DB, mongoRRHH *mongo.Database, mongoChat *mongo.Datab
 	authCtrl := controllers.NewAuthController(authService)
 	pasajeCtrl := controllers.NewPasajeController(agenciaService, rutaService, solicitudService, pasajeService, aerolineaService)
 	perfilCtrl := controllers.NewPerfilController(destinoService)
-	catalogoCtrl := controllers.NewCatalogoController(tipoSolicitudService)
+	catalogoCtrl := controllers.NewCatalogoController(tipoSolicitudService, destinoService, userService)
 
 	viaticoCtrl := controllers.NewViaticoController(viaticoService, solicitudService, catViaticoService, reportService)
 	aerolineaCtrl := controllers.NewAerolineaController(aerolineaService)

@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"sistema-pasajes/internal/models"
+	"strings"
 
 	"gorm.io/gorm"
 )
@@ -43,4 +44,22 @@ func (r *DestinoRepository) Create(ctx context.Context, d *models.Destino) error
 
 func (r *DestinoRepository) Update(ctx context.Context, d *models.Destino) error {
 	return r.db.WithContext(ctx).Save(d).Error
+}
+
+func (r *DestinoRepository) Search(ctx context.Context, query string) ([]models.Destino, error) {
+	var list []models.Destino
+	words := strings.Fields(query)
+	db := r.db.WithContext(ctx).
+		Preload("Ambito").
+		Preload("Departamento")
+
+	for _, word := range words {
+		q := "%" + word + "%"
+		db = db.Where("(iata ILIKE ? OR ciudad ILIKE ? OR aeropuerto ILIKE ?)", q, q, q)
+	}
+
+	err := db.Order("ciudad asc").
+		Limit(20).
+		Find(&list).Error
+	return list, err
 }

@@ -43,6 +43,21 @@
         destinoCiudad: '{{ .Destino.Ciudad }}',
         destinoIATA: '{{ .Destino.IATA }}',
         destinoAero: '{{ .Destino.Aeropuerto }}',
+        origenesAutorizados: {{ json .OrigenesAutorizados }},
+        showOrigenSelector: false,
+
+        setOrigen(dest) {
+          if (this.tipoItinerario === 'SOLO_IDA' || this.tipoItinerario === 'IDA_VUELTA') {
+             this.origenCiudad = dest.ciudad;
+             this.origenIATA = dest.iata;
+             this.origenAero = dest.aeropuerto;
+          } else if (this.tipoItinerario === 'SOLO_VUELTA') {
+             this.destinoCiudad = dest.ciudad;
+             this.destinoIATA = dest.iata;
+             this.destinoAero = dest.aeropuerto;
+          }
+          this.showOrigenSelector = false;
+        },
 
         validateForm() {
           return this.error === '';
@@ -118,7 +133,9 @@
           <i class="ph ph-warning text-warning-500 text-xl"></i>
           <p class="text-xs text-warning-700 font-medium">
             {{ .AlertaOrigen }}
-            <a href="{{ if eq .AuthUser.ID .TargetUser.ID }}/perfil{{ else }}/usuarios/{{ .TargetUser.ID }}/editar{{ end }}" class="font-bold underline hover:text-warning-800 ml-1">
+            <a
+              href="{{ if eq .AuthUser.ID .TargetUser.ID }}/perfil{{ else }}/usuarios/{{ .TargetUser.ID }}/editar{{ end }}"
+              class="font-bold underline hover:text-warning-800 ml-1">
               Configurar ahora
             </a>
           </p>
@@ -171,10 +188,53 @@
                       <div class="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary shadow-inner">
                         <i class="ph ph-map-pin text-2xl"></i>
                       </div>
-                      <div>
-                        <h4 class="text-xs font-black text-primary uppercase tracking-widest mb-0.5">Origen</h4>
-                        <div class="text-2xl font-black text-neutral-800 tracking-tighter leading-none" x-text="origenCiudad"></div>
-                        <div class="text-[10px] font-bold text-neutral-400 mt-1 uppercase truncate max-w-[150px]" x-text="origenAero"></div>
+                      <div class="flex-1 min-w-0">
+                        <div class="flex items-center gap-1.5">
+                          <h4 class="text-xs font-black text-primary uppercase tracking-widest mb-0.5" x-text="(tipoItinerario === 'SOLO_VUELTA' ? 'Destino' : 'Origen')"></h4>
+                          <template x-if="origenesAutorizados && origenesAutorizados.length > 0">
+                            <button
+                              type="button"
+                              @click="showOrigenSelector = !showOrigenSelector"
+                              class="p-0.5 hover:bg-primary-50 text-neutral-400 hover:text-primary rounded transition-colors"
+                              title="Cambiar origen autorizado">
+                              <i class="ph ph-note-pencil text-xs"></i>
+                            </button>
+                          </template>
+                        </div>
+                        <div
+                          class="text-2xl font-black text-neutral-800 tracking-tighter leading-none"
+                          x-text="(tipoItinerario === 'SOLO_VUELTA' ? destinoCiudad : origenCiudad)"></div>
+                        <div
+                          class="text-[10px] font-bold text-neutral-400 mt-1 uppercase truncate max-w-[150px]"
+                          x-text="(tipoItinerario === 'SOLO_VUELTA' ? destinoAero : origenAero)"></div>
+                      </div>
+                    </div>
+
+                    <!-- Dropdown selector de orígenes autorizados -->
+                    <div
+                      x-show="showOrigenSelector"
+                      @click.away="showOrigenSelector = false"
+                      class="absolute top-full left-0 mt-2 w-64 bg-white border border-neutral-200 rounded-lg shadow-xl z-50 overflow-hidden"
+                      x-cloak
+                      x-transition>
+                      <div class="bg-neutral-50 px-3 py-2 border-b border-neutral-100">
+                        <span class="text-[10px] font-black text-neutral-500 uppercase">Seleccionar Origen Autorizado</span>
+                      </div>
+                      <div class="max-h-48 overflow-y-auto">
+                        <template x-for="dest in origenesAutorizados" :key="dest.iata">
+                          <button
+                            type="button"
+                            @click="setOrigen(dest)"
+                            class="w-full text-left px-3 py-2 hover:bg-primary-50 transition-colors border-b border-neutral-50 last:border-0 group">
+                            <div class="flex items-center justify-between">
+                              <span class="text-sm font-bold text-neutral-700 group-hover:text-primary" x-text="dest.ciudad"></span>
+                              <span
+                                class="text-[10px] font-black text-neutral-400 bg-neutral-100 px-1.5 rounded group-hover:bg-primary/20 group-hover:text-primary"
+                                x-text="dest.iata"></span>
+                            </div>
+                            <div class="text-[9px] text-neutral-400 group-hover:text-primary/70 truncate" x-text="dest.aeropuerto"></div>
+                          </button>
+                        </template>
                       </div>
                     </div>
                   </div>
@@ -235,13 +295,17 @@
                             <div>
                               <div class="flex items-center gap-2">
                                 <div class="text-sm font-black text-neutral-800 tracking-tight">
-                                  {{ .Origen.IATA }}
+                                  <span x-text="origenIATA"></span>
                                   <i class="ph ph-arrow-right text-[10px] mx-1 text-neutral-400"></i>
-                                  {{ .Destino.IATA }}
+                                  <span x-text="destinoIATA"></span>
                                 </div>
                                 <span class="px-1.5 py-0.5 rounded-sm bg-primary-100 text-primary-700 text-[8px] font-black uppercase tracking-tighter">IDA</span>
                               </div>
-                              <div class="text-[10px] font-bold text-neutral-400 uppercase tracking-tighter">{{ .Origen.Ciudad }} • {{ .Destino.Ciudad }}</div>
+                              <div class="text-[10px] font-bold text-neutral-400 uppercase tracking-tighter">
+                                <span x-text="origenCiudad"></span>
+                                •
+                                <span x-text="destinoCiudad"></span>
+                              </div>
                             </div>
                           </div>
                         </td>
@@ -303,13 +367,17 @@
                             <div>
                               <div class="flex items-center gap-2">
                                 <div class="text-sm font-black text-neutral-800 tracking-tight">
-                                  {{ .Destino.IATA }}
+                                  <span x-text="destinoIATA"></span>
                                   <i class="ph ph-arrow-right text-[10px] mx-1 text-neutral-400"></i>
-                                  {{ .Origen.IATA }}
+                                  <span x-text="origenIATA"></span>
                                 </div>
                                 <span class="px-1.5 py-0.5 rounded-sm bg-secondary-100 text-secondary-700 text-[8px] font-black uppercase tracking-tighter">VUELTA</span>
                               </div>
-                              <div class="text-[10px] font-bold text-neutral-400 uppercase tracking-tighter">{{ .Destino.Ciudad }} • {{ .Origen.Ciudad }}</div>
+                              <div class="text-[10px] font-bold text-neutral-400 uppercase tracking-tighter">
+                                <span x-text="destinoCiudad"></span>
+                                •
+                                <span x-text="origenCiudad"></span>
+                              </div>
                             </div>
                           </div>
                         </td>
@@ -346,10 +414,10 @@
                               :disabled="!canEditVuelta"
                               :class="!canEditVuelta ? 'bg-neutral-100 cursor-not-allowed opacity-75' : 'bg-neutral-50 hover:bg-neutral-100'"
                               x-flatpickr="{
-                                 enableTime: true,
-                                 dateFormat: 'Y-m-d H:i',
-                                 altFormat: 'd/m/Y h:i K',
-                                 time_24hr: false
+                                enableTime: true,
+                                dateFormat: 'Y-m-d H:i',
+                                altFormat: 'd/m/Y h:i K',
+                                time_24hr: false
                               }"
                               class="w-full px-3 py-1.5 border border-neutral-200 rounded-lg text-xs font-bold text-neutral-700 font-mono focus:ring-2 focus:ring-secondary/20 transition-all" />
                           </div>

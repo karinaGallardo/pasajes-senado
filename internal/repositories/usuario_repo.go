@@ -63,8 +63,8 @@ func SearchUsuario(term string) func(db *gorm.DB) *gorm.DB {
 		words := strings.Fields(term)
 		for _, word := range words {
 			likeTerm := "%" + word + "%"
-			db = db.Where("(username ILIKE ? OR ci ILIKE ? OR firstname ILIKE ? OR lastname ILIKE ? OR email ILIKE ?)",
-				likeTerm, likeTerm, likeTerm, likeTerm, likeTerm)
+			db = db.Where("(username ILIKE ? OR ci ILIKE ? OR firstname ILIKE ? OR secondname ILIKE ? OR lastname ILIKE ? OR surname ILIKE ? OR email ILIKE ?)",
+				likeTerm, likeTerm, likeTerm, likeTerm, likeTerm, likeTerm, likeTerm)
 		}
 
 		return db
@@ -107,6 +107,18 @@ func (r *UsuarioRepository) FindPaginated(ctx context.Context, roleType string, 
 	}, err
 }
 
+func (r *UsuarioRepository) SearchStaff(ctx context.Context, query string) ([]models.Usuario, error) {
+	var usuarios []models.Usuario
+	err := r.db.WithContext(ctx).
+		Preload("Rol").
+		Preload("Cargo").
+		Preload("Oficina").
+		Scopes(FilterByRoleType("FUNCIONARIO"), SearchUsuario(query)).
+		Limit(20).
+		Find(&usuarios).Error
+	return usuarios, err
+}
+
 func (r *UsuarioRepository) FindByRoleType(ctx context.Context, roleType string) ([]models.Usuario, error) {
 	var usuarios []models.Usuario
 	query := r.db.WithContext(ctx).Preload("Rol").Preload("Genero").Preload("Origen").Preload("Departamento")
@@ -140,6 +152,7 @@ func (r *UsuarioRepository) FindByID(ctx context.Context, id string) (*models.Us
 		Preload("Encargado").
 		Preload("Origen").
 		Preload("Departamento").
+		Preload("OrigenesAlternativos.Destino").
 		First(&usuario, "id = ?", id).Error
 	return &usuario, err
 }
@@ -156,6 +169,33 @@ func (r *UsuarioRepository) UpdateRol(ctx context.Context, id string, rolCodigo 
 
 func (r *UsuarioRepository) Update(ctx context.Context, usuario *models.Usuario) error {
 	return r.db.WithContext(ctx).Save(usuario).Error
+}
+
+func (r *UsuarioRepository) SyncOrigenesAlternativos(ctx context.Context, usuarioID string, origins []string) error {
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// Eliminar existentes (Borrado FÍSICO para evitar conflictos con el índice único)
+		if err := tx.Unscoped().Where("usuario_id = ?", usuarioID).Delete(&models.UsuarioOrigenAlternativo{}).Error; err != nil {
+			return err
+		}
+
+		// Insertar nuevos (filtrando duplicados en Go antes de intentar insertarlos)
+		uniqueOrigins := make(map[string]bool)
+		for _, iata := range origins {
+			if iata == "" || uniqueOrigins[iata] {
+				continue
+			}
+			uniqueOrigins[iata] = true
+
+			newOrigin := models.UsuarioOrigenAlternativo{
+				UsuarioID:   usuarioID,
+				DestinoIATA: iata,
+			}
+			if err := tx.Create(&newOrigin).Error; err != nil {
+				return err
+			}
+		}
+		return nil
+	})
 }
 
 func (r *UsuarioRepository) FindByCI(ctx context.Context, ci string) (*models.Usuario, error) {

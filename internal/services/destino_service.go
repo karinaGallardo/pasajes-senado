@@ -27,3 +27,7 @@ func (s *DestinoService) GetByAmbito(ctx context.Context, ambito string) ([]mode
 func (s *DestinoService) GetByIATA(ctx context.Context, iata string) (*models.Destino, error) {
 	return s.repo.FindByIATA(ctx, iata)
 }
+
+func (s *DestinoService) Search(ctx context.Context, query string) ([]models.Destino, error) {
+	return s.repo.Search(ctx, query)
+}

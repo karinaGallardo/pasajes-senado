@@ -23,6 +23,7 @@ func main() {
 
 		// Catálogos Geográficos y de Transporte
 		&models.Destino{},
+		&models.UsuarioOrigenAlternativo{},
 		// &models.Ciudad{},
 		&models.Departamento{},
 		&models.Aerolinea{},

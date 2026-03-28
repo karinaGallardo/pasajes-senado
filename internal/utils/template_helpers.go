@@ -127,10 +127,10 @@ func FormatDateRange(ini, fin *time.Time) string {
 	return fmt.Sprintf("%s - %s", ini.Format("02/01"), fin.Format("02/01"))
 }
 
-// ToJSON serializa un valor a string JSON.
-func ToJSON(v any) string {
+// ToJSON serializa un valor a string JSON seguro para JavaScript.
+func ToJSON(v any) template.JS {
 	b, _ := json.Marshal(v)
-	return string(b)
+	return template.JS(b)
 }
 
 // FormatWeekRange formatea un rango de fechas al estilo "(lun, 09 de feb al dom, 15 de feb)".

@@ -12,23 +12,17 @@ import (
 )
 
 type FuncionarioController struct {
-	userService        *services.UsuarioService
-	rolService         *services.RolService
-	destinoService     *services.DestinoService
-	organigramaService *services.OrganigramaService
+	userService  *services.UsuarioService
+	auditService *services.AuditService
 }
 
 func NewFuncionarioController(
 	userService *services.UsuarioService,
-	rolService *services.RolService,
-	destinoService *services.DestinoService,
-	organigramaService *services.OrganigramaService,
+	auditService *services.AuditService,
 ) *FuncionarioController {
 	return &FuncionarioController{
-		userService:        userService,
-		rolService:         rolService,
-		destinoService:     destinoService,
-		organigramaService: organigramaService,
+		userService:  userService,
+		auditService: auditService,
 	}
 }
 

@@ -6,83 +6,80 @@ import (
 	"sistema-pasajes/internal/dtos"
 	"sistema-pasajes/internal/services"
 	"sistema-pasajes/internal/utils"
-	"strings"
+
+	"log/slog"
 
 	"github.com/gin-gonic/gin"
 )
 
 type UsuarioController struct {
-	userService        *services.UsuarioService
-	rolService         *services.RolService
-	destinoService     *services.DestinoService
-	organigramaService *services.OrganigramaService
+	userService  *services.UsuarioService
+	auditService *services.AuditService
 }
 
 func NewUsuarioController(
 	userService *services.UsuarioService,
-	rolService *services.RolService,
-	destinoService *services.DestinoService,
-	organigramaService *services.OrganigramaService,
+	auditService *services.AuditService,
 ) *UsuarioController {
 	return &UsuarioController{
-		userService:        userService,
-		rolService:         rolService,
-		destinoService:     destinoService,
-		organigramaService: organigramaService,
+		userService:  userService,
+		auditService: auditService,
 	}
 }
 
 func (ctrl *UsuarioController) Edit(c *gin.Context) {
 	id := c.Param("id")
-	usuario, err := ctrl.userService.GetByID(c.Request.Context(), id)
+	authUser := appcontext.AuthUser(c)
+
+	ctx, err := ctrl.userService.GetEditContext(c.Request.Context(), id, authUser)
 	if err != nil {
 		c.String(http.StatusNotFound, "Usuario no encontrado")
 		return
 	}
-	roles, _ := ctrl.rolService.GetAll(c.Request.Context())
-	destinos, _ := ctrl.destinoService.GetAll(c.Request.Context())
 
-	funcionarios, _ := ctrl.userService.GetByRoleType(c.Request.Context(), "FUNCIONARIO")
-	cargos, _ := ctrl.organigramaService.GetAllCargos(c.Request.Context())
-	oficinas, _ := ctrl.organigramaService.GetAllOficinas(c.Request.Context())
+	data := gin.H{
+		"Usuario":      ctx.Usuario,
+		"Roles":        ctx.Roles,
+		"Destinos":     ctx.Destinos,
+		"Funcionarios": ctx.Funcionarios,
+		"Cargos":       ctx.Cargos,
+		"Oficinas":     ctx.Oficinas,
+	}
+	for k, v := range ctx.Permissions {
+		data[k] = v
+	}
 
 	viewName := "usuarios/edit"
 	if c.GetHeader("HX-Request") == "true" {
-		viewName = "usuarios/components/edit_modal"
+		viewName = "usuarios/components/usuario_edit_modal"
 	}
 
-	utils.Render(c, viewName, gin.H{
-		"Usuario":      usuario,
-		"Roles":        roles,
-		"Destinos":     destinos,
-		"Funcionarios": funcionarios,
-		"Cargos":       cargos,
-		"Oficinas":     oficinas,
-	})
+	utils.Render(c, viewName, data)
 }
 
 func (ctrl *UsuarioController) GetEditModal(c *gin.Context) {
 	id := c.Param("id")
-	usuario, err := ctrl.userService.GetByID(c.Request.Context(), id)
+	authUser := appcontext.AuthUser(c)
+
+	ctx, err := ctrl.userService.GetEditContext(c.Request.Context(), id, authUser)
 	if err != nil {
 		c.String(http.StatusNotFound, "Usuario no encontrado")
 		return
 	}
-	roles, _ := ctrl.rolService.GetAll(c.Request.Context())
-	destinos, _ := ctrl.destinoService.GetAll(c.Request.Context())
 
-	funcionarios, _ := ctrl.userService.GetByRoleType(c.Request.Context(), "FUNCIONARIO")
-	cargos, _ := ctrl.organigramaService.GetAllCargos(c.Request.Context())
-	oficinas, _ := ctrl.organigramaService.GetAllOficinas(c.Request.Context())
+	data := gin.H{
+		"Usuario":      ctx.Usuario,
+		"Roles":        ctx.Roles,
+		"Destinos":     ctx.Destinos,
+		"Funcionarios": ctx.Funcionarios,
+		"Cargos":       ctx.Cargos,
+		"Oficinas":     ctx.Oficinas,
+	}
+	for k, v := range ctx.Permissions {
+		data[k] = v
+	}
 
-	utils.Render(c, "usuarios/components/edit_modal", gin.H{
-		"Usuario":      usuario,
-		"Roles":        roles,
-		"Destinos":     destinos,
-		"Funcionarios": funcionarios,
-		"Cargos":       cargos,
-		"Oficinas":     oficinas,
-	})
+	utils.Render(c, "usuarios/components/usuario_edit_modal", data)
 }
 
 func (ctrl *UsuarioController) Update(c *gin.Context) {
@@ -121,38 +118,68 @@ func (ctrl *UsuarioController) Update(c *gin.Context) {
 		return
 	}
 
-	if req.RolCodigo != "" {
-		usuario.RolCodigo = &req.RolCodigo
-	}
+	if authUser.IsAdminOrResponsable() {
+		if req.RolCodigo != "" {
+			usuario.RolCodigo = &req.RolCodigo
+		}
 
-	if req.OrigenIATA != "" {
-		usuario.OrigenIATA = &req.OrigenIATA
-	} else {
-		usuario.OrigenIATA = nil
-	}
+		if req.OrigenIATA != "" {
+			usuario.OrigenIATA = &req.OrigenIATA
+		} else {
+			usuario.OrigenIATA = nil
+		}
 
-	if req.EncargadoID != "" {
-		usuario.EncargadoID = &req.EncargadoID
-	} else {
-		usuario.EncargadoID = nil
+		if req.EncargadoID != "" {
+			usuario.EncargadoID = &req.EncargadoID
+		} else {
+			usuario.EncargadoID = nil
+		}
 	}
 
 	usuario.Email = req.Email
 	usuario.Phone = req.Phone
 
+	var successMsg, errorMsg string
+
 	if err := ctrl.userService.Update(c.Request.Context(), usuario); err != nil {
-		c.String(http.StatusInternalServerError, "Error actualizando usuario")
-		return
+		slog.Error("Error actualizando usuario", "id", id, "err", err)
+		errorMsg = "Error al actualizar datos básicos: " + err.Error()
+	} else {
+		// Sincronizar Orígenes Alternativos si es privilegiado y es senador
+		if authUser.IsAdminOrResponsable() && usuario.IsSenador() {
+			if err := ctrl.userService.SyncOrigenesAlternativos(c.Request.Context(), usuario.ID, req.OrigenesAlternativos); err != nil {
+				slog.Error("Error sincronizando orígenes alternativos", "id", usuario.ID, "err", err)
+				errorMsg = "Error al sincronizar orígenes alternativos: " + err.Error()
+			}
+		}
+	}
+
+	if errorMsg == "" {
+		successMsg = "Cambios guardados exitosamente"
+		// AUDITORÍA: Registrar el cambio
+		go ctrl.auditService.Log(c.Request.Context(), "UPDATE_USER", "Usuario", id, "", "Actualización de perfil/logística", "", "")
+	}
+
+	editCtx, _ := ctrl.userService.GetEditContext(c.Request.Context(), id, authUser)
+	data := gin.H{
+		"Usuario":      editCtx.Usuario,
+		"Roles":        editCtx.Roles,
+		"Destinos":     editCtx.Destinos,
+		"Funcionarios": editCtx.Funcionarios,
+		"Cargos":       editCtx.Cargos,
+		"Oficinas":     editCtx.Oficinas,
+		"Success":      successMsg,
+		"Error":        errorMsg,
+	}
+	for k, v := range editCtx.Permissions {
+		data[k] = v
 	}
 
 	if c.GetHeader("HX-Request") == "true" {
-		referer := c.Request.Header.Get("Referer")
-		if strings.Contains(referer, "/perfil") || strings.Contains(referer, "/cupos/derecho") {
-			c.Header("HX-Refresh", "true")
-		} else {
+		if errorMsg == "" {
 			c.Header("HX-Trigger", "reloadTable")
 		}
-		c.Status(http.StatusOK)
+		utils.Render(c, "usuarios/components/usuario_edit_modal", data)
 		return
 	}
 
@@ -184,9 +211,9 @@ func (ctrl *UsuarioController) UpdateOrigin(c *gin.Context) {
 		return
 	}
 
-	isEncargado := targetUser.EncargadoID != nil && *targetUser.EncargadoID == authUser.ID
+	isEncargado := targetUser.IsManagedBy(authUser)
 	isPrivileged := authUser.IsAdminOrResponsable()
-	isSelf := targetUser.ID == authUser.ID
+	isSelf := authUser.IsOwner(targetID)
 
 	if !isEncargado && !isPrivileged && !isSelf {
 		c.JSON(http.StatusForbidden, gin.H{"error": "No tiene permisos para modificar este usuario"})
@@ -199,12 +226,12 @@ func (ctrl *UsuarioController) UpdateOrigin(c *gin.Context) {
 		return
 	}
 
-	referer := c.Request.Header.Get("Referer")
-	if referer == "" {
-		referer = "/dashboard"
-	}
-	c.Redirect(http.StatusFound, referer)
+	// AUDITORÍA: Registrar el cambio de origen
+	go ctrl.auditService.Log(c.Request.Context(), "UPDATE_USER_ORIGIN", "Usuario", targetID, "", "Actualización manual de origen", "", "")
+
+	c.JSON(http.StatusOK, gin.H{"message": "Origen actualizado correctamente"})
 }
+
 
 func (ctrl *UsuarioController) Unblock(c *gin.Context) {
 	id := c.Param("id")
@@ -214,8 +241,7 @@ func (ctrl *UsuarioController) Unblock(c *gin.Context) {
 		return
 	}
 
-	usuario.IsBlocked = false
-	usuario.LoginAttempts = 0
+	usuario.Unblock()
 
 	if err := ctrl.userService.Update(c.Request.Context(), usuario); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al desbloquear usuario"})

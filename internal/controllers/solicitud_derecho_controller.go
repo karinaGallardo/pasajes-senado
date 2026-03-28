@@ -105,29 +105,41 @@ func (ctrl *SolicitudDerechoController) GetCreateModal(c *gin.Context) {
 		destino = userLoc
 	}
 
+	// Preparar Orígenes Autorizados para el Senador
+	origenesAutorizados := []models.Destino{}
+	if userLoc != nil {
+		origenesAutorizados = append(origenesAutorizados, *userLoc)
+	}
+	for _, alt := range targetUser.OrigenesAlternativos {
+		if alt.Destino != nil {
+			origenesAutorizados = append(origenesAutorizados, *alt.Destino)
+		}
+	}
+
 	referer := c.Request.Referer()
 	if referer == "" {
 		referer = "/cupos/derecho/" + targetUser.ID
 	}
 
 	utils.Render(c, "solicitud/derecho/modal_create", gin.H{
-		"TargetUser":        targetUser,
-		"Aerolineas":        aerolineas,
-		"Item":              item,
-		"Concepto":          tipoSolicitud.ConceptoViaje,
-		"TipoSolicitud":     tipoSolicitud,
-		"Ambito":            ambitoNac,
-		"Itinerario":        itinerario,
-		"Origen":            origen,
-		"Destino":           destino,
-		"IsEdit":            false,
-		"ReturnURL":         referer,
-		"MinDateIda":        minDateIda,
-		"MaxDateIda":        maxDateIda,
-		"MinDateVuelta":     minDateVuelta,
-		"MaxDateVuelta":     maxDateVuelta,
-		"DefaultDateIda":    time.Now().AddDate(0, 0, 1).Format("2006-01-02"),
-		"DefaultDateVuelta": time.Now().AddDate(0, 0, 4).Format("2006-01-02"),
+		"TargetUser":          targetUser,
+		"Aerolineas":          aerolineas,
+		"Item":                item,
+		"Concepto":            tipoSolicitud.ConceptoViaje,
+		"TipoSolicitud":       tipoSolicitud,
+		"Ambito":              ambitoNac,
+		"Itinerario":          itinerario,
+		"Origen":              origen,
+		"Destino":             destino,
+		"OrigenesAutorizados": origenesAutorizados,
+		"IsEdit":              false,
+		"ReturnURL":           referer,
+		"MinDateIda":          minDateIda,
+		"MaxDateIda":          maxDateIda,
+		"MinDateVuelta":       minDateVuelta,
+		"MaxDateVuelta":       maxDateVuelta,
+		"DefaultDateIda":      time.Now().AddDate(0, 0, 1).Format("2006-01-02"),
+		"DefaultDateVuelta":   time.Now().AddDate(0, 0, 4).Format("2006-01-02"),
 	})
 }
 
@@ -213,26 +225,38 @@ func (ctrl *SolicitudDerechoController) GetEditModal(c *gin.Context) {
 	canEditIda := ida == nil || ida.CanEdit()
 	canEditVuelta := vuelta == nil || vuelta.CanEdit()
 
+	// Preparar Orígenes Autorizados
+	origenesAutorizados := []models.Destino{}
+	if userLoc != nil {
+		origenesAutorizados = append(origenesAutorizados, *userLoc)
+	}
+	for _, alt := range solicitud.Usuario.OrigenesAlternativos {
+		if alt.Destino != nil {
+			origenesAutorizados = append(origenesAutorizados, *alt.Destino)
+		}
+	}
+
 	utils.Render(c, "solicitud/derecho/modal_edit", gin.H{
-		"Aerolineas":    aerolineas,
-		"TargetUser":    &solicitud.Usuario,
-		"Item":          item,
-		"Solicitud":     solicitud,
-		"IsEdit":        true,
-		"Concepto":      solicitud.TipoSolicitud.ConceptoViaje,
-		"TipoSolicitud": solicitud.TipoSolicitud,
-		"Ambito":        solicitud.AmbitoViaje,
-		"Itinerario":    itin,
-		"ReturnURL":     referer,
-		"Origen":        origen,
-		"Destino":       destino,
-		"MinDateIda":    minDateIda,
-		"MaxDateIda":    maxDateIda,
-		"MinDateVuelta": minDateVuelta,
-		"MaxDateVuelta": maxDateVuelta,
-		"IsDerecho":     solicitud.GetConceptoCodigo() == "DERECHO",
-		"CanEditIda":    canEditIda,
-		"CanEditVuelta": canEditVuelta,
+		"Aerolineas":          aerolineas,
+		"TargetUser":          &solicitud.Usuario,
+		"Item":                item,
+		"Solicitud":           solicitud,
+		"IsEdit":              true,
+		"Concepto":            solicitud.TipoSolicitud.ConceptoViaje,
+		"TipoSolicitud":       solicitud.TipoSolicitud,
+		"Ambito":              solicitud.AmbitoViaje,
+		"Itinerario":          itin,
+		"ReturnURL":           referer,
+		"Origen":              origen,
+		"Destino":             destino,
+		"OrigenesAutorizados": origenesAutorizados,
+		"MinDateIda":          minDateIda,
+		"MaxDateIda":          maxDateIda,
+		"MinDateVuelta":       minDateVuelta,
+		"MaxDateVuelta":       maxDateVuelta,
+		"IsDerecho":           solicitud.GetConceptoCodigo() == "DERECHO",
+		"CanEditIda":          canEditIda,
+		"CanEditVuelta":       canEditVuelta,
 	})
 }
 

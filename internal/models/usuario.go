@@ -44,9 +44,10 @@ type Usuario struct {
 	OficinaID *string  `gorm:"size:36;index"`
 	Oficina   *Oficina `gorm:"foreignKey:OficinaID;<-:false"`
 
-	TitularID *string   `gorm:"size:36;index"`
-	Titular   *Usuario  `gorm:"foreignKey:TitularID;<-:false"`
-	Suplentes []Usuario `gorm:"foreignKey:TitularID"`
+	TitularID            *string                    `gorm:"size:36;index"`
+	Titular              *Usuario                   `gorm:"foreignKey:TitularID;<-:false"`
+	Suplentes            []Usuario                  `gorm:"foreignKey:TitularID"`
+	OrigenesAlternativos []UsuarioOrigenAlternativo `gorm:"foreignKey:UsuarioID"`
 
 	FullName string `gorm:"-" json:"full_name"`
 
@@ -137,6 +138,59 @@ func (u *Usuario) IsAdminOrResponsable() bool {
 	return u.IsAdmin() || u.IsResponsable()
 }
 
+func (u *Usuario) IsAlternativo(iata string) bool {
+	for _, o := range u.OrigenesAlternativos {
+		if o.DestinoIATA == iata {
+			return true
+		}
+	}
+	return false
+}
+
+// --- Gestión de Tipos y Roles ---
+
+func (u *Usuario) IsTitular() bool {
+	return u.Tipo == "SENADOR_TITULAR"
+}
+
+func (u *Usuario) IsSuplente() bool {
+	return u.Tipo == "SENADOR_SUPLENTE"
+}
+
+// --- Predicados de Relación ---
+
+func (u *Usuario) IsManagedBy(authUser *Usuario) bool {
+	if authUser == nil || u.EncargadoID == nil {
+		return false
+	}
+	return *u.EncargadoID == authUser.ID
+}
+
+func (u *Usuario) IsAssistantOf(senador *Usuario) bool {
+	if senador == nil || senador.EncargadoID == nil {
+		return false
+	}
+	return *senador.EncargadoID == u.ID
+}
+
+func (u *Usuario) IsOwner(id string) bool {
+	return u.ID == id
+}
+
+// --- Gestión de Estado ---
+
+func (u *Usuario) Unblock() {
+	u.IsBlocked = false
+	u.LoginAttempts = 0
+}
+
+func (u *Usuario) RecordFailedLogin(maxAttempts int) {
+	u.LoginAttempts++
+	if u.LoginAttempts >= maxAttempts {
+		u.IsBlocked = true
+	}
+}
+
 func (u *Usuario) CanManagePasajes(s Solicitud) bool {
 	return u.IsAdminOrResponsable()
 }
@@ -221,6 +275,57 @@ func (u *Usuario) GetSuplente() *Usuario {
 		return &u.Suplentes[0]
 	}
 	return nil
+}
+
+type UserPermissions struct {
+	CanChangeRol    bool
+	CanChangeOrigin bool
+	CanChangeStaff  bool
+	CanManageRoutes bool
+	CanEditContact  bool
+
+	// Atomismo de completitud
+	HasOrigin  bool
+	HasCargo   bool
+	HasOficina bool
+	HasRol     bool
+	HasEmail   bool
+	HasPhone   bool
+}
+
+func (u *Usuario) GetPermissionsFor(authUser *Usuario) UserPermissions {
+	if authUser == nil {
+		return UserPermissions{}
+	}
+
+	isAdmin := authUser.IsAdminOrResponsable()
+	isSelf := authUser.ID == u.ID
+	isEncargado := u.IsManagedBy(authUser)
+
+	// El contacto lo puede editar el propio usuario, su encargado (asistente) o un admin
+	canEditContact := isSelf || isEncargado || isAdmin
+
+	// Atomismo de validación
+	hasOrigin := u.OrigenIATA != nil && *u.OrigenIATA != ""
+	hasCargo := u.CargoID != nil && *u.CargoID != ""
+	hasOficina := u.OficinaID != nil && *u.OficinaID != ""
+	hasRol := u.RolCodigo != nil && *u.RolCodigo != ""
+	hasEmail := u.Email != ""
+	hasPhone := u.Phone != ""
+
+	return UserPermissions{
+		CanChangeRol:    isAdmin,
+		CanChangeOrigin: isAdmin,
+		CanChangeStaff:  isAdmin,
+		CanManageRoutes: isAdmin,
+		CanEditContact:  canEditContact,
+		HasOrigin:       hasOrigin,
+		HasCargo:        hasCargo,
+		HasOficina:      hasOficina,
+		HasRol:          hasRol,
+		HasEmail:        hasEmail,
+		HasPhone:        hasPhone,
+	}
 }
 
 func (Usuario) TableName() string {

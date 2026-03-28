@@ -14,23 +14,17 @@ import (
 )
 
 type SenadorController struct {
-	userService        *services.UsuarioService
-	rolService         *services.RolService
-	destinoService     *services.DestinoService
-	organigramaService *services.OrganigramaService
+	userService  *services.UsuarioService
+	auditService *services.AuditService
 }
 
 func NewSenadorController(
 	userService *services.UsuarioService,
-	rolService *services.RolService,
-	destinoService *services.DestinoService,
-	organigramaService *services.OrganigramaService,
+	auditService *services.AuditService,
 ) *SenadorController {
 	return &SenadorController{
-		userService:        userService,
-		rolService:         rolService,
-		destinoService:     destinoService,
-		organigramaService: organigramaService,
+		userService:  userService,
+		auditService: auditService,
 	}
 }
 

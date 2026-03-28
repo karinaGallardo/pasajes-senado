@@ -13,13 +13,20 @@ type UsuarioService struct {
 	peopleRepo    *repositories.PeopleViewRepository
 	deptoRepo     *repositories.DepartamentoRepository
 	mongoUserRepo *repositories.MongoUserRepository
+	rolRepo       *repositories.RolRepository
+	destinoRepo   *repositories.DestinoRepository
 	cargoRepo     *repositories.CargoRepository
 	oficinaRepo   *repositories.OficinaRepository
 }
 
-type SyncResult struct {
-	Count     int
-	Conflicts []string
+type UserEditContext struct {
+	Usuario      *models.Usuario
+	Roles        []models.Rol
+	Destinos     []models.Destino
+	Funcionarios []models.Usuario
+	Cargos       []models.Cargo
+	Oficinas     []models.Oficina
+	Permissions  map[string]bool
 }
 
 func NewUsuarioService(
@@ -27,6 +34,8 @@ func NewUsuarioService(
 	peopleRepo *repositories.PeopleViewRepository,
 	deptoRepo *repositories.DepartamentoRepository,
 	mongoUserRepo *repositories.MongoUserRepository,
+	rolRepo *repositories.RolRepository,
+	destinoRepo *repositories.DestinoRepository,
 	cargoRepo *repositories.CargoRepository,
 	oficinaRepo *repositories.OficinaRepository,
 ) *UsuarioService {
@@ -35,9 +44,16 @@ func NewUsuarioService(
 		peopleRepo:    peopleRepo,
 		deptoRepo:     deptoRepo,
 		mongoUserRepo: mongoUserRepo,
+		rolRepo:       rolRepo,
+		destinoRepo:   destinoRepo,
 		cargoRepo:     cargoRepo,
 		oficinaRepo:   oficinaRepo,
 	}
+}
+
+type SyncResult struct {
+	Count     int
+	Conflicts []string
 }
 
 func (s *UsuarioService) SyncStaff(ctx context.Context) (SyncResult, error) {
@@ -392,10 +408,71 @@ func (s *UsuarioService) Update(ctx context.Context, usuario *models.Usuario) er
 	})
 }
 
+// GetCommonCatalogs devuelve destinos y funcionarios para el caché global del frontend.
+func (s *UsuarioService) GetCommonCatalogs(ctx context.Context) ([]models.Destino, []models.Usuario, error) {
+	destinos, err := s.destinoRepo.FindAll(ctx)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	funcionarios, err := s.repo.FindByRoleType(ctx, "FUNCIONARIO")
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return destinos, funcionarios, nil
+}
+
 func (s *UsuarioService) GetSenatorsByEncargado(ctx context.Context, encargadoID string) ([]models.Usuario, error) {
 	return s.repo.FindByEncargadoID(ctx, encargadoID)
 }
 
 func (s *UsuarioService) GetSuplenteByTitularID(ctx context.Context, titularID string) (*models.Usuario, error) {
 	return s.repo.FindSuplenteByTitularID(ctx, titularID)
+}
+
+func (s *UsuarioService) SyncOrigenesAlternativos(ctx context.Context, usuarioID string, origins []string) error {
+	return s.repo.SyncOrigenesAlternativos(ctx, usuarioID, origins)
+}
+
+func (s *UsuarioService) SearchStaff(ctx context.Context, query string) ([]models.Usuario, error) {
+	return s.repo.SearchStaff(ctx, query)
+}
+
+func (s *UsuarioService) GetEditContext(ctx context.Context, userID string, authUser *models.Usuario) (*UserEditContext, error) {
+	usuario, err := s.repo.FindByID(ctx, userID)
+	if err != nil {
+		return nil, err
+	}
+
+	roles, _ := s.rolRepo.FindAll(ctx)
+	destinos, _ := s.destinoRepo.FindAll(ctx)
+	funcionarios, _ := s.repo.FindByRoleType(ctx, "FUNCIONARIO")
+	cargos, _ := s.cargoRepo.FindAll(ctx)
+	oficinas, _ := s.oficinaRepo.FindAll(ctx)
+
+	perms := usuario.GetPermissionsFor(authUser)
+	permissions := map[string]bool{
+		"CanChangeRol":    perms.CanChangeRol,
+		"CanChangeOrigin": perms.CanChangeOrigin,
+		"CanChangeStaff":  perms.CanChangeStaff,
+		"CanManageRoutes": perms.CanManageRoutes,
+		"CanEditContact":  perms.CanEditContact,
+		"HasOrigin":       perms.HasOrigin,
+		"HasCargo":        perms.HasCargo,
+		"HasOficina":      perms.HasOficina,
+		"HasRol":          perms.HasRol,
+		"HasEmail":        perms.HasEmail,
+		"HasPhone":        perms.HasPhone,
+	}
+
+	return &UserEditContext{
+		Usuario:      usuario,
+		Roles:        roles,
+		Destinos:     destinos,
+		Funcionarios: funcionarios,
+		Cargos:       cargos,
+		Oficinas:     oficinas,
+		Permissions:  permissions,
+	}, nil
 }

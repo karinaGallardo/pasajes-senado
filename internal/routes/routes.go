@@ -50,8 +50,6 @@ func SetupRoutes(r *gin.Engine, container *app.Container, loginLimiter *middlewa
 		})
 		protected.GET("/dashboard", dashboardCtrl.Index)
 
-		protected.POST("/usuarios/:id/update-origin", usuarioCtrl.UpdateOrigin)
-
 		protected.GET("/perfil", perfilCtrl.Show)
 
 		protected.GET("/cupos/derecho/:senador_user_id/:gestion", cupoCtrl.DerechoByYear)
@@ -150,6 +148,8 @@ func SetupRoutes(r *gin.Engine, container *app.Container, loginLimiter *middlewa
 		protected.POST("/compensaciones", compensacionCtrl.Store)
 		protected.GET("/catalogos/tipos", catalogoCtrl.GetTipos)
 		protected.GET("/catalogos/ambitos", catalogoCtrl.GetAmbitos)
+		protected.GET("/api/catalogos/destinos", catalogoCtrl.SearchDestinos)
+		protected.GET("/api/catalogos/staff", catalogoCtrl.SearchStaff)
 
 		adminOnly := protected.Group("/")
 		adminOnly.Use(middleware.RequireRole("ADMIN", "RESPONSABLE"))
@@ -165,6 +165,7 @@ func SetupRoutes(r *gin.Engine, container *app.Container, loginLimiter *middlewa
 			adminOnly.GET("/usuarios/funcionarios/sync-modal", funcionarioCtrl.GetSyncModal)
 
 			adminOnly.POST("/usuarios/:id/unblock", usuarioCtrl.Unblock)
+			adminOnly.POST("/usuarios/:id/update-origin", usuarioCtrl.UpdateOrigin)
 
 			// Registro de Auditoría
 			adminOnly.GET("/admin/auditoria", container.AuditController.Index)

@@ -1,0 +1,409 @@
+{{ define "usuarios/components/usuario_edit_modal" }}
+<div
+  id="usuario_edit_modal_root"
+  x-data="{
+    modalOpen: false,
+    ready: false
+  }"
+  x-init="
+    $nextTick(() => {
+      ready = true;
+      modalOpen = true;
+    })
+  "
+  x-show="ready && modalOpen"
+  class="fixed inset-0 z-50 overflow-y-auto"
+  aria-labelledby="modal-title"
+  role="dialog"
+  aria-modal="true"
+  x-cloak>
+  <div class="flex items-start justify-center min-h-screen pt-10 px-4 pb-20 text-center">
+    <!-- Overlay: Solo se renderiza la primera vez si no es un swap parcial,
+         pero para simplicidad, mantenemos el hx-target interno -->
+    <div
+      x-show="modalOpen"
+      x-cloak
+      class="fixed inset-0 bg-neutral-900 bg-opacity-60 backdrop-blur-sm transition-opacity"
+      aria-hidden="true"
+      @click="modalOpen = false"
+      x-transition:enter="ease-out duration-300"
+      x-transition:enter-start="opacity-0"
+      x-transition:enter-end="opacity-100"
+      x-transition:leave="ease-in duration-200"
+      x-transition:leave-start="opacity-100"
+      x-transition:leave-end="opacity-0"></div>
+
+    <span class="hidden sm:inline-block sm:align-top sm:h-screen" aria-hidden="true">&#8203;</span>
+
+    <!-- Modal Content Card -->
+    <div
+      id="usuario_edit_modal_card"
+      x-show="modalOpen"
+      x-cloak
+      x-transition:enter="ease-out duration-300"
+      x-transition:enter-start="opacity-0 translate-y-[-20px] scale-95"
+      x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+      x-transition:leave="ease-in duration-200"
+      x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+      x-transition:leave-end="opacity-0 translate-y-[-20px] scale-95"
+      x-data="{ saving: false }"
+      class="relative inline-block align-top bg-white rounded-xl text-left shadow-2xl border border-neutral-100 transform transition-all w-[92%] sm:max-w-lg md:max-w-xl sm:my-8 overflow-hidden">
+      <form
+        id="usuario_edit_form_{{.Usuario.ID}}"
+        hx-post="/usuarios/{{.Usuario.ID}}/actualizar"
+        hx-target="#usuario_edit_modal_card"
+        hx-select="#usuario_edit_modal_card"
+        hx-swap="outerHTML"
+        @submit="saving = true"
+        autocomplete="off"
+        class="flex flex-col max-h-[85vh]">
+        <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
+
+        <!-- Header -->
+        <div class="px-6 py-4 border-b border-neutral-100 flex items-center justify-between bg-white shrink-0">
+          <div class="flex items-center space-x-3">
+            <div class="h-10 w-10 rounded-md bg-primary/10 flex items-center justify-center text-primary">
+              <i class="ph ph-user-circle text-2xl"></i>
+            </div>
+            <div>
+              <h3 class="text-lg font-bold text-neutral-900 leading-tight">Editar Perfil</h3>
+              <p class="text-xs text-neutral-500 font-medium">{{ .Usuario.GetNombreCompleto }}</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-2">
+            <button
+              type="submit"
+              :disabled="saving"
+              class="inline-flex items-center justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-bold rounded-md text-white bg-primary hover:bg-primary-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed min-w-[110px]">
+              <template x-if="!saving">
+                <span>Guardar</span>
+              </template>
+              <template x-if="saving">
+                <div class="flex items-center">
+                  <svg class="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path
+                      class="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  <span>...</span>
+                </div>
+              </template>
+            </button>
+
+            <button @click="modalOpen = false" type="button" class="text-neutral-400 hover:text-neutral-600 rounded-md transition-colors">
+              <i class="ph ph-x text-2xl font-bold"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Scrollable Body -->
+        <div class="flex-1 overflow-y-auto p-6 scroll-smooth custom-scrollbar text-neutral-800">
+          <!-- Alert Messages -->
+          {{ if or .Success .Error }}
+          <div x-show="!saving" class="mb-6 animate-in fade-in slide-in-from-top-2 duration-300">
+            <div
+              class="flex items-center p-3 rounded-lg border text-sm font-bold {{ if .Success }}bg-emerald-50 text-emerald-800 border-emerald-200{{ else }}bg-red-50 text-red-800 border-red-200{{ end }}">
+              <i class="{{ if .Success }}ph ph-check-circle{{ else }}ph ph-warning-circle{{ end }} mr-2 text-lg"></i>
+              <span>{{ if .Success }}{{ .Success }}{{ else }}{{ .Error }}{{ end }}</span>
+            </div>
+          </div>
+          {{ end }}
+
+          <div class="space-y-6">
+            <!-- Rol -->
+            <div class="space-y-1">
+              <label for="rol_codigo" class="block text-sm font-bold text-neutral-700">Rol Asignado</label>
+              {{ if not .CanChangeRol }}
+              <div class="flex items-center justify-between p-3 bg-neutral-100 border border-neutral-200 rounded-lg">
+                <span class="text-sm font-semibold text-neutral-600">{{ if .Usuario.Rol }}{{ .Usuario.Rol.Nombre }}{{ else }}Sin Rol{{ end }}</span>
+                <i class="ph ph-lock-key text-neutral-400"></i>
+              </div>
+              {{ else }}
+              <select
+                id="rol_codigo"
+                name="rol_codigo"
+                class="block w-full py-2.5 px-3 border border-neutral-300 bg-white rounded-lg shadow-sm focus:ring-2 focus:ring-primary/20 focus:border-primary sm:text-sm transition-all">
+                {{ $currentRol := "" }}{{ if .Usuario.RolCodigo }}{{ $currentRol = deref .Usuario.RolCodigo }}{{ end }} {{ range .Roles }}
+                <option value="{{ .Codigo }}" {{ if eq .Codigo $currentRol }}selected{{ end }}>{{ .Nombre }}</option>
+                {{ end }}
+              </select>
+              {{ end }}
+            </div>
+
+            {{ if .Usuario.IsSenador }}
+            <!-- Origen -->
+            <div class="space-y-1">
+              <label class="block text-sm font-bold text-neutral-700">Lugar de Origen</label>
+              {{ if .CanChangeOrigin }}
+              <div
+                x-data="searchableSelect({
+                  endpoint: '/api/catalogos/destinos',
+                  initialValue: '{{ if .Usuario.OrigenIATA }}{{ deref .Usuario.OrigenIATA }}{{ end }}',
+                  initialLabel: '{{ if .Usuario.Origen }}{{ .Usuario.Origen.GetNombreDisplay }}{{ end }}'
+                })">
+                <div class="relative">
+                  <input type="hidden" name="origen" :value="value" />
+
+                  <div
+                    @click="open = true; $nextTick(function() { $refs.searchInput.focus() })"
+                    x-show="!open"
+                    class="w-full rounded-lg border border-neutral-300 bg-white py-2.5 px-4 shadow-sm hover:border-neutral-400 focus:outline-none sm:text-sm cursor-pointer flex items-center justify-between transition-all min-h-[42px]">
+                    <span class="font-medium text-neutral-800" x-text="label"></span>
+                    <i class="ph ph-caret-down text-neutral-400"></i>
+                  </div>
+
+                  <div x-show="open" x-cloak class="relative">
+                    <input
+                      x-ref="searchInput"
+                      id="search_origen_{{.Usuario.ID}}"
+                      name="search_origen_ignore"
+                      type="text"
+                      x-model.debounce.250ms="search"
+                      autocomplete="one-time-code"
+                      @click.away="open = false"
+                      @keydown.escape="open = false"
+                      @keydown.enter.prevent="if (filteredItems.length > 0) select(filteredItems[0])"
+                      placeholder="Buscar ciudad o IATA..."
+                      class="w-full rounded-lg border-2 border-primary bg-white py-2.5 px-4 shadow-md focus:outline-none sm:text-sm transition-all" />
+
+                    <ul
+                      class="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-xl bg-white py-1 text-base shadow-2xl ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm border border-neutral-100">
+                      <li @click="select(null)" class="cursor-pointer py-2 px-4 hover:bg-neutral-50 text-neutral-400 italic text-xs border-b border-neutral-50">
+                        -- Sin destino asignado --
+                      </li>
+                      <template x-if="loading">
+                        <li class="py-2.5 px-4 text-neutral-400 italic text-xs flex items-center">
+                          <svg class="animate-spin h-4 w-4 mr-2" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path
+                              class="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Buscando...
+                        </li>
+                      </template>
+                      <template x-if="!loading && search.length >= 3 && filteredItems.length === 0">
+                        <li class="py-2.5 px-4 text-neutral-400 italic text-xs">No se encontraron resultados</li>
+                      </template>
+                      <template x-for="item in filteredItems" :key="item.value">
+                        <li @click="select(item)" class="cursor-pointer py-2.5 px-4 hover:bg-primary hover:text-white transition-colors border-b border-neutral-50 last:border-0">
+                          <span class="font-semibold block truncate" x-text="item.label"></span>
+                        </li>
+                      </template>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              {{ else }}
+              <div class="flex items-center justify-between p-3 bg-neutral-100 border border-neutral-200 rounded-lg">
+                <span class="text-sm font-semibold text-neutral-600">{{ if .Usuario.Origen }}{{ .Usuario.Origen.GetNombreDisplay }}{{ else }}Sin origen asignado{{ end }}</span>
+                <i class="ph ph-lock-key text-neutral-300"></i>
+              </div>
+              {{ end }}
+            </div>
+
+            <!-- Encargado -->
+            <div class="space-y-1">
+              <label class="block text-sm font-bold text-neutral-700">Encargado de Trámites</label>
+              {{ if .CanChangeStaff }}
+              <div
+                x-data="searchableSelect({
+                  endpoint: '/api/catalogos/staff',
+                  initialValue: '{{ if .Usuario.EncargadoID }}{{ .Usuario.EncargadoID }}{{ end }}',
+                  initialLabel: '{{ if .Usuario.Encargado }}{{ .Usuario.Encargado.GetNombreCompleto }}{{ end }}',
+                  disabled: false
+                })">
+                <div class="relative">
+                  <input type="hidden" name="encargado_id" :value="value" />
+
+                  <div
+                    @click="if (!disabled) { open = true; $nextTick(function() { $refs.searchInput.focus() }) }"
+                    x-show="!open"
+                    class="w-full rounded-lg border border-neutral-300 bg-white py-2.5 px-4 shadow-sm hover:border-neutral-400 focus:outline-none sm:text-sm cursor-pointer flex items-center justify-between transition-all min-h-[42px]"
+                    :class="{ 'bg-neutral-50 cursor-not-allowed opacity-75': disabled }">
+                    <span class="font-medium text-neutral-800" x-text="label"></span>
+                    <i class="ph ph-caret-down text-neutral-400"></i>
+                  </div>
+
+                  <div x-show="open" x-cloak class="relative">
+                    <input
+                      x-ref="searchInput"
+                      id="search_encargado_{{.Usuario.ID}}"
+                      name="search_encargado_ignore"
+                      type="text"
+                      x-model.debounce.250ms="search"
+                      autocomplete="one-time-code"
+                      @click.away="open = false"
+                      @keydown.escape="open = false"
+                      placeholder="Escriba nombre o CI..."
+                      class="w-full rounded-lg border-2 border-primary bg-white py-2.5 px-4 shadow-md focus:outline-none sm:text-sm transition-all" />
+
+                    <ul
+                      class="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-xl bg-white py-1 text-base shadow-2xl ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm border border-neutral-100">
+                      <li @click="select(null)" class="cursor-pointer py-2 px-4 hover:bg-neutral-50 text-neutral-400 italic text-xs border-b border-neutral-50">
+                        -- Sin encargado --
+                      </li>
+                      <template x-if="loading">
+                        <li class="py-2.5 px-4 text-neutral-400 italic text-xs flex items-center">
+                          <svg class="animate-spin h-4 w-4 mr-2 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path
+                              class="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                          Buscando...
+                        </li>
+                      </template>
+                      <template x-if="!loading && search.length >= 3 && filteredItems.length === 0">
+                        <li class="py-2.5 px-4 text-neutral-400 italic text-xs">No se encontraron resultados</li>
+                      </template>
+                      <template x-for="item in filteredItems" :key="item.value">
+                        <li
+                          @click="select(item)"
+                          class="cursor-pointer py-2.5 px-4 hover:bg-primary hover:text-white transition-colors group border-b border-neutral-50 last:border-0">
+                          <div class="flex flex-col">
+                            <span class="font-bold block truncate" x-text="item.label"></span>
+                            <span class="text-[10px] opacity-60 group-hover:opacity-100" x-text="'CI: ' + item.extra"></span>
+                          </div>
+                        </li>
+                      </template>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+              {{ else }}
+              <div class="flex items-center justify-between p-3 bg-neutral-100 border border-neutral-200 rounded-lg">
+                <span class="text-sm font-semibold text-neutral-600">
+                  {{ if .Usuario.Encargado }}{{ .Usuario.Encargado.GetNombreCompleto }}{{ else }}Sin encargado asignado{{ end }}
+                </span>
+                <i class="ph ph-lock-key text-neutral-300"></i>
+              </div>
+              {{ end }}
+            </div>
+
+            <div
+              class="space-y-3 pt-4 border-t border-neutral-100"
+              x-data='multiDestinoSelect({
+                endpoint: "/api/catalogos/destinos",
+                selected: ({{ json .Usuario.OrigenesAlternativos }} || []).map(o => ({
+                  iata: o.DestinoIATA,
+                  ciudad: o.Destino ? o.Destino.ciudad : o.DestinoIATA
+                }))
+              })'>
+              <div>
+                <label class="block text-sm font-black text-neutral-800 uppercase tracking-tight">Rutas Alternativas</label>
+                <p class="text-[10px] text-neutral-500 font-medium">Orígenes permitidos para solicitudes por derecho.</p>
+              </div>
+
+              <!-- Tags Container -->
+              <div class="flex flex-wrap gap-2 p-3 bg-neutral-50 rounded-xl border border-neutral-200 min-h-[50px] transition-all">
+                <template x-for="s in selected" :key="s.iata">
+                  <div
+                    class="inline-flex items-center bg-primary/95 text-white text-[11px] font-bold pl-3 pr-1.5 py-1.5 rounded-full shadow-sm {{ if .CanManageRoutes }}hover:bg-primary{{ end }} transition-all">
+                    <span x-text="s.ciudad + ' (' + s.iata + ')'"></span>
+                    {{ if .CanManageRoutes }}
+                    <button type="button" @click="remove(s.iata)" class="ml-2 hover:text-red-200 transition-colors">
+                      <i class="ph ph-x-circle text-sm"></i>
+                    </button>
+                    {{ end }}
+                    <input type="hidden" name="origenes_alternativos" :value="s.iata" />
+                  </div>
+                </template>
+                <div x-show="selected.length === 0" class="text-xs text-neutral-400 italic flex items-center px-1">Sin rutas alternativas seleccionadas</div>
+              </div>
+
+              <!-- Search (Solo Admin) -->
+              {{ if .CanManageRoutes }}
+              <div class="relative">
+                <div class="relative">
+                  <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-neutral-400">
+                    <i class="ph ph-magnifying-glass"></i>
+                  </div>
+                  <input
+                    type="text"
+                    x-model.debounce.150ms="search"
+                    @focus="open = true"
+                    @click.away="open = false"
+                    class="block w-full pl-10 pr-4 py-2.5 border border-neutral-300 rounded-lg leading-5 bg-white placeholder-neutral-400 focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-medium transition-all"
+                    placeholder="Añadir ciudad o aeropuerto..." />
+                </div>
+
+                <div
+                  x-show="open && (loading || (search.length >= 3 && filtered.length > 0) || (search.length >= 3 && filtered.length === 0))"
+                  class="absolute z-50 mt-1 w-full bg-white shadow-2xl max-h-52 rounded-xl py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm border border-neutral-100"
+                  x-cloak>
+                  <template x-if="loading">
+                    <div class="py-3 px-4 flex items-center justify-center">
+                      <svg class="animate-spin h-5 w-5 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path
+                          class="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </svg>
+                    </div>
+                  </template>
+                  <template x-if="!loading && search.length >= 3 && filtered.length === 0">
+                    <div class="py-3 px-4 text-neutral-400 italic text-xs text-center">No hay coincidencias</div>
+                  </template>
+                  <template x-for="d in filtered" :key="d.iata">
+                    <div @click="add(d)" class="cursor-pointer py-2 px-4 hover:bg-primary hover:text-white transition-colors group border-b border-neutral-50 last:border-0">
+                      <div class="flex items-center justify-between">
+                        <span class="block truncate font-bold text-sm" x-text="d.ciudad"></span>
+                        <span
+                          class="text-[10px] font-black opacity-40 group-hover:opacity-100 uppercase bg-neutral-100 group-hover:bg-primary-dark px-2 rounded-md"
+                          x-text="d.iata"></span>
+                      </div>
+                    </div>
+                  </template>
+                </div>
+              </div>
+              {{ end }}
+            </div>
+            {{ end }}
+
+            <!-- Contacto -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 border-t border-neutral-100">
+              <div class="md:col-span-2 space-y-1">
+                <label for="email" class="block text-sm font-bold text-neutral-700">Email Institucional</label>
+                <input
+                  type="email"
+                  name="email"
+                  id="email_field_{{.Usuario.ID}}"
+                  value="{{ .Usuario.Email }}"
+                  autocomplete="new-password"
+                  data-lpignore="true"
+                  data-form-type="other"
+                  class="block w-full py-2.5 px-4 border border-neutral-300 rounded-lg shadow-sm focus:ring-2 focus:ring-primary/20 focus:border-primary sm:text-sm transition-all"
+                  placeholder="ejemplo@senado.bo" />
+              </div>
+              <div class="space-y-1">
+                <label for="phone" class="block text-sm font-bold text-neutral-700">Celular</label>
+                <input
+                  type="text"
+                  name="phone"
+                  id="phone_field_{{.Usuario.ID}}"
+                  value="{{ .Usuario.Phone }}"
+                  autocomplete="new-password"
+                  data-lpignore="true"
+                  class="block w-full py-2.5 px-4 border border-neutral-300 rounded-lg shadow-sm focus:ring-2 focus:ring-primary/20 focus:border-primary sm:text-sm transition-all"
+                  placeholder="70000000" />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer / Optional CTA -->
+        <div class="px-6 py-4 bg-neutral-50 border-t border-neutral-100 text-[10px] text-neutral-400 font-medium text-center shrink-0">
+          Última actualización: {{ if .Usuario.UpdatedAt }}{{ .Usuario.UpdatedAt.Format "02/01/2006 15:04" }}{{ else }}Reciente{{ end }}
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{{ end }}
