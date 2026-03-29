@@ -22,7 +22,7 @@ type SolicitudItem struct {
 	DestinoIATA string   `gorm:"size:5;not null"`
 	Destino     *Destino `gorm:"foreignKey:DestinoIATA;references:IATA"`
 
-	Fecha *time.Time `gorm:"type:timestamp"`
+	Fecha        *time.Time           `gorm:"type:timestamp"`
 	EstadoCodigo *string              `gorm:"size:20;index;default:'SOLICITADO'"`
 	Estado       *EstadoSolicitudItem `gorm:"foreignKey:EstadoCodigo;references:Codigo;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;<-:false"`
 
@@ -44,6 +44,35 @@ func (t SolicitudItem) GetEstado() string {
 func (t SolicitudItem) CanEdit() bool {
 	st := t.GetEstado()
 	return st == "PENDIENTE" || st == "SOLICITADO" || st == "RECHAZADO"
+}
+
+func (t SolicitudItem) IsIda() bool {
+	return t.Tipo == TipoSolicitudItemIda
+}
+
+func (t SolicitudItem) IsVuelta() bool {
+	return t.Tipo == TipoSolicitudItemVuelta
+}
+
+func (t SolicitudItem) GetStatusBadgeClass() string {
+	switch t.GetEstado() {
+	case "SOLICITADO":
+		return "bg-primary-100 text-primary-700 font-bold"
+	case "PENDIENTE":
+		return "bg-neutral-100 text-neutral-500 font-medium"
+	case "APROBADO":
+		return "bg-success-100 text-success-700 font-bold"
+	case "EMITIDO":
+		return "bg-secondary-100 text-secondary-700 font-bold"
+	case "USADO":
+		return "bg-neutral-800 text-white font-bold"
+	case "RECHAZADO":
+		return "bg-danger-100 text-danger-700 font-bold"
+	case "REPROGRAMADO":
+		return "bg-violet-100 text-violet-700 font-bold"
+	default:
+		return "bg-neutral-100 text-neutral-600"
+	}
 }
 
 func (t SolicitudItem) HasActivePasaje() bool {

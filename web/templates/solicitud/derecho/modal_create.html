@@ -158,8 +158,11 @@
             </section>
 
             <!-- VISUALIZACIÓN DE RUTA -->
-            <section class="bg-white p-6 rounded-2xl border border-neutral-100 shadow-sm relative overflow-hidden group mb-4">
-              <div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 transition-transform duration-700 group-hover:scale-150"></div>
+            <section class="bg-white p-6 rounded-2xl border border-neutral-100 shadow-sm relative group mb-4">
+              <!-- Decorative background isolated with overflow-hidden -->
+              <div class="absolute inset-0 overflow-hidden pointer-events-none rounded-2xl">
+                <div class="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 transition-transform duration-700 group-hover:scale-150"></div>
+              </div>
 
               <div class="relative flex items-center justify-between gap-4">
                 <!-- ORIGEN -->
@@ -170,7 +173,7 @@
                     </div>
                     <div class="flex-1 min-w-0">
                       <div class="flex items-center gap-1.5">
-                        <h4 class="text-xs font-black text-primary uppercase tracking-widest mb-0.5" x-text="(tipoItinerario === 'SOLO_VUELTA' ? 'Destino' : 'Origen')"></h4>
+                        <h4 class="text-xs font-black text-primary uppercase tracking-widest mb-0.5">Origen</h4>
                         <template x-if="origenesAutorizados && origenesAutorizados.length > 0">
                           <button
                             type="button"
@@ -181,12 +184,8 @@
                           </button>
                         </template>
                       </div>
-                      <div
-                        class="text-2xl font-black text-neutral-800 tracking-tighter leading-none truncate"
-                        x-text="(tipoItinerario === 'SOLO_VUELTA' ? destinoCiudad : origenCiudad)"></div>
-                      <div
-                        class="text-[10px] font-bold text-neutral-400 mt-1 uppercase truncate max-w-[150px]"
-                        x-text="(tipoItinerario === 'SOLO_VUELTA' ? destinoAero : origenAero)"></div>
+                      <div class="text-2xl font-black text-neutral-800 tracking-tighter leading-none truncate" x-text="origenCiudad"></div>
+                      <div class="text-[10px] font-bold text-neutral-400 mt-1 uppercase truncate max-w-[150px]" x-text="origenAero"></div>
                     </div>
                   </div>
 

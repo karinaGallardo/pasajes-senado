@@ -15,3 +15,11 @@ type TipoSolicitud struct {
 }
 
 func (TipoSolicitud) TableName() string { return "tipo_solicitudes" }
+
+func (ts TipoSolicitud) IsDerecho() bool {
+	return ts.ConceptoViajeCodigo == "DERECHO"
+}
+
+func (ts TipoSolicitud) IsOficial() bool {
+	return ts.ConceptoViajeCodigo == "OFICIAL"
+}

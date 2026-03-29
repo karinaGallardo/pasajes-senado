@@ -1,6 +1,7 @@
 package models
 
 import (
+	"strings"
 	"time"
 )
 
@@ -243,9 +244,10 @@ func (s Solicitud) GetRutaSimple() string {
 	}
 	return origen + " - " + destino
 }
+
 func (s Solicitud) GetItemIda() *SolicitudItem {
 	for i := range s.Items {
-		if s.Items[i].Tipo == TipoSolicitudItemIda {
+		if strings.ToUpper(string(s.Items[i].Tipo)) == "IDA" {
 			return &s.Items[i]
 		}
 	}
@@ -254,12 +256,13 @@ func (s Solicitud) GetItemIda() *SolicitudItem {
 
 func (s Solicitud) GetItemVuelta() *SolicitudItem {
 	for i := range s.Items {
-		if s.Items[i].Tipo == TipoSolicitudItemVuelta {
+		if strings.ToUpper(string(s.Items[i].Tipo)) == "VUELTA" {
 			return &s.Items[i]
 		}
 	}
 	return nil
 }
+
 func (s Solicitud) GetMaxFechaVueloEmitida() *time.Time {
 	var maxDate *time.Time
 	for _, item := range s.Items {
@@ -355,20 +358,47 @@ func (s Solicitud) CanView(user *Usuario) bool {
 
 func (s Solicitud) CanEdit(user *Usuario) bool {
 	estado := s.GetEstado()
-
-	// All users (including Admin) must follow the state rules for editing.
-	if estado != "SOLICITADO" && estado != "RECHAZADO" && estado != "PARCIALMENTE_APROBADO" {
+	isEditableState := (estado == "SOLICITADO" || estado == "RECHAZADO" || estado == "PARCIALMENTE_APROBADO")
+	if !isEditableState {
 		return false
 	}
 	return s.CanView(user)
 }
 
+func (s Solicitud) CanDelete(user *Usuario) bool {
+	estado := s.GetEstado()
+	// Only creators/admins can delete and only in SOLICITADO state
+	if estado != "SOLICITADO" {
+		return false
+	}
+	if user.IsAdminOrResponsable() {
+		return true
+	}
+	if s.CreatedBy != nil && *s.CreatedBy == user.ID {
+		return true
+	}
+	return false
+}
+
 func (s Solicitud) CanApprove(user *Usuario) bool {
-	if !user.IsAdminOrResponsable() {
+	if !user.CanApproveReject() {
 		return false
 	}
 	estado := s.GetEstado()
 	return estado == "SOLICITADO" || estado == "PARCIALMENTE_APROBADO"
+}
+
+func (s Solicitud) CanReject(user *Usuario) bool {
+	return s.CanApprove(user)
+}
+
+func (s Solicitud) CanAssignPasaje(user *Usuario) bool {
+	// Solo Responsables o Admins pueden asignar pasajes electrónicos
+	return user.IsAdminOrResponsable()
+}
+
+func (s Solicitud) CanAssignViatico(user *Usuario) bool {
+	return user.IsAdminOrResponsable()
 }
 
 func (s Solicitud) HasEmittedPasaje() bool {
@@ -391,8 +421,59 @@ func (s Solicitud) CanRevertApproval(user *Usuario) bool {
 	return canRevertState && !s.HasEmittedPasaje()
 }
 
-func (s Solicitud) CanMakeDescargo() bool {
-	return s.HasEmittedPasaje()
+func (s Solicitud) CanMakeDescargo(user *Usuario) bool {
+	return s.HasEmittedPasaje() && s.CanView(user)
+}
+
+func (s Solicitud) CanPrint(user *Usuario) bool {
+	// Solo se imprime si está aprobada o emitida
+	st := s.GetEstado()
+	canPrintState := st == "APROBADO" || st == "PARCIALMENTE_APROBADO" || st == "EMITIDO" || st == "FINALIZADO"
+	return canPrintState && s.CanView(user)
+}
+
+// --- Display Helpers ---
+
+func (s Solicitud) IsDerecho() bool {
+	return s.GetConceptoCodigo() == "DERECHO"
+}
+
+func (s Solicitud) IsOficial() bool {
+	return s.GetConceptoCodigo() == "OFICIAL"
+}
+
+func (s Solicitud) GetStatusBadgeClass() string {
+	switch s.GetEstado() {
+	case "SOLICITADO":
+		return "bg-primary-100 text-primary-700"
+	case "RECHAZADO":
+		return "bg-danger-100 text-danger-700"
+	case "APROBADO":
+		return "bg-success-100 text-success-700 font-bold"
+	case "PARCIALMENTE_APROBADO":
+		return "bg-violet-100 text-violet-700"
+	case "EMITIDO":
+		return "bg-secondary-100 text-secondary-700 font-bold"
+	case "FINALIZADO":
+		return "bg-neutral-800 text-white"
+	default:
+		return "bg-neutral-100 text-neutral-600"
+	}
+}
+
+func (s Solicitud) GetStepNumber() int {
+	switch s.GetEstado() {
+	case "SOLICITADO", "RECHAZADO":
+		return 1
+	case "APROBADO", "PARCIALMENTE_APROBADO":
+		return 2
+	case "EMITIDO":
+		return 3
+	case "FINALIZADO":
+		return 4
+	default:
+		return 1
+	}
 }
 
 func (s Solicitud) HasCompleteDescargo() bool {
@@ -492,13 +573,14 @@ func (s Solicitud) GetDescargoMissingItems() string {
 		return "Datos completos"
 	}
 
-	html := "<div class='text-left'><p class='text-[10px] font-bold border-b border-white/20 pb-1 mb-1'>Pendiente de llenar:</p><ul class='list-inside list-disc space-y-0.5'>"
+	var html strings.Builder
+	html.WriteString("<div class='text-left'><p class='text-[10px] font-bold border-b border-white/20 pb-1 mb-1'>Pendiente de llenar:</p><ul class='list-inside list-disc space-y-0.5'>")
 	for _, item := range missing {
-		html += "<li class='text-[10px]'>" + item + "</li>"
+		html.WriteString("<li class='text-[10px]'>" + item + "</li>")
 	}
-	html += "</ul></div>"
+	html.WriteString("</ul></div>")
 
-	return html
+	return html.String()
 }
 
 // GetChanges compares current solicitud with old state and returns dirty fields map for GORM Updates

@@ -58,6 +58,9 @@ type SolicitudService struct {
 }
 
 func (s *SolicitudService) CreateDerecho(ctx context.Context, req dtos.CreateSolicitudRequest, currentUser *models.Usuario) (*models.Solicitud, error) {
+	req.OrigenIATA = strings.ToUpper(strings.TrimSpace(req.OrigenIATA))
+	req.DestinoIATA = strings.ToUpper(strings.TrimSpace(req.DestinoIATA))
+
 	fechaIda, err := utils.ParseDateTime(req.FechaIda)
 	if err != nil {
 		return nil, fmt.Errorf("error en fecha de ida: %w", err)
@@ -271,8 +274,8 @@ func (s *SolicitudService) CreateOficial(ctx context.Context, req dtos.CreateSol
 
 	// Multi-tramo process
 	for i, t := range req.Tramos {
-		orig := strings.TrimSpace(t.OrigenIATA)
-		dest := strings.TrimSpace(t.DestinoIATA)
+		orig := strings.ToUpper(strings.TrimSpace(t.OrigenIATA))
+		dest := strings.ToUpper(strings.TrimSpace(t.DestinoIATA))
 		if orig == "" || dest == "" {
 			continue
 		}
@@ -1036,8 +1039,8 @@ func (s *SolicitudService) UpdateOficial(ctx context.Context, id string, req dto
 
 		// 4. Process tramos from request
 		for i, t := range req.Tramos {
-			orig := strings.TrimSpace(t.OrigenIATA)
-			dest := strings.TrimSpace(t.DestinoIATA)
+			orig := strings.ToUpper(strings.TrimSpace(t.OrigenIATA))
+			dest := strings.ToUpper(strings.TrimSpace(t.DestinoIATA))
 			if orig == "" || dest == "" {
 				continue
 			}

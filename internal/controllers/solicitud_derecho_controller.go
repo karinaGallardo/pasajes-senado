@@ -11,6 +11,8 @@ import (
 	"sort"
 	"time"
 
+	"strings"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -194,13 +196,15 @@ func (ctrl *SolicitudDerechoController) GetEditModal(c *gin.Context) {
 
 	itin := solicitud.TipoItinerario
 
-	var origen, destino *models.Destino
-	if itin.Codigo == "SOLO_IDA" || itin.Codigo == "IDA_VUELTA" {
+	origen := solicitud.GetOrigen()
+	destino := solicitud.GetDestino()
+
+	// Fallback to user location if not set in items (should not happen for valid solicitudes)
+	if origen == nil {
 		origen = userLoc
+	}
+	if destino == nil {
 		destino = lpbLoc
-	} else {
-		origen = lpbLoc
-		destino = userLoc
 	}
 
 	var minDateIda string
@@ -238,6 +242,7 @@ func (ctrl *SolicitudDerechoController) GetEditModal(c *gin.Context) {
 
 	utils.Render(c, "solicitud/derecho/modal_edit", gin.H{
 		"Aerolineas":          aerolineas,
+		"AuthUser":            authUser,
 		"TargetUser":          &solicitud.Usuario,
 		"Item":                item,
 		"Solicitud":           solicitud,
@@ -257,6 +262,7 @@ func (ctrl *SolicitudDerechoController) GetEditModal(c *gin.Context) {
 		"IsDerecho":           solicitud.GetConceptoCodigo() == "DERECHO",
 		"CanEditIda":          canEditIda,
 		"CanEditVuelta":       canEditVuelta,
+		"IsAdmin":             authUser.IsAdminOrResponsable() || (solicitud.UsuarioID != authUser.ID),
 	})
 }
 
@@ -316,8 +322,12 @@ func (ctrl *SolicitudDerechoController) Update(c *gin.Context) {
 		solicitud.AerolineaSugerida = req.AerolineaSugerida
 		solicitud.Motivo = req.Motivo
 
+		req.OrigenIATA = strings.ToUpper(strings.TrimSpace(req.OrigenIATA))
+		req.DestinoIATA = strings.ToUpper(strings.TrimSpace(req.DestinoIATA))
+
 		orig, _ := ctrl.destinoService.GetByIATA(c.Request.Context(), req.OrigenIATA)
 		dest, _ := ctrl.destinoService.GetByIATA(c.Request.Context(), req.DestinoIATA)
+
 		// Forzamos que existan ambos tramos para DERECHO
 		if solicitud.GetItemIda() == nil {
 			solicitud.Items = append(solicitud.Items, models.SolicitudItem{
@@ -325,7 +335,7 @@ func (ctrl *SolicitudDerechoController) Update(c *gin.Context) {
 				Tipo:         models.TipoSolicitudItemIda,
 				OrigenIATA:   req.OrigenIATA,
 				DestinoIATA:  req.DestinoIATA,
-				EstadoCodigo: utils.Ptr("PENDIENTE"),
+				EstadoCodigo: new("PENDIENTE"),
 			})
 		}
 		if solicitud.GetItemVuelta() == nil {
@@ -334,7 +344,7 @@ func (ctrl *SolicitudDerechoController) Update(c *gin.Context) {
 				Tipo:         models.TipoSolicitudItemVuelta,
 				OrigenIATA:   req.DestinoIATA,
 				DestinoIATA:  req.OrigenIATA,
-				EstadoCodigo: utils.Ptr("PENDIENTE"),
+				EstadoCodigo: new("PENDIENTE"),
 			})
 		}
 
@@ -343,9 +353,7 @@ func (ctrl *SolicitudDerechoController) Update(c *gin.Context) {
 			it := &solicitud.Items[i]
 
 			// Solo permitir edición de tramos que NO estén procesados (aprobados/emitidos/etc)
-			// sin importar el rol del usuario.
 			canEditItem := it.CanEdit()
-
 			if !canEditItem {
 				continue
 			}
@@ -354,6 +362,12 @@ func (ctrl *SolicitudDerechoController) Update(c *gin.Context) {
 			case models.TipoSolicitudItemIda:
 				it.OrigenIATA = req.OrigenIATA
 				it.DestinoIATA = req.DestinoIATA
+				if orig != nil {
+					it.Origen = orig
+				}
+				if dest != nil {
+					it.Destino = dest
+				}
 				if req.IdaPorConfirmar {
 					it.EstadoCodigo = utils.Ptr("PENDIENTE")
 					it.Fecha = nil
@@ -364,21 +378,18 @@ func (ctrl *SolicitudDerechoController) Update(c *gin.Context) {
 			case models.TipoSolicitudItemVuelta:
 				it.OrigenIATA = req.DestinoIATA
 				it.DestinoIATA = req.OrigenIATA
+				if dest != nil {
+					it.Origen = dest
+				}
+				if orig != nil {
+					it.Destino = orig
+				}
 				if req.VueltaPorConfirmar {
 					it.EstadoCodigo = utils.Ptr("PENDIENTE")
 					it.Fecha = nil
 				} else {
 					it.EstadoCodigo = utils.Ptr("SOLICITADO")
 					it.Fecha = fechaVuelta
-				}
-
-				if orig != nil {
-					it.DestinoIATA = orig.IATA
-					it.Destino = orig
-				}
-				if dest != nil {
-					it.OrigenIATA = dest.IATA
-					it.Origen = dest
 				}
 			}
 		}
@@ -395,6 +406,12 @@ func (ctrl *SolicitudDerechoController) Update(c *gin.Context) {
 	}
 
 	utils.SetSuccessMessage(c, "Solicitud actualizada correctamente")
+
+	// If HTMX request, re-render the edit modal with updated data
+	if c.GetHeader("HX-Request") == "true" {
+		ctrl.GetEditModal(c)
+		return
+	}
 
 	targetURL := fmt.Sprintf("/solicitudes/derecho/%s/detalle", solicitud.ID)
 	if req.ReturnURL != "" {
@@ -485,7 +502,7 @@ func (ctrl *SolicitudDerechoController) Show(c *gin.Context) {
 		CanApproveReject:  authUser.CanApproveReject(),
 		CanRevertApproval: solicitud.CanRevertApproval(authUser),
 		CanAssignPasaje:   authUser.IsAdminOrResponsable(),
-		CanMakeDescargo:   solicitud.CanMakeDescargo(),
+		CanMakeDescargo:   solicitud.CanMakeDescargo(authUser),
 		IsAdminOrResp:     authUser.IsAdminOrResponsable(),
 	}
 

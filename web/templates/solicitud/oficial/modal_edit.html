@@ -32,7 +32,15 @@
         x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
         x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
         class="relative transform rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-6xl">
-        <form x-ref="form" @submit.prevent="submitForm" action="/solicitudes/oficial/{{ .Solicitud.ID }}/actualizar" method="POST" autocomplete="off">
+        <form
+          x-ref="form"
+          @submit.prevent="submitForm"
+          hx-post="/solicitudes/oficial/{{ .Solicitud.ID }}/actualizar"
+          hx-target="#modal-container"
+          hx-swap="innerHTML"
+          @htmx:after-request="loading = false; if(event.detail.xhr.status === 200) isUpdated = true"
+          method="POST"
+          autocomplete="off">
           <input type="hidden" name="tramos_json" id="tramos_json_input_edit" value="" />
 
           <!-- Header -->
@@ -55,13 +63,36 @@
                 <span x-show="!loading">Guardar Cambios</span>
                 <span x-show="loading">Procesando...</span>
               </button>
-              <button @click="open = false" type="button" class="bg-white border border-neutral-300 text-neutral-700 px-4 py-2 rounded-md font-bold text-sm hover:bg-neutral-50">
-                Cancelar
+              <button
+                @click="isUpdated ? window.location.reload() : open = false"
+                type="button"
+                class="bg-white border border-neutral-300 text-neutral-700 px-4 py-2 rounded-md font-bold text-sm hover:bg-neutral-50 transition-all">
+                Cancelar / Cerrar
               </button>
             </div>
           </div>
 
           <div class="px-6 py-6 space-y-6 bg-neutral-50/30">
+            {{ if .SuccessMessage }}
+            <div
+              x-data="{ show: true }"
+              x-show="show"
+              x-init="setTimeout(() => show = false, 5000)"
+              class="mb-4 p-3 bg-success-50 border border-success-200 rounded-lg flex items-center justify-between gap-3">
+              <div class="flex items-center gap-3">
+                <i class="ph ph-check-circle text-success-500 text-xl"></i>
+                <span class="text-sm font-bold text-success-600">{{ .SuccessMessage }}</span>
+              </div>
+              <button @click="show = false" type="button" class="text-success-400 hover:text-success-600">
+                <i class="ph ph-x text-sm"></i>
+              </button>
+            </div>
+            {{ end }} {{ if .ErrorMessage }}
+            <div class="mb-4 p-3 bg-danger-50 border border-danger-200 rounded-lg flex items-center gap-3">
+              <i class="ph ph-warning-circle text-danger-500 text-xl"></i>
+              <span class="text-sm font-bold text-danger-600">{{ .ErrorMessage }}</span>
+            </div>
+            {{ end }}
             <!-- 1. GENERAL INFO SECTION -->
             <div class="bg-white rounded-xl shadow-sm border border-neutral-200 p-4">
               <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -163,7 +194,7 @@
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-neutral-100">
-                    <template x-for="item in tramosIda()" :key="'ida-'+item.index">
+                    <template x-for="item in tramosIda()" :key="'ida-' + (item.tramo.id || item.index)">
                       <tr class="hover:bg-neutral-50/30 transition-colors relative">
                         <!-- Origen (IDA) -->
                         <td class="px-4 py-1.5">
@@ -325,7 +356,7 @@
                     </tr>
                   </thead>
                   <tbody class="divide-y divide-neutral-100">
-                    <template x-for="item in tramosVuelta()" :key="'vuelta-'+item.index">
+                    <template x-for="item in tramosVuelta()" :key="'vuelta-' + (item.tramo.id || item.index)">
                       <tr class="hover:bg-neutral-50/30 transition-colors relative">
                         <!-- Origen (VUELTA) -->
                         <td class="px-4 py-1.5">
@@ -479,6 +510,7 @@
       return {
         open: true,
         loading: false,
+        isUpdated: {{ if .SuccessMessage }}true{{ else }}false{{ end }},
         ambito: "",
         tipo: "",
         motivo: "",
@@ -486,7 +518,7 @@
         aerolinea: "",
         allDestinos: [],
         tramos: [],
-        isAdmin: {{ if .AuthUser.IsAdminOrResponsable }}true{{ else }}false{{ end }},
+        isAdmin: {{ .IsAdmin }},
 
         get availableDestinos() {
           if (!this.ambito) return [];
@@ -514,18 +546,27 @@
               this.aerolinea = d.aerolinea || "";
             } catch (e) {}
           }
+
           var el = document.getElementById("tramos-edit-inicial");
           try {
             var arr = el && el.textContent ? JSON.parse(el.textContent) : [];
             if (Array.isArray(arr) && arr.length > 0) {
+              var self = this;
               this.tramos = arr.map(function (t) {
+                var oCode = t.origen || "";
+                var dCode = t.destino || "";
+
+                // Buscar etiquetas bonitas si no vienen
+                var oDest = self.allDestinos.find(function(d) { return d.value === oCode; });
+                var dDest = self.allDestinos.find(function(d) { return d.value === dCode; });
+
                 return {
                   id: t.id || "",
                   tipo: t.tipo || "IDA",
-                  origen: t.origen || "",
-                  origenLabel: t.origenLabel || t.origen || "",
-                  destino: t.destino || "",
-                  destinoLabel: t.destinoLabel || t.destino || "",
+                  origen: oCode,
+                  origenLabel: t.origenLabel || (oDest ? (oDest.value + ' - ' + oDest.label) : oCode),
+                  destino: dCode,
+                  destinoLabel: t.destinoLabel || (dDest ? (dDest.value + ' - ' + dDest.label) : dCode),
                   fechaSalida: t.fechaSalida || "",
                   estado: t.estado || "SOLICITADO",
                 };
@@ -607,7 +648,8 @@
               }),
             );
           this.loading = true;
-          this.$refs.form.submit();
+          // Trigger HTMX dispatch
+          this.$refs.form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
         },
       };
     }

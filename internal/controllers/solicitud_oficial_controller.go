@@ -560,6 +560,7 @@ func (ctrl *SolicitudOficialController) GetEditModal(c *gin.Context) {
 
 	utils.Render(c, "solicitud/oficial/modal_edit", gin.H{
 		"Solicitud":    solicitud,
+		"AuthUser":     authUser,
 		"Aerolineas":   aerolineas,
 		"Ambitos":      ambitos,
 		"Destinos":     destinos,
@@ -567,6 +568,7 @@ func (ctrl *SolicitudOficialController) GetEditModal(c *gin.Context) {
 		"TramosJSON":   template.JS(tramosJSON),
 		"EditFormData": template.JS(editFormData),
 		"DestinosJSON": template.JS(destinosJSON),
+		"IsAdmin":      authUser.IsAdminOrResponsable() || (solicitud.UsuarioID != authUser.ID),
 	})
 }
 
@@ -605,6 +607,12 @@ func (ctrl *SolicitudOficialController) Update(c *gin.Context) {
 		utils.SetErrorMessage(c, "Error al actualizar: "+err.Error())
 	} else {
 		utils.SetSuccessMessage(c, "Solicitud actualizada correctamente")
+	}
+
+	// If HTMX request, re-render the edit modal with updated data
+	if c.GetHeader("HX-Request") == "true" {
+		ctrl.GetEditModal(c)
+		return
 	}
 
 	c.Redirect(http.StatusFound, "/solicitudes/oficial/"+id+"/detalle")

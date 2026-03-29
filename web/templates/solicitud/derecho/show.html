@@ -42,7 +42,7 @@
       </div>
     </div>
     <div class="flex flex-wrap items-center gap-2">
-      {{ if .Perms.CanEdit }}
+      {{ if .Solicitud.CanEdit .AuthUser }}
       <button
         type="button"
         hx-get="/solicitudes/derecho/{{ .Solicitud.ID }}/modal-editar"
@@ -52,6 +52,7 @@
         <span>Editar</span>
       </button>
       {{ end }}
+      {{ if .Solicitud.CanPrint .AuthUser }}
       <button
         type="button"
         hx-get="/solicitudes/derecho/{{ .Solicitud.ID }}/print"
@@ -60,6 +61,7 @@
         <i class="ph ph-printer text-sm"></i>
         <span>Imprimir</span>
       </button>
+      {{ end }}
       {{ if .DescargoID }}
       <a
         href="/descargos/derecho/{{ .DescargoID }}"
@@ -67,7 +69,7 @@
         <i class="ph ph-eye text-sm"></i>
         <span>Ver Descargo</span>
       </a>
-      {{ else if .Perms.CanMakeDescargo }}
+      {{ else if .Solicitud.CanMakeDescargo .AuthUser }}
       <a
         href="/descargos/derecho/nuevo/{{ .Solicitud.ID }}"
         class="btn-sm btn-primary">
@@ -140,7 +142,7 @@
     <div class="bg-white shadow sm:rounded-lg border border-neutral-200">
       <div class="px-6 py-4 border-b border-neutral-200 bg-neutral-50 flex justify-between items-center">
         <h3 class="text-sm font-bold text-neutral-800 uppercase tracking-wider">Pasajes Solicitados</h3>
-        {{ if .Perms.CanRevertApproval }}
+        {{ if .Solicitud.CanRevertApproval .AuthUser }}
         <button
           type="button"
           hx-post="/solicitudes/derecho/{{ .Solicitud.ID }}/revertir-aprobacion"
@@ -167,7 +169,7 @@
                   </div>
                   <span class="text-[11px] font-black uppercase text-neutral-400 tracking-wider">{{ .Tipo }}</span>
                   <span
-                    class="px-2 py-0.5 rounded text-[10px] font-bold uppercase {{ if eq .GetEstado `SOLICITADO` }} bg-primary-100 text-primary-700 {{ else if eq .GetEstado `APROBADO` }} bg-success-100 text-success-700 {{ else if eq .GetEstado `EMITIDO` }} bg-secondary-100 text-secondary-700 {{ else if eq .GetEstado `RECHAZADO` }} bg-danger-100 text-danger-700 {{ else }} bg-neutral-100 text-neutral-600 {{ end }}">
+                    class="px-2 py-0.5 rounded text-[10px] font-bold uppercase {{ .GetStatusBadgeClass }}">
                     {{ .GetEstado }}
                   </span>
                 </div>

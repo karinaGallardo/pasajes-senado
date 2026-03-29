@@ -218,9 +218,9 @@ func (r *SolicitudRepository) FindByID(ctx context.Context, id string) (*models.
 	var solicitud models.Solicitud
 	err := r.db.WithContext(ctx).Preload("Usuario").
 		Preload("Usuario.Encargado").
+		Preload("Usuario.OrigenesAlternativos.Destino").
 		Preload("Items").
 		Preload("Items.Origen").
-		Preload("Items.Destino").
 		Preload("Items.Destino").
 		Preload("Items.Pasajes.Aerolinea").
 		Preload("Items.Pasajes.Agencia").
