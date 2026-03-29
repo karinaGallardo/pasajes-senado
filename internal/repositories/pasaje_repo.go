@@ -35,7 +35,8 @@ func (r *PasajeRepository) FindByID(ctx context.Context, id string) (*models.Pas
 	err := r.db.WithContext(ctx).Preload("EstadoPasaje").
 		Preload("Agencia").
 		Preload("Aerolinea").
-		Preload("SolicitudItem").
+		Preload("SolicitudItem.Solicitud.CupoDerechoItem").
+		Preload("SolicitudItem.Solicitud.Usuario").
 		First(&pasaje, "id = ?", id).Error
 	return &pasaje, err
 }

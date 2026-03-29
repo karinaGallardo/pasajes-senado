@@ -32,6 +32,7 @@ func TemplateFuncs() template.FuncMap {
 		"formatCurrency":   FormatCurrency,
 		"abs":              Abs,
 		"lower":            strings.ToLower,
+		"split":            strings.Split,
 		"checked":          Checked,
 		"deviceIcon":       DeviceIcon,
 	}

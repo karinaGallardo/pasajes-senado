@@ -154,6 +154,9 @@ func (s *PasajeService) UpdateFromRequest(ctx context.Context, req dtos.UpdatePa
 	if req.AerolineaID != "" {
 		pasaje.AerolineaID = &req.AerolineaID
 	}
+	if req.AgenciaID != "" {
+		pasaje.AgenciaID = &req.AgenciaID
+	}
 
 	pasaje.Costo = utils.ParseFloat(req.Costo)
 
@@ -212,6 +215,11 @@ func (s *PasajeService) UpdateStatus(ctx context.Context, id string, status stri
 		return err
 	}
 
+	oldStatus := ""
+	if pasaje.EstadoPasajeCodigo != nil {
+		oldStatus = *pasaje.EstadoPasajeCodigo
+	}
+
 	pasaje.EstadoPasajeCodigo = &status
 	if ticketPath != "" {
 		pasaje.Archivo = ticketPath
@@ -238,9 +246,30 @@ func (s *PasajeService) UpdateStatus(ctx context.Context, id string, status stri
 		}
 	}
 
+	// Reversion logic: if it was EMITIDO and now REGISTRADO
+	if oldStatus == "EMITIDO" && status == "REGISTRADO" && pasaje.SolicitudItemID != nil {
+		// Revert item back to APROBADO (previous state)
+		s.solicitudItemRepo.UpdateStatus(ctx, *pasaje.SolicitudItemID, "APROBADO")
+
+		// Recalculate Solicitud global status
+		sol, err := s.solicitudRepo.FindByID(ctx, pasaje.SolicitudID)
+		if err == nil && sol != nil {
+			sol.UpdateStatusBasedOnItems()
+			s.solicitudRepo.Update(ctx, sol)
+		}
+	}
+
 	// Trigger email if emitted
 	if status == "EMITIDO" {
 		worker.GetPool().Submit(&EmissionEmailJob{
+			Service:  s,
+			PasajeID: id,
+		})
+	}
+
+	// Trigger email if reverted
+	if oldStatus == "EMITIDO" && status == "REGISTRADO" {
+		worker.GetPool().Submit(&ReversionEmailJob{
 			Service:  s,
 			PasajeID: id,
 		})
@@ -365,6 +394,78 @@ func (s *PasajeService) sendEmissionEmail(sol *models.Solicitud, pasaje *models.
 			</div>
 		</div>
 	`, concepto, strings.ToUpper(concepto), usuario.GetNombreCompleto(), sol.Codigo, tipoTramoStr, concepto, tipoTramoStr, ruta, fecha, aerolinea, vuelo, boleto, fileURL, fileURL, fileURL)
+
+	_ = s.emailService.SendEmail(to, cc, nil, subject, body)
+}
+
+// ReversionEmailJob encapsula la tarea de enviar un correo de reversión.
+type ReversionEmailJob struct {
+	Service  *PasajeService
+	PasajeID string
+}
+
+func (j *ReversionEmailJob) Name() string {
+	return "ReversionEmailJob:" + j.PasajeID
+}
+
+func (j *ReversionEmailJob) Run(ctx context.Context) error {
+	p, err := j.Service.repo.WithContext(ctx).FindByID(ctx, j.PasajeID)
+	if err != nil {
+		return err
+	}
+
+	sol, err := j.Service.solicitudRepo.WithContext(ctx).FindByID(ctx, p.SolicitudID)
+	if err != nil || sol == nil {
+		return err
+	}
+
+	j.Service.sendReversionEmail(sol, p)
+	return nil
+}
+
+func (s *PasajeService) sendReversionEmail(sol *models.Solicitud, pasaje *models.Pasaje) {
+	usuario := sol.Usuario
+	if usuario.Email == "" {
+		return
+	}
+
+	to := []string{usuario.Email}
+	var cc []string
+	if usuario.Encargado != nil && usuario.Encargado.Email != "" {
+		cc = append(cc, usuario.Encargado.Email)
+	}
+
+	concepto := sol.GetConceptoNombre()
+	tipoTramoStr := "Tramo"
+	if pasaje.SolicitudItem != nil {
+		tipoTramoStr = string(pasaje.SolicitudItem.Tipo)
+	}
+
+	subject := fmt.Sprintf("[%s] Envío de Pasaje Revertido - Solicitud %s", strings.ToUpper(concepto), sol.Codigo)
+
+	body := fmt.Sprintf(`
+		<div style="font-family: Arial, sans-serif; color: #333; max-width: 600px;">
+			<div style="background-color: #f59e0b; color: white; padding: 15px; border-radius: 5px 5px 0 0;">
+				<h2 style="margin:0;">Envío de Pasaje Revertido (Corrección)</h2>
+				<p style="margin: 5px 0 0 0; opacity: 0.9;">Solicitud: %s</p>
+			</div>
+			<div style="padding: 20px; border: 1px solid #ddd; border-top: none; border-radius: 0 0 5px 5px;">
+				<p>Se comunica a <strong>%s</strong>,</p>
+				<p>El envío de su pasaje correspondiente al tramo <strong>%s</strong> ha sido <strong>revertido</strong> por el administrador para realizar correcciones necesarias.</p>
+				<p><strong>Por favor, ignore la notificación de emisión anterior si ya la recibió.</strong> Una vez corregidos los datos, recibirá una nueva confirmación con el pasaje rectificado.</p>
+				
+				<h3 style="color: #f59e0b; border-bottom: 1px solid #eee; padding-bottom: 5px;">Detalles del Tramo</h3>
+				<ul style="list-style: none; padding: 0;">
+					<li><strong>Ruta:</strong> %s</li>
+					<li><strong>Fecha Programada Original:</strong> %s</li>
+				</ul>
+
+				<p style="font-size: 13px; background-color: #fffbeb; padding: 10px; border-left: 4px solid #f59e0b; color: #92400e;">
+					Este proceso es normal cuando se detectan errores en el número de boleto, la aerolínea o la fecha registrada por la empresa de transportes.
+				</p>
+			</div>
+		</div>
+	`, sol.Codigo, usuario.GetNombreCompleto(), tipoTramoStr, pasaje.Ruta, utils.FormatDateTimeLongES(pasaje.FechaVuelo))
 
 	_ = s.emailService.SendEmail(to, cc, nil, subject, body)
 }

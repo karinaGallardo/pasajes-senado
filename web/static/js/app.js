@@ -1,4 +1,74 @@
 document.addEventListener("alpine:init", function () {
+  /**
+   * Global data for Pasaje Modals (Create/Edit)
+   */
+  Alpine.data("modalPasaje", function (config) {
+    return {
+      open: true,
+      id: config.id || "",
+      ruta: config.ruta || "",
+      agencia_id: config.agencia_id || "",
+      aerolinea_id: config.aerolinea_id || "",
+      numero_vuelo: config.numero_vuelo || "",
+      fecha_vuelo: config.fecha_vuelo || "",
+      fecha_emision: config.fecha_emision || "",
+      numero_boleto: config.numero_boleto || "",
+      costo: config.costo || "",
+      glosa: config.glosa || "",
+      codigo_reserva: config.codigo_reserva || "",
+      numero_factura: config.numero_factura || "",
+      fileName: "",
+      loading: false,
+      processingImage: false,
+      fares: config.fares || {},
+
+      init() {
+        console.log("Modal Pasaje Initialized:", this.id ? "Edit" : "Create");
+      },
+
+      get tarifaReferencial() {
+        if (this.ruta && this.aerolinea_id && this.fares[this.ruta]) {
+          return this.fares[this.ruta][this.aerolinea_id] || 0;
+        }
+        return 0;
+      },
+
+      async handleFile(el) {
+        if (!el.files || el.files.length === 0) return;
+
+        const file = el.files[0];
+        if (!window.checkFileSize(file)) {
+          el.value = "";
+          this.fileName = "";
+          return;
+        }
+        if (file.type.startsWith("image/")) {
+          this.processingImage = true;
+          try {
+            const resizedFile = await window.resizeImage(file);
+            const dataTransfer = new DataTransfer();
+            dataTransfer.items.add(resizedFile);
+            el.files = dataTransfer.files;
+            this.fileName = resizedFile.name;
+          } catch (err) {
+            console.error("Error resizing image:", err);
+            this.fileName = file.name;
+          } finally {
+            this.processingImage = false;
+          }
+        } else {
+          this.fileName = file.name;
+        }
+      },
+
+      get canSave() {
+        if (this.loading || this.processingImage) return false;
+        // If editing, file is not mandatory. If creating, it is.
+        return this.id ? true : !!this.fileName;
+      },
+    };
+  });
+
   Alpine.data("searchableSelect", function (config) {
     return {
       open: false,

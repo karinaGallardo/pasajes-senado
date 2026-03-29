@@ -95,6 +95,18 @@ func (s *RutaService) GetAll(ctx context.Context) ([]models.Ruta, error) {
 	return s.rutaRepo.FindAll(ctx)
 }
 
+func (s *RutaService) GetFaresMap(rutas []models.Ruta) map[string]map[string]float64 {
+	fares := make(map[string]map[string]float64)
+	for _, r := range rutas {
+		m := make(map[string]float64)
+		for _, c := range r.Contratos {
+			m[c.AerolineaID] = c.MontoReferencial
+		}
+		fares[r.Tramo] = m
+	}
+	return fares
+}
+
 func (s *RutaService) GetByID(ctx context.Context, id string) (*models.Ruta, error) {
 	return s.rutaRepo.FindByID(ctx, id)
 }

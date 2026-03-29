@@ -79,6 +79,15 @@ func (s Solicitud) GetConceptoCodigo() string {
 	return ""
 }
 
+func (s *Solicitud) GetItemByID(id string) *SolicitudItem {
+	for i := range s.Items {
+		if s.Items[i].ID == id {
+			return &s.Items[i]
+		}
+	}
+	return nil
+}
+
 func (s *Solicitud) UpdateStatusBasedOnItems() {
 	if len(s.Items) == 0 {
 		return
@@ -430,6 +439,34 @@ func (s Solicitud) CanPrint(user *Usuario) bool {
 	st := s.GetEstado()
 	canPrintState := st == "APROBADO" || st == "PARCIALMENTE_APROBADO" || st == "EMITIDO" || st == "FINALIZADO"
 	return canPrintState && s.CanView(user)
+}
+
+func (s Solicitud) GetTipoItinerarioNombre() string {
+	switch s.TipoItinerarioCodigo {
+	case "IDA_VUELTA":
+		return "Ida y Vuelta"
+	case "SOLO_IDA":
+		return "Solo Ida"
+	case "SOLO_VUELTA":
+		return "Solo Vuelta"
+	default:
+		if s.TipoItinerario != nil {
+			return s.TipoItinerario.Nombre
+		}
+		return s.TipoItinerarioCodigo
+	}
+}
+
+func (s Solicitud) IsSoloIda() bool {
+	return s.TipoItinerarioCodigo == "SOLO_IDA"
+}
+
+func (s Solicitud) IsSoloVuelta() bool {
+	return s.TipoItinerarioCodigo == "SOLO_VUELTA"
+}
+
+func (s Solicitud) IsIdaVuelta() bool {
+	return s.TipoItinerarioCodigo == "IDA_VUELTA"
 }
 
 // --- Display Helpers ---

@@ -10,7 +10,7 @@
           {{ .Solicitud.GetTipoNombre }}
         </span>
         {{ if .Solicitud.EstadoSolicitud }}
-        <span class="px-2 py-0.5 inline-flex items-center gap-1 text-[10px] font-black rounded-full border status-badge-{{ .Solicitud.EstadoSolicitud.Codigo }}">
+        <span class="px-2 py-0.5 inline-flex items-center gap-1 text-[10px] font-black rounded-full border {{ .Solicitud.GetStatusBadgeClass }}">
           <i class="{{ .Solicitud.EstadoSolicitud.Icon }}"></i>
           {{ .Solicitud.EstadoSolicitud.Nombre }}
         </span>
@@ -50,7 +50,7 @@
         hx-post="/solicitudes/oficial/{{ .Solicitud.ID }}/aprobar"
         hx-confirm="¿Está seguro de aprobar GLOBALMENTE esta solicitud?"
         hx-target="body"
-        class="btn-sm btn-success">
+        class="btn-sm btn-success rounded-sm">
         <i class="ph ph-check text-sm"></i>
         <span>Aprobar Todo</span>
       </button>
@@ -59,37 +59,37 @@
         hx-post="/solicitudes/oficial/{{ .Solicitud.ID }}/rechazar"
         hx-confirm="¿Rechazar GLOBALMENTE esta solicitud?"
         hx-target="body"
-        class="btn-sm btn-danger">
+        class="btn-sm btn-danger rounded-sm">
         <i class="ph ph-x text-sm"></i>
         <span>Rechazar Todo</span>
       </button>
       {{ end }} {{ end }} {{ if .Perms.CanAssignViatico }}
-      <button type="button" hx-get="/solicitudes/{{ .Solicitud.ID }}/viaticos/nuevo" hx-target="#modal-container" class="btn-sm btn-primary">
+      <button type="button" hx-get="/solicitudes/{{ .Solicitud.ID }}/viaticos/nuevo" hx-target="#modal-container" class="btn-sm btn-primary rounded-sm">
         <i class="ph ph-currency-circle-dollar text-sm"></i>
         <span>Viáticos</span>
       </button>
       {{ end }} {{ if .Perms.CanEdit }}
-      <button type="button" hx-get="/solicitudes/oficial/{{ .Solicitud.ID }}/modal-editar" hx-target="#modal-container" class="btn-sm btn-white">
+      <button type="button" hx-get="/solicitudes/oficial/{{ .Solicitud.ID }}/modal-editar" hx-target="#modal-container" class="btn-sm btn-white rounded-sm">
         <i class="ph ph-pencil-simple text-sm"></i>
         <span>Editar</span>
       </button>
       {{ end }}
-      <button type="button" hx-get="/solicitudes/oficial/{{ .Solicitud.ID }}/print" hx-target="#modal-container" class="btn-sm btn-white border-neutral-300">
+      <button type="button" hx-get="/solicitudes/oficial/{{ .Solicitud.ID }}/print" hx-target="#modal-container" class="btn-sm btn-white border-neutral-300 rounded-sm">
         <i class="ph ph-file-pdf text-sm"></i>
         <span>PV-02</span>
       </button>
       {{ if .DescargoID }}
-      <a href="/descargos/oficial/{{ .DescargoID }}" class="btn-sm btn-primary">
+      <a href="/descargos/oficial/{{ .DescargoID }}" class="btn-sm btn-primary rounded-sm">
         <i class="ph ph-eye text-sm"></i>
         <span>Ver Descargo</span>
       </a>
       {{ else if .Perms.CanMakeDescargo }}
-      <a href="/descargos/oficial/nuevo/{{ .Solicitud.ID }}" class="btn-sm btn-primary">
+      <a href="/descargos/oficial/nuevo/{{ .Solicitud.ID }}" class="btn-sm btn-primary rounded-sm">
         <i class="ph ph-file-plus text-sm"></i>
         <span>Crear Descargo</span>
       </a>
       {{ end }}
-      <a href="/solicitudes" class="btn-sm btn-white border-neutral-300">Volver</a>
+      <a href="/solicitudes" class="btn-sm btn-white border-neutral-300 rounded-sm">Volver</a>
     </div>
   </div>
 
@@ -160,7 +160,7 @@
           hx-post="/solicitudes/oficial/{{ .Solicitud.ID }}/revertir-aprobacion"
           hx-confirm="¿Está seguro de que desea REVERTIR la aprobación? Volverá a estado SOLICITADO."
           hx-target="body"
-          class="btn-xs btn-white text-warning-700 border-warning-200">
+          class="btn-xs btn-white text-warning-700 border-warning-200 rounded-sm">
           <i class="ph ph-arrow-u-up-left"></i>
           Revertir Aprobación Global
         </button>
@@ -180,10 +180,7 @@
               <div>
                 <div class="flex items-center gap-2">
                   <span class="text-xs font-black uppercase text-neutral-400 tracking-widest">{{ .Tipo }}</span>
-                  <span
-                    class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase {{ if eq .GetEstado `SOLICITADO` }} bg-primary-100 text-primary-700 {{ else if eq .GetEstado `APROBADO` }} bg-success-100 text-success-700 {{ else if eq .GetEstado `EMITIDO` }} bg-secondary-100 text-secondary-700 {{ else if eq .GetEstado `RECHAZADO` }} bg-danger-100 text-danger-700 {{ else }} bg-neutral-100 text-neutral-600 {{ end }}">
-                    {{ .GetEstado }}
-                  </span>
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase {{ .GetStatusBadgeClass }}">{{ .GetEstado }}</span>
                 </div>
                 <h4 class="text-sm font-bold text-neutral-900 mt-0.5">
                   {{ if .Origen }}{{ .Origen.Ciudad }} ({{ .Origen.IATA }}){{ else }}{{ .OrigenIATA }}{{ end }}
@@ -209,13 +206,13 @@
 
             <!-- Tramo Actions -->
             <div class="flex items-center gap-2">
-              {{ if $.Perms.IsAdminOrResp }} {{ if eq .GetEstado "SOLICITADO" }}
+              {{ if .CanBeApproved $.AuthUser }}
               <button
                 type="button"
                 hx-post="/solicitudes/oficial/{{ $.Solicitud.ID }}/items/{{ .ID }}/aprobar"
                 hx-confirm="¿Aprobar este tramo?"
                 hx-target="body"
-                class="btn-sm btn-success">
+                class="btn-sm btn-success rounded-sm">
                 <i class="ph ph-check"></i>
                 Aprobar
               </button>
@@ -224,26 +221,26 @@
                 hx-post="/solicitudes/oficial/{{ $.Solicitud.ID }}/items/{{ .ID }}/rechazar"
                 hx-confirm="¿Rechazar este tramo?"
                 hx-target="body"
-                class="btn-sm btn-danger">
+                class="btn-sm btn-danger rounded-sm">
                 <i class="ph ph-x"></i>
                 Rechazar
               </button>
-              {{ end }} {{ if and (or (eq .GetEstado "APROBADO") (eq .GetEstado "EMITIDO")) (not .HasActivePasaje) }}
+              {{ end }} {{ if .CanBeReverted $.AuthUser }}
               <button
                 type="button"
                 hx-post="/solicitudes/oficial/{{ $.Solicitud.ID }}/items/{{ .ID }}/revertir-aprobacion"
                 hx-confirm="¿Está seguro de revertir la aprobación de este tramo? Volverá a estado SOLICITADO."
                 hx-target="body"
-                class="btn-sm btn-white text-warning-700 border-warning-200">
+                class="btn-sm btn-white text-warning-700 border-warning-200 rounded-sm">
                 <i class="ph ph-arrow-u-up-left"></i>
                 Revertir
               </button>
-              {{ if $.Perms.CanAssignPasaje }}
-              <button type="button" hx-get="/solicitudes/{{ $.Solicitud.ID }}/pasajes/nuevo?item_id={{ .ID }}" hx-target="#modal-container" class="btn-sm btn-secondary">
+              {{ end }} {{ if .CanAssignPasaje $.AuthUser }}
+              <button type="button" hx-get="/solicitudes/{{ $.Solicitud.ID }}/pasajes/nuevo?item_id={{ .ID }}" hx-target="#modal-container" class="btn-sm btn-secondary rounded-sm">
                 <i class="ph ph-plus"></i>
                 Pasaje
               </button>
-              {{ end }} {{ end }} {{ end }}
+              {{ end }}
             </div>
           </div>
 
@@ -263,8 +260,7 @@
                 </div>
 
                 <!-- Section 2: Dynamic Status Banner -->
-                <div
-                  class="px-6 py-2.5 flex items-center text-white transition-colors duration-500 {{ if eq .GetEstado `EMITIDO` }} bg-success-600 {{ else if eq .GetEstado `ANULADO` }} bg-neutral-600 {{ else if eq .GetEstado `USADO` }} bg-primary-600 {{ else }} bg-secondary-600 {{ end }}">
+                <div class="px-6 py-2.5 flex items-center text-white transition-colors duration-500 {{ .GetStatusBannerClass }}">
                   <span class="select-all tracking-widest font-black">{{ .GetEstado }}</span>
                 </div>
               </div>
@@ -286,7 +282,7 @@
 
                 <!-- Main Content -->
                 <div class="flex-1 flex flex-col md:flex-row items-center px-6 py-4 gap-6">
-                  <div class="flex-1 grid grid-cols-2 md:grid-cols-6 gap-6 w-full">
+                  <div class="flex-1 grid grid-cols-2 md:grid-cols-5 gap-6 w-full">
                     <!-- Date -->
                     <div class="space-y-1">
                       <span class="text-[8px] font-black uppercase tracking-widest text-neutral-400 block">Salida</span>
@@ -299,7 +295,11 @@
                     <!-- Trayecto -->
                     <div class="space-y-1">
                       <span class="text-[8px] font-black uppercase tracking-widest text-neutral-400 block">Trayecto</span>
-                      <p class="text-[12px] font-black text-neutral-800 uppercase tracking-tight leading-tight">{{ .Ruta }}</p>
+                      <p class="text-[12px] font-black text-neutral-800 uppercase tracking-tight leading-tight flex flex-col">
+                        {{ range (split .Ruta " - ") }}
+                        <span>{{ . }}</span>
+                        {{ end }}
+                      </p>
                     </div>
 
                     <!-- Boleto -->
@@ -307,14 +307,6 @@
                       <span class="text-[8px] font-black uppercase tracking-widest text-neutral-400 block">N° Boleto</span>
                       <p class="text-[12px] font-black text-neutral-900 leading-none uppercase select-all tracking-tight">
                         {{ if .NumeroBoleto }}{{ .NumeroBoleto }}{{ else }}---{{ end }}
-                      </p>
-                    </div>
-
-                    <!-- PNR -->
-                    <div class="space-y-1">
-                      <span class="text-[8px] font-black uppercase tracking-widest text-neutral-400 block">Reserva (PNR)</span>
-                      <p class="text-[12px] font-black text-neutral-900 leading-none uppercase select-all tracking-tight">
-                        {{ if .CodigoReserva }}{{ .CodigoReserva }}{{ else }}---{{ end }}
                       </p>
                     </div>
 
@@ -332,46 +324,52 @@
                         {{ printf "%.2f" .Costo }}
                       </p>
                     </div>
-                  </div>
-
-                  <!-- Inline Actions -->
-                  <div class="flex items-center gap-2 md:pl-6 md:border-l border-neutral-100 shrink-0">
-                    {{ if .Archivo }}
-                    <button
-                      type="button"
-                      hx-get="/pasajes/{{ .ID }}/preview?tipo=boleto"
-                      hx-target="#modal-container"
-                      class="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-danger-100 text-danger-500 hover:bg-danger-600 hover:text-white transition-all shadow-sm cursor-pointer"
-                      title="Ver PDF">
-                      <i class="ph ph-file-pdf text-lg font-bold"></i>
-                    </button>
-                    {{ end }} {{ if and $.Perms.IsAdminOrResp (ne .GetEstado "ANULADO") }} {{ if eq .GetEstado "REGISTRADO" }}
-                    <button
-                      type="button"
-                      @click="$dispatch('pasaje-action', { action: 'emitir', id: '{{.ID}}' })"
-                      class="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-secondary-100 text-secondary-600 hover:bg-secondary-600 hover:text-white transition-all shadow-sm cursor-pointer"
-                      title="Enviar">
-                      <i class="ph ph-paper-plane-right text-lg font-bold"></i>
-                    </button>
-
-                    <button
-                      type="button"
-                      hx-get="/pasajes/{{ .ID }}/editar"
-                      hx-target="#modal-container"
-                      class="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-neutral-200 text-neutral-500 hover:bg-neutral-800 hover:text-white transition-all shadow-sm cursor-pointer"
-                      title="Editar">
-                      <i class="ph ph-pencil-simple text-lg font-bold"></i>
-                    </button>
-                    {{ end }}
-
-                    <button
-                      type="button"
-                      @click="$dispatch('pasaje-action', { action: 'anular', id: '{{.ID}}' })"
-                      class="w-8 h-8 flex items-center justify-center rounded-lg bg-white border border-danger-50 text-danger-300 hover:bg-danger-600 hover:text-white transition-all shadow-sm cursor-pointer"
-                      title="Anular">
-                      <i class="ph ph-trash-simple text-lg font-bold"></i>
-                    </button>
-                    {{ end }}
+                    <!-- Inline Actions -->
+                    <div class="flex items-center gap-2 md:pl-6 md:border-l border-neutral-100 shrink-0">
+                      {{ if .Archivo }}
+                      <button
+                        type="button"
+                        hx-get="/pasajes/{{ .ID }}/preview?tipo=boleto"
+                        hx-target="#modal-container"
+                        class="w-8 h-8 flex items-center justify-center rounded-sm bg-white border border-danger-100 text-danger-500 hover:bg-danger-600 hover:text-white transition-all shadow-sm cursor-pointer"
+                        title="Ver PDF">
+                        <i class="ph ph-file-pdf text-lg font-bold"></i>
+                      </button>
+                      {{ end }} {{ if .CanBeEmitted $.AuthUser }}
+                      <button
+                        type="button"
+                        @click="$dispatch('pasaje-action', { action: 'emitir', id: '{{.ID}}' })"
+                        class="w-8 h-8 flex items-center justify-center rounded-sm bg-white border border-secondary-100 text-secondary-600 hover:bg-secondary-600 hover:text-white transition-all shadow-sm cursor-pointer"
+                        title="Enviar">
+                        <i class="ph ph-paper-plane-right text-lg font-bold"></i>
+                      </button>
+                      {{ end }} {{ if .CanBeEdited $.AuthUser }}
+                      <button
+                        type="button"
+                        hx-get="/pasajes/{{ .ID }}/editar"
+                        hx-target="#modal-container"
+                        class="w-8 h-8 flex items-center justify-center rounded-sm bg-white border border-neutral-200 text-neutral-500 hover:bg-neutral-800 hover:text-white transition-all shadow-sm cursor-pointer"
+                        title="Editar">
+                        <i class="ph ph-pencil-simple text-lg font-bold"></i>
+                      </button>
+                      {{ end }} {{ if .CanBeReverted $.AuthUser }}
+                      <button
+                        type="button"
+                        @click="$dispatch('pasaje-action', { action: 'revertir_emision', id: '{{.ID}}' })"
+                        class="w-8 h-8 flex items-center justify-center rounded-sm bg-white border border-warning-100 text-warning-600 hover:bg-warning-600 hover:text-white transition-all shadow-sm cursor-pointer"
+                        title="Revertir Envío">
+                        <i class="ph ph-arrow-counter-clockwise text-lg font-bold"></i>
+                      </button>
+                      {{ end }} {{ if .CanBeAnulado $.AuthUser }}
+                      <button
+                        type="button"
+                        @click="$dispatch('pasaje-action', { action: 'anular', id: '{{.ID}}' })"
+                        class="w-8 h-8 flex items-center justify-center rounded-sm bg-white border border-danger-50 text-danger-300 hover:bg-danger-600 hover:text-white transition-all shadow-sm cursor-pointer"
+                        title="Anular">
+                        <i class="ph ph-trash-simple text-lg font-bold"></i>
+                      </button>
+                      {{ end }}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -506,7 +504,7 @@
               </div>
               <div>
                 <p class="text-[10px] text-neutral-400 uppercase font-bold">Tipo Itinerario</p>
-                <p class="text-sm font-medium text-neutral-800">{{ if eq .Solicitud.TipoItinerarioCodigo "IDA_VUELTA" }}Ida y Vuelta{{ else }}Solo Ida{{ end }}</p>
+                <p class="text-sm font-medium text-neutral-800">{{ .Solicitud.GetTipoItinerarioNombre }}</p>
               </div>
             </div>
           </div>
@@ -530,7 +528,7 @@
           text: "Confirma que los datos son correctos. Se enviará la notificación de emisión.",
           icon: "info",
           showCancelButton: true,
-          confirmButtonColor: "#0396A6",
+          confirmButtonColor: "#893026", // primary.DEFAULT
           cancelButtonColor: "#6b7280",
           confirmButtonText: "Sí, emitir",
           cancelButtonText: "Cancelar",
@@ -554,8 +552,15 @@
           title = "¿Anular Pasaje?";
           text = "Esta acción no se puede deshacer.";
           confirmButtonText = "Sí, anular";
-          confirmButtonColor = "#ef4444"; // Danger
+          confirmButtonColor = "#dc2626"; // danger.DEFAULT
           newStatus = "ANULADO";
+          break;
+        case "revertir_emision":
+          title = "¿Revertir Envío?";
+          text = "El pasaje volverá a estado REGISTRADO y podrá ser editado.";
+          confirmButtonText = "Sí, revertir";
+          confirmButtonColor = "#d97706"; // warning.DEFAULT
+          newStatus = "REGISTRADO";
           break;
         default:
           return;

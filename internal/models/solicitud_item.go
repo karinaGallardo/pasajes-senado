@@ -54,6 +54,20 @@ func (t SolicitudItem) IsVuelta() bool {
 	return t.Tipo == TipoSolicitudItemVuelta
 }
 
+func (t SolicitudItem) GetIcon() string {
+	if t.Tipo == TipoSolicitudItemIda {
+		return "ph-airplane-takeoff"
+	}
+	return "ph-airplane-landing"
+}
+
+func (t SolicitudItem) GetColorClass() string {
+	if t.Tipo == TipoSolicitudItemIda {
+		return "text-primary-600"
+	}
+	return "text-secondary-600"
+}
+
 func (t SolicitudItem) GetStatusBadgeClass() string {
 	switch t.GetEstado() {
 	case "SOLICITADO":
@@ -147,4 +161,27 @@ func (t *SolicitudItem) GetChanges(old SolicitudItem) map[string]any {
 	}
 
 	return changes
+}
+
+func (t SolicitudItem) CanBeApproved(user *Usuario) bool {
+	if user == nil {
+		return false
+	}
+	return user.IsAdminOrResponsable() && t.GetEstado() == "SOLICITADO"
+}
+
+func (t SolicitudItem) CanBeRejected(user *Usuario) bool {
+	return t.CanBeApproved(user)
+}
+
+func (t SolicitudItem) CanBeReverted(user *Usuario) bool {
+	if user == nil {
+		return false
+	}
+	st := t.GetEstado()
+	return user.IsAdminOrResponsable() && (st == "APROBADO" || st == "EMITIDO") && !t.HasActivePasaje()
+}
+
+func (t SolicitudItem) CanAssignPasaje(user *Usuario) bool {
+	return t.CanBeReverted(user)
 }

@@ -60,18 +60,47 @@ func (p Pasaje) GetEstadoCodigo() string {
 }
 
 func (p Pasaje) CanBeEdited(user *Usuario) bool {
-	if !user.IsAdminOrResponsable() {
+	if user == nil {
 		return false
 	}
-	st := p.GetEstadoCodigo()
-	return st == "EMITIDO"
+	return user.IsAdminOrResponsable() && p.GetEstado() == "REGISTRADO"
+}
+
+func (p Pasaje) CanBeEmitted(user *Usuario) bool {
+	if user == nil {
+		return false
+	}
+	return user.IsAdminOrResponsable() && p.GetEstado() == "REGISTRADO"
+}
+
+func (p Pasaje) CanBeReverted(user *Usuario) bool {
+	if user == nil {
+		return false
+	}
+	return user.IsAdminOrResponsable() && p.GetEstado() == "EMITIDO"
 }
 
 func (p Pasaje) CanBeAnulado(user *Usuario) bool {
-	return user.IsAdminOrResponsable() && p.GetEstadoCodigo() != "ANULADO"
+	if user == nil {
+		return false
+	}
+	return user.IsAdminOrResponsable() && p.GetEstado() == "REGISTRADO"
 }
 
 func (p Pasaje) CanMarkUsado(user *Usuario) bool {
 	st := p.GetEstadoCodigo()
 	return (st == "EMITIDO" || st == "USADO")
+}
+
+func (p Pasaje) GetStatusBannerClass() string {
+	switch p.GetEstado() {
+	case "EMITIDO":
+		return "bg-success-600"
+	case "ANULADO":
+		return "bg-neutral-600"
+	case "USADO":
+		return "bg-primary-600"
+	default:
+		return "bg-secondary-600"
+	}
 }

@@ -281,12 +281,16 @@ func (ctrl *PasajeController) GetCreateModal(c *gin.Context) {
 	agencias, _ := ctrl.agenciaService.GetAllActive(c.Request.Context())
 	rutas, _ := ctrl.rutaService.GetAll(c.Request.Context())
 
+	itemID := c.Query("item_id")
+	selectedItem := solicitud.GetItemByID(itemID)
+
 	utils.Render(c, "solicitud/components/modal_crear_pasaje", gin.H{
-		"Solicitud":       solicitud,
-		"Aerolineas":      aerolineas,
-		"Agencias":        agencias,
-		"Rutas":           rutas,
-		"SolicitudItemID": c.Query("item_id"),
+		"Solicitud":    solicitud,
+		"Aerolineas":   aerolineas,
+		"Agencias":     agencias,
+		"Rutas":        rutas,
+		"SelectedItem": selectedItem,
+		"Fares":        ctrl.rutaService.GetFaresMap(rutas),
 	})
 }
 
@@ -307,6 +311,7 @@ func (ctrl *PasajeController) GetEditModal(c *gin.Context) {
 		"Aerolineas": aerolineas,
 		"Agencias":   agencias,
 		"Rutas":      rutas,
+		"Fares":      ctrl.rutaService.GetFaresMap(rutas),
 	})
 }
 

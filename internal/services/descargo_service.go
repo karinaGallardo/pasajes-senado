@@ -399,6 +399,7 @@ func (s *DescargoService) Approve(ctx context.Context, id string, userID string)
 	}
 
 	descargo.Estado = models.EstadoDescargoAprobado
+	descargo.Observaciones = ""
 	descargo.UpdatedBy = &userID
 	if err := s.repo.Update(ctx, descargo); err != nil {
 		return err

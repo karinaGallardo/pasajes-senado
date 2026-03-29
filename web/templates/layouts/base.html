@@ -55,6 +55,28 @@
     <script src="/static/js/app.js?v={{ .StaticVersion }}"></script>
     <script src="/static/js/sw-register.js"></script>
 
+    <style>
+      [x-cloak] {
+        display: none !important;
+      }
+
+      /* HTMX Indicators */
+      .htmx-indicator {
+        display: none;
+      }
+      .htmx-request .htmx-indicator {
+        display: flex !important;
+      }
+      .htmx-request.htmx-indicator {
+        display: flex !important;
+      }
+      .htmx-request .htmx-indicator-none {
+        display: none !important;
+      }
+      .htmx-request.htmx-indicator-none {
+        display: none !important;
+      }
+    </style>
     {{ block "header_scripts" . }}{{ end }} {{ block "header_styles" . }}{{ end }}
   </head>
 
