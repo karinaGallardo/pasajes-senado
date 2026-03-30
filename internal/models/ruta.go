@@ -1,9 +1,11 @@
 package models
 
+import "strings"
+
 type Ruta struct {
 	BaseModel
 	Tramo     string `gorm:"size:255;not null;unique"`
-	Sigla     string `gorm:"size:50"`
+	Sigla     string `gorm:"size:50;unique"`
 	NacInter  string `gorm:"size:50;not null"`
 	Ubicacion string `gorm:"size:100"`
 	Medio     string `gorm:"size:50;default:'AEREO'"`
@@ -16,6 +18,45 @@ type Ruta struct {
 
 	Escalas   []RutaEscala   `gorm:"foreignKey:RutaID"`
 	Contratos []RutaContrato `gorm:"foreignKey:RutaID"`
+}
+
+func (r Ruta) GetTramoDisplay() string {
+	if r.Origen.Ciudad != "" && r.Destino.Ciudad != "" {
+		parts := []string{r.Origen.Ciudad + " (" + r.Origen.IATA + ")"}
+		for _, e := range r.Escalas {
+			if e.Destino.Ciudad != "" {
+				parts = append(parts, e.Destino.Ciudad+" ("+e.Destino.IATA+")")
+			} else {
+				parts = append(parts, e.DestinoIATA)
+			}
+		}
+		parts = append(parts, r.Destino.Ciudad+" ("+r.Destino.IATA+")")
+		return strings.Join(parts, " - ")
+	}
+	return r.Tramo
+}
+
+func (r Ruta) GetSegments() []string {
+	if r.OrigenIATA == "" || r.DestinoIATA == "" {
+		return []string{r.Tramo}
+	}
+
+	var points []string
+	points = append(points, r.Origen.Ciudad+" ("+r.OrigenIATA+")")
+	for _, e := range r.Escalas {
+		if e.Destino.Ciudad != "" {
+			points = append(points, e.Destino.Ciudad+" ("+e.DestinoIATA+")")
+		} else {
+			points = append(points, e.DestinoIATA)
+		}
+	}
+	points = append(points, r.Destino.Ciudad+" ("+r.DestinoIATA+")")
+
+	var segments []string
+	for i := 0; i < len(points)-1; i++ {
+		segments = append(segments, points[i]+" - "+points[i+1])
+	}
+	return segments
 }
 
 type RutaEscala struct {

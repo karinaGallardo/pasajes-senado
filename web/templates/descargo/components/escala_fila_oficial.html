@@ -1,0 +1,136 @@
+{{ define "descargo/components/escala_fila_oficial" }}
+<tr
+  class="border-b border-neutral-100 last:border-0 hover:bg-neutral-50/50 transition-colors"
+  x-data="itineraryRow({ esDevo: false, esMod: {{ .EsModificacion }}, route: '{{ .Ruta }}', route_id: '{{ .RutaID }}', boleto: '{{ .Boleto }}' })"
+  @ticket-mod-changed.window="if($event.detail.boleto && $event.detail.boleto == '{{ .Boleto }}') { esModificacion = $event.detail.state }"
+  x-bind="bindFade">
+  <input type="hidden" name="itin_tipo[]" value="{{ .Tipo }}" />
+  <input type="hidden" name="itin_index[]" value="{{ .Index }}" />
+  <input type="hidden" name="itin_id[]" value="{{ .ID }}" />
+  <input type="hidden" name="itin_ruta_id[]" :value="route_id" />
+  <input type="hidden" name="itin_orden[]" value="{{ or .Orden 0 }}" />
+
+  <td class="px-2 py-1 text-center border-r border-neutral-100 bg-neutral-50/30">
+    {{ if .ReadOnlyCheck }}
+    <input type="checkbox" disabled class="h-4 w-4 text-neutral-300 border-neutral-300 rounded opacity-40" {{ checked .EsModificacion }} />
+    {{ else }}
+    <input
+      type="checkbox"
+      name="itin_modificacion[]"
+      value="{{ .Index }}"
+      x-model="esModificacion"
+      @change="if(esModificacion) $dispatch('ticket-mod-changed', { boleto: '{{ .Boleto }}', state: true })"
+      class="h-4 w-4 text-warning-600 border-neutral-300 rounded shadow-sm" />
+    {{ end }}
+  </td>
+
+  <td class="px-2 py-1">
+    {{ if .ReadOnlyRuta }}
+    <div class="text-[10px] leading-tight font-bold text-neutral-700 uppercase whitespace-pre-line">{{ .Ruta }}</div>
+    {{ else }}
+    <div
+      class="relative min-w-[200px]"
+      x-data="searchableSelect({
+           endpoint: '/api/rutas/search',
+           initialValue: '{{ .RutaID }}',
+           initialLabel: '{{ .Ruta }}',
+           placeholder: 'Buscar ruta...'
+         })"
+      x-modelable="value"
+      x-model="route_id">
+      <div class="relative">
+        <div
+          @click="if(!esModificacion) open = true; $nextTick(() => { if(open) $refs.searchInput.focus() })"
+          class="w-full bg-white border border-neutral-300 rounded px-2 py-1.5 text-[10px] cursor-pointer focus:ring-1 focus:ring-primary min-h-[38px] flex flex-col justify-center leading-tight transition-all hover:border-primary-300 shadow-sm"
+          :class="{ 'opacity-50 grayscale bg-neutral-100 cursor-not-allowed': esModificacion, 'border-primary-200 bg-primary-50/10': label && label !== 'Buscar ruta...' }">
+          <span x-text="label || 'Seleccionar Ruta'" class="whitespace-pre-line font-bold text-neutral-800 uppercase leading-none"></span>
+        </div>
+
+        <div x-show="open" @click.away="open = false" class="absolute z-[100] mt-1 w-full overflow-hidden rounded-md bg-white shadow-2xl ring-1 ring-black ring-opacity-5">
+          <input
+            x-ref="searchInput"
+            type="text"
+            x-model.debounce.300ms="search"
+            placeholder="Escriba origen o destino..."
+            class="w-full border-b border-neutral-100 py-2 px-3 text-xs focus:outline-none" />
+
+          <ul class="max-h-60 overflow-auto py-1 text-xs">
+            <template x-for="item in filteredItems" :key="item.value">
+              <li @click="select(item)" class="relative cursor-default select-none py-2 px-3 text-neutral-900 hover:bg-primary hover:text-white transition-colors text-[10px]">
+                <span class="block truncate font-bold" x-text="item.label"></span>
+              </li>
+            </template>
+          </ul>
+        </div>
+      </div>
+    </div>
+    {{ end }}
+  </td>
+
+  <td class="px-2 py-1">
+    <input type="date" name="itin_fecha[]" value="{{ .Fecha }}" x-bind="bindInput" class="w-full text-[11px] border border-neutral-300 rounded py-0.5 px-1 h-9" />
+  </td>
+
+  <td class="px-2 py-1">
+    <input
+      type="text"
+      name="itin_boleto[]"
+      value="{{ .Boleto }}"
+      x-bind="bindInput"
+      class="w-full text-[11px] border border-neutral-300 rounded py-0.5 px-2 h-9"
+      placeholder="Boleto" />
+  </td>
+
+  <td class="px-2 py-1">
+    <input
+      type="text"
+      name="itin_pase_numero[]"
+      value="{{ .Pase }}"
+      x-bind="bindPase"
+      class="w-full text-[11px] border border-neutral-300 rounded py-0.5 px-2 h-9 font-bold"
+      placeholder="Pase" />
+  </td>
+
+  <td class="px-2 py-1 text-center">
+    <div class="flex items-center justify-center gap-1.5">
+      <div class="relative group">
+        <label
+          class="cursor-pointer flex items-center justify-center h-9 w-9 rounded-lg border-2 border-dashed transition-all duration-200 overflow-hidden shadow-sm"
+          :class="(fileName || '{{ .Archivo }}') ? 'border-success-400 bg-success-50 text-success-700' : 'border-neutral-200 bg-neutral-50 text-neutral-400 hover:border-primary-300 hover:bg-white'">
+          <input
+            type="file"
+            name="itin_archivo_{{ .Index }}"
+            x-bind="bindArchivo"
+            class="hidden"
+            @change="await window.handleSingleUpload($event, $data); if($el.files[0] && $el.files[0].type.startsWith('image/')) { localUrl = URL.createObjectURL($el.files[0]) }" />
+
+          <input type="hidden" name="itin_archivo_existente_{{ .Index }}" value="{{ .Archivo }}" />
+          <img x-show="localUrl" :src="localUrl" class="w-full h-full object-cover" />
+          <div x-show="!localUrl && processingImage" class="flex items-center justify-center"><i class="ph ph-circle-notch animate-spin text-xl text-primary-500"></i></div>
+          <i
+            x-show="!localUrl && !processingImage"
+            class="ph ph-upload-simple text-xl font-bold"
+            :class="(fileName || '{{ .Archivo }}') ? 'text-success-600' : 'text-neutral-400'"></i>
+        </label>
+      </div>
+
+      <template x-if="localUrl || '{{ .Archivo }}'">
+        <button
+          type="button"
+          @click="if(localUrl) { window.open(localUrl, '_blank') } else { htmx.ajax('GET', '/preview-file?path=' + encodeURIComponent('{{ .Archivo }}'), { target: '#modal-container' }) }"
+          class="h-9 w-9 flex items-center justify-center rounded-lg text-primary-600 hover:bg-primary-50 transition-all">
+          <i class="ph ph-eye text-xl"></i>
+        </button>
+      </template>
+    </div>
+  </td>
+
+  <td class="px-2 py-1 text-right">
+    {{ if .CanDelete }}
+    <button type="button" @click="$el.closest('tr').remove()" class="text-neutral-400 hover:text-danger-600 transition-colors p-2">
+      <i class="ph ph-trash text-xl"></i>
+    </button>
+    {{ end }}
+  </td>
+</tr>
+{{ end }}

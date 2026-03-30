@@ -9,6 +9,8 @@ import (
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
 	"sistema-pasajes/internal/utils"
+	"sort"
+	"strconv"
 	"time"
 )
 
@@ -50,7 +52,7 @@ func (s *DescargoService) Create(ctx context.Context, req dtos.CreateDescargoReq
 	descargo.CreatedBy = &userID
 
 	// Si es solicitud oficial, crear detalle PV-06
-	isOficial := req.NroMemorandum != "" || req.InformeActividades != "" || req.ObjetivoViaje != "" || req.ResultadosViaje != "" || req.ConclusionesRecomendaciones != "" || req.MontoDevolucion > 0
+	isOficial := req.NroMemorandum != "" || req.InformeActividades != "" || req.ObjetivoViaje != "" || req.ResultadosViaje != "" || req.ConclusionesRecomendaciones != "" || req.MontoDevolucion > 0 || len(anexoPaths) > 0
 
 	if isOficial {
 		oficial := &models.DescargoOficial{
@@ -114,7 +116,7 @@ func (s *DescargoService) Create(ctx context.Context, req dtos.CreateDescargoReq
 
 	var itinDetalles []models.DetalleItinerarioDescargo
 	for i := range req.ItinTipo {
-		if i < len(req.ItinRuta) && req.ItinRuta[i] != "" {
+		if i < len(req.ItinRutaID) && req.ItinRutaID[i] != "" {
 			var fecha *time.Time
 			if i < len(req.ItinFecha) && req.ItinFecha[i] != "" {
 				t := utils.ParseDate("2006-01-02", req.ItinFecha[i])
@@ -142,18 +144,34 @@ func (s *DescargoService) Create(ctx context.Context, req dtos.CreateDescargoReq
 				idx := req.ItinIndex[i]
 				esDevo = devolucionMap[idx]
 				esMod = modificacionMap[idx]
+				if esMod {
+					esDevo = false
+				}
+			}
+
+			montoDevo := 0.0
+			if i < len(req.ItinMontoDevolucion) {
+				montoDevo, _ = strconv.ParseFloat(req.ItinMontoDevolucion[i], 64)
+			}
+
+			orden := i
+			if i < len(req.ItinOrden) {
+				if o, err := strconv.Atoi(req.ItinOrden[i]); err == nil {
+					orden = o
+				}
 			}
 
 			itinDetalles = append(itinDetalles, models.DetalleItinerarioDescargo{
 				Tipo:              models.TipoDetalleItinerario(req.ItinTipo[i]),
-				Ruta:              req.ItinRuta[i],
+				RutaID:            utils.NilIfEmpty(req.ItinRutaID[i]),
 				Fecha:             fecha,
 				Boleto:            boleto,
 				EsDevolucion:      esDevo,
 				EsModificacion:    esMod,
+				MontoDevolucion:   montoDevo,
 				NumeroPaseAbordo:  paseNumero,
 				ArchivoPaseAbordo: archivoPath,
-				Orden:             i,
+				Orden:             orden,
 			})
 		}
 	}
@@ -248,6 +266,12 @@ func (s *DescargoService) UpdateFull(ctx context.Context, id string, req dtos.Cr
 
 		// Mapear Anexos
 		if len(anexoPaths) > 0 {
+			if descargo.Oficial == nil {
+				descargo.Oficial = &models.DescargoOficial{DescargoID: id}
+				if err := s.repo.UpdateOficial(ctx, descargo.Oficial); err != nil {
+					return err
+				}
+			}
 			var anexos []models.AnexoDescargo
 			for i, path := range anexoPaths {
 				if path != "" {
@@ -258,11 +282,9 @@ func (s *DescargoService) UpdateFull(ctx context.Context, id string, req dtos.Cr
 					})
 				}
 			}
-			// Clear existing ones using oficial ID if exists
-			if descargo.Oficial.ID != "" {
-				if err := s.repo.ClearAnexos(ctx, descargo.Oficial.ID); err != nil {
-					return err
-				}
+			// Clear existing ones using oficial ID
+			if err := s.repo.ClearAnexos(ctx, descargo.Oficial.ID); err != nil {
+				return err
 			}
 			descargo.Oficial.Anexos = anexos
 		}
@@ -309,8 +331,9 @@ func (s *DescargoService) UpdateFull(ctx context.Context, id string, req dtos.Cr
 	}
 
 	var itinDetalles []models.DetalleItinerarioDescargo
+
 	for i := range req.ItinTipo {
-		if i < len(req.ItinRuta) && req.ItinRuta[i] != "" {
+		if i < len(req.ItinRutaID) && req.ItinRutaID[i] != "" {
 			var fecha *time.Time
 			if i < len(req.ItinFecha) && req.ItinFecha[i] != "" {
 				t := utils.ParseDate("2006-01-02", req.ItinFecha[i])
@@ -335,27 +358,47 @@ func (s *DescargoService) UpdateFull(ctx context.Context, id string, req dtos.Cr
 			esDevo := false
 			esMod := false
 			if i < len(req.ItinIndex) {
-				esDevo = devolucionMap[req.ItinIndex[i]]
-				esMod = modificacionMap[req.ItinIndex[i]]
+				idx := req.ItinIndex[i]
+				esDevo = devolucionMap[idx]
+				esMod = modificacionMap[idx]
+				if esMod {
+					esDevo = false
+				}
 			}
 
-			itinDetalles = append(itinDetalles, models.DetalleItinerarioDescargo{
+			montoDevo := 0.0
+			if i < len(req.ItinMontoDevolucion) {
+				montoDevo, _ = strconv.ParseFloat(req.ItinMontoDevolucion[i], 64)
+			}
+
+			var ptrRutaID *string
+			if i < len(req.ItinRutaID) && req.ItinRutaID[i] != "" {
+				ptrRutaID = &req.ItinRutaID[i]
+			}
+
+			// Usamos el índice global del bucle para garantizar un ordenamiento único y estable
+			orden := i
+
+			det := models.DetalleItinerarioDescargo{
 				DescargoID:        id,
 				Tipo:              models.TipoDetalleItinerario(req.ItinTipo[i]),
-				Ruta:              req.ItinRuta[i],
+				RutaID:            ptrRutaID,
 				Fecha:             fecha,
 				Boleto:            boleto,
 				EsDevolucion:      esDevo,
 				EsModificacion:    esMod,
+				MontoDevolucion:   montoDevo,
 				NumeroPaseAbordo:  paseNumero,
 				ArchivoPaseAbordo: archivoPath,
-				Orden:             i,
-			})
-		}
-	}
+				Orden:             orden,
+			}
 
-	if err := s.repo.ClearDetalles(ctx, id); err != nil {
-		return err
+			if i < len(req.ItinID) && req.ItinID[i] != "" {
+				det.ID = req.ItinID[i]
+			}
+
+			itinDetalles = append(itinDetalles, det)
+		}
 	}
 
 	descargo.DetallesItinerario = itinDetalles
@@ -460,4 +503,74 @@ func (s *DescargoService) RevertToDraft(ctx context.Context, id string, userID s
 	}
 
 	return nil
+}
+
+// GetItinerarioParaDescargo transforma los pasajes de una solicitud en estructuras listas para la vista de descargo.
+func (s *DescargoService) GetItinerarioParaDescargo(ctx context.Context, solicitud *models.Solicitud) (map[string][]dtos.TicketView, map[string][]dtos.TicketView) {
+	pasajesOriginales := make(map[string][]dtos.TicketView)
+	pasajesReprogramados := make(map[string][]dtos.TicketView)
+
+	// Procesamos Ida y Vuelta secuencialmente
+	s.processTicketItemsForView(solicitud, solicitud.GetItemIda(), "io", "ir", pasajesOriginales, pasajesReprogramados)
+	s.processTicketItemsForView(solicitud, solicitud.GetItemVuelta(), "vo", "vr", pasajesOriginales, pasajesReprogramados)
+
+	return pasajesOriginales, pasajesReprogramados
+}
+
+func (s *DescargoService) processTicketItemsForView(
+	solicitud *models.Solicitud,
+	item *models.SolicitudItem,
+	prefixOrig string,
+	prefixRepro string,
+	targetOrig map[string][]dtos.TicketView,
+	targetRepro map[string][]dtos.TicketView,
+) {
+	if item == nil {
+		return
+	}
+
+	tipo := string(item.Tipo)
+	pasajes := item.Pasajes
+
+	// Ordenar pasajes según Orden o Fecha de Creación
+	sort.Slice(pasajes, func(i, j int) bool {
+		if pasajes[i].Orden != pasajes[j].Orden {
+			return pasajes[i].Orden < pasajes[j].Orden
+		}
+		return pasajes[i].CreatedAt.Before(pasajes[j].CreatedAt)
+	})
+
+	for _, p := range pasajes {
+		if p.GetEstadoCodigo() != "EMITIDO" {
+			continue
+		}
+
+		targetMap := targetOrig
+		prefix := prefixOrig
+		if p.PasajeAnteriorID != nil {
+			targetMap = targetRepro
+			prefix = prefixRepro
+		}
+
+		ticket := dtos.TicketView{
+			Boleto: p.NumeroBoleto,
+		}
+
+		segments := p.GetRutaSegments()
+		for j, seg := range segments {
+			ticket.Scales = append(ticket.Scales, dtos.ConnectionView{
+				Ruta:            seg,
+				RutaID:          utils.DerefString(p.RutaID),
+				Fecha:           p.FechaVuelo.Format("2006-01-02"),
+				Boleto:          p.NumeroBoleto,
+				Index:           fmt.Sprintf("%s_%s_%s_%d", prefix, solicitud.ID, p.ID, j),
+				Orden:           j,
+				EsDevolucion:    false,
+				EsModificacion:  false,
+				MontoDevolucion: 0,
+				CostoPasaje:     p.Costo,
+			})
+		}
+		targetMap[tipo] = append(targetMap[tipo], ticket)
+	}
 }

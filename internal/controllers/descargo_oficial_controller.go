@@ -9,7 +9,9 @@ import (
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/services"
 	"sistema-pasajes/internal/utils"
+	"sort"
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -21,6 +23,29 @@ type DescargoOficialController struct {
 	reportService    *services.ReportService
 	peopleService    *services.PeopleService
 	configService    *services.ConfiguracionService
+}
+
+type ConnectionViewOficial struct {
+	ID              string
+	Ruta            string
+	RutaID          string
+	Fecha           string
+	Boleto          string
+	Index           string
+	Pase            string
+	Archivo         string
+	EsDevolucion    bool
+	MontoDevolucion float64
+	CostoPasaje     float64
+	EsModificacion  bool
+	TotalScales     int
+	IsFirstScale    bool
+	Orden           int
+}
+
+type TicketViewOficial struct {
+	Boleto string
+	Scales []ConnectionViewOficial
 }
 
 func NewDescargoOficialController(
@@ -60,46 +85,78 @@ func (ctrl *DescargoOficialController) Create(c *gin.Context) {
 		return
 	}
 
-	type ConnectionView struct {
-		Ruta           string
-		Fecha          string
-		Boleto         string
-		Index          string
-		Pase           string
-		Archivo        string
-		EsDevolucion   bool
-		EsModificacion bool
-	}
+	pasajesOriginales := make(map[string][]TicketViewOficial)
+	pasajesReprogramados := make(map[string][]TicketViewOficial)
 
-	pasajesOriginales := make(map[string][]ConnectionView)
-	pasajesReprogramados := make(map[string][]ConnectionView)
+	origGroups := make(map[string]map[string][]ConnectionViewOficial)
+	reproGroups := make(map[string]map[string][]ConnectionViewOficial)
 
 	for _, item := range solicitud.Items {
 		tipo := string(item.Tipo)
+		if origGroups[tipo] == nil {
+			origGroups[tipo] = make(map[string][]ConnectionViewOficial)
+		}
+		if reproGroups[tipo] == nil {
+			reproGroups[tipo] = make(map[string][]ConnectionViewOficial)
+		}
+
 		orig := item.GetPasajeOriginal()
 		if orig != nil {
-			routes := utils.SplitRoute(orig.Ruta)
-			for i, r := range routes {
-				pasajesOriginales[tipo] = append(pasajesOriginales[tipo], ConnectionView{
-					Ruta:   r,
-					Fecha:  orig.FechaVuelo.Format("2006-01-02"),
-					Boleto: orig.NumeroBoleto,
-					Index:  fmt.Sprintf("io_%s_%d", item.ID, i),
+			segments := orig.GetRutaSegments()
+			for i, r := range segments {
+				origGroups[tipo][orig.NumeroBoleto] = append(origGroups[tipo][orig.NumeroBoleto], ConnectionViewOficial{
+					Ruta:        r,
+					RutaID:      utils.DerefString(orig.RutaID),
+					Fecha:       orig.FechaVuelo.Format("2006-01-02"),
+					Boleto:      orig.NumeroBoleto,
+					Index:       fmt.Sprintf("io_%s_%d", item.ID, i),
+					Orden:       i,
+					CostoPasaje: orig.Costo,
 				})
 			}
 		}
 
 		repro := item.GetPasajeReprogramado()
 		if repro != nil {
-			routes := utils.SplitRoute(repro.Ruta)
-			for i, r := range routes {
-				pasajesReprogramados[tipo] = append(pasajesReprogramados[tipo], ConnectionView{
-					Ruta:   r,
-					Fecha:  repro.FechaVuelo.Format("2006-01-02"),
-					Boleto: repro.NumeroBoleto,
-					Index:  fmt.Sprintf("ir_%s_%d", item.ID, i),
+			segments := repro.GetRutaSegments()
+			for i, r := range segments {
+				reproGroups[tipo][repro.NumeroBoleto] = append(reproGroups[tipo][repro.NumeroBoleto], ConnectionViewOficial{
+					Ruta:        r,
+					RutaID:      utils.DerefString(repro.RutaID),
+					Fecha:       repro.FechaVuelo.Format("2006-01-02"),
+					Boleto:      repro.NumeroBoleto,
+					Index:       fmt.Sprintf("ir_%s_%d", item.ID, i),
+					Orden:       i,
+					CostoPasaje: repro.Costo,
 				})
 			}
+		}
+	}
+
+	for tipo, groups := range origGroups {
+		for boleto, scales := range groups {
+			ticket := TicketViewOficial{Boleto: boleto, Scales: scales}
+			sort.Slice(ticket.Scales, func(k, l int) bool {
+				return ticket.Scales[k].Orden < ticket.Scales[l].Orden
+			})
+			for j := range ticket.Scales {
+				ticket.Scales[j].TotalScales = len(ticket.Scales)
+				ticket.Scales[j].IsFirstScale = (j == 0)
+			}
+			pasajesOriginales[tipo] = append(pasajesOriginales[tipo], ticket)
+		}
+	}
+	for tipo, groups := range reproGroups {
+		for boleto, scales := range groups {
+			ticket := TicketViewOficial{Boleto: boleto, Scales: scales}
+			sort.Slice(ticket.Scales, func(k, l int) bool {
+				return ticket.Scales[k].Orden < ticket.Scales[l].Orden
+			})
+			for j := range ticket.Scales {
+				ticket.Scales[j].TotalScales = len(ticket.Scales)
+				ticket.Scales[j].IsFirstScale = (j == 0)
+			}
+			pasajesReprogramados[tipo] = append(pasajesReprogramados[tipo], ticket)
 		}
 	}
 
@@ -188,14 +245,13 @@ func (ctrl *DescargoOficialController) Show(c *gin.Context) {
 		return
 	}
 
-	// Dynamic Sync for Show View (similar to Edit)
 	itemsByType := make(map[string][]models.DetalleItinerarioDescargo)
 	existingKeys := make(map[string]bool)
 	detalles := descargo.DetallesItinerario
 
 	for _, item := range detalles {
 		itemsByType[string(item.Tipo)] = append(itemsByType[string(item.Tipo)], item)
-		key := fmt.Sprintf("%s_%s_%s", item.Tipo, item.Ruta, item.Boleto)
+		key := fmt.Sprintf("%s_%d_%s", item.Tipo, item.Orden, item.Boleto)
 		existingKeys[key] = true
 	}
 
@@ -213,16 +269,17 @@ func (ctrl *DescargoOficialController) Show(c *gin.Context) {
 					tipoTarget = tipoBase + "_REPRO"
 				}
 
-				routes := utils.SplitRoute(p.Ruta)
-				for _, r := range routes {
-					key := fmt.Sprintf("%s_%s_%s", tipoTarget, r, p.NumeroBoleto)
+				segments := p.GetRutaSegments()
+				for i := range segments {
+					key := fmt.Sprintf("%s_%d_%s", tipoTarget, i, p.NumeroBoleto)
 					if !existingKeys[key] {
 						tVuelo := p.FechaVuelo
 						newItem := models.DetalleItinerarioDescargo{
 							Tipo:         models.TipoDetalleItinerario(tipoTarget),
-							Ruta:         r,
+							RutaID:       p.RutaID,
 							Fecha:        &tVuelo,
 							Boleto:       p.NumeroBoleto,
+							Orden:        i,
 							EsDevolucion: false,
 						}
 						detalles = append(detalles, newItem)
@@ -234,7 +291,6 @@ func (ctrl *DescargoOficialController) Show(c *gin.Context) {
 		}
 	}
 
-	// Group by Ticket for the Template
 	type TicketGroup struct {
 		Boleto   string
 		Detalles []models.DetalleItinerarioDescargo
@@ -264,18 +320,38 @@ func (ctrl *DescargoOficialController) Show(c *gin.Context) {
 		bancoNombre = "BANCO UNIÓN S.A."
 	}
 
-	var tickets []TicketGroup
+	var ticketsIda []TicketGroup
+	var ticketsVuelta []TicketGroup
+
 	for _, key := range ticketsOrder {
-		tickets = append(tickets, *ticketsMap[key])
+		tg := ticketsMap[key]
+		sort.Slice(tg.Detalles, func(i, j int) bool {
+			return tg.Detalles[i].Orden < tg.Detalles[j].Orden
+		})
+
+		isVuelta := false
+		if len(tg.Detalles) > 0 {
+			tipo := string(tg.Detalles[0].Tipo)
+			if strings.HasPrefix(tipo, "VUELTA") {
+				isVuelta = true
+			}
+		}
+
+		if isVuelta {
+			ticketsVuelta = append(ticketsVuelta, *tg)
+		} else {
+			ticketsIda = append(ticketsIda, *tg)
+		}
 	}
 
 	utils.Render(c, "descargo/oficial/show", gin.H{
-		"Title":       "Detalle de Descargo (Oficial)",
-		"Descargo":    descargo,
-		"Detalles":    detalles,
-		"Tickets":     tickets,
-		"BancoCuenta": bancoCuenta,
-		"BancoNombre": bancoNombre,
+		"Title":         "Detalle de Descargo (Oficial)",
+		"Descargo":      descargo,
+		"Detalles":      detalles,
+		"TicketsIda":    ticketsIda,
+		"TicketsVuelta": ticketsVuelta,
+		"BancoCuenta":   bancoCuenta,
+		"BancoNombre":   bancoNombre,
 	})
 }
 
@@ -296,11 +372,10 @@ func (ctrl *DescargoOficialController) Edit(c *gin.Context) {
 	existingKeys := make(map[string]bool)
 	for _, item := range descargo.DetallesItinerario {
 		itemsByType[string(item.Tipo)] = append(itemsByType[string(item.Tipo)], item)
-		key := fmt.Sprintf("%s_%s_%s", item.Tipo, item.Ruta, item.Boleto)
+		key := fmt.Sprintf("%s_%d_%s", item.Tipo, item.Orden, item.Boleto)
 		existingKeys[key] = true
 	}
 
-	// Dynamic Sync: Check if new pasajes were issued after descargo creation
 	if descargo.Solicitud != nil {
 		for _, sItem := range descargo.Solicitud.Items {
 			tipoBase := string(sItem.Tipo)
@@ -315,16 +390,17 @@ func (ctrl *DescargoOficialController) Edit(c *gin.Context) {
 					tipoTarget = tipoBase + "_REPRO"
 				}
 
-				routes := utils.SplitRoute(p.Ruta)
-				for _, r := range routes {
-					key := fmt.Sprintf("%s_%s_%s", tipoTarget, r, p.NumeroBoleto)
+				segments := p.GetRutaSegments()
+				for i := range segments {
+					key := fmt.Sprintf("%s_%d_%s", tipoTarget, i, p.NumeroBoleto)
 					if !existingKeys[key] {
 						tVuelo := p.FechaVuelo
 						newItem := models.DetalleItinerarioDescargo{
 							Tipo:         models.TipoDetalleItinerario(tipoTarget),
-							Ruta:         r,
+							RutaID:       p.RutaID,
 							Fecha:        &tVuelo,
 							Boleto:       p.NumeroBoleto,
+							Orden:        i,
 							EsDevolucion: false,
 						}
 						itemsByType[tipoTarget] = append(itemsByType[tipoTarget], newItem)
@@ -335,51 +411,92 @@ func (ctrl *DescargoOficialController) Edit(c *gin.Context) {
 		}
 	}
 
-	// Group by ticket structure for the template
-	type ConnectionView struct {
-		Ruta           string
-		Fecha          string
-		Boleto         string
-		Index          string
-		Pase           string
-		Archivo        string
-		EsDevolucion   bool
-		EsModificacion bool
-	}
+	pasajesOriginales := make(map[string][]TicketViewOficial)
+	pasajesReprogramados := make(map[string][]TicketViewOficial)
 
-	pasajesOriginales := make(map[string][]ConnectionView)
-	pasajesReprogramados := make(map[string][]ConnectionView)
+	origGroups := make(map[string]map[string][]ConnectionViewOficial)
+	reproGroups := make(map[string]map[string][]ConnectionViewOficial)
 
 	for tipo, items := range itemsByType {
+		if origGroups[tipo] == nil {
+			origGroups[tipo] = make(map[string][]ConnectionViewOficial)
+		}
+		if reproGroups[tipo] == nil {
+			reproGroups[tipo] = make(map[string][]ConnectionViewOficial)
+		}
 		for i, item := range items {
-			prefix := "io" // ida original
-			if tipo == "IDA_REPRO" {
+			prefix := "io"
+			if strings.HasSuffix(tipo, "REPRO") {
 				prefix = "ir"
-			} else if tipo == "VUELTA_ORIGINAL" {
+			} else if strings.HasPrefix(tipo, "VUELTA_ORIGINAL") {
 				prefix = "vo"
-			} else if tipo == "VUELTA_REPRO" {
+			} else if strings.HasPrefix(tipo, "VUELTA_REPRO") {
 				prefix = "vr"
 			}
 
-			view := ConnectionView{
-				Ruta:           item.Ruta,
-				Fecha:          "",
-				Boleto:         item.Boleto,
-				Index:          fmt.Sprintf("%s_%d", prefix, i),
-				Pase:           item.NumeroPaseAbordo,
-				Archivo:        item.ArchivoPaseAbordo,
-				EsDevolucion:   item.EsDevolucion,
-				EsModificacion: item.EsModificacion,
+			costoPasaje := 0.0
+			if descargo.Solicitud != nil {
+				for _, sitem := range descargo.Solicitud.Items {
+					for _, pas := range sitem.Pasajes {
+						if pas.NumeroBoleto == item.Boleto && item.Boleto != "" {
+							costoPasaje = pas.Costo
+							break
+						}
+					}
+				}
+			}
+
+			view := ConnectionViewOficial{
+				ID:              item.ID,
+				Ruta:            item.GetRutaDisplay(),
+				RutaID:          utils.DerefString(item.RutaID),
+				Fecha:           "",
+				Boleto:          item.Boleto,
+				Index:           fmt.Sprintf("%s_%d", prefix, i),
+				Pase:            item.NumeroPaseAbordo,
+				Archivo:         item.ArchivoPaseAbordo,
+				EsDevolucion:    item.EsDevolucion,
+				MontoDevolucion: item.MontoDevolucion,
+				CostoPasaje:     costoPasaje,
+				EsModificacion:  item.EsModificacion,
+				Orden:           item.Orden,
 			}
 			if item.Fecha != nil {
 				view.Fecha = item.Fecha.Format("2006-01-02")
 			}
 
 			if strings.HasSuffix(tipo, "_ORIGINAL") {
-				pasajesOriginales[tipo] = append(pasajesOriginales[tipo], view)
+				origGroups[tipo][item.Boleto] = append(origGroups[tipo][item.Boleto], view)
 			} else {
-				pasajesReprogramados[tipo] = append(pasajesReprogramados[tipo], view)
+				reproGroups[tipo][item.Boleto] = append(reproGroups[tipo][item.Boleto], view)
 			}
+		}
+	}
+
+	for tipo, groups := range origGroups {
+		for boleto, scales := range groups {
+			ticket := TicketViewOficial{Boleto: boleto, Scales: scales}
+			sort.Slice(ticket.Scales, func(k, l int) bool {
+				return ticket.Scales[k].Orden < ticket.Scales[l].Orden
+			})
+			for j := range ticket.Scales {
+				ticket.Scales[j].TotalScales = len(ticket.Scales)
+				ticket.Scales[j].IsFirstScale = (j == 0)
+			}
+			pasajesOriginales[tipo] = append(pasajesOriginales[tipo], ticket)
+		}
+	}
+	for tipo, groups := range reproGroups {
+		for boleto, scales := range groups {
+			ticket := TicketViewOficial{Boleto: boleto, Scales: scales}
+			sort.Slice(ticket.Scales, func(k, l int) bool {
+				return ticket.Scales[k].Orden < ticket.Scales[l].Orden
+			})
+			for j := range ticket.Scales {
+				ticket.Scales[j].TotalScales = len(ticket.Scales)
+				ticket.Scales[j].IsFirstScale = (j == 0)
+			}
+			pasajesReprogramados[tipo] = append(pasajesReprogramados[tipo], ticket)
 		}
 	}
 
@@ -406,7 +523,6 @@ func (ctrl *DescargoOficialController) Edit(c *gin.Context) {
 
 func (ctrl *DescargoOficialController) Update(c *gin.Context) {
 	id := c.Param("id")
-
 	descargo, err := ctrl.descargoService.GetByID(c.Request.Context(), id)
 	if err != nil {
 		c.Redirect(http.StatusFound, "/descargos")
@@ -431,6 +547,9 @@ func (ctrl *DescargoOficialController) Update(c *gin.Context) {
 	}
 
 	indices := c.PostFormArray("itin_index[]")
+	itinIDs := c.PostFormArray("itin_id[]")
+	req.ItinID = itinIDs // Ensure ItinID is populated from form array
+
 	var archivoPaths []string
 	for _, idx := range indices {
 		path := c.PostForm("itin_archivo_existente_" + idx)
@@ -565,4 +684,24 @@ func (ctrl *DescargoOficialController) RevertApproval(c *gin.Context) {
 	}
 
 	c.Redirect(http.StatusFound, "/descargos/oficial/"+id)
+}
+
+func (ctrl *DescargoOficialController) NuevaFila(c *gin.Context) {
+	tipo := c.Query("tipo")
+	index := fmt.Sprintf("new_%d", time.Now().UnixNano())
+
+	c.HTML(http.StatusOK, "descargo/components/escala_fila_oficial", gin.H{
+		"Tipo":           tipo,
+		"Index":          index,
+		"EsModificacion": false,
+		"Ruta":           "",
+		"RutaID":         "",
+		"Fecha":          "",
+		"Boleto":         "",
+		"Pase":           "",
+		"Archivo":        "",
+		"CanDelete":      true,
+		"ReadOnlyRuta":   false,
+		"Orden":          0,
+	})
 }

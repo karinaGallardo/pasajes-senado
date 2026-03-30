@@ -289,7 +289,7 @@
                       <div class="space-y-1">
                         <span class="text-[8px] font-black uppercase tracking-widest text-neutral-400 block">Trayecto</span>
                         <p class="text-[12px] font-black text-neutral-800 uppercase tracking-tight leading-tight flex flex-col">
-                          {{ range (split .Ruta " - ") }}
+                          {{ range (split .GetRutaDisplay " - ") }}
                           <span>{{ . }}</span>
                           {{ end }}
                         </p>

@@ -69,6 +69,10 @@ func (r *SolicitudRepository) FindAll(ctx context.Context, status string, concep
 		Preload("Items.Origen").
 		Preload("Items.Destino").
 		Preload("Items.Estado").
+		Preload("Items.Pasajes.RutaPasaje.Origen").
+		Preload("Items.Pasajes.RutaPasaje.Destino").
+		Preload("Items.Pasajes.RutaPasaje.Escalas.Destino").
+		Preload("Items.Pasajes.RutaPasaje").
 		Preload("TipoSolicitud.ConceptoViaje").
 		Preload("EstadoSolicitud").
 		Order("created_at desc")
@@ -93,6 +97,10 @@ func (r *SolicitudRepository) FindByUserID(ctx context.Context, userID string, s
 		Preload("Items.Origen").
 		Preload("Items.Destino").
 		Preload("Items.Estado").
+		Preload("Items.Pasajes.RutaPasaje.Origen").
+		Preload("Items.Pasajes.RutaPasaje.Destino").
+		Preload("Items.Pasajes.RutaPasaje.Escalas.Destino").
+		Preload("Items.Pasajes.RutaPasaje").
 		Preload("TipoSolicitud.ConceptoViaje").
 		Preload("EstadoSolicitud").
 		Order("created_at desc").Where("usuario_id = ?", userID)
@@ -136,6 +144,10 @@ func (r *SolicitudRepository) FindByUserIdOrAccesibleByEncargadoID(ctx context.C
 		Preload("Items.Origen").
 		Preload("Items.Destino").
 		Preload("Items.Estado").
+		Preload("Items.Pasajes.RutaPasaje.Origen").
+		Preload("Items.Pasajes.RutaPasaje.Destino").
+		Preload("Items.Pasajes.RutaPasaje.Escalas.Destino").
+		Preload("Items.Pasajes.RutaPasaje").
 		Preload("TipoSolicitud.ConceptoViaje").
 		Preload("EstadoSolicitud").
 		Order("created_at desc").
@@ -170,6 +182,10 @@ func (r *SolicitudRepository) FindPaginated(ctx context.Context, userID string, 
 		Preload("Items.Origen").
 		Preload("Items.Destino").
 		Preload("Items.Estado").
+		Preload("Items.Pasajes.RutaPasaje.Origen").
+		Preload("Items.Pasajes.RutaPasaje.Destino").
+		Preload("Items.Pasajes.RutaPasaje.Escalas.Destino").
+		Preload("Items.Pasajes.RutaPasaje").
 		Preload("TipoSolicitud.ConceptoViaje").
 		Preload("EstadoSolicitud").
 		Scopes(SearchSolicitud(searchTerm))
@@ -219,12 +235,15 @@ func (r *SolicitudRepository) FindByID(ctx context.Context, id string) (*models.
 	err := r.db.WithContext(ctx).Preload("Usuario").
 		Preload("Usuario.Encargado").
 		Preload("Usuario.OrigenesAlternativos.Destino").
-		Preload("Items").
-		Preload("Items.Origen").
-		Preload("Items.Destino").
+		Preload("Items.Origen.Ambito").
+		Preload("Items.Destino.Ambito").
 		Preload("Items.Pasajes.Aerolinea").
 		Preload("Items.Pasajes.Agencia").
 		Preload("Items.Pasajes.EstadoPasaje").
+		Preload("Items.Pasajes.RutaPasaje.Origen").
+		Preload("Items.Pasajes.RutaPasaje.Destino").
+		Preload("Items.Pasajes.RutaPasaje.Escalas.Destino").
+		Preload("Items.Pasajes.RutaPasaje").
 		Preload("Items.Pasajes").
 		Preload("Viaticos").
 		Preload("Viaticos.Detalles").
@@ -280,6 +299,10 @@ func (r *SolicitudRepository) FindPendientesDeDescargoUI(ctx context.Context, us
 		Preload("Items.Pasajes").
 		Preload("Items.Origen").
 		Preload("Items.Destino").
+		Preload("Items.Pasajes.RutaPasaje.Origen").
+		Preload("Items.Pasajes.RutaPasaje.Destino").
+		Preload("Items.Pasajes.RutaPasaje.Escalas.Destino").
+		Preload("Items.Pasajes.RutaPasaje").
 		Preload("TipoSolicitud.ConceptoViaje").
 		Preload("EstadoSolicitud").
 		Preload("Descargo.DetallesItinerario").
@@ -313,6 +336,10 @@ func (r *SolicitudRepository) FindPendientesDeDescargoPaginated(ctx context.Cont
 		Preload("Items.Pasajes").
 		Preload("Items.Origen").
 		Preload("Items.Destino").
+		Preload("Items.Pasajes.RutaPasaje.Origen").
+		Preload("Items.Pasajes.RutaPasaje.Destino").
+		Preload("Items.Pasajes.RutaPasaje.Escalas.Destino").
+		Preload("Items.Pasajes.RutaPasaje").
 		Preload("TipoSolicitud.ConceptoViaje").
 		Preload("EstadoSolicitud").
 		Preload("Descargo.DetallesItinerario").

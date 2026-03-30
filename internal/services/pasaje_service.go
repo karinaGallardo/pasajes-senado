@@ -19,6 +19,7 @@ type PasajeService struct {
 	repo              *repositories.PasajeRepository
 	solicitudRepo     *repositories.SolicitudRepository
 	solicitudItemRepo *repositories.SolicitudItemRepository
+	rutaRepo          *repositories.RutaRepository
 	emailService      *EmailService
 	auditService      *AuditService
 }
@@ -27,6 +28,7 @@ func NewPasajeService(
 	repo *repositories.PasajeRepository,
 	solicitudRepo *repositories.SolicitudRepository,
 	solicitudItemRepo *repositories.SolicitudItemRepository,
+	rutaRepo *repositories.RutaRepository,
 	emailService *EmailService,
 	auditService *AuditService,
 ) *PasajeService {
@@ -34,6 +36,7 @@ func NewPasajeService(
 		repo:              repo,
 		solicitudRepo:     solicitudRepo,
 		solicitudItemRepo: solicitudItemRepo,
+		rutaRepo:          rutaRepo,
 		emailService:      emailService,
 		auditService:      auditService,
 	}
@@ -82,7 +85,7 @@ func (s *PasajeService) Create(ctx context.Context, solicitudID string, req dtos
 		AerolineaID:        aerolineaID,
 		AgenciaID:          &req.AgenciaID,
 		NumeroVuelo:        req.NumeroVuelo,
-		Ruta:               req.Ruta,
+		RutaID:             utils.NilIfEmpty(req.RutaID),
 		FechaVuelo:         fechaVuelo,
 		CodigoReserva:      req.CodigoReserva,
 		NumeroBoleto:       req.NumeroBoleto,
@@ -145,7 +148,7 @@ func (s *PasajeService) UpdateFromRequest(ctx context.Context, req dtos.UpdatePa
 	}
 
 	pasaje.NumeroVuelo = req.NumeroVuelo
-	pasaje.Ruta = req.Ruta
+	pasaje.RutaID = utils.NilIfEmpty(req.RutaID)
 	pasaje.NumeroBoleto = req.NumeroBoleto
 	pasaje.NumeroFactura = req.NumeroFactura
 	pasaje.CodigoReserva = req.CodigoReserva
@@ -329,7 +332,7 @@ func (s *PasajeService) sendEmissionEmail(sol *models.Solicitud, pasaje *models.
 
 	subject := fmt.Sprintf("[%s] Pasaje Emitido (%s) - Solicitud %s", strings.ToUpper(concepto), tipoTramoStr, sol.Codigo)
 
-	ruta := pasaje.Ruta
+	ruta := pasaje.GetRutaDisplay()
 	fecha := utils.FormatDateTimeLongES(pasaje.FechaVuelo)
 	boleto := pasaje.NumeroBoleto
 	aerolinea := "N/A"
@@ -453,7 +456,7 @@ func (s *PasajeService) sendReversionEmail(sol *models.Solicitud, pasaje *models
 				<p>Se comunica a <strong>%s</strong>,</p>
 				<p>El envío de su pasaje correspondiente al tramo <strong>%s</strong> ha sido <strong>revertido</strong> por el administrador para realizar correcciones necesarias.</p>
 				<p><strong>Por favor, ignore la notificación de emisión anterior si ya la recibió.</strong> Una vez corregidos los datos, recibirá una nueva confirmación con el pasaje rectificado.</p>
-				
+
 				<h3 style="color: #f59e0b; border-bottom: 1px solid #eee; padding-bottom: 5px;">Detalles del Tramo</h3>
 				<ul style="list-style: none; padding: 0;">
 					<li><strong>Ruta:</strong> %s</li>
@@ -465,7 +468,7 @@ func (s *PasajeService) sendReversionEmail(sol *models.Solicitud, pasaje *models
 				</p>
 			</div>
 		</div>
-	`, sol.Codigo, usuario.GetNombreCompleto(), tipoTramoStr, pasaje.Ruta, utils.FormatDateTimeLongES(pasaje.FechaVuelo))
+	`, sol.Codigo, usuario.GetNombreCompleto(), tipoTramoStr, pasaje.GetRutaDisplay(), utils.FormatDateTimeLongES(pasaje.FechaVuelo))
 
 	_ = s.emailService.SendEmail(to, cc, nil, subject, body)
 }

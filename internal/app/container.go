@@ -160,6 +160,7 @@ func NewContainer(db *gorm.DB, mongoRRHH *mongo.Database, mongoChat *mongo.Datab
 		pasajeRepo,
 		solicitudRepo,
 		solicitudItemRepo,
+		rutaRepo,
 		emailService,
 		auditService,
 	)

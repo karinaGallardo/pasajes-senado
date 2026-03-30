@@ -4,7 +4,6 @@ import (
 	"context"
 	"sistema-pasajes/internal/models"
 
-
 	"gorm.io/gorm"
 )
 

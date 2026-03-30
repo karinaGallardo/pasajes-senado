@@ -7,6 +7,7 @@ document.addEventListener("alpine:init", function () {
       open: true,
       id: config.id || "",
       ruta: config.ruta || "",
+      ruta_id: config.ruta_id || "",
       agencia_id: config.agencia_id || "",
       aerolinea_id: config.aerolinea_id || "",
       numero_vuelo: config.numero_vuelo || "",
@@ -27,8 +28,8 @@ document.addEventListener("alpine:init", function () {
       },
 
       get tarifaReferencial() {
-        if (this.ruta && this.aerolinea_id && this.fares[this.ruta]) {
-          return this.fares[this.ruta][this.aerolinea_id] || 0;
+        if (this.ruta_id && this.aerolinea_id && this.fares[this.ruta_id]) {
+          return this.fares[this.ruta_id][this.aerolinea_id] || 0;
         }
         return 0;
       },
@@ -136,6 +137,8 @@ document.addEventListener("alpine:init", function () {
         this.label = item ? item.label : this.placeholder;
         this.open = false;
         this.search = "";
+        // Dispatch unique event to avoid collision with standard "change" events
+        this.$el.dispatchEvent(new CustomEvent("searchable-select-change", { detail: item || {}, bubbles: true }));
       },
     };
   });
@@ -284,6 +287,130 @@ document.addEventListener("alpine:init", function () {
       },
     };
   });
+
+  Alpine.data("itineraryRow", (config) => ({
+    esDevolucion: config.esDevo,
+    esModificacion: config.esMod,
+    montoDevo: config.monto || 0,
+    route_id: config.route_id || "",
+    route: config.route || "",
+    boleto: config.boleto || "",
+    isFullTicket: false,
+    fileName: "",
+    localUrl: "",
+    processingImage: false,
+
+    init() {
+      this.$watch("esDevolucion", (val) => {
+        if (val) {
+          this.esModificacion = false;
+          this.isFullTicket = true;
+          this.montoDevo = 0; // Reset manual amount if full refund
+        } else {
+          this.isFullTicket = false;
+        }
+        this.$dispatch("update-totals", { boleto: this.boleto });
+      });
+
+      this.$watch("esModificacion", (val) => {
+        if (val) {
+          this.esDevolucion = false;
+          // When modifying connection, reset isFullTicket
+          this.isFullTicket = false;
+          // Sync other scales of the same ticket to also clear their Devolucion status
+          if (this.boleto) {
+            this.$dispatch("ticket-mod-changed", { boleto: this.boleto, state: true });
+          }
+        }
+        this.$dispatch("update-totals", { boleto: this.boleto });
+      });
+    },
+
+    checkFullStatus() {
+      // Legacy or called from outside, just sync isFullTicket with esDevolucion
+      this.isFullTicket = this.esDevolucion;
+    },
+
+    get bindFade() {
+      return {
+        "x-transition:enter": "transition ease-out duration-300",
+        "x-transition:enter-start": "opacity-0 transform -translate-y-2",
+        "x-transition:enter-end": "opacity-100 transform translate-y-0",
+        ":class": "{ 'bg-warning-50/30': esModificacion, 'bg-danger-50/30': esDevolucion }",
+      };
+    },
+
+    get bindInput() {
+      return {
+        ":disabled": "esDevolucion || esModificacion",
+        ":class": "{ 'bg-neutral-100 cursor-not-allowed opacity-60': esDevolucion || esModificacion }",
+      };
+    },
+
+    get bindPase() {
+      return {
+        ":disabled": "esDevolucion || esModificacion",
+        ":class": "{ 'bg-neutral-100 cursor-not-allowed opacity-60': esDevolucion || esModificacion }",
+      };
+    },
+
+    get bindArchivo() {
+      return {
+        ":disabled": "esDevolucion || esModificacion",
+        ":class": "{ 'bg-danger-50/10 cursor-not-allowed': esDevolucion, 'bg-warning-50/10 cursor-not-allowed': esModificacion }",
+      };
+    },
+  }));
+
+  Alpine.data("routePicker", (items = []) => ({
+    open: false,
+    searchOrig: "",
+    searchDest: "",
+    currentRowId: null,
+    selectedOrig: null,
+    selectedDest: null,
+    items: (items || []).map((d) => ({
+      value: d.iata || d.value,
+      cityName: d.nombre || d.label || d.ciudad,
+      label: (d.iata || d.value) + " - " + (d.nombre || d.label || d.ciudad),
+    })),
+
+    get filteredOrig() {
+      if (!this.searchOrig) return this.items || [];
+      const q = this.searchOrig.toLowerCase();
+      return (this.items || []).filter((i) => (i.label || "").toLowerCase().includes(q) || (i.cityName || "").toLowerCase().includes(q));
+    },
+
+    get filteredDest() {
+      if (!this.searchDest) return this.items || [];
+      const q = this.searchDest.toLowerCase();
+      return (this.items || []).filter((i) => (i.label || "").toLowerCase().includes(q) || (i.cityName || "").toLowerCase().includes(q));
+    },
+
+    openModal(rowId) {
+      this.currentRowId = rowId;
+      this.searchOrig = "";
+      this.searchDest = "";
+      this.selectedOrig = null;
+      this.selectedDest = null;
+      this.open = true;
+    },
+
+    confirm() {
+      if (this.selectedOrig && this.selectedDest) {
+        window.dispatchEvent(
+          new CustomEvent("route-picked", {
+            detail: {
+              rowId: this.currentRowId,
+              orig: this.selectedOrig,
+              dest: this.selectedDest,
+            },
+          }),
+        );
+        this.open = false;
+      }
+    },
+  }));
 });
 
 /**
@@ -326,11 +453,274 @@ document.addEventListener("showAlert", function (evt) {
   Swal.fire({
     icon: data.icon || "info",
     title: data.title || "",
-    text: data.text || "",
+    text: data.text || data.message || "",
     confirmButtonColor: "#03738C",
     customClass: {
       popup: "rounded-xl font-sans",
-      confirmButton: "rounded-lg px-4 py-2 text-sm font-medium shadow-sm",
+      title: "text-lg font-bold text-neutral-900",
+      htmlContainer: "text-sm text-neutral-600",
+      confirmButton: "rounded-lg px-6 py-2.5 text-sm font-medium shadow-sm transition-all duration-200",
     },
   });
 });
+
+/**
+ * Global HTMX Loading Handlers
+ * Shows a loading state on buttons and prevents multiple submissions
+ */
+document.addEventListener("htmx:configRequest", (event) => {
+  const element = event.detail.elt;
+  // Solo para botones o enlaces que tengan hx-get/post/etc o sean submits de forms htmx
+  if (element && (element.tagName === "BUTTON" || element.tagName === "A")) {
+    // Evitar procesar botones de navegacion simple o que tienen x-ignore
+    if (element.hasAttribute("x-ignore") || element.classList.contains("no-disable")) return;
+
+    element.disabled = true;
+    const originalContent = element.innerHTML;
+    element.setAttribute("data-original-content", originalContent);
+
+    // Si tiene icono, intentar mantener una estructura similar pero con spinner
+    if (originalContent.includes("<i")) {
+      element.innerHTML = '<i class="ph ph-circle-notch animate-spin"></i> <span class="ml-1">...</span>';
+    } else {
+      element.innerHTML = '<i class="ph ph-circle-notch animate-spin mr-2"></i>';
+    }
+    element.classList.add("opacity-75", "cursor-wait");
+  }
+});
+
+document.addEventListener("htmx:afterRequest", (event) => {
+  const element = event.detail.elt;
+  if (element && (element.tagName === "BUTTON" || element.tagName === "A")) {
+    element.disabled = false;
+    element.classList.remove("opacity-75", "cursor-wait");
+    const originalContent = element.getAttribute("data-original-content");
+    if (originalContent) {
+      element.innerHTML = originalContent;
+    }
+  }
+});
+
+document.addEventListener("htmx:beforeSend", (event) => {
+  // Opcional: mostrar barra de progreso global NProgress si estuviera disponible
+});
+
+/**
+ * Global Standard Form Submit Handlers
+ * Similar to HTMX handlers but for normal POST forms
+ */
+document.addEventListener("submit", (event) => {
+  const form = event.target;
+  const submitButton = form.querySelector('button[type="submit"]');
+
+  if (submitButton && !submitButton.hasAttribute("x-ignore") && !submitButton.classList.contains("no-disable")) {
+    // Check if it's already being handled by HTMX to avoid double processing
+    if (submitButton.hasAttribute("hx-post") || submitButton.hasAttribute("hx-put") || submitButton.hasAttribute("hx-get") || form.hasAttribute("hx-post")) {
+      return;
+    }
+
+    submitButton.disabled = true;
+    const originalContent = submitButton.innerHTML;
+    submitButton.setAttribute("data-original-content", originalContent);
+
+    if (originalContent.includes("<i")) {
+      submitButton.innerHTML = '<i class="ph ph-circle-notch animate-spin"></i> <span class="ml-1">...</span>';
+    } else {
+      submitButton.innerHTML = '<i class="ph ph-circle-notch animate-spin mr-2"></i>';
+    }
+    submitButton.classList.add("opacity-75", "cursor-wait");
+
+    // Optional: timeout to restore button if navigation takes too long or fails
+    setTimeout(() => {
+      if (submitButton.disabled) {
+        submitButton.disabled = false;
+        submitButton.classList.remove("opacity-75", "cursor-wait");
+        if (submitButton.getAttribute("data-original-content")) {
+          submitButton.innerHTML = submitButton.getAttribute("data-original-content");
+        }
+      }
+    }, 10000); // 10s fallback
+  }
+});
+
+/**
+ * Redimensiona una imagen si es muy pesada o muy grande.
+ */
+window.resizeImage = async function (file, maxWidth = 1600, maxHeight = 1600, quality = 0.7) {
+  return new Promise((resolve) => {
+    if (!file || !file.type.startsWith("image/") || file.size < 2 * 1024 * 1024) {
+      resolve(file);
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let width = img.width;
+        let height = img.height;
+        if (width > height) {
+          if (width > maxWidth) {
+            height *= maxWidth / width;
+            width = maxWidth;
+          }
+        } else {
+          if (height > maxHeight) {
+            width *= maxHeight / height;
+            height = maxHeight;
+          }
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext("2d");
+        ctx.drawImage(img, 0, 0, width, height);
+        canvas.toBlob(
+          (blob) => {
+            let newName = file.name;
+            const extension = newName.split(".").pop().toLowerCase();
+            if (extension !== "jpg" && extension !== "jpeg") {
+              newName = newName.replace(/\.[^/.]+$/, "") + ".jpg";
+            }
+            const resizedFile = new File([blob], newName, { type: "image/jpeg", lastModified: Date.now() });
+            resolve(resizedFile);
+          },
+          "image/jpeg",
+          quality,
+        );
+      };
+      img.onerror = () => resolve(file);
+      img.src = e.target.result;
+    };
+    reader.onerror = () => resolve(file);
+    reader.readAsDataURL(file);
+  });
+};
+
+/**
+ * Valida si el archivo cumple con el límite de tamaño.
+ */
+window.checkFileSize = function (file, maxSizeMB = 8) {
+  if (!file) return true;
+  const maxSizeBytes = maxSizeMB * 1024 * 1024;
+  if (file.size > maxSizeBytes) {
+    if (typeof Swal !== "undefined") {
+      Swal.fire({
+        icon: "warning",
+        title: "Archivo demasiado pesado",
+        text: `El archivo supera el límite permitido de ${maxSizeMB}MB.`,
+        confirmButtonColor: "#3085d6",
+      });
+    } else {
+      alert(`El archivo supera el límite permitido de ${maxSizeMB}MB.`);
+    }
+    return false;
+  }
+  return true;
+};
+
+/**
+ * Valida y procesa un archivo (redimensiona si es imagen).
+ */
+window.validateAndProcessFile = async function (file, maxSizeMB = 8) {
+  if (!window.checkFileSize(file, maxSizeMB)) return null;
+
+  if (file.type.startsWith("image/")) {
+    try {
+      return await window.resizeImage(file);
+    } catch (err) {
+      console.error("Error redimensionando:", err);
+      return file;
+    }
+  }
+  return file;
+};
+
+/**
+ * Manejador global para una sola carga de archivo (ej. Pases de abordar).
+ * Soporta actualización de Alpine si se pasa el objeto de datos.
+ */
+window.handleSingleUpload = async function (event, alpineData = null) {
+  const input = event.target;
+  if (!input.files || input.files.length === 0) return;
+
+  const file = input.files[0];
+  if (alpineData) alpineData.processingImage = true;
+
+  try {
+    const processed = await window.validateAndProcessFile(file);
+    if (!processed) {
+      input.value = "";
+      if (alpineData) alpineData.fileName = "";
+      return;
+    }
+
+    const dataTransfer = new DataTransfer();
+    dataTransfer.items.add(processed);
+    input.files = dataTransfer.files;
+
+    if (alpineData) {
+      alpineData.fileName = processed.name;
+    }
+
+    // --- NUEVO: Subida automática al servidor ---
+    const formData = new FormData();
+    formData.append("file", processed);
+    // Intentar sacar el token CSRF si existe en el documento
+    const csrfToken = document.querySelector('input[name="_csrf"]')?.value;
+    if (csrfToken) formData.append("_csrf", csrfToken);
+
+    const response = await fetch("/uploads/single", {
+      method: "POST",
+      body: formData,
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      if (data.path) {
+        // Buscar el input hidden correspondiente para guardar la ruta del server
+        // El input hidden debe tener nombre 'itin_archivo_existente_{{index}}' o similar
+        // Intentamos encontrarlo por nombre basándonos en el nombre del input file
+        const indexMatch = input.name.match(/itin_archivo_(.+)/);
+        if (indexMatch && indexMatch[1]) {
+          const index = indexMatch[1];
+          const hiddenInput = document.querySelector(`input[name="itin_archivo_existente_${index}"]`);
+          if (hiddenInput) {
+            hiddenInput.value = data.path;
+            console.log(`Archivo subido y vinculado: ${data.path}`);
+          }
+        }
+      }
+    } else {
+      console.error("Error en la subida automática:", response.statusText);
+    }
+    // ---------------------------------------------
+  } finally {
+    if (alpineData) alpineData.processingImage = false;
+  }
+};
+
+/**
+ * Manejador global para carga múltiple de archivos (ej. Anexos).
+ */
+window.handleMultipleUpload = async function (event, alpineData = null) {
+  const input = event.target;
+  if (!input.files || input.files.length === 0) return;
+
+  if (alpineData) alpineData.processingImage = true;
+
+  try {
+    const dataTransfer = new DataTransfer();
+    for (let i = 0; i < input.files.length; i++) {
+      const file = input.files[i];
+      const processed = await window.validateAndProcessFile(file);
+      if (processed) {
+        dataTransfer.items.add(processed);
+      }
+    }
+    input.files = dataTransfer.files;
+    // Disparar evento para que Alpine/HTMX detecten el cambio
+    input.dispatchEvent(new Event("change", { bubbles: true }));
+  } finally {
+    if (alpineData) alpineData.processingImage = false;
+  }
+};

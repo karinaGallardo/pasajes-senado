@@ -35,6 +35,11 @@ func (r *PasajeRepository) FindByID(ctx context.Context, id string) (*models.Pas
 	err := r.db.WithContext(ctx).Preload("EstadoPasaje").
 		Preload("Agencia").
 		Preload("Aerolinea").
+		Preload("RutaPasaje.Origen").
+		Preload("RutaPasaje.Destino").
+		Preload("RutaPasaje.Escalas.Destino").
+		Preload("SolicitudItem.Origen.Ambito").
+		Preload("SolicitudItem.Destino.Ambito").
 		Preload("SolicitudItem.Solicitud.CupoDerechoItem").
 		Preload("SolicitudItem.Solicitud.Usuario").
 		First(&pasaje, "id = ?", id).Error
@@ -71,6 +76,11 @@ func (r *PasajeRepository) FindConsolidado(ctx context.Context, filter dtos.Repo
 		Preload("EstadoPasaje").
 		Preload("Aerolinea").
 		Preload("Agencia").
+		Preload("RutaPasaje.Origen").
+		Preload("RutaPasaje.Destino").
+		Preload("RutaPasaje.Escalas.Destino").
+		Preload("SolicitudItem.Origen").
+		Preload("SolicitudItem.Destino").
 		Preload("SolicitudItem").
 		Joins("INNER JOIN solicitudes ON solicitudes.id = pasajes.solicitud_id").
 		Joins("INNER JOIN usuarios ON usuarios.id = solicitudes.usuario_id").

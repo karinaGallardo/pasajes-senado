@@ -82,6 +82,7 @@ func SetupRoutes(r *gin.Engine, container *app.Container, loginLimiter *middlewa
 		protected.POST("/descargos/derecho/:id/rechazar", descargoDerechoCtrl.Reject)
 		protected.POST("/descargos/derecho/:id/enviar", descargoDerechoCtrl.Submit)
 		protected.POST("/descargos/derecho/:id/revertir-aprobacion", descargoDerechoCtrl.RevertApproval)
+		protected.GET("/descargos/derecho/nueva-fila", descargoDerechoCtrl.NuevaFila)
 
 		protected.POST("/solicitudes/derecho/:id/actualizar", solicitudDerechoCtrl.Update)
 		protected.POST("/solicitudes/derecho/:id/aprobar", solicitudDerechoCtrl.Approve)
@@ -142,6 +143,7 @@ func SetupRoutes(r *gin.Engine, container *app.Container, loginLimiter *middlewa
 		protected.GET("/descargos", descargoDerechoCtrl.Index)
 		protected.GET("/descargos/table", descargoDerechoCtrl.Table)
 		protected.GET("/preview-file", descargoDerechoCtrl.PreviewFile)
+		protected.POST("/uploads/single", descargoDerechoCtrl.UploadSingle)
 
 		protected.GET("/compensaciones", compensacionCtrl.Index)
 		protected.GET("/compensaciones/nueva", compensacionCtrl.Create)
@@ -150,6 +152,7 @@ func SetupRoutes(r *gin.Engine, container *app.Container, loginLimiter *middlewa
 		protected.GET("/catalogos/ambitos", catalogoCtrl.GetAmbitos)
 		protected.GET("/api/catalogos/destinos", catalogoCtrl.SearchDestinos)
 		protected.GET("/api/catalogos/staff", catalogoCtrl.SearchStaff)
+		protected.GET("/api/rutas/search", rutaCtrl.Search)
 
 		adminOnly := protected.Group("/")
 		adminOnly.Use(middleware.RequireRole("ADMIN", "RESPONSABLE"))

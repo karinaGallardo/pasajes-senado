@@ -4,7 +4,6 @@ import (
 	"context"
 	"sistema-pasajes/internal/models"
 
-
 	"gorm.io/gorm"
 )
 
@@ -22,7 +21,25 @@ func (r *RutaRepository) WithContext(ctx context.Context) *RutaRepository {
 
 func (r *RutaRepository) FindAll(ctx context.Context) ([]models.Ruta, error) {
 	var rutas []models.Ruta
-	err := r.db.WithContext(ctx).Preload("Origen").Preload("Destino").Preload("Contratos.Aerolinea").Find(&rutas).Error
+	err := r.db.WithContext(ctx).
+		Preload("Origen").
+		Preload("Destino").
+		Preload("Escalas.Destino").
+		Preload("Contratos.Aerolinea").
+		Find(&rutas).Error
+	return rutas, err
+}
+
+func (r *RutaRepository) Search(ctx context.Context, query string) ([]models.Ruta, error) {
+	var rutas []models.Ruta
+	q := "%" + query + "%"
+	err := r.db.WithContext(ctx).
+		Preload("Origen").
+		Preload("Destino").
+		Preload("Escalas.Destino").
+		Where("tramo ILIKE ? OR sigla ILIKE ? OR origen_iata ILIKE ? OR destino_iata ILIKE ?", q, q, q, q).
+		Limit(20).
+		Find(&rutas).Error
 	return rutas, err
 }
 

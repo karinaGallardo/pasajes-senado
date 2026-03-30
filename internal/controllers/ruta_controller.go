@@ -32,14 +32,41 @@ func NewRutaController(
 func (ctrl *RutaController) Index(c *gin.Context) {
 	rutas, _ := ctrl.rutaService.GetAll(c.Request.Context())
 	aerolineas, _ := ctrl.aerolineaService.GetAll(c.Request.Context())
-	destinos, _ := ctrl.destinoService.GetAll(c.Request.Context())
 
 	utils.Render(c, "admin/rutas", gin.H{
 		"Rutas":      rutas,
 		"Aerolineas": aerolineas,
-		"Destinos":   destinos,
 		"Title":      "Gestión de Rutas y Tarifas",
 	})
+}
+
+func (ctrl *RutaController) Search(c *gin.Context) {
+	query := c.Query("q")
+	if len(query) < 3 {
+		c.JSON(http.StatusOK, []interface{}{})
+		return
+	}
+
+	rutas, err := ctrl.rutaService.Search(c.Request.Context(), query)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	type searchResult struct {
+		Value string `json:"value"`
+		Label string `json:"label"`
+	}
+
+	results := make([]searchResult, 0, len(rutas))
+	for _, r := range rutas {
+		results = append(results, searchResult{
+			Value: r.ID,
+			Label: r.GetTramoDisplay(),
+		})
+	}
+
+	c.JSON(http.StatusOK, results)
 }
 
 func (ctrl *RutaController) Store(c *gin.Context) {

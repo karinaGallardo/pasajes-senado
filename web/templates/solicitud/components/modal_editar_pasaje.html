@@ -2,7 +2,8 @@
 <div
   x-data="modalPasaje({
       id: '{{ .Pasaje.ID }}',
-      ruta: '{{ .Pasaje.Ruta }}',
+      ruta: '{{ .Pasaje.GetRutaDisplay }}',
+      ruta_id: '{{ if .Pasaje.RutaID }}{{ .Pasaje.RutaID }}{{ end }}',
       aerolinea_id: '{{ .Pasaje.AerolineaID }}',
       agencia_id: '{{ .Pasaje.AgenciaID }}',
       costo: {{ .Pasaje.Costo }},
@@ -15,7 +16,7 @@
 
   <template x-teleport="body">
     <div x-show="open" x-init="htmx.process($el)" class="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-      
+
       <!-- Overlay -->
       <div
         x-show="open"
@@ -72,6 +73,7 @@
           </div>
           <div class="flex items-center gap-3">
             <button
+              id="saveBtnModalPasaje"
               type="button"
               @click="document.getElementById('editPasajeForm').requestSubmit()"
               x-bind:disabled="!canSave"
@@ -95,7 +97,7 @@
           hx-post="/pasajes/update"
           hx-target="#modal-container"
           hx-swap="innerHTML"
-          hx-indicator="find button"
+          hx-indicator="#saveBtnModalPasaje"
           method="POST"
           enctype="multipart/form-data"
           autocomplete="off">
@@ -120,11 +122,9 @@
                   <div class="min-w-0">
                     <span class="text-[9px] font-black uppercase text-neutral-400 tracking-tighter block leading-none mb-0.5">{{ .Pasaje.SolicitudItem.Tipo }}</span>
                     <h4 class="text-xs font-bold text-neutral-900 leading-tight truncate">
-                      {{ if .Pasaje.SolicitudItem.Origen }}{{ .Pasaje.SolicitudItem.Origen.Ciudad }} ({{ .Pasaje.SolicitudItem.Origen.IATA }}){{ else }}{{
-                      .Pasaje.SolicitudItem.OrigenIATA }}{{ end }}
+                      {{ .Pasaje.SolicitudItem.GetOrigenDisplay }}
                       <i class="ph ph-arrow-right mx-0.5 text-neutral-300"></i>
-                      {{ if .Pasaje.SolicitudItem.Destino }}{{ .Pasaje.SolicitudItem.Destino.Ciudad }} ({{ .Pasaje.SolicitudItem.Destino.IATA }}){{ else }}{{
-                      .Pasaje.SolicitudItem.DestinoIATA }}{{ end }}
+                      {{ .Pasaje.SolicitudItem.GetDestinoDisplay }}
                     </h4>
                   </div>
                 </div>
@@ -136,17 +136,19 @@
               x-data="searchableSelect({
                     items: [
                         {{ range .Rutas }}
-                        { value: '{{ .Tramo }}', label: '{{ .Tramo }}' },
+                        { value: '{{ .ID }}', label: '{{ .Tramo }}' },
                         {{ end }}
                     ],
-                    initialValue: '{{ .Pasaje.Ruta }}',
-                    initialLabel: '{{ .Pasaje.Ruta }}'
+                    initialValue: '{{ if .Pasaje.RutaID }}{{ .Pasaje.RutaID }}{{ end }}',
+                    initialLabel: '{{ .Pasaje.GetRutaDisplay }}'
                 })"
               x-modelable="value"
-              x-model="ruta">
+              x-model="ruta_id"
+              @searchable-select-change="ruta = $event.detail.label">
               <label class="block text-sm font-medium text-neutral-700">Ruta (Origen - Destino)</label>
               <div class="relative mt-1">
-                <input type="hidden" name="ruta" :value="value" />
+                <input type="hidden" name="ruta_id" :value="value" />
+                <input type="hidden" name="ruta" :value="label" />
 
                 <div class="relative">
                   <div

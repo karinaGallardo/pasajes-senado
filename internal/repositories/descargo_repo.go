@@ -53,13 +53,22 @@ func SearchDescargo(term string) func(db *gorm.DB) *gorm.DB {
 func (r *DescargoRepository) FindBySolicitudID(ctx context.Context, solicitudID string) (*models.Descargo, error) {
 	var descargo models.Descargo
 	err := r.db.WithContext(ctx).Preload("Documentos").
-		Preload("DetallesItinerario").
+		Preload("DetallesItinerario", func(db *gorm.DB) *gorm.DB { return db.Order("orden ASC") }).
+		Preload("DetallesItinerario.RutaPasaje.Origen").
+		Preload("DetallesItinerario.RutaPasaje.Destino").
+		Preload("DetallesItinerario.RutaPasaje.Escalas", func(db *gorm.DB) *gorm.DB { return db.Order("orden ASC") }).
+		Preload("DetallesItinerario.RutaPasaje.Escalas.Destino").
 		Preload("Solicitud").
 		Preload("Solicitud.TipoSolicitud.ConceptoViaje").
 		Preload("Solicitud.CupoDerechoItem").
 		Preload("Solicitud.Items").
 		Preload("Solicitud.Items.Origen").
 		Preload("Solicitud.Items.Destino").
+		Preload("Solicitud.Items.Pasajes.RutaPasaje.Origen").
+		Preload("Solicitud.Items.Pasajes.RutaPasaje.Destino").
+		Preload("Solicitud.Items.Pasajes.RutaPasaje.Escalas", func(db *gorm.DB) *gorm.DB { return db.Order("orden ASC") }).
+		Preload("Solicitud.Items.Pasajes.RutaPasaje.Escalas.Destino").
+		Preload("Solicitud.Items.Pasajes.RutaPasaje").
 		Preload("Solicitud.Items.Pasajes").
 		Preload("Solicitud.Usuario.Encargado").
 		Preload("Oficial").
@@ -72,7 +81,11 @@ func (r *DescargoRepository) FindBySolicitudID(ctx context.Context, solicitudID 
 func (r *DescargoRepository) FindByID(ctx context.Context, id string) (*models.Descargo, error) {
 	var descargo models.Descargo
 	err := r.db.WithContext(ctx).Preload("Documentos").
-		Preload("DetallesItinerario").
+		Preload("DetallesItinerario", func(db *gorm.DB) *gorm.DB { return db.Order("orden ASC") }).
+		Preload("DetallesItinerario.RutaPasaje.Origen").
+		Preload("DetallesItinerario.RutaPasaje.Destino").
+		Preload("DetallesItinerario.RutaPasaje.Escalas", func(db *gorm.DB) *gorm.DB { return db.Order("orden ASC") }).
+		Preload("DetallesItinerario.RutaPasaje.Escalas.Destino").
 		Preload("Solicitud").
 		Preload("Solicitud.TipoSolicitud.ConceptoViaje").
 		Preload("Solicitud.Usuario").
@@ -82,6 +95,11 @@ func (r *DescargoRepository) FindByID(ctx context.Context, id string) (*models.D
 		Preload("Solicitud.Items").
 		Preload("Solicitud.Items.Origen").
 		Preload("Solicitud.Items.Destino").
+		Preload("Solicitud.Items.Pasajes.RutaPasaje.Origen").
+		Preload("Solicitud.Items.Pasajes.RutaPasaje.Destino").
+		Preload("Solicitud.Items.Pasajes.RutaPasaje.Escalas", func(db *gorm.DB) *gorm.DB { return db.Order("orden ASC") }).
+		Preload("Solicitud.Items.Pasajes.RutaPasaje.Escalas.Destino").
+		Preload("Solicitud.Items.Pasajes.RutaPasaje").
 		Preload("Solicitud.Items.Pasajes").
 		Preload("Solicitud.Usuario.Encargado").
 		Preload("Solicitud.Viaticos").
@@ -102,9 +120,18 @@ func (r *DescargoRepository) FindAll(ctx context.Context) ([]models.Descargo, er
 		Preload("Solicitud.Items").
 		Preload("Solicitud.Items.Origen").
 		Preload("Solicitud.Items.Destino").
+		Preload("Solicitud.Items.Pasajes.RutaPasaje.Origen").
+		Preload("Solicitud.Items.Pasajes.RutaPasaje.Destino").
+		Preload("Solicitud.Items.Pasajes.RutaPasaje.Escalas", func(db *gorm.DB) *gorm.DB { return db.Order("orden ASC") }).
+		Preload("Solicitud.Items.Pasajes.RutaPasaje.Escalas.Destino").
+		Preload("Solicitud.Items.Pasajes.RutaPasaje").
 		Preload("Solicitud.Items.Pasajes").
 		Preload("Solicitud.Usuario.Encargado").
-		Preload("DetallesItinerario").
+		Preload("DetallesItinerario", func(db *gorm.DB) *gorm.DB { return db.Order("orden ASC") }).
+		Preload("DetallesItinerario.RutaPasaje.Origen").
+		Preload("DetallesItinerario.RutaPasaje.Destino").
+		Preload("DetallesItinerario.RutaPasaje.Escalas", func(db *gorm.DB) *gorm.DB { return db.Order("orden ASC") }).
+		Preload("DetallesItinerario.RutaPasaje.Escalas.Destino").
 		Preload("Oficial").
 		Preload("Oficial.Anexos").
 		Preload("Oficial.TransportesTerrestres").
@@ -135,9 +162,18 @@ func (r *DescargoRepository) FindPaginated(ctx context.Context, page, limit int,
 		Preload("Solicitud.Items").
 		Preload("Solicitud.Items.Origen").
 		Preload("Solicitud.Items.Destino").
+		Preload("Solicitud.Items.Pasajes.RutaPasaje.Origen").
+		Preload("Solicitud.Items.Pasajes.RutaPasaje.Destino").
+		Preload("Solicitud.Items.Pasajes.RutaPasaje.Escalas", func(db *gorm.DB) *gorm.DB { return db.Order("orden ASC") }).
+		Preload("Solicitud.Items.Pasajes.RutaPasaje.Escalas.Destino").
+		Preload("Solicitud.Items.Pasajes.RutaPasaje").
 		Preload("Solicitud.Items.Pasajes").
 		Preload("Solicitud.Usuario.Encargado").
-		Preload("DetallesItinerario").
+		Preload("DetallesItinerario", func(db *gorm.DB) *gorm.DB { return db.Order("orden ASC") }).
+		Preload("DetallesItinerario.RutaPasaje.Origen").
+		Preload("DetallesItinerario.RutaPasaje.Destino").
+		Preload("DetallesItinerario.RutaPasaje.Escalas", func(db *gorm.DB) *gorm.DB { return db.Order("orden ASC") }).
+		Preload("DetallesItinerario.RutaPasaje.Escalas.Destino").
 		Preload("Oficial").
 		Preload("Oficial.Anexos").
 		Preload("Oficial.TransportesTerrestres").
@@ -171,15 +207,52 @@ func (r *DescargoRepository) FindPaginated(ctx context.Context, page, limit int,
 }
 
 func (r *DescargoRepository) Update(ctx context.Context, descargo *models.Descargo) error {
-	return r.db.WithContext(ctx).Session(&gorm.Session{FullSaveAssociations: true}).Save(descargo).Error
+	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		// 1. Actualizar campos principales del Descargo (omitimos relaciones complejas)
+		if err := tx.Model(descargo).Omit("DetallesItinerario", "Oficial", "Anexos", "Terrestres").Save(descargo).Error; err != nil {
+			return err
+		}
+
+		// 2. Obtener IDs actuales para borrar los que ya no vienen en el formulario
+		var newIDs []string
+		for _, det := range descargo.DetallesItinerario {
+			if det.ID != "" {
+				newIDs = append(newIDs, det.ID)
+			}
+		}
+
+		// Borrar los que no están en la nueva lista
+		query := tx.Where("descargo_id = ?", descargo.ID)
+		if len(newIDs) > 0 {
+			query = query.Where("id NOT IN ?", newIDs)
+		}
+		if err := query.Delete(&models.DetalleItinerarioDescargo{}).Error; err != nil {
+			return err
+		}
+
+		// 3. Guardar/Actualizar cada detalle individualmente para asegurar que los campos cambien
+		for i := range descargo.DetallesItinerario {
+			det := &descargo.DetallesItinerario[i]
+			det.DescargoID = descargo.ID
+			if err := tx.Save(det).Error; err != nil {
+				return err
+			}
+		}
+
+		return nil
+	})
 }
 
 func (r *DescargoRepository) UpdateOficial(ctx context.Context, oficial *models.DescargoOficial) error {
 	return r.db.WithContext(ctx).Save(oficial).Error
 }
 
-func (r *DescargoRepository) ClearDetalles(ctx context.Context, descargoID string) error {
-	return r.db.WithContext(ctx).Where("descargo_id = ?", descargoID).Delete(&models.DetalleItinerarioDescargo{}).Error
+func (r *DescargoRepository) DeleteDetallesNotIn(ctx context.Context, descargoID string, ids []string) error {
+	query := r.db.WithContext(ctx).Where("descargo_id = ?", descargoID)
+	if len(ids) > 0 {
+		query = query.Where("id NOT IN ?", ids)
+	}
+	return query.Delete(&models.DetalleItinerarioDescargo{}).Error
 }
 
 func (r *DescargoRepository) ClearAnexos(ctx context.Context, oficialID string) error {

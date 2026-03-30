@@ -1,39 +1,19 @@
 {{ define "descargo/derecho/create" }} {{ template "layout_start" . }}
 
-<div class="max-w-4xl mx-auto" 
-     x-data="{ 
-       canSubmit: false, 
+<div
+  class="max-w-4xl mx-auto"
+  x-data="{
+       canSubmit: false,
        submitting: false,
-       processingImages: false,
-       async handleFile(event) {
-         const input = event.target;
-         if (!input.files || input.files.length === 0) return;
-                  const file = input.files[0];
-          if (!window.checkFileSize(file)) {
-            input.value = '';
-            return;
-          }
-          if (file.type.startsWith('image/')) {
-           this.processingImages = true;
-           try {
-             const resizedFile = await window.resizeImage(file);
-             const dataTransfer = new DataTransfer();
-             dataTransfer.items.add(resizedFile);
-             input.files = dataTransfer.files;
-           } catch (err) {
-             console.error('Error resizing image:', err);
-           } finally {
-             this.processingImages = false;
-           }
-         }
-       }
-     }" 
-     x-init="canSubmit = $refs.form.checkValidity()">
+       processingImages: false
+     }"
+  x-init="canSubmit = $refs.form.checkValidity()">
   <div class="md:flex md:items-center md:justify-between mb-6">
     <div class="flex-1 min-w-0">
       <h2 class="text-2xl font-black text-neutral-900 tracking-tight">Realizar Descargo (PV-05)</h2>
       <p class="text-xs text-neutral-400 mt-1 uppercase tracking-tighter">
-        <span class="font-bold">Para Solicitud:</span> #{{ .Solicitud.Codigo }}
+        <span class="font-bold">Para Solicitud:</span>
+        #{{ .Solicitud.Codigo }}
       </p>
     </div>
     <div class="mt-4 flex flex-wrap items-center gap-3">
@@ -49,12 +29,16 @@
       <button
         type="submit"
         form="descargo-form"
-        :disabled="submitting || processingImages"
-        :class="(!submitting && !processingImages) ? 'bg-success-600 hover:bg-success-700 shadow-lg scale-100' : 'bg-neutral-100 text-neutral-400 cursor-not-allowed'"
+        :disabled="submitting || processingImages || !canSubmit"
+        :class="(!submitting && !processingImages && canSubmit) ? 'bg-success-600 hover:bg-success-700 shadow-lg scale-100' : 'bg-neutral-100 text-neutral-400 cursor-not-allowed'"
         class="inline-flex items-center px-8 py-2.5 border border-transparent shadow-sm text-xs font-black rounded-lg text-white focus:outline-none transition-all active:scale-95 uppercase tracking-widest min-w-[180px] justify-center">
-        <span x-show="!submitting && !processingImages" class="flex items-center">
+        <span x-show="!submitting && !processingImages && canSubmit" class="flex items-center">
           <i class="ph ph-check-circle mr-2 text-md"></i>
           Registrar Descargo
+        </span>
+        <span x-show="!submitting && !processingImages && !canSubmit" x-cloak class="flex items-center text-neutral-400">
+          <i class="ph ph-warning-circle mr-2 text-md"></i>
+          Formulario Incompleto
         </span>
         <span x-show="submitting || processingImages" x-cloak class="flex items-center text-white">
           <svg class="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24">
@@ -96,17 +80,6 @@
               <span class="text-[10px] font-bold text-primary-400 uppercase tracking-tight block">Beneficiario</span>
               <span class="text-sm font-black text-primary-900 leading-tight block">{{ .Solicitud.Usuario.GetNombreCompleto }}</span>
             </div>
-
-            <div class="space-y-1">
-              <span class="text-[10px] font-bold text-primary-400 uppercase tracking-tight block">Aerolínea Sugerida</span>
-              <span class="text-xs font-black text-primary-900 block">
-                {{ if .AerolineaNombre }}
-                  <i class="ph ph-airplane text-primary-400 mr-1"></i> {{ .AerolineaNombre }}
-                {{ else }}
-                  <span class="text-primary-300 italic">No especificada</span>
-                {{ end }}
-              </span>
-            </div>
           </div>
         </div>
 
@@ -130,52 +103,24 @@
                 </div>
                 <div class="overflow-visible">
                   <table class="min-w-full divide-y divide-neutral-200">
-                    <thead class="bg-neutral-50">
+                    <thead class="bg-neutral-50 text-[9px] font-bold text-neutral-400 uppercase">
                       <tr>
-                        <th class="px-2 py-1 text-center text-[9px] font-bold text-neutral-400 uppercase">Dev.</th>
-                        <th class="px-2 py-1 text-center text-[9px] font-bold text-neutral-400 uppercase">Mod.</th>
-                        <th class="px-2 py-1 text-left text-[9px] font-bold text-neutral-400 uppercase min-w-[250px]">Ruta / Tramo</th>
-                        <th class="px-2 py-1 text-left text-[9px] font-bold text-neutral-400 uppercase">Fecha</th>
-                        <th class="px-2 py-1 text-left text-[9px] font-bold text-neutral-400 uppercase">Boleto</th>
-                        <th class="px-2 py-1 text-left text-[9px] font-bold text-neutral-400 uppercase min-w-[20px] max-w-[60px]">Nº Pase</th>
-                        <th class="px-2 py-1 text-center text-[9px] font-bold text-neutral-400 uppercase">PDF</th>
+                        <th class="px-2 py-1 text-center font-black">Dev.</th>
+                        <th class="px-2 py-1 text-center font-black">Mod.</th>
+                        <th class="px-2 py-1 text-left font-black min-w-[250px]">Ruta / Tramo</th>
+                        <th class="px-2 py-1 text-left font-black">Fecha</th>
+                        <th class="px-2 py-1 text-left font-black">Boleto</th>
+                        <th class="px-2 py-1 text-left font-black min-w-[20px] max-w-[60px]">Nº Pase</th>
+                        <th class="px-2 py-1 text-center font-black">Costo Pasaje</th>
+                        <th class="px-2 py-1 text-center font-black">PDF</th>
                       </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-neutral-100 border-b border-neutral-200">
-                      {{ range $i, $ticket := (index .PasajesOriginales "IDA") }}
-                        {{ range $j, $scale := .Scales }}
-                        <tr x-data="{ devuelto: false, modificado: false }">
-                          <td class="px-2 py-1 text-center border-r border-neutral-100 bg-neutral-50/30">
-                            <input type="checkbox" name="itin_devolucion[]" value="{{ $scale.Index }}" x-model="devuelto" @change="if(devuelto) modificado = false" title="Devolver Conexión" class="h-4 w-4 text-danger-600 border-neutral-300 rounded focus:ring-danger-500">
-                          </td>
-                          <td class="px-2 py-1 text-center border-r border-neutral-100 bg-neutral-50/30">
-                            <input type="checkbox" name="itin_modificacion[]" value="{{ $scale.Index }}" x-model="modificado" @change="if(modificado) devuelto = false" title="Modificar Conexión" class="h-4 w-4 text-warning-600 border-neutral-300 rounded focus:ring-warning-500">
-                          </td>
-
-                          <td class="px-2 py-1" :class="{ 'opacity-50 grayscale bg-neutral-50': devuelto || modificado }">
-                            <input type="hidden" name="itin_tipo[]" value="IDA_ORIGINAL" />
-                            <input type="hidden" name="itin_index[]" value="{{ $scale.Index }}" />
-                            <input type="text" name="itin_ruta[]" value="{{ $scale.Ruta }}" required class="block w-full text-[11px] border-neutral-200 rounded py-0.5 px-2 bg-neutral-50 min-w-[250px]" readonly />
-                          </td>
-                          <td class="px-2 py-1" :class="{ 'opacity-50 grayscale bg-neutral-50': devuelto || modificado }">
-                            <input type="date" name="itin_fecha[]" value="{{ $scale.Fecha }}" required class="block w-full text-[11px] border-neutral-200 rounded py-0.5 px-1 bg-neutral-50" readonly />
-                          </td>
-                          <td class="px-2 py-1" :class="{ 'opacity-50 grayscale bg-neutral-50': devuelto || modificado }">
-                            <input type="text" name="itin_boleto[]" value="{{ $scale.Boleto }}" readonly class="block w-full text-[11px] border-neutral-200 rounded py-0.5 px-2 bg-neutral-50" />
-                          </td>
-                          <td class="px-2 py-1" :class="{ 'opacity-50 grayscale bg-neutral-50': devuelto || modificado }">
-                            <input type="text" name="itin_pase_numero[]" :required="!devuelto && !modificado" :readonly="devuelto || modificado" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2 min-w-[20px] max-w-[60px]" placeholder="Pase" />
-                          </td>
-                          <td class="px-2 py-1 text-center" :class="{ 'opacity-50 grayscale bg-neutral-50': devuelto || modificado }" x-data="{ fileName: '' }">
-                            <label class="cursor-pointer flex items-center justify-center py-0.5 px-1.5 rounded border transition-colors hover:bg-neutral-100" 
-                                  :class="fileName ? 'bg-success-50 border-success-200 text-success-700' : 'bg-neutral-50 border-neutral-200 text-neutral-500'">
-                              <input type="file" :disabled="devuelto || modificado" name="itin_archivo_{{ $scale.Index }}" class="hidden" accept=".pdf,application/pdf,image/*" @change="await handleFile($event); fileName = $el.files[0] ? $el.files[0].name : ''" />
-                              <i class="ph text-base" :class="fileName ? 'ph-file-pdf' : 'ph-upload-simple'"></i>
-                            </label>
-                          </td>
-                        </tr>
-                        {{ end }}
-                      {{ end }}
+                      {{ range $i, $ticket := (index .PasajesOriginales "IDA") }} {{ $totalScales := len .Scales }} {{ range $j, $scale := .Scales }} {{ template
+                      "descargo/components/escala_fila_derecho" (dict "Tipo" "IDA_ORIGINAL" "Index" $scale.Index "RutaID" $scale.RutaID "EsDevolucion" $scale.EsDevolucion
+                      "EsModificacion" $scale.EsModificacion "Ruta" $scale.Ruta "Fecha" $scale.Fecha "Boleto" $scale.Boleto "Pase" $scale.Pase "Archivo" $scale.Archivo
+                      "MontoDevolucion" $scale.MontoDevolucion "CostoPasaje" $scale.CostoPasaje "ReadOnlyCheck" false "ReadOnlyRuta" true "CanDelete" false "IsFirstScale" (eq $j 0)
+                      "TotalScales" $totalScales "Orden" $scale.Orden ) }} {{ end }} {{ end }}
                     </tbody>
                   </table>
                 </div>
@@ -187,71 +132,38 @@
                   <div class="h-px bg-neutral-200 flex-1"></div>
                   <span class="px-2 text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Reprogramación</span>
                   <div class="h-px bg-neutral-200 flex-1"></div>
-                  <button type="button" @click="addItinRow('IDA_REPRO')" class="ml-2 text-[10px] bg-neutral-50 text-neutral-600 px-2 py-0.5 rounded border border-neutral-200 hover:bg-neutral-100 transition-colors">
-                    + Tramo
+                  <button
+                    type="button"
+                    hx-get="/descargos/derecho/nueva-fila?tipo=IDA_REPRO"
+                    hx-target="#itin-ida-repro-container"
+                    hx-swap="beforeend"
+                    hx-on::after-settle="this.closest('form').dispatchEvent(new Event('input', { bubbles: true }))"
+                    class="ml-2 text-[10px] bg-primary-50 text-primary-700 font-bold px-2 py-0.5 rounded-md border border-primary-200 hover:bg-primary-100 transition-all flex items-center gap-1">
+                    <i class="ph ph-plus-circle text-xs"></i>
+                    Añadir Tramo
                   </button>
                 </div>
                 <div class="overflow-visible">
                   <table class="min-w-full divide-y divide-neutral-200">
-                    <thead class="bg-neutral-50">
+                    <thead class="bg-neutral-50 text-[9px] font-bold text-neutral-400 uppercase">
                       <tr>
-                        <th class="px-2 py-1 text-center text-[9px] font-bold text-neutral-400 uppercase">Dev.</th>
-                        <th class="px-2 py-1 text-center text-[9px] font-bold text-neutral-400 uppercase">Mod.</th>
-                        <th class="px-2 py-1 text-left text-[9px] font-bold text-neutral-400 uppercase min-w-[250px]">Ruta / Tramo</th>
-                        <th class="px-2 py-1 text-left text-[9px] font-bold text-neutral-400 uppercase">Fecha</th>
-                        <th class="px-2 py-1 text-left text-[9px] font-bold text-neutral-400 uppercase">Boleto</th>
-                        <th class="px-2 py-1 text-left text-[9px] font-bold text-neutral-400 uppercase min-w-[20px] max-w-[60px]">Nº Pase</th>
-                        <th class="px-2 py-1 text-center text-[9px] font-bold text-neutral-400 uppercase">PDF</th>
+                        <th class="px-2 py-1 text-center font-black">Dev.</th>
+                        <th class="px-2 py-1 text-center font-black">Mod.</th>
+                        <th class="px-2 py-1 text-left font-black min-w-[250px]">Ruta / Tramo</th>
+                        <th class="px-2 py-1 text-left font-black">Fecha</th>
+                        <th class="px-2 py-1 text-left font-black">Boleto</th>
+                        <th class="px-2 py-1 text-left font-black min-w-[20px] max-w-[60px]">Nº Pase</th>
+                        <th class="px-2 py-1 text-center font-black">Costo Pasaje</th>
+                        <th class="px-2 py-1 text-center font-black">PDF</th>
                         <th class="px-2 py-1 text-right"></th>
                       </tr>
                     </thead>
                     <tbody id="itin-ida-repro-container" class="bg-white divide-y divide-neutral-100 border-b border-neutral-200">
-                      {{ range $i, $ticket := (index .PasajesReprogramados "IDA") }}
-                        {{ range $j, $scale := .Scales }}
-                        <tr x-data="{ devuelto: false, modificado: false, route: '{{ $scale.Ruta }}' }">
-                          <td class="px-2 py-1 text-center border-r border-neutral-100 bg-neutral-50/30">
-                            <input type="checkbox" name="itin_devolucion[]" value="{{ $scale.Index }}" x-model="devuelto" disabled title="No aplica" class="h-4 w-4 text-neutral-300 border-neutral-300 rounded cursor-not-allowed">
-                          </td>
-                          <td class="px-2 py-1 text-center border-r border-neutral-100 bg-neutral-50/30">
-                            <input type="checkbox" name="itin_modificacion[]" value="{{ $scale.Index }}" x-model="modificado" disabled title="No aplica" class="h-4 w-4 text-neutral-300 border-neutral-300 rounded cursor-not-allowed">
-                          </td>
-                          
-                          <td class="px-2 py-1" :class="{ 'opacity-50 grayscale bg-neutral-50': devuelto }">
-                            <input type="hidden" name="itin_tipo[]" value="IDA_REPRO" />
-                            <input type="hidden" name="itin_index[]" value="{{ $scale.Index }}" />
-                            <div class="relative min-w-[250px]">
-                              <input type="text" readonly
-                                     :value="route"
-                                     @click="if(!devuelto) $dispatch('open-route-picker', { rowId: '{{ $scale.Index }}' })"
-                                     placeholder="Seleccionar Ruta"
-                                     class="w-full bg-white border border-neutral-300 rounded px-2 py-1 text-[10px] cursor-pointer focus:outline-none focus:ring-1 focus:ring-secondary">
-                              <input type="hidden" name="itin_ruta[]" :value="route" :required="!devuelto" />
-                            </div>
-                          </td>
-                          <td class="px-2 py-1" :class="{ 'opacity-50 grayscale bg-neutral-50': devuelto }">
-                            <input type="date" name="itin_fecha[]" value="{{ $scale.Fecha }}" :required="!devuelto" :readonly="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" />
-                          </td>
-                          <td class="px-2 py-1" :class="{ 'opacity-50 grayscale bg-neutral-50': devuelto }">
-                            <input type="text" name="itin_boleto[]" value="{{ $scale.Boleto }}" :readonly="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" />
-                          </td>
-                          <td class="px-2 py-1" :class="{ 'opacity-50 grayscale bg-neutral-50': devuelto }">
-                            <input type="text" name="itin_pase_numero[]" :readonly="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2 min-w-[20px] max-w-[60px]" />
-                          </td>
-                          <td class="px-2 py-1 text-center" :class="{ 'opacity-50 grayscale bg-neutral-50': devuelto }" x-data="{ fileName: '' }">
-                            <label class="cursor-pointer flex items-center justify-center py-0.5 px-1.5 rounded border transition-colors hover:bg-neutral-100" 
-                                  :class="fileName ? 'bg-success-50 border-success-200 text-success-700' : 'bg-neutral-50 border-neutral-200 text-neutral-500'">
-                              <input type="file" :disabled="devuelto" name="itin_archivo_{{ $scale.Index }}" class="hidden" accept=".pdf,application/pdf,image/*" @change="await handleFile($event); fileName = $el.files[0] ? $el.files[0].name : ''" />
-                              <i class="ph text-base" :class="fileName ? 'ph-file-pdf' : 'ph-upload-simple'"></i>
-                            </label>
-                          </td>
-                          <td class="px-2 py-1 text-right">
-                            <button type="button" @click="$el.closest('tr').remove(); $dispatch('input')" class="text-neutral-400 hover:text-danger-600 transition-colors">
-                              <i class="ph ph-trash"></i>
-                            </button>
-                          </td>
-                        </tr>
-                        {{ end }}
-                      {{ end }}
+                      {{ range $i, $ticket := (index .PasajesReprogramados "IDA") }} {{ $totalScales := len .Scales }} {{ range $j, $scale := .Scales }} {{ template
+                      "descargo/components/escala_fila_derecho" (dict "Tipo" "IDA_REPRO" "Index" $scale.Index "RutaID" $scale.RutaID "EsDevolucion" $scale.EsDevolucion
+                      "EsModificacion" $scale.EsModificacion "Ruta" $scale.Ruta "Fecha" $scale.Fecha "Boleto" $scale.Boleto "Pase" $scale.Pase "Archivo" $scale.Archivo
+                      "MontoDevolucion" $scale.MontoDevolucion "CostoPasaje" $scale.CostoPasaje "ReadOnlyCheck" true "ReadOnlyRuta" false "CanDelete" true "IsFirstScale" (eq $j 0)
+                      "TotalScales" $totalScales "Orden" $scale.Orden ) }} {{ end }} {{ end }}
                     </tbody>
                   </table>
                 </div>
@@ -276,52 +188,24 @@
                 </div>
                 <div class="overflow-visible">
                   <table class="min-w-full divide-y divide-neutral-200">
-                    <thead class="bg-neutral-50">
+                    <thead class="bg-neutral-50 text-[9px] font-bold text-neutral-400 uppercase">
                       <tr>
-                        <th class="px-2 py-1 text-center text-[9px] font-bold text-neutral-400 uppercase">Dev.</th>
-                        <th class="px-2 py-1 text-center text-[9px] font-bold text-neutral-400 uppercase">Mod.</th>
-                        <th class="px-2 py-1 text-left text-[9px] font-bold text-neutral-400 uppercase min-w-[250px]">Ruta / Tramo</th>
-                        <th class="px-2 py-1 text-left text-[9px] font-bold text-neutral-400 uppercase">Fecha</th>
-                        <th class="px-2 py-1 text-left text-[9px] font-bold text-neutral-400 uppercase">Boleto</th>
-                        <th class="px-2 py-1 text-left text-[9px] font-bold text-neutral-400 uppercase min-w-[20px] max-w-[60px]">Nº Pase</th>
-                        <th class="px-2 py-1 text-center text-[9px] font-bold text-neutral-400 uppercase">PDF</th>
+                        <th class="px-2 py-1 text-center font-black">Dev.</th>
+                        <th class="px-2 py-1 text-center font-black">Mod.</th>
+                        <th class="px-2 py-1 text-left font-black min-w-[250px]">Ruta / Tramo</th>
+                        <th class="px-2 py-1 text-left font-black">Fecha</th>
+                        <th class="px-2 py-1 text-left font-black">Boleto</th>
+                        <th class="px-2 py-1 text-left font-black min-w-[20px] max-w-[60px]">Nº Pase</th>
+                        <th class="px-2 py-1 text-center font-black">Costo Pasaje</th>
+                        <th class="px-2 py-1 text-center font-black">PDF</th>
                       </tr>
                     </thead>
                     <tbody class="bg-white divide-y divide-neutral-100 border-b border-neutral-200">
-                      {{ range $i, $ticket := (index .PasajesOriginales "VUELTA") }}
-                        {{ range $j, $scale := .Scales }}
-                        <tr x-data="{ devuelto: false, modificado: false }">
-                          <td class="px-2 py-1 text-center border-r border-neutral-100 bg-neutral-50/30">
-                            <input type="checkbox" name="itin_devolucion[]" value="{{ $scale.Index }}" x-model="devuelto" @change="if(devuelto) modificado = false" title="Devolver Conexión" class="h-4 w-4 text-danger-600 border-neutral-300 rounded focus:ring-danger-500">
-                          </td>
-                          <td class="px-2 py-1 text-center border-r border-neutral-100 bg-neutral-50/30">
-                            <input type="checkbox" name="itin_modificacion[]" value="{{ $scale.Index }}" x-model="modificado" @change="if(modificado) devuelto = false" title="Modificar Conexión" class="h-4 w-4 text-warning-600 border-neutral-300 rounded focus:ring-warning-500">
-                          </td>
-
-                          <td class="px-2 py-1" :class="{ 'opacity-50 grayscale bg-neutral-50': devuelto || modificado }">
-                            <input type="hidden" name="itin_tipo[]" value="VUELTA_ORIGINAL" />
-                            <input type="hidden" name="itin_index[]" value="{{ $scale.Index }}" />
-                            <input type="text" name="itin_ruta[]" value="{{ $scale.Ruta }}" required class="block w-full text-[11px] border-neutral-200 rounded py-0.5 px-2 bg-neutral-50 min-w-[250px]" readonly />
-                          </td>
-                          <td class="px-2 py-1" :class="{ 'opacity-50 grayscale bg-neutral-50': devuelto || modificado }">
-                            <input type="date" name="itin_fecha[]" value="{{ $scale.Fecha }}" required class="block w-full text-[11px] border-neutral-200 rounded py-0.5 px-1 bg-neutral-50" readonly />
-                          </td>
-                          <td class="px-2 py-1" :class="{ 'opacity-50 grayscale bg-neutral-50': devuelto || modificado }">
-                            <input type="text" name="itin_boleto[]" value="{{ $scale.Boleto }}" readonly class="block w-full text-[11px] border-neutral-200 rounded py-0.5 px-2 bg-neutral-50" />
-                          </td>
-                          <td class="px-2 py-1" :class="{ 'opacity-50 grayscale bg-neutral-50': devuelto || modificado }">
-                            <input type="text" name="itin_pase_numero[]" :required="!devuelto && !modificado" :readonly="devuelto || modificado" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2 min-w-[20px] max-w-[60px]" placeholder="Pase" />
-                          </td>
-                          <td class="px-2 py-1 text-center" :class="{ 'opacity-50 grayscale bg-neutral-50': devuelto || modificado }" x-data="{ fileName: '' }">
-                            <label class="cursor-pointer flex items-center justify-center py-0.5 px-1.5 rounded border transition-colors hover:bg-neutral-100" 
-                                  :class="fileName ? 'bg-success-50 border-success-200 text-success-700' : 'bg-neutral-50 border-neutral-200 text-neutral-500'">
-                              <input type="file" :disabled="devuelto || modificado" name="itin_archivo_{{ $scale.Index }}" class="hidden" accept=".pdf,application,pdf,image/*" @change="await handleFile($event); fileName = $el.files[0] ? $el.files[0].name : ''" />
-                              <i class="ph text-base" :class="fileName ? 'ph-file-pdf' : 'ph-upload-simple'"></i>
-                            </label>
-                          </td>
-                        </tr>
-                        {{ end }}
-                      {{ end }}
+                      {{ range $i, $ticket := (index .PasajesOriginales "VUELTA") }} {{ $totalScales := len .Scales }} {{ range $j, $scale := .Scales }} {{ template
+                      "descargo/components/escala_fila_derecho" (dict "Tipo" "VUELTA_ORIGINAL" "Index" $scale.Index "RutaID" $scale.RutaID "EsDevolucion" $scale.EsDevolucion
+                      "EsModificacion" $scale.EsModificacion "Ruta" $scale.Ruta "Fecha" $scale.Fecha "Boleto" $scale.Boleto "Pase" $scale.Pase "Archivo" $scale.Archivo
+                      "MontoDevolucion" $scale.MontoDevolucion "CostoPasaje" $scale.CostoPasaje "ReadOnlyCheck" false "ReadOnlyRuta" true "CanDelete" false "IsFirstScale" (eq $j 0)
+                      "TotalScales" $totalScales "Orden" $scale.Orden ) }} {{ end }} {{ end }}
                     </tbody>
                   </table>
                 </div>
@@ -333,71 +217,38 @@
                   <div class="h-px bg-neutral-200 flex-1"></div>
                   <span class="px-2 text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Reprogramación</span>
                   <div class="h-px bg-neutral-200 flex-1"></div>
-                  <button type="button" @click="addItinRow('VUELTA_REPRO')" class="ml-2 text-[10px] bg-neutral-50 text-neutral-600 px-2 py-0.5 rounded border border-neutral-200 hover:bg-neutral-100 transition-colors">
-                    + Tramo
+                  <button
+                    type="button"
+                    hx-get="/descargos/derecho/nueva-fila?tipo=VUELTA_REPRO"
+                    hx-target="#itin-vuelta-repro-container"
+                    hx-swap="beforeend"
+                    hx-on::after-settle="this.closest('form').dispatchEvent(new Event('input', { bubbles: true }))"
+                    class="ml-2 text-[10px] bg-primary-50 text-primary-700 font-bold px-2 py-0.5 rounded-md border border-primary-200 hover:bg-primary-100 transition-all flex items-center gap-1">
+                    <i class="ph ph-plus-circle text-xs"></i>
+                    Añadir Tramo
                   </button>
                 </div>
                 <div class="overflow-visible">
                   <table class="min-w-full divide-y divide-neutral-200">
-                    <thead class="bg-neutral-50">
+                    <thead class="bg-neutral-50 text-[9px] font-bold text-neutral-400 uppercase">
                       <tr>
-                        <th class="px-2 py-1 text-center text-[9px] font-bold text-neutral-400 uppercase">Dev.</th>
-                        <th class="px-2 py-1 text-center text-[9px] font-bold text-neutral-400 uppercase">Mod.</th>
-                        <th class="px-2 py-1 text-left text-[9px] font-bold text-neutral-400 uppercase min-w-[250px]">Ruta / Tramo</th>
-                        <th class="px-2 py-1 text-left text-[9px] font-bold text-neutral-400 uppercase">Fecha</th>
-                        <th class="px-2 py-1 text-left text-[9px] font-bold text-neutral-400 uppercase">Boleto</th>
-                        <th class="px-2 py-1 text-left text-[9px] font-bold text-neutral-400 uppercase min-w-[20px] max-w-[60px]">Nº Pase</th>
-                        <th class="px-2 py-1 text-center text-[9px] font-bold text-neutral-400 uppercase">PDF</th>
+                        <th class="px-2 py-1 text-center font-black">Dev.</th>
+                        <th class="px-2 py-1 text-center font-black">Mod.</th>
+                        <th class="px-2 py-1 text-left font-black min-w-[250px]">Ruta / Tramo</th>
+                        <th class="px-2 py-1 text-left font-black">Fecha</th>
+                        <th class="px-2 py-1 text-left font-black">Boleto</th>
+                        <th class="px-2 py-1 text-left font-black min-w-[20px] max-w-[60px]">Nº Pase</th>
+                        <th class="px-2 py-1 text-center font-black">Costo Pasaje</th>
+                        <th class="px-2 py-1 text-center font-black">PDF</th>
                         <th class="px-2 py-1 text-right"></th>
                       </tr>
                     </thead>
                     <tbody id="itin-vuelta-repro-container" class="bg-white divide-y divide-neutral-100 border-b border-neutral-200">
-                      {{ range $i, $ticket := (index .PasajesReprogramados "VUELTA") }}
-                        {{ range $j, $scale := .Scales }}
-                        <tr x-data="{ devuelto: false, modificado: false, route: '{{ $scale.Ruta }}' }">
-                          <td class="px-2 py-1 text-center border-r border-neutral-100 bg-neutral-50/30">
-                            <input type="checkbox" name="itin_devolucion[]" value="{{ $scale.Index }}" x-model="devuelto" disabled title="No aplica" class="h-4 w-4 text-neutral-300 border-neutral-300 rounded cursor-not-allowed">
-                          </td>
-                          <td class="px-2 py-1 text-center border-r border-neutral-100 bg-neutral-50/30">
-                            <input type="checkbox" name="itin_modificacion[]" value="{{ $scale.Index }}" x-model="modificado" disabled title="No aplica" class="h-4 w-4 text-neutral-300 border-neutral-300 rounded cursor-not-allowed">
-                          </td>
-                          
-                          <td class="px-2 py-1" :class="{ 'opacity-50 grayscale bg-neutral-50': devuelto }">
-                            <input type="hidden" name="itin_tipo[]" value="VUELTA_REPRO" />
-                            <input type="hidden" name="itin_index[]" value="{{ $scale.Index }}" />
-                            <div class="relative min-w-[250px]">
-                              <input type="text" readonly 
-                                     :value="route"
-                                     @click="if(!devuelto) $dispatch('open-route-picker', { rowId: '{{ $scale.Index }}' })"
-                                     placeholder="Seleccionar Ruta"
-                                     class="w-full bg-white border border-neutral-300 rounded px-2 py-1 text-[10px] cursor-pointer focus:outline-none focus:ring-1 focus:ring-secondary">
-                              <input type="hidden" name="itin_ruta[]" :value="route" :required="!devuelto" />
-                            </div>
-                          </td>
-                          <td class="px-2 py-1" :class="{ 'opacity-50 grayscale bg-neutral-50': devuelto }">
-                            <input type="date" name="itin_fecha[]" value="{{ $scale.Fecha }}" :required="!devuelto" :readonly="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" />
-                          </td>
-                          <td class="px-2 py-1" :class="{ 'opacity-50 grayscale bg-neutral-50': devuelto }">
-                            <input type="text" name="itin_boleto[]" value="{{ $scale.Boleto }}" :readonly="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2" />
-                          </td>
-                          <td class="px-2 py-1" :class="{ 'opacity-50 grayscale bg-neutral-50': devuelto }">
-                            <input type="text" name="itin_pase_numero[]" :readonly="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2 min-w-[20px] max-w-[60px]" />
-                          </td>
-                          <td class="px-2 py-1 text-center" :class="{ 'opacity-50 grayscale bg-neutral-50': devuelto }" x-data="{ fileName: '' }">
-                            <label class="cursor-pointer flex items-center justify-center py-0.5 px-1.5 rounded border transition-colors hover:bg-neutral-100" 
-                                  :class="fileName ? 'bg-success-50 border-success-200 text-success-700' : 'bg-neutral-50 border-neutral-200 text-neutral-500'">
-                              <input type="file" :disabled="devuelto" name="itin_archivo_{{ $scale.Index }}" class="hidden" accept=".pdf,application/pdf,image/*" @change="await handleFile($event); fileName = $el.files[0] ? $el.files[0].name : ''" />
-                              <i class="ph text-base" :class="fileName ? 'ph-file-pdf' : 'ph-upload-simple'"></i>
-                            </label>
-                          </td>
-                          <td class="px-2 py-1 text-right">
-                            <button type="button" @click="$el.closest('tr').remove(); $dispatch('input')" class="text-neutral-400 hover:text-danger-600 transition-colors">
-                              <i class="ph ph-trash"></i>
-                            </button>
-                          </td>
-                        </tr>
-                        {{ end }}
-                      {{ end }}
+                      {{ range $i, $ticket := (index .PasajesReprogramados "VUELTA") }} {{ $totalScales := len .Scales }} {{ range $j, $scale := .Scales }} {{ template
+                      "descargo/components/escala_fila_derecho" (dict "Tipo" "VUELTA_REPRO" "Index" $scale.Index "RutaID" $scale.RutaID "EsDevolucion" $scale.EsDevolucion
+                      "EsModificacion" $scale.EsModificacion "Ruta" $scale.Ruta "Fecha" $scale.Fecha "Boleto" $scale.Boleto "Pase" $scale.Pase "Archivo" $scale.Archivo
+                      "MontoDevolucion" $scale.MontoDevolucion "CostoPasaje" $scale.CostoPasaje "ReadOnlyCheck" true "ReadOnlyRuta" false "CanDelete" true "IsFirstScale" (eq $j 0)
+                      "TotalScales" $totalScales "Orden" $scale.Orden ) }} {{ end }} {{ end }}
                     </tbody>
                   </table>
                 </div>
@@ -405,283 +256,10 @@
             </div>
           </div>
           {{ end }}
+        </div>
       </div>
     </div>
-
-    <!-- Bottom actions removed per user request, moved to top header -->
   </form>
-</div>
-<script>
-  // Destinos data from server
-  const destinos = [
-    {{ range .Destinos }}
-    { iata: "{{ .IATA }}", nombre: "{{ .Ciudad }}" },
-    {{ end }}
-  ];
-
-  document.addEventListener("alpine:init", () => {
-    Alpine.data("routePicker", () => ({
-      open: false,
-      searchOrig: "",
-      searchDest: "",
-      currentRowId: null,
-      selectedOrig: null,
-      selectedDest: null,
-      items: destinos.map(d => ({
-        value: d.iata,
-        cityName: d.nombre,
-        label: d.iata + " - " + d.nombre
-      })),
-
-      get filteredOrig() {
-        if (!this.searchOrig) return this.items;
-        const q = this.searchOrig.toLowerCase();
-        return this.items.filter(i => 
-          i.label.toLowerCase().includes(q) || 
-          i.cityName.toLowerCase().includes(q)
-        );
-      },
-
-      get filteredDest() {
-        if (!this.searchDest) return this.items;
-        const q = this.searchDest.toLowerCase();
-        return this.items.filter(i => 
-          i.label.toLowerCase().includes(q) || 
-          i.cityName.toLowerCase().includes(q)
-        );
-      },
-
-      openModal(rowId) {
-        this.currentRowId = rowId;
-        this.searchOrig = "";
-        this.searchDest = "";
-        this.selectedOrig = null;
-        this.selectedDest = null;
-        this.open = true;
-      },
-
-      confirm() {
-        if (this.selectedOrig && this.selectedDest) {
-          window.dispatchEvent(new CustomEvent('route-picked', {
-            detail: {
-              rowId: this.currentRowId,
-              orig: this.selectedOrig,
-              dest: this.selectedDest
-            }
-          }));
-          this.open = false;
-        }
-      }
-    }));
-  });
-
-  let itinCounter = 100;
-
-  // Attach to window so it's globally available to Alpine @click handlers
-  window.addItinRow = function(type) {
-    const containerId = type === "IDA_REPRO" ? "itin-ida-repro-container" : "itin-vuelta-repro-container";
-    const container = document.getElementById(containerId);
-    if (!container) return;
-
-    const index = itinCounter++;
-    const xData = `{ devuelto: false, modificado: false, route: '' }`;
-
-    const rowHtml = `
-      <tr x-data="${xData}"
-          class="border-b border-neutral-100 last:border-0 hover:bg-neutral-50/50 transition-colors"
-          @route-picked.window="if($event.detail.rowId == ${index}) {
-            route = $event.detail.orig.cityName + ' - ' + $event.detail.dest.cityName;
-          }">
-        <td class="px-2 py-1 text-center">
-          <input type="hidden" name="itin_tipo[]" value="${type}">
-          <input type="hidden" name="itin_index[]" value="${index}">
-          <input type="checkbox" name="itin_devolucion[]" value="${index}" disabled title="No aplica" class="h-4 w-4 text-neutral-300 border-neutral-300 rounded cursor-not-allowed">
-        </td>
-        <td class="px-2 py-1 text-center">
-          <input type="checkbox" name="itin_modificacion[]" value="${index}" disabled title="No aplica" class="h-4 w-4 text-neutral-300 border-neutral-300 rounded cursor-not-allowed">
-        </td>
-        <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
-          <div class="relative min-w-[250px]">
-            <input type="text" readonly
-                   :value="route"
-                   @click="if(!devuelto) $dispatch('open-route-picker', { rowId: ${index} })"
-                   placeholder="Seleccionar Ruta (Origen - Destino)"
-                   class="w-full bg-white border border-neutral-300 rounded px-2 py-1 text-[10px] cursor-pointer focus:outline-none focus:ring-1 focus:ring-secondary">
-            <input type="hidden" name="itin_ruta[]" :value="route" :required="!devuelto" />
-          </div>
-        </td>
-        <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
-          <input type="date" name="itin_fecha[]" :required="!devuelto" :readonly="devuelto" class="block w-full text-[11px] border-neutral-200 rounded py-0.5 px-2 focus:ring-secondary focus:border-secondary">
-        </td>
-        <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
-          <input type="text" name="itin_boleto[]" placeholder="Boleto" :readonly="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2 focus:ring-secondary focus:border-secondary">
-        </td>
-        <td class="px-2 py-1" :class="{ 'opacity-50': devuelto }">
-          <input type="text" name="itin_pase_numero[]" placeholder="Pase" :readonly="devuelto" class="block w-full text-[11px] border-neutral-300 rounded py-0.5 px-2 focus:ring-secondary focus:border-secondary min-w-[20px] max-w-[60px]">
-        </td>
-        <td class="px-2 py-1 text-center" :class="{ 'opacity-50': devuelto }" x-data="{ fileName: '' }">
-          <label class="cursor-pointer flex items-center justify-center py-0.5 px-1.5 rounded border transition-colors hover:bg-neutral-100 border-neutral-200 bg-neutral-50 text-neutral-500" 
-                 :class="fileName ? 'bg-success-50 border-success-200 text-success-700' : ''"
-                 :title="fileName ? fileName : 'Subir PDF (Opcional)'">
-            <input type="file" :disabled="devuelto" name="itin_archivo_${index}" class="hidden" accept=".pdf,application/pdf,image/*" @change="await handleFile($event); fileName = $el.files[0] ? $el.files[0].name : ''" />
-            <i class="ph text-base" :class="fileName ? 'ph-file-pdf' : 'ph-upload-simple'"></i>
-          </label>
-        </td>
-        <td class="px-2 py-1 text-right">
-          <button type="button" class="remove-row-btn text-neutral-400 hover:text-danger-600 transition-colors">
-            <i class="ph ph-trash"></i>
-          </button>
-        </td>
-      </tr>`;
-
-    container.insertAdjacentHTML('beforeend', rowHtml);
-    const row = container.lastElementChild;
-
-    row.querySelector('.remove-row-btn').addEventListener('click', () => {
-      row.remove();
-      const form = document.getElementById('descargo-form');
-      if (form) form.dispatchEvent(new Event('input', { bubbles: true }));
-    });
-  };
-
-  document.addEventListener("DOMContentLoaded", () => {
-    // Sync counter with existing rows if any
-    const existingCount = document.querySelectorAll('input[name="itin_tipo[]"]').length;
-    if (existingCount > 0) {
-      itinCounter = existingCount + 100;
-    }
-  });
-</script>
-
-<!-- MODAL PARA SELECCIÓN DE RUTA (Lado a Lado) -->
-<div x-data="routePicker()" 
-     x-show="open" 
-     @open-route-picker.window="openModal($event.detail.rowId)"
-     class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
-     x-transition:enter="transition ease-out duration-300"
-     x-transition:enter-start="opacity-0"
-     x-transition:enter-end="opacity-100"
-     x-transition:leave="transition ease-in duration-200"
-     x-transition:leave-start="opacity-100"
-     x-transition:leave-end="opacity-0"
-     style="display: none">
-  <div class="bg-white rounded-xl shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[90vh]" 
-       @click.away="open = false"
-       x-transition:enter="transition ease-out duration-300"
-       x-transition:enter-start="opacity-0 scale-95 translate-y-4"
-       x-transition:enter-end="opacity-100 scale-100 translate-y-0">
-    
-    <!-- Header -->
-    <div class="p-4 border-b border-neutral-100 bg-neutral-50 flex items-center justify-between">
-      <h3 class="font-bold text-neutral-800 flex items-center gap-2 text-sm uppercase tracking-tight">
-        <i class="ph ph-map-pin-line text-primary text-lg"></i>
-        Configurar Ruta (Origen - Destino)
-      </h3>
-      <button @click="open = false" class="text-neutral-400 hover:text-neutral-600 transition-colors">
-        <i class="ph ph-x text-xl"></i>
-      </button>
-    </div>
-
-    <!-- Content: Side by Side Selection -->
-    <div class="flex-1 overflow-hidden grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-neutral-100">
-      
-      <!-- LADO IZQUIERDO: ORIGEN -->
-      <div class="flex flex-col p-4 overflow-hidden">
-        <div class="flex items-center justify-between mb-3">
-          <h4 class="text-xs font-black text-neutral-500 uppercase tracking-widest flex items-center gap-2">
-            <span class="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px]">1</span>
-            Ciudad de Origen
-          </h4>
-          <span x-show="selectedOrig" class="text-[10px] font-bold text-success-600 bg-success-50 px-2 py-0.5 rounded-full animate-in fade-in zoom-in" x-text="selectedOrig?.value"></span>
-        </div>
-        
-        <div class="relative mb-3">
-          <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-neutral-400">
-            <i class="ph ph-magnifying-glass"></i>
-          </span>
-          <input type="text" x-model="searchOrig"
-                 placeholder="Buscar origen..."
-                 class="w-full pl-9 pr-4 py-2 bg-neutral-50 border border-neutral-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none transition-all">
-        </div>
-
-        <div class="flex-1 overflow-y-auto custom-scrollbar pr-1">
-          <ul class="space-y-1">
-            <template x-for="item in filteredOrig" :key="'orig-'+item.value">
-              <li @click="selectedOrig = item" 
-                  class="flex items-center justify-between p-2.5 rounded-lg cursor-pointer transition-all border group"
-                  :class="selectedOrig?.value === item.value ? 'bg-primary-50 border-primary-200 shadow-sm' : 'border-transparent hover:bg-neutral-50'">
-                <div class="flex items-center gap-3">
-                  <div class="w-8 h-8 rounded bg-neutral-100 flex items-center justify-center font-bold text-[10px]"
-                       :class="selectedOrig?.value === item.value ? 'bg-primary text-white' : 'text-neutral-500'" x-text="item.value"></div>
-                  <div class="font-bold text-neutral-800 text-xs" x-text="item.cityName"></div>
-                </div>
-                <i x-show="selectedOrig?.value === item.value" class="ph ph-check-circle text-primary text-lg animate-in zoom-in"></i>
-              </li>
-            </template>
-          </ul>
-        </div>
-      </div>
-
-      <!-- LADO DERECHO: DESTINO -->
-      <div class="flex flex-col p-4 overflow-hidden bg-neutral-50/30">
-        <div class="flex items-center justify-between mb-3">
-          <h4 class="text-xs font-black text-neutral-500 uppercase tracking-widest flex items-center gap-2">
-            <span class="w-5 h-5 rounded-full bg-primary/10 text-primary flex items-center justify-center text-[10px]">2</span>
-            Ciudad de Destino
-          </h4>
-          <span x-show="selectedDest" class="text-[10px] font-bold text-success-600 bg-success-50 px-2 py-0.5 rounded-full animate-in fade-in zoom-in" x-text="selectedDest?.value"></span>
-        </div>
-
-        <div class="relative mb-3">
-          <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-neutral-400">
-            <i class="ph ph-magnifying-glass"></i>
-          </span>
-          <input type="text" x-model="searchDest"
-                 placeholder="Buscar destino..."
-                 class="w-full pl-9 pr-4 py-2 bg-neutral-50 border border-neutral-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none transition-all">
-        </div>
-
-        <div class="flex-1 overflow-y-auto custom-scrollbar pr-1">
-          <ul class="space-y-1">
-            <template x-for="item in filteredDest" :key="'dest-'+item.value">
-              <li @click="selectedDest = item" 
-                  class="flex items-center justify-between p-2.5 rounded-lg cursor-pointer transition-all border group"
-                  :class="selectedDest?.value === item.value ? 'bg-primary-50 border-primary-200 shadow-sm' : 'border-transparent hover:bg-neutral-50'">
-                <div class="flex items-center gap-3">
-                  <div class="w-8 h-8 rounded bg-neutral-100 flex items-center justify-center font-bold text-[10px]"
-                       :class="selectedDest?.value === item.value ? 'bg-primary text-white' : 'text-neutral-500'" x-text="item.value"></div>
-                  <div class="font-bold text-neutral-800 text-xs" x-text="item.cityName"></div>
-                </div>
-                <i x-show="selectedDest?.value === item.value" class="ph ph-check-circle text-primary text-lg animate-in zoom-in"></i>
-              </li>
-            </template>
-          </ul>
-        </div>
-      </div>
-    </div>
-
-    <!-- Footer -->
-    <div class="p-4 border-t border-neutral-100 bg-neutral-50 flex items-center justify-between">
-      <div class="flex items-center gap-4">
-        <div class="flex items-center gap-2">
-          <div class="w-2 h-2 rounded-full" :class="selectedOrig ? 'bg-success-500' : 'bg-neutral-300'"></div>
-          <span class="text-[10px] font-bold uppercase text-neutral-500">Origen</span>
-        </div>
-        <div class="flex items-center gap-2">
-          <div class="w-2 h-2 rounded-full" :class="selectedDest ? 'bg-success-500' : 'bg-neutral-300'"></div>
-          <span class="text-[10px] font-bold uppercase text-neutral-500">Destino</span>
-        </div>
-      </div>
-
-      <button @click="confirm()" 
-              :disabled="!selectedOrig || !selectedDest"
-              class="inline-flex items-center px-6 py-2 rounded-lg text-white font-black text-xs uppercase tracking-widest transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
-              :class="selectedOrig && selectedDest ? 'bg-primary hover:bg-primary-700 shadow-lg' : 'bg-neutral-400'">
-        <i class="ph ph-check-circle mr-2 text-lg"></i>
-        Confirmar Ruta
-      </button>
-    </div>
-  </div>
 </div>
 
 {{ template "layout_end" . }} {{ end }}

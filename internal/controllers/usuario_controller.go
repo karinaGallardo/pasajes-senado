@@ -232,7 +232,6 @@ func (ctrl *UsuarioController) UpdateOrigin(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"message": "Origen actualizado correctamente"})
 }
 
-
 func (ctrl *UsuarioController) Unblock(c *gin.Context) {
 	id := c.Param("id")
 	usuario, err := ctrl.userService.GetByID(c.Request.Context(), id)

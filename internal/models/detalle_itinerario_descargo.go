@@ -15,14 +15,28 @@ type DetalleItinerarioDescargo struct {
 	BaseModel
 	DescargoID        string                `gorm:"size:36;not null;index"`
 	Tipo              TipoDetalleItinerario `gorm:"size:20;not null"`
-	Ruta              string                `gorm:"size:255"`
+	RutaID            *string               `gorm:"size:36;index"`
+	RutaPasaje        *Ruta                 `gorm:"foreignKey:RutaID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;<-:false"`
 	Fecha             *time.Time            `gorm:"type:timestamp"`
 	Boleto            string                `gorm:"size:100"`
 	NumeroPaseAbordo  string                `gorm:"size:100"`
 	ArchivoPaseAbordo string                `gorm:"size:255"`
 	EsDevolucion      bool                  `gorm:"default:false"`
 	EsModificacion    bool                  `gorm:"default:false"`
+	MontoDevolucion   float64               `gorm:"type:decimal(10,2);default:0"`
 	Orden             int                   `gorm:"default:0"`
+}
+
+func (d DetalleItinerarioDescargo) GetRutaDisplay() string {
+	if d.RutaPasaje != nil {
+		segments := d.RutaPasaje.GetSegments()
+		// If it's a legacy record or we don't have enough segments, fall back to total display
+		if len(segments) > 1 && d.Orden < len(segments) {
+			return segments[d.Orden]
+		}
+		return d.RutaPasaje.GetTramoDisplay()
+	}
+	return "Ruta no especificada"
 }
 
 func (DetalleItinerarioDescargo) TableName() string {

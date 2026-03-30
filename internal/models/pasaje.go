@@ -16,7 +16,9 @@ type Pasaje struct {
 	Agencia   *Agencia `gorm:"foreignKey:AgenciaID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;<-:false"`
 
 	NumeroVuelo string `gorm:"size:50"`
-	Ruta        string `gorm:"size:255"`
+
+	RutaID     *string `gorm:"size:36;index"`
+	RutaPasaje *Ruta   `gorm:"foreignKey:RutaID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;<-:false"`
 
 	FechaVuelo   time.Time  `gorm:"type:timestamp"`
 	FechaEmision *time.Time `gorm:"type:date"`
@@ -36,6 +38,21 @@ type Pasaje struct {
 	Glosa             string  `gorm:"type:text"`
 	NumeroFactura     string  `gorm:"size:50;index"`
 	CostoPenalidad    float64 `gorm:"type:decimal(10,2);default:0"`
+	Orden             int     `gorm:"default:0"`
+}
+
+func (p Pasaje) GetRutaDisplay() string {
+	if p.RutaPasaje != nil {
+		return p.RutaPasaje.GetTramoDisplay()
+	}
+	return "Ruta no especificada"
+}
+
+func (p Pasaje) GetRutaSegments() []string {
+	if p.RutaPasaje != nil {
+		return p.RutaPasaje.GetSegments()
+	}
+	return []string{"Ruta no especificada"}
 }
 
 func (Pasaje) TableName() string {

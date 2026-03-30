@@ -6,6 +6,6 @@ type PushSubscription struct {
 	Endpoint string `gorm:"size:500;uniqueIndex" json:"endpoint"`
 	P256dh   string `gorm:"size:255" json:"p256dh"`
 	Auth     string `gorm:"size:255" json:"auth"`
-	
-	User     *Usuario `gorm:"foreignKey:UserID" json:"user,omitempty"`
+
+	User *Usuario `gorm:"foreignKey:UserID" json:"user,omitempty"`
 }

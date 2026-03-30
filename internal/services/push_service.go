@@ -52,7 +52,7 @@ func (s *PushService) SendToUser(ctx context.Context, userID string, title, mess
 
 	publicKey := viper.GetString("VAPID_PUBLIC_KEY")
 	privateKey := viper.GetString("VAPID_PRIVATE_KEY")
-	
+
 	if publicKey == "" || privateKey == "" {
 		return nil
 	}

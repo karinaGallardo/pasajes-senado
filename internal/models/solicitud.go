@@ -79,6 +79,13 @@ func (s Solicitud) GetConceptoCodigo() string {
 	return ""
 }
 
+func (s Solicitud) GetAmbitoViajeNombre() string {
+	if s.AmbitoViaje != nil {
+		return s.AmbitoViaje.Nombre
+	}
+	return s.AmbitoViajeCodigo
+}
+
 func (s *Solicitud) GetItemByID(id string) *SolicitudItem {
 	for i := range s.Items {
 		if s.Items[i].ID == id {
@@ -252,6 +259,34 @@ func (s Solicitud) GetRutaSimple() string {
 		return s.GetOrigenCiudad() + " - " + s.GetDestinoCiudad()
 	}
 	return origen + " - " + destino
+}
+
+func (s Solicitud) GetRutaDetallada() string {
+	origen := s.GetOrigen()
+	if origen == nil {
+		return "-"
+	}
+	destino := s.GetDestino()
+	if destino == nil {
+		return "-"
+	}
+	return origen.GetLabel() + " - " + destino.GetLabel()
+}
+
+func (s Solicitud) GetOrigenLabel() string {
+	obj := s.GetOrigen()
+	if obj == nil {
+		return "-"
+	}
+	return obj.GetLabel()
+}
+
+func (s Solicitud) GetDestinoLabel() string {
+	obj := s.GetDestino()
+	if obj == nil {
+		return "-"
+	}
+	return obj.GetLabel()
 }
 
 func (s Solicitud) GetItemIda() *SolicitudItem {

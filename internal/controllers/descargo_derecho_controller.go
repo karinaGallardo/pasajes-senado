@@ -9,8 +9,11 @@ import (
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/services"
 	"sistema-pasajes/internal/utils"
+	"sort"
 	"strconv"
 	"strings"
+
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -23,6 +26,7 @@ type DescargoDerechoController struct {
 	peopleService    *services.PeopleService
 	aerolineaService *services.AerolineaService
 }
+
 
 func NewDescargoDerechoController(
 	descargoService *services.DescargoService,
@@ -62,75 +66,20 @@ func (ctrl *DescargoDerechoController) Create(c *gin.Context) {
 		return
 	}
 
-	type ConnectionView struct {
-		Ruta   string
-		Fecha  string
-		Boleto string
-		Index  string
-	}
-
-	type TicketView struct {
-		Boleto string
-		Scales []ConnectionView
-	}
-
-	pasajesOriginales := make(map[string][]TicketView)
-	pasajesReprogramados := make(map[string][]TicketView)
-
-	for _, item := range solicitud.Items {
-		tipo := string(item.Tipo)
-		for _, p := range item.Pasajes {
-			st := p.GetEstadoCodigo()
-			if st != "EMITIDO" {
-				continue
-			}
-
-			targetMap := pasajesOriginales
-			prefix := "io"
-			if p.PasajeAnteriorID != nil {
-				targetMap = pasajesReprogramados
-				prefix = "ir"
-			}
-
-			ticket := TicketView{
-				Boleto: p.NumeroBoleto,
-			}
-
-			routes := utils.SplitRoute(p.Ruta)
-			for j, r := range routes {
-				ticket.Scales = append(ticket.Scales, ConnectionView{
-					Ruta:   r,
-					Fecha:  p.FechaVuelo.Format("2006-01-02"),
-					Boleto: p.NumeroBoleto,
-					Index:  fmt.Sprintf("%s_%s_%d", prefix, item.ID, j), // Fixed type to %s for item.ID
-				})
-			}
-			targetMap[tipo] = append(targetMap[tipo], ticket)
-		}
-	}
+	// Delegamos la transformación de datos al servicio (Lógica de Negocio)
+	pasajesOriginales, pasajesReprogramados := ctrl.descargoService.GetItinerarioParaDescargo(c.Request.Context(), solicitud)
 
 	destinos, _ := ctrl.destinoService.GetAll(c.Request.Context())
-
-	aerolineaNombre := solicitud.AerolineaSugerida
-	if solicitud.AerolineaSugerida != "" {
-		if aereolinea, err := ctrl.aerolineaService.GetByID(c.Request.Context(), solicitud.AerolineaSugerida); err == nil {
-			if aereolinea.Sigla != "" {
-				aerolineaNombre = aereolinea.Sigla
-			} else {
-				aerolineaNombre = aereolinea.Nombre
-			}
-		}
-	}
 
 	utils.Render(c, "descargo/derecho/create", gin.H{
 		"Title":                "Nuevo Descargo (Derecho)",
 		"Solicitud":            solicitud,
-		"AerolineaNombre":      aerolineaNombre,
 		"PasajesOriginales":    pasajesOriginales,
 		"PasajesReprogramados": pasajesReprogramados,
 		"Destinos":             destinos,
 	})
 }
+
 
 func (ctrl *DescargoDerechoController) Store(c *gin.Context) {
 	var req dtos.CreateDescargoRequest
@@ -196,7 +145,7 @@ func (ctrl *DescargoDerechoController) Show(c *gin.Context) {
 
 	for _, item := range detalles {
 		itemsByType[string(item.Tipo)] = append(itemsByType[string(item.Tipo)], item)
-		key := fmt.Sprintf("%s_%s_%s", item.Tipo, item.Ruta, item.Boleto)
+		key := fmt.Sprintf("%s_%d_%s", item.Tipo, item.Orden, strings.ToUpper(strings.TrimSpace(item.Boleto)))
 		existingKeys[key] = true
 	}
 
@@ -214,16 +163,18 @@ func (ctrl *DescargoDerechoController) Show(c *gin.Context) {
 					tipoTarget = tipoBase + "_REPRO"
 				}
 
-				routes := utils.SplitRoute(p.Ruta)
-				for _, r := range routes {
-					key := fmt.Sprintf("%s_%s_%s", tipoTarget, r, p.NumeroBoleto)
+				segments := p.GetRutaSegments()
+				for i := range segments {
+					key := fmt.Sprintf("%s_%d_%s", tipoTarget, i, strings.ToUpper(strings.TrimSpace(p.NumeroBoleto)))
 					if !existingKeys[key] {
 						tVuelo := p.FechaVuelo
 						newItem := models.DetalleItinerarioDescargo{
 							Tipo:         models.TipoDetalleItinerario(tipoTarget),
-							Ruta:         r,
+							RutaID:       p.RutaID,
+							RutaPasaje:   p.RutaPasaje,
 							Fecha:        &tVuelo,
 							Boleto:       p.NumeroBoleto,
+							Orden:        i,
 							EsDevolucion: false,
 						}
 						// Append to both the general list and the map
@@ -237,14 +188,28 @@ func (ctrl *DescargoDerechoController) Show(c *gin.Context) {
 	}
 
 	type TicketGroup struct {
-		Boleto         string
-		Detalles       []models.DetalleItinerarioDescargo
-		EsDevolucion   bool
-		EsModificacion bool
+		Boleto          string
+		Detalles        []models.DetalleItinerarioDescargo
+		EsDevolucion    bool
+		EsModificacion  bool
+		MontoDevolucion float64
+		CostoPasaje     float64
 	}
 
 	ticketsMap := make(map[string]*TicketGroup)
 	var ticketsOrder []string
+
+	// Pre-escaneo para identificar boletos con rutas válidas
+	boletoHasValidRoute := make(map[string]bool)
+	for _, d := range detalles {
+		bKey := d.Boleto
+		if bKey == "" {
+			bKey = "SIN_BOLETO"
+		}
+		if d.GetRutaDisplay() != "Ruta no especificada" {
+			boletoHasValidRoute[bKey] = true
+		}
+	}
 
 	for _, d := range detalles {
 		boletoKey := d.Boleto
@@ -256,21 +221,56 @@ func (ctrl *DescargoDerechoController) Show(c *gin.Context) {
 			ticketsOrder = append(ticketsOrder, boletoKey)
 		}
 
-		// Individual connection state is preserved in Detalles
+		// Evitar duplicados por ruta en el mismo boleto
+		isDuplicate := false
+		for _, existing := range ticketsMap[boletoKey].Detalles {
+			if existing.Orden == d.Orden && existing.Tipo == d.Tipo {
+				isDuplicate = true
+				break
+			}
+		}
 
-		ticketsMap[boletoKey].Detalles = append(ticketsMap[boletoKey].Detalles, d)
+		// Si ya sabemos que este boleto tiene una ruta válida, ignorar cualquier "Ruta no especificada"
+		if d.GetRutaDisplay() == "Ruta no especificada" && boletoHasValidRoute[boletoKey] {
+			isDuplicate = true
+		}
+
+		if !isDuplicate {
+			ticketsMap[boletoKey].Detalles = append(ticketsMap[boletoKey].Detalles, d)
+		}
 	}
 
-	var tickets []TicketGroup
+	var ticketsIda []TicketGroup
+	var ticketsVuelta []TicketGroup
+
 	for _, key := range ticketsOrder {
-		tickets = append(tickets, *ticketsMap[key])
+		tg := ticketsMap[key]
+		sort.Slice(tg.Detalles, func(i, j int) bool {
+			return tg.Detalles[i].Orden < tg.Detalles[j].Orden
+		})
+
+		// Determine if it belongs to IDA or VUELTA based on any detail type
+		isVuelta := false
+		if len(tg.Detalles) > 0 {
+			tipo := string(tg.Detalles[0].Tipo)
+			if strings.HasPrefix(tipo, "VUELTA") {
+				isVuelta = true
+			}
+		}
+
+		if isVuelta {
+			ticketsVuelta = append(ticketsVuelta, *tg)
+		} else {
+			ticketsIda = append(ticketsIda, *tg)
+		}
 	}
 
 	utils.Render(c, "descargo/derecho/show", gin.H{
-		"Title":    "Detalle de Descargo (Derecho)",
-		"Descargo": descargo,
-		"Detalles": detalles,
-		"Tickets":  tickets,
+		"Title":         "Detalle de Descargo (Derecho)",
+		"Descargo":      descargo,
+		"Detalles":      detalles,
+		"TicketsIda":    ticketsIda,
+		"TicketsVuelta": ticketsVuelta,
 	})
 }
 
@@ -292,7 +292,7 @@ func (ctrl *DescargoDerechoController) Edit(c *gin.Context) {
 	for _, item := range descargo.DetallesItinerario {
 		itemsByType[string(item.Tipo)] = append(itemsByType[string(item.Tipo)], item)
 		// Unique key to avoid duplicates
-		key := fmt.Sprintf("%s_%s_%s", item.Tipo, item.Ruta, item.Boleto)
+		key := fmt.Sprintf("%s_%d_%s", item.Tipo, item.Orden, strings.ToUpper(strings.TrimSpace(item.Boleto)))
 		existingKeys[key] = true
 	}
 
@@ -311,16 +311,18 @@ func (ctrl *DescargoDerechoController) Edit(c *gin.Context) {
 					tipoTarget = tipoBase + "_REPRO"
 				}
 
-				routes := utils.SplitRoute(p.Ruta)
-				for _, r := range routes {
-					key := fmt.Sprintf("%s_%s_%s", tipoTarget, r, p.NumeroBoleto)
+				segments := p.GetRutaSegments()
+				for i := range segments {
+					// Clave compuesta estricta: Tipo + Orden + Boleto
+					key := fmt.Sprintf("%s_%d_%s", tipoTarget, i, strings.ToUpper(strings.TrimSpace(p.NumeroBoleto)))
 					if !existingKeys[key] {
 						tVuelo := p.FechaVuelo
 						newItem := models.DetalleItinerarioDescargo{
 							Tipo:         models.TipoDetalleItinerario(tipoTarget),
-							Ruta:         r,
+							RutaID:       p.RutaID,
 							Fecha:        &tVuelo,
 							Boleto:       p.NumeroBoleto,
+							Orden:        i,
 							EsDevolucion: false,
 						}
 						itemsByType[tipoTarget] = append(itemsByType[tipoTarget], newItem)
@@ -331,31 +333,30 @@ func (ctrl *DescargoDerechoController) Edit(c *gin.Context) {
 		}
 	}
 
-	// Group by ticket structure for the template
-	type ConnectionView struct {
-		Ruta           string
-		Fecha          string
-		Boleto         string
-		Index          string
-		Pase           string
-		Archivo        string
-		EsDevolucion   bool
-		EsModificacion bool
-	}
+	pasajesOriginales := make(map[string][]dtos.TicketView)
+	pasajesReprogramados := make(map[string][]dtos.TicketView)
 
-	type TicketView struct {
-		Boleto         string
-		Scales         []ConnectionView
-		EsDevolucion   bool
-		EsModificacion bool
-	}
+	// Procesamiento ordenado para garantizar que Ida aparezca antes que Vuelta en la vista
+	tiposOrdenados := []string{"IDA_ORIGINAL", "IDA_REPRO", "VUELTA_ORIGINAL", "VUELTA_REPRO"}
+	for _, tipo := range tiposOrdenados {
+		items, ok := itemsByType[tipo]
+		if !ok {
+			continue
+		}
+		ticketMap := make(map[string]*dtos.TicketView)
+		var orderedTickets []*dtos.TicketView
 
-	pasajesOriginales := make(map[string][]TicketView)
-	pasajesReprogramados := make(map[string][]TicketView)
-
-	for tipo, items := range itemsByType {
-		ticketMap := make(map[string]*TicketView)
-		var orderedTickets []*TicketView
+		// Pre-escaneo para identificar boletos con rutas válidas en este grupo
+		itemHasValidRoute := make(map[string]bool)
+		for _, itm := range items {
+			bKey := itm.Boleto
+			if bKey == "" {
+				bKey = "SIN_BOLETO"
+			}
+			if itm.GetRutaDisplay() != "Ruta no especificada" {
+				itemHasValidRoute[bKey] = true
+			}
+		}
 
 		for i, item := range items {
 			key := item.Boleto
@@ -364,10 +365,11 @@ func (ctrl *DescargoDerechoController) Edit(c *gin.Context) {
 			}
 
 			if _, ok := ticketMap[key]; !ok {
-				t := &TicketView{
-					Boleto:         item.Boleto,
-					EsDevolucion:   item.EsDevolucion,
-					EsModificacion: item.EsModificacion,
+				t := &dtos.TicketView{
+					Boleto:          item.Boleto,
+					EsDevolucion:    item.EsDevolucion,
+					EsModificacion:  item.EsModificacion,
+					MontoDevolucion: item.MontoDevolucion,
 				}
 				ticketMap[key] = t
 				orderedTickets = append(orderedTickets, t)
@@ -384,21 +386,66 @@ func (ctrl *DescargoDerechoController) Edit(c *gin.Context) {
 				p = "vr"
 			}
 
+			// Find original cost
+			costoPasaje := 0.0
+			if descargo.Solicitud != nil {
+				for _, sitem := range descargo.Solicitud.Items {
+					for _, pas := range sitem.Pasajes {
+						if pas.NumeroBoleto == item.Boleto && item.Boleto != "" {
+							costoPasaje = pas.Costo
+							break
+						}
+					}
+				}
+			}
+
 			idx := fmt.Sprintf("%s_%s_%d", p, id, i)
 
-			ticketMap[key].Scales = append(ticketMap[key].Scales, ConnectionView{
-				Ruta:           item.Ruta,
-				Fecha:          item.Fecha.Format("2006-01-02"),
-				Boleto:         item.Boleto,
-				Index:          idx,
-				Pase:           item.NumeroPaseAbordo,
-				Archivo:        item.ArchivoPaseAbordo,
-				EsDevolucion:   item.EsDevolucion,
-				EsModificacion: item.EsModificacion,
-			})
+			// Evitar duplicados por ruta en el mismo boleto USANDO CLAVE COMPUESTA
+			isDuplicate := false
+			// Si el ticketMap ya tiene este boleto, verificar si ya metimos este tramo (Orden)
+			if t, ok := ticketMap[key]; ok {
+				for _, sc := range t.Scales {
+					if sc.Orden == item.Orden {
+						isDuplicate = true
+						break
+					}
+				}
+			}
+
+			// Si este boleto ya tiene una ruta válida, ignorar cualquier "Ruta no especificada"
+			if item.GetRutaDisplay() == "Ruta no especificada" && itemHasValidRoute[item.Boleto] {
+				isDuplicate = true
+			}
+
+			if !isDuplicate {
+				dateStr := ""
+				if item.Fecha != nil {
+					dateStr = item.Fecha.Format("2006-01-02")
+				}
+
+				ticketMap[key].Scales = append(ticketMap[key].Scales, dtos.ConnectionView{
+					ID:              item.ID,
+					Ruta:            item.GetRutaDisplay(),
+					RutaID:          utils.DerefString(item.RutaID),
+					Fecha:           dateStr,
+					Boleto:          item.Boleto,
+					Index:           idx,
+					Pase:            item.NumeroPaseAbordo,
+					Archivo:         item.ArchivoPaseAbordo,
+					EsDevolucion:    item.EsDevolucion,
+					EsModificacion:  item.EsModificacion,
+					MontoDevolucion: item.MontoDevolucion,
+					CostoPasaje:     costoPasaje,
+					Orden:           item.Orden,
+				})
+			}
 		}
 
-		deref := make([]TicketView, len(orderedTickets))
+		// Scales within a ticket are already sorted by the original insertion order of the slices.
+		// No need for grouping metadata (IsFirstScale, TotalScales) in the atomic model.
+
+		deref := make([]dtos.TicketView, len(orderedTickets))
 		for i, t := range orderedTickets {
 			deref[i] = *t
 		}
@@ -420,22 +467,10 @@ func (ctrl *DescargoDerechoController) Edit(c *gin.Context) {
 
 	destinos, _ := ctrl.destinoService.GetAll(c.Request.Context())
 
-	aerolineaNombre := descargo.Solicitud.AerolineaSugerida
-	if descargo.Solicitud.AerolineaSugerida != "" {
-		if aereolinea, err := ctrl.aerolineaService.GetByID(c.Request.Context(), descargo.Solicitud.AerolineaSugerida); err == nil {
-			if aereolinea.Sigla != "" {
-				aerolineaNombre = aereolinea.Sigla
-			} else {
-				aerolineaNombre = aereolinea.Nombre
-			}
-		}
-	}
-
 	utils.Render(c, "descargo/derecho/edit", gin.H{
 		"Title":                "Editar Descargo (Derecho)",
 		"Descargo":             descargo,
 		"Solicitud":            descargo.Solicitud,
-		"AerolineaNombre":      aerolineaNombre,
 		"PasajesOriginales":    pasajesOriginales,
 		"PasajesReprogramados": pasajesReprogramados,
 		"Destinos":             destinos,
@@ -468,7 +503,20 @@ func (ctrl *DescargoDerechoController) Update(c *gin.Context) {
 		return
 	}
 
-	indices := c.PostFormArray("itin_index[]")
+	// Captura manual de todos los arrays para asegurar sincronización perfecta entre ellos
+	req.ItinTipo = c.PostFormArray("itin_tipo[]")
+	req.ItinID = c.PostFormArray("itin_id[]")
+	req.ItinRutaID = c.PostFormArray("itin_ruta_id[]")
+	req.ItinFecha = c.PostFormArray("itin_fecha[]")
+	req.ItinBoleto = c.PostFormArray("itin_boleto[]")
+	req.ItinPaseNumero = c.PostFormArray("itin_pase_numero[]")
+	req.ItinIndex = c.PostFormArray("itin_index[]")
+	req.ItinOrden = c.PostFormArray("itin_orden[]")
+	req.ItinDevolucion = c.PostFormArray("itin_devolucion[]")
+	req.ItinModificacion = c.PostFormArray("itin_modificacion[]")
+	req.ItinMontoDevolucion = c.PostFormArray("itin_monto_devo[]")
+
+	indices := req.ItinIndex
 	var archivoPaths []string
 	for _, idx := range indices {
 		path := c.PostForm("itin_archivo_existente_" + idx)
@@ -683,5 +731,53 @@ func (ctrl *DescargoDerechoController) PreviewFile(c *gin.Context) {
 		"InfoBoletoRegistrado": c.Query("info_boleto_registrado"),
 		"InfoPaseRegistrado":   c.Query("info_pase_registrado"),
 		"IsMobile":             utils.IsMobileBrowser(c),
+	})
+}
+
+func (ctrl *DescargoDerechoController) NuevaFila(c *gin.Context) {
+	tipo := c.Query("tipo")
+	index := fmt.Sprintf("new_%d", time.Now().UnixNano())
+
+	c.HTML(http.StatusOK, "descargo/components/escala_fila_derecho", gin.H{
+		"Tipo":            tipo,
+		"Index":           index,
+		"EsDevolucion":    false,
+		"EsModificacion":  false,
+		"Ruta":            "",
+		"RutaID":          "",
+		"Fecha":           "",
+		"Boleto":          "",
+		"Pase":            "",
+		"MontoDevolucion": 0.0,
+		"CostoPasaje":     0.0,
+		"Archivo":         "",
+		"ReadOnlyCheck":   false,
+		"ReadOnlyRuta":    false,
+		"CanDelete":       true,
+		"IsFirstScale":    true,
+		"TotalScales":     1,
+		"Orden":           0,
+	})
+}
+
+func (ctrl *DescargoDerechoController) UploadSingle(c *gin.Context) {
+	file, err := c.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "No se recibió ningún archivo"})
+		return
+	}
+
+	// Guardar el archivo en la carpeta de pases de abordar
+	timestamp := time.Now().UnixNano()
+	savedPath, err := utils.SaveUploadedFile(c, file, "uploads/pases_abordo", fmt.Sprintf("fast_upload_%d_", timestamp))
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al guardar el archivo: " + err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"path":    savedPath,
+		"message": "Archivo subido correctamente",
+		"success": true,
 	})
 }

@@ -9,18 +9,18 @@ type CreateSolicitudRequest struct {
 	TipoItinerarioCodigo string `form:"tipo_itinerario_codigo"`
 	TipoItinerario       string `form:"tipo_itinerario"`
 
-	OrigenIATA        string `form:"origen" binding:"required"`
-	DestinoIATA       string `form:"destino" binding:"required"`
-	FechaIda          string `form:"fecha_salida"`
-	FechaVuelta       string `form:"fecha_retorno"`
-	Motivo            string `form:"motivo"`
-	AerolineaSugerida string `form:"aerolinea"`
-	CupoDerechoItemID string `form:"cupo_derecho_item_id"`
-	ActiveTab         string `form:"active_tab"`
-	Autorizacion        string `form:"autorizacion"`
-	ReturnURL           string `form:"return_url"`
-	IdaPorConfirmar     bool   `form:"ida_por_confirmar"`
-	VueltaPorConfirmar  bool   `form:"vuelta_por_confirmar"`
+	OrigenIATA         string `form:"origen" binding:"required"`
+	DestinoIATA        string `form:"destino" binding:"required"`
+	FechaIda           string `form:"fecha_salida"`
+	FechaVuelta        string `form:"fecha_retorno"`
+	Motivo             string `form:"motivo"`
+	AerolineaSugerida  string `form:"aerolinea"`
+	CupoDerechoItemID  string `form:"cupo_derecho_item_id"`
+	ActiveTab          string `form:"active_tab"`
+	Autorizacion       string `form:"autorizacion"`
+	ReturnURL          string `form:"return_url"`
+	IdaPorConfirmar    bool   `form:"ida_por_confirmar"`
+	VueltaPorConfirmar bool   `form:"vuelta_por_confirmar"`
 }
 
 type UpdateSolicitudRequest struct {

@@ -103,6 +103,7 @@ func (ctrl *PasajeController) renderCreateModalWithError(c *gin.Context, solicit
 		"SolicitudItemID": req.SolicitudItemID,
 		"Form":            req,
 		"ErrorMessage":    errMsg,
+		"Fares":           ctrl.rutaService.GetFaresMap(rutas),
 	})
 }
 
@@ -238,6 +239,7 @@ func (ctrl *PasajeController) renderEditModalWithError(c *gin.Context, pasajeID 
 		"Rutas":        rutas,
 		"Form":         req,
 		"ErrorMessage": errMsg,
+		"Fares":        ctrl.rutaService.GetFaresMap(rutas),
 	})
 }
 

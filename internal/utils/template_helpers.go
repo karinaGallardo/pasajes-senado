@@ -35,6 +35,7 @@ func TemplateFuncs() template.FuncMap {
 		"split":            strings.Split,
 		"checked":          Checked,
 		"deviceIcon":       DeviceIcon,
+		"dict":             Dict,
 	}
 }
 
@@ -293,4 +294,20 @@ func DeviceIcon(ua string) string {
 		return "ph ph-device-mobile"
 	}
 	return "ph ph-desktop"
+}
+
+// Dict crea un mapa a partir de pares de llave-valor para pasar múltiples argumentos a templates.
+func Dict(values ...interface{}) (map[string]interface{}, error) {
+	if len(values)%2 != 0 {
+		return nil, fmt.Errorf("invalid dict call")
+	}
+	dict := make(map[string]interface{}, len(values)/2)
+	for i := 0; i < len(values); i += 2 {
+		key, ok := values[i].(string)
+		if !ok {
+			return nil, fmt.Errorf("dict keys must be strings")
+		}
+		dict[key] = values[i+1]
+	}
+	return dict, nil
 }

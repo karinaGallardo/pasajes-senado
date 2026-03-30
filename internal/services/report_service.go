@@ -561,7 +561,8 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 		}
 		pdf.SetFillColor(255, 255, 255)
 		pdf.SetFont("Arial", "B", 7)
-		pdf.CellFormat(70, 5, tr("RUTA"), "1", 0, "C", false, 0, "")
+		pdf.CellFormat(35, 5, tr("ORIGEN"), "1", 0, "C", false, 0, "")
+		pdf.CellFormat(35, 5, tr("DESTINO"), "1", 0, "C", false, 0, "")
 		pdf.CellFormat(30, 5, tr("FECHA DE VIAJE"), "1", 0, "C", false, 0, "")
 		pdf.CellFormat(50, 5, tr(headerBoleto), "1", 0, "C", false, 0, "")
 		pdf.CellFormat(40, 5, tr("N° PASE A BORDO"), "1", 1, "C", false, 0, "")
@@ -569,12 +570,12 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 		pdf.SetFont("Arial", "", 8)
 		for _, r := range rows {
 			orig, dest := "", ""
-			parts := strings.Split(r.Ruta, "-")
+			parts := strings.Split(r.GetRutaDisplay(), " - ")
 			if len(parts) >= 2 {
 				orig = strings.TrimSpace(parts[0])
 				dest = strings.TrimSpace(parts[1])
 			} else {
-				orig = r.Ruta
+				orig = r.GetRutaDisplay()
 			}
 			pdf.CellFormat(35, 6, tr(orig), "1", 0, "C", false, 0, "")
 			pdf.CellFormat(35, 6, tr(dest), "1", 0, "C", false, 0, "")
@@ -590,6 +591,10 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 				pdf.SetTextColor(200, 0, 0)
 				pdf.SetFont("Arial", "B", 7)
 				paseVal = "DEVUELTO"
+			} else if r.EsModificacion {
+				pdf.SetTextColor(0, 128, 0) // Green
+				pdf.SetFont("Arial", "B", 7)
+				paseVal = "MODIFICADO"
 			}
 			pdf.CellFormat(40, 6, tr(paseVal), "1", 1, "C", false, 0, "")
 			pdf.SetTextColor(0, 0, 0)
@@ -599,9 +604,11 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 
 	// Group by Ticket consolidate devo/mod status
 	type TicketRepGroup struct {
-		Boleto       string
-		Detalles     []models.DetalleItinerarioDescargo
-		EsDevolucion bool
+		Boleto          string
+		Detalles        []models.DetalleItinerarioDescargo
+		EsDevolucion    bool
+		EsModificacion  bool
+		MontoDevolucion float64
 	}
 	ticketsMap := make(map[string]*TicketRepGroup)
 	var ticketsOrder []string
@@ -609,7 +616,7 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 	for _, d := range descargo.DetallesItinerario {
 		key := d.Boleto
 		if key == "" {
-			key = "SN-" + d.Ruta
+			key = "SN-" + d.GetRutaDisplay()
 		}
 		if _, ok := ticketsMap[key]; !ok {
 			ticketsMap[key] = &TicketRepGroup{Boleto: d.Boleto}
@@ -617,6 +624,10 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 		}
 		if d.EsDevolucion {
 			ticketsMap[key].EsDevolucion = true
+			ticketsMap[key].MontoDevolucion += d.MontoDevolucion
+		}
+		if d.EsModificacion {
+			ticketsMap[key].EsModificacion = true
 		}
 		ticketsMap[key].Detalles = append(ticketsMap[key].Detalles, d)
 	}
@@ -626,16 +637,13 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 
 		for _, key := range tOrder {
 			g := tMap[key]
-			for _, d := range g.Detalles {
-				// Propagate group return status to individual segment for display
-				if g.EsDevolucion {
-					d.EsDevolucion = true
-				}
+			for i := range g.Detalles {
+				d := &g.Detalles[i]
 				switch d.Tipo {
 				case typeOrig:
-					origRows = append(origRows, d)
+					origRows = append(origRows, *d)
 				case typeRepro:
-					reproRows = append(reproRows, d)
+					reproRows = append(reproRows, *d)
 				}
 			}
 		}
@@ -675,35 +683,28 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 			}
 
 			// Find cost and full route from Pasaje
-			cost := 0.0
+			cost := g.MontoDevolucion
 			fullRoute := ""
-			if descargo.Solicitud != nil {
+			if cost == 0 && descargo.Solicitud != nil {
 				for _, item := range descargo.Solicitud.Items {
 					for _, p := range item.Pasajes {
 						if p.NumeroBoleto == g.Boleto && g.Boleto != "" {
 							cost = p.Costo
-							fullRoute = p.Ruta
+							fullRoute = p.GetRutaDisplay()
 							break
 						}
 					}
 				}
 			}
 
-			// Fallback route reconstruction if not found in Pasaje
-			if fullRoute == "" && len(g.Detalles) > 0 {
-				var routeParts []string
-				for i, det := range g.Detalles {
-					parts := strings.Split(det.Ruta, "-")
-					if i == 0 {
-						routeParts = append(routeParts, strings.TrimSpace(parts[0]))
-					}
-					if len(parts) >= 2 {
-						routeParts = append(routeParts, strings.TrimSpace(parts[1]))
-					}
+			// Reconstruct only returned legs for clarity
+			var routeParts []string
+			for _, det := range g.Detalles {
+				if det.EsDevolucion {
+					routeParts = append(routeParts, det.GetRutaDisplay())
 				}
-				fullRoute = strings.Join(routeParts, " - ")
 			}
-
+			fullRoute = strings.Join(routeParts, " ; ")
 			s.drawReturnTableSummarized(pdf, tr, tipoStr, g.Boleto, fullRoute, cost)
 			pdf.Ln(1)
 		}
@@ -1071,9 +1072,11 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 
 	// Group by Ticket consolidate devo/mod status
 	type TicketRepGroup struct {
-		Boleto       string
-		Detalles     []models.DetalleItinerarioDescargo
-		EsDevolucion bool
+		Boleto          string
+		Detalles        []models.DetalleItinerarioDescargo
+		EsDevolucion    bool
+		MontoDevolucion float64
+		EsModificacion  bool
 	}
 	ticketsMap := make(map[string]*TicketRepGroup)
 	var ticketsOrder []string
@@ -1081,7 +1084,7 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 	for _, d := range descargo.DetallesItinerario {
 		key := d.Boleto
 		if key == "" {
-			key = "SN-" + d.Ruta
+			key = "SN-" + d.GetRutaDisplay()
 		}
 		if _, ok := ticketsMap[key]; !ok {
 			ticketsMap[key] = &TicketRepGroup{Boleto: d.Boleto}
@@ -1089,6 +1092,9 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 		}
 		if d.EsDevolucion {
 			ticketsMap[key].EsDevolucion = true
+		}
+		if d.EsModificacion {
+			ticketsMap[key].EsModificacion = true
 		}
 		ticketsMap[key].Detalles = append(ticketsMap[key].Detalles, d)
 	}
@@ -1108,32 +1114,27 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 			}
 
 			// Find cost and full route from Pasaje
-			cost := 0.0
+			cost := g.MontoDevolucion
 			fullRoute := ""
-			if descargo.Solicitud != nil {
+			if cost == 0 && descargo.Solicitud != nil {
 				for _, item := range descargo.Solicitud.Items {
 					for _, p := range item.Pasajes {
 						if p.NumeroBoleto == g.Boleto && g.Boleto != "" {
 							cost = p.Costo
-							fullRoute = p.Ruta
+							fullRoute = p.GetRutaDisplay()
 							break
 						}
 					}
 				}
 			}
-			if fullRoute == "" && len(g.Detalles) > 0 {
-				var routeParts []string
-				for i, det := range g.Detalles {
-					parts := strings.Split(det.Ruta, "-")
-					if i == 0 {
-						routeParts = append(routeParts, strings.TrimSpace(parts[0]))
-					}
-					if len(parts) >= 2 {
-						routeParts = append(routeParts, strings.TrimSpace(parts[1]))
-					}
+			// Filter and reconstruct only returned legs for clarity
+			var routeParts []string
+			for _, det := range g.Detalles {
+				if det.EsDevolucion {
+					routeParts = append(routeParts, det.GetRutaDisplay())
 				}
-				fullRoute = strings.Join(routeParts, " - ")
 			}
+			fullRoute = strings.Join(routeParts, " ; ")
 
 			s.drawReturnTableSummarized(pdf, tr, tipoStr, g.Boleto, fullRoute, cost)
 			pdf.Ln(1)
@@ -1145,7 +1146,6 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 	}
 
 	pdf.Ln(5)
-
 	// --- Sección de Devolución Estilizada (según imagen) ---
 	pdf.SetFont("Arial", "B", 10)
 	pdf.CellFormat(190, 6, tr("En caso de Devolución de Pasajes y/o Viáticos:"), "", 1, "L", false, 0, "")
@@ -1424,7 +1424,8 @@ func (s *ReportService) drawSubTable(pdf *gofpdf.Fpdf, tr func(string) string, s
 	}
 	pdf.SetFillColor(255, 255, 255)
 	pdf.SetFont("Arial", "B", 7)
-	pdf.CellFormat(70, 5, tr("RUTA"), "1", 0, "C", false, 0, "")
+	pdf.CellFormat(35, 5, tr("ORIGEN"), "1", 0, "C", false, 0, "")
+	pdf.CellFormat(35, 5, tr("DESTINO"), "1", 0, "C", false, 0, "")
 	pdf.CellFormat(30, 5, tr("FECHA DE VIAJE"), "1", 0, "C", false, 0, "")
 	pdf.CellFormat(50, 5, tr(headerBoleto), "1", 0, "C", false, 0, "")
 	pdf.CellFormat(40, 5, tr("N° PASE A BORDO"), "1", 1, "C", false, 0, "")
@@ -1442,12 +1443,12 @@ func (s *ReportService) drawSubTable(pdf *gofpdf.Fpdf, tr func(string) string, s
 	pdf.SetFont("Arial", "", 8)
 	for _, r := range rows {
 		orig, dest := "", ""
-		parts := strings.Split(r.Ruta, "-")
+		parts := strings.Split(r.GetRutaDisplay(), " - ")
 		if len(parts) >= 2 {
 			orig = strings.TrimSpace(parts[0])
 			dest = strings.TrimSpace(parts[1])
 		} else {
-			orig = r.Ruta
+			orig = r.GetRutaDisplay()
 		}
 		pdf.CellFormat(35, 6, tr(orig), "1", 0, "C", false, 0, "")
 		pdf.CellFormat(35, 6, tr(dest), "1", 0, "C", false, 0, "")
@@ -1457,7 +1458,19 @@ func (s *ReportService) drawSubTable(pdf *gofpdf.Fpdf, tr func(string) string, s
 		}
 		pdf.CellFormat(30, 6, tr(fecha), "1", 0, "C", false, 0, "")
 		pdf.CellFormat(50, 6, tr(r.Boleto), "1", 0, "C", false, 0, "")
-		pdf.CellFormat(40, 6, tr(r.NumeroPaseAbordo), "1", 1, "C", false, 0, "")
+		paseVal := r.NumeroPaseAbordo
+		if r.EsDevolucion {
+			pdf.SetTextColor(200, 0, 0)
+			pdf.SetFont("Arial", "B", 7)
+			paseVal = "DEVUELTO"
+		} else if r.EsModificacion {
+			pdf.SetTextColor(0, 128, 0) // Green
+			pdf.SetFont("Arial", "B", 7)
+			paseVal = "MODIFICADO"
+		}
+		pdf.CellFormat(40, 6, tr(paseVal), "1", 1, "C", false, 0, "")
+		pdf.SetTextColor(0, 0, 0)
+		pdf.SetFont("Arial", "", 8)
 	}
 }
 
@@ -1493,7 +1506,7 @@ func (s *ReportService) drawReturnTableSummarized(pdf *gofpdf.Fpdf, tr func(stri
 	pdf.SetFont("Arial", "B", 8)
 	pdf.CellFormat(90, 6, tr("RUTA COMPLETA"), "1", 0, "C", true, 0, "")
 	pdf.CellFormat(50, 6, tr("N° BOLETO"), "1", 0, "C", true, 0, "")
-	pdf.CellFormat(50, 6, tr("COSTO TOTAL (Bs.)"), "1", 1, "C", true, 0, "")
+	pdf.CellFormat(50, 6, tr("MONTO DEVOLUCIÓN (Bs.)"), "1", 1, "C", true, 0, "")
 
 	pdf.SetFont("Arial", "", 8)
 	if boleto != "" || ruta != "" {
@@ -1852,7 +1865,7 @@ func (s *ReportService) GenerateConsolidadoPasajesExcel(ctx context.Context, fil
 		f.SetCellValue(sheet, fmt.Sprintf("C%d", row), codigoSolicitud)
 		f.SetCellValue(sheet, fmt.Sprintf("D%d", row), concepto)
 		f.SetCellValue(sheet, fmt.Sprintf("E%d", row), beneficiario)
-		f.SetCellValue(sheet, fmt.Sprintf("F%d", row), p.Ruta)
+		f.SetCellValue(sheet, fmt.Sprintf("F%d", row), p.GetRutaDisplay())
 		if p.Aerolinea != nil {
 			f.SetCellValue(sheet, fmt.Sprintf("G%d", row), p.Aerolinea.Nombre)
 		}
@@ -2034,4 +2047,3 @@ func (s *ReportService) GenerateEstadisticasAerolineaExcel(ctx context.Context, 
 
 	return f, nil
 }
-

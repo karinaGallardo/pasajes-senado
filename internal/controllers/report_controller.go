@@ -11,14 +11,14 @@ import (
 )
 
 type ReportController struct {
-	reportService   *services.ReportService
+	reportService    *services.ReportService
 	aerolineaService *services.AerolineaService
 	agenciaService   *services.AgenciaService
 }
 
 func NewReportController(reportService *services.ReportService, aerolineaService *services.AerolineaService, agenciaService *services.AgenciaService) *ReportController {
 	return &ReportController{
-		reportService:   reportService,
+		reportService:    reportService,
 		aerolineaService: aerolineaService,
 		agenciaService:   agenciaService,
 	}
@@ -106,4 +106,3 @@ func (ctrl *ReportController) DownloadEstadisticasAerolineaExcel(c *gin.Context)
 	c.Header("Content-Disposition", "attachment; filename="+fileName)
 	_ = f.Write(c.Writer)
 }
-

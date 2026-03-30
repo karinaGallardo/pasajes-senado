@@ -185,3 +185,17 @@ func (t SolicitudItem) CanBeReverted(user *Usuario) bool {
 func (t SolicitudItem) CanAssignPasaje(user *Usuario) bool {
 	return t.CanBeReverted(user)
 }
+
+func (t SolicitudItem) GetOrigenDisplay() string {
+	if t.Origen != nil {
+		return t.Origen.Ciudad + " (" + t.Origen.IATA + ")"
+	}
+	return t.OrigenIATA
+}
+
+func (t SolicitudItem) GetDestinoDisplay() string {
+	if t.Destino != nil {
+		return t.Destino.Ciudad + " (" + t.Destino.IATA + ")"
+	}
+	return t.DestinoIATA
+}

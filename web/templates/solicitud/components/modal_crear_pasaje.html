@@ -1,7 +1,7 @@
 {{ define "solicitud/components/modal_crear_pasaje" }}
 <div
   x-data="modalPasaje({
-      ruta: '{{ .Form.Ruta }}',
+      ruta_id: '{{ .Form.RutaID }}',
       aerolinea_id: '{{ .Form.AerolineaID }}',
       agencia_id: '{{ .Form.AgenciaID }}',
       fares: {{ .Fares | json }}
@@ -114,9 +114,9 @@
                         <div class="min-w-0">
                           <span class="text-[9px] font-black uppercase text-neutral-400 tracking-tighter block leading-none mb-0.5">{{ .SelectedItem.Tipo }}</span>
                           <h4 class="text-xs font-bold text-neutral-900 leading-tight truncate">
-                            {{ if .SelectedItem.Origen }}{{ .SelectedItem.Origen.Ciudad }} ({{ .SelectedItem.Origen.IATA }}){{ else }}{{ .SelectedItem.OrigenIATA }}{{ end }}
+                            {{ .SelectedItem.GetOrigenDisplay }}
                             <i class="ph ph-arrow-right mx-0.5 text-neutral-300"></i>
-                            {{ if .SelectedItem.Destino }}{{ .SelectedItem.Destino.Ciudad }} ({{ .SelectedItem.Destino.IATA }}){{ else }}{{ .SelectedItem.DestinoIATA }}{{ end }}
+                            {{ .SelectedItem.GetDestinoDisplay }}
                           </h4>
                         </div>
                       </div>
@@ -131,17 +131,17 @@
                     x-data="searchableSelect({
                         items: [
                             {{ range .Rutas }}
-                            { value: '{{ .Tramo }}', label: '{{ .Tramo }}' },
+                            { value: '{{ .ID }}', label: '{{ .Tramo }}' },
                             {{ end }}
                         ],
-                        initialValue: '{{ .Form.Ruta }}',
+                        initialValue: '{{ .Form.RutaID }}',
                         initialLabel: '{{ .Form.Ruta }}'
                     })"
                     x-modelable="value"
-                    x-model="ruta">
+                    x-model="ruta_id">
                     <label class="block text-sm font-medium text-neutral-700">Ruta (Incluyendo Escalas)</label>
                     <div class="relative mt-1">
-                      <input type="hidden" name="ruta" :value="value" required />
+                      <input type="hidden" name="ruta_id" :value="value" />
 
                       <div class="relative">
                         <div
