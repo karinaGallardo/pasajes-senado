@@ -130,7 +130,7 @@ func (s *AlertaService) enviarAlertaDescargoEmail(sol models.Solicitud, fechaLim
 	// Copia oculta a pasajesgo (o configuración)
 	bccEmail := viper.GetString("ALERTA_BCC_EMAIL")
 	if bccEmail == "" {
-		bccEmail = "pasajesgo@senado.gob.bo" // Placeholder por defecto sugerido por el usuario
+		bccEmail = "pasajes.go@senado.gob.bo" // Placeholder por defecto sugerido por el usuario
 	}
 	ocultos := []string{bccEmail}
 
