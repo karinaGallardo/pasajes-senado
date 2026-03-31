@@ -1,469 +1,593 @@
-{{ define "descargo/derecho/show" }} {{ template "layout_start" . }}
+{{ define "descargo/derecho/show" }}
+  {{ template "layout_header" . }}
 
-<div class="w-full space-y-6">
-  <!-- Header -->
-  <div class="flex items-center justify-between">
-    <div>
-      <h2 class="text-2xl font-black text-neutral-900 tracking-tight">Descargo #{{ .Descargo.Codigo }}</h2>
-      <p class="text-xs text-neutral-400 mt-0.5">
-        <span class="font-bold uppercase tracking-tighter mr-1">Presentado:</span>
-        {{ .Descargo.FechaPresentacion.Format "02/01/2006" }} por
-        <span class="font-semibold text-neutral-600 tracking-tight">{{ .Descargo.Solicitud.Usuario.GetNombreCompleto }}</span>
-      </p>
-    </div>
-  </div>
 
-  <!-- Status Banner -->
-  <div class="bg-white shadow rounded-lg px-6 py-4 border-l-4 {{ .Descargo.GetEstadoColorClass }}">
-    <div class="flex items-center justify-between">
+  <div class="w-full space-y-6">
+    <!-- Header -->
+    <div class="flex items-center justify-between mb-8">
       <div>
-        <p class="text-[10px] font-black text-neutral-400 uppercase tracking-widest leading-none mb-1">Estado del Trámite</p>
-        <h3 class="text-xl font-black text-neutral-800 tracking-tight leading-none">{{ .Descargo.GetEstadoLabel }}</h3>
-        <p class="text-[10px] text-neutral-500 mt-1 max-w-sm">{{ .Descargo.GetEstadoDescripcion }}</p>
+        <h2 class="text-2xl font-black text-neutral-900 tracking-tight">Descargo #{{ .Descargo.Codigo }}</h2>
+        <p class="text-xs text-neutral-400 mt-0.5">
+          <span class="font-bold uppercase tracking-tighter mr-1">Presentado:</span>
+          {{ .Descargo.FechaPresentacion.Format "02/01/2006" }} por
+          <span class="font-semibold text-neutral-600 tracking-tight">{{ .Descargo.Solicitud.Usuario.GetNombreCompleto }}</span>
+        </p>
       </div>
       <div>
-        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black {{ .Descargo.GetEstadoBadgeClass }} uppercase tracking-tighter">
-          <i class="{{ .Descargo.GetEstadoIcon }} mr-1 text-sm"></i>
-          {{ .Descargo.GetEstadoLabel }}
-        </span>
+        <a
+          href="/solicitudes/derecho/{{ .Descargo.SolicitudID }}/detalle"
+          class="inline-flex items-center px-4 py-2 border border-neutral-300 shadow-sm text-xs font-black rounded-md text-neutral-700 bg-white hover:bg-neutral-50 transition-all active:scale-95 uppercase tracking-tight"
+        >
+          <i class="ph ph-arrow-left mr-2 text-lg"></i>
+          Volver a Solicitud
+        </a>
       </div>
     </div>
-    {{ if .Descargo.Observaciones }}
-    <div class="mt-4 p-4 bg-danger-50 border border-danger-100 rounded-lg shadow-sm">
-      <div class="flex items-start">
-        <i class="ph ph-warning-circle text-danger-500 text-lg mr-3 mt-0.5"></i>
+
+    <!-- Status Banner -->
+    <div class="bg-white shadow rounded-lg px-6 py-4 border-l-4 {{ .Descargo.GetEstadoColorClass }}">
+      <div class="flex items-center justify-between">
         <div>
-          <h4 class="text-[10px] font-black text-danger-700 uppercase tracking-widest mb-1">Observaciones de la Revisión</h4>
-          <p class="text-xs text-danger-900 font-medium leading-relaxed">{{ .Descargo.Observaciones }}</p>
+          <p class="text-[10px] font-black text-neutral-400 uppercase tracking-widest leading-none mb-1">Estado del Trámite</p>
+          <h3 class="text-xl font-black text-neutral-800 tracking-tight leading-none">{{ .Descargo.GetEstadoLabel }}</h3>
+          <p class="text-[10px] text-neutral-500 mt-1 max-w-sm">{{ .Descargo.GetEstadoDescripcion }}</p>
         </div>
-      </div>
-    </div>
-    {{ end }}
-  </div>
-
-  <!-- Grid Layout -->
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-    <!-- Left Col: Travel Info -->
-    <div class="md:col-span-1 space-y-6">
-      <!-- Travel Context -->
-      <div class="bg-primary-50 shadow rounded-lg p-6 border border-primary-100 overflow-hidden relative">
-        <div class="absolute top-0 right-0 mt-2 mr-2">
-          <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider {{ if .Descargo.Solicitud.IsDerecho }} bg-violet-500 text-white {{ else }} bg-primary text-white {{ end }} shadow-sm">
-            {{ .Descargo.Solicitud.GetConceptoNombre }}
+        <div>
+          <span
+            class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black {{ .Descargo.GetEstadoBadgeClass }} uppercase tracking-tighter"
+          >
+            <i class="{{ .Descargo.GetEstadoIcon }} mr-1 text-sm"></i>
+            {{ .Descargo.GetEstadoLabel }}
           </span>
         </div>
-        <h3 class="text-lg font-bold text-primary mb-4 flex items-center gap-2">
-          <i class="ph ph-info font-bold"></i>
-          Datos del Viaje
-        </h3>
-        <dl class="space-y-4">
-          <div>
-            <dt class="text-[10px] font-black text-neutral-400 uppercase tracking-widest border-b border-primary/10 pb-1 mb-2 italic">Información Base</dt>
-            <dd class="text-sm text-neutral-900 font-bold mt-1">
-              <a href="/solicitudes/derecho/{{ .Descargo.Solicitud.ID }}/detalle" class="text-secondary hover:underline flex items-center group">
-                <i class="ph ph-file-text mr-1.5 text-lg group-hover:scale-110 transition-transform"></i>
-                Solicitud #{{ .Descargo.Solicitud.Codigo }}
-              </a>
-              <p class="text-[10px] text-neutral-500 font-bold uppercase mt-1 ml-6">{{ .Descargo.Solicitud.GetTipoNombre }}</p>
-            </dd>
-          </div>
-          <div>
-            <dt class="text-[10px] font-black text-neutral-400 uppercase tracking-widest border-b border-primary/10 pb-1 mb-2 italic">Destino & Período</dt>
-            <dd class="text-sm text-neutral-900 mt-1 flex flex-col space-y-2">
-              <div class="flex flex-col gap-1 border-l-2 border-primary-100 pl-3">
-                <div class="flex items-center gap-2 grayscale-50 opacity-60">
-                  <i class="ph ph-airplane-takeoff text-[10px]"></i>
-                  <p class="text-[10px] font-black text-neutral-600 uppercase leading-none">{{ .Descargo.Solicitud.GetOrigenLabel }}</p>
-                </div>
-                <div class="flex items-center gap-2">
-                  <i class="ph ph-airplane-landing text-[12px] text-primary"></i>
-                  <p class="text-[11px] font-black text-neutral-900 uppercase leading-none">{{ .Descargo.Solicitud.GetDestinoLabel }}</p>
-                </div>
-              </div>
-              <div class="flex items-center space-x-2 text-xs text-neutral-600 bg-white/50 p-2 rounded border border-primary/5">
-                <i class="ph ph-calendar mr-1.5 text-neutral-400"></i>
-                <span class="font-bold">{{ if .Descargo.Solicitud.GetFechaIda }}{{ .Descargo.Solicitud.GetFechaIda.Format "02/01" }}{{ else }} - {{ end }}</span>
-                <i class="ph ph-arrow-right text-neutral-300"></i>
-                <span class="font-bold">{{ if .Descargo.Solicitud.GetFechaVuelta }}{{ .Descargo.Solicitud.GetFechaVuelta.Format "02/01" }}{{ else }} - {{ end }}</span>
-              </div>
-            </dd>
-          </div>
-          <div>
-            <dt class="text-[10px] font-black text-neutral-400 uppercase tracking-widest border-b border-primary/10 pb-1 mb-2 italic">Motivo del Viaje</dt>
-            <dd class="text-xs text-neutral-700 bg-white/40 p-3 rounded italic leading-relaxed border border-primary/10">
-              {{ if .Descargo.Solicitud.Motivo }}{{ .Descargo.Solicitud.Motivo }}{{ else }}Sin motivo registrado{{ end }}
-            </dd>
-          </div>
-        </dl>
       </div>
-
-      <!-- Quick Actions -->
-      <div class="bg-white shadow rounded-lg p-6 border border-neutral-200">
-        <h3 class="text-[10px] font-black text-neutral-400 uppercase mb-4 tracking-widest border-b pb-2">Acciones del Descargo</h3>
-        <div class="space-y-3">
-          <!-- User Actions: BORRADOR / RECHAZADO -->
-          {{ if .Descargo.CanSubmit .AuthUser }}
-          <form action="/descargos/derecho/{{ .Descargo.ID }}/enviar" method="POST" x-data="{ loading: false }" @submit="loading = true">
-            <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
-            <button
-              type="submit"
-              :disabled="loading"
-              class="w-full inline-flex justify-center items-center px-2 py-1 border border-transparent text-xs font-black rounded-md text-white bg-primary hover:bg-primary-600 transition-all shadow-md active:scale-95 disabled:opacity-50 uppercase tracking-tight cursor-pointer">
-              <i class="ph ph-paper-plane-tilt mr-2 text-lg" x-show="!loading"></i>
-              <span x-show="!loading">Enviar a Revisión</span>
-              <span x-show="loading">Enviando...</span>
-            </button>
-          </form>
-          {{ end }}
-
-          <!-- Admin Actions: EN_REVISION -->
-          {{ if .Descargo.CanApprove .AuthUser }}
-          <form action="/descargos/derecho/{{ .Descargo.ID }}/aprobar" method="POST" x-data="{ loading: false }" @submit="loading = true">
-            <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
-            <button
-              type="submit"
-              :disabled="loading"
-              class="w-full inline-flex justify-center items-center px-4 py-1 border border-transparent text-xs font-black rounded-md text-white bg-success-600 hover:bg-success-700 transition-all shadow-md active:scale-95 disabled:opacity-50 uppercase tracking-tight cursor-pointer">
-              <i class="ph ph-check-square mr-2 text-lg" x-show="!loading"></i>
-              <span x-show="!loading">Aprobar y Finalizar</span>
-              <span x-show="loading">Procesando...</span>
-            </button>
-          </form>
-          {{ end }}
-
-          {{ if .Descargo.CanReject .AuthUser }}
-          <div class="border-t border-danger-100 my-4 pt-4">
-            <form action="/descargos/derecho/{{ .Descargo.ID }}/rechazar" method="POST" x-data="{ loading: false }" @submit="loading = true" class="space-y-4">
-              <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
-              <div class="relative group">
-                <label for="observaciones" class="flex items-center text-[10px] font-black text-danger-700 uppercase tracking-widest mb-2 ml-1">
-                  <i class="ph ph-chat-centered-text mr-1.5 text-sm"></i>
-                  Observaciones para Corrección
-                </label>
-                <div class="relative overflow-hidden rounded-lg border border-neutral-200 bg-white transition-all duration-200 focus-within:ring-2 focus-within:ring-focus focus-within:border-primary-500 shadow-sm">
-                  <textarea
-                    name="observaciones"
-                    id="observaciones"
-                    rows="3"
-                    required
-                    class="w-full text-xs p-3 border-0 focus:ring-0 focus:outline-none bg-transparent text-gray-900 placeholder-neutral-400 resize-none min-h-[80px]"
-                    placeholder="Escriba detalladamente qué debe ser corregido por el funcionario..."></textarea>
-                </div>
-              </div>
-              <button
-                type="submit"
-                :disabled="loading"
-                class="w-full group/btn inline-flex justify-center items-center px-4 py-1 border border-danger-200 text-xs font-black rounded-lg text-danger-700 bg-danger-50 hover:bg-danger-100 transition-all active:scale-95 disabled:opacity-50 uppercase tracking-tight cursor-pointer">
-                <i class="ph ph-warning-circle mr-2 text-lg" x-show="!loading"></i>
-                <span x-show="!loading">Observar y Devolver</span>
-                <span x-show="loading" class="flex items-center">
-                  <svg class="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Procesando...
-                </span>
-              </button>
-            </form>
-          </div>
-          {{ end }}
-
-          <button
-            hx-get="/descargos/derecho/{{ .Descargo.ID }}/previsualizar"
-            hx-target="#modal-container"
-            class="w-full inline-flex justify-center items-center px-4 py-1 border border-transparent text-xs font-black rounded-md text-white bg-primary hover:bg-primary-600 transition-all shadow-sm active:scale-95 uppercase tracking-tight cursor-pointer">
-            <i class="ph ph-file-pdf mr-2 text-lg"></i>
-            Ver / Imprimir PV-05
-          </button>
-
-          {{ if .Descargo.CanRevert .AuthUser }}
-          <form action="/descargos/derecho/{{ .Descargo.ID }}/revertir-aprobacion" method="POST" x-data="{ loading: false }" @submit="loading = true">
-            <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
-            <button
-              type="submit"
-              :disabled="loading"
-              class="w-full inline-flex justify-center items-center px-4 py-1 border border-neutral-200 text-xs font-black rounded-md text-danger-600 bg-white hover:bg-danger-50 transition-all shadow-sm active:scale-95 disabled:opacity-50 uppercase tracking-tight cursor-pointer">
-              <i class="ph ph-arrow-counter-clockwise mr-2 text-lg" x-show="!loading"></i>
-              <span x-show="!loading">Revertir Aprobación</span>
-              <span x-show="loading">Procesando...</span>
-            </button>
-          </form>
-          {{ end }}
-
-          {{ if .Descargo.CanEdit .AuthUser }}
-          <a
-            href="/descargos/derecho/{{ .Descargo.ID }}/editar"
-            class="w-full inline-flex justify-center items-center px-4 py-1 border border-neutral-200 text-xs font-black rounded-md text-neutral-600 bg-white hover:bg-neutral-50 transition-all shadow-sm active:scale-95 uppercase tracking-tight">
-            <i class="ph ph-note-pencil mr-2 text-lg"></i>
-            Editar Descargo
-          </a>
-          {{ end }}
-
-          <div class="border-t border-neutral-100 my-4 pt-4">
-            <a
-              href="/solicitudes/derecho/{{ .Descargo.SolicitudID }}/detalle"
-              class="w-full inline-flex justify-center items-center px-4 py-1 border border-neutral-200 text-xs font-black rounded-md text-neutral-500 bg-neutral-50 hover:bg-neutral-100 transition-all active:scale-95 uppercase tracking-tight">
-              <i class="ph ph-arrow-left mr-2 text-lg"></i>
-              Volver a Solicitud
-            </a>
+      {{ if .Descargo.Observaciones }}
+        <div class="mt-4 p-4 bg-danger-50 border border-danger-100 rounded-lg shadow-sm">
+          <div class="flex items-start">
+            <i class="ph ph-warning-circle text-danger-500 text-lg mr-3 mt-0.5"></i>
+            <div>
+              <h4 class="text-[10px] font-black text-danger-700 uppercase tracking-widest mb-1">Observaciones de la Revisión</h4>
+              <p class="text-xs text-danger-900 font-medium leading-relaxed">{{ .Descargo.Observaciones }}</p>
+            </div>
           </div>
         </div>
-      </div>
+      {{ end }}
     </div>
 
-    <!-- Right Col: Report Content -->
-    <div class="md:col-span-2 space-y-6">
-      <div class="space-y-6">
-        <!-- TRAMO DE IDA -->
-        <div class="bg-white shadow rounded-lg overflow-hidden border border-neutral-200">
-          <div class="px-6 py-4 border-b border-neutral-100 bg-neutral-50 flex justify-between items-center">
-            <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-full bg-primary-50 flex items-center justify-center">
-                <i class="ph ph-airplane text-primary-500 text-lg rotate-45"></i>
-              </div>
-              <h3 class="text-sm font-bold text-neutral-900 uppercase tracking-widest">Tramo de Ida / Salida</h3>
+    <!-- Grid Layout -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <!-- Left Col: Travel Info -->
+      <div class="md:col-span-1 space-y-6">
+        <!-- Travel Context -->
+        <div class="bg-primary-50 shadow rounded-lg p-6 border border-primary-100 overflow-hidden relative">
+          <div class="absolute top-0 right-0 mt-2 mr-2">
+            <span
+              class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider {{ if .Descargo.Solicitud.IsDerecho }}
+                bg-violet-500 text-white
+              {{ else }}
+                bg-primary text-white
+              {{ end }} shadow-sm"
+            >
+              {{ .Descargo.Solicitud.GetConceptoNombre }}
+            </span>
+          </div>
+          <h3 class="text-lg font-bold text-primary mb-4 flex items-center gap-2">
+            <i class="ph ph-info font-bold"></i>
+            Datos del Viaje
+          </h3>
+          <dl class="space-y-4">
+            <div>
+              <dt
+                class="text-[10px] font-black text-neutral-400 uppercase tracking-widest border-b border-primary/10 pb-1 mb-2 italic"
+              >
+                Información Base
+              </dt>
+              <dd class="text-sm text-neutral-900 font-bold mt-1">
+                <a
+                  href="/solicitudes/derecho/{{ .Descargo.Solicitud.ID }}/detalle"
+                  class="text-secondary hover:underline flex items-center group"
+                >
+                  <i class="ph ph-file-text mr-1.5 text-lg group-hover:scale-110 transition-transform"></i>
+                  Solicitud
+                  #{{ .Descargo.Solicitud.Codigo }}
+                </a>
+                <p class="text-[10px] text-neutral-500 font-bold uppercase mt-1 ml-6">
+                  {{ .Descargo.Solicitud.GetTipoNombre }}
+                </p>
+              </dd>
             </div>
-            <span class="text-[10px] bg-primary-50 text-primary-700 px-2 py-0.5 rounded-full font-black uppercase tracking-tighter">Itinerario Confirmado</span>
+            <div>
+              <dt
+                class="text-[10px] font-black text-neutral-400 uppercase tracking-widest border-b border-primary/10 pb-1 mb-2 italic"
+              >
+                Destino & Período
+              </dt>
+              <dd class="text-sm text-neutral-900 mt-1 flex flex-col space-y-2">
+                <div class="flex flex-col gap-1 border-l-2 border-primary-100 pl-3">
+                  <div class="flex items-center gap-2 grayscale-50 opacity-60">
+                    <i class="ph ph-airplane-takeoff text-[10px]"></i>
+                    <p class="text-[10px] font-black text-neutral-600 uppercase leading-none">
+                      {{ .Descargo.Solicitud.GetOrigenLabel }}
+                    </p>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <i class="ph ph-airplane-landing text-[12px] text-primary"></i>
+                    <p class="text-[11px] font-black text-neutral-900 uppercase leading-none">
+                      {{ .Descargo.Solicitud.GetDestinoLabel }}
+                    </p>
+                  </div>
+                </div>
+                <div class="flex items-center space-x-2 text-xs text-neutral-600 bg-white/50 p-2 rounded border border-primary/5">
+                  <i class="ph ph-calendar mr-1.5 text-neutral-400"></i>
+                  <span class="font-bold">
+                    {{ if .Descargo.Solicitud.GetFechaIda }}
+                      {{ .Descargo.Solicitud.GetFechaIda.Format "02/01" }}
+                    {{ else }}
+                      -
+                    {{ end }}
+                  </span>
+                  <i class="ph ph-arrow-right text-neutral-300"></i>
+                  <span class="font-bold">
+                    {{ if .Descargo.Solicitud.GetFechaVuelta }}
+                      {{ .Descargo.Solicitud.GetFechaVuelta.Format "02/01" }}
+                    {{ else }}
+                      -
+                    {{ end }}
+                  </span>
+                </div>
+              </dd>
+            </div>
+            <div>
+              <dt
+                class="text-[10px] font-black text-neutral-400 uppercase tracking-widest border-b border-primary/10 pb-1 mb-2 italic"
+              >
+                Motivo del Viaje
+              </dt>
+              <dd class="text-xs text-neutral-700 bg-white/40 p-3 rounded italic leading-relaxed border border-primary/10">
+                {{ if .Descargo.Solicitud.Motivo }}{{ .Descargo.Solicitud.Motivo }}{{ else }}Sin motivo registrado{{ end }}
+              </dd>
+            </div>
+          </dl>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="bg-white shadow rounded-lg p-6 border border-neutral-200">
+          <h3 class="text-[10px] font-black text-neutral-400 uppercase mb-4 tracking-widest border-b pb-2">
+            Acciones del Descargo
+          </h3>
+          <div class="space-y-3">
+            <!-- User Actions: BORRADOR / RECHAZADO -->
+            {{ if .Descargo.CanSubmit .AuthUser }}
+              <form
+                action="/descargos/derecho/{{ .Descargo.ID }}/enviar"
+                method="POST"
+                x-data="{ loading: false }"
+                @submit="loading = true"
+              >
+                <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
+                <button
+                  type="submit"
+                  :disabled="loading"
+                  class="w-full inline-flex justify-center items-center px-2 py-1 border border-transparent text-xs font-black rounded-md text-white bg-primary hover:bg-primary-600 transition-all shadow-md active:scale-95 disabled:opacity-50 uppercase tracking-tight cursor-pointer"
+                >
+                  <i class="ph ph-paper-plane-tilt mr-2 text-lg" x-show="!loading"></i>
+                  <span x-show="!loading">Enviar a Revisión</span>
+                  <span x-show="loading">Enviando...</span>
+                </button>
+              </form>
+            {{ end }}
+
+
+            <!-- Admin Actions: EN_REVISION -->
+            {{ if .Descargo.CanApprove .AuthUser }}
+              <form
+                action="/descargos/derecho/{{ .Descargo.ID }}/aprobar"
+                method="POST"
+                x-data="{ loading: false }"
+                @submit="loading = true"
+              >
+                <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
+                <button
+                  type="submit"
+                  :disabled="loading"
+                  class="w-full inline-flex justify-center items-center px-4 py-1 border border-transparent text-xs font-black rounded-md text-white bg-success-600 hover:bg-success-700 transition-all shadow-md active:scale-95 disabled:opacity-50 uppercase tracking-tight cursor-pointer"
+                >
+                  <i class="ph ph-check-square mr-2 text-lg" x-show="!loading"></i>
+                  <span x-show="!loading">Aprobar y Finalizar</span>
+                  <span x-show="loading">Procesando...</span>
+                </button>
+              </form>
+            {{ end }}
+
+            {{ if .Descargo.CanReject .AuthUser }}
+              <div class="border-t border-danger-100 my-4 pt-4">
+                <form
+                  action="/descargos/derecho/{{ .Descargo.ID }}/rechazar"
+                  method="POST"
+                  x-data="{ loading: false }"
+                  @submit="loading = true"
+                  class="space-y-4"
+                >
+                  <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
+                  <div class="relative group">
+                    <label
+                      for="observaciones"
+                      class="flex items-center text-[10px] font-black text-danger-700 uppercase tracking-widest mb-2 ml-1"
+                    >
+                      <i class="ph ph-chat-centered-text mr-1.5 text-sm"></i>
+                      Observaciones para Corrección
+                    </label>
+                    <div
+                      class="relative overflow-hidden rounded-lg border border-neutral-200 bg-white transition-all duration-200 focus-within:ring-2 focus-within:ring-focus focus-within:border-primary-500 shadow-sm"
+                    >
+                      <textarea
+                        name="observaciones"
+                        id="observaciones"
+                        rows="3"
+                        required
+                        class="w-full text-xs p-3 border-0 focus:ring-0 focus:outline-none bg-transparent text-gray-900 placeholder-neutral-400 resize-none min-h-[80px]"
+                        placeholder="Escriba detalladamente qué debe ser corregido por el funcionario..."
+                      ></textarea>
+                    </div>
+                  </div>
+                  <button
+                    type="submit"
+                    :disabled="loading"
+                    class="w-full group/btn inline-flex justify-center items-center px-4 py-1 border border-danger-200 text-xs font-black rounded-lg text-danger-700 bg-danger-50 hover:bg-danger-100 transition-all active:scale-95 disabled:opacity-50 uppercase tracking-tight cursor-pointer"
+                  >
+                    <i class="ph ph-warning-circle mr-2 text-lg" x-show="!loading"></i>
+                    <span x-show="!loading">Observar y Devolver</span>
+                    <span x-show="loading" class="flex items-center">
+                      <svg class="animate-spin h-4 w-4 mr-2" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path
+                          class="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        ></path>
+                      </svg>
+                      Procesando...
+                    </span>
+                  </button>
+                </form>
+              </div>
+            {{ end }}
+
+
+            <button
+              hx-get="/descargos/derecho/{{ .Descargo.ID }}/previsualizar"
+              hx-target="#modal-container"
+              class="w-full inline-flex justify-center items-center px-4 py-1 border border-transparent text-xs font-black rounded-md text-white bg-primary hover:bg-primary-600 transition-all shadow-sm active:scale-95 uppercase tracking-tight cursor-pointer"
+            >
+              <i class="ph ph-file-pdf mr-2 text-lg"></i>
+              Ver / Imprimir PV-05
+            </button>
+
+            {{ if .Descargo.CanRevert .AuthUser }}
+              <form
+                action="/descargos/derecho/{{ .Descargo.ID }}/revertir-aprobacion"
+                method="POST"
+                x-data="{ loading: false }"
+                @submit="loading = true"
+              >
+                <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
+                <button
+                  type="submit"
+                  :disabled="loading"
+                  class="w-full inline-flex justify-center items-center px-4 py-1 border border-neutral-200 text-xs font-black rounded-md text-danger-600 bg-white hover:bg-danger-50 transition-all shadow-sm active:scale-95 disabled:opacity-50 uppercase tracking-tight cursor-pointer"
+                >
+                  <i class="ph ph-arrow-counter-clockwise mr-2 text-lg" x-show="!loading"></i>
+                  <span x-show="!loading">Revertir Aprobación</span>
+                  <span x-show="loading">Procesando...</span>
+                </button>
+              </form>
+            {{ end }}
+
+            {{ if .Descargo.CanEdit .AuthUser }}
+              <a
+                href="/descargos/derecho/{{ .Descargo.ID }}/editar"
+                class="w-full inline-flex justify-center items-center px-4 py-1 border border-neutral-200 text-xs font-black rounded-md text-neutral-600 bg-white hover:bg-neutral-50 transition-all shadow-sm active:scale-95 uppercase tracking-tight"
+              >
+                <i class="ph ph-note-pencil mr-2 text-lg"></i>
+                Editar Descargo
+              </a>
+            {{ end }}
+
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Col: Report Content -->
+      <div class="md:col-span-2 space-y-6">
+        <div class="space-y-6">
+          <!-- TRAMO DE IDA -->
+          <div class="bg-white shadow rounded-lg overflow-hidden border border-neutral-200">
+            <div class="px-6 py-4 border-b border-neutral-100 bg-neutral-50 flex justify-between items-center">
+              <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-full bg-primary-50 flex items-center justify-center">
+                  <i class="ph ph-airplane text-primary-500 text-lg rotate-45"></i>
+                </div>
+                <h3 class="text-sm font-bold text-neutral-900 uppercase tracking-widest">Tramo de Ida / Salida</h3>
+              </div>
+              <span
+                class="text-[10px] bg-primary-50 text-primary-700 px-2 py-0.5 rounded-full font-black uppercase tracking-tighter"
+              >
+                Itinerario Confirmado
+              </span>
+            </div>
+
+            {{ if .TicketsIda }}
+              <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-neutral-200 border-separate border-spacing-0">
+                  <thead class="bg-neutral-50/50 text-[10px] font-bold text-neutral-500 uppercase">
+                    <tr>
+                      <th scope="col" class="px-6 py-2 text-left tracking-wider">Tipo</th>
+                      <th scope="col" class="px-6 py-2 text-left tracking-wider">Ruta & Fecha</th>
+                      <th scope="col" class="px-6 py-2 text-left tracking-wider">Documentación</th>
+                      <th scope="col" class="relative px-6 py-2 text-right"><span class="sr-only">Acciones</span></th>
+                    </tr>
+                  </thead>
+                  <tbody class="bg-white divide-y divide-neutral-100">
+                    {{ range $t := .TicketsIda }}
+                      {{ range $i, $d := .Detalles }}
+                        <tr
+                          class="group hover:bg-neutral-50/80 transition-all duration-200 {{ if .EsDevolucion }}
+                            opacity-60 bg-danger-50/10 grayscale
+                          {{ end }} {{ if .EsModificacion }}bg-warning-50/30{{ end }}"
+                        >
+                          <td class="px-6 py-4 whitespace-nowrap align-top">
+                            <div class="flex flex-col gap-1.5">
+                              {{ if eq $i 0 }}
+                                <span
+                                  class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black border {{ .GetTipoColorClass }} uppercase tracking-tighter shadow-sm w-fit"
+                                >
+                                  {{ .GetTipoDisplay }}
+                                </span>
+                              {{ end }}
+                              {{ if .EsModificacion }}
+                                <span
+                                  class="inline-flex items-center justify-center px-1.5 py-0.5 rounded text-[8px] font-black bg-warning-100 text-warning-700 border border-warning-200 uppercase tracking-tighter w-fit"
+                                >
+                                  Modificado
+                                </span>
+                              {{ end }}
+                            </div>
+                          </td>
+                          <td class="px-6 py-4 whitespace-nowrap align-top font-bold text-neutral-900">
+                            <div class="flex flex-col">
+                              <span class="text-xs">{{ .GetRutaDisplay }}</span>
+                              <span class="text-[10px] text-neutral-400 font-medium">
+                                {{ if .Fecha }}{{ .Fecha.Format "02 de Ene, 2006" }}{{ else }}-{{ end }}
+                              </span>
+                            </div>
+                          </td>
+                          <td class="px-6 py-4 whitespace-nowrap align-top text-[10px]">
+                            <div class="flex flex-col space-y-0.5">
+                              <span class="text-neutral-400">
+                                Boleto:
+                                <span class="text-neutral-700 font-mono font-bold">
+                                  {{ if .Boleto }}{{ .Boleto }}{{ else }}-{{ end }}
+                                </span>
+                              </span>
+                              <span class="text-neutral-400">
+                                Pase:
+                                <span class="text-neutral-700 font-mono font-bold">
+                                  {{ if .NumeroPaseAbordo }}{{ .NumeroPaseAbordo }}{{ else }}-{{ end }}
+                                </span>
+                              </span>
+                            </div>
+                          </td>
+                          <td class="px-6 py-4 whitespace-nowrap text-right align-middle">
+                            {{ if .ArchivoPaseAbordo }}
+                              <button
+                                type="button"
+                                hx-get="/preview-file?path={{ .ArchivoPaseAbordo }}&info_tramo_registrado={{ .GetRutaDisplay | urlquery }}&info_fecha_registrada={{ if .Fecha }}
+                                  {{ .Fecha.Format `02/01/2006` }}
+                                {{ end }}&info_boleto_registrado={{ .Boleto }}&info_pase_registrado={{ .NumeroPaseAbordo }}"
+                                hx-target="#modal-container"
+                                class="p-1.5 rounded-lg bg-white border border-neutral-200 shadow-sm hover:bg-primary-50 hover:text-primary transition-all active:scale-90"
+                              >
+                                <i class="ph ph-file-search text-lg"></i>
+                              </button>
+                            {{ end }}
+                          </td>
+                        </tr>
+                      {{ end }}
+                    {{ end }}
+                  </tbody>
+                </table>
+              </div>
+            {{ else }}
+              <div class="p-8 text-center text-neutral-400 text-sm italic">No se registraron tramos de ida.</div>
+            {{ end }}
           </div>
 
-          {{ if .TicketsIda }}
-          <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-neutral-200 border-separate border-spacing-0">
-              <thead class="bg-neutral-50/50 text-[10px] font-bold text-neutral-500 uppercase">
-                <tr>
-                  <th scope="col" class="px-6 py-2 text-left tracking-wider">Tipo</th>
-                  <th scope="col" class="px-6 py-2 text-left tracking-wider">Ruta & Fecha</th>
-                  <th scope="col" class="px-6 py-2 text-left tracking-wider">Documentación</th>
-                  <th scope="col" class="relative px-6 py-2 text-right"><span class="sr-only">Acciones</span></th>
-                </tr>
-              </thead>
-              <tbody class="bg-white divide-y divide-neutral-100">
-                {{ range $t := .TicketsIda }}
-                  {{ range $i, $d := .Scales }}
-                                    <tr class="group hover:bg-neutral-50/80 transition-all duration-200 {{ if .EsDevolucion }}opacity-60 bg-danger-50/10 grayscale{{ end }} {{ if .EsModificacion }}bg-warning-50/30{{ end }}">
-                    <td class="px-6 py-4 whitespace-nowrap align-top">
-                                            <div class="flex flex-col gap-1.5">
-                        {{ if eq $i 0 }}
-                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black border {{ .GetTipoColorClass }} uppercase tracking-tighter shadow-sm w-fit">
-                          {{ .GetTipoDisplay }}
-                        </span>
-                        {{ end }}
-                        {{ if .EsModificacion }}
-                        <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded text-[8px] font-black bg-warning-100 text-warning-700 border border-warning-200 uppercase tracking-tighter w-fit">
-                          Modificado
-                        </span>
-                        {{ end }}
-                      </div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap align-top font-bold text-neutral-900">
-                      <div class="flex flex-col">
-                        <span class="text-xs">{{ .GetRutaDisplay }}</span>
-                        <span class="text-[10px] text-neutral-400 font-medium">
-                          {{ if .Fecha }}{{ .Fecha.Format "02 de Ene, 2006" }}{{ else }} - {{ end }}
-                        </span>
-                      </div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap align-top text-[10px]">
-                      <div class="flex flex-col space-y-0.5">
-                        <span class="text-neutral-400">Boleto: <span class="text-neutral-700 font-mono font-bold">{{ if .Boleto }}{{ .Boleto }}{{ else }} - {{ end }}</span></span>
-                        <span class="text-neutral-400">Pase: <span class="text-neutral-700 font-mono font-bold">{{ if .NumeroPaseAbordo }}{{ .NumeroPaseAbordo }}{{ else }} - {{ end }}</span></span>
-                      </div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-right align-middle">
-                      {{ if .ArchivoPaseAbordo }}
-                      <button type="button" hx-get="/preview-file?path={{ .ArchivoPaseAbordo }}&info_tramo_registrado={{ .GetRutaDisplay | urlquery }}&info_fecha_registrada={{ if .Fecha }}{{ .Fecha.Format "02/01/2006" | urlquery }}{{ end }}&info_boleto_registrado={{ .Boleto | urlquery }}&info_pase_registrado={{ .NumeroPaseAbordo | urlquery }}" hx-target="#modal-container"
-                        class="p-1.5 rounded-lg bg-white border border-neutral-200 shadow-sm hover:bg-primary-50 hover:text-primary transition-all active:scale-90">
-                        <i class="ph ph-file-search text-lg"></i>
-                      </button>
+          <!-- TRAMO DE VUELTA -->
+          {{ if .TicketsVuelta }}
+            <div class="bg-white shadow rounded-lg overflow-hidden border border-neutral-200">
+              <div class="px-6 py-4 border-b border-neutral-100 bg-neutral-50 flex justify-between items-center">
+                <div class="flex items-center gap-3">
+                  <div class="w-8 h-8 rounded-full bg-secondary-50 flex items-center justify-center">
+                    <i class="ph ph-airplane text-secondary-500 text-lg rotate-[225deg]"></i>
+                  </div>
+                  <h3 class="text-sm font-bold text-neutral-900 uppercase tracking-widest">Tramo de Vuelta / Retorno</h3>
+                </div>
+                <span
+                  class="text-[10px] bg-secondary-50 text-secondary-700 px-2 py-0.5 rounded-full font-black uppercase tracking-tighter"
+                >
+                  Itinerario Confirmado
+                </span>
+              </div>
+
+              <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-neutral-200 border-separate border-spacing-0">
+                  <thead class="bg-neutral-50/50 text-[10px] font-bold text-neutral-500 uppercase">
+                    <tr>
+                      <th scope="col" class="px-6 py-2 text-left tracking-wider">Tipo</th>
+                      <th scope="col" class="px-6 py-2 text-left tracking-wider">Ruta & Fecha</th>
+                      <th scope="col" class="px-6 py-2 text-left tracking-wider">Documentación</th>
+                      <th scope="col" class="relative px-6 py-2 text-right"><span class="sr-only">Acciones</span></th>
+                    </tr>
+                  </thead>
+                  <tbody class="bg-white divide-y divide-neutral-100">
+                    {{ range $t := .TicketsVuelta }}
+                      {{ range $i, $d := .Detalles }}
+                        <tr
+                          class="group hover:bg-neutral-50/80 transition-all duration-200 {{ if .EsDevolucion }}
+                            opacity-60 bg-danger-50/10 grayscale
+                          {{ end }} {{ if .EsModificacion }}bg-warning-50/30{{ end }}"
+                        >
+                          <td class="px-6 py-4 whitespace-nowrap align-top">
+                            <div class="flex flex-col gap-1.5">
+                              {{ if eq $i 0 }}
+                                <span
+                                  class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black border {{ .GetTipoColorClass }} uppercase tracking-tighter shadow-sm w-fit"
+                                >
+                                  {{ .GetTipoDisplay }}
+                                </span>
+                              {{ end }}
+                              {{ if .EsModificacion }}
+                                <span
+                                  class="inline-flex items-center justify-center px-1.5 py-0.5 rounded text-[8px] font-black bg-warning-100 text-warning-700 border border-warning-200 uppercase tracking-tighter w-fit"
+                                >
+                                  Modificado
+                                </span>
+                              {{ end }}
+                            </div>
+                          </td>
+                          <td class="px-6 py-4 whitespace-nowrap align-top font-bold text-neutral-900">
+                            <div class="flex flex-col">
+                              <span class="text-xs">{{ .GetRutaDisplay }}</span>
+                              <span class="text-[10px] text-neutral-400 font-medium">
+                                {{ if .Fecha }}{{ .Fecha.Format "02 de Ene, 2006" }}{{ else }}-{{ end }}
+                              </span>
+                            </div>
+                          </td>
+                          <td class="px-6 py-4 whitespace-nowrap align-top text-[10px]">
+                            <div class="flex flex-col space-y-0.5">
+                              <span class="text-neutral-400">
+                                Boleto:
+                                <span class="text-neutral-700 font-mono font-bold">
+                                  {{ if .Boleto }}{{ .Boleto }}{{ else }}-{{ end }}
+                                </span>
+                              </span>
+                              <span class="text-neutral-400">
+                                Pase:
+                                <span class="text-neutral-700 font-mono font-bold">
+                                  {{ if .NumeroPaseAbordo }}{{ .NumeroPaseAbordo }}{{ else }}-{{ end }}
+                                </span>
+                              </span>
+                            </div>
+                          </td>
+                          <td class="px-6 py-4 whitespace-nowrap text-right align-middle">
+                            {{ if .ArchivoPaseAbordo }}
+                              <button
+                                type="button"
+                                hx-get="/preview-file?path={{ .ArchivoPaseAbordo }}&info_tramo_registrado={{ .GetRutaDisplay | urlquery }}&info_fecha_registrada={{ if .Fecha }}
+                                  {{ .Fecha.Format `02/01/2006` }}
+                                {{ end }}&info_boleto_registrado={{ .Boleto }}&info_pase_registrado={{ .NumeroPaseAbordo }}"
+                                hx-target="#modal-container"
+                                class="p-1.5 rounded-lg bg-white border border-neutral-200 shadow-sm hover:bg-primary-50 hover:text-primary transition-all active:scale-90"
+                              >
+                                <i class="ph ph-file-search text-lg"></i>
+                              </button>
+                            {{ end }}
+                          </td>
+                        </tr>
                       {{ end }}
-                    </td>
-                  </tr>
-                  {{ end }}
-                {{ end }}
-              </tbody>
-            </table>
-          </div>
-          {{ else }}
-          <div class="p-8 text-center text-neutral-400 text-sm italic">No se registraron tramos de ida.</div>
+                    {{ end }}
+                  </tbody>
+                </table>
+              </div>
+            </div>
           {{ end }}
         </div>
 
-        <!-- TRAMO DE VUELTA -->
-        {{ if .TicketsVuelta }}
-        <div class="bg-white shadow rounded-lg overflow-hidden border border-neutral-200">
-          <div class="px-6 py-4 border-b border-neutral-100 bg-neutral-50 flex justify-between items-center">
-            <div class="flex items-center gap-3">
-              <div class="w-8 h-8 rounded-full bg-secondary-50 flex items-center justify-center">
-                <i class="ph ph-airplane text-secondary-500 text-lg rotate-[225deg]"></i>
-              </div>
-              <h3 class="text-sm font-bold text-neutral-900 uppercase tracking-widest">Tramo de Vuelta / Retorno</h3>
+        <!-- Pasajes Devueltos -->
+        {{ $hasReturns := false }}
+        {{ range .Detalles }}{{ if .EsDevolucion }}{{ $hasReturns = true }}{{ end }}{{ end }}
+
+        {{ if $hasReturns }}
+          <div class="bg-white shadow rounded-lg overflow-hidden border border-danger-200">
+            <div class="px-6 py-4 border-b border-danger-100 bg-danger-50 flex justify-between items-center">
+              <h3 class="text-lg font-bold text-danger-900">Pasajes Devueltos</h3>
+              <i class="ph ph-ticket text-danger-400 text-xl"></i>
             </div>
-            <span class="text-[10px] bg-secondary-50 text-secondary-700 px-2 py-0.5 rounded-full font-black uppercase tracking-tighter">Itinerario Confirmado</span>
-          </div>
-
-          <div class="overflow-x-auto">
-            <table class="min-w-full divide-y divide-neutral-200 border-separate border-spacing-0">
-              <thead class="bg-neutral-50/50 text-[10px] font-bold text-neutral-500 uppercase">
-                <tr>
-                  <th scope="col" class="px-6 py-2 text-left tracking-wider">Tipo</th>
-                  <th scope="col" class="px-6 py-2 text-left tracking-wider">Ruta & Fecha</th>
-                  <th scope="col" class="px-6 py-2 text-left tracking-wider">Documentación</th>
-                  <th scope="col" class="relative px-6 py-2 text-right"><span class="sr-only">Acciones</span></th>
-                </tr>
-              </thead>
-              <tbody class="bg-white divide-y divide-neutral-100">
-                {{ range $t := .TicketsVuelta }}
-                  {{ range $i, $d := .Scales }}
-                  <tr class="group hover:bg-neutral-50/80 transition-all duration-200 {{ if .EsDevolucion }}opacity-60 bg-danger-50/10 grayscale{{ end }} {{ if .EsModificacion }}bg-warning-50/30{{ end }}">
-                    <td class="px-6 py-4 whitespace-nowrap align-top">
-                      <div class="flex flex-col gap-1.5">
-                        {{ if eq $i 0 }}
-                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black border {{ .GetTipoColorClass }} uppercase tracking-tighter shadow-sm w-fit">
-                          {{ .GetTipoDisplay }}
-                        </span>
-                        {{ end }}
-                        {{ if .EsModificacion }}
-                        <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded text-[8px] font-black bg-warning-100 text-warning-700 border border-warning-200 uppercase tracking-tighter w-fit">
-                          Modificado
-                        </span>
-                        {{ end }}
-                      </div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap align-top font-bold text-neutral-900">
-                      <div class="flex flex-col">
-                        <span class="text-xs">{{ .GetRutaDisplay }}</span>
-                        <span class="text-[10px] text-neutral-400 font-medium">
-                          {{ if .Fecha }}{{ .Fecha.Format "02 de Ene, 2006" }}{{ else }} - {{ end }}
-                        </span>
-                      </div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap align-top text-[10px]">
-                      <div class="flex flex-col space-y-0.5">
-                        <span class="text-neutral-400">Boleto: <span class="text-neutral-700 font-mono font-bold">{{ if .Boleto }}{{ .Boleto }}{{ else }} - {{ end }}</span></span>
-                        <span class="text-neutral-400">Pase: <span class="text-neutral-700 font-mono font-bold">{{ if .NumeroPaseAbordo }}{{ .NumeroPaseAbordo }}{{ else }} - {{ end }}</span></span>
-                      </div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-right align-middle">
-                      {{ if .ArchivoPaseAbordo }}
-                      <button type="button" hx-get="/preview-file?path={{ .ArchivoPaseAbordo }}&info_tramo_registrado={{ .GetRutaDisplay | urlquery }}&info_fecha_registrada={{ if .Fecha }}{{ .Fecha.Format "02/01/2006" | urlquery }}{{ end }}&info_boleto_registrado={{ .Boleto | urlquery }}&info_pase_registrado={{ .NumeroPaseAbordo | urlquery }}" hx-target="#modal-container"
-                        class="p-1.5 rounded-lg bg-white border border-neutral-200 shadow-sm hover:bg-primary-50 hover:text-primary transition-all active:scale-90">
-                        <i class="ph ph-file-search text-lg"></i>
-                      </button>
-                      {{ end }}
-                    </td>
+            <div class="overflow-x-auto">
+              <table class="min-w-full divide-y divide-danger-100">
+                <thead class="bg-danger-50/50">
+                  <tr>
+                    <th class="px-4 py-3 text-left text-[10px] font-bold text-danger-800 uppercase tracking-widest">
+                      Boleto / Tipo
+                    </th>
+                    <th class="px-4 py-3 text-left text-[10px] font-bold text-danger-800 uppercase tracking-widest">
+                      Itinerario
+                    </th>
+                    <th class="px-4 py-3 text-left text-[10px] font-bold text-danger-800 uppercase tracking-widest">
+                      Fecha Original
+                    </th>
+                    <th class="px-4 py-3 text-left text-[10px] font-bold text-danger-800 uppercase tracking-widest text-right">
+                      Estado
+                    </th>
                   </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-danger-100">
+                  {{ range $ticket := .TicketsIda }}
+                    {{ template "show_fila_devolucion" $ticket }}
                   {{ end }}
-                {{ end }}
-              </tbody>
-            </table>
+                  {{ range $ticket := $.TicketsVuelta }}
+                    {{ template "show_fila_devolucion" $ticket }}
+                  {{ end }}
+                </tbody>
+              </table>
+            </div>
           </div>
-        </div>
         {{ end }}
-      </div>
-
-      <!-- Pasajes Devueltos -->
-      {{ $hasReturns := false }}
-      {{ range .Detalles }}{{ if .EsDevolucion }}{{ $hasReturns = true }}{{ end }}{{ end }}
-
-      {{ if $hasReturns }}
-      <div class="bg-white shadow rounded-lg overflow-hidden border border-danger-200">
-        <div class="px-6 py-4 border-b border-danger-100 bg-danger-50 flex justify-between items-center">
-          <h3 class="text-lg font-bold text-danger-900">Pasajes Devueltos</h3>
-          <i class="ph ph-ticket text-danger-400 text-xl"></i>
-        </div>
-        <div class="overflow-x-auto">
-          <table class="min-w-full divide-y divide-danger-100">
-            <thead class="bg-danger-50/50">
-              <tr>
-                <th class="px-4 py-3 text-left text-[10px] font-bold text-danger-800 uppercase tracking-widest">Boleto / Tipo</th>
-                <th class="px-4 py-3 text-left text-[10px] font-bold text-danger-800 uppercase tracking-widest">Itinerario</th>
-                <th class="px-4 py-3 text-left text-[10px] font-bold text-danger-800 uppercase tracking-widest">Fecha Original</th>
-                <th class="px-4 py-3 text-left text-[10px] font-bold text-danger-800 uppercase tracking-widest text-right">Estado</th>
-              </tr>
-            </thead>
-            <tbody class="bg-white divide-y divide-danger-100">
-              {{ range .TicketsIda }}
-                {{ if .Scales }}
-                  {{ $first := (index .Scales 0) }}
-                  {{ if $first.EsDevolucion }}
-                    {{ range $index, $det := .Scales }}
-                  <tr class="hover:bg-danger-50/30 transition-colors">
-                    <td class="px-4 py-3 whitespace-nowrap">
-                      {{ if eq $index 0 }}
-                      <div class="flex flex-col">
-                        <span class="text-[11px] font-black text-neutral-900 border-b border-neutral-100 pb-0.5 mb-1">{{ if .Boleto }}{{ .Boleto }}{{ else }}SIN NÚMERO{{ end }}</span>
-                        <span class="inline-flex items-center px-1.5 py-px rounded text-[8px] font-bold bg-neutral-100 text-neutral-600 border border-neutral-200 w-fit">
-                          {{ .GetTipoDisplay }}
-                        </span>
-                      </div>
-                      {{ end }}
-                    </td>
-                    <td class="px-4 py-3 whitespace-nowrap text-[11px] font-medium text-neutral-700">
-                      <div class="flex items-center">
-                        <i class="ph ph-arrow-right text-danger-300 mr-2"></i>
-                        {{ .GetRutaDisplay }}
-                      </div>
-                    </td>
-                    <td class="px-4 py-3 whitespace-nowrap text-[11px] text-neutral-500">
-                      {{ if .Fecha }}{{ .Fecha.Format "02/01/2006" }}{{ else }} - {{ end }}
-                    </td>
-                    <td class="px-4 py-3 whitespace-nowrap text-right">
-                      {{ if eq $index 0 }}
-                      <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black bg-danger-600 text-white border border-danger-700 shadow-sm uppercase tracking-tighter">
-                        DEVUELTO
-                      </span>
-                      {{ end }}
-                    </td>
-                  </tr>
-                  {{ end }}
-                {{ end }}
-              {{ end }}
-            {{ end }}
-            {{ range $.TicketsVuelta }}
-                {{ if .Scales }}
-                  {{ $first := (index .Scales 0) }}
-                  {{ if $first.EsDevolucion }}
-                    {{ range $index, $det := .Scales }}
-                  <tr class="hover:bg-danger-50/30 transition-colors">
-                    <td class="px-4 py-3 whitespace-nowrap">
-                      {{ if eq $index 0 }}
-                      <div class="flex flex-col">
-                        <span class="text-[11px] font-black text-neutral-900 border-b border-neutral-100 pb-0.5 mb-1">{{ if .Boleto }}{{ .Boleto }}{{ else }}SIN NÚMERO{{ end }}</span>
-                        <span class="inline-flex items-center px-1.5 py-px rounded text-[8px] font-bold bg-neutral-100 text-neutral-600 border border-neutral-200 w-fit">
-                          {{ .GetTipoDisplay }}
-                        </span>
-                      </div>
-                      {{ end }}
-                    </td>
-                    <td class="px-4 py-3 whitespace-nowrap text-[11px] font-medium text-neutral-700">
-                      <div class="flex items-center">
-                        <i class="ph ph-arrow-right text-danger-300 mr-2"></i>
-                        {{ .GetRutaDisplay }}
-                      </div>
-                    </td>
-                    <td class="px-4 py-3 whitespace-nowrap text-[11px] text-neutral-500">
-                      {{ if .Fecha }}{{ .Fecha.Format "02/01/2006" }}{{ else }} - {{ end }}
-                    </td>
-                    <td class="px-4 py-3 whitespace-nowrap text-right">
-                      {{ if eq $index 0 }}
-                      <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black bg-danger-600 text-white border border-danger-700 shadow-sm uppercase tracking-tighter">
-                        DEVUELTO
-                      </span>
-                      {{ end }}
-                    </td>
-                  </tr>
-                  {{ end }}
-                {{ end }}
-              {{ end }}
-            {{ end }}
-            </tbody>
-          </table>
-        </div>
-      </div>
-      {{ end }}
       </div>
     </div>
   </div>
-</div>
 
-{{ template "layout_end" . }} {{ end }}
+  {{ template "layout_footer" . }}
+{{ end }}
+
+{{ define "show_fila_devolucion" }}
+  {{ $ticket := . }}
+  {{ if and $ticket.Detalles (index $ticket.Detalles 0).EsDevolucion }}
+    {{ range $index, $det := $ticket.Detalles }}
+      <tr class="hover:bg-danger-50/30 transition-colors">
+        <td class="px-4 py-3 whitespace-nowrap">
+          {{ if eq $index 0 }}
+            <div class="flex flex-col">
+              <span class="text-[11px] font-black text-neutral-900 border-b border-neutral-100 pb-0.5 mb-1">
+                {{ if $det.Boleto }}{{ $det.Boleto }}{{ else }}SIN NÚMERO{{ end }}
+              </span>
+              <span
+                class="inline-flex items-center px-1.5 py-px rounded text-[8px] font-bold bg-neutral-100 text-neutral-600 border border-neutral-200 w-fit"
+              >
+                {{ $det.GetTipoDisplay }}
+              </span>
+            </div>
+          {{ end }}
+        </td>
+        <td class="px-4 py-3 whitespace-nowrap text-[11px] font-medium text-neutral-700">
+          <div class="flex items-center">
+            <i class="ph ph-arrow-right text-danger-300 mr-2"></i>
+            {{ $det.GetRutaDisplay }}
+          </div>
+        </td>
+        <td class="px-4 py-3 whitespace-nowrap text-[11px] text-neutral-500">
+          {{ if $det.Fecha }}{{ $det.Fecha.Format "02/01/2006" }}{{ else }}-{{ end }}
+        </td>
+        <td class="px-4 py-3 whitespace-nowrap text-right">
+          {{ if eq $index 0 }}
+            <span
+              class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black bg-danger-600 text-white border border-danger-700 shadow-sm uppercase tracking-tighter"
+            >
+              DEVUELTO
+            </span>
+          {{ end }}
+        </td>
+      </tr>
+    {{ end }}
+  {{ end }}
+{{ end }}

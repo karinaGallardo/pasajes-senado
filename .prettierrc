@@ -1,14 +1,18 @@
 {
-  "printWidth": 180,
-  "htmlWhitespaceSensitivity": "ignore",
+  "printWidth": 130,
   "endOfLine": "lf",
-  "bracketSameLine": true,
+  "tabWidth": 2,
+  "useTabs": false,
+  "plugins": ["prettier-plugin-go-template"],
   "overrides": [
     {
-      "files": "*.html",
+      "files": ["*.html", "*.tmpl", "*.gohtml"],
       "options": {
-        "printWidth": 180
+        "parser": "go-template"
       }
     }
-  ]
+  ],
+  "goTemplateBracketSpacing": true,
+  "htmlWhitespaceSensitivity": "ignore",
+  "goTemplatePreserveSpace": false
 }

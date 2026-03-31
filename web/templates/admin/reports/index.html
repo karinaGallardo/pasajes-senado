@@ -1,4 +1,4 @@
-{{ define "admin/reports/index" }} {{ template "layout_start" . }}
+{{ define "admin/reports/index" }} {{ template "layout_header" . }}
 
 <div class="max-w-4xl mx-auto py-8">
   <div class="mb-8">
@@ -218,7 +218,7 @@
   </div>
 </div>
 
-{{ template "layout_end" . }} {{ end }} {{ define "footer_scripts" }}
+{{ template "layout_footer" . }} {{ end }} {{ define "footer_scripts" }}
 <script>
   // Set default dates to current month
   document.addEventListener("DOMContentLoaded", function () {

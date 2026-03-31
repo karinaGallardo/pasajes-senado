@@ -1,4 +1,4 @@
-{{ define "usuarios/funcionarios" }} {{ template "layout_start" . }}
+{{ define "usuarios/funcionarios" }} {{ template "layout_header" . }}
 
 <div class="space-y-6" x-data="{ activeTab: '{{ .Rol }}', syncConfirm: false, syncing: false }">
   <!-- Header -->
@@ -40,4 +40,4 @@
   </div>
 </div>
 
-{{ template "layout_end" . }} {{ end }}
+{{ template "layout_footer" . }} {{ end }}

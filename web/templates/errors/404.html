@@ -1,4 +1,4 @@
-{{ define "errors/404" }} {{ template "layout_start" . }}
+{{ define "errors/404" }} {{ template "layout_header" . }}
 
 <div class="min-h-[calc(100vh-200px)] flex flex-col items-center justify-center p-4">
   <div class="text-center max-w-lg">
@@ -28,4 +28,4 @@
   </div>
 </div>
 
-{{ template "layout_end" . }} {{ end }}
+{{ template "layout_footer" . }} {{ end }}

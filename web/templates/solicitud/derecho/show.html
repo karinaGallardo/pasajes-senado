@@ -1,4 +1,4 @@
-{{ define "solicitud/derecho/show" }} {{ template "layout_start" . }}
+{{ define "solicitud/derecho/show" }} {{ template "layout_header" . }}
 
 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
   <!-- Header -->
@@ -560,7 +560,7 @@
   </div>
 </div>
 
-{{ template "layout_end" . }} {{ end }} {{ define "footer_scripts" }}
+{{ template "layout_footer" . }} {{ end }} {{ define "footer_scripts" }}
 <script>
   (function () {
     document.addEventListener("pasaje-action", function (e) {

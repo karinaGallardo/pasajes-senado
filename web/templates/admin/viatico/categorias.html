@@ -1,4 +1,4 @@
-{{ define "admin/viatico/categorias" }} {{ template "layout_start" . }}
+{{ define "admin/viatico/categorias" }} {{ template "layout_header" . }}
 
 <div class="max-w-7xl mx-auto mt-8 px-4 pb-12" x-data="{ showCatModal: false, showZonaModal: false }">
   <div class="mb-8 flex justify-between items-center">
@@ -256,4 +256,4 @@
   </div>
 </div>
 
-{{ template "layout_end" . }} {{ end }}
+{{ template "layout_footer" . }} {{ end }}

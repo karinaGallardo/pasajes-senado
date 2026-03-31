@@ -2032,6 +2032,10 @@ video {
   min-height: 100vh;
 }
 
+.min-h-\[45px\] {
+  min-height: 45px;
+}
+
 .w-1 {
   width: 0.25rem;
 }
@@ -10328,6 +10332,11 @@ h1, h2, h3 {
   border-color: rgb(232 98 11 / var(--tw-border-opacity, 1));
 }
 
+.focus\:border-warning-500:focus {
+  --tw-border-opacity: 1;
+  border-color: rgb(245 158 11 / var(--tw-border-opacity, 1));
+}
+
 .focus\:placeholder-neutral-400:focus::-moz-placeholder {
   --tw-placeholder-opacity: 1;
   color: rgb(163 163 163 / var(--tw-placeholder-opacity, 1));
@@ -10429,6 +10438,11 @@ h1, h2, h3 {
 .focus\:ring-success-600:focus {
   --tw-ring-opacity: 1;
   --tw-ring-color: rgb(5 150 105 / var(--tw-ring-opacity, 1));
+}
+
+.focus\:ring-warning-500:focus {
+  --tw-ring-opacity: 1;
+  --tw-ring-color: rgb(245 158 11 / var(--tw-ring-opacity, 1));
 }
 
 .focus\:ring-offset-2:focus {

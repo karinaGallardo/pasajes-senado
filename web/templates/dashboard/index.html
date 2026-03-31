@@ -1,182 +1,215 @@
-{{ define "dashboard/index" }} {{ template "layout_start" . }}
+{{ define "dashboard/index" }}
+  {{ template "layout_header" . }}
 
-<div class="space-y-8">
-  <!-- Welcome Section -->
-  <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-primary flex justify-between items-center">
-    <div>
-      <h2 class="text-2xl font-brand font-bold text-primary-900">Bienvenido, {{ .AuthUser.GetNombreCompleto }}</h2>
-      <p class="text-neutral mt-1">Panel de control del Sistema de Pasajes y Viáticos</p>
-    </div>
-    <div>
-      <span class="px-4 py-2 rounded-full bg-primary-50 text-primary-800 text-sm font-bold shadow-sm">{{ .AuthUser.Rol.Nombre }}</span>
-    </div>
-  </div>
 
-  <!-- Metrics Grid -->
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-    <!-- Card 1: Solicitudes Pendientes -->
-    <div class="bg-white rounded-xl shadow-md p-6 border-t-4 border-gold hover:shadow-lg transition-shadow duration-300">
-      <div class="flex items-center justify-between pointer-events-none">
-        <!-- pointer-events-none prevents icon selection -->
-        <div>
-          <p class="text-sm font-medium text-neutral-500 uppercase tracking-wider">Pendientes de Aprobación</p>
-          <p class="text-4xl font-black text-neutral mt-2">{{ .Pendientes }}</p>
-        </div>
-        <div class="p-3 bg-warning-50 rounded-full">
-          <i class="ph ph-clock-countdown text-3xl text-gold"></i>
-        </div>
+  <div class="space-y-8">
+    <!-- Welcome Section -->
+    <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-primary flex justify-between items-center">
+      <div>
+        <h2 class="text-2xl font-brand font-bold text-primary-900">Bienvenido, {{ .AuthUser.GetNombreCompleto }}</h2>
+        <p class="text-neutral mt-1">Panel de control del Sistema de Pasajes y Viáticos</p>
       </div>
-      <div class="mt-4">
-        <span class="text-sm font-semibold text-neutral flex items-center cursor-default">
-          Ver listado en tabla
-          <span aria-hidden="true" class="ml-1">&darr;</span>
+      <div>
+        <span class="px-4 py-2 rounded-full bg-primary-50 text-primary-800 text-sm font-bold shadow-sm">
+          {{ .AuthUser.Rol.Nombre }}
         </span>
       </div>
     </div>
 
-    <!-- Card 2: Aprobados -->
-    <div class="bg-white rounded-xl shadow-md p-6 border-t-4 border-secondary hover:shadow-lg transition-shadow duration-300">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-sm font-medium text-neutral-500 uppercase tracking-wider">Viajes Aprobados</p>
-          <p class="text-4xl font-black text-neutral mt-2">{{ .Aprobados }}</p>
-        </div>
-        <div class="p-3 bg-primary-50 rounded-full">
-          <i class="ph ph-ticket text-3xl text-secondary"></i>
-        </div>
-      </div>
-      <div class="mt-4">
-        <span class="text-sm font-semibold text-secondary flex items-center cursor-default">
-          Gestionar en tabla
-          <span aria-hidden="true" class="ml-1">&darr;</span>
-        </span>
-      </div>
-    </div>
-
-    <!-- Card 3: Descargos -->
-    <div class="bg-white rounded-xl shadow-md p-6 border-t-4 border-accent hover:shadow-lg transition-shadow duration-300">
-      <div class="flex items-center justify-between">
-        <div>
-          <p class="text-sm font-medium text-neutral-500 uppercase tracking-wider">Descargos Realizados</p>
-          <p class="text-4xl font-black text-neutral mt-2">{{ .Descargos }}</p>
-        </div>
-        <div class="p-3 bg-danger-50 rounded-full">
-          <i class="ph ph-file-text text-3xl text-accent"></i>
-        </div>
-      </div>
-      <div class="mt-4">
-        <a href="/descargos" class="text-sm font-semibold text-accent hover:text-danger-800 flex items-center">
-          Revisar informes
-          <span aria-hidden="true" class="ml-1">&rarr;</span>
-        </a>
-      </div>
-    </div>
-  </div>
-
-  <!-- Senadores Assigned List -->
-  {{ if .SenadoresEncargados }}
-  <div class="bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden mb-8">
-    <div class="px-6 py-4 border-b border-l-4 border-l-primary border-neutral-200 bg-neutral-50">
-      <h3 class="text-lg font-brand font-bold text-neutral-900">Senadores Asignados</h3>
-      <p class="text-sm text-neutral-500">Usted es responsable de la gestión de pasajes para los siguientes senadores.</p>
-    </div>
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-6">
-      {{ range .SenadoresEncargados }}
-      <div class="flex items-center space-x-4 p-4 border rounded-lg hover:bg-neutral-50 transition-colors">
-        <div class="flex-shrink-0 h-12 w-12 rounded-full bg-primary-100 flex items-center justify-center text-primary font-bold text-lg">
-          {{ printf "%.1s" .GetNombreCompleto }}
-        </div>
-        <div class="flex-1 min-w-0">
-          <div class="flex items-center space-x-2">
-            <p class="text-sm font-bold text-neutral-900 truncate">{{ .GetNombreCompleto }}</p>
-            {{ if eq .Tipo "SENADOR_TITULAR" }}
-            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-primary-100 text-primary-700">TITULAR</span>
-            {{ else if eq .Tipo "SENADOR_SUPLENTE" }}
-            <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-info-100 text-info-700">SUPLENTE</span>
-            {{ end }}
+    <!-- Metrics Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <!-- Card 1: Solicitudes Pendientes -->
+      <div class="bg-white rounded-xl shadow-md p-6 border-t-4 border-gold hover:shadow-lg transition-shadow duration-300">
+        <div class="flex items-center justify-between pointer-events-none">
+          <!-- pointer-events-none prevents icon selection -->
+          <div>
+            <p class="text-sm font-medium text-neutral-500 uppercase tracking-wider">Pendientes de Aprobación</p>
+            <p class="text-4xl font-black text-neutral mt-2">{{ .Pendientes }}</p>
           </div>
-          <p class="text-xs text-neutral-500 truncate mb-1">{{ .CI }}</p>
-          <div class="flex items-center text-xs text-neutral-400">
-            <i class="ph ph-map-pin mr-1"></i>
-            {{ if .Origen }}{{ .Origen.Ciudad }}{{ else }}Sin Origen{{ end }}
+          <div class="p-3 bg-warning-50 rounded-full">
+            <i class="ph ph-clock-countdown text-3xl text-gold"></i>
           </div>
         </div>
-        <div class="flex flex-col gap-2 flex-shrink-0">
-          <button
-            type="button"
-            hx-get="/solicitudes/oficial/modal-crear?target_user_id={{ .ID }}"
-            hx-target="#modal-container"
-            class="btn-sm btn-primary min-w-[90px]">
-            <i class="ph ph-airplane-tilt text-sm"></i>
-            <span>Oficial</span>
-          </button>
-          <a
-            href="/cupos/derecho/{{ .ID }}/{{ $.Gestion }}"
-            class="btn-sm btn-secondary min-w-[90px]">
-            <i class="ph ph-calendar-plus text-sm"></i>
-            <span>Derecho</span>
+        <div class="mt-4">
+          <span class="text-sm font-semibold text-neutral flex items-center cursor-default">
+            Ver listado en tabla
+            <span aria-hidden="true" class="ml-1">&darr;</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- Card 2: Aprobados -->
+      <div class="bg-white rounded-xl shadow-md p-6 border-t-4 border-secondary hover:shadow-lg transition-shadow duration-300">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-neutral-500 uppercase tracking-wider">Viajes Aprobados</p>
+            <p class="text-4xl font-black text-neutral mt-2">{{ .Aprobados }}</p>
+          </div>
+          <div class="p-3 bg-primary-50 rounded-full">
+            <i class="ph ph-ticket text-3xl text-secondary"></i>
+          </div>
+        </div>
+        <div class="mt-4">
+          <span class="text-sm font-semibold text-secondary flex items-center cursor-default">
+            Gestionar en tabla
+            <span aria-hidden="true" class="ml-1">&darr;</span>
+          </span>
+        </div>
+      </div>
+
+      <!-- Card 3: Descargos -->
+      <div class="bg-white rounded-xl shadow-md p-6 border-t-4 border-accent hover:shadow-lg transition-shadow duration-300">
+        <div class="flex items-center justify-between">
+          <div>
+            <p class="text-sm font-medium text-neutral-500 uppercase tracking-wider">Descargos Realizados</p>
+            <p class="text-4xl font-black text-neutral mt-2">{{ .Descargos }}</p>
+          </div>
+          <div class="p-3 bg-danger-50 rounded-full">
+            <i class="ph ph-file-text text-3xl text-accent"></i>
+          </div>
+        </div>
+        <div class="mt-4">
+          <a href="/descargos" class="text-sm font-semibold text-accent hover:text-danger-800 flex items-center">
+            Revisar informes
+            <span aria-hidden="true" class="ml-1">&rarr;</span>
           </a>
         </div>
       </div>
-      {{ end }}
     </div>
-  </div>
-  {{ end }}
 
-  <!-- Recent Activity Table -->
-  <div class="bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden">
-    <div class="px-6 py-4 border-b border-neutral-200 bg-neutral-50 flex justify-between items-center">
-      <h3 class="text-lg font-brand font-bold text-neutral-900">Actividad Reciente</h3>
-      <!-- <a href="/solicitudes/nueva" class="text-sm font-medium text-secondary hover:text-primary-900">+ Nueva Solicitud</a> -->
-    </div>
-    <div class="overflow-x-auto">
-      <table class="min-w-full divide-y divide-neutral-200">
-        <thead class="bg-neutral-50">
-          <tr>
-            <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">CÓDIGO</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Ruta</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Fecha Salida</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Estado</th>
-            <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider"></th>
-          </tr>
-        </thead>
-        <tbody class="bg-white divide-y divide-neutral-200">
-          {{ range .Recent }}
-          <tr class="hover:bg-neutral-50 transition-colors">
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-900 font-bold">
-              {{ if .Codigo }}
-              <span class="font-mono bg-neutral-100 px-2 py-1 rounded text-xs">{{ .Codigo }}</span>
-              {{ else }}
-              <span class="text-xs text-neutral-400">#{{ .ID }}</span>
-              {{ end }}
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-700">
-              {{ .GetOrigenCiudad }}
-              <span class="text-neutral-400 mx-1">&rarr;</span>
-              {{ .GetDestinoCiudad }}
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">{{ if .GetFechaIda }}{{ .GetFechaIda.Format "02/01/2006" }}{{ else }} - {{ end }}</td>
-            <td class="px-6 py-4 whitespace-nowrap">
-              <span
-                class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                    {{ if .EstadoSolicitudCodigo }}{{ if eq .GetEstadoCodigo `SOLICITADO` }} bg-warning-100 text-warning-800 {{ end }}{{ end }}
-                    {{ if .EstadoSolicitudCodigo }}{{ if eq .GetEstadoCodigo `APROBADO` }} bg-success-100 text-success-800 {{ end }}{{ end }}
-                    {{ if .EstadoSolicitudCodigo }}{{ if eq .GetEstadoCodigo `FINALIZADO` }} bg-neutral-100 text-neutral-800 {{ end }}{{ end }}
-                    ">
-                {{ if .EstadoSolicitud }}{{ .EstadoSolicitud.Nombre }}{{ else }}{{ if .EstadoSolicitudCodigo }}{{ .EstadoSolicitudCodigo }}{{ end }}{{ end }}
-              </span>
-            </td>
-            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-              <a href="/solicitudes/{{ if eq .GetConceptoCodigo `OFICIAL` }}oficial{{ else }}derecho{{ end }}/{{ .ID }}/detalle" class="text-secondary hover:text-primary-900">
-                Detalles
-              </a>
-            </td>
-          </tr>
+    <!-- Senadores Assigned List -->
+    {{ if .SenadoresEncargados }}
+      <div class="bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden mb-8">
+        <div class="px-6 py-4 border-b border-l-4 border-l-primary border-neutral-200 bg-neutral-50">
+          <h3 class="text-lg font-brand font-bold text-neutral-900">Senadores Asignados</h3>
+          <p class="text-sm text-neutral-500">Usted es responsable de la gestión de pasajes para los siguientes senadores.</p>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-6">
+          {{ range .SenadoresEncargados }}
+            <div class="flex items-center space-x-4 p-4 border rounded-lg hover:bg-neutral-50 transition-colors">
+              <div
+                class="flex-shrink-0 h-12 w-12 rounded-full bg-primary-100 flex items-center justify-center text-primary font-bold text-lg"
+              >
+                {{ printf "%.1s" .GetNombreCompleto }}
+              </div>
+              <div class="flex-1 min-w-0">
+                <div class="flex items-center space-x-2">
+                  <p class="text-sm font-bold text-neutral-900 truncate">{{ .GetNombreCompleto }}</p>
+                  {{ if eq .Tipo "SENADOR_TITULAR" }}
+                    <span
+                      class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-primary-100 text-primary-700"
+                    >
+                      TITULAR
+                    </span>
+                  {{ else if eq .Tipo "SENADOR_SUPLENTE" }}
+                    <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-bold bg-info-100 text-info-700">
+                      SUPLENTE
+                    </span>
+                  {{ end }}
+                </div>
+                <p class="text-xs text-neutral-500 truncate mb-1">{{ .CI }}</p>
+                <div class="flex items-center text-xs text-neutral-400">
+                  <i class="ph ph-map-pin mr-1"></i>
+                  {{ if .Origen }}{{ .Origen.Ciudad }}{{ else }}Sin Origen{{ end }}
+                </div>
+              </div>
+              <div class="flex flex-col gap-2 flex-shrink-0">
+                <button
+                  type="button"
+                  hx-get="/solicitudes/oficial/modal-crear?target_user_id={{ .ID }}"
+                  hx-target="#modal-container"
+                  class="btn-sm btn-primary min-w-[90px]"
+                >
+                  <i class="ph ph-airplane-tilt text-sm"></i>
+                  <span>Oficial</span>
+                </button>
+                <a href="/cupos/derecho/{{ .ID }}/{{ $.Gestion }}" class="btn-sm btn-secondary min-w-[90px]">
+                  <i class="ph ph-calendar-plus text-sm"></i>
+                  <span>Derecho</span>
+                </a>
+              </div>
+            </div>
           {{ end }}
-        </tbody>
-      </table>
+        </div>
+      </div>
+    {{ end }}
+
+
+    <!-- Recent Activity Table -->
+    <div class="bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden">
+      <div class="px-6 py-4 border-b border-neutral-200 bg-neutral-50 flex justify-between items-center">
+        <h3 class="text-lg font-brand font-bold text-neutral-900">Actividad Reciente</h3>
+        <!-- <a href="/solicitudes/nueva" class="text-sm font-medium text-secondary hover:text-primary-900">+ Nueva Solicitud</a> -->
+      </div>
+      <div class="overflow-x-auto">
+        <table class="min-w-full divide-y divide-neutral-200">
+          <thead class="bg-neutral-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">CÓDIGO</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Ruta</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Fecha Salida</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Estado</th>
+              <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider"></th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-neutral-200">
+            {{ range .Recent }}
+              <tr class="hover:bg-neutral-50 transition-colors">
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-900 font-bold">
+                  {{ if .Codigo }}
+                    <span class="font-mono bg-neutral-100 px-2 py-1 rounded text-xs">{{ .Codigo }}</span>
+                  {{ else }}
+                    <span class="text-xs text-neutral-400">#{{ .ID }}</span>
+                  {{ end }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-700">
+                  {{ .GetOrigenCiudad }}
+                  <span class="text-neutral-400 mx-1">&rarr;</span>
+                  {{ .GetDestinoCiudad }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">
+                  {{ if .GetFechaIda }}{{ .GetFechaIda.Format "02/01/2006" }}{{ else }}-{{ end }}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                  <span
+                    class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                    {{ if .EstadoSolicitudCodigo }}
+                      {{ if eq .GetEstadoCodigo `SOLICITADO` }}bg-warning-100 text-warning-800{{ end }}
+                    {{ end }}
+                    {{ if .EstadoSolicitudCodigo }}
+                      {{ if eq .GetEstadoCodigo `APROBADO` }}bg-success-100 text-success-800{{ end }}
+                    {{ end }}
+                    {{ if .EstadoSolicitudCodigo }}
+                      {{ if eq .GetEstadoCodigo `FINALIZADO` }}bg-neutral-100 text-neutral-800{{ end }}
+                    {{ end }}
+                    "
+                  >
+                    {{ if .EstadoSolicitud }}
+                      {{ .EstadoSolicitud.Nombre }}
+                    {{ else }}
+                      {{ if .EstadoSolicitudCodigo }}{{ .EstadoSolicitudCodigo }}{{ end }}
+                    {{ end }}
+                  </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                  <a
+                    href="/solicitudes/{{ if eq .GetConceptoCodigo `OFICIAL` }}
+                      oficial
+                    {{ else }}
+                      derecho
+                    {{ end }}/{{ .ID }}/detalle"
+                    class="text-secondary hover:text-primary-900"
+                  >
+                    Detalles
+                  </a>
+                </td>
+              </tr>
+            {{ end }}
+          </tbody>
+        </table>
+      </div>
     </div>
   </div>
-</div>
 
-{{ template "layout_end" . }} {{ end }}
+  {{ template "layout_footer" . }}
+{{ end }}

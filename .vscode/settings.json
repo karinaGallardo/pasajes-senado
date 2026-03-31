@@ -7,4 +7,8 @@
     "prettier.printWidth": 150,
     "html.format.wrapLineLength": 0,
     "terminal.integrated.gpuAcceleration": "off",
+    "[go]": {
+        "editor.formatOnSave": true,
+        "editor.defaultFormatter": "golang.go"
+    }
 }

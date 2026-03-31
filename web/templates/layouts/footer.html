@@ -1,0 +1,43 @@
+{{ define "layout_footer" }}
+            </div>
+          </main>
+        </div>
+      </div>
+
+      {{ if .AuthUser }}
+    <script>
+      (function () {
+        const audio = new Audio("/static/sounds/magic-notification-ring.wav");
+        let socket;
+        function connect() {
+          const protocol = window.location.protocol === "https:" ? "wss://" : "ws://";
+          socket = new WebSocket(protocol + window.location.host + "/ws/notifications");
+          socket.onmessage = function (event) {
+            try {
+              const data = JSON.parse(event.data);
+              if (data.event === "refresh_notifications" && data.target_user === "{{ .AuthUser.ID }}") {
+                window.dispatchEvent(new CustomEvent("refresh_notifications", { detail: data }));
+                document.body.dispatchEvent(new CustomEvent("refresh-stats"));
+                if (data.type === "new_solicitud") {
+                  audio.play().catch((e) => console.log("Permiso de audio requerido:", e));
+                }
+              }
+            } catch (err) {
+              console.error("Error procesando mensaje WS:", err);
+            }
+          };
+          socket.onclose = function () {
+            setTimeout(connect, 5000);
+          };
+          socket.onerror = function (err) {
+            socket.close();
+          };
+        }
+        connect();
+      })();
+    </script>
+      {{ end }}
+      {{ block "footer_scripts" . }}{{ end }}
+    </body>
+  </html>
+{{ end }}
