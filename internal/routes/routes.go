@@ -72,7 +72,6 @@ func SetupRoutes(r *gin.Engine, container *app.Container, loginLimiter *middlewa
 
 		// Descargos Derecho
 		protected.GET("/descargos/derecho/nuevo/:id", descargoDerechoCtrl.Create)
-		protected.POST("/descargos/derecho", descargoDerechoCtrl.Store)
 		protected.GET("/descargos/derecho/:id", descargoDerechoCtrl.Show)
 		protected.GET("/descargos/derecho/:id/editar", descargoDerechoCtrl.Edit)
 		protected.POST("/descargos/derecho/:id/actualizar", descargoDerechoCtrl.Update)
@@ -102,7 +101,6 @@ func SetupRoutes(r *gin.Engine, container *app.Container, loginLimiter *middlewa
 
 		// Descargos Oficial
 		protected.GET("/descargos/oficial/nuevo/:id", descargoOficialCtrl.Create)
-		protected.POST("/descargos/oficial", descargoOficialCtrl.Store)
 		protected.GET("/descargos/oficial/:id", descargoOficialCtrl.Show)
 		protected.GET("/descargos/oficial/:id/editar", descargoOficialCtrl.Edit)
 		protected.POST("/descargos/oficial/:id/actualizar", descargoOficialCtrl.Update)
@@ -112,6 +110,7 @@ func SetupRoutes(r *gin.Engine, container *app.Container, loginLimiter *middlewa
 		protected.POST("/descargos/oficial/:id/rechazar", descargoOficialCtrl.Reject)
 		protected.POST("/descargos/oficial/:id/enviar", descargoOficialCtrl.Submit)
 		protected.POST("/descargos/oficial/:id/revertir-aprobacion", descargoOficialCtrl.RevertApproval)
+		protected.GET("/descargos/oficial/nueva-fila", descargoOficialCtrl.NuevaFila)
 
 		protected.POST("/solicitudes/oficial/:id/actualizar", solicitudOficialCtrl.Update)
 		protected.POST("/solicitudes/oficial", solicitudOficialCtrl.Store)

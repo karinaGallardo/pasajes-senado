@@ -95,8 +95,8 @@ func (s *RutaService) GetAll(ctx context.Context) ([]models.Ruta, error) {
 	return s.rutaRepo.FindAll(ctx)
 }
 
-func (s *RutaService) Search(ctx context.Context, query string) ([]models.Ruta, error) {
-	return s.rutaRepo.Search(ctx, query)
+func (s *RutaService) Search(ctx context.Context, query string, onlyAtomic bool) ([]models.Ruta, error) {
+	return s.rutaRepo.Search(ctx, query, onlyAtomic)
 }
 
 func (s *RutaService) GetFaresMap(rutas []models.Ruta) map[string]map[string]float64 {

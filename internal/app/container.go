@@ -19,6 +19,8 @@ type Container struct {
 	SolicitudService      *services.SolicitudService
 	CompensacionService   *services.CompensacionService
 	DescargoService       *services.DescargoService
+	DescargoDerechoService *services.DescargoDerechoService
+	DescargoOficialService *services.DescargoOficialService
 	RolService            *services.RolService
 	DestinoService        *services.DestinoService
 	OrganigramaService    *services.OrganigramaService
@@ -137,6 +139,8 @@ func NewContainer(db *gorm.DB, mongoRRHH *mongo.Database, mongoChat *mongo.Datab
 
 	compensacionService := services.NewCompensacionService(compensacionRepo, catCompensacionRepo)
 	descargoService := services.NewDescargoService(descargoRepo, solicitudService, userService, auditService)
+	descargoDerechoService := services.NewDescargoDerechoService(descargoRepo, solicitudService, auditService)
+	descargoOficialService := services.NewDescargoOficialService(descargoRepo, solicitudService, auditService)
 	rolService := services.NewRolService(rolRepo)
 	destinoService := services.NewDestinoService(destinoRepo)
 	organigramaService := services.NewOrganigramaService(cargoRepo, oficinaRepo)
@@ -218,6 +222,7 @@ func NewContainer(db *gorm.DB, mongoRRHH *mongo.Database, mongoChat *mongo.Datab
 
 	descargoDerechoCtrl := controllers.NewDescargoDerechoController(
 		descargoService,
+		descargoDerechoService,
 		solicitudService,
 		destinoService,
 		reportService,
@@ -228,6 +233,7 @@ func NewContainer(db *gorm.DB, mongoRRHH *mongo.Database, mongoChat *mongo.Datab
 
 	descargoOficialCtrl := controllers.NewDescargoOficialController(
 		descargoService,
+		descargoOficialService,
 		solicitudService,
 		destinoService,
 		reportService,
@@ -262,6 +268,8 @@ func NewContainer(db *gorm.DB, mongoRRHH *mongo.Database, mongoChat *mongo.Datab
 		SolicitudService:      solicitudService,
 		CompensacionService:   compensacionService,
 		DescargoService:       descargoService,
+		DescargoDerechoService: descargoDerechoService,
+		DescargoOficialService: descargoOficialService,
 		RolService:            rolService,
 		DestinoService:        destinoService,
 		OrganigramaService:    organigramaService,

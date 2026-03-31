@@ -491,86 +491,68 @@
           </div>
 
           <!-- Right Column: Route Visual (Wider) -->
-          {{ $isRoundTrip := .Solicitud.IsIdaVuelta }}
-          <div
-            class="lg:col-span-7 flex flex-col md:flex-row items-center justify-between bg-neutral-50/50 rounded-xl border border-neutral-200 border-dashed p-6 relative overflow-hidden h-full">
-            <!-- Origen -->
-            <div class="text-center {{ if $isRoundTrip }}md:text-center{{ else }}md:text-left{{ end }} z-10 w-full md:w-auto">
-              <p class="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1">Origen</p>
-              <p class="text-2xl font-black text-neutral-800 leading-none">{{ .Solicitud.GetOrigenCiudad }}</p>
-              <p class="text-xs text-neutral-500 font-medium mt-1">{{ if .Solicitud.GetOrigen }}{{ .Solicitud.GetOrigen.Aeropuerto }}{{ end }}</p>
-              <div class="mt-2 text-center {{ if $isRoundTrip }}md:text-center{{ else }}md:text-left{{ end }}">
-                <span class="px-2 py-1 bg-neutral-200 text-neutral-700 font-mono font-bold text-xs rounded">
-                  {{ if .Solicitud.GetOrigen }}{{ .Solicitud.GetOrigen.IATA }}{{ end }}
+          <!-- Right Column: Route Visual (Asymmetric 3-Node Layout) -->
+          <div class="lg:col-span-7 flex flex-col md:flex-row items-center justify-between bg-neutral-50/50 rounded-xl border border-neutral-200 border-dashed p-6 relative overflow-hidden h-full">
+            <!-- 1. ORIGEN INICIAL (IDA) -->
+            <div class="text-center z-10 w-full md:w-auto flex-1">
+              <p class="text-[9px] font-black text-primary uppercase tracking-widest leading-none mb-2">Punto de Salida</p>
+              <div class="flex flex-col items-center">
+                <div class="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary mb-2 shadow-sm border border-primary/20">
+                  <i class="ph ph-map-pin text-2xl"></i>
+                </div>
+                <p class="text-xl font-black text-neutral-800 leading-none truncate max-w-[150px]">{{ .Solicitud.GetOrigenCiudad }}</p>
+                <span class="mt-2 px-2 py-0.5 bg-neutral-200 text-neutral-700 font-mono font-bold text-[10px] rounded border border-neutral-300">
+                  {{ .Solicitud.GetOrigenIATA }}
                 </span>
+                <p class="text-[9px] text-neutral-400 font-bold mt-1 uppercase truncate max-w-[150px]">
+                  {{ if .Solicitud.GetOrigen }}{{ .Solicitud.GetOrigen.Aeropuerto }}{{ end }}
+                </p>
               </div>
             </div>
 
-            <!-- Connector 1 -->
-            <div class="flex-1 px-4 w-full md:w-auto flex flex-col items-center justify-center relative py-6 md:py-0 z-0">
-              <div class="w-full h-px border-t-2 border-dashed border-neutral-300 absolute top-1/2 left-0 transform -translate-y-1/2 hidden md:block"></div>
-              <div class="bg-white p-2 rounded-full border border-neutral-200 relative z-10 text-neutral-400 transform rotate-90 md:rotate-0 shadow-sm">
-                <i class="ph ph-airplane-tilt text-xl"></i>
-              </div>
-              <span class="text-[11px] font-bold text-primary uppercase mt-2 bg-neutral-50 px-2 rounded-full relative z-10">Ida</span>
+            <!-- Flecha/Conexión 1 -->
+            <div class="flex items-center justify-center text-neutral-300 py-4 md:py-0 md:px-4">
+              <div class="hidden md:block w-8 h-px bg-neutral-200 border-t border-dashed border-neutral-300"></div>
+              <i class="ph ph-caret-right text-sm mx-2"></i>
+              <div class="hidden md:block w-8 h-px bg-neutral-200 border-t border-dashed border-neutral-300"></div>
             </div>
 
-            <!-- Destino -->
-            <div class="text-center {{ if $isRoundTrip }}md:text-center{{ else }}md:text-right{{ end }} z-10 w-full md:w-auto">
-              <p class="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1">Destino</p>
-              <p class="text-2xl font-black text-neutral-800 leading-none">{{ .Solicitud.GetDestinoCiudad }}</p>
-              <p class="text-xs text-neutral-500 font-medium mt-1">{{ if .Solicitud.GetDestino }}{{ .Solicitud.GetDestino.Aeropuerto }}{{ end }}</p>
-              <div class="mt-2 text-center {{ if $isRoundTrip }}md:text-center{{ else }}md:text-right{{ end }}">
-                <span class="px-2 py-1 bg-primary text-white font-mono font-bold text-xs rounded border border-primary-600 shadow-sm">
-                  {{ if .Solicitud.GetDestino }}{{ .Solicitud.GetDestino.IATA }}{{ end }}
+            <!-- 2. SEDE (LA PAZ) - PUNTO CENTRAL -->
+            <div class="text-center z-10 w-full md:w-auto px-4">
+              <div class="inline-flex flex-col items-center">
+                <div class="h-10 w-10 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-400 mb-2 border border-neutral-200 shadow-inner">
+                  <i class="ph ph-buildings text-lg"></i>
+                </div>
+                <p class="text-xs font-black text-neutral-500 leading-none uppercase tracking-wider">SEDE CENTRAL</p>
+                <div class="text-sm font-black text-neutral-700 mt-1 uppercase">LA PAZ</div>
+                <div class="text-[10px] font-bold text-neutral-400 tracking-widest mt-1">LPB</div>
+              </div>
+            </div>
+
+             <!-- Flecha/Conexión 2 -->
+             <div class="flex items-center justify-center text-neutral-300 py-4 md:py-0 md:px-4">
+              <div class="hidden md:block w-8 h-px bg-neutral-200 border-t border-dashed border-neutral-300"></div>
+              <i class="ph ph-caret-right text-sm mx-2"></i>
+              <div class="hidden md:block w-8 h-px bg-neutral-200 border-t border-dashed border-neutral-300"></div>
+            </div>
+
+            <!-- 3. DESTINO FINAL (RETORNO) -->
+            <div class="text-center z-10 w-full md:w-auto flex-1">
+              <p class="text-[9px] font-black text-secondary uppercase tracking-widest leading-none mb-2">Punto de Retorno</p>
+              <div class="flex flex-col items-center">
+                <div class="h-12 w-12 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary mb-2 shadow-sm border border-secondary/20">
+                  <i class="ph ph-navigation-arrow text-2xl"></i>
+                </div>
+                <p class="text-xl font-black text-neutral-800 leading-none truncate max-w-[150px]">{{ .Solicitud.GetDestinoCiudad }}</p>
+                <span class="mt-2 px-2 py-0.5 bg-secondary text-white font-mono font-bold text-[10px] rounded border border-secondary shadow-sm">
+                  {{ .Solicitud.GetDestinoIATA }}
                 </span>
+                <p class="text-[9px] text-neutral-400 font-bold mt-1 uppercase truncate max-w-[150px]">
+                  {{ if .Solicitud.GetDestino }}{{ .Solicitud.GetDestino.Aeropuerto }}{{ end }}
+                </p>
               </div>
             </div>
-
-            {{ if $isRoundTrip }}
-            <!-- Connector 2 -->
-            <div class="flex-1 px-4 w-full md:w-auto flex flex-col items-center justify-center relative py-6 md:py-0 z-0 {{ if not .Solicitud.GetFechaVuelta }}opacity-60{{ end }}">
-              <div
-                class="w-full h-px border-t-2 border-dashed {{ if .Solicitud.GetFechaVuelta }}border-neutral-300{{ else }}border-neutral-200{{ end }} absolute top-1/2 left-0 transform -translate-y-1/2 hidden md:block"></div>
-              <div
-                class="bg-white p-2 rounded-full border {{ if .Solicitud.GetFechaVuelta }}border-neutral-200 text-neutral-600{{ else }}border-neutral-100 text-neutral-300{{ end }} relative z-10 transform rotate-90 md:rotate-0 shadow-sm">
-                <i class="ph ph-airplane-landing text-xl"></i>
-              </div>
-              <span
-                class="text-[11px] font-bold {{ if .Solicitud.GetFechaVuelta }}text-primary{{ else }}text-neutral-400{{ end }} uppercase mt-2 bg-neutral-50 px-2 rounded-full relative z-10">
-                Vuelta
-              </span>
-            </div>
-
-            <!-- Origen (Final) -->
-            <div class="text-center md:text-right z-10 w-full md:w-auto">
-              <p class="text-[10px] font-bold text-neutral-400 uppercase tracking-widest mb-1">Origen</p>
-              <p class="text-2xl font-black text-neutral-800 leading-none">{{ .Solicitud.GetOrigenCiudad }}</p>
-              <p class="text-xs text-neutral-500 font-medium mt-1">{{ if .Solicitud.GetOrigen }}{{ .Solicitud.GetOrigen.Aeropuerto }}{{ end }}</p>
-              <div class="mt-2 text-center md:text-right">
-                <span class="px-2 py-1 bg-neutral-200 text-neutral-700 font-mono font-bold text-xs rounded">
-                  {{ if .Solicitud.GetOrigen }}{{ .Solicitud.GetOrigen.IATA }}{{ end }}
-                </span>
-              </div>
-            </div>
-            {{ end }}
           </div>
-        </div>
-
-        <!-- Motivo -->
-        <div class="mt-4">
-          <h4 class="text-xs font-bold text-neutral-400 uppercase tracking-widest mb-2 flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-            </svg>
-            Motivo / Justificación
-          </h4>
-          <div class="bg-neutral-50 p-4 rounded-lg border border-neutral-200">
-            <p class="text-sm text-neutral-700 leading-relaxed italic">{{ .Solicitud.Motivo }}</p>
           </div>
         </div>
       </div>

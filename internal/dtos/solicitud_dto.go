@@ -9,8 +9,8 @@ type CreateSolicitudRequest struct {
 	TipoItinerarioCodigo string `form:"tipo_itinerario_codigo"`
 	TipoItinerario       string `form:"tipo_itinerario"`
 
-	OrigenIATA         string `form:"origen" binding:"required"`
-	DestinoIATA        string `form:"destino" binding:"required"`
+	OrigenIdaIATA      string `form:"origen_ida" binding:"required"`
+	DestinoVueltaIATA  string `form:"destino_vuelta" binding:"required"`
 	FechaIda           string `form:"fecha_salida"`
 	FechaVuelta        string `form:"fecha_retorno"`
 	Motivo             string `form:"motivo"`
@@ -27,8 +27,8 @@ type UpdateSolicitudRequest struct {
 	TipoSolicitudCodigo  string `form:"tipo_solicitud_codigo" binding:"required"`
 	AmbitoViajeCodigo    string `form:"ambito_viaje_codigo" binding:"required"`
 	TipoItinerarioCodigo string `form:"tipo_itinerario_codigo"`
-	OrigenIATA           string `form:"origen_cod" binding:"required"`
-	DestinoIATA          string `form:"destino_cod" binding:"required"`
+	OrigenIdaIATA        string `form:"origen_ida_cod" binding:"required"`
+	DestinoVueltaIATA    string `form:"destino_vuelta_cod" binding:"required"`
 	FechaIda             string `form:"fecha_salida"`
 	FechaVuelta          string `form:"fecha_retorno"`
 	Motivo               string `form:"motivo"`

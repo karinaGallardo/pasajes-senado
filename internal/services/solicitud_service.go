@@ -58,8 +58,8 @@ type SolicitudService struct {
 }
 
 func (s *SolicitudService) CreateDerecho(ctx context.Context, req dtos.CreateSolicitudRequest, currentUser *models.Usuario) (*models.Solicitud, error) {
-	req.OrigenIATA = strings.ToUpper(strings.TrimSpace(req.OrigenIATA))
-	req.DestinoIATA = strings.ToUpper(strings.TrimSpace(req.DestinoIATA))
+	req.OrigenIdaIATA = strings.ToUpper(strings.TrimSpace(req.OrigenIdaIATA))
+	req.DestinoVueltaIATA = strings.ToUpper(strings.TrimSpace(req.DestinoVueltaIATA))
 
 	fechaIda, err := utils.ParseDateTime(req.FechaIda)
 	if err != nil {
@@ -152,8 +152,8 @@ func (s *SolicitudService) CreateDerecho(ctx context.Context, req dtos.CreateSol
 	}
 	ida := models.SolicitudItem{
 		Tipo:         models.TipoSolicitudItemIda,
-		OrigenIATA:   req.OrigenIATA,
-		DestinoIATA:  req.DestinoIATA,
+		OrigenIATA:   req.OrigenIdaIATA,
+		DestinoIATA:  "LPB", // Sede Fija
 		Fecha:        fechaIda,
 		EstadoCodigo: utils.Ptr(stIda),
 	}
@@ -167,8 +167,8 @@ func (s *SolicitudService) CreateDerecho(ctx context.Context, req dtos.CreateSol
 	}
 	vuelta := models.SolicitudItem{
 		Tipo:         models.TipoSolicitudItemVuelta,
-		OrigenIATA:   req.DestinoIATA, // Intercambiado
-		DestinoIATA:  req.OrigenIATA,  // Intercambiado
+		OrigenIATA:   "LPB", // Sede Fija
+		DestinoIATA:  req.DestinoVueltaIATA,
 		Fecha:        fechaVuelta,
 		EstadoCodigo: utils.Ptr(stVuelta),
 	}

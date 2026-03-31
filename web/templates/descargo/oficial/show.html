@@ -222,7 +222,7 @@
 
         <div class="space-y-6">
           <!-- Tramos de IDA -->
-          {{ if .TicketsIda }}
+          {{ if .PasajesOriginales.IDA }}
           <div class="px-6 py-4 bg-primary-100/30">
             <h4 class="text-[10px] font-black text-primary-700 uppercase tracking-widest flex items-center gap-2">
               <i class="ph ph-airplane-takeoff"></i>
@@ -240,69 +240,84 @@
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-neutral-100">
-                {{ range .TicketsIda }}
-                  {{ range $i, $d := .Detalles }}
-                    {{ if not .EsDevolucion }}
+                {{ range .PasajesOriginales.IDA }}
+                  {{ range $i, $scale := .Scales }}
                     <tr class="group hover:bg-neutral-50/80 transition-all duration-200 {{ if .EsModificacion }}bg-warning-50/30{{ end }}">
                       <td class="px-6 py-4 whitespace-nowrap align-top">
                         <div class="flex flex-col gap-1.5">
                           {{ if eq $i 0 }}
-                          <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black border {{ .GetTipoColorClass }} uppercase tracking-tighter shadow-sm w-fit">
-                            {{ .GetTipoDisplay }}
-                          </span>
-                          {{ end }}
-                          {{ if .EsModificacion }}
-                          <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded text-[8px] font-black bg-warning-100 text-warning-700 border border-warning-200 uppercase tracking-tighter w-fit">
-                            Modificado
+                          <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black border border-primary-200 bg-primary-50 text-primary-700 uppercase tracking-tighter shadow-sm w-fit">
+                            ORIGINAL
                           </span>
                           {{ end }}
                         </div>
                       </td>
-
                       <td class="px-6 py-4 whitespace-nowrap align-top">
                         <div class="flex flex-col">
                           <span class="text-sm font-bold text-neutral-900 flex items-center mb-1">
                             <i class="ph ph-airplane mr-2 text-neutral-400"></i>
-                            {{ .GetRutaDisplay }}
+                            {{ .Ruta }}
                           </span>
                           <span class="text-xs text-neutral-500 flex items-center">
                             <i class="ph ph-calendar text-neutral-400 mr-2"></i>
-                            {{ if .Fecha }}{{ .Fecha.Format "02 de Ene, 2006" }}{{ else }} - {{ end }}
+                            {{ if .Fecha }}{{ .Fecha }}{{ else }} - {{ end }}
                           </span>
                         </div>
                       </td>
-
                       <td class="px-6 py-4 whitespace-nowrap align-top">
-                        <div class="flex flex-col gap-1">
-                          <div class="flex items-center text-[10px] text-neutral-700">
+                        <div class="flex flex-col gap-1 text-[10px] text-neutral-700">
+                          <div class="flex items-center">
                             <span class="w-12 font-bold text-neutral-400 uppercase tracking-widest italic opacity-60">Boleto</span>
                             <span class="font-mono text-neutral-900 font-bold ml-1">{{ if .Boleto }}{{ .Boleto }}{{ else }} - {{ end }}</span>
                           </div>
-                          {{ if .NumeroPaseAbordo }}
-                          <div class="flex items-center text-[10px] text-neutral-700">
-                            <span class="w-12 font-bold text-neutral-400 uppercase tracking-widest italic opacity-60">Pase</span>
-                            <span class="font-mono text-neutral-900 font-bold ml-1 uppercase">{{ .NumeroPaseAbordo }}</span>
-                          </div>
-                          {{ end }}
                         </div>
                       </td>
-
                       <td class="px-6 py-4 whitespace-nowrap text-right align-middle">
-                        {{ if .ArchivoPaseAbordo }}
-                        <button
-                          type="button"
-                          hx-get="/preview-file?path={{ .ArchivoPaseAbordo }}&info_tramo_registrado={{ .GetRutaDisplay | urlquery }}&info_fecha_registrada={{ if .Fecha }}{{ .Fecha.Format "02/01/2006" | urlquery }}{{ end }}&info_boleto_registrado={{ .Boleto | urlquery }}&info_pase_registrado={{ .NumeroPaseAbordo | urlquery }}"
-                          hx-target="#modal-container"
-                          class="inline-flex items-center px-3 py-1.5 border border-neutral-200 rounded-lg text-xs font-bold text-neutral-600 bg-white hover:bg-primary-50 hover:text-primary hover:border-primary/30 transition-all shadow-sm group-hover:shadow-md">
-                          <i class="ph ph-file-search mr-2 text-lg text-primary-500"></i>
-                          Ver Archivo
-                        </button>
-                        {{ else }}
-                        <span class="text-[9px] font-black text-neutral-400 uppercase italic opacity-40 px-3">Sin pase</span>
+                        {{ if .Archivo }}
+                        <button type="button" hx-get="/preview-file?path={{ .Archivo }}" hx-target="#modal-container" class="text-primary hover:underline font-bold text-xs">Ver Pase</button>
                         {{ end }}
                       </td>
                     </tr>
-                    {{ end }}
+                  {{ end }}
+                {{ end }}
+                {{ range .PasajesReprogramados.IDA }}
+                  {{ range $i, $scale := .Scales }}
+                    <tr class="group hover:bg-neutral-50/80 transition-all duration-200 bg-warning-50/30">
+                      <td class="px-6 py-4 whitespace-nowrap align-top">
+                        <div class="flex flex-col gap-1.5">
+                          {{ if eq $i 0 }}
+                          <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black border border-warning-200 bg-warning-50 text-warning-700 uppercase tracking-tighter shadow-sm w-fit">
+                            REPROGRAMADO
+                          </span>
+                          {{ end }}
+                        </div>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap align-top">
+                        <div class="flex flex-col">
+                          <span class="text-sm font-bold text-neutral-900 flex items-center mb-1">
+                            <i class="ph ph-airplane mr-2 text-neutral-400"></i>
+                            {{ .Ruta }}
+                          </span>
+                          <span class="text-xs text-neutral-500 flex items-center">
+                            <i class="ph ph-calendar text-neutral-400 mr-2"></i>
+                            {{ if .Fecha }}{{ .Fecha }}{{ else }} - {{ end }}
+                          </span>
+                        </div>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap align-top">
+                        <div class="flex flex-col gap-1 text-[10px] text-neutral-700">
+                          <div class="flex items-center">
+                            <span class="w-12 font-bold text-neutral-400 uppercase tracking-widest italic opacity-60">Boleto</span>
+                            <span class="font-mono text-neutral-900 font-bold ml-1">{{ if .Boleto }}{{ .Boleto }}{{ else }} - {{ end }}</span>
+                          </div>
+                        </div>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap text-right align-middle">
+                        {{ if .Archivo }}
+                        <button type="button" hx-get="/preview-file?path={{ .Archivo }}" hx-target="#modal-container" class="text-primary hover:underline font-bold text-xs">Ver Pase</button>
+                        {{ end }}
+                      </td>
+                    </tr>
                   {{ end }}
                 {{ end }}
               </tbody>
@@ -311,7 +326,7 @@
           {{ end }}
 
           <!-- Tramos de VUELTA -->
-          {{ if .TicketsVuelta }}
+          {{ if .PasajesOriginales.VUELTA }}
           <div class="px-6 py-4 bg-secondary-100/30 border-t border-neutral-100">
             <h4 class="text-[10px] font-black text-secondary-700 uppercase tracking-widest flex items-center gap-2">
               <i class="ph ph-airplane-landing"></i>
@@ -329,69 +344,84 @@
                 </tr>
               </thead>
               <tbody class="bg-white divide-y divide-neutral-100">
-                {{ range .TicketsVuelta }}
-                  {{ range $i, $d := .Detalles }}
-                    {{ if not .EsDevolucion }}
-                    <tr class="group hover:bg-neutral-50/80 transition-all duration-200 {{ if .EsModificacion }}bg-warning-50/30{{ end }}">
+                {{ range .PasajesOriginales.VUELTA }}
+                  {{ range $i, $scale := .Scales }}
+                    <tr class="group hover:bg-neutral-50/80 transition-all duration-200">
                       <td class="px-6 py-4 whitespace-nowrap align-top">
                         <div class="flex flex-col gap-1.5">
                           {{ if eq $i 0 }}
-                          <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black border {{ .GetTipoColorClass }} uppercase tracking-tighter shadow-sm w-fit">
-                            {{ .GetTipoDisplay }}
-                          </span>
-                          {{ end }}
-                          {{ if .EsModificacion }}
-                          <span class="inline-flex items-center justify-center px-1.5 py-0.5 rounded text-[8px] font-black bg-warning-100 text-warning-700 border border-warning-200 uppercase tracking-tighter w-fit">
-                            Modificado
+                          <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black border border-secondary-200 bg-secondary-50 text-secondary-700 uppercase tracking-tighter shadow-sm w-fit">
+                            ORIGINAL
                           </span>
                           {{ end }}
                         </div>
                       </td>
-
                       <td class="px-6 py-4 whitespace-nowrap align-top">
                         <div class="flex flex-col">
                           <span class="text-sm font-bold text-neutral-900 flex items-center mb-1">
                             <i class="ph ph-airplane mr-2 text-neutral-400"></i>
-                            {{ .GetRutaDisplay }}
+                            {{ .Ruta }}
                           </span>
                           <span class="text-xs text-neutral-500 flex items-center">
                             <i class="ph ph-calendar text-neutral-400 mr-2"></i>
-                            {{ if .Fecha }}{{ .Fecha.Format "02 de Ene, 2006" }}{{ else }} - {{ end }}
+                            {{ if .Fecha }}{{ .Fecha }}{{ else }} - {{ end }}
                           </span>
                         </div>
                       </td>
-
                       <td class="px-6 py-4 whitespace-nowrap align-top">
-                        <div class="flex flex-col gap-1">
-                          <div class="flex items-center text-[10px] text-neutral-700">
+                        <div class="flex flex-col gap-1 text-[10px] text-neutral-700">
+                          <div class="flex items-center">
                             <span class="w-12 font-bold text-neutral-400 uppercase tracking-widest italic opacity-60">Boleto</span>
                             <span class="font-mono text-neutral-900 font-bold ml-1">{{ if .Boleto }}{{ .Boleto }}{{ else }} - {{ end }}</span>
                           </div>
-                          {{ if .NumeroPaseAbordo }}
-                          <div class="flex items-center text-[10px] text-neutral-700">
-                            <span class="w-12 font-bold text-neutral-400 uppercase tracking-widest italic opacity-60">Pase</span>
-                            <span class="font-mono text-neutral-900 font-bold ml-1 uppercase">{{ .NumeroPaseAbordo }}</span>
-                          </div>
-                          {{ end }}
                         </div>
                       </td>
-
                       <td class="px-6 py-4 whitespace-nowrap text-right align-middle">
-                        {{ if .ArchivoPaseAbordo }}
-                        <button
-                          type="button"
-                          hx-get="/preview-file?path={{ .ArchivoPaseAbordo }}&info_tramo_registrado={{ .GetRutaDisplay | urlquery }}&info_fecha_registrada={{ if .Fecha }}{{ .Fecha.Format "02/01/2006" | urlquery }}{{ end }}&info_boleto_registrado={{ .Boleto | urlquery }}&info_pase_registrado={{ .NumeroPaseAbordo | urlquery }}"
-                          hx-target="#modal-container"
-                          class="inline-flex items-center px-3 py-1.5 border border-neutral-200 rounded-lg text-xs font-bold text-neutral-600 bg-white hover:bg-primary-50 hover:text-primary hover:border-primary/30 transition-all shadow-sm group-hover:shadow-md">
-                          <i class="ph ph-file-search mr-2 text-lg text-primary-500"></i>
-                          Ver Archivo
-                        </button>
-                        {{ else }}
-                        <span class="text-[9px] font-black text-neutral-400 uppercase italic opacity-40 px-3">Sin pase</span>
+                        {{ if .Archivo }}
+                        <button type="button" hx-get="/preview-file?path={{ .Archivo }}" hx-target="#modal-container" class="text-primary hover:underline font-bold text-xs">Ver Pase</button>
                         {{ end }}
                       </td>
                     </tr>
-                    {{ end }}
+                  {{ end }}
+                {{ end }}
+                {{ range .PasajesReprogramados.VUELTA }}
+                  {{ range $i, $scale := .Scales }}
+                    <tr class="group hover:bg-neutral-50/80 transition-all duration-200 bg-warning-50/30">
+                      <td class="px-6 py-4 whitespace-nowrap align-top">
+                        <div class="flex flex-col gap-1.5">
+                          {{ if eq $i 0 }}
+                          <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black border border-warning-200 bg-warning-50 text-warning-700 uppercase tracking-tighter shadow-sm w-fit">
+                            REPROGRAMADO
+                          </span>
+                          {{ end }}
+                        </div>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap align-top">
+                        <div class="flex flex-col">
+                          <span class="text-sm font-bold text-neutral-900 flex items-center mb-1">
+                            <i class="ph ph-airplane mr-2 text-neutral-400"></i>
+                            {{ .Ruta }}
+                          </span>
+                          <span class="text-xs text-neutral-500 flex items-center">
+                            <i class="ph ph-calendar text-neutral-400 mr-2"></i>
+                            {{ if .Fecha }}{{ .Fecha }}{{ else }} - {{ end }}
+                          </span>
+                        </div>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap align-top">
+                        <div class="flex flex-col gap-1 text-[10px] text-neutral-700">
+                          <div class="flex items-center">
+                            <span class="w-12 font-bold text-neutral-400 uppercase tracking-widest italic opacity-60">Boleto</span>
+                            <span class="font-mono text-neutral-900 font-bold ml-1">{{ if .Boleto }}{{ .Boleto }}{{ else }} - {{ end }}</span>
+                          </div>
+                        </div>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap text-right align-middle">
+                        {{ if .Archivo }}
+                        <button type="button" hx-get="/preview-file?path={{ .Archivo }}" hx-target="#modal-container" class="text-primary hover:underline font-bold text-xs">Ver Pase</button>
+                        {{ end }}
+                      </td>
+                    </tr>
                   {{ end }}
                 {{ end }}
               </tbody>
@@ -575,6 +605,7 @@
         </div>
       </div>
       {{ end }}
+      </div>
     </div>
   </div>
 </div>

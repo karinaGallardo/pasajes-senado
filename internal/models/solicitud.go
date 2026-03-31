@@ -197,11 +197,13 @@ func (s Solicitud) GetFechaVuelta() *time.Time {
 }
 
 func (s Solicitud) GetOrigen() *Destino {
+	// Look for IDA leg first
 	for i := range s.Items {
 		if s.Items[i].Tipo == TipoSolicitudItemIda {
 			return s.Items[i].Origen
 		}
 	}
+	// Fallback to first item's origin
 	if len(s.Items) > 0 {
 		return s.Items[0].Origen
 	}
@@ -209,13 +211,21 @@ func (s Solicitud) GetOrigen() *Destino {
 }
 
 func (s Solicitud) GetDestino() *Destino {
+	// Look for VUELTA leg first (this is the final destination for round-trips)
+	for i := range s.Items {
+		if s.Items[i].Tipo == TipoSolicitudItemVuelta {
+			return s.Items[i].Destino
+		}
+	}
+	// Fallback to IDA leg's destination (for one-way trips)
 	for i := range s.Items {
 		if s.Items[i].Tipo == TipoSolicitudItemIda {
 			return s.Items[i].Destino
 		}
 	}
+	// Fallback to last item's destination
 	if len(s.Items) > 0 {
-		return s.Items[0].Destino
+		return s.Items[len(s.Items)-1].Destino
 	}
 	return nil
 }

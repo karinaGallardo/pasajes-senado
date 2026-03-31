@@ -32,32 +32,40 @@
         vueltaProgramada: {{ if and $vuelta (eq $vuelta.GetEstado `PENDIENTE`) }}false{{ else }}true{{ end }},
         tipoItinerario: '{{ .Solicitud.TipoItinerarioCodigo }}',
         editId: '{{ .Solicitud.ID }}',
-        motivo: '{{ .Solicitud.Motivo }}',
         aerolinea: '{{ .Solicitud.AerolineaSugerida }}',
         idaStatus: '{{ $stIda }}',
         vueltaStatus: '{{ $stVuelta }}',
         selectedWeekLabel: '{{ .Item.Semana }}: del {{ if .Item.FechaDesde }}{{ .Item.FechaDesde.Format `02/01/2006` }}{{ end }} al {{ if .Item.FechaHasta }}{{ .Item.FechaHasta.Format `02/01/2006` }}{{ end }}',
 
-        origenCiudad: '{{ .Origen.Ciudad }}',
-        origenIATA: '{{ .Origen.IATA }}',
-        origenAero: '{{ .Origen.Aeropuerto }}',
-        destinoCiudad: '{{ .Destino.Ciudad }}',
-        destinoIATA: '{{ .Destino.IATA }}',
-        destinoAero: '{{ .Destino.Aeropuerto }}',
-        origenesAutorizados: {{ json .OrigenesAutorizados }},
-        showOrigenSelector: false,
+        // Ruta Asimétrica (Cargada con precisión desde el controlador)
+        origenIdaCiudad: '{{ .Origen.Ciudad }}',
+        origenIdaIATA: '{{ .Origen.IATA }}',
+        origenIdaAero: '{{ .Origen.Aeropuerto }}',
 
-        setOrigen(dest) {
-          if (this.tipoItinerario === 'SOLO_IDA' || this.tipoItinerario === 'IDA_VUELTA') {
-             this.origenCiudad = dest.ciudad;
-             this.origenIATA = dest.iata;
-             this.origenAero = dest.aeropuerto;
-          } else if (this.tipoItinerario === 'SOLO_VUELTA') {
-             this.destinoCiudad = dest.ciudad;
-             this.destinoIATA = dest.iata;
-             this.destinoAero = dest.aeropuerto;
-          }
-          this.showOrigenSelector = false;
+        destinoVueltaCiudad: '{{ .Destino.Ciudad }}',
+        destinoVueltaIATA: '{{ .Destino.IATA }}',
+        destinoVueltaAero: '{{ .Destino.Aeropuerto }}',
+
+        lpbCiudad: '{{ .LPBCity }}',
+        lpbIATA: '{{ .LPBIATA }}',
+        lpbAero: 'Aeropuerto Int. El Alto',
+
+        origenesAutorizados: {{ json .OrigenesAutorizados }},
+        showIdaSelector: false,
+        showVueltaSelector: false,
+
+        setOrigenIda(dest) {
+          this.origenIdaCiudad = dest.ciudad;
+          this.origenIdaIATA = dest.iata;
+          this.origenIdaAero = dest.aeropuerto;
+          this.showIdaSelector = false;
+        },
+
+        setDestinoVuelta(dest) {
+          this.destinoVueltaCiudad = dest.ciudad;
+          this.destinoVueltaIATA = dest.iata;
+          this.destinoVueltaAero = dest.aeropuerto;
+          this.showVueltaSelector = false;
         },
 
         validateForm() {
@@ -226,85 +234,124 @@
                 </div>
               </section>
 
-              <!-- VISUALIZACIÓN DE RUTA -->
-              <section class="bg-white p-6 rounded-2xl border border-neutral-100 shadow-sm relative mb-4">
-                <div class="relative flex items-center justify-between gap-4">
-                  <!-- ORIGEN -->
-                  <div class="flex-1">
-                    <div class="flex items-center space-x-3">
-                      <div class="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary shadow-inner">
-                        <i class="ph ph-map-pin text-2xl"></i>
+              <!-- VISUALIZACIÓN DE RUTA (ASIMÉTRICA) -->
+              <section class="bg-white p-6 rounded-2xl border border-neutral-100 shadow-sm relative group mb-4">
+                <div class="relative flex items-center justify-between gap-2">
+                  <!-- 1. ORIGEN IDA -->
+                  <div class="flex-1 relative">
+                    <div class="flex items-center space-x-2">
+                      <div class="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shadow-inner">
+                        <i class="ph ph-map-pin text-xl"></i>
                       </div>
                       <div class="flex-1 min-w-0">
-                        <div class="flex items-center gap-1.5">
-                          <h4 class="text-xs font-black text-primary uppercase tracking-widest mb-0.5">Origen</h4>
-                          <template x-if="origenesAutorizados && origenesAutorizados.length > 0">
-                            <button
-                              type="button"
-                              @click="showOrigenSelector = !showOrigenSelector"
-                              class="p-0.5 hover:bg-primary-50 text-neutral-400 hover:text-primary rounded transition-colors"
-                              title="Cambiar origen autorizado">
-                              <i class="ph ph-note-pencil text-xs"></i>
-                            </button>
-                          </template>
+                        <div class="flex items-center gap-1">
+                          <h4 class="text-[9px] font-black text-primary uppercase tracking-widest leading-none">Salida</h4>
+                          <button
+                            type="button"
+                            @click="showIdaSelector = !showIdaSelector"
+                            class="p-0.5 hover:bg-primary-50 text-neutral-400 hover:text-primary rounded transition-colors"
+                            :disabled="!canEditIda"
+                            :class="!canEditIda ? 'opacity-0' : ''">
+                            <i class="ph ph-note-pencil text-[10px]"></i>
+                          </button>
                         </div>
-                        <div class="text-2xl font-black text-neutral-800 tracking-tighter leading-none truncate" x-text="origenCiudad"></div>
-                        <div class="text-[10px] font-bold text-neutral-400 mt-1 uppercase truncate max-w-[150px]" x-text="origenAero"></div>
+                        <div class="text-lg font-black text-neutral-800 leading-none truncate" x-text="origenIdaCiudad"></div>
+                        <div class="text-[10px] font-bold text-primary" x-text="origenIdaIATA"></div>
                       </div>
                     </div>
 
-                    <!-- Dropdown selector de orígenes autorizados -->
+                    <!-- Selector Ida -->
                     <div
-                      x-show="showOrigenSelector"
-                      @click.away="showOrigenSelector = false"
-                      class="absolute top-full left-0 mt-2 w-64 bg-white border border-neutral-200 rounded-lg shadow-xl z-50 overflow-hidden"
+                      x-show="showIdaSelector"
+                      @click.away="showIdaSelector = false"
+                      class="absolute top-full left-0 mt-2 w-56 bg-white border border-neutral-200 rounded-lg shadow-xl z-50 overflow-hidden"
                       x-cloak
                       x-transition>
-                      <div class="bg-neutral-50 px-3 py-2 border-b border-neutral-100">
-                        <span class="text-[10px] font-black text-neutral-500 uppercase">Seleccionar Origen Autorizado</span>
+                      <div class="bg-neutral-50 px-2 py-1.5 border-b border-neutral-100">
+                        <span class="text-[9px] font-black text-neutral-500 uppercase">Origen Autorizado</span>
                       </div>
-                      <div class="max-h-48 overflow-y-auto">
+                      <div class="max-h-40 overflow-y-auto">
                         <template x-for="dest in origenesAutorizados" :key="dest.iata">
                           <button
                             type="button"
-                            @click="setOrigen(dest)"
-                            class="w-full text-left px-3 py-2 hover:bg-primary-50 transition-colors border-b border-neutral-50 last:border-0 group">
+                            @click="setOrigenIda(dest)"
+                            class="w-full text-left px-3 py-1.5 hover:bg-primary-50 transition-colors border-b border-neutral-50 last:border-0 group">
                             <div class="flex items-center justify-between">
-                              <span class="text-sm font-bold text-neutral-700 group-hover:text-primary" x-text="dest.ciudad"></span>
-                              <span
-                                class="text-[10px] font-black text-neutral-400 bg-neutral-100 px-1.5 rounded group-hover:bg-primary/20 group-hover:text-primary"
-                                x-text="dest.iata"></span>
+                              <span class="text-xs font-bold text-neutral-700 group-hover:text-primary" x-text="dest.ciudad"></span>
+                              <span class="text-[9px] font-black text-neutral-400" x-text="dest.iata"></span>
                             </div>
-                            <div class="text-[9px] text-neutral-400 group-hover:text-primary/70 truncate" x-text="dest.aeropuerto"></div>
                           </button>
                         </template>
                       </div>
                     </div>
                   </div>
 
-                  <!-- CONEXIÓN -->
-                  <div class="flex-[0.5] flex flex-col items-center justify-center py-2">
-                    <div class="relative w-full flex items-center justify-center">
-                      <div class="absolute inset-0 flex items-center">
-                        <div class="w-full border-t-2 border-dashed border-neutral-200"></div>
+                  <!-- Flecha/Conexión Ida -->
+                  <div class="flex items-center text-neutral-300">
+                    <i class="ph ph-caret-right text-xs"></i>
+                  </div>
+
+                  <!-- 2. SEDE (LA PAZ) - FIJA -->
+                  <div class="flex-1 text-center px-2">
+                    <div class="inline-flex flex-col items-center">
+                      <div class="h-8 w-8 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-400 mb-1 border border-neutral-200">
+                        <i class="ph ph-buildings text-sm"></i>
                       </div>
-                      <div
-                        class="relative h-10 w-10 rounded-full bg-white border-2 border-primary/20 flex items-center justify-center text-primary shadow-sm group-hover:rotate-12 transition-transform duration-500">
-                        <i class="ph ph-airplane-tilt text-xl"></i>
-                      </div>
+                      <div class="text-xs font-black text-neutral-500 leading-none uppercase" x-text="lpbCiudad"></div>
+                      <div class="text-[9px] font-bold text-neutral-400" x-text="lpbIATA"></div>
                     </div>
                   </div>
 
-                  <!-- DESTINO -->
-                  <div class="flex-1 text-right">
-                    <div class="flex items-center justify-end space-x-3">
-                      <div>
-                        <h4 class="text-xs font-black text-secondary uppercase tracking-widest mb-0.5">Destino</h4>
-                        <div class="text-2xl font-black text-neutral-800 tracking-tighter leading-none" x-text="destinoCiudad"></div>
-                        <div class="text-[10px] font-bold text-neutral-400 mt-1 uppercase truncate max-w-[150px]" x-text="destinoAero"></div>
+                  <!-- Flecha/Conexión Vuelta -->
+                  <div class="flex items-center text-neutral-300">
+                    <i class="ph ph-caret-right text-xs"></i>
+                  </div>
+
+                  <!-- 3. DESTINO VUELTA -->
+                  <div class="flex-1 text-right relative">
+                    <div class="flex items-center justify-end space-x-2">
+                      <div class="flex-1 min-w-0">
+                        <div class="flex items-center justify-end gap-1">
+                          <button
+                            type="button"
+                            @click="showVueltaSelector = !showVueltaSelector"
+                            class="p-0.5 hover:bg-secondary-50 text-neutral-400 hover:text-secondary rounded transition-colors"
+                            :disabled="!canEditVuelta"
+                            :class="!canEditVuelta ? 'opacity-0' : ''">
+                            <i class="ph ph-note-pencil text-[10px]"></i>
+                          </button>
+                          <h4 class="text-[9px] font-black text-secondary uppercase tracking-widest leading-none">Retorno</h4>
+                        </div>
+                        <div class="text-lg font-black text-neutral-800 leading-none truncate" x-text="destinoVueltaCiudad"></div>
+                        <div class="text-[10px] font-bold text-secondary" x-text="destinoVueltaIATA"></div>
                       </div>
-                      <div class="h-12 w-12 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary shadow-inner">
-                        <i class="ph ph-navigation-arrow text-2xl"></i>
+                      <div class="h-10 w-10 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary shadow-inner">
+                        <i class="ph ph-navigation-arrow text-xl"></i>
+                      </div>
+                    </div>
+
+                    <!-- Selector Vuelta -->
+                    <div
+                      x-show="showVueltaSelector"
+                      @click.away="showVueltaSelector = false"
+                      class="absolute top-full right-0 mt-2 w-56 bg-white border border-neutral-200 rounded-lg shadow-xl z-50 overflow-hidden"
+                      x-cloak
+                      x-transition>
+                      <div class="bg-neutral-50 px-2 py-1.5 border-b border-neutral-100 text-right">
+                        <span class="text-[9px] font-black text-neutral-500 uppercase">Destino Autorizado</span>
+                      </div>
+                      <div class="max-h-40 overflow-y-auto">
+                        <template x-for="dest in origenesAutorizados" :key="dest.iata">
+                          <button
+                            type="button"
+                            @click="setDestinoVuelta(dest)"
+                            class="w-full text-right px-3 py-1.5 hover:bg-secondary-50 transition-colors border-b border-neutral-50 last:border-0 group">
+                            <div class="flex items-center justify-between">
+                              <span class="text-[9px] font-black text-neutral-400" x-text="dest.iata"></span>
+                              <span class="text-xs font-bold text-neutral-700 group-hover:text-secondary" x-text="dest.ciudad"></span>
+                            </div>
+                          </button>
+                        </template>
                       </div>
                     </div>
                   </div>
@@ -338,16 +385,16 @@
                             <div>
                               <div class="flex items-center gap-2">
                                 <div class="text-sm font-black text-neutral-800 tracking-tight">
-                                  <span x-text="origenIATA"></span>
+                                  <span x-text="origenIdaIATA"></span>
                                   <i class="ph ph-arrow-right text-[10px] mx-1 text-neutral-400"></i>
-                                  <span x-text="destinoIATA"></span>
+                                  <span x-text="lpbIATA"></span>
                                 </div>
                                 <span class="px-1.5 py-0.5 rounded-sm bg-primary-100 text-primary-700 text-[8px] font-black uppercase tracking-tighter">IDA</span>
                               </div>
                               <div class="text-[10px] font-bold text-neutral-400 uppercase tracking-tighter">
-                                <span x-text="origenCiudad"></span>
+                                <span x-text="origenIdaCiudad"></span>
                                 •
-                                <span x-text="destinoCiudad"></span>
+                                <span x-text="lpbCiudad"></span>
                               </div>
                             </div>
                           </div>
@@ -402,16 +449,16 @@
                             <div>
                               <div class="flex items-center gap-2">
                                 <div class="text-sm font-black text-neutral-800 tracking-tight">
-                                  <span x-text="destinoIATA"></span>
+                                  <span x-text="lpbIATA"></span>
                                   <i class="ph ph-arrow-right text-[10px] mx-1 text-neutral-400"></i>
-                                  <span x-text="origenIATA"></span>
+                                  <span x-text="destinoVueltaIATA"></span>
                                 </div>
                                 <span class="px-1.5 py-0.5 rounded-sm bg-secondary-100 text-secondary-700 text-[8px] font-black uppercase tracking-tighter">VUELTA</span>
                               </div>
                               <div class="text-[10px] font-bold text-neutral-400 uppercase tracking-tighter">
-                                <span x-text="destinoCiudad"></span>
+                                <span x-text="lpbCiudad"></span>
                                 •
-                                <span x-text="origenCiudad"></span>
+                                <span x-text="destinoVueltaCiudad"></span>
                               </div>
                             </div>
                           </div>
@@ -464,8 +511,8 @@
               <section>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
                   <!-- Hidden fields required for update (always present) -->
-                  <input type="hidden" name="origen_cod" :value="origenIATA" />
-                  <input type="hidden" name="destino_cod" :value="destinoIATA" />
+                  <input type="hidden" name="origen_ida_cod" :value="origenIdaIATA" />
+                  <input type="hidden" name="destino_vuelta_cod" :value="destinoVueltaIATA" />
                   <input type="hidden" name="tipo_itinerario_codigo" :value="tipoItinerario" />
 
                   <div class="md:col-span-2 space-y-1.5">
@@ -533,10 +580,6 @@
                     </div>
                     <input type="hidden" name="aerolinea_sugerida" :value="aerolinea" />
                   </div>
-
-                  <!-- VALORES INMUTABLES EN EDICIÓN (HIDDEN) -->
-                  <input type="hidden" name="autorizacion" value="{{ .Solicitud.Autorizacion }}" />
-                  <input type="hidden" name="motivo" :value="motivo" />
                 </div>
               </section>
             </div>
@@ -545,5 +588,5 @@
       </div>
     </div>
   </div>
-  {{ end }}
 </div>
+{{ end }}

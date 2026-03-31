@@ -30,14 +30,20 @@ func (r *RutaRepository) FindAll(ctx context.Context) ([]models.Ruta, error) {
 	return rutas, err
 }
 
-func (r *RutaRepository) Search(ctx context.Context, query string) ([]models.Ruta, error) {
+func (r *RutaRepository) Search(ctx context.Context, query string, onlyAtomic bool) ([]models.Ruta, error) {
 	var rutas []models.Ruta
 	q := "%" + query + "%"
-	err := r.db.WithContext(ctx).
+	db := r.db.WithContext(ctx).
 		Preload("Origen").
-		Preload("Destino").
-		Preload("Escalas.Destino").
-		Where("tramo ILIKE ? OR sigla ILIKE ? OR origen_iata ILIKE ? OR destino_iata ILIKE ?", q, q, q, q).
+		Preload("Destino")
+
+	if onlyAtomic {
+		db = db.Where("rutas.id NOT IN (SELECT ruta_id FROM ruta_escalas)")
+	} else {
+		db = db.Preload("Escalas.Destino")
+	}
+
+	err := db.Where("tramo ILIKE ? OR sigla ILIKE ? OR origen_iata ILIKE ? OR destino_iata ILIKE ?", q, q, q, q).
 		Limit(20).
 		Find(&rutas).Error
 	return rutas, err

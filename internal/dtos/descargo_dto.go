@@ -35,6 +35,9 @@ type CreateDescargoRequest struct {
 	ItinOrden           []string                `form:"itin_orden[]"`
 	ItinDevolucion      []string                `form:"itin_devolucion[]"`
 	ItinModificacion    []string                `form:"itin_modificacion[]"`
-	ItinMontoDevolucion []string                `form:"itin_monto_devo[]"`
+	ItinMontoDevolucion []string                `form:"itin_monto_devolucion[]"`
+	ItinMoneda          []string                `form:"itin_moneda[]"`
+	ItinPasajeID        []string                `form:"itin_pasaje_id[]"`
+	ItinSolicitudItemID []string                `form:"itin_solicitud_item_id[]"`
 	ItinPaseArchivo     []*multipart.FileHeader `form:"itin_archivo[]"`
 }

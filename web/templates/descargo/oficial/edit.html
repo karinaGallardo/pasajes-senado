@@ -238,23 +238,18 @@
               </tr>
             </thead>
             <tbody>
-              {{ range $tipo, $tickets := .Tickets }} {{ if eq $tipo "IDA_ORIGINAL" }} {{ range $tickets }} {{ $totalScales := len .Scales }} {{ range $j, $scale := .Scales }} {{
-              template "descargo/components/escala_fila_oficial" (dict "Tipo" "IDA_ORIGINAL" "Index" $scale.Index "RutaID" $scale.RutaID "Ruta" $scale.Ruta "Fecha" $scale.Fecha
-              "Boleto" $scale.Boleto "Pase" $scale.Pase "Archivo" $scale.Archivo "CostoPasaje" $scale.CostoPasaje "EsDevolucion" $scale.EsDevolucion "EsModificacion"
-              $scale.EsModificacion "IsFirstScale" (eq $j 0) "TotalScales" $totalScales "CanDelete" false "ReadOnlyRuta" true "Orden" $scale.Orden "ID" $scale.ID) }} {{ end }} {{
-              end }} {{ end }} {{ end }}
+              {{ range (index .PasajesOriginales "IDA") }} {{
+              template "descargo/components/escala_fila_oficial" (dict "Scale" . "Tipo" "IDA_ORIGINAL") }} {{ end }}
             </tbody>
             <tbody id="itin-ida-repro-container" class="border-t-2 border-neutral-50">
-              {{ range $tipo, $tickets := .Tickets }} {{ if eq $tipo "IDA_REPRO" }} {{ range $tickets }} {{ range .Scales }} {{ template "descargo/components/escala_fila_oficial"
-              (dict "Tipo" "IDA_REPRO" "Index" .Index "RutaID" .RutaID "Ruta" .Ruta "Fecha" .Fecha "Boleto" .Boleto "Pase" .Pase "Archivo" .Archivo "CostoPasaje" .CostoPasaje
-              "EsDevolucion" .EsDevolucion "EsModificacion" .EsModificacion "IsFirstScale" true "TotalScales" 1 "CanDelete" true "ReadOnlyRuta" false "Orden" .Orden "ID" .ID) }} {{
-              end }} {{ end }} {{ end }} {{ end }}
+              {{ range (index .PasajesReprogramados "IDA") }} {{
+              template "descargo/components/escala_fila_oficial" (dict "Scale" . "Tipo" "IDA_REPRO") }} {{ end }}
             </tbody>
           </table>
           <div class="flex justify-start">
             <button
               type="button"
-              hx-get="/descargos/oficial/nueva-fila?tipo=IDA_REPRO"
+              hx-get="/descargos/oficial/nueva-fila?tipo=IDA_REPRO&solicitud_item_id={{ .Solicitud.GetItemIda.ID }}"
               hx-target="#itin-ida-repro-container"
               hx-swap="beforeend"
               class="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary hover:text-primary-800 transition-colors">
@@ -273,23 +268,18 @@
           </div>
           <table class="min-w-full">
             <tbody>
-              {{ range $tipo, $tickets := .Tickets }} {{ if eq $tipo "VUELTA_ORIGINAL" }} {{ range $tickets }} {{ $totalScales := len .Scales }} {{ range $j, $scale := .Scales }}
-              {{ template "descargo/components/escala_fila_oficial" (dict "Tipo" "VUELTA_ORIGINAL" "Index" $scale.Index "RutaID" $scale.RutaID "Ruta" $scale.Ruta "Fecha"
-              $scale.Fecha "Boleto" $scale.Boleto "Pase" $scale.Pase "Archivo" $scale.Archivo "CostoPasaje" $scale.CostoPasaje "EsDevolucion" $scale.EsDevolucion "EsModificacion"
-              $scale.EsModificacion "IsFirstScale" (eq $j 0) "TotalScales" $totalScales "CanDelete" false "ReadOnlyRuta" true "Orden" $scale.Orden "ID" $scale.ID) }} {{ end }} {{
-              end }} {{ end }} {{ end }}
+              {{ range (index .PasajesOriginales "VUELTA") }} {{
+              template "descargo/components/escala_fila_oficial" (dict "Scale" . "Tipo" "VUELTA_ORIGINAL") }} {{ end }}
             </tbody>
             <tbody id="itin-vuelta-repro-container" class="border-t-2 border-neutral-50">
-              {{ range $tipo, $tickets := .Tickets }} {{ if eq $tipo "VUELTA_REPRO" }} {{ range $tickets }} {{ range .Scales }} {{ template
-              "descargo/components/escala_fila_oficial" (dict "Tipo" "VUELTA_REPRO" "Index" .Index "RutaID" .RutaID "Ruta" .Ruta "Fecha" .Fecha "Boleto" .Boleto "Pase" .Pase
-              "Archivo" .Archivo "CostoPasaje" .CostoPasaje "EsDevolucion" .EsDevolucion "EsModificacion" .EsModificacion "IsFirstScale" true "TotalScales" 1 "CanDelete" true
-              "ReadOnlyRuta" false "Orden" .Orden "ID" .ID) }} {{ end }} {{ end }} {{ end }} {{ end }}
+              {{ range (index .PasajesReprogramados "VUELTA") }} {{
+              template "descargo/components/escala_fila_oficial" (dict "Scale" . "Tipo" "VUELTA_REPRO") }} {{ end }}
             </tbody>
           </table>
           <div class="flex justify-start">
             <button
               type="button"
-              hx-get="/descargos/oficial/nueva-fila?tipo=VUELTA_REPRO"
+              hx-get="/descargos/oficial/nueva-fila?tipo=VUELTA_REPRO&solicitud_item_id={{ .Solicitud.GetItemVuelta.ID }}"
               hx-target="#itin-vuelta-repro-container"
               hx-swap="beforeend"
               class="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-secondary hover:text-secondary-800 transition-colors">

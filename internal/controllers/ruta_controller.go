@@ -47,7 +47,8 @@ func (ctrl *RutaController) Search(c *gin.Context) {
 		return
 	}
 
-	rutas, err := ctrl.rutaService.Search(c.Request.Context(), query)
+	atomic := c.Query("atomic") == "true"
+	rutas, err := ctrl.rutaService.Search(c.Request.Context(), query, atomic)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

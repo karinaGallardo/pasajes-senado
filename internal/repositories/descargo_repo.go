@@ -52,7 +52,7 @@ func SearchDescargo(term string) func(db *gorm.DB) *gorm.DB {
 
 func (r *DescargoRepository) FindBySolicitudID(ctx context.Context, solicitudID string) (*models.Descargo, error) {
 	var descargo models.Descargo
-	err := r.db.WithContext(ctx).Preload("Documentos").
+	err := r.db.WithContext(ctx).
 		Preload("DetallesItinerario", func(db *gorm.DB) *gorm.DB { return db.Order("orden ASC") }).
 		Preload("DetallesItinerario.RutaPasaje.Origen").
 		Preload("DetallesItinerario.RutaPasaje.Destino").
@@ -80,7 +80,7 @@ func (r *DescargoRepository) FindBySolicitudID(ctx context.Context, solicitudID 
 
 func (r *DescargoRepository) FindByID(ctx context.Context, id string) (*models.Descargo, error) {
 	var descargo models.Descargo
-	err := r.db.WithContext(ctx).Preload("Documentos").
+	err := r.db.WithContext(ctx).
 		Preload("DetallesItinerario", func(db *gorm.DB) *gorm.DB { return db.Order("orden ASC") }).
 		Preload("DetallesItinerario.RutaPasaje.Origen").
 		Preload("DetallesItinerario.RutaPasaje.Destino").
@@ -208,9 +208,17 @@ func (r *DescargoRepository) FindPaginated(ctx context.Context, page, limit int,
 
 func (r *DescargoRepository) Update(ctx context.Context, descargo *models.Descargo) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		// 1. Actualizar campos principales del Descargo (omitimos relaciones complejas)
-		if err := tx.Model(descargo).Omit("DetallesItinerario", "Oficial", "Anexos", "Terrestres").Save(descargo).Error; err != nil {
+		// 1. Cargar el Descargo actual para comparar (Dirty Tracking)
+		var existing models.Descargo
+		if err := tx.First(&existing, "id = ?", descargo.ID).Error; err != nil {
 			return err
+		}
+
+		// 2. Actualizar la cabecera SOLO si cambió algo
+		if descargo.HasChanges(existing) {
+			if err := tx.Model(descargo).Select("*").Omit("DetallesItinerario", "Oficial", "Anexos", "Terrestres", "CreatedAt", "CreatedBy").Updates(descargo).Error; err != nil {
+				return err
+			}
 		}
 
 		// 2. Obtener IDs actuales para borrar los que ya no vienen en el formulario
@@ -230,12 +238,41 @@ func (r *DescargoRepository) Update(ctx context.Context, descargo *models.Descar
 			return err
 		}
 
-		// 3. Guardar/Actualizar cada detalle individualmente para asegurar que los campos cambien
+		// 3. Cargar los detalles actuales de la DB para comparar (Dirty Tracking como Eloquent)
+		var existingDetails []models.DetalleItinerarioDescargo
+		if err := tx.Where("descargo_id = ?", descargo.ID).Find(&existingDetails).Error; err != nil {
+			return err
+		}
+
+		existingMap := make(map[string]models.DetalleItinerarioDescargo)
+		for _, ed := range existingDetails {
+			existingMap[ed.ID] = ed
+		}
+
+		// 4. Guardar/Actualizar cada detalle de forma inteligente
 		for i := range descargo.DetallesItinerario {
 			det := &descargo.DetallesItinerario[i]
 			det.DescargoID = descargo.ID
-			if err := tx.Save(det).Error; err != nil {
-				return err
+
+			// Si el ID empieza con "new_", es un registro nuevo (generado en Alpine)
+			if det.ID == "" || strings.HasPrefix(det.ID, "new_") {
+				det.ID = "" // Limpiar el ID temporal para que GORM genere uno (UUID)
+				if err := tx.Create(det).Error; err != nil {
+					return err
+				}
+			} else {
+				// Es un registro que ya existía: ¿ha cambiado algo realmente?
+				if existing, ok := existingMap[det.ID]; ok {
+					if det.HasChanges(existing) {
+						// Solo disparamos el UPDATE si hay cambios en los datos de negocio
+						// Esto protege la integridad de updated_at para auditoría
+						if err := tx.Model(det).Select("*").Omit("CreatedAt", "CreatedBy").Updates(det).Error; err != nil {
+							return err
+						}
+					}
+					// Si HasChanges es false, saltamos el UPDATE por completo. 
+					// Así mantenemos el updated_at original.
+				}
 			}
 		}
 
@@ -244,7 +281,19 @@ func (r *DescargoRepository) Update(ctx context.Context, descargo *models.Descar
 }
 
 func (r *DescargoRepository) UpdateOficial(ctx context.Context, oficial *models.DescargoOficial) error {
-	return r.db.WithContext(ctx).Save(oficial).Error
+	// 1. Carga el registro actual para comparar (Dirty Tracking)
+	var existing models.DescargoOficial
+	if err := r.db.WithContext(ctx).First(&existing, "id = ?", oficial.ID).Error; err != nil {
+		// Si no existe (raro en un update pero posible), procedemos con un Save normal
+		return r.db.WithContext(ctx).Save(oficial).Error
+	}
+
+	// 2. Solo actualizamos si cambió algo
+	if oficial.HasChanges(existing) {
+		return r.db.WithContext(ctx).Model(oficial).Select("*").Omit("CreatedAt", "CreatedBy").Updates(oficial).Error
+	}
+
+	return nil
 }
 
 func (r *DescargoRepository) DeleteDetallesNotIn(ctx context.Context, descargoID string, ids []string) error {

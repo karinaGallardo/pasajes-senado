@@ -4,7 +4,7 @@ package utils
 //
 //go:fix inline
 func Ptr[T any](v T) *T {
-	return new(v)
+	return &v
 }
 
 // NilIfEmpty retorna nil si el string está vacío, de lo contrario un puntero al string.

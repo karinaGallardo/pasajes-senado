@@ -25,6 +25,20 @@ type DescargoOficial struct {
 	TransportesTerrestres []TransporteTerrestreDescargo `gorm:"foreignKey:DescargoOficialID"`
 }
 
+func (d DescargoOficial) HasChanges(other DescargoOficial) bool {
+	return d.DescargoID != other.DescargoID ||
+		d.NroMemorandum != other.NroMemorandum ||
+		d.ObjetivoViaje != other.ObjetivoViaje ||
+		d.TipoTransporte != other.TipoTransporte ||
+		d.PlacaVehiculo != other.PlacaVehiculo ||
+		d.InformeActividades != other.InformeActividades ||
+		d.ResultadosViaje != other.ResultadosViaje ||
+		d.ConclusionesRecomendaciones != other.ConclusionesRecomendaciones ||
+		d.MontoDevolucion != other.MontoDevolucion ||
+		d.NroBoletaDeposito != other.NroBoletaDeposito ||
+		d.DirigidoA != other.DirigidoA
+}
+
 func (DescargoOficial) TableName() string {
 	return "descargos_oficiales"
 }

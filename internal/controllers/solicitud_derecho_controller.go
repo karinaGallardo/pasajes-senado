@@ -196,14 +196,23 @@ func (ctrl *SolicitudDerechoController) GetEditModal(c *gin.Context) {
 
 	itin := solicitud.TipoItinerario
 
-	origen := solicitud.GetOrigen()
-	destino := solicitud.GetDestino()
+	// Extraer específicamente origen de IDA y destino de VUELTA para la visualización asimétrica
+	var origen, destino *models.Destino
+	ida := solicitud.GetItemIda()
+	vuelta := solicitud.GetItemVuelta()
 
-	// Fallback to user location if not set in items (should not happen for valid solicitudes)
-	if origen == nil {
+	if ida != nil && ida.Origen != nil {
+		origen = ida.Origen
+	} else if userLoc != nil {
 		origen = userLoc
 	}
-	if destino == nil {
+
+	if vuelta != nil && vuelta.Destino != nil {
+		destino = vuelta.Destino
+	} else if ida != nil && ida.Destino != nil {
+		// Fallback al destino de la ida si no hay vuelta (vuelos solo ida)
+		destino = ida.Destino
+	} else if lpbLoc != nil {
 		destino = lpbLoc
 	}
 
@@ -223,8 +232,6 @@ func (ctrl *SolicitudDerechoController) GetEditModal(c *gin.Context) {
 	maxDateVuelta := maxDateIda
 
 	referer := c.Request.Referer()
-	ida := solicitud.GetItemIda()
-	vuelta := solicitud.GetItemVuelta()
 
 	canEditIda := ida == nil || ida.CanEdit()
 	canEditVuelta := vuelta == nil || vuelta.CanEdit()
@@ -254,6 +261,8 @@ func (ctrl *SolicitudDerechoController) GetEditModal(c *gin.Context) {
 		"ReturnURL":           referer,
 		"Origen":              origen,
 		"Destino":             destino,
+		"LPBCity":             "LA PAZ",
+		"LPBIATA":             "LPB",
 		"OrigenesAutorizados": origenesAutorizados,
 		"MinDateIda":          minDateIda,
 		"MaxDateIda":          maxDateIda,
@@ -320,31 +329,34 @@ func (ctrl *SolicitudDerechoController) Update(c *gin.Context) {
 		solicitud.TipoSolicitudCodigo = req.TipoSolicitudCodigo
 		solicitud.AmbitoViajeCodigo = req.AmbitoViajeCodigo
 		solicitud.AerolineaSugerida = req.AerolineaSugerida
-		solicitud.Motivo = req.Motivo
+		if req.Motivo != "" {
+			solicitud.Motivo = req.Motivo
+		}
 
-		req.OrigenIATA = strings.ToUpper(strings.TrimSpace(req.OrigenIATA))
-		req.DestinoIATA = strings.ToUpper(strings.TrimSpace(req.DestinoIATA))
+		req.OrigenIdaIATA = strings.ToUpper(strings.TrimSpace(req.OrigenIdaIATA))
+		req.DestinoVueltaIATA = strings.ToUpper(strings.TrimSpace(req.DestinoVueltaIATA))
 
-		orig, _ := ctrl.destinoService.GetByIATA(c.Request.Context(), req.OrigenIATA)
-		dest, _ := ctrl.destinoService.GetByIATA(c.Request.Context(), req.DestinoIATA)
+		origIda, _ := ctrl.destinoService.GetByIATA(c.Request.Context(), req.OrigenIdaIATA)
+		destVuelta, _ := ctrl.destinoService.GetByIATA(c.Request.Context(), req.DestinoVueltaIATA)
+		lpb, _ := ctrl.destinoService.GetByIATA(c.Request.Context(), "LPB")
 
 		// Forzamos que existan ambos tramos para DERECHO
 		if solicitud.GetItemIda() == nil {
 			solicitud.Items = append(solicitud.Items, models.SolicitudItem{
 				SolicitudID:  solicitud.ID,
 				Tipo:         models.TipoSolicitudItemIda,
-				OrigenIATA:   req.OrigenIATA,
-				DestinoIATA:  req.DestinoIATA,
-				EstadoCodigo: new("PENDIENTE"),
+				OrigenIATA:   req.OrigenIdaIATA,
+				DestinoIATA:  "LPB",
+				EstadoCodigo: utils.Ptr("PENDIENTE"),
 			})
 		}
 		if solicitud.GetItemVuelta() == nil {
 			solicitud.Items = append(solicitud.Items, models.SolicitudItem{
 				SolicitudID:  solicitud.ID,
 				Tipo:         models.TipoSolicitudItemVuelta,
-				OrigenIATA:   req.DestinoIATA,
-				DestinoIATA:  req.OrigenIATA,
-				EstadoCodigo: new("PENDIENTE"),
+				OrigenIATA:   "LPB",
+				DestinoIATA:  req.DestinoVueltaIATA,
+				EstadoCodigo: utils.Ptr("PENDIENTE"),
 			})
 		}
 
@@ -360,13 +372,13 @@ func (ctrl *SolicitudDerechoController) Update(c *gin.Context) {
 
 			switch it.Tipo {
 			case models.TipoSolicitudItemIda:
-				it.OrigenIATA = req.OrigenIATA
-				it.DestinoIATA = req.DestinoIATA
-				if orig != nil {
-					it.Origen = orig
+				it.OrigenIATA = req.OrigenIdaIATA
+				it.DestinoIATA = "LPB"
+				if origIda != nil {
+					it.Origen = origIda
 				}
-				if dest != nil {
-					it.Destino = dest
+				if lpb != nil {
+					it.Destino = lpb
 				}
 				if req.IdaPorConfirmar {
 					it.EstadoCodigo = utils.Ptr("PENDIENTE")
@@ -376,13 +388,13 @@ func (ctrl *SolicitudDerechoController) Update(c *gin.Context) {
 					it.Fecha = fechaIda
 				}
 			case models.TipoSolicitudItemVuelta:
-				it.OrigenIATA = req.DestinoIATA
-				it.DestinoIATA = req.OrigenIATA
-				if dest != nil {
-					it.Origen = dest
+				it.OrigenIATA = "LPB"
+				it.DestinoIATA = req.DestinoVueltaIATA
+				if lpb != nil {
+					it.Origen = lpb
 				}
-				if orig != nil {
-					it.Destino = orig
+				if destVuelta != nil {
+					it.Destino = destVuelta
 				}
 				if req.VueltaPorConfirmar {
 					it.EstadoCodigo = utils.Ptr("PENDIENTE")

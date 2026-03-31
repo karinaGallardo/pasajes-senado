@@ -9,47 +9,23 @@ import (
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/services"
 	"sistema-pasajes/internal/utils"
-	"sort"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
 type DescargoOficialController struct {
-	descargoService  *services.DescargoService
-	solicitudService *services.SolicitudService
-	destinoService   *services.DestinoService
-	reportService    *services.ReportService
-	peopleService    *services.PeopleService
-	configService    *services.ConfiguracionService
-}
-
-type ConnectionViewOficial struct {
-	ID              string
-	Ruta            string
-	RutaID          string
-	Fecha           string
-	Boleto          string
-	Index           string
-	Pase            string
-	Archivo         string
-	EsDevolucion    bool
-	MontoDevolucion float64
-	CostoPasaje     float64
-	EsModificacion  bool
-	TotalScales     int
-	IsFirstScale    bool
-	Orden           int
-}
-
-type TicketViewOficial struct {
-	Boleto string
-	Scales []ConnectionViewOficial
+	descargoService        *services.DescargoService
+	descargoOficialService *services.DescargoOficialService
+	solicitudService       *services.SolicitudService
+	reportService          *services.ReportService
+	peopleService          *services.PeopleService
+	configService          *services.ConfiguracionService
 }
 
 func NewDescargoOficialController(
 	descargoService *services.DescargoService,
+	descargoOficialService *services.DescargoOficialService,
 	solicitudService *services.SolicitudService,
 	destinoService *services.DestinoService,
 	reportService *services.ReportService,
@@ -57,12 +33,12 @@ func NewDescargoOficialController(
 	configService *services.ConfiguracionService,
 ) *DescargoOficialController {
 	return &DescargoOficialController{
-		descargoService:  descargoService,
-		solicitudService: solicitudService,
-		destinoService:   destinoService,
-		reportService:    reportService,
-		peopleService:    peopleService,
-		configService:    configService,
+		descargoService:        descargoService,
+		descargoOficialService: descargoOficialService,
+		solicitudService:       solicitudService,
+		reportService:          reportService,
+		peopleService:          peopleService,
+		configService:          configService,
 	}
 }
 
@@ -79,161 +55,21 @@ func (ctrl *DescargoOficialController) Create(c *gin.Context) {
 		return
 	}
 
-	existe, _ := ctrl.descargoService.GetBySolicitudID(c.Request.Context(), solicitudID)
-	if existe != nil && existe.ID != "" {
-		c.Redirect(http.StatusFound, "/descargos/oficial/"+existe.ID)
-		return
-	}
-
-	pasajesOriginales := make(map[string][]TicketViewOficial)
-	pasajesReprogramados := make(map[string][]TicketViewOficial)
-
-	origGroups := make(map[string]map[string][]ConnectionViewOficial)
-	reproGroups := make(map[string]map[string][]ConnectionViewOficial)
-
-	for _, item := range solicitud.Items {
-		tipo := string(item.Tipo)
-		if origGroups[tipo] == nil {
-			origGroups[tipo] = make(map[string][]ConnectionViewOficial)
-		}
-		if reproGroups[tipo] == nil {
-			reproGroups[tipo] = make(map[string][]ConnectionViewOficial)
-		}
-
-		orig := item.GetPasajeOriginal()
-		if orig != nil {
-			segments := orig.GetRutaSegments()
-			for i, r := range segments {
-				origGroups[tipo][orig.NumeroBoleto] = append(origGroups[tipo][orig.NumeroBoleto], ConnectionViewOficial{
-					Ruta:        r,
-					RutaID:      utils.DerefString(orig.RutaID),
-					Fecha:       orig.FechaVuelo.Format("2006-01-02"),
-					Boleto:      orig.NumeroBoleto,
-					Index:       fmt.Sprintf("io_%s_%d", item.ID, i),
-					Orden:       i,
-					CostoPasaje: orig.Costo,
-				})
-			}
-		}
-
-		repro := item.GetPasajeReprogramado()
-		if repro != nil {
-			segments := repro.GetRutaSegments()
-			for i, r := range segments {
-				reproGroups[tipo][repro.NumeroBoleto] = append(reproGroups[tipo][repro.NumeroBoleto], ConnectionViewOficial{
-					Ruta:        r,
-					RutaID:      utils.DerefString(repro.RutaID),
-					Fecha:       repro.FechaVuelo.Format("2006-01-02"),
-					Boleto:      repro.NumeroBoleto,
-					Index:       fmt.Sprintf("ir_%s_%d", item.ID, i),
-					Orden:       i,
-					CostoPasaje: repro.Costo,
-				})
-			}
-		}
-	}
-
-	for tipo, groups := range origGroups {
-		for boleto, scales := range groups {
-			ticket := TicketViewOficial{Boleto: boleto, Scales: scales}
-			sort.Slice(ticket.Scales, func(k, l int) bool {
-				return ticket.Scales[k].Orden < ticket.Scales[l].Orden
-			})
-			for j := range ticket.Scales {
-				ticket.Scales[j].TotalScales = len(ticket.Scales)
-				ticket.Scales[j].IsFirstScale = (j == 0)
-			}
-			pasajesOriginales[tipo] = append(pasajesOriginales[tipo], ticket)
-		}
-	}
-	for tipo, groups := range reproGroups {
-		for boleto, scales := range groups {
-			ticket := TicketViewOficial{Boleto: boleto, Scales: scales}
-			sort.Slice(ticket.Scales, func(k, l int) bool {
-				return ticket.Scales[k].Orden < ticket.Scales[l].Orden
-			})
-			for j := range ticket.Scales {
-				ticket.Scales[j].TotalScales = len(ticket.Scales)
-				ticket.Scales[j].IsFirstScale = (j == 0)
-			}
-			pasajesReprogramados[tipo] = append(pasajesReprogramados[tipo], ticket)
-		}
-	}
-
-	hasGastosRep := false
-	for _, v := range solicitud.Viaticos {
-		if v.TieneGastosRep && (v.MontoGastosRep > 0 || v.MontoLiquidoGastos > 0) {
-			hasGastosRep = true
-			break
-		}
-	}
-
-	destinos, _ := ctrl.destinoService.GetAll(c.Request.Context())
-	bancoCuenta := ctrl.configService.GetValue(c.Request.Context(), "BANCO_CUENTA_DEVOLUCION")
-	if bancoCuenta == "" {
-		bancoCuenta = "10000005588211"
-	}
-	bancoNombre := ctrl.configService.GetValue(c.Request.Context(), "BANCO_NOMBRE_DEVOLUCION")
-	if bancoNombre == "" {
-		bancoNombre = "BANCO UNIÓN S.A."
-	}
-
-	utils.Render(c, "descargo/oficial/create", gin.H{
-		"Title":                "Nuevo Descargo (Oficial)",
-		"Solicitud":            solicitud,
-		"PasajesOriginales":    pasajesOriginales,
-		"PasajesReprogramados": pasajesReprogramados,
-		"HasGastosRep":         hasGastosRep,
-		"Destinos":             destinos,
-		"ZeroFloat":            float64(0),
-		"BancoCuenta":          bancoCuenta,
-		"BancoNombre":          bancoNombre,
-	})
-}
-
-func (ctrl *DescargoOficialController) Store(c *gin.Context) {
-	var req dtos.CreateDescargoRequest
-	if err := c.ShouldBind(&req); err != nil {
-		c.Redirect(http.StatusFound, "/solicitudes?error=DatosInvalidos")
-		return
-	}
-
 	authUser := appcontext.AuthUser(c)
 	if authUser == nil {
 		c.Redirect(http.StatusFound, "/auth/login")
 		return
 	}
 
-	indices := c.PostFormArray("itin_index[]")
-	var archivoPaths []string
-	for _, idx := range indices {
-		path := ""
-		if file, err := c.FormFile("itin_archivo_" + idx); err == nil {
-			savedPath, err := utils.SaveUploadedFile(c, file, "uploads/pases_abordo", "pase_descargo_"+idx+"_")
-			if err == nil {
-				path = savedPath
-			}
-		}
-		archivoPaths = append(archivoPaths, path)
-	}
-
-	var anexoPaths []string
-	form, _ := c.MultipartForm()
-	files := form.File["anexos[]"]
-	for _, fileHeader := range files {
-		savedPath, err := utils.SaveUploadedFile(c, fileHeader, "uploads/anexos", "anexo_"+req.SolicitudID+"_")
-		if err == nil {
-			anexoPaths = append(anexoPaths, savedPath)
-		}
-	}
-
-	descargo, err := ctrl.descargoService.Create(c.Request.Context(), req, authUser.ID, archivoPaths, anexoPaths)
+	// Auto-crear si no existe, o recuperar si ya existe
+	descargo, err := ctrl.descargoOficialService.AutoCreateFromSolicitud(c.Request.Context(), solicitud, authUser.ID)
 	if err != nil {
-		log.Printf("Error creando descargo oficial: %v", err)
+		log.Printf("Error en auto-creación de descargo oficial: %v", err)
 		c.Redirect(http.StatusFound, "/solicitudes?error=ErrorCreacion")
 		return
 	}
 
+	// Redirigir siempre a edición
 	c.Redirect(http.StatusFound, "/descargos/oficial/"+descargo.ID+"/editar")
 }
 
@@ -245,71 +81,7 @@ func (ctrl *DescargoOficialController) Show(c *gin.Context) {
 		return
 	}
 
-	itemsByType := make(map[string][]models.DetalleItinerarioDescargo)
-	existingKeys := make(map[string]bool)
-	detalles := descargo.DetallesItinerario
-
-	for _, item := range detalles {
-		itemsByType[string(item.Tipo)] = append(itemsByType[string(item.Tipo)], item)
-		key := fmt.Sprintf("%s_%d_%s", item.Tipo, item.Orden, item.Boleto)
-		existingKeys[key] = true
-	}
-
-	if descargo.Solicitud != nil {
-		for _, sItem := range descargo.Solicitud.Items {
-			tipoBase := string(sItem.Tipo)
-			for _, p := range sItem.Pasajes {
-				st := p.GetEstadoCodigo()
-				if st != "EMITIDO" && st != "USADO" {
-					continue
-				}
-
-				tipoTarget := tipoBase + "_ORIGINAL"
-				if p.PasajeAnteriorID != nil {
-					tipoTarget = tipoBase + "_REPRO"
-				}
-
-				segments := p.GetRutaSegments()
-				for i := range segments {
-					key := fmt.Sprintf("%s_%d_%s", tipoTarget, i, p.NumeroBoleto)
-					if !existingKeys[key] {
-						tVuelo := p.FechaVuelo
-						newItem := models.DetalleItinerarioDescargo{
-							Tipo:         models.TipoDetalleItinerario(tipoTarget),
-							RutaID:       p.RutaID,
-							Fecha:        &tVuelo,
-							Boleto:       p.NumeroBoleto,
-							Orden:        i,
-							EsDevolucion: false,
-						}
-						detalles = append(detalles, newItem)
-						itemsByType[tipoTarget] = append(itemsByType[tipoTarget], newItem)
-						existingKeys[key] = true
-					}
-				}
-			}
-		}
-	}
-
-	type TicketGroup struct {
-		Boleto   string
-		Detalles []models.DetalleItinerarioDescargo
-	}
-
-	ticketsMap := make(map[string]*TicketGroup)
-	var ticketsOrder []string
-
-	for _, d := range detalles {
-		boletoKey := d.Boleto
-		if boletoKey == "" {
-			boletoKey = "SIN_BOLETO"
-		}
-		if _, ok := ticketsMap[boletoKey]; !ok {
-			ticketsMap[boletoKey] = &TicketGroup{Boleto: d.Boleto}
-			ticketsOrder = append(ticketsOrder, boletoKey)
-		}
-		ticketsMap[boletoKey].Detalles = append(ticketsMap[boletoKey].Detalles, d)
-	}
+	pasajesOriginales, pasajesReprogramados := ctrl.descargoOficialService.PrepareItinerarioOficial(descargo)
 
 	bancoCuenta := ctrl.configService.GetValue(c.Request.Context(), "BANCO_CUENTA_DEVOLUCION")
 	if bancoCuenta == "" {
@@ -320,38 +92,13 @@ func (ctrl *DescargoOficialController) Show(c *gin.Context) {
 		bancoNombre = "BANCO UNIÓN S.A."
 	}
 
-	var ticketsIda []TicketGroup
-	var ticketsVuelta []TicketGroup
-
-	for _, key := range ticketsOrder {
-		tg := ticketsMap[key]
-		sort.Slice(tg.Detalles, func(i, j int) bool {
-			return tg.Detalles[i].Orden < tg.Detalles[j].Orden
-		})
-
-		isVuelta := false
-		if len(tg.Detalles) > 0 {
-			tipo := string(tg.Detalles[0].Tipo)
-			if strings.HasPrefix(tipo, "VUELTA") {
-				isVuelta = true
-			}
-		}
-
-		if isVuelta {
-			ticketsVuelta = append(ticketsVuelta, *tg)
-		} else {
-			ticketsIda = append(ticketsIda, *tg)
-		}
-	}
-
 	utils.Render(c, "descargo/oficial/show", gin.H{
-		"Title":         "Detalle de Descargo (Oficial)",
-		"Descargo":      descargo,
-		"Detalles":      detalles,
-		"TicketsIda":    ticketsIda,
-		"TicketsVuelta": ticketsVuelta,
-		"BancoCuenta":   bancoCuenta,
-		"BancoNombre":   bancoNombre,
+		"Title":                "Detalle de Descargo (Oficial)",
+		"Descargo":             descargo,
+		"PasajesOriginales":    pasajesOriginales,
+		"PasajesReprogramados": pasajesReprogramados,
+		"BancoCuenta":          bancoCuenta,
+		"BancoNombre":          bancoNombre,
 	})
 }
 
@@ -368,139 +115,18 @@ func (ctrl *DescargoOficialController) Edit(c *gin.Context) {
 		return
 	}
 
-	itemsByType := make(map[string][]models.DetalleItinerarioDescargo)
-	existingKeys := make(map[string]bool)
-	for _, item := range descargo.DetallesItinerario {
-		itemsByType[string(item.Tipo)] = append(itemsByType[string(item.Tipo)], item)
-		key := fmt.Sprintf("%s_%d_%s", item.Tipo, item.Orden, item.Boleto)
-		existingKeys[key] = true
-	}
-
+	// Sincronización proactiva de pasajes emitidos después de la creación
 	if descargo.Solicitud != nil {
-		for _, sItem := range descargo.Solicitud.Items {
-			tipoBase := string(sItem.Tipo)
-			for _, p := range sItem.Pasajes {
-				st := p.GetEstadoCodigo()
-				if st != "EMITIDO" && st != "USADO" {
-					continue
-				}
-
-				tipoTarget := tipoBase + "_ORIGINAL"
-				if p.PasajeAnteriorID != nil {
-					tipoTarget = tipoBase + "_REPRO"
-				}
-
-				segments := p.GetRutaSegments()
-				for i := range segments {
-					key := fmt.Sprintf("%s_%d_%s", tipoTarget, i, p.NumeroBoleto)
-					if !existingKeys[key] {
-						tVuelo := p.FechaVuelo
-						newItem := models.DetalleItinerarioDescargo{
-							Tipo:         models.TipoDetalleItinerario(tipoTarget),
-							RutaID:       p.RutaID,
-							Fecha:        &tVuelo,
-							Boleto:       p.NumeroBoleto,
-							Orden:        i,
-							EsDevolucion: false,
-						}
-						itemsByType[tipoTarget] = append(itemsByType[tipoTarget], newItem)
-						existingKeys[key] = true
-					}
-				}
-			}
+		if err := ctrl.descargoOficialService.SyncItineraryFromSolicitud(c.Request.Context(), descargo, descargo.Solicitud); err == nil {
+			// Recargar para popular Preloads de los nuevos items sincronizados
+			descargo, _ = ctrl.descargoService.GetByID(c.Request.Context(), id)
+		} else {
+			log.Printf("Error sincronizando itinerario oficial en edición: %v", err)
 		}
 	}
 
-	pasajesOriginales := make(map[string][]TicketViewOficial)
-	pasajesReprogramados := make(map[string][]TicketViewOficial)
+	pasajesOriginales, pasajesReprogramados := ctrl.descargoOficialService.PrepareItinerarioOficial(descargo)
 
-	origGroups := make(map[string]map[string][]ConnectionViewOficial)
-	reproGroups := make(map[string]map[string][]ConnectionViewOficial)
-
-	for tipo, items := range itemsByType {
-		if origGroups[tipo] == nil {
-			origGroups[tipo] = make(map[string][]ConnectionViewOficial)
-		}
-		if reproGroups[tipo] == nil {
-			reproGroups[tipo] = make(map[string][]ConnectionViewOficial)
-		}
-		for i, item := range items {
-			prefix := "io"
-			if strings.HasSuffix(tipo, "REPRO") {
-				prefix = "ir"
-			} else if strings.HasPrefix(tipo, "VUELTA_ORIGINAL") {
-				prefix = "vo"
-			} else if strings.HasPrefix(tipo, "VUELTA_REPRO") {
-				prefix = "vr"
-			}
-
-			costoPasaje := 0.0
-			if descargo.Solicitud != nil {
-				for _, sitem := range descargo.Solicitud.Items {
-					for _, pas := range sitem.Pasajes {
-						if pas.NumeroBoleto == item.Boleto && item.Boleto != "" {
-							costoPasaje = pas.Costo
-							break
-						}
-					}
-				}
-			}
-
-			view := ConnectionViewOficial{
-				ID:              item.ID,
-				Ruta:            item.GetRutaDisplay(),
-				RutaID:          utils.DerefString(item.RutaID),
-				Fecha:           "",
-				Boleto:          item.Boleto,
-				Index:           fmt.Sprintf("%s_%d", prefix, i),
-				Pase:            item.NumeroPaseAbordo,
-				Archivo:         item.ArchivoPaseAbordo,
-				EsDevolucion:    item.EsDevolucion,
-				MontoDevolucion: item.MontoDevolucion,
-				CostoPasaje:     costoPasaje,
-				EsModificacion:  item.EsModificacion,
-				Orden:           item.Orden,
-			}
-			if item.Fecha != nil {
-				view.Fecha = item.Fecha.Format("2006-01-02")
-			}
-
-			if strings.HasSuffix(tipo, "_ORIGINAL") {
-				origGroups[tipo][item.Boleto] = append(origGroups[tipo][item.Boleto], view)
-			} else {
-				reproGroups[tipo][item.Boleto] = append(reproGroups[tipo][item.Boleto], view)
-			}
-		}
-	}
-
-	for tipo, groups := range origGroups {
-		for boleto, scales := range groups {
-			ticket := TicketViewOficial{Boleto: boleto, Scales: scales}
-			sort.Slice(ticket.Scales, func(k, l int) bool {
-				return ticket.Scales[k].Orden < ticket.Scales[l].Orden
-			})
-			for j := range ticket.Scales {
-				ticket.Scales[j].TotalScales = len(ticket.Scales)
-				ticket.Scales[j].IsFirstScale = (j == 0)
-			}
-			pasajesOriginales[tipo] = append(pasajesOriginales[tipo], ticket)
-		}
-	}
-	for tipo, groups := range reproGroups {
-		for boleto, scales := range groups {
-			ticket := TicketViewOficial{Boleto: boleto, Scales: scales}
-			sort.Slice(ticket.Scales, func(k, l int) bool {
-				return ticket.Scales[k].Orden < ticket.Scales[l].Orden
-			})
-			for j := range ticket.Scales {
-				ticket.Scales[j].TotalScales = len(ticket.Scales)
-				ticket.Scales[j].IsFirstScale = (j == 0)
-			}
-			pasajesReprogramados[tipo] = append(pasajesReprogramados[tipo], ticket)
-		}
-	}
-
-	destinos, _ := ctrl.destinoService.GetAll(c.Request.Context())
 	bancoCuenta := ctrl.configService.GetValue(c.Request.Context(), "BANCO_CUENTA_DEVOLUCION")
 	if bancoCuenta == "" {
 		bancoCuenta = "10000005588211"
@@ -513,9 +139,9 @@ func (ctrl *DescargoOficialController) Edit(c *gin.Context) {
 	utils.Render(c, "descargo/oficial/edit", gin.H{
 		"Title":                "Editar Descargo (Oficial)",
 		"Descargo":             descargo,
+		"Solicitud":            descargo.Solicitud,
 		"PasajesOriginales":    pasajesOriginales,
 		"PasajesReprogramados": pasajesReprogramados,
-		"Destinos":             destinos,
 		"BancoCuenta":          bancoCuenta,
 		"BancoNombre":          bancoNombre,
 	})
@@ -546,15 +172,26 @@ func (ctrl *DescargoOficialController) Update(c *gin.Context) {
 		return
 	}
 
-	indices := c.PostFormArray("itin_index[]")
-	itinIDs := c.PostFormArray("itin_id[]")
-	req.ItinID = itinIDs // Ensure ItinID is populated from form array
+	// RE-BINDING MANUAL: Gin sometimes fails to bind parallel arrays in complex multipart/form-data
+	req.ItinTipo = c.PostFormArray("itin_tipo[]")
+	req.ItinID = c.PostFormArray("itin_id[]")
+	req.ItinRutaID = c.PostFormArray("itin_ruta_id[]")
+	req.ItinFecha = c.PostFormArray("itin_fecha[]")
+	req.ItinBoleto = c.PostFormArray("itin_boleto[]")
+	req.ItinPaseNumero = c.PostFormArray("itin_pase_numero[]")
+	req.ItinOrden = c.PostFormArray("itin_orden[]")
+	req.ItinDevolucion = c.PostFormArray("itin_devolucion[]")
+	req.ItinModificacion = c.PostFormArray("itin_modificacion[]")
+	req.ItinMontoDevolucion = c.PostFormArray("itin_monto_devolucion[]")
+	req.ItinMoneda = c.PostFormArray("itin_moneda[]")
+	req.ItinPasajeID = c.PostFormArray("itin_pasaje_id[]")
+	req.ItinSolicitudItemID = c.PostFormArray("itin_solicitud_item_id[]")
 
 	var archivoPaths []string
-	for _, idx := range indices {
-		path := c.PostForm("itin_archivo_existente_" + idx)
-		if file, err := c.FormFile("itin_archivo_" + idx); err == nil {
-			savedPath, err := utils.SaveUploadedFile(c, file, "uploads/pases_abordo", "pase_descargo_"+idx+"_")
+	for _, idRow := range req.ItinID {
+		path := c.PostForm("itin_archivo_existente_" + idRow)
+		if file, err := c.FormFile("itin_archivo_" + idRow); err == nil {
+			savedPath, err := utils.SaveUploadedFile(c, file, "uploads/pases_abordo", "pase_descargo_"+idRow+"_")
 			if err == nil {
 				path = savedPath
 			}
@@ -575,7 +212,7 @@ func (ctrl *DescargoOficialController) Update(c *gin.Context) {
 		}
 	}
 
-	if err := ctrl.descargoService.UpdateFull(c.Request.Context(), id, req, authUser.ID, archivoPaths, anexoPaths); err != nil {
+	if err := ctrl.descargoOficialService.UpdateOficial(c.Request.Context(), id, req, authUser.ID, archivoPaths, anexoPaths); err != nil {
 		c.Redirect(http.StatusFound, "/descargos/oficial/"+id+"/editar?error=ErrorActualizacion")
 		return
 	}
@@ -688,20 +325,23 @@ func (ctrl *DescargoOficialController) RevertApproval(c *gin.Context) {
 
 func (ctrl *DescargoOficialController) NuevaFila(c *gin.Context) {
 	tipo := c.Query("tipo")
+	solicitudItemID := c.Query("solicitud_item_id")
 	index := fmt.Sprintf("new_%d", time.Now().UnixNano())
 
 	c.HTML(http.StatusOK, "descargo/components/escala_fila_oficial", gin.H{
-		"Tipo":           tipo,
-		"Index":          index,
-		"EsModificacion": false,
-		"Ruta":           "",
-		"RutaID":         "",
-		"Fecha":          "",
-		"Boleto":         "",
-		"Pase":           "",
-		"Archivo":        "",
-		"CanDelete":      true,
-		"ReadOnlyRuta":   false,
-		"Orden":          0,
+		"Tipo": tipo,
+		"Scale": dtos.ConnectionView{
+			ID:              index,
+			SolicitudItemID: solicitudItemID,
+			EsModificacion:  false,
+			Ruta:            dtos.RutaView{},
+			RutaID:          "",
+			Fecha:           "",
+			Boleto:          "",
+			Pase:            "",
+			Archivo:         "",
+			Orden:           0,
+			PasajeID:        "",
+		},
 	})
 }

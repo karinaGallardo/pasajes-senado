@@ -109,7 +109,8 @@ document.addEventListener("alpine:init", function () {
         this.loading = true;
 
         try {
-          const res = await fetch(`${this.endpoint}?q=${encodeURIComponent(this.search)}`, {
+          const separator = this.endpoint.includes("?") ? "&" : "?";
+          const res = await fetch(`${this.endpoint}${separator}q=${encodeURIComponent(this.search)}`, {
             signal: this.abortController.signal,
           });
           if (!res.ok) throw new Error("Server error");
@@ -291,7 +292,7 @@ document.addEventListener("alpine:init", function () {
   Alpine.data("itineraryRow", (config) => ({
     esDevolucion: config.esDevo,
     esModificacion: config.esMod,
-    montoDevo: config.monto || 0,
+    monto: config.monto || 0,
     route_id: config.route_id || "",
     route: config.route || "",
     boleto: config.boleto || "",
@@ -305,7 +306,7 @@ document.addEventListener("alpine:init", function () {
         if (val) {
           this.esModificacion = false;
           this.isFullTicket = true;
-          this.montoDevo = 0; // Reset manual amount if full refund
+          this.monto = 0; // Reset manual amount if full refund
         } else {
           this.isFullTicket = false;
         }
@@ -342,14 +343,14 @@ document.addEventListener("alpine:init", function () {
 
     get bindInput() {
       return {
-        ":disabled": "esDevolucion || esModificacion",
+        ":readonly": "esDevolucion || esModificacion",
         ":class": "{ 'bg-neutral-100 cursor-not-allowed opacity-60': esDevolucion || esModificacion }",
       };
     },
 
     get bindPase() {
       return {
-        ":disabled": "esDevolucion || esModificacion",
+        ":readonly": "esDevolucion || esModificacion",
         ":class": "{ 'bg-neutral-100 cursor-not-allowed opacity-60': esDevolucion || esModificacion }",
       };
     },

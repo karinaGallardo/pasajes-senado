@@ -239,7 +239,7 @@
               </thead>
               <tbody class="bg-white divide-y divide-neutral-100">
                 {{ range $t := .TicketsIda }}
-                  {{ range $i, $d := .Detalles }}
+                  {{ range $i, $d := .Scales }}
                                     <tr class="group hover:bg-neutral-50/80 transition-all duration-200 {{ if .EsDevolucion }}opacity-60 bg-danger-50/10 grayscale{{ end }} {{ if .EsModificacion }}bg-warning-50/30{{ end }}">
                     <td class="px-6 py-4 whitespace-nowrap align-top">
                                             <div class="flex flex-col gap-1.5">
@@ -313,7 +313,7 @@
               </thead>
               <tbody class="bg-white divide-y divide-neutral-100">
                 {{ range $t := .TicketsVuelta }}
-                  {{ range $i, $d := .Detalles }}
+                  {{ range $i, $d := .Scales }}
                   <tr class="group hover:bg-neutral-50/80 transition-all duration-200 {{ if .EsDevolucion }}opacity-60 bg-danger-50/10 grayscale{{ end }} {{ if .EsModificacion }}bg-warning-50/30{{ end }}">
                     <td class="px-6 py-4 whitespace-nowrap align-top">
                       <div class="flex flex-col gap-1.5">
@@ -383,9 +383,10 @@
             </thead>
             <tbody class="bg-white divide-y divide-danger-100">
               {{ range .TicketsIda }}
-                {{ $first := (index .Detalles 0) }}
-                {{ if $first.EsDevolucion }}
-                  {{ range $index, $det := .Detalles }}
+                {{ if .Scales }}
+                  {{ $first := (index .Scales 0) }}
+                  {{ if $first.EsDevolucion }}
+                    {{ range $index, $det := .Scales }}
                   <tr class="hover:bg-danger-50/30 transition-colors">
                     <td class="px-4 py-3 whitespace-nowrap">
                       {{ if eq $index 0 }}
@@ -417,10 +418,12 @@
                   {{ end }}
                 {{ end }}
               {{ end }}
-              {{ range .TicketsVuelta }}
-                {{ $first := (index .Detalles 0) }}
-                {{ if $first.EsDevolucion }}
-                  {{ range $index, $det := .Detalles }}
+            {{ end }}
+            {{ range $.TicketsVuelta }}
+                {{ if .Scales }}
+                  {{ $first := (index .Scales 0) }}
+                  {{ if $first.EsDevolucion }}
+                    {{ range $index, $det := .Scales }}
                   <tr class="hover:bg-danger-50/30 transition-colors">
                     <td class="px-4 py-3 whitespace-nowrap">
                       {{ if eq $index 0 }}
@@ -452,6 +455,7 @@
                   {{ end }}
                 {{ end }}
               {{ end }}
+            {{ end }}
             </tbody>
           </table>
         </div>

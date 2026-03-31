@@ -10,8 +10,7 @@ import (
 	"sistema-pasajes/internal/repositories"
 	"sistema-pasajes/internal/utils"
 	"sort"
-	"strconv"
-	"time"
+	"strings"
 )
 
 type DescargoService struct {
@@ -35,155 +34,6 @@ func NewDescargoService(
 	}
 }
 
-func (s *DescargoService) Create(ctx context.Context, req dtos.CreateDescargoRequest, userID string, archivoPaths []string, anexoPaths []string) (*models.Descargo, error) {
-	solicitud, err := s.solicitudService.GetByID(ctx, req.SolicitudID)
-	if err != nil {
-		return nil, err
-	}
-
-	descargo := &models.Descargo{
-		SolicitudID:       req.SolicitudID,
-		UsuarioID:         userID,
-		Codigo:            solicitud.Codigo,
-		FechaPresentacion: time.Now(),
-		Observaciones:     req.Observaciones,
-		Estado:            models.EstadoDescargoBorrador,
-	}
-	descargo.CreatedBy = &userID
-
-	// Si es solicitud oficial, crear detalle PV-06
-	isOficial := req.NroMemorandum != "" || req.InformeActividades != "" || req.ObjetivoViaje != "" || req.ResultadosViaje != "" || req.ConclusionesRecomendaciones != "" || req.MontoDevolucion > 0 || len(anexoPaths) > 0
-
-	if isOficial {
-		oficial := &models.DescargoOficial{
-			NroMemorandum:               req.NroMemorandum,
-			ObjetivoViaje:               req.ObjetivoViaje,
-			TipoTransporte:              req.TipoTransporte,
-			PlacaVehiculo:               req.PlacaVehiculo,
-			InformeActividades:          req.InformeActividades,
-			ResultadosViaje:             req.ResultadosViaje,
-			ConclusionesRecomendaciones: req.ConclusionesRecomendaciones,
-			MontoDevolucion:             req.MontoDevolucion,
-			NroBoletaDeposito:           req.NroBoletaDeposito,
-			DirigidoA:                   req.DirigidoA,
-		}
-
-		// Mapear Anexos
-		var anexos []models.AnexoDescargo
-		for i, path := range anexoPaths {
-			if path != "" {
-				anexos = append(anexos, models.AnexoDescargo{
-					Archivo: path,
-					Orden:   i,
-				})
-			}
-		}
-		oficial.Anexos = anexos
-
-		// Mapear Transporte Terrestre
-		var terrestres []models.TransporteTerrestreDescargo
-		for i := range req.TransporteTerrestreFecha {
-			if i < len(req.TransporteTerrestreFactura) && i < len(req.TransporteTerrestreImporte) && req.TransporteTerrestreFecha[i] != "" {
-				importe := utils.ParseFloat(req.TransporteTerrestreImporte[i])
-				t := utils.ParseDate("2006-01-02", req.TransporteTerrestreFecha[i])
-				tipo := "IDA"
-				if i < len(req.TransporteTerrestreTipo) {
-					tipo = req.TransporteTerrestreTipo[i]
-				}
-				terrestres = append(terrestres, models.TransporteTerrestreDescargo{
-					Fecha:      t,
-					NroFactura: req.TransporteTerrestreFactura[i],
-					Importe:    importe,
-					Tipo:       tipo,
-				})
-			}
-		}
-		oficial.TransportesTerrestres = terrestres
-
-		descargo.Oficial = oficial
-	}
-
-	// Mapear Detalles de Itinerario
-	devolucionMap := make(map[string]bool)
-	for _, idx := range req.ItinDevolucion {
-		devolucionMap[idx] = true
-	}
-
-	modificacionMap := make(map[string]bool)
-	for _, idx := range req.ItinModificacion {
-		modificacionMap[idx] = true
-	}
-
-	var itinDetalles []models.DetalleItinerarioDescargo
-	for i := range req.ItinTipo {
-		if i < len(req.ItinRutaID) && req.ItinRutaID[i] != "" {
-			var fecha *time.Time
-			if i < len(req.ItinFecha) && req.ItinFecha[i] != "" {
-				t := utils.ParseDate("2006-01-02", req.ItinFecha[i])
-				fecha = &t
-			}
-
-			boleto := ""
-			if i < len(req.ItinBoleto) {
-				boleto = req.ItinBoleto[i]
-			}
-
-			paseNumero := ""
-			if i < len(req.ItinPaseNumero) {
-				paseNumero = req.ItinPaseNumero[i]
-			}
-
-			archivoPath := ""
-			if i < len(archivoPaths) {
-				archivoPath = archivoPaths[i]
-			}
-
-			esDevo := false
-			esMod := false
-			if i < len(req.ItinIndex) {
-				idx := req.ItinIndex[i]
-				esDevo = devolucionMap[idx]
-				esMod = modificacionMap[idx]
-				if esMod {
-					esDevo = false
-				}
-			}
-
-			montoDevo := 0.0
-			if i < len(req.ItinMontoDevolucion) {
-				montoDevo, _ = strconv.ParseFloat(req.ItinMontoDevolucion[i], 64)
-			}
-
-			orden := i
-			if i < len(req.ItinOrden) {
-				if o, err := strconv.Atoi(req.ItinOrden[i]); err == nil {
-					orden = o
-				}
-			}
-
-			itinDetalles = append(itinDetalles, models.DetalleItinerarioDescargo{
-				Tipo:              models.TipoDetalleItinerario(req.ItinTipo[i]),
-				RutaID:            utils.NilIfEmpty(req.ItinRutaID[i]),
-				Fecha:             fecha,
-				Boleto:            boleto,
-				EsDevolucion:      esDevo,
-				EsModificacion:    esMod,
-				MontoDevolucion:   montoDevo,
-				NumeroPaseAbordo:  paseNumero,
-				ArchivoPaseAbordo: archivoPath,
-				Orden:             orden,
-			})
-		}
-	}
-	descargo.DetallesItinerario = itinDetalles
-
-	if err := s.repo.Create(ctx, descargo); err != nil {
-		return nil, err
-	}
-
-	return descargo, nil
-}
-
 func (s *DescargoService) GetBySolicitudID(ctx context.Context, solicitudID string) (*models.Descargo, error) {
 	return s.repo.FindBySolicitudID(ctx, solicitudID)
 }
@@ -205,10 +55,6 @@ func (s *DescargoService) GetPaginated(ctx context.Context, page, limit int, sea
 	return s.repo.FindPaginated(ctx, page, limit, searchTerm, userIDs)
 }
 
-// GetPaginatedScoped resuelve la visibilidad según el rol del usuario:
-// Admin/Responsable → ve todos los descargos del sistema
-// Encargado         → ve los suyos + los de sus senadores asignados
-// Cualquier otro   → solo los propios
 func (s *DescargoService) GetPaginatedScoped(ctx context.Context, authUser *models.Usuario, page, limit int, searchTerm string) (*repositories.PaginatedDescargos, error) {
 	if authUser.IsAdminOrResponsable() {
 		return s.repo.FindPaginated(ctx, page, limit, searchTerm, nil)
@@ -226,188 +72,6 @@ func (s *DescargoService) GetPaginatedScoped(ctx context.Context, authUser *mode
 
 func (s *DescargoService) Update(ctx context.Context, descargo *models.Descargo) error {
 	return s.repo.Update(ctx, descargo)
-}
-
-func (s *DescargoService) UpdateFull(ctx context.Context, id string, req dtos.CreateDescargoRequest, userID string, archivoPaths []string, anexoPaths []string) error {
-	descargo, err := s.repo.FindByID(ctx, id)
-	if err != nil {
-		return err
-	}
-	if descargo.Estado != models.EstadoDescargoBorrador && descargo.Estado != models.EstadoDescargoRechazado {
-		return fmt.Errorf("el descargo no se puede editar en su estado actual (%s)", descargo.Estado)
-	}
-
-	descargo.Observaciones = req.Observaciones
-	descargo.Estado = models.EstadoDescargoBorrador // Revert to draft on update
-	descargo.UpdatedBy = &userID
-
-	// Mapear Detalle Oficial
-	isOficialUpdate := req.NroMemorandum != "" || req.InformeActividades != "" || req.ObjetivoViaje != "" || req.ResultadosViaje != "" || req.ConclusionesRecomendaciones != "" || req.MontoDevolucion > 0
-
-	if isOficialUpdate {
-		if descargo.Oficial == nil {
-			descargo.Oficial = &models.DescargoOficial{DescargoID: id}
-		}
-		descargo.Oficial.NroMemorandum = req.NroMemorandum
-		descargo.Oficial.ObjetivoViaje = req.ObjetivoViaje
-		descargo.Oficial.TipoTransporte = req.TipoTransporte
-		descargo.Oficial.PlacaVehiculo = req.PlacaVehiculo
-		descargo.Oficial.InformeActividades = req.InformeActividades
-		descargo.Oficial.ResultadosViaje = req.ResultadosViaje
-		descargo.Oficial.ConclusionesRecomendaciones = req.ConclusionesRecomendaciones
-		descargo.Oficial.MontoDevolucion = req.MontoDevolucion
-		descargo.Oficial.NroBoletaDeposito = req.NroBoletaDeposito
-		descargo.Oficial.DirigidoA = req.DirigidoA
-
-		// Explicitly save the official detail to ensure columns are updated correctly
-		if err := s.repo.UpdateOficial(ctx, descargo.Oficial); err != nil {
-			return err
-		}
-
-		// Mapear Anexos
-		if len(anexoPaths) > 0 {
-			if descargo.Oficial == nil {
-				descargo.Oficial = &models.DescargoOficial{DescargoID: id}
-				if err := s.repo.UpdateOficial(ctx, descargo.Oficial); err != nil {
-					return err
-				}
-			}
-			var anexos []models.AnexoDescargo
-			for i, path := range anexoPaths {
-				if path != "" {
-					anexos = append(anexos, models.AnexoDescargo{
-						DescargoOficialID: descargo.Oficial.ID,
-						Archivo:           path,
-						Orden:             i,
-					})
-				}
-			}
-			// Clear existing ones using oficial ID
-			if err := s.repo.ClearAnexos(ctx, descargo.Oficial.ID); err != nil {
-				return err
-			}
-			descargo.Oficial.Anexos = anexos
-		}
-
-		// Mapear Transporte Terrestre
-		if len(req.TransporteTerrestreFecha) > 0 {
-			var terrestres []models.TransporteTerrestreDescargo
-			for i := range req.TransporteTerrestreFecha {
-				if i < len(req.TransporteTerrestreFactura) && i < len(req.TransporteTerrestreImporte) && req.TransporteTerrestreFecha[i] != "" {
-					importe := utils.ParseFloat(req.TransporteTerrestreImporte[i])
-					t := utils.ParseDate("2006-01-02", req.TransporteTerrestreFecha[i])
-					tipo := "IDA"
-					if i < len(req.TransporteTerrestreTipo) {
-						tipo = req.TransporteTerrestreTipo[i]
-					}
-					terrestres = append(terrestres, models.TransporteTerrestreDescargo{
-						DescargoOficialID: descargo.Oficial.ID,
-						Fecha:             t,
-						NroFactura:        req.TransporteTerrestreFactura[i],
-						Importe:           importe,
-						Tipo:              tipo,
-					})
-				}
-			}
-			// Clear existing ones
-			if descargo.Oficial.ID != "" {
-				if err := s.repo.ClearTransportesTerrestres(ctx, descargo.Oficial.ID); err != nil {
-					return err
-				}
-			}
-			descargo.Oficial.TransportesTerrestres = terrestres
-		}
-	}
-
-	// Mapear Detalles de Itinerario
-	devolucionMap := make(map[string]bool)
-	for _, idx := range req.ItinDevolucion {
-		devolucionMap[idx] = true
-	}
-
-	modificacionMap := make(map[string]bool)
-	for _, idx := range req.ItinModificacion {
-		modificacionMap[idx] = true
-	}
-
-	var itinDetalles []models.DetalleItinerarioDescargo
-
-	for i := range req.ItinTipo {
-		if i < len(req.ItinRutaID) && req.ItinRutaID[i] != "" {
-			var fecha *time.Time
-			if i < len(req.ItinFecha) && req.ItinFecha[i] != "" {
-				t := utils.ParseDate("2006-01-02", req.ItinFecha[i])
-				fecha = &t
-			}
-
-			boleto := ""
-			if i < len(req.ItinBoleto) {
-				boleto = req.ItinBoleto[i]
-			}
-
-			paseNumero := ""
-			if i < len(req.ItinPaseNumero) {
-				paseNumero = req.ItinPaseNumero[i]
-			}
-
-			archivoPath := ""
-			if i < len(archivoPaths) {
-				archivoPath = archivoPaths[i]
-			}
-
-			esDevo := false
-			esMod := false
-			if i < len(req.ItinIndex) {
-				idx := req.ItinIndex[i]
-				esDevo = devolucionMap[idx]
-				esMod = modificacionMap[idx]
-				if esMod {
-					esDevo = false
-				}
-			}
-
-			montoDevo := 0.0
-			if i < len(req.ItinMontoDevolucion) {
-				montoDevo, _ = strconv.ParseFloat(req.ItinMontoDevolucion[i], 64)
-			}
-
-			var ptrRutaID *string
-			if i < len(req.ItinRutaID) && req.ItinRutaID[i] != "" {
-				ptrRutaID = &req.ItinRutaID[i]
-			}
-
-			// Usamos el índice global del bucle para garantizar un ordenamiento único y estable
-			orden := i
-
-			det := models.DetalleItinerarioDescargo{
-				DescargoID:        id,
-				Tipo:              models.TipoDetalleItinerario(req.ItinTipo[i]),
-				RutaID:            ptrRutaID,
-				Fecha:             fecha,
-				Boleto:            boleto,
-				EsDevolucion:      esDevo,
-				EsModificacion:    esMod,
-				MontoDevolucion:   montoDevo,
-				NumeroPaseAbordo:  paseNumero,
-				ArchivoPaseAbordo: archivoPath,
-				Orden:             orden,
-			}
-
-			if i < len(req.ItinID) && req.ItinID[i] != "" {
-				det.ID = req.ItinID[i]
-			}
-
-			itinDetalles = append(itinDetalles, det)
-		}
-	}
-
-	descargo.DetallesItinerario = itinDetalles
-	if err := s.repo.Update(ctx, descargo); err != nil {
-		return err
-	}
-
-	s.auditService.Log(ctx, "ACTUALIZAR_DESCARGO", "descargo", id, "", "", "", "")
-	return nil
 }
 
 func (s *DescargoService) Submit(ctx context.Context, id, userID string) error {
@@ -505,26 +169,17 @@ func (s *DescargoService) RevertToDraft(ctx context.Context, id string, userID s
 	return nil
 }
 
-// GetItinerarioParaDescargo transforma los pasajes de una solicitud en estructuras listas para la vista de descargo.
-func (s *DescargoService) GetItinerarioParaDescargo(ctx context.Context, solicitud *models.Solicitud) (map[string][]dtos.TicketView, map[string][]dtos.TicketView) {
-	pasajesOriginales := make(map[string][]dtos.TicketView)
-	pasajesReprogramados := make(map[string][]dtos.TicketView)
+func (s *DescargoService) GetItinerarioParaDescargo(ctx context.Context, solicitud *models.Solicitud) (map[string][]dtos.ConnectionView, map[string][]dtos.ConnectionView) {
+	pasajesOriginales := make(map[string][]dtos.ConnectionView)
+	pasajesReprogramados := make(map[string][]dtos.ConnectionView)
 
-	// Procesamos Ida y Vuelta secuencialmente
-	s.processTicketItemsForView(solicitud, solicitud.GetItemIda(), "io", "ir", pasajesOriginales, pasajesReprogramados)
-	s.processTicketItemsForView(solicitud, solicitud.GetItemVuelta(), "vo", "vr", pasajesOriginales, pasajesReprogramados)
+	s.processTicketItemsForView(solicitud.GetItemIda(), pasajesOriginales, pasajesReprogramados)
+	s.processTicketItemsForView(solicitud.GetItemVuelta(), pasajesOriginales, pasajesReprogramados)
 
 	return pasajesOriginales, pasajesReprogramados
 }
 
-func (s *DescargoService) processTicketItemsForView(
-	solicitud *models.Solicitud,
-	item *models.SolicitudItem,
-	prefixOrig string,
-	prefixRepro string,
-	targetOrig map[string][]dtos.TicketView,
-	targetRepro map[string][]dtos.TicketView,
-) {
+func (s *DescargoService) processTicketItemsForView(item *models.SolicitudItem, targetOrig, targetRepro map[string][]dtos.ConnectionView) {
 	if item == nil {
 		return
 	}
@@ -532,7 +187,6 @@ func (s *DescargoService) processTicketItemsForView(
 	tipo := string(item.Tipo)
 	pasajes := item.Pasajes
 
-	// Ordenar pasajes según Orden o Fecha de Creación
 	sort.Slice(pasajes, func(i, j int) bool {
 		if pasajes[i].Orden != pasajes[j].Orden {
 			return pasajes[i].Orden < pasajes[j].Orden
@@ -546,31 +200,32 @@ func (s *DescargoService) processTicketItemsForView(
 		}
 
 		targetMap := targetOrig
-		prefix := prefixOrig
 		if p.PasajeAnteriorID != nil {
 			targetMap = targetRepro
-			prefix = prefixRepro
-		}
-
-		ticket := dtos.TicketView{
-			Boleto: p.NumeroBoleto,
 		}
 
 		segments := p.GetRutaSegments()
 		for j, seg := range segments {
-			ticket.Scales = append(ticket.Scales, dtos.ConnectionView{
-				Ruta:            seg,
+			parts := strings.Split(seg, " - ")
+			rv := dtos.RutaView{Display: seg}
+			if len(parts) == 2 {
+				rv.Origen = parts[0]
+				rv.Destino = parts[1]
+			} else {
+				rv.Origen = seg
+			}
+
+			targetMap[tipo] = append(targetMap[tipo], dtos.ConnectionView{
+				ID:              p.ID,
+				Ruta:            rv,
 				RutaID:          utils.DerefString(p.RutaID),
 				Fecha:           p.FechaVuelo.Format("2006-01-02"),
 				Boleto:          p.NumeroBoleto,
-				Index:           fmt.Sprintf("%s_%s_%s_%d", prefix, solicitud.ID, p.ID, j),
 				Orden:           j,
 				EsDevolucion:    false,
 				EsModificacion:  false,
 				MontoDevolucion: 0,
-				CostoPasaje:     p.Costo,
 			})
 		}
-		targetMap[tipo] = append(targetMap[tipo], ticket)
 	}
 }

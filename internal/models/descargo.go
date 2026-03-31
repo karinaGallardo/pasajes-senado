@@ -28,10 +28,19 @@ type Descargo struct {
 
 	Estado EstadoDescargo `gorm:"size:50;default:'BORRADOR'"`
 
-	Documentos []DocumentoDescargo `gorm:"foreignKey:DescargoID"`
 
 	// Detalle opcional para informes oficiales (PV-06)
 	Oficial *DescargoOficial `gorm:"foreignKey:DescargoID"`
+}
+
+func (d Descargo) HasChanges(other Descargo) bool {
+	return d.SolicitudID != other.SolicitudID ||
+		d.UsuarioID != other.UsuarioID ||
+		d.Codigo != other.Codigo ||
+		d.NumeroCite != other.NumeroCite ||
+		!d.FechaPresentacion.Equal(other.FechaPresentacion) ||
+		d.Observaciones != other.Observaciones ||
+		d.Estado != other.Estado
 }
 
 func (d Descargo) IsComplete() bool {
