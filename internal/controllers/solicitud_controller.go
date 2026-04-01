@@ -23,7 +23,7 @@ func NewSolicitudController(service *services.SolicitudService, userService *ser
 }
 
 func (ctrl *SolicitudController) Index(c *gin.Context) {
-	ctrl.renderIndex(c, "", "Bandeja de Solicitudes", "solicitud/index")
+	c.Redirect(302, "/solicitudes/derecho")
 }
 
 func (ctrl *SolicitudController) IndexPendientesDescargo(c *gin.Context) {
