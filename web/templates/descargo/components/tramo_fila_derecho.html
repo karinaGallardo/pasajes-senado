@@ -1,8 +1,7 @@
 {{ define "descargo/components/tramo_fila_derecho" }}
-  {{ $isOriginal := or (eq .Tipo "IDA_ORIGINAL") (eq .Tipo "VUELTA_ORIGINAL") }}
-  {{ $readOnlyRuta := or .ReadOnlyRuta $isOriginal }}
-  {{ $canDelete := or .CanDelete (not $isOriginal) }}
-  {{ $readOnlyCheck := or .ReadOnlyCheck (not $isOriginal) }}
+  {{ $readOnlyRuta := or .ReadOnlyRuta .Tramo.IsOriginal }}
+  {{ $canDelete := or .CanDelete (not .Tramo.IsOriginal) }}
+  {{ $readOnlyCheck := or .ReadOnlyCheck (not .Tramo.IsOriginal) }}
 
 
   <tr
@@ -11,6 +10,7 @@
       esDevo: {{ .Tramo.EsDevolucion }},
       esMod: {{ .Tramo.EsModificacion }},
       monto: {{ or .Tramo.MontoDevolucion 0 }},
+      moneda: '{{ or .Tramo.Moneda `BOB` }}',
       route: '{{ .Tramo.Ruta.Display }}',
       route_id: '{{ .Tramo.RutaID }}',
       billete: '{{ .Tramo.Billete }}'
@@ -18,7 +18,7 @@
     @update-totals.window="checkFullStatus()"
     x-bind="bindFade"
   >
-    <input type="hidden" name="tramo_tipo[]" value="{{ .Tipo }}" />
+    <input type="hidden" name="tramo_tipo[]" value="{{ .Tramo.Tipo }}" />
     <input type="hidden" name="tramo_id[]" value="{{ .Tramo.ID }}" />
     <input type="hidden" name="tramo_ruta_id[]" :value="route_id" />
     <input type="hidden" name="tramo_orden[]" value="{{ or .Tramo.Orden 0 }}" />
@@ -27,7 +27,10 @@
     <input type="hidden" name="tramo_devolucion[]" value="{{ .Tramo.ID }}" :disabled="!esDevolucion" />
 
     <td class="px-2 py-1 text-center border-r border-neutral-100 bg-neutral-50/30">
-      {{ if $readOnlyCheck }}
+      {{ if .Tramo.IsReprogramacion }}
+        <input type="hidden" name="tramo_devolucion[]" value="false" />
+        <span class="text-neutral-300">-</span>
+      {{ else if .ReadOnlyCheck }}
         <input
           type="checkbox"
           disabled
@@ -40,7 +43,11 @@
     </td>
 
     <td class="px-2 py-1 text-center border-r border-neutral-100 bg-neutral-50/30">
-      {{ if $readOnlyCheck }}
+      {{ if .Tramo.IsReprogramacion }}
+        <!-- Audit: Segment not issued by Senate. Cannot be modified. -->
+        <input type="hidden" name="tramo_modificacion[]" value="false" />
+        <span class="text-neutral-300">-</span>
+      {{ else if .ReadOnlyCheck }}
         <input
           type="checkbox"
           disabled
@@ -59,9 +66,9 @@
       {{ end }}
     </td>
 
-    <td class="px-2 py-1">
+    <td class="px-2 py-0">
       {{ if $readOnlyRuta }}
-        <div class="text-[10px] leading-tight font-bold text-neutral-700 uppercase whitespace-pre-line">
+        <div class="text-[10px] leading-none font-bold text-neutral-700 uppercase whitespace-pre-line -mt-3">
           <span class="">{{ .Tramo.Ruta.Origen }}</span>
           <span class="">{{ .Tramo.Ruta.Destino }}</span>
         </div>
@@ -134,8 +141,8 @@
         name="tramo_fecha[]"
         value="{{ .Tramo.Fecha }}"
         x-bind="bindInput"
-        {{ if $isOriginal }}readonly{{ end }}
-        class="w-full text-[11px] border border-neutral-300 rounded py-0.5 px-1 focus:ring-primary h-9 {{ if $isOriginal }}
+        {{ if .Tramo.IsOriginal }}readonly{{ end }}
+        class="w-full text-[11px] border border-neutral-300 rounded py-0.5 px-1 focus:ring-primary h-9 {{ if .Tramo.IsOriginal }}
           bg-neutral-50 text-neutral-500 cursor-not-allowed
         {{ end }}"
       />
@@ -147,8 +154,8 @@
         name="tramo_billete[]"
         value="{{ .Tramo.Billete }}"
         x-bind="bindInput"
-        {{ if $isOriginal }}readonly{{ end }}
-        class="w-full text-[11px] border border-neutral-300 rounded py-0.5 px-2 focus:ring-primary h-9 {{ if $isOriginal }}
+        {{ if .Tramo.IsOriginal }}readonly{{ end }}
+        class="w-full text-[11px] border border-neutral-300 rounded py-0.5 px-2 focus:ring-primary h-9 {{ if .Tramo.IsOriginal }}
           bg-neutral-50 text-neutral-500 cursor-not-allowed
         {{ end }}"
         placeholder="Billete"
@@ -168,84 +175,98 @@
 
     <td class="px-2 py-1 text-center border-r border-neutral-100 bg-neutral-50/10">
       <div class="flex flex-col items-center justify-center h-full min-h-[45px]">
-        <div
-          class="relative group w-full max-w-[130px]"
-          x-data="{ localMoneda: '{{ or .Tramo.Moneda `Bs.` }}' }"
-          x-show="esModificacion"
-          x-cloak
-        >
-          <div class="flex items-center gap-0.5">
-            <select
-              name="tramo_moneda[]"
-              x-model="localMoneda"
-              class="text-[9px] font-bold text-neutral-500 bg-neutral-100 border border-neutral-300 rounded-l py-1.5 px-1 focus:ring-0 focus:outline-none h-8 border-r-0"
-            >
-              <option value="Bs.">Bs.</option>
-              <option value="USD">USD</option>
-              <option value="EUR">EUR</option>
-            </select>
-            <input
-              type="number"
-              step="0.01"
-              name="tramo_monto_devolucion[]"
-              x-model.number="monto"
-              class="w-full text-[11px] font-black border border-neutral-300 rounded-r py-1 px-1 focus:ring-warning-500 focus:border-warning-500 transition-all text-right h-8 bg-warning-50 text-warning-700"
-              placeholder="0.00"
-            />
+        {{ if .Tramo.IsOriginal }}
+          <input type="hidden" name="tramo_moneda[]" value="{{ or .Tramo.Moneda `BOB` }}" />
+          <input type="hidden" name="tramo_monto_devolucion[]" value="{{ or .Tramo.MontoDevolucion 0 }}" />
+
+          <template x-if="esModificacion">
+            <span class="text-[8px] font-bold text-warning-600 uppercase leading-none">Tramo Modificado</span>
+          </template>
+          <template x-if="esDevolucion">
+            <span class="text-[8px] font-bold text-danger-500 uppercase leading-none">Devolución Pase</span>
+          </template>
+          <span x-show="!esModificacion && !esDevolucion" class="text-neutral-300">-</span>
+        {{ else if .Tramo.IsReprogramacion }}
+          <div class="relative group w-full max-w-[130px]">
+            <div class="flex items-center gap-0.5">
+              <select
+                name="tramo_moneda[]"
+                x-model="moneda"
+                class="text-[9px] font-bold text-neutral-500 bg-neutral-100 border border-neutral-300 rounded-l py-1.5 px-1 focus:ring-0 focus:outline-none h-8 border-r-0"
+              >
+                <option value="BOB">Bs.</option>
+                <option value="USD">USD</option>
+                <option value="EUR">EUR</option>
+              </select>
+              <input
+                type="number"
+                step="0.01"
+                name="tramo_monto_devolucion[]"
+                x-model.number="monto"
+                class="w-full text-[11px] font-black border border-neutral-300 rounded-r py-1 px-1 focus:ring-warning-500 focus:border-warning-500 transition-all text-right h-8 bg-warning-50 text-warning-700"
+                placeholder="0.00"
+              />
+            </div>
+            <div class="text-[8px] font-bold text-warning-600 uppercase mt-0.5">Monto Diferencia</div>
           </div>
-          <div class="text-[8px] font-bold text-warning-600 uppercase mt-0.5">Monto Diferencia</div>
-        </div>
-        <template x-if="esDevolucion">
-          <span class="text-[8px] font-bold text-danger-500 uppercase leading-none mt-1">Devolución Pase</span>
-        </template>
+        {{ end }}
       </div>
     </td>
 
     <td class="px-2 py-1 text-center">
-      <div class="flex items-center justify-center gap-1.5">
-        <div class="relative group">
-          <label
-            class="cursor-pointer flex items-center justify-center h-9 w-9 rounded-lg border-2 border-dashed transition-all duration-200 overflow-hidden shadow-sm"
-            :class="(fileName || '{{ .Tramo.Archivo }}') ? 'border-success-400 bg-success-50 text-success-700' : 'border-neutral-200 bg-neutral-50 text-neutral-400 hover:border-primary-300 hover:bg-white'"
-          >
-            <input
-              type="file"
-              name="tramo_archivo_{{ .Tramo.ID }}"
-              x-bind="bindArchivo"
-              class="hidden"
-              @change="await window.handleSingleUpload($event, $data); if($el.files[0] && $el.files[0].type.startsWith('image/')) { localUrl = URL.createObjectURL($el.files[0]) }"
-            />
+      <div class="flex items-center justify-center h-full min-h-[45px]">
+        <div x-show="!esDevolucion && !esModificacion" class="flex items-center justify-center gap-1 w-[76px] mx-auto" x-cloak>
+          <!-- Slot: Upload -->
+          <div class="w-9 h-9 flex-shrink-0">
+            <div class="relative group">
+              <label
+                class="cursor-pointer flex items-center justify-center h-9 w-9 rounded-lg border-2 border-dashed transition-all duration-200 overflow-hidden shadow-sm"
+                :class="(fileName || '{{ .Tramo.Archivo }}') ? 'border-success-400 bg-success-50 text-success-700' : 'border-neutral-200 bg-neutral-50 text-neutral-400 hover:border-primary-300 hover:bg-white'"
+              >
+                <input
+                  type="file"
+                  name="tramo_archivo_{{ .Tramo.ID }}"
+                  x-bind="bindArchivo"
+                  class="hidden"
+                  @change="await window.handleSingleUpload($event, $data); if($el.files[0] && $el.files[0].type.startsWith('image/')) { localUrl = URL.createObjectURL($el.files[0]) }"
+                />
 
-            <input type="hidden" name="tramo_archivo_existente_{{ .Tramo.ID }}" value="{{ .Tramo.Archivo }}" />
-            <img x-show="localUrl" :src="localUrl" class="w-full h-full object-cover" />
-            <div x-show="!localUrl && processingImage" class="flex items-center justify-center">
-              <i class="ph ph-circle-notch animate-spin text-xl text-primary-500"></i>
+                <input type="hidden" name="tramo_archivo_existente_{{ .Tramo.ID }}" value="{{ .Tramo.Archivo }}" />
+                <img x-show="localUrl" :src="localUrl" class="w-full h-full object-cover" />
+                <div x-show="!localUrl && processingImage" class="flex items-center justify-center">
+                  <i class="ph ph-circle-notch animate-spin text-xl text-primary-500"></i>
+                </div>
+                <i
+                  x-show="!localUrl && !processingImage"
+                  class="ph ph-upload-simple text-xl font-bold"
+                  :class="(fileName || '{{ .Tramo.Archivo }}') ? 'text-success-600' : 'text-neutral-400'"
+                ></i>
+              </label>
             </div>
-            <i
-              x-show="!localUrl && !processingImage"
-              class="ph ph-upload-simple text-xl font-bold"
-              :class="(fileName || '{{ .Tramo.Archivo }}') ? 'text-success-600' : 'text-neutral-400'"
-            ></i>
-          </label>
-        </div>
+          </div>
 
-        <template x-if="localUrl || '{{ .Tramo.Archivo }}'">
-          <button
-            type="button"
-            @click="if(localUrl) {
-              window.open(localUrl, '_blank')
-            } else {
-              htmx.ajax('GET', '/preview-file?path=' + encodeURIComponent('{{ .Tramo.Archivo }}'), { target: '#modal-container' })
-            }"
-            class="h-9 w-9 flex items-center justify-center rounded-lg text-primary-600 hover:bg-primary-50 transition-all"
-          >
-            <i class="ph ph-eye text-xl"></i>
-          </button>
-        </template>
+          <!-- Slot: Eye -->
+          <div class="w-9 h-9 flex-shrink-0 flex items-center justify-center">
+            <template x-if="localUrl || '{{ .Tramo.Archivo }}'">
+              <button
+                type="button"
+                @click="if(localUrl) {
+                  window.open(localUrl, '_blank')
+                } else {
+                  htmx.ajax('GET', '/preview-file?path=' + encodeURIComponent('{{ .Tramo.Archivo }}'), { target: '#modal-container' })
+                }"
+                class="h-9 w-9 flex items-center justify-center rounded-lg text-primary-600 hover:bg-primary-50 transition-all shadow-sm border border-neutral-100 bg-white"
+              >
+                <i class="ph ph-eye text-xl"></i>
+              </button>
+            </template>
+          </div>
+        </div>
+        <span x-show="esDevolucion || esModificacion" class="text-neutral-300" x-cloak>-</span>
       </div>
     </td>
 
-    <td class="px-2 py-1 text-right">
+    <td class="px-0 py-1 text-left">
       {{ if $canDelete }}
         <button
           type="button"

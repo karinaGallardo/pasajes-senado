@@ -1,5 +1,7 @@
 package dtos
 
+import "strings"
+
 type RutaView struct {
 	Display string
 	Origen  string
@@ -22,6 +24,16 @@ type TramoView struct {
 	Orden           int
 	PasajeID        string
 	SolicitudItemID string
+}
+
+func (t TramoView) IsOriginal() bool {
+	upper := strings.ToUpper(t.Tipo)
+	return strings.HasSuffix(upper, "_ORIGINAL")
+}
+
+func (t TramoView) IsReprogramacion() bool {
+	upper := strings.ToUpper(t.Tipo)
+	return strings.HasSuffix(upper, "_REPRO") || strings.HasSuffix(upper, "_REPROG")
 }
 
 type ItinerarioView struct {

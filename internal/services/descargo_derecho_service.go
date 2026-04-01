@@ -35,58 +35,82 @@ func (s *DescargoDerechoService) GetShowData(ctx context.Context, id string) (*d
 		return nil, err
 	}
 
-	// 1. Obtener tramos y sincronizar virtualmente con la solicitud
+	// 1. Obtener tramos unificados (Originales + Repros)
 	tramos := descargo.Tramos
 	if descargo.Solicitud != nil {
 		tramos = s.syncVirtualItinerary(tramos, descargo.Solicitud)
 	}
 
-	// 2. Agrupar por Billete para la UI
-	ticketsMap := make(map[string]*dtos.BilleteItinerario)
-	var ticketsOrder []string
+	// 2. Agrupar por Billete (como llave de itinerario) para la UI
+	itinerariosMap := make(map[string]*dtos.ItinerarioTramos)
+	var itinerariosOrder []string
 
-	for _, d := range tramos {
-		key := d.Billete
+	for _, item := range tramos {
+		key := item.Billete
 		if key == "" {
 			key = "SIN_BILLETE"
 		}
 
-		if _, ok := ticketsMap[key]; !ok {
-			ticketsMap[key] = &dtos.BilleteItinerario{Billete: d.Billete}
-			ticketsOrder = append(ticketsOrder, key)
+		if _, ok := itinerariosMap[key]; !ok {
+			itinerariosMap[key] = &dtos.ItinerarioTramos{Billete: item.Billete}
+			itinerariosOrder = append(itinerariosOrder, key)
 		}
 
-		tg := ticketsMap[key]
-		tg.Tramos = append(tg.Tramos, d)
-		if d.EsDevolucion {
-			// ticketsMap[key].EsDevolucion = true // No longer needed at grouping level
+		// Transform models to TramoView
+		dateStr := ""
+		if item.Fecha != nil {
+			dateStr = item.Fecha.Format("2006-01-02")
 		}
-		if d.EsModificacion {
-			// ticketsMap[key].EsModificacion = true // No longer needed at grouping level
+
+		rutaStr := item.GetRutaDisplay()
+		parts := strings.Split(rutaStr, " - ")
+		rv := dtos.RutaView{Display: rutaStr}
+		if len(parts) == 2 {
+			rv.Origen = parts[0]
+			rv.Destino = parts[1]
+		} else {
+			rv.Origen = rutaStr
 		}
+
+		view := dtos.TramoView{
+			ID:              item.ID,
+			Tipo:            string(item.Tipo),
+			Ruta:            rv,
+			RutaID:          utils.DerefString(item.RutaID),
+			Fecha:           dateStr,
+			Billete:         item.Billete,
+			Pase:            item.NumeroPaseAbordo,
+			Archivo:         item.ArchivoPaseAbordo,
+			EsDevolucion:    item.EsDevolucion,
+			EsModificacion:  item.EsModificacion,
+			MontoDevolucion: item.MontoDevolucion,
+			Moneda:          item.Moneda,
+			Orden:           item.Orden,
+			PasajeID:        utils.DerefString(item.PasajeID),
+			SolicitudItemID: utils.DerefString(item.SolicitudItemID),
+		}
+
+		tg := itinerariosMap[key]
+		tg.Tramos = append(tg.Tramos, view)
 	}
 
 	// 3. Clasificar en IDA y VUELTA
-	var billetesIda, billetesVuelta []dtos.BilleteItinerario
-	for _, key := range ticketsOrder {
-		tg := ticketsMap[key]
-
-		// Ordenar tramos por el campo Orden
-		// sort.Slice is safe here.
-		s.sortTramos(tg.Tramos)
+	var itinerarioIda, itinerarioVuelta []dtos.ItinerarioTramos
+	for _, key := range itinerariosOrder {
+		tg := itinerariosMap[key]
 
 		// Clasificar por el tipo del primer tramo
 		if len(tg.Tramos) > 0 && strings.HasPrefix(string(tg.Tramos[0].Tipo), "VUELTA") {
-			billetesVuelta = append(billetesVuelta, *tg)
+			itinerarioVuelta = append(itinerarioVuelta, *tg)
 		} else {
-			billetesIda = append(billetesIda, *tg)
+			itinerarioIda = append(itinerarioIda, *tg)
 		}
 	}
 
 	return &dtos.DescargoShowData{
 		Descargo: descargo,
-		Ida:      billetesIda,
-		Vuelta:   billetesVuelta,
+		Ida:      itinerarioIda,
+		Vuelta:   itinerarioVuelta,
 	}, nil
 }
 
@@ -308,65 +332,76 @@ func (s *DescargoDerechoService) UpdateDerecho(ctx context.Context, id string, r
 	return s.repo.Update(ctx, descargo)
 }
 
-func (s *DescargoDerechoService) PrepareItinerarioDerecho(descargo *models.Descargo) (map[string][]dtos.TramoView, map[string][]dtos.TramoView) {
-	pasajesOriginales := make(map[string][]dtos.TramoView)
-	pasajesReprogramados := make(map[string][]dtos.TramoView)
-
-	itemsByType := make(map[string][]models.DescargoTramo)
-
-	for _, item := range descargo.Tramos {
-		itemsByType[string(item.Tipo)] = append(itemsByType[string(item.Tipo)], item)
+func (s *DescargoDerechoService) GetEditData(ctx context.Context, id string) (*dtos.DescargoEditData, error) {
+	descargo, err := s.repo.FindByID(ctx, id)
+	if err != nil {
+		return nil, err
 	}
 
-	tiposOrdenados := []string{"IDA_ORIGINAL", "IDA_REPRO", "VUELTA_ORIGINAL", "VUELTA_REPRO"}
-	for _, tipo := range tiposOrdenados {
-		items := itemsByType[tipo]
-		for _, item := range items {
-			dateStr := ""
-			if item.Fecha != nil {
-				dateStr = item.Fecha.Format("2006-01-02")
-			}
+	if !descargo.IsEditable() {
+		return nil, fmt.Errorf("el descargo no se puede editar en su estado actual (%s)", descargo.Estado)
+	}
 
-			rutaStr := item.GetRutaDisplay()
-			parts := strings.Split(rutaStr, " - ")
-			rv := dtos.RutaView{Display: rutaStr}
-			if len(parts) == 2 {
-				rv.Origen = parts[0]
-				rv.Destino = parts[1]
-			} else {
-				rv.Origen = rutaStr
-			}
-
-			cv := dtos.TramoView{
-				ID:              item.ID,
-				Tipo:            string(item.Tipo),
-				Ruta:            rv,
-				RutaID:          utils.DerefString(item.RutaID),
-				Fecha:           dateStr,
-				Billete:         item.Billete,
-				Pase:            item.NumeroPaseAbordo,
-				Archivo:         item.ArchivoPaseAbordo,
-				EsDevolucion:    item.EsDevolucion,
-				EsModificacion:  item.EsModificacion,
-				MontoDevolucion: item.MontoDevolucion,
-				Moneda:          item.Moneda,
-				Orden:           item.Orden,
-				PasajeID:        utils.DerefString(item.PasajeID),
-				SolicitudItemID: utils.DerefString(item.SolicitudItemID),
-			}
-
-			targetMap := pasajesOriginales
-			if strings.HasSuffix(tipo, "REPRO") {
-				targetMap = pasajesReprogramados
-			}
-
-			category := "IDA"
-			if strings.HasPrefix(tipo, "VUELTA") {
-				category = "VUELTA"
-			}
-			targetMap[category] = append(targetMap[category], cv)
+	// Sincronización proactiva: Si se emitieron nuevos pasajes después de la creación inicial
+	if descargo.Solicitud != nil {
+		if err := s.SyncItineraryFromSolicitud(ctx, descargo, descargo.Solicitud); err == nil {
+			// Recargar para relacionales GORM si hubo cambios
+			descargo, _ = s.repo.FindByID(ctx, id)
 		}
 	}
 
-	return pasajesOriginales, pasajesReprogramados
+	// 1. Obtener tramos unificados (Originales + Repros)
+	tramos := descargo.Tramos
+
+	// 2. Agrupar por categoría (IDA/VUELTA) pero manteniendo la estructura para el formulario
+	pasajesIda := make([]dtos.TramoView, 0)
+	pasajesVuelta := make([]dtos.TramoView, 0)
+
+	for _, item := range tramos {
+		dateStr := ""
+		if item.Fecha != nil {
+			dateStr = item.Fecha.Format("2006-01-02")
+		}
+
+		rutaStr := item.GetRutaDisplay()
+		parts := strings.Split(rutaStr, " - ")
+		rv := dtos.RutaView{Display: rutaStr}
+		if len(parts) == 2 {
+			rv.Origen = parts[0]
+			rv.Destino = parts[1]
+		} else {
+			rv.Origen = rutaStr
+		}
+
+		cv := dtos.TramoView{
+			ID:              item.ID,
+			Tipo:            string(item.Tipo),
+			Ruta:            rv,
+			RutaID:          utils.DerefString(item.RutaID),
+			Fecha:           dateStr,
+			Billete:         item.Billete,
+			Pase:            item.NumeroPaseAbordo,
+			Archivo:         item.ArchivoPaseAbordo,
+			EsDevolucion:    item.EsDevolucion,
+			EsModificacion:  item.EsModificacion,
+			MontoDevolucion: item.MontoDevolucion,
+			Moneda:          item.Moneda,
+			Orden:           item.Orden,
+			PasajeID:        utils.DerefString(item.PasajeID),
+			SolicitudItemID: utils.DerefString(item.SolicitudItemID),
+		}
+
+		if strings.HasPrefix(string(item.Tipo), "VUELTA") {
+			pasajesVuelta = append(pasajesVuelta, cv)
+		} else {
+			pasajesIda = append(pasajesIda, cv)
+		}
+	}
+
+	return &dtos.DescargoEditData{
+		Descargo:  descargo,
+		Solicitud: descargo.Solicitud,
+		Ida:       pasajesIda,
+		Vuelta:    pasajesVuelta,
+	}, nil
 }

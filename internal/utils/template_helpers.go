@@ -29,6 +29,8 @@ func TemplateFuncs() template.FuncMap {
 		"nombreDiaCorto":   DayNameShort,
 		"rangoSemanaCorto": FormatWeekRangeShort,
 		"contains":         strings.Contains,
+		"hasSuffix":        strings.HasSuffix,
+		"hasPrefix":        strings.HasPrefix,
 		"formatCurrency":   FormatCurrency,
 		"abs":              Abs,
 		"lower":            strings.ToLower,

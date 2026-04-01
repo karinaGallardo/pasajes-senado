@@ -299,6 +299,7 @@ document.addEventListener("alpine:init", function () {
     esDevolucion: config.esDevo,
     esModificacion: config.esMod,
     monto: config.monto || 0,
+    moneda: config.moneda || "BOB",
     route_id: config.route_id || "",
     route: config.route || "",
     billete: config.billete || "",

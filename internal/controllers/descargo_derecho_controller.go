@@ -97,35 +97,18 @@ func (ctrl *DescargoDerechoController) Show(c *gin.Context) {
 
 func (ctrl *DescargoDerechoController) Edit(c *gin.Context) {
 	id := c.Param("id")
-	descargo, err := ctrl.descargoService.GetByID(c.Request.Context(), id)
+	data, err := ctrl.descargoDerechoService.GetEditData(c.Request.Context(), id)
 	if err != nil {
 		c.Redirect(http.StatusFound, "/descargos")
 		return
 	}
 
-	if !descargo.IsEditable() {
-		c.Redirect(http.StatusFound, "/descargos/derecho/"+id)
-		return
-	}
-
-	// Sincronización proactiva: Si se emitieron nuevos pasajes después de la creación inicial
-	if descargo.Solicitud != nil {
-		if err := ctrl.descargoDerechoService.SyncItineraryFromSolicitud(c.Request.Context(), descargo, descargo.Solicitud); err == nil {
-			// Recargar el descargo para asegurar que las relaciones GORM se pueblen para los nuevos items sincronizados
-			descargo, _ = ctrl.descargoService.GetByID(c.Request.Context(), id)
-		} else {
-			log.Printf("Error sincronizando itinerario en edición: %v", err)
-		}
-	}
-
-	pasajesOriginales, pasajesReprogramados := ctrl.descargoDerechoService.PrepareItinerarioDerecho(descargo)
-
 	utils.Render(c, "descargo/derecho/edit", gin.H{
-		"Title":                "Editar Descargo (Derecho)",
-		"Descargo":             descargo,
-		"Solicitud":            descargo.Solicitud,
-		"PasajesOriginales":    pasajesOriginales,
-		"PasajesReprogramados": pasajesReprogramados,
+		"Title":     "Editar Descargo (Derecho)",
+		"Descargo":  data.Descargo,
+		"Solicitud": data.Solicitud,
+		"Ida":       data.Ida,
+		"Vuelta":    data.Vuelta,
 	})
 }
 
@@ -359,6 +342,7 @@ func (ctrl *DescargoDerechoController) NuevaFila(c *gin.Context) {
 		"Tipo": tipo,
 		"Tramo": dtos.TramoView{
 			ID:              index,
+			Tipo:            tipo,
 			SolicitudItemID: solicitudItemID,
 			EsDevolucion:    false,
 			EsModificacion:  false,

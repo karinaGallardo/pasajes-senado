@@ -147,14 +147,22 @@ func (r *CreateDescargoRequest) Bind(c *gin.Context) error {
 	return nil
 }
 
-type BilleteItinerario struct {
-	Billete string // Nro de Billete / E-Ticket
-	Tramos  []models.DescargoTramo
+type ItinerarioTramos struct {
+	Billete string      // Nro de Billete / E-Ticket
+	Tramos  []TramoView // Tramos agrupados por este billete
 }
 
 // DescargoShowData contiene toda la información necesaria para renderizar el detalle del descargo
 type DescargoShowData struct {
 	Descargo *models.Descargo
-	Ida      []BilleteItinerario
-	Vuelta   []BilleteItinerario
+	Ida      []ItinerarioTramos
+	Vuelta   []ItinerarioTramos
+}
+
+// DescargoEditData contiene la información estructurada para el formulario de edición
+type DescargoEditData struct {
+	Descargo  *models.Descargo
+	Solicitud *models.Solicitud
+	Ida       []TramoView
+	Vuelta    []TramoView
 }
