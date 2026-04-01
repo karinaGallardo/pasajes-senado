@@ -42,7 +42,7 @@ func (s *DescargoDerechoService) GetShowData(ctx context.Context, id string) (*d
 	}
 
 	// 2. Agrupar por Billete para la UI
-	ticketsMap := make(map[string]*dtos.Itinerario)
+	ticketsMap := make(map[string]*dtos.BilleteItinerario)
 	var ticketsOrder []string
 
 	for _, d := range tramos {
@@ -52,7 +52,7 @@ func (s *DescargoDerechoService) GetShowData(ctx context.Context, id string) (*d
 		}
 
 		if _, ok := ticketsMap[key]; !ok {
-			ticketsMap[key] = &dtos.Itinerario{Billete: d.Billete}
+			ticketsMap[key] = &dtos.BilleteItinerario{Billete: d.Billete}
 			ticketsOrder = append(ticketsOrder, key)
 		}
 
@@ -67,7 +67,7 @@ func (s *DescargoDerechoService) GetShowData(ctx context.Context, id string) (*d
 	}
 
 	// 3. Clasificar en IDA y VUELTA
-	var billetesIda, billetesVuelta []dtos.Itinerario
+	var billetesIda, billetesVuelta []dtos.BilleteItinerario
 	for _, key := range ticketsOrder {
 		tg := ticketsMap[key]
 
