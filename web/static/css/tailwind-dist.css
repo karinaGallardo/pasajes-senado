@@ -2741,6 +2741,11 @@ video {
   border-color: rgb(212 212 212 / var(--tw-divide-opacity, 1));
 }
 
+.divide-warning-100 > :not([hidden]) ~ :not([hidden]) {
+  --tw-divide-opacity: 1;
+  border-color: rgb(254 243 199 / var(--tw-divide-opacity, 1));
+}
+
 .self-center {
   align-self: center;
 }
@@ -10179,6 +10184,10 @@ h1, h2, h3 {
 .hover\:bg-white:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(255 255 255 / var(--tw-bg-opacity, 1));
+}
+
+.hover\:bg-warning-50\/30:hover {
+  background-color: rgb(255 251 235 / 0.3);
 }
 
 .hover\:text-danger-500:hover {

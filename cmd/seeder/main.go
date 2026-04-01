@@ -190,7 +190,7 @@ func seedEstadosSolicitud() {
 		{Codigo: "SOLICITADO", Nombre: "Solicitado", Color: "#F59E0B", Icon: "ph ph-paper-plane-tilt", Descripcion: "Solicitud creada, pendiente de aprobación"},         // Amber 500
 		{Codigo: "PARCIALMENTE_APROBADO", Nombre: "Parcialmente Aprobado", Color: "#8B5CF6", Icon: "ph ph-check-square-offset", Descripcion: "Algunos tramos aprobados"}, // Violet 500
 		{Codigo: "APROBADO", Nombre: "Aprobado", Color: "#10B981", Icon: "ph ph-check-circle", Descripcion: "Solicitud aprobada, pasajes en emisión"},                    // Emerald 500
-		{Codigo: "EMITIDO", Nombre: "Emitido", Color: "#0EA5E9", Icon: "ph ph-ticket", Descripcion: "Todos los boletos han sido emitidos"},                               // Sky 500
+		{Codigo: "EMITIDO", Nombre: "Emitido", Color: "#0EA5E9", Icon: "ph ph-ticket", Descripcion: "Todos los pasajes han sido emitidos"},                               // Sky 500
 		{Codigo: "RECHAZADO", Nombre: "Rechazado", Color: "#F43F5E", Icon: "ph ph-x-circle", Descripcion: "Solicitud rechazada por autoridad"},                           // Rose 500
 		{Codigo: "FINALIZADO", Nombre: "Finalizado", Color: "#525252", Icon: "ph ph-archive", Descripcion: "Viaje completado y cerrado"},                                 // Neutral 700
 	}
@@ -516,7 +516,7 @@ func seedEstadosSolicitudItem() {
 		{Codigo: "SOLICITADO", Nombre: "Solicitado", Color: "#F59E0B", Icon: "ph ph-clock", Descripcion: "Item solicitado"},                   // Amber 500
 		{Codigo: "APROBADO", Nombre: "Aprobado", Color: "#10B981", Icon: "ph ph-check", Descripcion: "Item aprobado por autoridad"},           // Emerald 500
 		{Codigo: "RECHAZADO", Nombre: "Rechazado", Color: "#F43F5E", Icon: "ph ph-x", Descripcion: "Item rechazado"},                          // Rose 500
-		{Codigo: "EMITIDO", Nombre: "Emitido", Color: "#0EA5E9", Icon: "ph ph-ticket", Descripcion: "Boleto emitido"},                         // Sky 500
+		{Codigo: "EMITIDO", Nombre: "Emitido", Color: "#0EA5E9", Icon: "ph ph-ticket", Descripcion: "Billete emitido"},                        // Sky 500
 		{Codigo: "REPROGRAMADO", Nombre: "Reprogramado", Color: "#EAB308", Icon: "ph ph-arrows-clockwise", Descripcion: "Item reprogramado"},  // Yellow 500
 		{Codigo: "FINALIZADO", Nombre: "Finalizado", Color: "#525252", Icon: "ph ph-check-fat", Descripcion: "Item completado"},               // Neutral 700
 		{Codigo: "CANCELADO", Nombre: "Cancelado", Color: "#EF4444", Icon: "ph ph-trash", Descripcion: "Item cancelado"},                      // Red 500

@@ -282,7 +282,7 @@ func (r *SolicitudRepository) FindPendientesDeDescargo(ctx context.Context) ([]m
 	err := r.db.WithContext(ctx).Preload("Usuario.Encargado").
 		Preload("Items.Pasajes").
 		Preload("TipoSolicitud.ConceptoViaje").
-		Preload("Descargo.DetallesItinerario").
+		Preload("Descargo.Tramos").
 		Preload("Descargo.Oficial").
 		Joins("LEFT JOIN descargos ON solicitudes.id = descargos.solicitud_id").
 		Where("(descargos.id IS NULL OR descargos.estado != ?)", models.EstadoDescargoAprobado).
@@ -305,7 +305,7 @@ func (r *SolicitudRepository) FindPendientesDeDescargoUI(ctx context.Context, us
 		Preload("Items.Pasajes.RutaPasaje").
 		Preload("TipoSolicitud.ConceptoViaje").
 		Preload("EstadoSolicitud").
-		Preload("Descargo.DetallesItinerario").
+		Preload("Descargo.Tramos").
 		Preload("Descargo.Oficial").
 		Joins("LEFT JOIN descargos ON solicitudes.id = descargos.solicitud_id").
 		Where("(descargos.id IS NULL OR descargos.estado != ?)", models.EstadoDescargoAprobado).
@@ -342,7 +342,7 @@ func (r *SolicitudRepository) FindPendientesDeDescargoPaginated(ctx context.Cont
 		Preload("Items.Pasajes.RutaPasaje").
 		Preload("TipoSolicitud.ConceptoViaje").
 		Preload("EstadoSolicitud").
-		Preload("Descargo.DetallesItinerario").
+		Preload("Descargo.Tramos").
 		Preload("Descargo.Oficial").
 		Joins("LEFT JOIN descargos ON solicitudes.id = descargos.solicitud_id").
 		Joins("LEFT JOIN usuarios ON solicitudes.usuario_id = usuarios.id").

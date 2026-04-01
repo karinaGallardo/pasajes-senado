@@ -32,3 +32,43 @@ func SaveUploadedFile(c *gin.Context, file *multipart.FileHeader, uploadDir stri
 
 	return filePath, nil
 }
+
+// ExtractDescargoFiles procesa de forma masiva los archivos de pases de abordaje para un descargo.
+func ExtractDescargoFiles(c *gin.Context, tramoIDs []string) []string {
+	var paths []string
+	for _, idRow := range tramoIDs {
+		// 1. Verificar si hay un archivo existente (pasa de largo si no hay nada nuevo)
+		path := c.PostForm("tramo_archivo_existente_" + idRow)
+
+		// 2. Intentar capturar el archivo nuevo subido para esta fila
+		if file, err := c.FormFile("tramo_archivo_" + idRow); err == nil {
+			savedPath, err := SaveUploadedFile(c, file, "uploads/pases_abordo", "pase_descargo_"+idRow+"_")
+			if err == nil {
+				path = savedPath
+			}
+		}
+		paths = append(paths, path)
+	}
+	return paths
+}
+
+// ExtractDescargoAnexos procesa los archivos anexos para un informe oficial PV-06.
+func ExtractDescargoAnexos(c *gin.Context, id string) []string {
+	var paths []string
+	form, _ := c.MultipartForm()
+	if form == nil {
+		return c.PostFormArray("anexos_existentes[]")
+	}
+
+	newAnexos := form.File["anexos[]"]
+	existentes := c.PostFormArray("anexos_existentes[]")
+	paths = append(paths, existentes...)
+
+	for _, fileHeader := range newAnexos {
+		savedPath, err := SaveUploadedFile(c, fileHeader, "uploads/anexos", "anexo_edit_"+id+"_")
+		if err == nil {
+			paths = append(paths, savedPath)
+		}
+	}
+	return paths
+}

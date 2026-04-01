@@ -231,7 +231,7 @@
                 <th class="px-2 py-1 text-[9px] font-black text-neutral-400 uppercase text-center w-10">Mod.</th>
                 <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase w-1/3">Ruta / Conexión</th>
                 <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase">Fecha</th>
-                <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase">Nro Boleto</th>
+                <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase">Nro Billete</th>
                 <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase">Nro Pase</th>
                 <th class="px-2 py-1 text-center text-[9px] font-black text-neutral-400 uppercase">Archivo</th>
                 <th class="px-2 py-1 text-right"></th>
@@ -239,11 +239,11 @@
             </thead>
             <tbody>
               {{ range (index .PasajesOriginales "IDA") }} {{
-              template "descargo/components/escala_fila_oficial" (dict "Scale" . "Tipo" "IDA_ORIGINAL") }} {{ end }}
+              template "descargo/components/tramo_fila_oficial" (dict "Scale" . "Tipo" "IDA_ORIGINAL") }} {{ end }}
             </tbody>
             <tbody id="itin-ida-repro-container" class="border-t-2 border-neutral-50">
               {{ range (index .PasajesReprogramados "IDA") }} {{
-              template "descargo/components/escala_fila_oficial" (dict "Scale" . "Tipo" "IDA_REPRO") }} {{ end }}
+              template "descargo/components/tramo_fila_oficial" (dict "Scale" . "Tipo" "IDA_REPRO") }} {{ end }}
             </tbody>
           </table>
           <div class="flex justify-start">
@@ -269,11 +269,11 @@
           <table class="min-w-full">
             <tbody>
               {{ range (index .PasajesOriginales "VUELTA") }} {{
-              template "descargo/components/escala_fila_oficial" (dict "Scale" . "Tipo" "VUELTA_ORIGINAL") }} {{ end }}
+              template "descargo/components/tramo_fila_oficial" (dict "Scale" . "Tipo" "VUELTA_ORIGINAL") }} {{ end }}
             </tbody>
             <tbody id="itin-vuelta-repro-container" class="border-t-2 border-neutral-50">
               {{ range (index .PasajesReprogramados "VUELTA") }} {{
-              template "descargo/components/escala_fila_oficial" (dict "Scale" . "Tipo" "VUELTA_REPRO") }} {{ end }}
+              template "descargo/components/tramo_fila_oficial" (dict "Scale" . "Tipo" "VUELTA_REPRO") }} {{ end }}
             </tbody>
           </table>
           <div class="flex justify-start">

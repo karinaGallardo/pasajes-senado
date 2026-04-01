@@ -67,10 +67,10 @@
                 <i class="ph ph-calendar text-neutral-400 mr-2"></i>
                 <span>{{ .InfoFechaRegistrada }}</span>
               </div>
-              {{ end }} {{ if .InfoBoletoRegistrado }}
+              {{ end }} {{ if .InfoBilleteRegistrado }}
               <div class="flex items-center">
                 <i class="ph ph-ticket text-neutral-400 mr-2"></i>
-                <span class="text-xs">B: {{ .InfoBoletoRegistrado }}</span>
+                <span class="text-xs">B: {{ .InfoBilleteRegistrado }}</span>
               </div>
               {{ end }} {{ if .InfoPaseRegistrado }}
               <div class="flex items-center">
@@ -106,10 +106,10 @@
                   <i class="ph ph-calendar-blank text-primary-400 mr-2"></i>
                   <span>{{ .InfoFecha }}</span>
                 </div>
-                {{ end }} {{ if .InfoBoleto }}
+                {{ end }} {{ if .InfoBillete }}
                 <div class="flex items-center">
                   <i class="ph ph-ticket text-primary-400 mr-2"></i>
-                  <span>{{ .InfoBoleto }}</span>
+                  <span>{{ .InfoBillete }}</span>
                 </div>
                 {{ end }}
               </div>

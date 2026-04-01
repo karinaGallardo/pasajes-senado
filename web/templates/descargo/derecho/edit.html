@@ -161,7 +161,7 @@
                       <th class="px-2 py-1 text-center font-black">Mod.</th>
                       <th class="px-2 py-1 text-left font-black">Ruta / Tramo</th>
                       <th class="px-2 py-1 font-black">Fecha</th>
-                      <th class="px-2 py-1 font-black">Boleto</th>
+                      <th class="px-2 py-1 font-black">Billete</th>
                       <th class="px-2 py-1 font-black">Pase</th>
                       <th class="px-2 py-1 text-center font-black">Monto / Moneda</th>
                       <th class="px-2 py-1 text-center font-black">PDF</th>
@@ -169,7 +169,7 @@
                   </thead>
                   <tbody class="divide-y divide-neutral-100 border-b last:border-0">
                     {{ range (index .PasajesOriginales "IDA") }}
-                      {{ template "descargo/components/escala_fila_derecho" (dict "Scale" . "Tipo" "IDA_ORIGINAL") }}
+                      {{ template "descargo/components/tramo_fila_derecho" (dict "Tramo" . "Tipo" "IDA_ORIGINAL") }}
                     {{ end }}
                   </tbody>
                 </table>
@@ -192,7 +192,7 @@
                 <table class="min-w-full">
                   <tbody id="itin-ida-repro-container">
                     {{ range (index .PasajesReprogramados "IDA") }}
-                      {{ template "descargo/components/escala_fila_derecho" (dict "Scale" . "Tipo" "IDA_REPRO") }}
+                      {{ template "descargo/components/tramo_fila_derecho" (dict "Tramo" . "Tipo" "IDA_REPRO") }}
                     {{ end }}
                   </tbody>
                 </table>
@@ -219,7 +219,7 @@
                         <th class="px-2 py-1 text-center font-black">Mod.</th>
                         <th class="px-2 py-1 text-left font-black">Ruta / Tramo</th>
                         <th class="px-2 py-1 font-black">Fecha</th>
-                        <th class="px-2 py-1 font-black">Boleto</th>
+                        <th class="px-2 py-1 font-black">Billete</th>
                         <th class="px-2 py-1 font-black">Pase</th>
                         <th class="px-2 py-1 text-center font-black">Monto / Moneda</th>
                         <th class="px-2 py-1 text-center font-black">PDF</th>
@@ -227,7 +227,7 @@
                     </thead>
                     <tbody class="divide-y divide-neutral-100 border-b last:border-0">
                       {{ range (index .PasajesOriginales "VUELTA") }}
-                        {{ template "descargo/components/escala_fila_derecho" (dict "Scale" . "Tipo" "VUELTA_ORIGINAL") }}
+                        {{ template "descargo/components/tramo_fila_derecho" (dict "Tramo" . "Tipo" "VUELTA_ORIGINAL") }}
                       {{ end }}
                     </tbody>
                   </table>
@@ -250,7 +250,7 @@
                   <table class="min-w-full">
                     <tbody id="itin-vuelta-repro-container">
                       {{ range (index .PasajesReprogramados "VUELTA") }}
-                        {{ template "descargo/components/escala_fila_derecho" (dict "Scale" . "Tipo" "VUELTA_REPRO") }}
+                        {{ template "descargo/components/tramo_fila_derecho" (dict "Tramo" . "Tipo" "VUELTA_REPRO") }}
                       {{ end }}
                     </tbody>
                   </table>

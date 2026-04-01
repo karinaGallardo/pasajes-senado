@@ -302,11 +302,11 @@
                       </p>
                     </div>
 
-                    <!-- Boleto -->
+                    <!-- Billete -->
                     <div class="space-y-1">
-                      <span class="text-[8px] font-black uppercase tracking-widest text-neutral-400 block">N° Boleto</span>
+                      <span class="text-[8px] font-black uppercase tracking-widest text-neutral-400 block">N° Billete</span>
                       <p class="text-[12px] font-black text-neutral-900 leading-none uppercase select-all tracking-tight">
-                        {{ if .NumeroBoleto }}{{ .NumeroBoleto }}{{ else }}---{{ end }}
+                        {{ if .NumeroBillete }}{{ .NumeroBillete }}{{ else }}---{{ end }}
                       </p>
                     </div>
 
@@ -329,7 +329,7 @@
                       {{ if .Archivo }}
                       <button
                         type="button"
-                        hx-get="/pasajes/{{ .ID }}/preview?tipo=boleto"
+                        hx-get="/pasajes/{{ .ID }}/preview?tipo=billete"
                         hx-target="#modal-container"
                         class="w-8 h-8 flex items-center justify-center rounded-sm bg-white border border-danger-100 text-danger-500 hover:bg-danger-600 hover:text-white transition-all shadow-sm cursor-pointer"
                         title="Ver PDF">

@@ -20,7 +20,7 @@ type Ruta struct {
 	Contratos []RutaContrato `gorm:"foreignKey:RutaID"`
 }
 
-func (r Ruta) GetTramoDisplay() string {
+func (r Ruta) GetRutaDisplay() string {
 	if r.Origen.Ciudad != "" && r.Destino.Ciudad != "" {
 		parts := []string{r.Origen.Ciudad + " (" + r.Origen.IATA + ")"}
 		for _, e := range r.Escalas {
@@ -36,7 +36,7 @@ func (r Ruta) GetTramoDisplay() string {
 	return r.Tramo
 }
 
-func (r Ruta) GetSegments() []string {
+func (r Ruta) GetTramos() []string {
 	if r.OrigenIATA == "" || r.DestinoIATA == "" {
 		return []string{r.Tramo}
 	}
@@ -52,11 +52,11 @@ func (r Ruta) GetSegments() []string {
 	}
 	points = append(points, r.Destino.Ciudad+" ("+r.DestinoIATA+")")
 
-	var segments []string
+	var tramos []string
 	for i := 0; i < len(points)-1; i++ {
-		segments = append(segments, points[i]+" - "+points[i+1])
+		tramos = append(tramos, points[i]+" - "+points[i+1])
 	}
-	return segments
+	return tramos
 }
 
 type RutaEscala struct {

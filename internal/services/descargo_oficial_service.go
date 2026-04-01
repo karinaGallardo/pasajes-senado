@@ -7,7 +7,6 @@ import (
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
 	"sistema-pasajes/internal/utils"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -67,7 +66,7 @@ func (s *DescargoOficialService) AutoCreateFromSolicitud(ctx context.Context, so
 
 func (s *DescargoOficialService) SyncItineraryFromSolicitud(ctx context.Context, descargo *models.Descargo, solicitud *models.Solicitud) error {
 	existingMap := make(map[string]bool)
-	for _, det := range descargo.DetallesItinerario {
+	for _, det := range descargo.Tramos {
 		if det.PasajeID != nil {
 			key := fmt.Sprintf("%s_%d", *det.PasajeID, det.Orden)
 			existingMap[key] = true
@@ -86,24 +85,21 @@ func (s *DescargoOficialService) SyncItineraryFromSolicitud(ctx context.Context,
 			}
 
 			tipo := tipoPrefix + "_ORIGINAL"
-			if p.PasajeAnteriorID != nil {
-				tipo = tipoPrefix + "_REPRO"
-			}
 
-			segments := p.GetRutaSegments()
-			for i := range segments {
+			tramosVuelo := p.GetTramosRuta()
+			for i := range tramosVuelo {
 				orden := p.Orden*100 + i
 				key := fmt.Sprintf("%s_%d", p.ID, orden)
 
 				if !existingMap[key] {
 					tVuelo := p.FechaVuelo
-					descargo.DetallesItinerario = append(descargo.DetallesItinerario, models.DetalleItinerarioDescargo{
-						Tipo:            models.TipoDetalleItinerario(tipo),
+					descargo.Tramos = append(descargo.Tramos, models.DescargoTramo{
+						Tipo:            models.TipoDescargoTramo(tipo),
 						RutaID:          p.RutaID,
 						PasajeID:        &p.ID,
 						SolicitudItemID: &item.ID,
 						Fecha:           &tVuelo,
-						Boleto:          strings.ToUpper(strings.TrimSpace(p.NumeroBoleto)),
+						Billete:         strings.ToUpper(strings.TrimSpace(p.NumeroBillete)),
 						Orden:           orden,
 					})
 					existingMap[key] = true
@@ -122,12 +118,12 @@ func (s *DescargoOficialService) SyncItineraryFromSolicitud(ctx context.Context,
 	return nil
 }
 
-func (s *DescargoOficialService) UpdateOficial(ctx context.Context, id string, req dtos.CreateDescargoRequest, userID string, archivoPaths []string, anexoPaths []string) error {
+func (s *DescargoOficialService) UpdateOficial(ctx context.Context, id string, req dtos.CreateDescargoRequest, userID string, pasesAbordoPaths []string, anexoPaths []string) error {
 	descargo, err := s.repo.FindByID(ctx, id)
 	if err != nil {
 		return err
 	}
-	if descargo.Estado != models.EstadoDescargoBorrador && descargo.Estado != models.EstadoDescargoRechazado {
+	if !descargo.IsEditable() {
 		return fmt.Errorf("el descargo no se puede editar en su estado actual (%s)", descargo.Estado)
 	}
 
@@ -184,94 +180,78 @@ func (s *DescargoOficialService) UpdateOficial(ctx context.Context, id string, r
 		descargo.Oficial.TransportesTerrestres = terrestres
 	}
 
-	// 4. Itinerary Connection Data
-	devoMap := utils.ToMap(req.ItinDevolucion)
-	modMap := utils.ToMap(req.ItinModificacion)
-	existingMap := make(map[string]models.DetalleItinerarioDescargo)
-	for _, d := range descargo.DetallesItinerario {
+	// 4. Data Cleansing & Mapping
+	existingMap := make(map[string]models.DescargoTramo)
+	for _, d := range descargo.Tramos {
 		existingMap[d.ID] = d
 	}
 
-	var itinDetalles []models.DetalleItinerarioDescargo
-	for i, tipoRaw := range req.ItinTipo {
+	// 5. Process Structured Itinerary Rows
+	rows := req.ToTramoRows(pasesAbordoPaths)
+	tramosProcesados := make([]models.DescargoTramo, 0, len(rows))
+
+	for _, row := range rows {
 		// Mandatory field check
-		rutaIDRaw := utils.GetIdx(req.ItinRutaID, i)
-		if rutaIDRaw == "" {
+		if row.RutaID == "" {
 			continue
 		}
 
-		rawID := utils.GetIdx(req.ItinID, i)
-		idRow := strings.TrimSpace(rawID)
-		if strings.HasPrefix(idRow, "new_") || idRow == "" {
+		// Row ID preparation
+		idRow := row.ID
+		if strings.HasPrefix(idRow, "new_") {
 			idRow = ""
 		}
 
-		fecha := utils.ParseDatePtr("2006-01-02", utils.GetIdx(req.ItinFecha, i))
-		boleto := strings.ToUpper(strings.TrimSpace(utils.GetIdx(req.ItinBoleto, i)))
-		paseNum := utils.GetIdx(req.ItinPaseNumero, i)
-		archivo := utils.GetIdx(archivoPaths, i)
-		moneda := utils.GetIdxOrDefault(req.ItinMoneda, i, "Bs.")
-		montoDevo, _ := strconv.ParseFloat(utils.GetIdx(req.ItinMontoDevolucion, i), 64)
-		orden, _ := strconv.Atoi(utils.GetIdx(req.ItinOrden, i))
+		// Field preparation
+		fecha := utils.ParseDatePtr("2006-01-02", row.Fecha)
+		rutaID := utils.NilIfEmpty(row.RutaID)
+		pasajeID := utils.NilIfEmpty(row.PasajeID)
+		solItemID := utils.NilIfEmpty(row.SolicitudItemID)
 
-		rutaID := utils.NilIfEmpty(rutaIDRaw)
-		pasajeID := utils.NilIfEmpty(utils.GetIdx(req.ItinPasajeID, i))
-		solItemID := utils.NilIfEmpty(utils.GetIdx(req.ItinSolicitudItemID, i))
-
-		esDevo := devoMap[idRow]
-		if idRow == "" {
-			esDevo = devoMap[rawID]
-		}
-		esMod := modMap[idRow]
-		if idRow == "" {
-			esMod = modMap[rawID]
-		}
-		if esMod {
-			esDevo = false
-		}
-
-		tipoRow := models.TipoDetalleItinerario(tipoRaw)
+		// 6. Domain Rule: Data Protection for issued segments
+		tipoRow := models.TipoDescargoTramo(row.Tipo)
 		if idRow != "" {
 			if original, ok := existingMap[idRow]; ok && original.PasajeID != nil {
+				// Fields from a pre-issued ticket segment are protected (read-only for business integrity)
 				tipoRow = original.Tipo
 				rutaID = original.RutaID
 				fecha = original.Fecha
-				boleto = original.Boleto
 				pasajeID = original.PasajeID
 				solItemID = original.SolicitudItemID
 			}
 		}
 
-		det := models.DetalleItinerarioDescargo{
+		// 7. Atomic Entity Assembly
+		det := models.DescargoTramo{
 			DescargoID:        id,
 			Tipo:              tipoRow,
 			RutaID:            rutaID,
 			PasajeID:          pasajeID,
 			SolicitudItemID:   solItemID,
 			Fecha:             fecha,
-			Boleto:            boleto,
-			NumeroPaseAbordo:  paseNum,
-			ArchivoPaseAbordo: archivo,
-			EsDevolucion:      esDevo,
-			EsModificacion:    esMod,
-			MontoDevolucion:   montoDevo,
-			Moneda:            moneda,
-			Orden:             orden,
+			Billete:           row.Billete,
+			NumeroPaseAbordo:  row.PaseNumero,
+			ArchivoPaseAbordo: row.ArchivoPath,
+			EsDevolucion:      row.EsDevolucion,
+			EsModificacion:    row.EsModificacion,
+			MontoDevolucion:   row.MontoDevolucion,
+			Moneda:            row.Moneda,
+			Orden:             row.Orden,
 		}
 		det.ID = idRow
-		itinDetalles = append(itinDetalles, det)
+		tramosProcesados = append(tramosProcesados, det)
 	}
 
-	descargo.DetallesItinerario = itinDetalles
+	descargo.Tramos = tramosProcesados
 	return s.repo.Update(ctx, descargo)
 }
 
-func (s *DescargoOficialService) PrepareItinerarioOficial(descargo *models.Descargo) (map[string][]dtos.ConnectionView, map[string][]dtos.ConnectionView) {
-	pasajesOriginales := make(map[string][]dtos.ConnectionView)
-	pasajesReprogramados := make(map[string][]dtos.ConnectionView)
+func (s *DescargoOficialService) PrepareItinerarioOficial(descargo *models.Descargo) (map[string][]dtos.TramoView, map[string][]dtos.TramoView) {
+	pasajesOriginales := make(map[string][]dtos.TramoView)
+	pasajesReprogramados := make(map[string][]dtos.TramoView)
 
-	itemsByType := make(map[string][]models.DetalleItinerarioDescargo)
-	for _, item := range descargo.DetallesItinerario {
+	itemsByType := make(map[string][]models.DescargoTramo)
+	for _, item := range descargo.Tramos {
 		itemsByType[string(item.Tipo)] = append(itemsByType[string(item.Tipo)], item)
 	}
 
@@ -294,13 +274,13 @@ func (s *DescargoOficialService) PrepareItinerarioOficial(descargo *models.Desca
 				rv.Origen = rutaStr
 			}
 
-			cv := dtos.ConnectionView{
+			cv := dtos.TramoView{
 				ID:              item.ID,
 				Tipo:            string(item.Tipo),
 				Ruta:            rv,
 				RutaID:          utils.DerefString(item.RutaID),
 				Fecha:           dateStr,
-				Boleto:          item.Boleto,
+				Billete:         item.Billete,
 				Pase:            item.NumeroPaseAbordo,
 				Archivo:         item.ArchivoPaseAbordo,
 				EsDevolucion:    item.EsDevolucion,

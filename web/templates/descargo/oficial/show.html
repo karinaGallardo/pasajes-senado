@@ -241,7 +241,7 @@
               </thead>
               <tbody class="bg-white divide-y divide-neutral-100">
                 {{ range .PasajesOriginales.IDA }}
-                  {{ range $i, $scale := .Scales }}
+                  {{ range $i, $scale := .Tramos }}
                     <tr class="group hover:bg-neutral-50/80 transition-all duration-200 {{ if .EsModificacion }}bg-warning-50/30{{ end }}">
                       <td class="px-6 py-4 whitespace-nowrap align-top">
                         <div class="flex flex-col gap-1.5">
@@ -267,8 +267,8 @@
                       <td class="px-6 py-4 whitespace-nowrap align-top">
                         <div class="flex flex-col gap-1 text-[10px] text-neutral-700">
                           <div class="flex items-center">
-                            <span class="w-12 font-bold text-neutral-400 uppercase tracking-widest italic opacity-60">Boleto</span>
-                            <span class="font-mono text-neutral-900 font-bold ml-1">{{ if .Boleto }}{{ .Boleto }}{{ else }} - {{ end }}</span>
+                            <span class="w-12 font-bold text-neutral-400 uppercase tracking-widest italic opacity-60">Billete</span>
+                            <span class="font-mono text-neutral-900 font-bold ml-1">{{ if .Billete }}{{ .Billete }}{{ else }} - {{ end }}</span>
                           </div>
                         </div>
                       </td>
@@ -281,7 +281,7 @@
                   {{ end }}
                 {{ end }}
                 {{ range .PasajesReprogramados.IDA }}
-                  {{ range $i, $scale := .Scales }}
+                  {{ range $i, $scale := .Tramos }}
                     <tr class="group hover:bg-neutral-50/80 transition-all duration-200 bg-warning-50/30">
                       <td class="px-6 py-4 whitespace-nowrap align-top">
                         <div class="flex flex-col gap-1.5">
@@ -307,8 +307,8 @@
                       <td class="px-6 py-4 whitespace-nowrap align-top">
                         <div class="flex flex-col gap-1 text-[10px] text-neutral-700">
                           <div class="flex items-center">
-                            <span class="w-12 font-bold text-neutral-400 uppercase tracking-widest italic opacity-60">Boleto</span>
-                            <span class="font-mono text-neutral-900 font-bold ml-1">{{ if .Boleto }}{{ .Boleto }}{{ else }} - {{ end }}</span>
+                            <span class="w-12 font-bold text-neutral-400 uppercase tracking-widest italic opacity-60">Billete</span>
+                            <span class="font-mono text-neutral-900 font-bold ml-1">{{ if .Billete }}{{ .Billete }}{{ else }} - {{ end }}</span>
                           </div>
                         </div>
                       </td>
@@ -345,7 +345,7 @@
               </thead>
               <tbody class="bg-white divide-y divide-neutral-100">
                 {{ range .PasajesOriginales.VUELTA }}
-                  {{ range $i, $scale := .Scales }}
+                  {{ range $i, $scale := .Tramos }}
                     <tr class="group hover:bg-neutral-50/80 transition-all duration-200">
                       <td class="px-6 py-4 whitespace-nowrap align-top">
                         <div class="flex flex-col gap-1.5">
@@ -371,8 +371,8 @@
                       <td class="px-6 py-4 whitespace-nowrap align-top">
                         <div class="flex flex-col gap-1 text-[10px] text-neutral-700">
                           <div class="flex items-center">
-                            <span class="w-12 font-bold text-neutral-400 uppercase tracking-widest italic opacity-60">Boleto</span>
-                            <span class="font-mono text-neutral-900 font-bold ml-1">{{ if .Boleto }}{{ .Boleto }}{{ else }} - {{ end }}</span>
+                            <span class="w-12 font-bold text-neutral-400 uppercase tracking-widest italic opacity-60">Billete</span>
+                            <span class="font-mono text-neutral-900 font-bold ml-1">{{ if .Billete }}{{ .Billete }}{{ else }} - {{ end }}</span>
                           </div>
                         </div>
                       </td>
@@ -385,7 +385,7 @@
                   {{ end }}
                 {{ end }}
                 {{ range .PasajesReprogramados.VUELTA }}
-                  {{ range $i, $scale := .Scales }}
+                  {{ range $i, $scale := .Tramos }}
                     <tr class="group hover:bg-neutral-50/80 transition-all duration-200 bg-warning-50/30">
                       <td class="px-6 py-4 whitespace-nowrap align-top">
                         <div class="flex flex-col gap-1.5">
@@ -411,8 +411,8 @@
                       <td class="px-6 py-4 whitespace-nowrap align-top">
                         <div class="flex flex-col gap-1 text-[10px] text-neutral-700">
                           <div class="flex items-center">
-                            <span class="w-12 font-bold text-neutral-400 uppercase tracking-widest italic opacity-60">Boleto</span>
-                            <span class="font-mono text-neutral-900 font-bold ml-1">{{ if .Boleto }}{{ .Boleto }}{{ else }} - {{ end }}</span>
+                            <span class="w-12 font-bold text-neutral-400 uppercase tracking-widest italic opacity-60">Billete</span>
+                            <span class="font-mono text-neutral-900 font-bold ml-1">{{ if .Billete }}{{ .Billete }}{{ else }} - {{ end }}</span>
                           </div>
                         </div>
                       </td>
@@ -563,7 +563,7 @@
 
       <!-- Pasajes Devueltos -->
       {{ $hasReturns := false }}
-      {{ range .Descargo.DetallesItinerario }}{{ if .EsDevolucion }}{{ $hasReturns = true }}{{ end }}{{ end }}
+      {{ range .Descargo.Tramos }}{{ if .EsDevolucion }}{{ $hasReturns = true }}{{ end }}{{ end }}
 
       {{ if $hasReturns }}
       <div class="bg-white shadow rounded-lg overflow-hidden border border-danger-200">
@@ -582,7 +582,7 @@
               </tr>
             </thead>
             <tbody class="bg-white divide-y divide-danger-100">
-              {{ range .Descargo.DetallesItinerario }}
+              {{ range .Descargo.Tramos }}
               {{ if .EsDevolucion }}
               <tr class="hover:bg-danger-50/30 transition-colors">
                 <td class="px-4 py-3 whitespace-nowrap">

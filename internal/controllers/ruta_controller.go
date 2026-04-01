@@ -63,7 +63,7 @@ func (ctrl *RutaController) Search(c *gin.Context) {
 	for _, r := range rutas {
 		results = append(results, searchResult{
 			Value: r.ID,
-			Label: r.GetTramoDisplay(),
+			Label: r.GetRutaDisplay(),
 		})
 	}
 

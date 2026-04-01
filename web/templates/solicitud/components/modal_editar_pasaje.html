@@ -29,7 +29,7 @@
             x-show="open"
             x-transition.opacity.scale.origin.top.duration.400ms
             class="relative transform overflow-hidden rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-3xl"
-            x-id="['emision', 'boleto', 'vuelo', 'num-vuelo', 'costo', 'glosa', 'archivo']">
+            x-id="['emision', 'billete', 'vuelo', 'num-vuelo', 'costo', 'glosa', 'archivo']">
       <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
         {{ if .ErrorMessage }}
         <div class="mb-4 p-3 bg-danger-50 border border-danger-200 rounded-lg flex items-center gap-3 text-danger-700 shadow-sm animate-bounce">
@@ -299,7 +299,7 @@
                 </div>
               </div>
             </div>              <div class="col-span-3">
-                <label :for="$id('emision')" class="block text-sm font-medium text-neutral-700">Fecha Emisión Boleto</label>
+                <label :for="$id('emision')" class="block text-sm font-medium text-neutral-700">Fecha Emisión Billete</label>
                 <input
                   :id="$id('emision')"
                   type="text"
@@ -312,12 +312,12 @@
               </div>
 
               <div class="col-span-3">
-                <label :for="$id('boleto')" class="block text-sm font-medium text-neutral-700">Nº Boleto</label>
+                <label :for="$id('billete')" class="block text-sm font-medium text-neutral-700">Nº Billete</label>
                 <input
-                  :id="$id('boleto')"
+                  :id="$id('billete')"
                   type="text"
-                  name="numero_boleto"
-                  value="{{ .Pasaje.NumeroBoleto }}"
+                  name="numero_billete"
+                  value="{{ .Pasaje.NumeroBillete }}"
                   required
                   autocomplete="off"
                   class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md border p-2"

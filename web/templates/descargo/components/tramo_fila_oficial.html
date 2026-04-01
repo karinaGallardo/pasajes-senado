@@ -1,35 +1,35 @@
-{{ define "descargo/components/escala_fila_oficial" }} {{ $isOriginal := or (eq .Tipo "IDA_ORIGINAL") (eq .Tipo "VUELTA_ORIGINAL") }} {{ $readOnlyRuta := or .ReadOnlyRuta
+{{ define "descargo/components/tramo_fila_oficial" }} {{ $isOriginal := or (eq .Tipo "IDA_ORIGINAL") (eq .Tipo "VUELTA_ORIGINAL") }} {{ $readOnlyRuta := or .ReadOnlyRuta
 $isOriginal }} {{ $canDelete := or .CanDelete (not $isOriginal) }} {{ $readOnlyCheck := or .ReadOnlyCheck (not $isOriginal) }}
 
 <tr
   class="border-b border-neutral-100 last:border-0 hover:bg-neutral-50/50 transition-colors"
-  x-data="itineraryRow({ esDevo: false, esMod: {{ .Scale.EsModificacion }}, route: '{{ .Scale.Ruta.Display }}', route_id: '{{ .Scale.RutaID }}', boleto: '{{ .Scale.Boleto }}' })"
+  x-data="itineraryRow({ esDevo: false, esMod: {{ .Tramo.EsModificacion }}, route: '{{ .Tramo.Ruta.Display }}', route_id: '{{ .Tramo.RutaID }}', billete: '{{ .Tramo.Billete }}' })"
   x-bind="bindFade">
-  <input type="hidden" name="itin_tipo[]" value="{{ .Tipo }}" />
-  <input type="hidden" name="itin_id[]" value="{{ .Scale.ID }}" />
-  <input type="hidden" name="itin_ruta_id[]" :value="route_id" />
-  <input type="hidden" name="itin_orden[]" value="{{ or .Scale.Orden 0 }}" />
-  <input type="hidden" name="itin_pasaje_id[]" value="{{ .Scale.PasajeID }}" />
-  <input type="hidden" name="itin_solicitud_item_id[]" value="{{ .Scale.SolicitudItemID }}" />
+  <input type="hidden" name="tramo_tipo[]" value="{{ .Tipo }}" />
+  <input type="hidden" name="tramo_id[]" value="{{ .Tramo.ID }}" />
+  <input type="hidden" name="tramo_ruta_id[]" :value="route_id" />
+  <input type="hidden" name="tramo_orden[]" value="{{ or .Tramo.Orden 0 }}" />
+  <input type="hidden" name="tramo_pasaje_id[]" value="{{ .Tramo.PasajeID }}" />
+  <input type="hidden" name="tramo_solicitud_item_id[]" value="{{ .Tramo.SolicitudItemID }}" />
 
   <td class="px-2 py-1 text-center border-r border-neutral-100 bg-neutral-50/30">
     {{ if $readOnlyCheck }}
-    <input type="checkbox" disabled class="h-4 w-4 text-neutral-300 border-neutral-300 rounded opacity-40" {{ checked .Scale.EsModificacion }} />
+    <input type="checkbox" disabled class="h-4 w-4 text-neutral-300 border-neutral-300 rounded opacity-40" {{ checked .Tramo.EsModificacion }} />
     {{ else }}
-    <input type="checkbox" name="itin_modificacion[]" value="{{ .Scale.ID }}" x-model="esModificacion" class="h-4 w-4 text-warning-600 border-neutral-300 rounded shadow-sm" />
+    <input type="checkbox" name="tramo_modificacion[]" value="{{ .Tramo.ID }}" x-model="esModificacion" class="h-4 w-4 text-warning-600 border-neutral-300 rounded shadow-sm" />
     {{ end }}
   </td>
 
   <td class="px-2 py-1">
     {{ if $readOnlyRuta }}
-    <div class="text-[10px] leading-tight font-bold text-neutral-700 uppercase whitespace-pre-line">{{ .Scale.Ruta.Display }}</div>
+    <div class="text-[10px] leading-tight font-bold text-neutral-700 uppercase whitespace-pre-line">{{ .Tramo.Ruta.Display }}</div>
     {{ else }}
     <div
       class="relative min-w-[220px]"
       x-data="searchableSelect({
            endpoint: '/api/rutas/search?atomic=true',
-           initialValue: '{{ .Scale.RutaID }}',
-           initialLabel: '{{ .Scale.Ruta.Display }}',
+           initialValue: '{{ .Tramo.RutaID }}',
+           initialLabel: '{{ .Tramo.Ruta.Display }}',
            placeholder: 'Buscar ruta...'
          })"
       x-modelable="value"
@@ -76,8 +76,8 @@ $isOriginal }} {{ $canDelete := or .CanDelete (not $isOriginal) }} {{ $readOnlyC
   <td class="px-2 py-1">
     <input
       type="date"
-      name="itin_fecha[]"
-      value="{{ .Scale.Fecha }}"
+      name="tramo_fecha[]"
+      value="{{ .Tramo.Fecha }}"
       x-bind="bindInput"
       {{
       if
@@ -91,8 +91,8 @@ $isOriginal }} {{ $canDelete := or .CanDelete (not $isOriginal) }} {{ $readOnlyC
   <td class="px-2 py-1">
     <input
       type="text"
-      name="itin_boleto[]"
-      value="{{ .Scale.Boleto }}"
+      name="tramo_billete[]"
+      value="{{ .Tramo.Billete }}"
       x-bind="bindInput"
       {{
       if
@@ -101,14 +101,14 @@ $isOriginal }} {{ $canDelete := or .CanDelete (not $isOriginal) }} {{ $readOnlyC
       end
       }}
       class="w-full text-[11px] border border-neutral-300 rounded py-0.5 px-2 h-9 {{ if $isOriginal }}bg-neutral-50 text-neutral-500 cursor-not-allowed{{ end }}"
-      placeholder="Boleto" />
+      placeholder="Billete" />
   </td>
 
   <td class="px-2 py-1">
     <input
       type="text"
-      name="itin_pase_numero[]"
-      value="{{ .Scale.Pase }}"
+      name="tramo_pase_numero[]"
+      value="{{ .Tramo.Pase }}"
       x-bind="bindPase"
       class="w-full text-[11px] border border-neutral-300 rounded py-0.5 px-2 h-9 font-bold"
       placeholder="Pase" />
@@ -119,28 +119,28 @@ $isOriginal }} {{ $canDelete := or .CanDelete (not $isOriginal) }} {{ $readOnlyC
       <div class="relative group">
         <label
           class="cursor-pointer flex items-center justify-center h-9 w-9 rounded-lg border-2 border-dashed transition-all duration-200 overflow-hidden shadow-sm"
-          :class="(fileName || '{{ .Scale.Archivo }}') ? 'border-success-400 bg-success-50 text-success-700' : 'border-neutral-200 bg-neutral-50 text-neutral-400 hover:border-primary-300 hover:bg-white'">
+          :class="(fileName || '{{ .Tramo.Archivo }}') ? 'border-success-400 bg-success-50 text-success-700' : 'border-neutral-200 bg-neutral-50 text-neutral-400 hover:border-primary-300 hover:bg-white'">
           <input
             type="file"
-            name="itin_archivo_{{ .Scale.ID }}"
+            name="tramo_archivo_{{ .Tramo.ID }}"
             x-bind="bindArchivo"
             class="hidden"
             @change="await window.handleSingleUpload($event, $data); if($el.files[0] && $el.files[0].type.startsWith('image/')) { localUrl = URL.createObjectURL($el.files[0]) }" />
 
-          <input type="hidden" name="itin_archivo_existente_{{ .Scale.ID }}" value="{{ .Scale.Archivo }}" />
+          <input type="hidden" name="tramo_archivo_existente_{{ .Tramo.ID }}" value="{{ .Tramo.Archivo }}" />
           <img x-show="localUrl" :src="localUrl" class="w-full h-full object-cover" />
           <div x-show="!localUrl && processingImage" class="flex items-center justify-center"><i class="ph ph-circle-notch animate-spin text-xl text-primary-500"></i></div>
           <i
             x-show="!localUrl && !processingImage"
             class="ph ph-upload-simple text-xl font-bold"
-            :class="(fileName || '{{ .Scale.Archivo }}') ? 'text-success-600' : 'text-neutral-400'"></i>
+            :class="(fileName || '{{ .Tramo.Archivo }}') ? 'text-success-600' : 'text-neutral-400'"></i>
         </label>
       </div>
 
-      <template x-if="localUrl || '{{ .Scale.Archivo }}'">
+      <template x-if="localUrl || '{{ .Tramo.Archivo }}'">
         <button
           type="button"
-          @click="if(localUrl) { window.open(localUrl, '_blank') } else { htmx.ajax('GET', '/preview-file?path=' + encodeURIComponent('{{ .Scale.Archivo }}'), { target: '#modal-container' }) }"
+          @click="if(localUrl) { window.open(localUrl, '_blank') } else { htmx.ajax('GET', '/preview-file?path=' + encodeURIComponent('{{ .Tramo.Archivo }}'), { target: '#modal-container' }) }"
           class="h-9 w-9 flex items-center justify-center rounded-lg text-primary-600 hover:bg-primary-50 transition-all">
           <i class="ph ph-eye text-xl"></i>
         </button>

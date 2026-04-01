@@ -65,7 +65,7 @@ func main() {
 		&models.Descargo{},
 		&models.DescargoOficial{},
 		&models.AnexoDescargo{},
-		&models.DetalleItinerarioDescargo{},
+		&models.DescargoTramo{},
 		&models.TransporteTerrestreDescargo{},
 		&models.Notification{},
 		&models.AuditLog{},

@@ -6,10 +6,8 @@ import (
 	"net/http"
 	"sistema-pasajes/internal/appcontext"
 	"sistema-pasajes/internal/dtos"
-	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/services"
 	"sistema-pasajes/internal/utils"
-	"sort"
 	"strconv"
 	"strings"
 
@@ -82,145 +80,18 @@ func (ctrl *DescargoDerechoController) Create(c *gin.Context) {
 
 func (ctrl *DescargoDerechoController) Show(c *gin.Context) {
 	id := c.Param("id")
-	descargo, err := ctrl.descargoService.GetByID(c.Request.Context(), id)
+	data, err := ctrl.descargoDerechoService.GetShowData(c.Request.Context(), id)
 	if err != nil {
 		c.Redirect(http.StatusFound, "/descargos")
 		return
 	}
 
-	// Dynamic Sync for Show View (similar to Edit)
-	// We want to show even items that haven't been formally added yet but are EMITIDO
-	itemsByType := make(map[string][]models.DetalleItinerarioDescargo)
-	existingKeys := make(map[string]bool)
-	detalles := descargo.DetallesItinerario
-
-	for _, item := range detalles {
-		itemsByType[string(item.Tipo)] = append(itemsByType[string(item.Tipo)], item)
-		key := fmt.Sprintf("%s_%d_%s", item.Tipo, item.Orden, strings.ToUpper(strings.TrimSpace(item.Boleto)))
-		existingKeys[key] = true
-	}
-
-	if descargo.Solicitud != nil {
-		for _, sItem := range descargo.Solicitud.Items {
-			tipoBase := string(sItem.Tipo)
-			for _, p := range sItem.Pasajes {
-				st := p.GetEstadoCodigo()
-				if st != "EMITIDO" && st != "USADO" {
-					continue
-				}
-
-				tipoTarget := tipoBase + "_ORIGINAL"
-				if p.PasajeAnteriorID != nil {
-					tipoTarget = tipoBase + "_REPRO"
-				}
-
-				segments := p.GetRutaSegments()
-				for i := range segments {
-					key := fmt.Sprintf("%s_%d_%s", tipoTarget, i, strings.ToUpper(strings.TrimSpace(p.NumeroBoleto)))
-					if !existingKeys[key] {
-						tVuelo := p.FechaVuelo
-						newItem := models.DetalleItinerarioDescargo{
-							Tipo:         models.TipoDetalleItinerario(tipoTarget),
-							RutaID:       p.RutaID,
-							RutaPasaje:   p.RutaPasaje,
-							Fecha:        &tVuelo,
-							Boleto:       p.NumeroBoleto,
-							Orden:        i,
-							EsDevolucion: false,
-						}
-						// Append to both the general list and the map
-						detalles = append(detalles, newItem)
-						itemsByType[tipoTarget] = append(itemsByType[tipoTarget], newItem)
-						existingKeys[key] = true
-					}
-				}
-			}
-		}
-	}
-
-	type TicketGroup struct {
-		Boleto          string
-		Detalles        []models.DetalleItinerarioDescargo
-		EsDevolucion    bool
-		EsModificacion  bool
-		MontoDevolucion float64
-	}
-
-	ticketsMap := make(map[string]*TicketGroup)
-	var ticketsOrder []string
-
-	// Pre-escaneo para identificar boletos con rutas válidas
-	boletoHasValidRoute := make(map[string]bool)
-	for _, d := range detalles {
-		bKey := d.Boleto
-		if bKey == "" {
-			bKey = "SIN_BOLETO"
-		}
-		if d.GetRutaDisplay() != "Ruta no especificada" {
-			boletoHasValidRoute[bKey] = true
-		}
-	}
-
-	for _, d := range detalles {
-		boletoKey := d.Boleto
-		if boletoKey == "" {
-			boletoKey = "SIN_BOLETO"
-		}
-		if _, ok := ticketsMap[boletoKey]; !ok {
-			ticketsMap[boletoKey] = &TicketGroup{Boleto: d.Boleto}
-			ticketsOrder = append(ticketsOrder, boletoKey)
-		}
-
-		// Evitar duplicados por ruta en el mismo boleto
-		isDuplicate := false
-		for _, existing := range ticketsMap[boletoKey].Detalles {
-			if existing.Orden == d.Orden && existing.Tipo == d.Tipo {
-				isDuplicate = true
-				break
-			}
-		}
-
-		// Si ya sabemos que este boleto tiene una ruta válida, ignorar cualquier "Ruta no especificada"
-		if d.GetRutaDisplay() == "Ruta no especificada" && boletoHasValidRoute[boletoKey] {
-			isDuplicate = true
-		}
-
-		if !isDuplicate {
-			ticketsMap[boletoKey].Detalles = append(ticketsMap[boletoKey].Detalles, d)
-		}
-	}
-
-	var ticketsIda []TicketGroup
-	var ticketsVuelta []TicketGroup
-
-	for _, key := range ticketsOrder {
-		tg := ticketsMap[key]
-		sort.Slice(tg.Detalles, func(i, j int) bool {
-			return tg.Detalles[i].Orden < tg.Detalles[j].Orden
-		})
-
-		// Determine if it belongs to IDA or VUELTA based on any detail type
-		isVuelta := false
-		if len(tg.Detalles) > 0 {
-			tipo := string(tg.Detalles[0].Tipo)
-			if strings.HasPrefix(tipo, "VUELTA") {
-				isVuelta = true
-			}
-		}
-
-		if isVuelta {
-			ticketsVuelta = append(ticketsVuelta, *tg)
-		} else {
-			ticketsIda = append(ticketsIda, *tg)
-		}
-	}
-
 	utils.Render(c, "descargo/derecho/show", gin.H{
-		"Title":         "Detalle de Descargo (Derecho)",
-		"Descargo":      descargo,
-		"Detalles":      detalles,
-		"TicketsIda":    ticketsIda,
-		"TicketsVuelta": ticketsVuelta,
+		"Title":      "Detalle de Descargo (Derecho)",
+		"Descargo":   data.Descargo,
+		"Ida":        data.Ida,
+		"Vuelta":     data.Vuelta,
+		"csrf_token": c.GetString("csrf_token"),
 	})
 }
 
@@ -232,7 +103,7 @@ func (ctrl *DescargoDerechoController) Edit(c *gin.Context) {
 		return
 	}
 
-	if descargo.Estado != models.EstadoDescargoBorrador && descargo.Estado != models.EstadoDescargoRechazado {
+	if !descargo.IsEditable() {
 		c.Redirect(http.StatusFound, "/descargos/derecho/"+id)
 		return
 	}
@@ -259,6 +130,12 @@ func (ctrl *DescargoDerechoController) Edit(c *gin.Context) {
 }
 
 func (ctrl *DescargoDerechoController) Update(c *gin.Context) {
+	authUser := appcontext.AuthUser(c)
+	if authUser == nil {
+		c.Redirect(http.StatusFound, "/auth/login")
+		return
+	}
+
 	id := c.Param("id")
 
 	descargo, err := ctrl.descargoService.GetByID(c.Request.Context(), id)
@@ -267,55 +144,21 @@ func (ctrl *DescargoDerechoController) Update(c *gin.Context) {
 		return
 	}
 
-	if descargo.Estado != models.EstadoDescargoBorrador && descargo.Estado != models.EstadoDescargoRechazado {
+	if !descargo.IsEditable() {
 		c.Redirect(http.StatusFound, "/descargos/derecho/"+id+"?error=EstadoNoPermitido")
 		return
 	}
 
 	var req dtos.CreateDescargoRequest
-	if err := c.ShouldBind(&req); err != nil {
+	if err := req.Bind(c); err != nil {
 		c.Redirect(http.StatusFound, "/descargos/derecho/"+id+"/editar?error=DatosInvalidos")
 		return
 	}
 
-	authUser := appcontext.AuthUser(c)
-	if authUser == nil {
-		c.Redirect(http.StatusFound, "/auth/login")
-		return
-	}
+	// Delegar recolección de archivos a sus respectivos dueños
+	pasesAbordoPaths := utils.ExtractDescargoFiles(c, req.TramoID)
 
-	// RE-BINDING MANUAL: Gin sometimes fails to bind parallel arrays in complex multipart/form-data
-	req.ItinTipo = c.PostFormArray("itin_tipo[]")
-	req.ItinID = c.PostFormArray("itin_id[]")
-	req.ItinRutaID = c.PostFormArray("itin_ruta_id[]")
-	req.ItinFecha = c.PostFormArray("itin_fecha[]")
-	req.ItinBoleto = c.PostFormArray("itin_boleto[]")
-	req.ItinPaseNumero = c.PostFormArray("itin_pase_numero[]")
-	req.ItinOrden = c.PostFormArray("itin_orden[]")
-	req.ItinDevolucion = c.PostFormArray("itin_devolucion[]")
-	req.ItinModificacion = c.PostFormArray("itin_modificacion[]")
-	req.ItinMontoDevolucion = c.PostFormArray("itin_monto_devolucion[]")
-	req.ItinMoneda = c.PostFormArray("itin_moneda[]")
-	req.ItinPasajeID = c.PostFormArray("itin_pasaje_id[]")
-	req.ItinSolicitudItemID = c.PostFormArray("itin_solicitud_item_id[]")
-
-	// the file handling still needs careful manual processing due to dynamic naming
-	var archivoPaths []string
-	for _, idRow := range req.ItinID {
-		// Try to get existing file path if no new file is uploaded
-		path := c.PostForm("itin_archivo_existente_" + idRow)
-
-		// Check for new file upload for this specific row
-		if file, err := c.FormFile("itin_archivo_" + idRow); err == nil {
-			savedPath, err := utils.SaveUploadedFile(c, file, "uploads/pases_abordo", "pase_descargo_"+idRow+"_")
-			if err == nil {
-				path = savedPath
-			}
-		}
-		archivoPaths = append(archivoPaths, path)
-	}
-
-	if err := ctrl.descargoDerechoService.UpdateDerecho(c.Request.Context(), id, req, authUser.ID, archivoPaths); err != nil {
+	if err := ctrl.descargoDerechoService.UpdateDerecho(c.Request.Context(), id, req, authUser.ID, pasesAbordoPaths); err != nil {
 		c.Redirect(http.StatusFound, "/descargos/derecho/"+id+"/editar?error=ErrorActualizacion")
 		return
 	}
@@ -491,19 +334,19 @@ func (ctrl *DescargoDerechoController) PreviewFile(c *gin.Context) {
 	}
 
 	utils.Render(c, "solicitud/components/modal_preview_archivo", gin.H{
-		"Title":                title,
-		"FilePath":             fullPath,
-		"IsPDF":                isPDF,
-		"IsImage":              isImage,
-		"InfoRuta":             c.Query("ruta"),
-		"InfoFecha":            c.Query("fecha"),
-		"InfoBoleto":           c.Query("boleto"),
-		"InfoVuelo":            c.Query("vuelo"),
-		"InfoTramoRegistrado":  c.Query("info_tramo_registrado"),
-		"InfoFechaRegistrada":  c.Query("info_fecha_registrada"),
-		"InfoBoletoRegistrado": c.Query("info_boleto_registrado"),
-		"InfoPaseRegistrado":   c.Query("info_pase_registrado"),
-		"IsMobile":             utils.IsMobileBrowser(c),
+		"Title":                 title,
+		"FilePath":              fullPath,
+		"IsPDF":                 isPDF,
+		"IsImage":               isImage,
+		"InfoRuta":              c.Query("ruta"),
+		"InfoFecha":             c.Query("fecha"),
+		"InfoBillete":           c.Query("billete"),
+		"InfoVuelo":             c.Query("vuelo"),
+		"InfoTramoRegistrado":   c.Query("info_tramo_registrado"),
+		"InfoFechaRegistrada":   c.Query("info_fecha_registrada"),
+		"InfoBilleteRegistrado": c.Query("info_billete_registrado"),
+		"InfoPaseRegistrado":    c.Query("info_pase_registrado"),
+		"IsMobile":              utils.IsMobileBrowser(c),
 	})
 }
 
@@ -512,9 +355,9 @@ func (ctrl *DescargoDerechoController) NuevaFila(c *gin.Context) {
 	solicitudItemID := c.Query("solicitud_item_id")
 	index := fmt.Sprintf("new_%d", time.Now().UnixNano())
 
-	c.HTML(http.StatusOK, "descargo/components/escala_fila_derecho", gin.H{
+	c.HTML(http.StatusOK, "descargo/components/tramo_fila_derecho", gin.H{
 		"Tipo": tipo,
-		"Scale": dtos.ConnectionView{
+		"Tramo": dtos.TramoView{
 			ID:              index,
 			SolicitudItemID: solicitudItemID,
 			EsDevolucion:    false,
@@ -522,7 +365,7 @@ func (ctrl *DescargoDerechoController) NuevaFila(c *gin.Context) {
 			Ruta:            dtos.RutaView{},
 			RutaID:          "",
 			Fecha:           "",
-			Boleto:          "",
+			Billete:         "",
 			Pase:            "",
 			MontoDevolucion: 0.0,
 			Moneda:          "Bs.",

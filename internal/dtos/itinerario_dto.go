@@ -6,13 +6,13 @@ type RutaView struct {
 	Destino string
 }
 
-type ConnectionView struct {
+type TramoView struct {
 	ID              string
 	Tipo            string
 	Ruta            RutaView
 	RutaID          string
 	Fecha           string
-	Boleto          string
+	Billete         string
 	Pase            string
 	Archivo         string
 	EsDevolucion    bool
@@ -24,11 +24,7 @@ type ConnectionView struct {
 	SolicitudItemID string
 }
 
-type TicketView struct {
-	Boleto          string
-	Scales          []ConnectionView
-	EsDevolucion    bool
-	EsModificacion  bool
-	MontoDevolucion float64
-	Moneda          string
+type ItinerarioView struct {
+	Billete string
+	Tramos  []TramoView
 }

@@ -61,10 +61,10 @@ func (s *PasajeService) Create(ctx context.Context, solicitudID string, req dtos
 
 	status := "REGISTRADO"
 
-	if req.NumeroBoleto != "" {
-		existing, _ := s.repo.FindByNumeroBoleto(ctx, req.NumeroBoleto)
+	if req.NumeroBillete != "" {
+		existing, _ := s.repo.FindByNumeroBillete(ctx, req.NumeroBillete)
 		if existing != nil && existing.ID != "" {
-			return nil, fmt.Errorf("ya existe un pasaje con el número de boleto %s", req.NumeroBoleto)
+			return nil, fmt.Errorf("ya existe un pasaje con el número de billete %s", req.NumeroBillete)
 		}
 	}
 
@@ -88,7 +88,7 @@ func (s *PasajeService) Create(ctx context.Context, solicitudID string, req dtos
 		RutaID:             utils.NilIfEmpty(req.RutaID),
 		FechaVuelo:         fechaVuelo,
 		CodigoReserva:      req.CodigoReserva,
-		NumeroBoleto:       req.NumeroBoleto,
+		NumeroBillete:      req.NumeroBillete,
 		NumeroFactura:      req.NumeroFactura,
 		Glosa:              req.Glosa,
 		Costo:              costo,
@@ -140,16 +140,16 @@ func (s *PasajeService) UpdateFromRequest(ctx context.Context, req dtos.UpdatePa
 	}
 
 	// Validate duplicate ticket number
-	if req.NumeroBoleto != "" {
-		existing, _ := s.repo.FindByNumeroBoleto(ctx, req.NumeroBoleto)
+	if req.NumeroBillete != "" {
+		existing, _ := s.repo.FindByNumeroBillete(ctx, req.NumeroBillete)
 		if existing != nil && existing.ID != "" && existing.ID != req.ID {
-			return fmt.Errorf("ya existe un pasaje con el número de boleto %s", req.NumeroBoleto)
+			return fmt.Errorf("ya existe un pasaje con el número de billete %s", req.NumeroBillete)
 		}
 	}
 
 	pasaje.NumeroVuelo = req.NumeroVuelo
 	pasaje.RutaID = utils.NilIfEmpty(req.RutaID)
-	pasaje.NumeroBoleto = req.NumeroBoleto
+	pasaje.NumeroBillete = req.NumeroBillete
 	pasaje.NumeroFactura = req.NumeroFactura
 	pasaje.CodigoReserva = req.CodigoReserva
 	pasaje.Glosa = req.Glosa
@@ -334,7 +334,7 @@ func (s *PasajeService) sendEmissionEmail(sol *models.Solicitud, pasaje *models.
 
 	ruta := pasaje.GetRutaDisplay()
 	fecha := utils.FormatDateTimeLongES(pasaje.FechaVuelo)
-	boleto := pasaje.NumeroBoleto
+	billete := pasaje.NumeroBillete
 	aerolinea := "N/A"
 	if pasaje.Aerolinea != nil {
 		aerolinea = pasaje.Aerolinea.Nombre
@@ -382,7 +382,7 @@ func (s *PasajeService) sendEmissionEmail(sol *models.Solicitud, pasaje *models.
 						<td style="padding: 8px 0;">%s</td>
 					</tr>
 					<tr>
-						<td style="padding: 8px 0; color: #666;"><strong>Nº de Boleto:</strong></td>
+						<td style="padding: 8px 0; color: #666;"><strong>Nº de Billete:</strong></td>
 						<td style="padding: 8px 0;">%s</td>
 					</tr>
 				</table>
@@ -396,7 +396,7 @@ func (s *PasajeService) sendEmissionEmail(sol *models.Solicitud, pasaje *models.
 				</p>
 			</div>
 		</div>
-	`, concepto, strings.ToUpper(concepto), usuario.GetNombreCompleto(), sol.Codigo, tipoTramoStr, concepto, tipoTramoStr, ruta, fecha, aerolinea, vuelo, boleto, fileURL, fileURL, fileURL)
+	`, concepto, strings.ToUpper(concepto), usuario.GetNombreCompleto(), sol.Codigo, tipoTramoStr, concepto, tipoTramoStr, ruta, fecha, aerolinea, vuelo, billete, fileURL, fileURL, fileURL)
 
 	_ = s.emailService.SendEmail(to, cc, nil, subject, body)
 }
@@ -464,7 +464,7 @@ func (s *PasajeService) sendReversionEmail(sol *models.Solicitud, pasaje *models
 				</ul>
 
 				<p style="font-size: 13px; background-color: #fffbeb; padding: 10px; border-left: 4px solid #f59e0b; color: #92400e;">
-					Este proceso es normal cuando se detectan errores en el número de boleto, la aerolínea o la fecha registrada por la empresa de transportes.
+					Este proceso es normal cuando se detectan errores en el número de billete, la aerolínea o la fecha registrada por la empresa de transportes.
 				</p>
 			</div>
 		</div>

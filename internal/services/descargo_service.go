@@ -169,9 +169,9 @@ func (s *DescargoService) RevertToDraft(ctx context.Context, id string, userID s
 	return nil
 }
 
-func (s *DescargoService) GetItinerarioParaDescargo(ctx context.Context, solicitud *models.Solicitud) (map[string][]dtos.ConnectionView, map[string][]dtos.ConnectionView) {
-	pasajesOriginales := make(map[string][]dtos.ConnectionView)
-	pasajesReprogramados := make(map[string][]dtos.ConnectionView)
+func (s *DescargoService) GetItinerarioParaDescargo(ctx context.Context, solicitud *models.Solicitud) (map[string][]dtos.TramoView, map[string][]dtos.TramoView) {
+	pasajesOriginales := make(map[string][]dtos.TramoView)
+	pasajesReprogramados := make(map[string][]dtos.TramoView)
 
 	s.processTicketItemsForView(solicitud.GetItemIda(), pasajesOriginales, pasajesReprogramados)
 	s.processTicketItemsForView(solicitud.GetItemVuelta(), pasajesOriginales, pasajesReprogramados)
@@ -179,7 +179,7 @@ func (s *DescargoService) GetItinerarioParaDescargo(ctx context.Context, solicit
 	return pasajesOriginales, pasajesReprogramados
 }
 
-func (s *DescargoService) processTicketItemsForView(item *models.SolicitudItem, targetOrig, targetRepro map[string][]dtos.ConnectionView) {
+func (s *DescargoService) processTicketItemsForView(item *models.SolicitudItem, targetOrig, targetRepro map[string][]dtos.TramoView) {
 	if item == nil {
 		return
 	}
@@ -195,17 +195,15 @@ func (s *DescargoService) processTicketItemsForView(item *models.SolicitudItem, 
 	})
 
 	for _, p := range pasajes {
-		if p.GetEstadoCodigo() != "EMITIDO" {
+		if !p.IsDischargeable() {
 			continue
 		}
 
 		targetMap := targetOrig
-		if p.PasajeAnteriorID != nil {
-			targetMap = targetRepro
-		}
+		// Se eliminó la clasificación por PasajeAnteriorID ya que ahora se revierte y edita el pasaje original
 
-		segments := p.GetRutaSegments()
-		for j, seg := range segments {
+		tramosVuelo := p.GetTramosRuta()
+		for j, seg := range tramosVuelo {
 			parts := strings.Split(seg, " - ")
 			rv := dtos.RutaView{Display: seg}
 			if len(parts) == 2 {
@@ -215,12 +213,12 @@ func (s *DescargoService) processTicketItemsForView(item *models.SolicitudItem, 
 				rv.Origen = seg
 			}
 
-			targetMap[tipo] = append(targetMap[tipo], dtos.ConnectionView{
+			targetMap[tipo] = append(targetMap[tipo], dtos.TramoView{
 				ID:              p.ID,
 				Ruta:            rv,
 				RutaID:          utils.DerefString(p.RutaID),
 				Fecha:           p.FechaVuelo.Format("2006-01-02"),
-				Boleto:          p.NumeroBoleto,
+				Billete:          p.NumeroBillete,
 				Orden:           j,
 				EsDevolucion:    false,
 				EsModificacion:  false,

@@ -23,11 +23,10 @@ type Descargo struct {
 	FechaPresentacion time.Time `gorm:"not null;type:timestamp"`
 	Observaciones     string    `gorm:"type:text"`
 
-	// Detalles de Itinerario (FV-05) - Relación granular por conexiones
-	DetallesItinerario []DetalleItinerarioDescargo `gorm:"foreignKey:DescargoID"`
+	// Tramos de Viaje (FV-05) - Relación granular por conexiones
+	Tramos []DescargoTramo `gorm:"foreignKey:DescargoID"`
 
 	Estado EstadoDescargo `gorm:"size:50;default:'BORRADOR'"`
-
 
 	// Detalle opcional para informes oficiales (PV-06)
 	Oficial *DescargoOficial `gorm:"foreignKey:DescargoID"`
@@ -44,13 +43,13 @@ func (d Descargo) HasChanges(other Descargo) bool {
 }
 
 func (d Descargo) IsComplete() bool {
-	// 1. Validar Itinerario (Boleto, Pase, Archivo)
+	// 1. Validar Itinerario (Billete, Pase, Archivo)
 	// Solo validamos los que no son devoluciones
 	hasItinerary := false
-	for _, it := range d.DetallesItinerario {
+	for _, it := range d.Tramos {
 		if !it.EsDevolucion {
 			hasItinerary = true
-			if it.Boleto == "" || it.NumeroPaseAbordo == "" || it.ArchivoPaseAbordo == "" {
+			if it.Billete == "" || it.NumeroPaseAbordo == "" || it.ArchivoPaseAbordo == "" {
 				return false
 			}
 		}
@@ -84,10 +83,10 @@ func (d Descargo) IsComplete() bool {
 }
 
 func (d Descargo) allDevolucion() bool {
-	if len(d.DetallesItinerario) == 0 {
+	if len(d.Tramos) == 0 {
 		return false
 	}
-	for _, it := range d.DetallesItinerario {
+	for _, it := range d.Tramos {
 		if !it.EsDevolucion {
 			return false
 		}
@@ -100,15 +99,15 @@ func (d Descargo) GetMissingItemsHTML() string {
 
 	// Check Itinerary
 	hasItinerary := false
-	missingBoletos := false
+	missingBilletes := false
 	missingPases := false
 	missingArchivos := false
 
-	for _, it := range d.DetallesItinerario {
+	for _, it := range d.Tramos {
 		if !it.EsDevolucion {
 			hasItinerary = true
-			if it.Boleto == "" {
-				missingBoletos = true
+			if it.Billete == "" {
+				missingBilletes = true
 			}
 			if it.NumeroPaseAbordo == "" {
 				missingPases = true
@@ -122,8 +121,8 @@ func (d Descargo) GetMissingItemsHTML() string {
 	if !hasItinerary && !d.allDevolucion() {
 		missing = append(missing, "Itinerario de viaje")
 	} else {
-		if missingBoletos {
-			missing = append(missing, "N° Boletos")
+		if missingBilletes {
+			missing = append(missing, "N° Billetes")
 		}
 		if missingPases {
 			missing = append(missing, "N° Pases a Bordo")
@@ -246,15 +245,19 @@ func (d Descargo) GetEstadoDescripcion() string {
 
 // --- Permission Helpers ---
 
+func (d Descargo) IsEditable() bool {
+	return d.Estado == EstadoDescargoBorrador || d.Estado == EstadoDescargoRechazado
+}
+
 func (d Descargo) CanEdit(user *Usuario) bool {
-	if d.Estado != EstadoDescargoBorrador && d.Estado != EstadoDescargoRechazado {
+	if !d.IsEditable() {
 		return false
 	}
 	return d.isOwnerOrAdmin(user)
 }
 
 func (d Descargo) CanSubmit(user *Usuario) bool {
-	if d.Estado != EstadoDescargoBorrador && d.Estado != EstadoDescargoRechazado {
+	if !d.IsEditable() {
 		return false
 	}
 	return d.isOwnerOrAdmin(user)

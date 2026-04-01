@@ -65,11 +65,12 @@ func (r *PasajeRepository) RunTransaction(fn func(repo *PasajeRepository, tx *go
 	})
 }
 
-func (r *PasajeRepository) FindByNumeroBoleto(ctx context.Context, numeroBoleto string) (*models.Pasaje, error) {
+func (r *PasajeRepository) FindByNumeroBillete(ctx context.Context, numeroBillete string) (*models.Pasaje, error) {
 	var pasaje models.Pasaje
-	err := r.db.WithContext(ctx).Where("numero_boleto = ?", numeroBoleto).First(&pasaje).Error
+	err := r.db.WithContext(ctx).Where("numero_billete = ?", numeroBillete).First(&pasaje).Error
 	return &pasaje, err
 }
+
 func (r *PasajeRepository) FindConsolidado(ctx context.Context, filter dtos.ReportFilterRequest) ([]models.Pasaje, error) {
 	var pasajes []models.Pasaje
 	query := r.db.WithContext(ctx).Model(&models.Pasaje{}).

@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"sistema-pasajes/internal/appcontext"
 	"sistema-pasajes/internal/dtos"
-	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/services"
 	"sistema-pasajes/internal/utils"
 	"time"
@@ -110,7 +109,7 @@ func (ctrl *DescargoOficialController) Edit(c *gin.Context) {
 		return
 	}
 
-	if descargo.Estado != models.EstadoDescargoBorrador && descargo.Estado != models.EstadoDescargoRechazado {
+	if !descargo.IsEditable() {
 		c.Redirect(http.StatusFound, "/descargos/oficial/"+id)
 		return
 	}
@@ -148,6 +147,12 @@ func (ctrl *DescargoOficialController) Edit(c *gin.Context) {
 }
 
 func (ctrl *DescargoOficialController) Update(c *gin.Context) {
+	authUser := appcontext.AuthUser(c)
+	if authUser == nil {
+		c.Redirect(http.StatusFound, "/auth/login")
+		return
+	}
+
 	id := c.Param("id")
 	descargo, err := ctrl.descargoService.GetByID(c.Request.Context(), id)
 	if err != nil {
@@ -155,64 +160,22 @@ func (ctrl *DescargoOficialController) Update(c *gin.Context) {
 		return
 	}
 
-	if descargo.Estado != models.EstadoDescargoBorrador && descargo.Estado != models.EstadoDescargoRechazado {
+	if !descargo.IsEditable() {
 		c.Redirect(http.StatusFound, "/descargos/oficial/"+id+"?error=EstadoNoPermitido")
 		return
 	}
 
 	var req dtos.CreateDescargoRequest
-	if err := c.ShouldBind(&req); err != nil {
+	if err := req.Bind(c); err != nil {
 		c.Redirect(http.StatusFound, "/descargos/oficial/"+id+"/editar?error=DatosInvalidos")
 		return
 	}
 
-	authUser := appcontext.AuthUser(c)
-	if authUser == nil {
-		c.Redirect(http.StatusFound, "/auth/login")
-		return
-	}
+	// Delegar recolección de archivos a sus respectivos dueños
+	pasesAbordoPaths := utils.ExtractDescargoFiles(c, req.TramoID)
+	anexoPaths := utils.ExtractDescargoAnexos(c, id)
 
-	// RE-BINDING MANUAL: Gin sometimes fails to bind parallel arrays in complex multipart/form-data
-	req.ItinTipo = c.PostFormArray("itin_tipo[]")
-	req.ItinID = c.PostFormArray("itin_id[]")
-	req.ItinRutaID = c.PostFormArray("itin_ruta_id[]")
-	req.ItinFecha = c.PostFormArray("itin_fecha[]")
-	req.ItinBoleto = c.PostFormArray("itin_boleto[]")
-	req.ItinPaseNumero = c.PostFormArray("itin_pase_numero[]")
-	req.ItinOrden = c.PostFormArray("itin_orden[]")
-	req.ItinDevolucion = c.PostFormArray("itin_devolucion[]")
-	req.ItinModificacion = c.PostFormArray("itin_modificacion[]")
-	req.ItinMontoDevolucion = c.PostFormArray("itin_monto_devolucion[]")
-	req.ItinMoneda = c.PostFormArray("itin_moneda[]")
-	req.ItinPasajeID = c.PostFormArray("itin_pasaje_id[]")
-	req.ItinSolicitudItemID = c.PostFormArray("itin_solicitud_item_id[]")
-
-	var archivoPaths []string
-	for _, idRow := range req.ItinID {
-		path := c.PostForm("itin_archivo_existente_" + idRow)
-		if file, err := c.FormFile("itin_archivo_" + idRow); err == nil {
-			savedPath, err := utils.SaveUploadedFile(c, file, "uploads/pases_abordo", "pase_descargo_"+idRow+"_")
-			if err == nil {
-				path = savedPath
-			}
-		}
-		archivoPaths = append(archivoPaths, path)
-	}
-
-	var anexoPaths []string
-	form, _ := c.MultipartForm()
-	newAnexos := form.File["anexos[]"]
-	existentes := c.PostFormArray("anexos_existentes[]")
-	anexoPaths = append(anexoPaths, existentes...)
-
-	for _, fileHeader := range newAnexos {
-		savedPath, err := utils.SaveUploadedFile(c, fileHeader, "uploads/anexos", "anexo_edit_"+id+"_")
-		if err == nil {
-			anexoPaths = append(anexoPaths, savedPath)
-		}
-	}
-
-	if err := ctrl.descargoOficialService.UpdateOficial(c.Request.Context(), id, req, authUser.ID, archivoPaths, anexoPaths); err != nil {
+	if err := ctrl.descargoOficialService.UpdateOficial(c.Request.Context(), id, req, authUser.ID, pasesAbordoPaths, anexoPaths); err != nil {
 		c.Redirect(http.StatusFound, "/descargos/oficial/"+id+"/editar?error=ErrorActualizacion")
 		return
 	}
@@ -328,16 +291,16 @@ func (ctrl *DescargoOficialController) NuevaFila(c *gin.Context) {
 	solicitudItemID := c.Query("solicitud_item_id")
 	index := fmt.Sprintf("new_%d", time.Now().UnixNano())
 
-	c.HTML(http.StatusOK, "descargo/components/escala_fila_oficial", gin.H{
+	c.HTML(http.StatusOK, "descargo/components/tramo_fila_oficial", gin.H{
 		"Tipo": tipo,
-		"Scale": dtos.ConnectionView{
+		"Tramo": dtos.TramoView{
 			ID:              index,
 			SolicitudItemID: solicitudItemID,
 			EsModificacion:  false,
 			Ruta:            dtos.RutaView{},
 			RutaID:          "",
 			Fecha:           "",
-			Boleto:          "",
+			Billete:         "",
 			Pase:            "",
 			Archivo:         "",
 			Orden:           0,

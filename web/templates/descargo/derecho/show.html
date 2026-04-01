@@ -316,7 +316,7 @@
               </span>
             </div>
 
-            {{ if .TicketsIda }}
+            {{ if .Ida }}
               <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-neutral-200 border-separate border-spacing-0">
                   <thead class="bg-neutral-50/50 text-[10px] font-bold text-neutral-500 uppercase">
@@ -328,8 +328,8 @@
                     </tr>
                   </thead>
                   <tbody class="bg-white divide-y divide-neutral-100">
-                    {{ range $t := .TicketsIda }}
-                      {{ range $i, $d := .Detalles }}
+                    {{ range $ticket := .Ida }}
+                      {{ range $i, $d := .Tramos }}
                         <tr
                           class="group hover:bg-neutral-50/80 transition-all duration-200 {{ if .EsDevolucion }}
                             opacity-60 bg-danger-50/10 grayscale
@@ -364,9 +364,9 @@
                           <td class="px-6 py-4 whitespace-nowrap align-top text-[10px]">
                             <div class="flex flex-col space-y-0.5">
                               <span class="text-neutral-400">
-                                Boleto:
+                                Billete:
                                 <span class="text-neutral-700 font-mono font-bold">
-                                  {{ if .Boleto }}{{ .Boleto }}{{ else }}-{{ end }}
+                                  {{ if .Billete }}{{ .Billete }}{{ else }}-{{ end }}
                                 </span>
                               </span>
                               <span class="text-neutral-400">
@@ -383,7 +383,7 @@
                                 type="button"
                                 hx-get="/preview-file?path={{ .ArchivoPaseAbordo }}&info_tramo_registrado={{ .GetRutaDisplay | urlquery }}&info_fecha_registrada={{ if .Fecha }}
                                   {{ .Fecha.Format `02/01/2006` }}
-                                {{ end }}&info_boleto_registrado={{ .Boleto }}&info_pase_registrado={{ .NumeroPaseAbordo }}"
+                                {{ end }}&info_billete_registrado={{ .Billete }}&info_pase_registrado={{ .NumeroPaseAbordo }}"
                                 hx-target="#modal-container"
                                 class="p-1.5 rounded-lg bg-white border border-neutral-200 shadow-sm hover:bg-primary-50 hover:text-primary transition-all active:scale-90"
                               >
@@ -400,101 +400,182 @@
             {{ else }}
               <div class="p-8 text-center text-neutral-400 text-sm italic">No se registraron tramos de ida.</div>
             {{ end }}
+            <!-- TRAMO DE VUELTA -->
+            {{ if .ItinerariosVuelta }}
+              <div class="bg-white shadow rounded-lg overflow-hidden border border-neutral-200">
+                <div class="px-6 py-4 border-b border-neutral-100 bg-neutral-50 flex justify-between items-center">
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-full bg-secondary-50 flex items-center justify-center">
+                      <i class="ph ph-airplane text-secondary-500 text-lg rotate-[225deg]"></i>
+                    </div>
+                    <h3 class="text-sm font-bold text-neutral-900 uppercase tracking-widest">Tramo de Vuelta / Retorno</h3>
+                  </div>
+                  <span
+                    class="text-[10px] bg-secondary-50 text-secondary-700 px-2 py-0.5 rounded-full font-black uppercase tracking-tighter"
+                  >
+                    Itinerario Confirmado
+                  </span>
+                </div>
+
+                <div class="overflow-x-auto">
+                  <table class="min-w-full divide-y divide-neutral-200 border-separate border-spacing-0">
+                    <thead class="bg-neutral-50/50 text-[10px] font-bold text-neutral-500 uppercase">
+                      <tr>
+                        <th scope="col" class="px-6 py-2 text-left tracking-wider">Tipo</th>
+                        <th scope="col" class="px-6 py-2 text-left tracking-wider">Ruta & Fecha</th>
+                        <th scope="col" class="px-6 py-2 text-left tracking-wider">Documentación</th>
+                        <th scope="col" class="relative px-6 py-2 text-right"><span class="sr-only">Acciones</span></th>
+                      </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-neutral-100">
+                      {{ range $ticket := .Vuelta }}
+                        {{ range $i, $d := .Tramos }}
+                          <tr
+                            class="group hover:bg-neutral-50/80 transition-all duration-200 {{ if .EsDevolucion }}
+                              opacity-60 bg-danger-50/10 grayscale
+                            {{ end }} {{ if .EsModificacion }}bg-warning-50/30{{ end }}"
+                          >
+                            <td class="px-6 py-4 whitespace-nowrap align-top">
+                              <div class="flex flex-col gap-1.5">
+                                {{ if eq $i 0 }}
+                                  <span
+                                    class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black border {{ .GetTipoColorClass }} uppercase tracking-tighter shadow-sm w-fit"
+                                  >
+                                    {{ .GetTipoDisplay }}
+                                  </span>
+                                {{ end }}
+                                {{ if .EsModificacion }}
+                                  <span
+                                    class="inline-flex items-center justify-center px-1.5 py-0.5 rounded text-[8px] font-black bg-warning-100 text-warning-700 border border-warning-200 uppercase tracking-tighter w-fit"
+                                  >
+                                    Modificado
+                                  </span>
+                                {{ end }}
+                              </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap align-top font-bold text-neutral-900">
+                              <div class="flex flex-col">
+                                <span class="text-xs">{{ .GetRutaDisplay }}</span>
+                                <span class="text-[10px] text-neutral-400 font-medium">
+                                  {{ if .Fecha }}{{ .Fecha.Format "02 de Ene, 2006" }}{{ else }}-{{ end }}
+                                </span>
+                              </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap align-top text-[10px]">
+                              <div class="flex flex-col space-y-0.5">
+                                <span class="text-neutral-400">
+                                  Billete:
+                                  <span class="text-neutral-700 font-mono font-bold">
+                                    {{ if .Billete }}{{ .Billete }}{{ else }}-{{ end }}
+                                  </span>
+                                </span>
+                                <span class="text-neutral-400">
+                                  Pase:
+                                  <span class="text-neutral-700 font-mono font-bold">
+                                    {{ if .NumeroPaseAbordo }}{{ .NumeroPaseAbordo }}{{ else }}-{{ end }}
+                                  </span>
+                                </span>
+                              </div>
+                            </td>
+                            <td class="px-6 py-4 whitespace-nowrap text-right align-middle">
+                              {{ if .ArchivoPaseAbordo }}
+                                <button
+                                  type="button"
+                                  hx-get="/preview-file?path={{ .ArchivoPaseAbordo }}&info_tramo_registrado={{ .GetRutaDisplay | urlquery }}&info_fecha_registrada={{ if .Fecha }}
+                                    {{ .Fecha.Format `02/01/2006` }}
+                                  {{ end }}&info_billete_registrado={{ .Billete }}&info_pase_registrado={{ .NumeroPaseAbordo }}"
+                                  hx-target="#modal-container"
+                                  class="p-1.5 rounded-lg bg-white border border-neutral-200 shadow-sm hover:bg-primary-50 hover:text-primary transition-all active:scale-90"
+                                >
+                                  <i class="ph ph-file-search text-lg"></i>
+                                </button>
+                              {{ end }}
+                            </td>
+                          </tr>
+                        {{ end }}
+                      {{ end }}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            {{ end }}
           </div>
 
-          <!-- TRAMO DE VUELTA -->
-          {{ if .TicketsVuelta }}
-            <div class="bg-white shadow rounded-lg overflow-hidden border border-neutral-200">
-              <div class="px-6 py-4 border-b border-neutral-100 bg-neutral-50 flex justify-between items-center">
-                <div class="flex items-center gap-3">
-                  <div class="w-8 h-8 rounded-full bg-secondary-50 flex items-center justify-center">
-                    <i class="ph ph-airplane text-secondary-500 text-lg rotate-[225deg]"></i>
-                  </div>
-                  <h3 class="text-sm font-bold text-neutral-900 uppercase tracking-widest">Tramo de Vuelta / Retorno</h3>
-                </div>
-                <span
-                  class="text-[10px] bg-secondary-50 text-secondary-700 px-2 py-0.5 rounded-full font-black uppercase tracking-tighter"
-                >
-                  Itinerario Confirmado
-                </span>
-              </div>
+          <!-- Pasajes Devueltos -->
+          {{ $hasReturns := false }}
+          {{ range .Descargo.Tramos }}{{ if .EsDevolucion }}{{ $hasReturns = true }}{{ end }}{{ end }}
 
+          {{ if $hasReturns }}
+            <div class="bg-white shadow rounded-lg overflow-hidden border border-danger-200">
+              <div class="px-6 py-4 border-b border-danger-100 bg-danger-50 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-danger-900">Tramos Devueltos</h3>
+                <i class="ph ph-airplane-tilt text-danger-400 text-xl"></i>
+              </div>
               <div class="overflow-x-auto">
-                <table class="min-w-full divide-y divide-neutral-200 border-separate border-spacing-0">
-                  <thead class="bg-neutral-50/50 text-[10px] font-bold text-neutral-500 uppercase">
+                <table class="min-w-full divide-y divide-danger-100">
+                  <thead class="bg-danger-50/50">
                     <tr>
-                      <th scope="col" class="px-6 py-2 text-left tracking-wider">Tipo</th>
-                      <th scope="col" class="px-6 py-2 text-left tracking-wider">Ruta & Fecha</th>
-                      <th scope="col" class="px-6 py-2 text-left tracking-wider">Documentación</th>
-                      <th scope="col" class="relative px-6 py-2 text-right"><span class="sr-only">Acciones</span></th>
+                      <th class="px-4 py-3 text-left text-[10px] font-bold text-danger-800 uppercase tracking-widest">
+                        Tramo / Billete
+                      </th>
+                      <th class="px-4 py-3 text-left text-[10px] font-bold text-danger-800 uppercase tracking-widest">
+                        Tramos de Vuelo
+                      </th>
+                      <th class="px-4 py-3 text-left text-[10px] font-bold text-danger-800 uppercase tracking-widest">
+                        Fecha Original
+                      </th>
+                      <th class="px-4 py-3 text-left text-[10px] font-bold text-danger-800 uppercase tracking-widest text-right">
+                        Estado
+                      </th>
                     </tr>
                   </thead>
-                  <tbody class="bg-white divide-y divide-neutral-100">
-                    {{ range $t := .TicketsVuelta }}
-                      {{ range $i, $d := .Detalles }}
-                        <tr
-                          class="group hover:bg-neutral-50/80 transition-all duration-200 {{ if .EsDevolucion }}
-                            opacity-60 bg-danger-50/10 grayscale
-                          {{ end }} {{ if .EsModificacion }}bg-warning-50/30{{ end }}"
-                        >
-                          <td class="px-6 py-4 whitespace-nowrap align-top">
-                            <div class="flex flex-col gap-1.5">
-                              {{ if eq $i 0 }}
-                                <span
-                                  class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black border {{ .GetTipoColorClass }} uppercase tracking-tighter shadow-sm w-fit"
-                                >
-                                  {{ .GetTipoDisplay }}
-                                </span>
-                              {{ end }}
-                              {{ if .EsModificacion }}
-                                <span
-                                  class="inline-flex items-center justify-center px-1.5 py-0.5 rounded text-[8px] font-black bg-warning-100 text-warning-700 border border-warning-200 uppercase tracking-tighter w-fit"
-                                >
-                                  Modificado
-                                </span>
-                              {{ end }}
-                            </div>
-                          </td>
-                          <td class="px-6 py-4 whitespace-nowrap align-top font-bold text-neutral-900">
-                            <div class="flex flex-col">
-                              <span class="text-xs">{{ .GetRutaDisplay }}</span>
-                              <span class="text-[10px] text-neutral-400 font-medium">
-                                {{ if .Fecha }}{{ .Fecha.Format "02 de Ene, 2006" }}{{ else }}-{{ end }}
-                              </span>
-                            </div>
-                          </td>
-                          <td class="px-6 py-4 whitespace-nowrap align-top text-[10px]">
-                            <div class="flex flex-col space-y-0.5">
-                              <span class="text-neutral-400">
-                                Boleto:
-                                <span class="text-neutral-700 font-mono font-bold">
-                                  {{ if .Boleto }}{{ .Boleto }}{{ else }}-{{ end }}
-                                </span>
-                              </span>
-                              <span class="text-neutral-400">
-                                Pase:
-                                <span class="text-neutral-700 font-mono font-bold">
-                                  {{ if .NumeroPaseAbordo }}{{ .NumeroPaseAbordo }}{{ else }}-{{ end }}
-                                </span>
-                              </span>
-                            </div>
-                          </td>
-                          <td class="px-6 py-4 whitespace-nowrap text-right align-middle">
-                            {{ if .ArchivoPaseAbordo }}
-                              <button
-                                type="button"
-                                hx-get="/preview-file?path={{ .ArchivoPaseAbordo }}&info_tramo_registrado={{ .GetRutaDisplay | urlquery }}&info_fecha_registrada={{ if .Fecha }}
-                                  {{ .Fecha.Format `02/01/2006` }}
-                                {{ end }}&info_boleto_registrado={{ .Boleto }}&info_pase_registrado={{ .NumeroPaseAbordo }}"
-                                hx-target="#modal-container"
-                                class="p-1.5 rounded-lg bg-white border border-neutral-200 shadow-sm hover:bg-primary-50 hover:text-primary transition-all active:scale-90"
-                              >
-                                <i class="ph ph-file-search text-lg"></i>
-                              </button>
-                            {{ end }}
-                          </td>
-                        </tr>
-                      {{ end }}
+                  <tbody class="bg-white divide-y divide-danger-100">
+                    {{ range $ticket := .Ida }}
+                      {{ template "show_fila_devolucion" $ticket }}
+                    {{ end }}
+                    {{ range $ticket := $.Vuelta }}
+                      {{ template "show_fila_devolucion" $ticket }}
+                    {{ end }}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          {{ end }}
+
+          <!-- Pasajes Reprogramados -->
+          {{ $hasRepro := false }}
+          {{ range .Descargo.Tramos }}{{ if .EsModificacion }}{{ $hasRepro = true }}{{ end }}{{ end }}
+
+          {{ if $hasRepro }}
+            <div class="bg-white shadow rounded-lg overflow-hidden border border-warning-200">
+              <div class="px-6 py-4 border-b border-warning-100 bg-warning-50 flex justify-between items-center">
+                <h3 class="text-lg font-bold text-warning-900">Tramos Reprogramados</h3>
+                <i class="ph ph-arrows-left-right text-warning-500 text-xl"></i>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-warning-100">
+                  <thead class="bg-warning-50/50">
+                    <tr>
+                      <th class="px-4 py-3 text-left text-[10px] font-bold text-warning-800 uppercase tracking-widest">
+                        Tramo / Billete
+                      </th>
+                      <th class="px-4 py-3 text-left text-[10px] font-bold text-warning-800 uppercase tracking-widest">
+                        Nueva Ruta / Tramo
+                      </th>
+                      <th class="px-4 py-3 text-left text-[10px] font-bold text-warning-800 uppercase tracking-widest">
+                        Nueva Fecha
+                      </th>
+                      <th class="px-4 py-3 text-left text-[10px] font-bold text-warning-800 uppercase tracking-widest text-right">
+                        Acción
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody class="bg-white divide-y divide-warning-100">
+                    {{ range $ticket := .Ida }}
+                      {{ template "show_fila_reprogramacion" $ticket }}
+                    {{ end }}
+                    {{ range $ticket := $.Vuelta }}
+                      {{ template "show_fila_reprogramacion" $ticket }}
                     {{ end }}
                   </tbody>
                 </table>
@@ -502,72 +583,29 @@
             </div>
           {{ end }}
         </div>
-
-        <!-- Pasajes Devueltos -->
-        {{ $hasReturns := false }}
-        {{ range .Detalles }}{{ if .EsDevolucion }}{{ $hasReturns = true }}{{ end }}{{ end }}
-
-        {{ if $hasReturns }}
-          <div class="bg-white shadow rounded-lg overflow-hidden border border-danger-200">
-            <div class="px-6 py-4 border-b border-danger-100 bg-danger-50 flex justify-between items-center">
-              <h3 class="text-lg font-bold text-danger-900">Pasajes Devueltos</h3>
-              <i class="ph ph-ticket text-danger-400 text-xl"></i>
-            </div>
-            <div class="overflow-x-auto">
-              <table class="min-w-full divide-y divide-danger-100">
-                <thead class="bg-danger-50/50">
-                  <tr>
-                    <th class="px-4 py-3 text-left text-[10px] font-bold text-danger-800 uppercase tracking-widest">
-                      Boleto / Tipo
-                    </th>
-                    <th class="px-4 py-3 text-left text-[10px] font-bold text-danger-800 uppercase tracking-widest">
-                      Itinerario
-                    </th>
-                    <th class="px-4 py-3 text-left text-[10px] font-bold text-danger-800 uppercase tracking-widest">
-                      Fecha Original
-                    </th>
-                    <th class="px-4 py-3 text-left text-[10px] font-bold text-danger-800 uppercase tracking-widest text-right">
-                      Estado
-                    </th>
-                  </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-danger-100">
-                  {{ range $ticket := .TicketsIda }}
-                    {{ template "show_fila_devolucion" $ticket }}
-                  {{ end }}
-                  {{ range $ticket := $.TicketsVuelta }}
-                    {{ template "show_fila_devolucion" $ticket }}
-                  {{ end }}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        {{ end }}
       </div>
     </div>
-  </div>
 
-  {{ template "layout_footer" . }}
+    {{ template "layout_footer" . }}
+  </div>
 {{ end }}
 
 {{ define "show_fila_devolucion" }}
-  {{ $ticket := . }}
-  {{ if and $ticket.Detalles (index $ticket.Detalles 0).EsDevolucion }}
-    {{ range $index, $det := $ticket.Detalles }}
+  {{ $billete := . }}
+  {{ range $index, $det := $billete.Tramos }}
+    {{ if $det.EsDevolucion }}
       <tr class="hover:bg-danger-50/30 transition-colors">
         <td class="px-4 py-3 whitespace-nowrap">
-          {{ if eq $index 0 }}
-            <div class="flex flex-col">
-              <span class="text-[11px] font-black text-neutral-900 border-b border-neutral-100 pb-0.5 mb-1">
-                {{ if $det.Boleto }}{{ $det.Boleto }}{{ else }}SIN NÚMERO{{ end }}
-              </span>
-              <span
-                class="inline-flex items-center px-1.5 py-px rounded text-[8px] font-bold bg-neutral-100 text-neutral-600 border border-neutral-200 w-fit"
-              >
-                {{ $det.GetTipoDisplay }}
-              </span>
-            </div>
-          {{ end }}
+          <div class="flex flex-col">
+            <span class="text-[11px] font-black text-neutral-900 border-b border-neutral-100 pb-0.5 mb-1">
+              {{ if $det.Billete }}{{ $det.Billete }}{{ else }}SIN BILLETE{{ end }}
+            </span>
+            <span
+              class="inline-flex items-center px-1.5 py-px rounded text-[8px] font-bold bg-neutral-100 text-neutral-600 border border-neutral-200 w-fit"
+            >
+              {{ $det.GetTipoDisplay }}
+            </span>
+          </div>
         </td>
         <td class="px-4 py-3 whitespace-nowrap text-[11px] font-medium text-neutral-700">
           <div class="flex items-center">
@@ -579,13 +617,49 @@
           {{ if $det.Fecha }}{{ $det.Fecha.Format "02/01/2006" }}{{ else }}-{{ end }}
         </td>
         <td class="px-4 py-3 whitespace-nowrap text-right">
-          {{ if eq $index 0 }}
-            <span
-              class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black bg-danger-600 text-white border border-danger-700 shadow-sm uppercase tracking-tighter"
-            >
-              DEVUELTO
+          <span
+            class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black bg-danger-600 text-white border border-danger-700 shadow-sm uppercase tracking-tighter"
+          >
+            DEVUELTO
+          </span>
+        </td>
+      </tr>
+    {{ end }}
+  {{ end }}
+{{ end }}
+
+{{ define "show_fila_reprogramacion" }}
+  {{ $billete := . }}
+  {{ range $index, $det := $billete.Tramos }}
+    {{ if $det.EsModificacion }}
+      <tr class="hover:bg-warning-50/30 transition-colors">
+        <td class="px-4 py-3 whitespace-nowrap">
+          <div class="flex flex-col">
+            <span class="text-[11px] font-black text-neutral-900 border-b border-neutral-100 pb-0.5 mb-1">
+              {{ if $det.Billete }}{{ $det.Billete }}{{ else }}SIN BILLETE{{ end }}
             </span>
-          {{ end }}
+            <span
+              class="inline-flex items-center px-1.5 py-px rounded text-[8px] font-bold bg-warning-100 text-warning-700 border border-warning-200 w-fit uppercase"
+            >
+              {{ $det.GetTipoDisplay }}
+            </span>
+          </div>
+        </td>
+        <td class="px-4 py-3 whitespace-nowrap text-[11px] font-medium text-neutral-700">
+          <div class="flex items-center">
+            <i class="ph ph-arrows-merge text-warning-400 mr-2"></i>
+            {{ $det.GetRutaDisplay }}
+          </div>
+        </td>
+        <td class="px-4 py-3 whitespace-nowrap text-[11px] text-neutral-500">
+          {{ if $det.Fecha }}{{ $det.Fecha.Format "02/01/2006" }}{{ else }}-{{ end }}
+        </td>
+        <td class="px-4 py-3 whitespace-nowrap text-right">
+          <span
+            class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black bg-warning-500 text-white border border-warning-600 shadow-sm uppercase tracking-tighter"
+          >
+            REPROGRAMADO
+          </span>
         </td>
       </tr>
     {{ end }}

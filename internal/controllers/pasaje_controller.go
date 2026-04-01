@@ -253,7 +253,7 @@ func (ctrl *PasajeController) Preview(c *gin.Context) {
 
 	tipo := c.Query("tipo")
 	filePath := pasaje.Archivo
-	title := "Vista Previa de Boleto"
+	title := "Vista Previa de Billete"
 	if tipo == "pase" {
 		filePath = pasaje.ArchivoPaseAbordo
 		title = "Vista Previa de Pase a Bordo"

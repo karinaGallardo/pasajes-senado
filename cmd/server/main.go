@@ -81,7 +81,26 @@ func main() {
 		gin.SetMode(gin.ReleaseMode)
 	}
 
-	r := gin.Default()
+	r := gin.New()
+	r.Use(gin.Recovery())
+
+	// Filtro de Logs: No mostrar ruido de archivos estáticos ni uploads
+	r.Use(func(c *gin.Context) {
+		path := c.Request.URL.Path
+		skip := strings.HasPrefix(path, "/static/") ||
+			strings.HasPrefix(path, "/uploads/") ||
+			path == "/favicon.ico" ||
+			path == "/sw.js" ||
+			path == "/health"
+
+		if skip {
+			c.Next()
+			return
+		}
+
+		// Ejecutamos el Logger de Gin, el cual internamente llama a c.Next()
+		gin.Logger()(c)
+	})
 
 	r.Use(gzip.Gzip(gzip.DefaultCompression))
 	r.Use(middleware.MetadataMiddleware())

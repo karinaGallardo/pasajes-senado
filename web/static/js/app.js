@@ -13,7 +13,7 @@ document.addEventListener("alpine:init", function () {
       numero_vuelo: config.numero_vuelo || "",
       fecha_vuelo: config.fecha_vuelo || "",
       fecha_emision: config.fecha_emision || "",
-      numero_boleto: config.numero_boleto || "",
+      numero_billete: config.numero_billete || "",
       costo: config.costo || "",
       glosa: config.glosa || "",
       codigo_reserva: config.codigo_reserva || "",
@@ -129,7 +129,11 @@ document.addEventListener("alpine:init", function () {
         if (this.search === "") return this.items || [];
         const q = this.search.toLowerCase();
         return (this.items || []).filter((i) => {
-          return (i.label && i.label.toLowerCase().includes(q)) || (i.value && i.value.toLowerCase().includes(q)) || (i.extra && i.extra.toLowerCase().includes(q));
+          return (
+            (i.label && i.label.toLowerCase().includes(q)) ||
+            (i.value && i.value.toLowerCase().includes(q)) ||
+            (i.extra && i.extra.toLowerCase().includes(q))
+          );
         });
       },
 
@@ -271,7 +275,9 @@ document.addEventListener("alpine:init", function () {
         const s = this.search.toLowerCase();
         return list
           .filter((d) => (d.ciudad || "").toLowerCase().includes(s) || (d.iata || "").toLowerCase().includes(s))
-          .filter((d) => !this.selected.some((item) => (item.iata || "").trim().toUpperCase() === (d.iata || "").trim().toUpperCase()))
+          .filter(
+            (d) => !this.selected.some((item) => (item.iata || "").trim().toUpperCase() === (d.iata || "").trim().toUpperCase()),
+          )
           .slice(0, 15);
       },
 
@@ -295,7 +301,7 @@ document.addEventListener("alpine:init", function () {
     monto: config.monto || 0,
     route_id: config.route_id || "",
     route: config.route || "",
-    boleto: config.boleto || "",
+    billete: config.billete || "",
     isFullTicket: false,
     fileName: "",
     localUrl: "",
@@ -310,7 +316,7 @@ document.addEventListener("alpine:init", function () {
         } else {
           this.isFullTicket = false;
         }
-        this.$dispatch("update-totals", { boleto: this.boleto });
+        this.$dispatch("update-totals", { billete: this.billete });
       });
 
       this.$watch("esModificacion", (val) => {
@@ -319,11 +325,11 @@ document.addEventListener("alpine:init", function () {
           // When modifying connection, reset isFullTicket
           this.isFullTicket = false;
           // Sync other scales of the same ticket to also clear their Devolucion status
-          if (this.boleto) {
-            this.$dispatch("ticket-mod-changed", { boleto: this.boleto, state: true });
+          if (this.billete) {
+            this.$dispatch("ticket-mod-changed", { billete: this.billete, state: true });
           }
         }
-        this.$dispatch("update-totals", { boleto: this.boleto });
+        this.$dispatch("update-totals", { billete: this.billete });
       });
     },
 
@@ -379,13 +385,17 @@ document.addEventListener("alpine:init", function () {
     get filteredOrig() {
       if (!this.searchOrig) return this.items || [];
       const q = this.searchOrig.toLowerCase();
-      return (this.items || []).filter((i) => (i.label || "").toLowerCase().includes(q) || (i.cityName || "").toLowerCase().includes(q));
+      return (this.items || []).filter(
+        (i) => (i.label || "").toLowerCase().includes(q) || (i.cityName || "").toLowerCase().includes(q),
+      );
     },
 
     get filteredDest() {
       if (!this.searchDest) return this.items || [];
       const q = this.searchDest.toLowerCase();
-      return (this.items || []).filter((i) => (i.label || "").toLowerCase().includes(q) || (i.cityName || "").toLowerCase().includes(q));
+      return (this.items || []).filter(
+        (i) => (i.label || "").toLowerCase().includes(q) || (i.cityName || "").toLowerCase().includes(q),
+      );
     },
 
     openModal(rowId) {
@@ -516,7 +526,12 @@ document.addEventListener("submit", (event) => {
 
   if (submitButton && !submitButton.hasAttribute("x-ignore") && !submitButton.classList.contains("no-disable")) {
     // Check if it's already being handled by HTMX to avoid double processing
-    if (submitButton.hasAttribute("hx-post") || submitButton.hasAttribute("hx-put") || submitButton.hasAttribute("hx-get") || form.hasAttribute("hx-post")) {
+    if (
+      submitButton.hasAttribute("hx-post") ||
+      submitButton.hasAttribute("hx-put") ||
+      submitButton.hasAttribute("hx-get") ||
+      form.hasAttribute("hx-post")
+    ) {
       return;
     }
 
@@ -679,12 +694,12 @@ window.handleSingleUpload = async function (event, alpineData = null) {
       const data = await response.json();
       if (data.path) {
         // Buscar el input hidden correspondiente para guardar la ruta del server
-        // El input hidden debe tener nombre 'itin_archivo_existente_{{index}}' o similar
+        // El input hidden debe tener nombre 'tramo_archivo_existente_{{index}}' o similar
         // Intentamos encontrarlo por nombre basándonos en el nombre del input file
-        const indexMatch = input.name.match(/itin_archivo_(.+)/);
+        const indexMatch = input.name.match(/tramo_archivo_(.+)/);
         if (indexMatch && indexMatch[1]) {
           const index = indexMatch[1];
-          const hiddenInput = document.querySelector(`input[name="itin_archivo_existente_${index}"]`);
+          const hiddenInput = document.querySelector(`input[name="tramo_archivo_existente_${index}"]`);
           if (hiddenInput) {
             hiddenInput.value = data.path;
             console.log(`Archivo subido y vinculado: ${data.path}`);

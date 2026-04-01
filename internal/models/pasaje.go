@@ -24,7 +24,7 @@ type Pasaje struct {
 	FechaEmision *time.Time `gorm:"type:date"`
 
 	CodigoReserva string  `gorm:"size:50"`
-	NumeroBoleto  string  `gorm:"size:100;index"`
+	NumeroBillete string  `gorm:"size:100;index"`
 	Costo         float64 `gorm:"type:decimal(10,2)"`
 
 	EstadoPasajeCodigo *string       `gorm:"size:50;default:'EMITIDO'"`
@@ -33,8 +33,6 @@ type Pasaje struct {
 	Archivo string `gorm:"size:255;default:''"`
 
 	ArchivoPaseAbordo string  `gorm:"size:255;default:''"`
-	PasajeAnteriorID  *string `gorm:"size:36"`
-	PasajeAnterior    *Pasaje `gorm:"foreignKey:PasajeAnteriorID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;<-:false"`
 	Glosa             string  `gorm:"type:text"`
 	NumeroFactura     string  `gorm:"size:50;index"`
 	CostoPenalidad    float64 `gorm:"type:decimal(10,2);default:0"`
@@ -43,14 +41,14 @@ type Pasaje struct {
 
 func (p Pasaje) GetRutaDisplay() string {
 	if p.RutaPasaje != nil {
-		return p.RutaPasaje.GetTramoDisplay()
+		return p.RutaPasaje.GetRutaDisplay()
 	}
 	return "Ruta no especificada"
 }
 
-func (p Pasaje) GetRutaSegments() []string {
+func (p Pasaje) GetTramosRuta() []string {
 	if p.RutaPasaje != nil {
-		return p.RutaPasaje.GetSegments()
+		return p.RutaPasaje.GetTramos()
 	}
 	return []string{"Ruta no especificada"}
 }
@@ -104,9 +102,9 @@ func (p Pasaje) CanBeAnulado(user *Usuario) bool {
 	return user.IsAdminOrResponsable() && p.GetEstado() == "REGISTRADO"
 }
 
-func (p Pasaje) CanMarkUsado(user *Usuario) bool {
+func (p Pasaje) IsDischargeable() bool {
 	st := p.GetEstadoCodigo()
-	return (st == "EMITIDO" || st == "USADO")
+	return st == "EMITIDO" || st == "USADO"
 }
 
 func (p Pasaje) GetStatusBannerClass() string {

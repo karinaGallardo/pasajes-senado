@@ -98,43 +98,18 @@ func (t SolicitudItem) HasActivePasaje() bool {
 	return false
 }
 
-func (t SolicitudItem) GetPasajeOriginal() *Pasaje {
+func (t SolicitudItem) GetPasajeActivo() *Pasaje {
 	if len(t.Pasajes) == 0 {
 		return nil
 	}
-	// The original is usually the first one or the one without PasajeAnteriorID
+	// Devuelve el primer pasaje que no esté anulado (ahora solo debería haber uno activo por diseño)
 	for i := range t.Pasajes {
 		p := &t.Pasajes[i]
-		if p.PasajeAnteriorID == nil && (p.EstadoPasajeCodigo == nil || *p.EstadoPasajeCodigo != "ANULADO") {
-			return p
-		}
-	}
-	if len(t.Pasajes) > 0 {
-		p := &t.Pasajes[0]
 		if p.EstadoPasajeCodigo == nil || *p.EstadoPasajeCodigo != "ANULADO" {
 			return p
 		}
 	}
 	return nil
-}
-
-func (t SolicitudItem) GetPasajeReprogramado() *Pasaje {
-	if len(t.Pasajes) < 2 {
-		return nil
-	}
-	// The reprogrammed is the latest active one that is not the original
-	var latest *Pasaje
-	original := t.GetPasajeOriginal()
-	for i := range t.Pasajes {
-		p := &t.Pasajes[i]
-		if original != nil && p.ID == original.ID {
-			continue
-		}
-		if p.EstadoPasajeCodigo != nil && *p.EstadoPasajeCodigo != "ANULADO" {
-			latest = p
-		}
-	}
-	return latest
 }
 
 // GetChanges compares current item with old state and returns dirty fields map for GORM Updates

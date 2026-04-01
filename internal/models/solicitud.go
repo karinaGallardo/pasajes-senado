@@ -563,12 +563,12 @@ func (s Solicitud) HasCompleteDescargo() bool {
 		return false
 	}
 
-	// 1. Validar Itinerario (Boleto, Pase, Archivo)
+	// 1. Validar Itinerario (Billete, Pase, Archivo)
 	hasItinerary := false
-	for _, it := range s.Descargo.DetallesItinerario {
+	for _, it := range s.Descargo.Tramos {
 		if !it.EsDevolucion {
 			hasItinerary = true
-			if it.Boleto == "" || it.NumeroPaseAbordo == "" || it.ArchivoPaseAbordo == "" {
+			if it.Billete == "" || it.NumeroPaseAbordo == "" || it.ArchivoPaseAbordo == "" {
 				return false
 			}
 		}
@@ -604,15 +604,15 @@ func (s Solicitud) GetDescargoMissingItems() string {
 
 	// Check Itinerary
 	hasItinerary := false
-	missingBoletos := false
+	missingBilletes := false
 	missingPases := false
 	missingArchivos := false
 
-	for _, it := range s.Descargo.DetallesItinerario {
+	for _, it := range s.Descargo.Tramos {
 		if !it.EsDevolucion {
 			hasItinerary = true
-			if it.Boleto == "" {
-				missingBoletos = true
+			if it.Billete == "" {
+				missingBilletes = true
 			}
 			if it.NumeroPaseAbordo == "" {
 				missingPases = true
@@ -626,8 +626,8 @@ func (s Solicitud) GetDescargoMissingItems() string {
 	if !hasItinerary && !s.Descargo.allDevolucion() {
 		missing = append(missing, "Itinerario de viaje")
 	} else {
-		if missingBoletos {
-			missing = append(missing, "N° Boletos")
+		if missingBilletes {
+			missing = append(missing, "N° Billetes")
 		}
 		if missingPases {
 			missing = append(missing, "N° Pases a Bordo")
