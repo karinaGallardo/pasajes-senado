@@ -267,7 +267,11 @@ func (r *SolicitudRepository) UpdateStatus(ctx context.Context, id string, statu
 	return r.db.WithContext(ctx).Model(&models.Solicitud{}).Where("id = ?", id).Update("estado_solicitud_codigo", status).Error
 }
 
-func (r *SolicitudRepository) Delete(ctx context.Context, id string) error {
+func (r *SolicitudRepository) Delete(ctx context.Context, id string, deletedBy string) error {
+	// First update DeletedBy, then call Delete (soft delete)
+	if err := r.db.WithContext(ctx).Model(&models.Solicitud{}).Where("id = ?", id).Update("deleted_by", deletedBy).Error; err != nil {
+		return err
+	}
 	return r.db.WithContext(ctx).Delete(&models.Solicitud{}, "id = ?", id).Error
 }
 

@@ -800,7 +800,13 @@ func (ctrl *SolicitudDerechoController) Destroy(c *gin.Context) {
 		return
 	}
 
-	if err := ctrl.solicitudService.Delete(c.Request.Context(), id); err != nil {
+	authUser := appcontext.AuthUser(c)
+	if authUser == nil {
+		c.String(http.StatusUnauthorized, "No autorizado")
+		return
+	}
+
+	if err := ctrl.solicitudService.Delete(c.Request.Context(), id, authUser.ID); err != nil {
 		c.String(http.StatusInternalServerError, "Error eliminando: "+err.Error())
 		return
 	}

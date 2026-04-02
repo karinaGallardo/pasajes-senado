@@ -6,6 +6,7 @@ import (
 	"sistema-pasajes/internal/services"
 	"sistema-pasajes/internal/utils"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -240,5 +241,34 @@ func (ctrl *SolicitudController) UpdateRegularizacionDates(c *gin.Context) {
 
 	// Trigger full page refresh to show updated dates
 	c.Header("HX-Refresh", "true")
+	c.Status(200)
+}
+
+func (ctrl *SolicitudController) Delete(c *gin.Context) {
+	id := c.Param("id")
+	authUser := appcontext.AuthUser(c)
+	if authUser == nil {
+		c.JSON(401, gin.H{"error": "No autorizado"})
+		return
+	}
+
+	if err := ctrl.service.Delete(c.Request.Context(), id, authUser.ID); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Smart Redirect: If deleting from Show page, redirect to list. If from Table, just trigger reload.
+	currentURL := c.GetHeader("HX-Current-URL")
+	if strings.Contains(currentURL, "/detalle") {
+		// Determine which list to return to (default to derecho)
+		redirectURL := "/solicitudes/derecho"
+		if strings.Contains(currentURL, "/oficial/") {
+			redirectURL = "/solicitudes/oficial"
+		}
+		c.Header("HX-Location", redirectURL)
+	} else {
+		c.Header("HX-Trigger", "reloadTable, refresh-stats")
+	}
+
 	c.Status(200)
 }

@@ -1,691 +1,871 @@
-{{ define "solicitud/derecho/show" }} {{ template "layout_header" . }}
+{{ define "solicitud/derecho/show" }}
+  {{ template "layout_header" . }}
 
-<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-  <!-- Header -->
-  <div class="mb-6 flex items-center justify-between">
-    <div>
-      <div class="flex items-center gap-3">
-        <h2 class="text-3xl font-bold text-neutral-900 leading-none">{{ .Solicitud.Codigo }}</h2>
-        <span class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-primary-50 text-primary-700 border border-primary-200 shadow-sm">
-          {{ .Solicitud.GetTipoNombre }}
-        </span>
-        {{ if .Solicitud.EstadoSolicitud }}
-        <span class="px-2 py-0.5 inline-flex items-center gap-1 text-[10px] font-black rounded-full border {{ .Solicitud.GetStatusBadgeClass }}">
-          <i class="{{ .Solicitud.EstadoSolicitud.Icon }}"></i>
-          {{ .Solicitud.EstadoSolicitud.Nombre }}
-        </span>
-        {{ end }}
-      </div>
-      <div class="flex flex-col space-y-0.5 mt-1">
-        <p class="text-xs text-neutral-400 flex items-center gap-1.5">
-          <span>
-            <span class="font-bold uppercase tracking-tighter mr-1">Creado:</span>
-            {{ fechaHora .Solicitud.CreatedAt }} por
-            <span class="font-semibold text-neutral-600 tracking-tight">
-              {{ $c := index .Usuarios (deref .Solicitud.CreatedBy) }} {{ if $c }} {{ $c.GetNombreCompleto }} {{ else }} {{ .Solicitud.Usuario.GetNombreCompleto }} {{ end }}
+
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+    <!-- Header -->
+    <div class="mb-6 flex items-center justify-between">
+      <div>
+        <div class="flex items-center gap-3">
+          <h2 class="text-3xl font-bold text-neutral-900 leading-none">{{ .Solicitud.Codigo }}</h2>
+          <span
+            class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-primary-50 text-primary-700 border border-primary-200 shadow-sm"
+          >
+            {{ .Solicitud.GetTipoNombre }}
+          </span>
+          {{ if .Solicitud.EstadoSolicitud }}
+            <span
+              class="px-2 py-0.5 inline-flex items-center gap-1 text-[10px] font-black rounded-full border {{ .Solicitud.GetStatusBadgeClass }}"
+            >
+              <i class="{{ .Solicitud.EstadoSolicitud.Icon }}"></i>
+              {{ .Solicitud.EstadoSolicitud.Nombre }}
             </span>
-          </span>
-          {{ if .Perms.IsAdminOrResp }}
-          <button
-            hx-get="/solicitudes/{{ .Solicitud.ID }}/regularizacion-modal"
-            hx-target="body"
-            hx-swap="beforeend"
-            class="ml-1 px-1.5 py-0.5 bg-warning-50 border border-warning-200 rounded text-[9px] font-black text-warning-700 hover:bg-warning-100 transition-all cursor-pointer flex items-center gap-1 uppercase tracking-wider shadow-sm"
-            title="Regularizar fecha sistema solicitud">
-            <i class="ph ph-clock-counter-clockwise font-bold"></i>
-            Regularizar
-          </button>
           {{ end }}
-        </p>
-        {{ if .Solicitud.UpdatedBy }}
-        <p class="text-xs text-neutral-400">
-          <span class="font-bold uppercase tracking-tighter mr-1">Actualizado:</span>
-          {{ fechaHora .Solicitud.UpdatedAt }} por
-          <span class="font-semibold text-neutral-600 tracking-tight">
-            {{ $u := index .Usuarios (deref .Solicitud.UpdatedBy) }} {{ if $u }} {{ $u.GetNombreCompleto }} {{ else }} Sistema {{ end }}
-          </span>
-        </p>
+        </div>
+        <div class="flex flex-col space-y-0.5 mt-1">
+          <p class="text-xs text-neutral-400 flex items-center gap-1.5">
+            <span>
+              <span class="font-bold uppercase tracking-tighter mr-1">Creado:</span>
+              {{ fechaHora .Solicitud.CreatedAt }} por
+              <span class="font-semibold text-neutral-600 tracking-tight">
+                {{ $c := index .Usuarios (deref .Solicitud.CreatedBy) }}
+                {{ if $c }}{{ $c.GetNombreCompleto }}{{ else }}{{ .Solicitud.Usuario.GetNombreCompleto }}{{ end }}
+              </span>
+            </span>
+            {{ if .Perms.IsAdminOrResp }}
+              <button
+                hx-get="/solicitudes/{{ .Solicitud.ID }}/regularizacion-modal"
+                hx-target="body"
+                hx-swap="beforeend"
+                class="ml-1 px-1.5 py-0.5 bg-warning-50 border border-warning-200 rounded text-[9px] font-black text-warning-700 hover:bg-warning-100 transition-all cursor-pointer flex items-center gap-1 uppercase tracking-wider shadow-sm"
+                title="Regularizar fecha sistema solicitud"
+              >
+                <i class="ph ph-clock-counter-clockwise font-bold"></i>
+                Regularizar
+              </button>
+            {{ end }}
+          </p>
+          {{ if .Solicitud.UpdatedBy }}
+            <p class="text-xs text-neutral-400">
+              <span class="font-bold uppercase tracking-tighter mr-1">Actualizado:</span>
+              {{ fechaHora .Solicitud.UpdatedAt }} por
+              <span class="font-semibold text-neutral-600 tracking-tight">
+                {{ $u := index .Usuarios (deref .Solicitud.UpdatedBy) }}
+                {{ if $u }}{{ $u.GetNombreCompleto }}{{ else }}Sistema{{ end }}
+              </span>
+            </p>
+          {{ end }}
+        </div>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        {{ if .Solicitud.CanEdit .AuthUser }}
+          <button
+            type="button"
+            hx-get="/solicitudes/derecho/{{ .Solicitud.ID }}/modal-editar"
+            hx-target="#modal-container"
+            class="btn-md btn-white"
+          >
+            <i class="ph ph-pencil-simple text-sm"></i>
+            <span>Editar</span>
+          </button>
         {{ end }}
+
+        {{ if .Solicitud.CanDelete .AuthUser }}
+          <button
+            type="button"
+            hx-delete="/solicitudes/{{ .Solicitud.ID }}"
+            hx-confirm="¿Está seguro que desea eliminar esta solicitud? Esta acción no se puede deshacer y liberará los cupos reservados."
+            hx-target="body"
+            class="group btn-md bg-danger-50 text-danger-600 border border-danger-200 hover:bg-danger-600 hover:text-white transition-all shadow-sm"
+            title="Eliminar Solicitud"
+          >
+            <i class="ph ph-trash text-sm group-hover:scale-110 transition-transform"></i>
+            <span>Eliminar</span>
+          </button>
+        {{ end }}
+
+        {{ if .Solicitud.CanPrint .AuthUser }}
+          <button
+            type="button"
+            hx-get="/solicitudes/derecho/{{ .Solicitud.ID }}/print"
+            hx-target="#modal-container"
+            class="btn-md btn-white border-neutral-300"
+          >
+            <i class="ph ph-printer text-sm"></i>
+            <span>Imprimir</span>
+          </button>
+        {{ end }}
+        {{ if .DescargoID }}
+          <a href="/descargos/derecho/{{ .DescargoID }}" class="btn-md btn-primary">
+            <i class="ph ph-eye text-sm"></i>
+            <span>Ver Descargo</span>
+          </a>
+        {{ else if .Solicitud.CanMakeDescargo .AuthUser }}
+          <a href="/descargos/derecho/nuevo/{{ .Solicitud.ID }}" class="btn-md btn-primary">
+            <i class="ph ph-file-plus text-sm"></i>
+            <span>Crear Descargo</span>
+          </a>
+        {{ end }}
+        <a href="/solicitudes?estado={{ .Solicitud.EstadoSolicitud.Codigo }}" class="btn-md btn-white border-neutral-300">
+          Volver
+        </a>
       </div>
     </div>
-    <div class="flex flex-wrap items-center gap-2">
-      {{ if .Solicitud.CanEdit .AuthUser }}
-      <button type="button" hx-get="/solicitudes/derecho/{{ .Solicitud.ID }}/modal-editar" hx-target="#modal-container" class="btn-md btn-white">
-        <i class="ph ph-pencil-simple text-sm"></i>
-        <span>Editar</span>
-      </button>
-      {{ end }} {{ if .Solicitud.CanPrint .AuthUser }}
-      <button type="button" hx-get="/solicitudes/derecho/{{ .Solicitud.ID }}/print" hx-target="#modal-container" class="btn-md btn-white border-neutral-300">
-        <i class="ph ph-printer text-sm"></i>
-        <span>Imprimir</span>
-      </button>
-      {{ end }} {{ if .DescargoID }}
-      <a href="/descargos/derecho/{{ .DescargoID }}" class="btn-md btn-primary">
-        <i class="ph ph-eye text-sm"></i>
-        <span>Ver Descargo</span>
-      </a>
-      {{ else if .Solicitud.CanMakeDescargo .AuthUser }}
-      <a href="/descargos/derecho/nuevo/{{ .Solicitud.ID }}" class="btn-md btn-primary">
-        <i class="ph ph-file-plus text-sm"></i>
-        <span>Crear Descargo</span>
-      </a>
-      {{ end }}
-      <a href="/solicitudes?estado={{ .Solicitud.EstadoSolicitud.Codigo }}" class="btn-md btn-white border-neutral-300">Volver</a>
-    </div>
-  </div>
 
-  <div class="space-y-4">
-    <!-- Workflow Stepper Card -->
-    <div class="bg-white shadow rounded-lg pl-7 pr-7 pt-3 pb-8">
-      <div class="flex items-center w-full">
-        <!-- Step 1: Solicitado -->
-        <div class="flex items-center relative z-10">
-          <div class="rounded-full transition duration-500 ease-in-out h-10 w-10 py-3 {{ .Steps.Solicitado.WrapperClass }} flex items-center justify-center">
-            <i class="{{ .Steps.Solicitado.Icon }}"></i>
-          </div>
-          <div class="hidden sm:block absolute top-0 -ml-10 text-center mt-12 w-32 text-xs font-medium uppercase {{ .Steps.Solicitado.LabelClass }}">
-            {{ .Steps.Solicitado.Label }}
-          </div>
-        </div>
-
-        <!-- Connector 1 -->
-        <div class="flex-auto h-1 transition duration-500 ease-in-out bg-neutral-200"></div>
-
-        <!-- Step 2: Aprobado / Parcial / Rechazado -->
-        <div class="flex items-center relative z-10">
-          <div class="rounded-full transition duration-500 ease-in-out h-10 w-10 py-3 {{ .Steps.Aprobado.WrapperClass }} flex items-center justify-center">
-            <i class="{{ .Steps.Aprobado.Icon }}"></i>
-          </div>
-          <div class="hidden sm:block absolute top-0 -ml-10 text-center mt-12 w-32 text-xs font-medium uppercase {{ .Steps.Aprobado.LabelClass }}">{{ .Steps.Aprobado.Label }}</div>
-        </div>
-
-        {{ if .ShowNextSteps }}
-        <!-- Connector 2 -->
-        <div class="flex-auto h-1 transition duration-500 ease-in-out bg-neutral-200"></div>
-
-        <!-- Step 3: Emitido -->
-        <div class="flex items-center relative z-10">
-          <div class="rounded-full transition duration-500 ease-in-out h-10 w-10 py-3 {{ .Steps.Emitido.WrapperClass }} flex items-center justify-center">
-            <i class="{{ .Steps.Emitido.Icon }}"></i>
-          </div>
-          <div class="hidden sm:block absolute top-0 -ml-10 text-center mt-12 w-32 text-xs font-medium uppercase {{ .Steps.Emitido.LabelClass }}">{{ .Steps.Emitido.Label }}</div>
-        </div>
-
-        <!-- Connector 3 -->
-        <div class="flex-auto h-1 transition duration-500 ease-in-out bg-neutral-200"></div>
-
-        <!-- Step 4: Finalizado -->
-        <div class="flex items-center relative z-10">
-          <div class="rounded-full transition duration-500 ease-in-out h-10 w-10 py-3 {{ .Steps.Finalizado.WrapperClass }} flex items-center justify-center">
-            <i class="{{ .Steps.Finalizado.Icon }}"></i>
-          </div>
-          <div class="hidden sm:block absolute top-0 -ml-10 text-center mt-12 w-32 text-xs font-medium uppercase {{ .Steps.Finalizado.LabelClass }}">
-            {{ .Steps.Finalizado.Label }}
-          </div>
-        </div>
-        {{ end }}
-      </div>
-    </div>
-
-    <!-- Itinerario y Pasajes -->
-    <div class="bg-white shadow sm:rounded-lg border border-neutral-200">
-      <div class="px-6 py-4 border-b border-neutral-200 bg-neutral-50 flex justify-between items-center">
-        <h3 class="text-sm font-bold text-neutral-800 uppercase tracking-wider">Pasajes Solicitados</h3>
-        {{ if .Solicitud.CanRevertApproval .AuthUser }}
-        <button
-          type="button"
-          hx-post="/solicitudes/derecho/{{ .Solicitud.ID }}/revertir-aprobacion"
-          hx-confirm="¿Está seguro de que desea REVERTIR la aprobación? Volverá a estado SOLICITADO."
-          hx-target="body"
-          class="btn-sm btn-white text-warning-700 border-warning-200 rounded-sm text-[13px]">
-          <i class="ph ph-arrow-u-up-left font-bold text-[18px]"></i>
-          Revertir Aprobación Global
-        </button>
-        {{ end }}
-      </div>
-
-      <div class="divide-y divide-neutral-200 transition-all">
-        {{ range .Solicitud.Items }} {{ $item := . }}
-        <div class="p-0">
-          <div class="p-6 pb-4">
-            <div class="flex flex-col md:flex-row md:items-start justify-between gap-4">
-              <!-- Tramo Info (The Request) -->
-              <div class="flex items-center gap-4 w-full">
-                <div class="flex items-center gap-2 min-w-max">
-                  <div
-                    class="h-8 w-8 rounded-full flex items-center justify-center border {{ if eq .Tipo `IDA` }} bg-primary-50 border-primary-200 text-primary-600 {{ else }} bg-secondary-50 border-secondary-200 text-secondary-600 {{ end }}">
-                    <i class="ph {{ if eq .Tipo `IDA` }}ph-airplane-takeoff{{ else }}ph-airplane-landing{{ end }} text-lg font-bold"></i>
-                  </div>
-                  <span class="text-[11px] font-black uppercase text-neutral-400 tracking-wider">{{ .Tipo }}</span>
-                  <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase {{ .GetStatusBadgeClass }}">{{ .GetEstado }}</span>
-                </div>
-
-                <div class="h-4 w-px bg-neutral-200 hidden sm:block"></div>
-
-                <div class="flex flex-1 items-center gap-3">
-                  <h4 class="text-sm font-bold text-neutral-800 flex items-center gap-2 whitespace-nowrap">
-                    <span>{{ if .Origen }}{{ .Origen.Ciudad }}{{ else }}{{ .OrigenIATA }}{{ end }}</span>
-                    <i class="ph ph-arrow-right text-neutral-300 text-xs"></i>
-                    <span>{{ if .Destino }}{{ .Destino.Ciudad }}{{ else }}{{ .DestinoIATA }}{{ end }}</span>
-                  </h4>
-                  <p class="text-[11px] text-neutral-500 font-medium whitespace-nowrap hidden lg:block flex items-center gap-1.5">
-                    <span>
-                      <i class="ph ph-calendar-blank mr-1"></i>
-                      {{ if .Fecha }}{{ fechaHora .Fecha }}{{ else }}Fecha no definida{{ end }}
-                    </span>
-                    {{ if $.Perms.IsAdminOrResp }}
-                    <button
-                      hx-get="/solicitudes/{{ $.Solicitud.ID }}/items/{{ .ID }}/regularizacion-modal"
-                      hx-target="body"
-                      hx-swap="beforeend"
-                      class="ml-2 px-1.5 py-0.5 bg-warning-50 border border-warning-100 rounded-sm text-[9px] font-black text-warning-600 hover:bg-warning-100 transition-all cursor-pointer flex items-center gap-1 uppercase tracking-wider"
-                      title="Regularizar fecha sistema">
-                      <i class="ph ph-clock-counter-clockwise font-bold"></i>
-                      REG
-                    </button>
-                    {{ end }}
-                  </p>
-                </div>
-              </div>
-
-              <!-- Tramo Actions -->
-              <div class="flex items-center gap-2">
-                {{ if .CanBeApproved $.AuthUser }}
-                <button
-                  type="button"
-                  hx-post="/solicitudes/derecho/{{ $.Solicitud.ID }}/items/{{ .ID }}/aprobar"
-                  hx-confirm="¿Aprobar este tramo?"
-                  hx-target="body"
-                  class="btn-xs btn-success rounded-sm text-[13px]">
-                  <i class="ph ph-check-circle font-bold text-[18px]"></i>
-                  Aprobar
-                </button>
-                <button
-                  type="button"
-                  hx-post="/solicitudes/derecho/{{ $.Solicitud.ID }}/items/{{ .ID }}/rechazar"
-                  hx-confirm="¿Rechazar este tramo?"
-                  hx-target="body"
-                  class="btn-xs btn-danger rounded-sm text-[13px]">
-                  <i class="ph ph-x-circle font-bold text-[18px]"></i>
-                  Rechazar
-                </button>
-                {{ end }} {{ if .CanBeReverted $.AuthUser }}
-                <button
-                  type="button"
-                  hx-post="/solicitudes/derecho/{{ $.Solicitud.ID }}/items/{{ .ID }}/revertir-aprobacion"
-                  hx-confirm="¿Revertir aprobación?"
-                  hx-target="body"
-                  class="btn-xs btn-white text-warning-700 border-warning-200 rounded-sm text-[13px]">
-                  <i class="ph ph-arrow-counter-clockwise font-bold text-[18px]"></i>
-                  Revertir
-                </button>
-                {{ end }} {{ if .CanAssignPasaje $.AuthUser }}
-                <button
-                  type="button"
-                  hx-get="/solicitudes/{{ $.Solicitud.ID }}/pasajes/nuevo?item_id={{ .ID }}"
-                  hx-target="#modal-container"
-                  class="btn-xs btn-secondary rounded-sm text-[12px]">
-                  <i class="ph ph-ticket font-bold text-[18px]"></i>
-                  Asignar Pasaje
-                </button>
-                {{ end }}
-              </div>
+    <div class="space-y-4">
+      <!-- Workflow Stepper Card -->
+      <div class="bg-white shadow rounded-lg pl-7 pr-7 pt-3 pb-8">
+        <div class="flex items-center w-full">
+          <!-- Step 1: Solicitado -->
+          <div class="flex items-center relative z-10">
+            <div
+              class="rounded-full transition duration-500 ease-in-out h-10 w-10 py-3 {{ .Steps.Solicitado.WrapperClass }} flex items-center justify-center"
+            >
+              <i class="{{ .Steps.Solicitado.Icon }}"></i>
+            </div>
+            <div
+              class="hidden sm:block absolute top-0 -ml-10 text-center mt-12 w-32 text-xs font-medium uppercase {{ .Steps.Solicitado.LabelClass }}"
+            >
+              {{ .Steps.Solicitado.Label }}
             </div>
           </div>
 
-          <!-- Pasajes for this Tramo (The Real Result) -->
-          {{ if .Pasajes }}
-          <div class="px-6 pb-6">
-            <div class="space-y-4">
-              {{ range .Pasajes }}
+          <!-- Connector 1 -->
+          <div class="flex-auto h-1 transition duration-500 ease-in-out bg-neutral-200"></div>
+
+          <!-- Step 2: Aprobado / Parcial / Rechazado -->
+          <div class="flex items-center relative z-10">
+            <div
+              class="rounded-full transition duration-500 ease-in-out h-10 w-10 py-3 {{ .Steps.Aprobado.WrapperClass }} flex items-center justify-center"
+            >
+              <i class="{{ .Steps.Aprobado.Icon }}"></i>
+            </div>
+            <div
+              class="hidden sm:block absolute top-0 -ml-10 text-center mt-12 w-32 text-xs font-medium uppercase {{ .Steps.Aprobado.LabelClass }}"
+            >
+              {{ .Steps.Aprobado.Label }}
+            </div>
+          </div>
+
+          {{ if .ShowNextSteps }}
+            <!-- Connector 2 -->
+            <div class="flex-auto h-1 transition duration-500 ease-in-out bg-neutral-200"></div>
+
+            <!-- Step 3: Emitido -->
+            <div class="flex items-center relative z-10">
               <div
-                class="group relative bg-white border border-neutral-200 rounded-md transition-all duration-300 hover:shadow-lg flex flex-col overflow-hidden"
-                x-data="{ openMenu: false }">
-                <!-- Ticket Header (Formal Label with Split Design) -->
-                <div class="text-[10px] font-black uppercase tracking-[0.2em] flex items-stretch shrink-0 w-full border-b border-neutral-100">
-                  <!-- Section 1: Official Label -->
-                  <div class="bg-primary-50 px-4 py-2.5 flex items-center gap-2.5 flex-1 relative border-l-4 border-primary">
-                    <i class="ph ph-ticket font-bold text-primary-600 text-xs"></i>
-                    <span class="text-primary-900/70">PASAJE COMPRADO</span>
-                  </div>
+                class="rounded-full transition duration-500 ease-in-out h-10 w-10 py-3 {{ .Steps.Emitido.WrapperClass }} flex items-center justify-center"
+              >
+                <i class="{{ .Steps.Emitido.Icon }}"></i>
+              </div>
+              <div
+                class="hidden sm:block absolute top-0 -ml-10 text-center mt-12 w-32 text-xs font-medium uppercase {{ .Steps.Emitido.LabelClass }}"
+              >
+                {{ .Steps.Emitido.Label }}
+              </div>
+            </div>
 
-                  <!-- Section 2: Dynamic Status Banner -->
-                  <div class="px-6 py-2.5 flex items-center text-white transition-colors duration-500 {{ .GetStatusBannerClass }}">
-                    <span class="select-all tracking-widest font-black">{{ .GetEstado }}</span>
-                  </div>
-                </div>
+            <!-- Connector 3 -->
+            <div class="flex-auto h-1 transition duration-500 ease-in-out bg-neutral-200"></div>
 
-                <div class="flex flex-col lg:flex-row flex-1 rounded-b-sm overflow-hidden">
-                  <!-- Left "Stub" - Air Identity -->
-                  <div
-                    class="lg:w-32 bg-neutral-50 px-4 py-3 flex flex-col items-center justify-center border-b lg:border-b-0 lg:border-r border-dashed border-neutral-200 relative shrink-0">
-                    <!-- Decorative Notches -->
-                    <div class="hidden lg:block absolute -bottom-2 -right-2 w-4 h-4 bg-white border border-neutral-200 rounded-full z-10"></div>
+            <!-- Step 4: Finalizado -->
+            <div class="flex items-center relative z-10">
+              <div
+                class="rounded-full transition duration-500 ease-in-out h-10 w-10 py-3 {{ .Steps.Finalizado.WrapperClass }} flex items-center justify-center"
+              >
+                <i class="{{ .Steps.Finalizado.Icon }}"></i>
+              </div>
+              <div
+                class="hidden sm:block absolute top-0 -ml-10 text-center mt-12 w-32 text-xs font-medium uppercase {{ .Steps.Finalizado.LabelClass }}"
+              >
+                {{ .Steps.Finalizado.Label }}
+              </div>
+            </div>
+          {{ end }}
+        </div>
+      </div>
 
-                    <div class="text-center space-y-2">
+      <!-- Itinerario y Pasajes -->
+      <div class="bg-white shadow sm:rounded-lg border border-neutral-200">
+        <div class="px-6 py-4 border-b border-neutral-200 bg-neutral-50 flex justify-between items-center">
+          <h3 class="text-sm font-bold text-neutral-800 uppercase tracking-wider">Pasajes Solicitados</h3>
+          {{ if .Solicitud.CanRevertApproval .AuthUser }}
+            <button
+              type="button"
+              hx-post="/solicitudes/derecho/{{ .Solicitud.ID }}/revertir-aprobacion"
+              hx-confirm="¿Está seguro de que desea REVERTIR la aprobación? Volverá a estado SOLICITADO."
+              hx-target="body"
+              class="btn-sm btn-white text-warning-700 border-warning-200 rounded-sm text-[13px]"
+            >
+              <i class="ph ph-arrow-u-up-left font-bold text-[18px]"></i>
+              Revertir Aprobación Global
+            </button>
+          {{ end }}
+        </div>
+
+        <div class="divide-y divide-neutral-200 transition-all">
+          {{ range .Solicitud.Items }}
+            {{ $item := . }}
+            <div class="p-0">
+              <div class="p-6 pb-4">
+                <div class="flex flex-col md:flex-row md:items-start justify-between gap-4">
+                  <!-- Tramo Info (The Request) -->
+                  <div class="flex items-center gap-4 w-full">
+                    <div class="flex items-center gap-2 min-w-max">
                       <div
-                        class="w-10 h-10 rounded-xl bg-white shadow-sm border border-neutral-100 flex items-center justify-center text-primary-600 mx-auto transition-transform group-hover:scale-105">
-                        <i class="ph ph-airplane text-2xl font-bold"></i>
+                        class="h-8 w-8 rounded-full flex items-center justify-center border {{ if eq .Tipo `IDA` }}
+                          bg-primary-50 border-primary-200 text-primary-600
+                        {{ else }}
+                          bg-secondary-50 border-secondary-200 text-secondary-600
+                        {{ end }}"
+                      >
+                        <i
+                          class="ph {{ if eq .Tipo `IDA` }}
+                            ph-airplane-takeoff
+                          {{ else }}
+                            ph-airplane-landing
+                          {{ end }} text-lg font-bold"
+                        ></i>
                       </div>
-                      <p class="text-[11px] font-black text-neutral-900 uppercase tracking-tighter">
-                        {{ if .Aerolinea }}{{ if .Aerolinea.Sigla }}{{ .Aerolinea.Sigla }}{{ else }}{{ .Aerolinea.Nombre }}{{ end }}{{ else }}Oficial{{ end }}
+                      <span class="text-[11px] font-black uppercase text-neutral-400 tracking-wider">{{ .Tipo }}</span>
+                      <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase {{ .GetStatusBadgeClass }}">
+                        {{ .GetEstado }}
+                      </span>
+                    </div>
+
+                    <div class="h-4 w-px bg-neutral-200 hidden sm:block"></div>
+
+                    <div class="flex flex-1 items-center gap-3">
+                      <h4 class="text-sm font-bold text-neutral-800 flex items-center gap-2 whitespace-nowrap">
+                        <span>{{ if .Origen }}{{ .Origen.Ciudad }}{{ else }}{{ .OrigenIATA }}{{ end }}</span>
+                        <i class="ph ph-arrow-right text-neutral-300 text-xs"></i>
+                        <span>{{ if .Destino }}{{ .Destino.Ciudad }}{{ else }}{{ .DestinoIATA }}{{ end }}</span>
+                      </h4>
+                      <p
+                        class="text-[11px] text-neutral-500 font-medium whitespace-nowrap hidden lg:block flex items-center gap-1.5"
+                      >
+                        <span>
+                          <i class="ph ph-calendar-blank mr-1"></i>
+                          {{ if .Fecha }}{{ fechaHora .Fecha }}{{ else }}Fecha no definida{{ end }}
+                        </span>
+                        {{ if $.Perms.IsAdminOrResp }}
+                          <button
+                            hx-get="/solicitudes/{{ $.Solicitud.ID }}/items/{{ .ID }}/regularizacion-modal"
+                            hx-target="body"
+                            hx-swap="beforeend"
+                            class="ml-2 px-1.5 py-0.5 bg-warning-50 border border-warning-100 rounded-sm text-[9px] font-black text-warning-600 hover:bg-warning-100 transition-all cursor-pointer flex items-center gap-1 uppercase tracking-wider"
+                            title="Regularizar fecha sistema"
+                          >
+                            <i class="ph ph-clock-counter-clockwise font-bold"></i>
+                            REG
+                          </button>
+                        {{ end }}
                       </p>
                     </div>
                   </div>
 
-                  <!-- Main Content -->
-                  <div class="flex-1 flex flex-col md:flex-row items-center px-6 py-4 gap-6">
-                    <div class="flex-1 grid grid-cols-2 md:grid-cols-5 gap-6 w-full">
-                      <!-- Date -->
-                      <div class="space-y-1">
-                        <span class="text-[8px] font-black uppercase tracking-widest text-neutral-400 block">Salida</span>
-                        <div class="leading-tight">
-                          <p class="text-[12px] font-bold text-neutral-900">{{ if .FechaVuelo }}{{ .FechaVuelo.Format "02/01/2006" }}{{ else }}-{{ end }}</p>
-                          <p class="text-[10px] font-bold text-primary-600">{{ if .FechaVuelo }}{{ .FechaVuelo.Format "15:04" }} hrs{{ else }}-{{ end }}</p>
-                        </div>
-                      </div>
-
-                      <!-- Trayecto -->
-                      <div class="space-y-1">
-                        <span class="text-[8px] font-black uppercase tracking-widest text-neutral-400 block">Trayecto</span>
-                        <p class="text-[12px] font-black text-neutral-800 uppercase tracking-tight leading-tight flex flex-col">
-                          {{ range (split .GetRutaDisplay " - ") }}
-                          <span>{{ . }}</span>
-                          {{ end }}
-                        </p>
-                      </div>
-
-                      <!-- Billete -->
-                      <div class="space-y-1">
-                        <span class="text-[8px] font-black uppercase tracking-widest text-neutral-400 block">N° Billete</span>
-                        <p class="text-[12px] font-black text-neutral-900 leading-none uppercase select-all tracking-tight">
-                          {{ if .NumeroBillete }}{{ .NumeroBillete }}{{ else }}---{{ end }}
-                        </p>
-                      </div>
-
-                      <!-- Vuelo -->
-                      <div class="space-y-1">
-                        <span class="text-[8px] font-black uppercase tracking-widest text-neutral-400 block">Vuelo</span>
-                        <p class="text-[12px] font-black text-neutral-900 leading-none uppercase tracking-tight">{{ if .NumeroVuelo }}{{ .NumeroVuelo }}{{ else }}---{{ end }}</p>
-                      </div>
-
-                      <!-- Costo -->
-                      <div class="space-y-px text-right">
-                        <span class="text-[8px] font-black uppercase tracking-widest text-neutral-400 block">Costo</span>
-                        <p class="text-xl font-black text-secondary-600 leading-none">
-                          <span class="text-[10px] font-bold mr-0.5">Bs</span>
-                          {{ printf "%.2f" .Costo }}
-                        </p>
-                      </div>
-                    </div>
-
-                    <!-- Inline Actions -->
-                    <div class="flex items-center gap-2 md:pl-6 md:border-l border-neutral-100 shrink-0">
-                      {{ if .Archivo }}
+                  <!-- Tramo Actions -->
+                  <div class="flex items-center gap-2">
+                    {{ if .CanBeApproved $.AuthUser }}
                       <button
                         type="button"
-                        hx-get="/pasajes/{{ .ID }}/preview?tipo=billete"
+                        hx-post="/solicitudes/derecho/{{ $.Solicitud.ID }}/items/{{ .ID }}/aprobar"
+                        hx-confirm="¿Aprobar este tramo?"
+                        hx-target="body"
+                        class="btn-xs btn-success rounded-sm text-[13px]"
+                      >
+                        <i class="ph ph-check-circle font-bold text-[18px]"></i>
+                        Aprobar
+                      </button>
+                      <button
+                        type="button"
+                        hx-post="/solicitudes/derecho/{{ $.Solicitud.ID }}/items/{{ .ID }}/rechazar"
+                        hx-confirm="¿Rechazar este tramo?"
+                        hx-target="body"
+                        class="btn-xs btn-danger rounded-sm text-[13px]"
+                      >
+                        <i class="ph ph-x-circle font-bold text-[18px]"></i>
+                        Rechazar
+                      </button>
+                    {{ end }}
+                    {{ if .CanBeReverted $.AuthUser }}
+                      <button
+                        type="button"
+                        hx-post="/solicitudes/derecho/{{ $.Solicitud.ID }}/items/{{ .ID }}/revertir-aprobacion"
+                        hx-confirm="¿Revertir aprobación?"
+                        hx-target="body"
+                        class="btn-xs btn-white text-warning-700 border-warning-200 rounded-sm text-[13px]"
+                      >
+                        <i class="ph ph-arrow-counter-clockwise font-bold text-[18px]"></i>
+                        Revertir
+                      </button>
+                    {{ end }}
+                    {{ if .CanAssignPasaje $.AuthUser }}
+                      <button
+                        type="button"
+                        hx-get="/solicitudes/{{ $.Solicitud.ID }}/pasajes/nuevo?item_id={{ .ID }}"
                         hx-target="#modal-container"
-                        class="w-8 h-8 flex items-center justify-center rounded-sm bg-white border border-danger-100 text-danger-500 hover:bg-danger-600 hover:text-white transition-all shadow-sm cursor-pointer"
-                        title="Ver PDF">
-                        <i class="ph ph-file-pdf text-lg font-bold"></i>
+                        class="btn-xs btn-secondary rounded-sm text-[12px]"
+                      >
+                        <i class="ph ph-ticket font-bold text-[18px]"></i>
+                        Asignar Pasaje
                       </button>
-                      {{ end }} {{ if .CanBeEmitted $.AuthUser }}
-                      <button
-                        type="button"
-                        @click="$dispatch('pasaje-action', { action: 'emitir', id: '{{.ID}}' })"
-                        class="w-8 h-8 flex items-center justify-center rounded-sm bg-white border border-secondary-100 text-secondary-600 hover:bg-secondary-600 hover:text-white transition-all shadow-sm cursor-pointer"
-                        title="Enviar">
-                        <i class="ph ph-paper-plane-right text-lg font-bold"></i>
-                      </button>
-                      {{ end }} {{ if .CanBeEdited $.AuthUser }}
-                      <button
-                        type="button"
-                        hx-get="/pasajes/{{ .ID }}/editar"
-                        hx-target="#modal-container"
-                        class="w-8 h-8 flex items-center justify-center rounded-sm bg-white border border-neutral-200 text-neutral-500 hover:bg-neutral-800 hover:text-white transition-all shadow-sm cursor-pointer"
-                        title="Editar">
-                        <i class="ph ph-pencil-simple text-lg font-bold"></i>
-                      </button>
-                      {{ end }} {{ if .CanBeReverted $.AuthUser }}
-                      <button
-                        type="button"
-                        @click="$dispatch('pasaje-action', { action: 'revertir_emision', id: '{{.ID}}' })"
-                        class="w-8 h-8 flex items-center justify-center rounded-sm bg-white border border-warning-100 text-warning-600 hover:bg-warning-600 hover:text-white transition-all shadow-sm cursor-pointer"
-                        title="Revertir Envío">
-                        <i class="ph ph-arrow-counter-clockwise text-lg font-bold"></i>
-                      </button>
-                      {{ end }} {{ if .CanBeAnulado $.AuthUser }}
-                      <button
-                        type="button"
-                        @click="$dispatch('pasaje-action', { action: 'anular', id: '{{.ID}}' })"
-                        class="w-8 h-8 flex items-center justify-center rounded-sm bg-white border border-danger-50 text-danger-300 hover:bg-danger-600 hover:text-white transition-all shadow-sm cursor-pointer"
-                        title="Anular">
-                        <i class="ph ph-trash-simple text-lg font-bold"></i>
-                      </button>
-                      {{ end }}
-                    </div>
+                    {{ end }}
                   </div>
                 </div>
               </div>
+
+              <!-- Pasajes for this Tramo (The Real Result) -->
+              {{ if .Pasajes }}
+                <div class="px-6 pb-6">
+                  <div class="space-y-4">
+                    {{ range .Pasajes }}
+                      <div
+                        class="group relative bg-white border border-neutral-200 rounded-md transition-all duration-300 hover:shadow-lg flex flex-col overflow-hidden"
+                        x-data="{ openMenu: false }"
+                      >
+                        <!-- Ticket Header (Formal Label with Split Design) -->
+                        <div
+                          class="text-[10px] font-black uppercase tracking-[0.2em] flex items-stretch shrink-0 w-full border-b border-neutral-100"
+                        >
+                          <!-- Section 1: Official Label -->
+                          <div
+                            class="bg-primary-50 px-4 py-2.5 flex items-center gap-2.5 flex-1 relative border-l-4 border-primary"
+                          >
+                            <i class="ph ph-ticket font-bold text-primary-600 text-xs"></i>
+                            <span class="text-primary-900/70">PASAJE COMPRADO</span>
+                          </div>
+
+                          <!-- Section 2: Dynamic Status Banner -->
+                          <div
+                            class="px-6 py-2.5 flex items-center text-white transition-colors duration-500 {{ .GetStatusBannerClass }}"
+                          >
+                            <span class="select-all tracking-widest font-black">{{ .GetEstado }}</span>
+                          </div>
+                        </div>
+
+                        <div class="flex flex-col lg:flex-row flex-1 rounded-b-sm overflow-hidden">
+                          <!-- Left "Stub" - Air Identity -->
+                          <div
+                            class="lg:w-32 bg-neutral-50 px-4 py-3 flex flex-col items-center justify-center border-b lg:border-b-0 lg:border-r border-dashed border-neutral-200 relative shrink-0"
+                          >
+                            <!-- Decorative Notches -->
+                            <div
+                              class="hidden lg:block absolute -bottom-2 -right-2 w-4 h-4 bg-white border border-neutral-200 rounded-full z-10"
+                            ></div>
+
+                            <div class="text-center space-y-2">
+                              <div
+                                class="w-10 h-10 rounded-xl bg-white shadow-sm border border-neutral-100 flex items-center justify-center text-primary-600 mx-auto transition-transform group-hover:scale-105"
+                              >
+                                <i class="ph ph-airplane text-2xl font-bold"></i>
+                              </div>
+                              <p class="text-[11px] font-black text-neutral-900 uppercase tracking-tighter">
+                                {{ if .Aerolinea }}
+                                  {{ if .Aerolinea.Sigla }}{{ .Aerolinea.Sigla }}{{ else }}{{ .Aerolinea.Nombre }}{{ end }}
+                                {{ else }}
+                                  Oficial
+                                {{ end }}
+                              </p>
+                            </div>
+                          </div>
+
+                          <!-- Main Content -->
+                          <div class="flex-1 flex flex-col md:flex-row items-center px-6 py-4 gap-6">
+                            <div class="flex-1 grid grid-cols-2 md:grid-cols-5 gap-6 w-full">
+                              <!-- Date -->
+                              <div class="space-y-1">
+                                <span class="text-[8px] font-black uppercase tracking-widest text-neutral-400 block">Salida</span>
+                                <div class="leading-tight">
+                                  <p class="text-[12px] font-bold text-neutral-900">
+                                    {{ if .FechaVuelo }}{{ .FechaVuelo.Format "02/01/2006" }}{{ else }}-{{ end }}
+                                  </p>
+                                  <p class="text-[10px] font-bold text-primary-600">
+                                    {{ if .FechaVuelo }}{{ .FechaVuelo.Format "15:04" }} hrs{{ else }}-{{ end }}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <!-- Trayecto -->
+                              <div class="space-y-1">
+                                <span class="text-[8px] font-black uppercase tracking-widest text-neutral-400 block">
+                                  Trayecto
+                                </span>
+                                <p
+                                  class="text-[12px] font-black text-neutral-800 uppercase tracking-tight leading-tight flex flex-col"
+                                >
+                                  {{ range (split .GetRutaDisplay " - ") }}
+                                    <span>{{ . }}</span>
+                                  {{ end }}
+                                </p>
+                              </div>
+
+                              <!-- Billete -->
+                              <div class="space-y-1">
+                                <span class="text-[8px] font-black uppercase tracking-widest text-neutral-400 block">
+                                  N° Billete
+                                </span>
+                                <p
+                                  class="text-[12px] font-black text-neutral-900 leading-none uppercase select-all tracking-tight"
+                                >
+                                  {{ if .NumeroBillete }}{{ .NumeroBillete }}{{ else }}---{{ end }}
+                                </p>
+                              </div>
+
+                              <!-- Vuelo -->
+                              <div class="space-y-1">
+                                <span class="text-[8px] font-black uppercase tracking-widest text-neutral-400 block">Vuelo</span>
+                                <p class="text-[12px] font-black text-neutral-900 leading-none uppercase tracking-tight">
+                                  {{ if .NumeroVuelo }}{{ .NumeroVuelo }}{{ else }}---{{ end }}
+                                </p>
+                              </div>
+
+                              <!-- Costo -->
+                              <div class="space-y-px text-right">
+                                <span class="text-[8px] font-black uppercase tracking-widest text-neutral-400 block">Costo</span>
+                                <p class="text-xl font-black text-secondary-600 leading-none">
+                                  <span class="text-[10px] font-bold mr-0.5">Bs</span>
+                                  {{ printf "%.2f" .Costo }}
+                                </p>
+                              </div>
+                            </div>
+
+                            <!-- Inline Actions -->
+                            <div class="flex items-center gap-2 md:pl-6 md:border-l border-neutral-100 shrink-0">
+                              {{ if .Archivo }}
+                                <button
+                                  type="button"
+                                  hx-get="/pasajes/{{ .ID }}/preview?tipo=billete"
+                                  hx-target="#modal-container"
+                                  class="w-8 h-8 flex items-center justify-center rounded-sm bg-white border border-danger-100 text-danger-500 hover:bg-danger-600 hover:text-white transition-all shadow-sm cursor-pointer"
+                                  title="Ver PDF"
+                                >
+                                  <i class="ph ph-file-pdf text-lg font-bold"></i>
+                                </button>
+                              {{ end }}
+                              {{ if .CanBeEmitted $.AuthUser }}
+                                <button
+                                  type="button"
+                                  @click="$dispatch('pasaje-action', { action: 'emitir', id: '{{ .ID }}' })"
+                                  class="w-8 h-8 flex items-center justify-center rounded-sm bg-white border border-secondary-100 text-secondary-600 hover:bg-secondary-600 hover:text-white transition-all shadow-sm cursor-pointer"
+                                  title="Enviar"
+                                >
+                                  <i class="ph ph-paper-plane-right text-lg font-bold"></i>
+                                </button>
+                              {{ end }}
+                              {{ if .CanBeEdited $.AuthUser }}
+                                <button
+                                  type="button"
+                                  hx-get="/pasajes/{{ .ID }}/editar"
+                                  hx-target="#modal-container"
+                                  class="w-8 h-8 flex items-center justify-center rounded-sm bg-white border border-neutral-200 text-neutral-500 hover:bg-neutral-800 hover:text-white transition-all shadow-sm cursor-pointer"
+                                  title="Editar"
+                                >
+                                  <i class="ph ph-pencil-simple text-lg font-bold"></i>
+                                </button>
+                              {{ end }}
+                              {{ if .CanBeReverted $.AuthUser }}
+                                <button
+                                  type="button"
+                                  @click="$dispatch('pasaje-action', { action: 'revertir_emision', id: '{{ .ID }}' })"
+                                  class="w-8 h-8 flex items-center justify-center rounded-sm bg-white border border-warning-100 text-warning-600 hover:bg-warning-600 hover:text-white transition-all shadow-sm cursor-pointer"
+                                  title="Revertir Envío"
+                                >
+                                  <i class="ph ph-arrow-counter-clockwise text-lg font-bold"></i>
+                                </button>
+                              {{ end }}
+                              {{ if .CanBeAnulado $.AuthUser }}
+                                <button
+                                  type="button"
+                                  @click="$dispatch('pasaje-action', { action: 'anular', id: '{{ .ID }}' })"
+                                  class="w-8 h-8 flex items-center justify-center rounded-sm bg-white border border-danger-50 text-danger-300 hover:bg-danger-600 hover:text-white transition-all shadow-sm cursor-pointer"
+                                  title="Anular"
+                                >
+                                  <i class="ph ph-trash-simple text-lg font-bold"></i>
+                                </button>
+                              {{ end }}
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    {{ end }}
+                  </div>
+                </div>
               {{ end }}
             </div>
-          </div>
+          {{ else }}
+            <div class="p-10 text-center">
+              <i class="ph ph-list-bullets text-4xl text-neutral-200 mb-2"></i>
+              <p class="text-sm text-neutral-500">No hay tramos registrados en esta solicitud.</p>
+            </div>
           {{ end }}
         </div>
-        {{ else }}
-        <div class="p-10 text-center">
-          <i class="ph ph-list-bullets text-4xl text-neutral-200 mb-2"></i>
-          <p class="text-sm text-neutral-500">No hay tramos registrados en esta solicitud.</p>
-        </div>
-        {{ end }}
-      </div>
-    </div>
-
-    <!-- Request Details Card -->
-    <div class="bg-white shadow-sm rounded-xl border border-neutral-200 overflow-hidden">
-      <!-- Beneficiary Header -->
-      <div class="bg-neutral-50 px-6 py-4 border-b border-neutral-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div class="flex items-center space-x-2">
-          <div class="h-10 w-10 rounded-full bg-white border border-neutral-200 flex items-center justify-center shadow-sm">
-            <span class="text-primary font-bold text-sm">{{ printf "%.2s" .Solicitud.Usuario.GetNombreCompleto }}</span>
-          </div>
-          <div class="flex items-center gap-2">
-            <p class="text-sm font-bold text-neutral-900 uppercase tracking-tight">{{ .Solicitud.Usuario.GetNombreCompleto }}</p>
-            <span class="inline-flex items-center rounded-md bg-white border border-neutral-200 px-2 py-0.5 text-[10px] font-bold text-neutral-600">
-              {{ if .Solicitud.Usuario.IsTitular }}TITULAR{{ else }}SUPLENTE{{ end }}
-            </span>
-          </div>
-        </div>
       </div>
 
-      <div class="p-3">
-        <!-- Route Visual -->
-        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          <!-- Left Column: Meta Details Grid (Narrower) -->
-          <div class="lg:col-span-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {{ if .Solicitud.CupoDerechoItem }}
-            <!-- Quota Info -->
-            <div class="flex items-center space-x-3 p-2 rounded-lg bg-warning-50 border border-warning-100 hover:border-warning-200 transition-colors sm:col-span-2">
-              <div class="text-warning-500 bg-white p-1 rounded-md border border-warning-100 shadow-sm flex items-center justify-center">
-                <i class="ph ph-calendar-check text-lg"></i>
-              </div>
-              <div>
-                <p class="text-[10px] font-bold text-warning-800 uppercase tracking-wide leading-none mb-0.5">Información del Cupo</p>
-                <p class="text-xs font-bold text-warning-900 leading-tight">
-                  {{ .Solicitud.CupoDerechoItem.Semana }}: del {{ if .Solicitud.CupoDerechoItem.FechaDesde }}{{ .Solicitud.CupoDerechoItem.FechaDesde.Format "02/01/2006" }}{{ end
-                  }} al {{ if .Solicitud.CupoDerechoItem.FechaHasta }}{{ .Solicitud.CupoDerechoItem.FechaHasta.Format "02/01/2006" }}{{ end }}
-                </p>
-              </div>
+      <!-- Request Details Card -->
+      <div class="bg-white shadow-sm rounded-xl border border-neutral-200 overflow-hidden">
+        <!-- Beneficiary Header -->
+        <div
+          class="bg-neutral-50 px-6 py-4 border-b border-neutral-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
+        >
+          <div class="flex items-center space-x-2">
+            <div class="h-10 w-10 rounded-full bg-white border border-neutral-200 flex items-center justify-center shadow-sm">
+              <span class="text-primary font-bold text-sm">{{ printf "%.2s" .Solicitud.Usuario.GetNombreCompleto }}</span>
             </div>
-            {{ end }}
-            <!-- Departure -->
-            <div class="flex items-start space-x-3 p-3 rounded-lg bg-neutral-50 border border-neutral-100 hover:border-neutral-200 transition-colors sm:col-span-1">
-              <div class="text-neutral-400 mt-0.5 bg-white p-1.5 rounded-md border border-neutral-100 shadow-sm">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-              </div>
-              <div>
-                <p class="text-[10px] text-neutral-400 uppercase font-bold">Tipo de Solicitud</p>
-                <p class="text-sm font-medium text-neutral-800">{{ .Solicitud.GetTipoNombre }}</p>
-              </div>
-              <div>
-                <p class="text-[10px] text-neutral-400 uppercase font-bold">Tipo Itinerario</p>
-                <p class="text-sm font-medium text-neutral-800">{{ .Solicitud.GetTipoItinerarioNombre }}</p>
-              </div>
+            <div class="flex items-center gap-2">
+              <p class="text-sm font-bold text-neutral-900 uppercase tracking-tight">
+                {{ .Solicitud.Usuario.GetNombreCompleto }}
+              </p>
+              <span
+                class="inline-flex items-center rounded-md bg-white border border-neutral-200 px-2 py-0.5 text-[10px] font-bold text-neutral-600"
+              >
+                {{ if .Solicitud.Usuario.IsTitular }}TITULAR{{ else }}SUPLENTE{{ end }}
+              </span>
             </div>
+          </div>
+        </div>
 
-            <!-- Return -->
-            <div
-              class="flex items-start space-x-3 p-3 rounded-lg border hover:border-neutral-200 transition-colors sm:col-span-1 {{ if .Solicitud.GetFechaVuelta }} bg-neutral-50 border-neutral-100 {{ else }} bg-warning-50 border-warning-200 {{ end }}">
-              <div class="text-neutral-400 mt-0.5 bg-white p-1.5 rounded-md border border-neutral-100 shadow-sm">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 transform rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
+        <div class="p-3">
+          <!-- Route Visual -->
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <!-- Left Column: Meta Details Grid (Narrower) -->
+            <div class="lg:col-span-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {{ if .Solicitud.CupoDerechoItem }}
+                <!-- Quota Info -->
+                <div
+                  class="flex items-center space-x-3 p-2 rounded-lg bg-warning-50 border border-warning-100 hover:border-warning-200 transition-colors sm:col-span-2"
+                >
+                  <div
+                    class="text-warning-500 bg-white p-1 rounded-md border border-warning-100 shadow-sm flex items-center justify-center"
+                  >
+                    <i class="ph ph-calendar-check text-lg"></i>
+                  </div>
+                  <div>
+                    <p class="text-[10px] font-bold text-warning-800 uppercase tracking-wide leading-none mb-0.5">
+                      Información del Cupo
+                    </p>
+                    <p class="text-xs font-bold text-warning-900 leading-tight">
+                      {{ .Solicitud.CupoDerechoItem.Semana }}: del
+                      {{ if .Solicitud.CupoDerechoItem.FechaDesde }}
+                        {{ .Solicitud.CupoDerechoItem.FechaDesde.Format "02/01/2006" }}
+                      {{ end }}
+                      al
+                      {{ if .Solicitud.CupoDerechoItem.FechaHasta }}
+                        {{ .Solicitud.CupoDerechoItem.FechaHasta.Format "02/01/2006" }}
+                      {{ end }}
+                    </p>
+                  </div>
+                </div>
+              {{ end }}
+              <!-- Departure -->
+              <div
+                class="flex items-start space-x-3 p-3 rounded-lg bg-neutral-50 border border-neutral-100 hover:border-neutral-200 transition-colors sm:col-span-1"
+              >
+                <div class="text-neutral-400 mt-0.5 bg-white p-1.5 rounded-md border border-neutral-100 shadow-sm">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <p class="text-[10px] text-neutral-400 uppercase font-bold">Tipo de Solicitud</p>
+                  <p class="text-sm font-medium text-neutral-800">{{ .Solicitud.GetTipoNombre }}</p>
+                </div>
+                <div>
+                  <p class="text-[10px] text-neutral-400 uppercase font-bold">Tipo Itinerario</p>
+                  <p class="text-sm font-medium text-neutral-800">{{ .Solicitud.GetTipoItinerarioNombre }}</p>
+                </div>
               </div>
-              <div>
-                <p class="text-[10px] font-bold text-neutral-500 uppercase tracking-wide">Fecha Retorno</p>
-                {{ if .Solicitud.GetFechaVuelta }}
-                <p class="text-sm font-bold text-neutral-900 mt-0.5">{{ fechaHora .Solicitud.GetFechaVuelta }}</p>
-                {{ else if .Solicitud.IsSoloIda }}
-                <p class="text-sm font-bold text-neutral-400 mt-0.5">No aplica</p>
+
+              <!-- Return -->
+              <div
+                class="flex items-start space-x-3 p-3 rounded-lg border hover:border-neutral-200 transition-colors sm:col-span-1 {{ if .Solicitud.GetFechaVuelta }}
+                  bg-neutral-50 border-neutral-100
                 {{ else }}
-                <div class="flex items-center gap-1.5 mt-0.5 text-warning-700">
-                  <i class="ph ph-warning-circle text-lg"></i>
-                  <p class="text-sm font-bold">Falta programar</p>
+                  bg-warning-50 border-warning-200
+                {{ end }}"
+              >
+                <div class="text-neutral-400 mt-0.5 bg-white p-1.5 rounded-md border border-neutral-100 shadow-sm">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    class="h-5 w-5 transform rotate-180"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                    />
+                  </svg>
                 </div>
-                {{ end }}
-              </div>
-            </div>
-
-            <!-- Airline -->
-            <div class="flex items-start space-x-3 p-3 rounded-lg bg-neutral-50 border border-neutral-100 hover:border-neutral-200 transition-colors sm:col-span-2">
-              <div class="text-neutral-400 mt-0.5 bg-white p-1.5 rounded-md border border-neutral-100 shadow-sm">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path
-                    stroke-linecap="round"
-                    stroke-linejoin="round"
-                    stroke-width="2"
-                    d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div>
-                <p class="text-[10px] font-bold text-neutral-500 uppercase tracking-wide">Aerolínea Sugerida</p>
-                <p class="text-sm font-bold text-primary mt-0.5">
-                  {{ if .Solicitud.AerolineaSugerida }} {{ $found := false }} {{ range .Aerolineas }} {{ if eq .ID $.Solicitud.AerolineaSugerida }} {{ .Nombre }} {{ $found = true
-                  }} {{ end }} {{ end }} {{ if not $found }}{{ .Solicitud.AerolineaSugerida }}{{ end }} {{ else }}
-                  <span class="text-neutral-400 italic font-normal">Sin preferencia</span>
+                <div>
+                  <p class="text-[10px] font-bold text-neutral-500 uppercase tracking-wide">Fecha Retorno</p>
+                  {{ if .Solicitud.GetFechaVuelta }}
+                    <p class="text-sm font-bold text-neutral-900 mt-0.5">{{ fechaHora .Solicitud.GetFechaVuelta }}</p>
+                  {{ else if .Solicitud.IsSoloIda }}
+                    <p class="text-sm font-bold text-neutral-400 mt-0.5">No aplica</p>
+                  {{ else }}
+                    <div class="flex items-center gap-1.5 mt-0.5 text-warning-700">
+                      <i class="ph ph-warning-circle text-lg"></i>
+                      <p class="text-sm font-bold">Falta programar</p>
+                    </div>
                   {{ end }}
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <!-- Right Column: Route Visual (Wider) -->
-          <!-- Right Column: Route Visual (Asymmetric 3-Node Layout) -->
-          <div class="lg:col-span-7 flex flex-col md:flex-row items-center justify-between bg-neutral-50/50 rounded-xl border border-neutral-200 border-dashed p-6 relative overflow-hidden h-full">
-            <!-- 1. ORIGEN INICIAL (IDA) -->
-            <div class="text-center z-10 w-full md:w-auto flex-1">
-              <p class="text-[9px] font-black text-primary uppercase tracking-widest leading-none mb-2">Punto de Salida</p>
-              <div class="flex flex-col items-center">
-                <div class="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary mb-2 shadow-sm border border-primary/20">
-                  <i class="ph ph-map-pin text-2xl"></i>
                 </div>
-                <p class="text-xl font-black text-neutral-800 leading-none truncate max-w-[150px]">{{ .Solicitud.GetOrigenCiudad }}</p>
-                <span class="mt-2 px-2 py-0.5 bg-neutral-200 text-neutral-700 font-mono font-bold text-[10px] rounded border border-neutral-300">
-                  {{ .Solicitud.GetOrigenIATA }}
-                </span>
-                <p class="text-[9px] text-neutral-400 font-bold mt-1 uppercase truncate max-w-[150px]">
-                  {{ if .Solicitud.GetOrigen }}{{ .Solicitud.GetOrigen.Aeropuerto }}{{ end }}
-                </p>
               </div>
-            </div>
 
-            <!-- Flecha/Conexión 1 -->
-            <div class="flex items-center justify-center text-neutral-300 py-4 md:py-0 md:px-4">
-              <div class="hidden md:block w-8 h-px bg-neutral-200 border-t border-dashed border-neutral-300"></div>
-              <i class="ph ph-caret-right text-sm mx-2"></i>
-              <div class="hidden md:block w-8 h-px bg-neutral-200 border-t border-dashed border-neutral-300"></div>
-            </div>
-
-            <!-- 2. SEDE (LA PAZ) - PUNTO CENTRAL -->
-            <div class="text-center z-10 w-full md:w-auto px-4">
-              <div class="inline-flex flex-col items-center">
-                <div class="h-10 w-10 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-400 mb-2 border border-neutral-200 shadow-inner">
-                  <i class="ph ph-buildings text-lg"></i>
+              <!-- Airline -->
+              <div
+                class="flex items-start space-x-3 p-3 rounded-lg bg-neutral-50 border border-neutral-100 hover:border-neutral-200 transition-colors sm:col-span-2"
+              >
+                <div class="text-neutral-400 mt-0.5 bg-white p-1.5 rounded-md border border-neutral-100 shadow-sm">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="2"
+                      d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
                 </div>
-                <p class="text-xs font-black text-neutral-500 leading-none uppercase tracking-wider">SEDE CENTRAL</p>
-                <div class="text-sm font-black text-neutral-700 mt-1 uppercase">LA PAZ</div>
-                <div class="text-[10px] font-bold text-neutral-400 tracking-widest mt-1">LPB</div>
-              </div>
-            </div>
-
-             <!-- Flecha/Conexión 2 -->
-             <div class="flex items-center justify-center text-neutral-300 py-4 md:py-0 md:px-4">
-              <div class="hidden md:block w-8 h-px bg-neutral-200 border-t border-dashed border-neutral-300"></div>
-              <i class="ph ph-caret-right text-sm mx-2"></i>
-              <div class="hidden md:block w-8 h-px bg-neutral-200 border-t border-dashed border-neutral-300"></div>
-            </div>
-
-            <!-- 3. DESTINO FINAL (RETORNO) -->
-            <div class="text-center z-10 w-full md:w-auto flex-1">
-              <p class="text-[9px] font-black text-secondary uppercase tracking-widest leading-none mb-2">Punto de Retorno</p>
-              <div class="flex flex-col items-center">
-                <div class="h-12 w-12 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary mb-2 shadow-sm border border-secondary/20">
-                  <i class="ph ph-navigation-arrow text-2xl"></i>
+                <div>
+                  <p class="text-[10px] font-bold text-neutral-500 uppercase tracking-wide">Aerolínea Sugerida</p>
+                  <p class="text-sm font-bold text-primary mt-0.5">
+                    {{ if .Solicitud.AerolineaSugerida }}
+                      {{ $found := false }}
+                      {{ range .Aerolineas }}
+                        {{ if eq .ID $.Solicitud.AerolineaSugerida }}{{ .Nombre }} {{ $found = true }}{{ end }}
+                      {{ end }}
+                      {{ if not $found }}{{ .Solicitud.AerolineaSugerida }}{{ end }}
+                    {{ else }}
+                      <span class="text-neutral-400 italic font-normal">Sin preferencia</span>
+                    {{ end }}
+                  </p>
                 </div>
-                <p class="text-xl font-black text-neutral-800 leading-none truncate max-w-[150px]">{{ .Solicitud.GetDestinoCiudad }}</p>
-                <span class="mt-2 px-2 py-0.5 bg-secondary text-white font-mono font-bold text-[10px] rounded border border-secondary shadow-sm">
-                  {{ .Solicitud.GetDestinoIATA }}
-                </span>
-                <p class="text-[9px] text-neutral-400 font-bold mt-1 uppercase truncate max-w-[150px]">
-                  {{ if .Solicitud.GetDestino }}{{ .Solicitud.GetDestino.Aeropuerto }}{{ end }}
-                </p>
               </div>
             </div>
-          </div>
+
+            <!-- Right Column: Route Visual (Wider) -->
+            <!-- Right Column: Route Visual (Asymmetric 3-Node Layout) -->
+            <div
+              class="lg:col-span-7 flex flex-col md:flex-row items-center justify-between bg-neutral-50/50 rounded-xl border border-neutral-200 border-dashed p-6 relative overflow-hidden h-full"
+            >
+              <!-- 1. ORIGEN INICIAL (IDA) -->
+              <div class="text-center z-10 w-full md:w-auto flex-1">
+                <p class="text-[9px] font-black text-primary uppercase tracking-widest leading-none mb-2">Punto de Salida</p>
+                <div class="flex flex-col items-center">
+                  <div
+                    class="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary mb-2 shadow-sm border border-primary/20"
+                  >
+                    <i class="ph ph-map-pin text-2xl"></i>
+                  </div>
+                  <p class="text-xl font-black text-neutral-800 leading-none truncate max-w-[150px]">
+                    {{ .Solicitud.GetOrigenCiudad }}
+                  </p>
+                  <span
+                    class="mt-2 px-2 py-0.5 bg-neutral-200 text-neutral-700 font-mono font-bold text-[10px] rounded border border-neutral-300"
+                  >
+                    {{ .Solicitud.GetOrigenIATA }}
+                  </span>
+                  <p class="text-[9px] text-neutral-400 font-bold mt-1 uppercase truncate max-w-[150px]">
+                    {{ if .Solicitud.GetOrigen }}{{ .Solicitud.GetOrigen.Aeropuerto }}{{ end }}
+                  </p>
+                </div>
+              </div>
+
+              <!-- Flecha/Conexión 1 -->
+              <div class="flex items-center justify-center text-neutral-300 py-4 md:py-0 md:px-4">
+                <div class="hidden md:block w-8 h-px bg-neutral-200 border-t border-dashed border-neutral-300"></div>
+                <i class="ph ph-caret-right text-sm mx-2"></i>
+                <div class="hidden md:block w-8 h-px bg-neutral-200 border-t border-dashed border-neutral-300"></div>
+              </div>
+
+              <!-- 2. SEDE (LA PAZ) - PUNTO CENTRAL -->
+              <div class="text-center z-10 w-full md:w-auto px-4">
+                <div class="inline-flex flex-col items-center">
+                  <div
+                    class="h-10 w-10 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-400 mb-2 border border-neutral-200 shadow-inner"
+                  >
+                    <i class="ph ph-buildings text-lg"></i>
+                  </div>
+                  <p class="text-xs font-black text-neutral-500 leading-none uppercase tracking-wider">SEDE CENTRAL</p>
+                  <div class="text-sm font-black text-neutral-700 mt-1 uppercase">LA PAZ</div>
+                  <div class="text-[10px] font-bold text-neutral-400 tracking-widest mt-1">LPB</div>
+                </div>
+              </div>
+
+              <!-- Flecha/Conexión 2 -->
+              <div class="flex items-center justify-center text-neutral-300 py-4 md:py-0 md:px-4">
+                <div class="hidden md:block w-8 h-px bg-neutral-200 border-t border-dashed border-neutral-300"></div>
+                <i class="ph ph-caret-right text-sm mx-2"></i>
+                <div class="hidden md:block w-8 h-px bg-neutral-200 border-t border-dashed border-neutral-300"></div>
+              </div>
+
+              <!-- 3. DESTINO FINAL (RETORNO) -->
+              <div class="text-center z-10 w-full md:w-auto flex-1">
+                <p class="text-[9px] font-black text-secondary uppercase tracking-widest leading-none mb-2">Punto de Retorno</p>
+                <div class="flex flex-col items-center">
+                  <div
+                    class="h-12 w-12 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary mb-2 shadow-sm border border-secondary/20"
+                  >
+                    <i class="ph ph-navigation-arrow text-2xl"></i>
+                  </div>
+                  <p class="text-xl font-black text-neutral-800 leading-none truncate max-w-[150px]">
+                    {{ .Solicitud.GetDestinoCiudad }}
+                  </p>
+                  <span
+                    class="mt-2 px-2 py-0.5 bg-secondary text-white font-mono font-bold text-[10px] rounded border border-secondary shadow-sm"
+                  >
+                    {{ .Solicitud.GetDestinoIATA }}
+                  </span>
+                  <p class="text-[9px] text-neutral-400 font-bold mt-1 uppercase truncate max-w-[150px]">
+                    {{ if .Solicitud.GetDestino }}{{ .Solicitud.GetDestino.Aeropuerto }}{{ end }}
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </div>
-</div>
 
-{{ template "layout_footer" . }} {{ end }} {{ define "footer_scripts" }}
-<script>
-  (function () {
-    document.addEventListener("pasaje-action", function (e) {
-      const { action, id } = e.detail;
+  {{ template "layout_footer" . }}
+{{ end }}
+{{ define "footer_scripts" }}
+  <script>
+    (function () {
+      document.addEventListener("pasaje-action", function (e) {
+        const { action, id } = e.detail;
 
-      let title, text, confirmButtonText, confirmButtonColor, newStatus;
+        let title, text, confirmButtonText, confirmButtonColor, newStatus;
 
-      if (action === "emitir") {
+        if (action === "emitir") {
+          Swal.fire({
+            title: "Enviar Pasaje?",
+            text: "Confirma que los datos son correctos. Se enviará la notificación de emisión.",
+            icon: "info",
+            showCancelButton: true,
+            confirmButtonColor: "#893026", // primary.DEFAULT
+            cancelButtonColor: "#6b7280",
+            confirmButtonText: "Sí, emitir",
+            cancelButtonText: "Cancelar",
+            customClass: {
+              popup: "rounded-xl font-sans",
+              title: "text-lg font-bold text-neutral-900",
+              htmlContainer: "text-sm text-neutral-600",
+              confirmButton: "rounded-lg px-4 py-2 text-sm font-medium shadow-sm",
+              cancelButton:
+                "rounded-lg px-4 py-2 text-sm font-medium shadow-sm hover:bg-neutral-100 text-neutral-700 bg-white border border-neutral-300",
+            },
+          }).then(function (result) {
+            if (result.isConfirmed) {
+              updatePasajeStatus(id, "EMITIDO");
+            }
+          });
+          return;
+        }
+
+        switch (action) {
+          case "anular":
+            title = "¿Anular Pasaje?";
+            text = "Esta acción no se puede deshacer.";
+            confirmButtonText = "Sí, anular";
+            confirmButtonColor = "#dc2626"; // danger.DEFAULT
+            newStatus = "ANULADO";
+            break;
+          case "revertir_emision":
+            title = "¿Revertir Envío?";
+            text = "El pasaje volverá a estado REGISTRADO y podrá ser editado.";
+            confirmButtonText = "Sí, revertir";
+            confirmButtonColor = "#d97706"; // warning.DEFAULT
+            newStatus = "REGISTRADO";
+            break;
+          case "validar_uso_ok":
+            title = "¿Aprobar Uso?";
+            text = "Confirmar que el pasaje ha sido usado correctamente.";
+            confirmButtonText = "Sí, aprobar";
+            confirmButtonColor = "#10b981"; // Success
+            newStatus = "USADO";
+            break;
+          case "validar_uso_no":
+            title = "¿Rechazar Uso?";
+            text = "El beneficiario deberá subir el documento nuevamente.";
+            confirmButtonText = "Sí, rechazar";
+            confirmButtonColor = "#ef4444"; // Danger
+            newStatus = "USO_RECHAZADO";
+            break;
+          default:
+            return;
+        }
+
         Swal.fire({
-          title: "Enviar Pasaje?",
-          text: "Confirma que los datos son correctos. Se enviará la notificación de emisión.",
-          icon: "info",
+          title: title,
+          text: text,
+          icon: "warning",
           showCancelButton: true,
-          confirmButtonColor: "#893026", // primary.DEFAULT
+          confirmButtonColor: confirmButtonColor,
           cancelButtonColor: "#6b7280",
-          confirmButtonText: "Sí, emitir",
+          confirmButtonText: confirmButtonText,
           cancelButtonText: "Cancelar",
           customClass: {
             popup: "rounded-xl font-sans",
             title: "text-lg font-bold text-neutral-900",
             htmlContainer: "text-sm text-neutral-600",
             confirmButton: "rounded-lg px-4 py-2 text-sm font-medium shadow-sm",
-            cancelButton: "rounded-lg px-4 py-2 text-sm font-medium shadow-sm hover:bg-neutral-100 text-neutral-700 bg-white border border-neutral-300",
+            cancelButton:
+              "rounded-lg px-4 py-2 text-sm font-medium shadow-sm hover:bg-neutral-100 text-neutral-700 bg-white border border-neutral-300",
           },
         }).then(function (result) {
           if (result.isConfirmed) {
-            updatePasajeStatus(id, "EMITIDO");
+            updatePasajeStatus(id, newStatus);
           }
         });
-        return;
-      }
-
-      switch (action) {
-        case "anular":
-          title = "¿Anular Pasaje?";
-          text = "Esta acción no se puede deshacer.";
-          confirmButtonText = "Sí, anular";
-          confirmButtonColor = "#dc2626"; // danger.DEFAULT
-          newStatus = "ANULADO";
-          break;
-        case "revertir_emision":
-          title = "¿Revertir Envío?";
-          text = "El pasaje volverá a estado REGISTRADO y podrá ser editado.";
-          confirmButtonText = "Sí, revertir";
-          confirmButtonColor = "#d97706"; // warning.DEFAULT
-          newStatus = "REGISTRADO";
-          break;
-        case "validar_uso_ok":
-          title = "¿Aprobar Uso?";
-          text = "Confirmar que el pasaje ha sido usado correctamente.";
-          confirmButtonText = "Sí, aprobar";
-          confirmButtonColor = "#10b981"; // Success
-          newStatus = "USADO";
-          break;
-        case "validar_uso_no":
-          title = "¿Rechazar Uso?";
-          text = "El beneficiario deberá subir el documento nuevamente.";
-          confirmButtonText = "Sí, rechazar";
-          confirmButtonColor = "#ef4444"; // Danger
-          newStatus = "USO_RECHAZADO";
-          break;
-        default:
-          return;
-      }
-
-      Swal.fire({
-        title: title,
-        text: text,
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonColor: confirmButtonColor,
-        cancelButtonColor: "#6b7280",
-        confirmButtonText: confirmButtonText,
-        cancelButtonText: "Cancelar",
-        customClass: {
-          popup: "rounded-xl font-sans",
-          title: "text-lg font-bold text-neutral-900",
-          htmlContainer: "text-sm text-neutral-600",
-          confirmButton: "rounded-lg px-4 py-2 text-sm font-medium shadow-sm",
-          cancelButton: "rounded-lg px-4 py-2 text-sm font-medium shadow-sm hover:bg-neutral-100 text-neutral-700 bg-white border border-neutral-300",
-        },
-      }).then(function (result) {
-        if (result.isConfirmed) {
-          updatePasajeStatus(id, newStatus);
-        }
       });
-    });
 
-    function updatePasajeStatus(id, status, file = null) {
-      const formData = new FormData();
-      formData.append("id", id);
-      formData.append("status", status);
-      if (file) {
-        formData.append("archivo_ticket", file);
-      }
+      function updatePasajeStatus(id, status, file = null) {
+        const formData = new FormData();
+        formData.append("id", id);
+        formData.append("status", status);
+        if (file) {
+          formData.append("archivo_ticket", file);
+        }
 
-      fetch("/pasajes/update-status", {
-        method: "POST",
-        body: formData,
-        headers: {
-          "X-Requested-With": "XMLHttpRequest",
-        },
-      })
-        .then(function (response) {
-          if (response.ok) {
-            window.location.reload();
-          } else {
+        fetch("/pasajes/update-status", {
+          method: "POST",
+          body: formData,
+          headers: {
+            "X-Requested-With": "XMLHttpRequest",
+          },
+        })
+          .then(function (response) {
+            if (response.ok) {
+              window.location.reload();
+            } else {
+              Swal.fire({
+                title: "Error",
+                text: "No se pudo actualizar el estado del pasaje.",
+                icon: "error",
+                confirmButtonColor: "#ef4444",
+              });
+            }
+          })
+          .catch(function (error) {
+            console.error("Error:", error);
             Swal.fire({
-              title: "Error",
-              text: "No se pudo actualizar el estado del pasaje.",
+              title: "Error de Conexión",
+              text: "Verifique su conexión a internet.",
               icon: "error",
               confirmButtonColor: "#ef4444",
             });
-          }
-        })
-        .catch(function (error) {
-          console.error("Error:", error);
-          Swal.fire({
-            title: "Error de Conexión",
-            text: "Verifique su conexión a internet.",
-            icon: "error",
-            confirmButtonColor: "#ef4444",
           });
-        });
-    }
-  })();
-</script>
+      }
+    })();
+  </script>
 {{ end }}

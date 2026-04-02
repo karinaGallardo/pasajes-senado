@@ -802,12 +802,20 @@ func (s *SolicitudService) Update(ctx context.Context, solicitud *models.Solicit
 	})
 }
 
-func (s *SolicitudService) Delete(ctx context.Context, id string) error {
+func (s *SolicitudService) Delete(ctx context.Context, id string, deletedBy string) error {
 	return s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
 		itemRepoTx := s.itemRepo.WithTx(tx)
 
 		solicitud, err := repoTx.FindByID(ctx, id)
-		if err == nil && solicitud != nil && solicitud.CupoDerechoItemID != nil {
+		if err != nil {
+			return err
+		}
+
+		if !solicitud.IsDeletableState() {
+			return errors.New("solo se pueden eliminar solicitudes en estado SOLICITADO. El estado actual es: " + solicitud.GetEstado())
+		}
+
+		if solicitud.CupoDerechoItemID != nil {
 			item, err := itemRepoTx.FindByID(ctx, *solicitud.CupoDerechoItemID)
 			if err == nil && item != nil {
 				item.EstadoCupoDerechoCodigo = "DISPONIBLE"
@@ -817,7 +825,7 @@ func (s *SolicitudService) Delete(ctx context.Context, id string) error {
 			}
 		}
 
-		return repoTx.Delete(ctx, id)
+		return repoTx.Delete(ctx, id, deletedBy)
 	})
 }
 

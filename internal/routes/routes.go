@@ -60,6 +60,7 @@ func SetupRoutes(r *gin.Engine, container *app.Container, loginLimiter *middlewa
 		protected.GET("/solicitudes/derecho/table", solicitudCtrl.TableDerecho)
 		protected.GET("/solicitudes/oficial", solicitudCtrl.IndexOficial)
 		protected.GET("/solicitudes/oficial/table", solicitudCtrl.TableOficial)
+		protected.DELETE("/solicitudes/:id", solicitudCtrl.Delete)
 		protected.GET("/solicitudes/pendientes-descargo", solicitudCtrl.IndexPendientesDescargo)
 		protected.GET("/solicitudes/pendientes-descargo/table", solicitudCtrl.TablePendientesDescargo)
 		protected.GET("/api/solicitudes/pending-stats", solicitudCtrl.GetPendingStats)

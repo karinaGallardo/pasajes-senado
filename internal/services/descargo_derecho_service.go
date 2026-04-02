@@ -37,25 +37,10 @@ func (s *DescargoDerechoService) GetShowData(ctx context.Context, id string) (*d
 
 	// 1. Obtener tramos unificados (Originales + Repros)
 	tramos := descargo.Tramos
-	if descargo.Solicitud != nil {
-		tramos = s.syncVirtualItinerary(tramos, descargo.Solicitud)
-	}
 
-	// 2. Agrupar por Billete (como llave de itinerario) para la UI
-	itinerariosMap := make(map[string]*dtos.ItinerarioTramos)
-	var itinerariosOrder []string
-
+	// 2. Clasificar en IDA y VUELTA
+	var itinerarioIda, itinerarioVuelta []dtos.TramoView
 	for _, item := range tramos {
-		key := item.Billete
-		if key == "" {
-			key = "SIN_BILLETE"
-		}
-
-		if _, ok := itinerariosMap[key]; !ok {
-			itinerariosMap[key] = &dtos.ItinerarioTramos{Billete: item.Billete}
-			itinerariosOrder = append(itinerariosOrder, key)
-		}
-
 		// Transform models to TramoView
 		dateStr := ""
 		if item.Fecha != nil {
@@ -90,20 +75,10 @@ func (s *DescargoDerechoService) GetShowData(ctx context.Context, id string) (*d
 			SolicitudItemID: utils.DerefString(item.SolicitudItemID),
 		}
 
-		tg := itinerariosMap[key]
-		tg.Tramos = append(tg.Tramos, view)
-	}
-
-	// 3. Clasificar en IDA y VUELTA
-	var itinerarioIda, itinerarioVuelta []dtos.ItinerarioTramos
-	for _, key := range itinerariosOrder {
-		tg := itinerariosMap[key]
-
-		// Clasificar por el tipo del primer tramo
-		if len(tg.Tramos) > 0 && strings.HasPrefix(string(tg.Tramos[0].Tipo), "VUELTA") {
-			itinerarioVuelta = append(itinerarioVuelta, *tg)
+		if strings.HasPrefix(string(item.Tipo), "VUELTA_") {
+			itinerarioVuelta = append(itinerarioVuelta, view)
 		} else {
-			itinerarioIda = append(itinerarioIda, *tg)
+			itinerarioIda = append(itinerarioIda, view)
 		}
 	}
 
@@ -114,55 +89,6 @@ func (s *DescargoDerechoService) GetShowData(ctx context.Context, id string) (*d
 	}, nil
 }
 
-func (s *DescargoDerechoService) syncVirtualItinerary(
-	actuales []models.DescargoTramo,
-	solicitud *models.Solicitud,
-) []models.DescargoTramo {
-	existingKeys := make(map[string]bool)
-	for _, it := range actuales {
-		key := fmt.Sprintf("%s_%d_%s", it.Tipo, it.Orden, strings.ToUpper(it.Billete))
-		existingKeys[key] = true
-	}
-
-	for _, sItem := range solicitud.Items {
-		tipoBase := string(sItem.Tipo)
-		for _, p := range sItem.Pasajes {
-			if !p.IsDischargeable() {
-				continue
-			}
-
-			tipoTarget := tipoBase + "_ORIGINAL"
-
-			tramosVuelo := p.GetTramosRuta()
-			for i := range tramosVuelo {
-				key := fmt.Sprintf("%s_%d_%s", tipoTarget, i, strings.ToUpper(p.NumeroBillete))
-				if !existingKeys[key] {
-					tVuelo := p.FechaVuelo
-					actuales = append(actuales, models.DescargoTramo{
-						Tipo:       models.TipoDescargoTramo(tipoTarget),
-						RutaID:     p.RutaID,
-						RutaPasaje: p.RutaPasaje,
-						Fecha:      &tVuelo,
-						Billete:    p.NumeroBillete,
-						Orden:      i,
-					})
-					existingKeys[key] = true
-				}
-			}
-		}
-	}
-	return actuales
-}
-
-func (s *DescargoDerechoService) sortTramos(tramos []models.DescargoTramo) {
-	for i := range tramos {
-		for j := i + 1; j < len(tramos); j++ {
-			if tramos[i].Orden > tramos[j].Orden {
-				tramos[i], tramos[j] = tramos[j], tramos[i]
-			}
-		}
-	}
-}
 
 func (s *DescargoDerechoService) AutoCreateFromSolicitud(ctx context.Context, solicitud *models.Solicitud, userID string) (*models.Descargo, error) {
 	// Verificar si ya existe
@@ -268,8 +194,20 @@ func (s *DescargoDerechoService) UpdateDerecho(ctx context.Context, id string, r
 
 	// 2. Data Cleansing & Mapping
 	existingMap := make(map[string]models.DescargoTramo)
+	maxOrdenIda := -1
+	maxOrdenVuelta := -1
+
 	for _, d := range descargo.Tramos {
 		existingMap[d.ID] = d
+		if strings.HasPrefix(string(d.Tipo), "VUELTA") {
+			if d.Orden > maxOrdenVuelta {
+				maxOrdenVuelta = d.Orden
+			}
+		} else {
+			if d.Orden > maxOrdenIda {
+				maxOrdenIda = d.Orden
+			}
+		}
 	}
 
 	// 3. Process Structured Itinerary Rows
@@ -293,9 +231,9 @@ func (s *DescargoDerechoService) UpdateDerecho(ctx context.Context, id string, r
 		rutaID := utils.NilIfEmpty(row.RutaID)
 		pasajeID := utils.NilIfEmpty(row.PasajeID)
 		solItemID := utils.NilIfEmpty(row.SolicitudItemID)
+		tipoRow := models.TipoDescargoTramo(row.Tipo)
 
 		// 4. Domain Rule: Data Protection for issued segments
-		tipoRow := models.TipoDescargoTramo(row.Tipo)
 		if idRow != "" {
 			if original, ok := existingMap[idRow]; ok && original.PasajeID != nil {
 				// Fields from a pre-issued ticket segment are protected (read-only for business integrity)
@@ -307,7 +245,19 @@ func (s *DescargoDerechoService) UpdateDerecho(ctx context.Context, id string, r
 			}
 		}
 
-		// 5. Atomic Entity Assembly
+		// 5. Logical Ordering for new manual segments
+		ordenRow := row.Orden
+		if idRow == "" {
+			if strings.HasPrefix(string(tipoRow), "VUELTA") {
+				maxOrdenVuelta++
+				ordenRow = maxOrdenVuelta
+			} else {
+				maxOrdenIda++
+				ordenRow = maxOrdenIda
+			}
+		}
+
+		// 6. Atomic Entity Assembly
 		det := models.DescargoTramo{
 			DescargoID:        id,
 			Tipo:              tipoRow,
@@ -322,7 +272,7 @@ func (s *DescargoDerechoService) UpdateDerecho(ctx context.Context, id string, r
 			EsModificacion:    row.EsModificacion,
 			MontoDevolucion:   row.MontoDevolucion,
 			Moneda:            row.Moneda,
-			Orden:             row.Orden,
+			Orden:             ordenRow,
 		}
 		det.ID = idRow
 		tramosProcesados = append(tramosProcesados, det)

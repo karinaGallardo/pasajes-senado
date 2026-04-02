@@ -12,36 +12,36 @@ import (
 // Container holds all instantiated services and controllers
 type Container struct {
 	// Services
-	CupoService           *services.CupoService
-	UsuarioService        *services.UsuarioService
-	ReportService         *services.ReportService
-	ConfiguracionService  *services.ConfiguracionService
-	SolicitudService      *services.SolicitudService
-	CompensacionService   *services.CompensacionService
-	DescargoService       *services.DescargoService
+	CupoService            *services.CupoService
+	UsuarioService         *services.UsuarioService
+	ReportService          *services.ReportService
+	ConfiguracionService   *services.ConfiguracionService
+	SolicitudService       *services.SolicitudService
+	CompensacionService    *services.CompensacionService
+	DescargoService        *services.DescargoService
 	DescargoDerechoService *services.DescargoDerechoService
 	DescargoOficialService *services.DescargoOficialService
-	RolService            *services.RolService
-	DestinoService        *services.DestinoService
-	OrganigramaService    *services.OrganigramaService
-	PeopleService         *services.PeopleService
-	TipoSolicitudService  *services.TipoSolicitudService
-	AmbitoService         *services.AmbitoService
-	AerolineaService      *services.AerolineaService
-	AgenciaService        *services.AgenciaService
-	TipoItinerarioService *services.TipoItinerarioService
-	RutaService           *services.RutaService
-	AuthService           *services.AuthService
-	PasajeService         *services.PasajeService
-	ViaticoService        *services.ViaticoService
-	CatViaticoService     *services.CategoriaViaticoService
-	NotificationService   *services.NotificationService
-	EmailService          *services.EmailService
-	AlertaService         *services.AlertaService
-	ConceptoService       *services.ConceptoService
-	EstadoPasajeService   *services.EstadoPasajeService
-	AuditService          *services.AuditService
-	PushService           *services.PushService
+	RolService             *services.RolService
+	DestinoService         *services.DestinoService
+	OrganigramaService     *services.OrganigramaService
+	PeopleService          *services.PeopleService
+	TipoSolicitudService   *services.TipoSolicitudService
+	AmbitoService          *services.AmbitoService
+	AerolineaService       *services.AerolineaService
+	AgenciaService         *services.AgenciaService
+	TipoItinerarioService  *services.TipoItinerarioService
+	RutaService            *services.RutaService
+	AuthService            *services.AuthService
+	PasajeService          *services.PasajeService
+	ViaticoService         *services.ViaticoService
+	CatViaticoService      *services.CategoriaViaticoService
+	NotificationService    *services.NotificationService
+	EmailService           *services.EmailService
+	AlertaService          *services.AlertaService
+	ConceptoService        *services.ConceptoService
+	EstadoPasajeService    *services.EstadoPasajeService
+	AuditService           *services.AuditService
+	PushService            *services.PushService
 
 	// Controllers
 	CupoController             *controllers.CupoController
@@ -261,36 +261,36 @@ func NewContainer(db *gorm.DB, mongoRRHH *mongo.Database, mongoChat *mongo.Datab
 
 	return &Container{
 		// Services
-		CupoService:           cupoService,
-		UsuarioService:        userService,
-		ReportService:         reportService,
-		ConfiguracionService:  configService,
-		SolicitudService:      solicitudService,
-		CompensacionService:   compensacionService,
-		DescargoService:       descargoService,
+		CupoService:            cupoService,
+		UsuarioService:         userService,
+		ReportService:          reportService,
+		ConfiguracionService:   configService,
+		SolicitudService:       solicitudService,
+		CompensacionService:    compensacionService,
+		DescargoService:        descargoService,
 		DescargoDerechoService: descargoDerechoService,
 		DescargoOficialService: descargoOficialService,
-		RolService:            rolService,
-		DestinoService:        destinoService,
-		OrganigramaService:    organigramaService,
-		PeopleService:         peopleService,
-		TipoSolicitudService:  tipoSolicitudService,
-		AmbitoService:         ambitoService,
-		AerolineaService:      aerolineaService,
-		AgenciaService:        agenciaService,
-		TipoItinerarioService: tipoItinerarioService,
-		RutaService:           rutaService,
-		AuthService:           authService,
-		PasajeService:         pasajeService,
-		ViaticoService:        viaticoService,
-		CatViaticoService:     catViaticoService,
-		NotificationService:   notifService,
-		EmailService:          emailService,
-		AlertaService:         alertaService,
-		ConceptoService:       conceptoService,
-		EstadoPasajeService:   estadoPasajeService,
-		AuditService:          auditService,
-		PushService:           pushService,
+		RolService:             rolService,
+		DestinoService:         destinoService,
+		OrganigramaService:     organigramaService,
+		PeopleService:          peopleService,
+		TipoSolicitudService:   tipoSolicitudService,
+		AmbitoService:          ambitoService,
+		AerolineaService:       aerolineaService,
+		AgenciaService:         agenciaService,
+		TipoItinerarioService:  tipoItinerarioService,
+		RutaService:            rutaService,
+		AuthService:            authService,
+		PasajeService:          pasajeService,
+		ViaticoService:         viaticoService,
+		CatViaticoService:      catViaticoService,
+		NotificationService:    notifService,
+		EmailService:           emailService,
+		AlertaService:          alertaService,
+		ConceptoService:        conceptoService,
+		EstadoPasajeService:    estadoPasajeService,
+		AuditService:           auditService,
+		PushService:            pushService,
 
 		// Controllers
 		CupoController:             cupoCtrl,

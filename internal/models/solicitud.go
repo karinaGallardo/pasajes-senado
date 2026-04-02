@@ -419,10 +419,12 @@ func (s Solicitud) CanEdit(user *Usuario) bool {
 	return s.CanView(user)
 }
 
+func (s Solicitud) IsDeletableState() bool {
+	return s.GetEstado() == "SOLICITADO"
+}
+
 func (s Solicitud) CanDelete(user *Usuario) bool {
-	estado := s.GetEstado()
-	// Only creators/admins can delete and only in SOLICITADO state
-	if estado != "SOLICITADO" {
+	if !s.IsDeletableState() {
 		return false
 	}
 	if user.IsAdminOrResponsable() {

@@ -270,7 +270,7 @@ func (r *DescargoRepository) Update(ctx context.Context, descargo *models.Descar
 							return err
 						}
 					}
-					// Si HasChanges es false, saltamos el UPDATE por completo. 
+					// Si HasChanges es false, saltamos el UPDATE por completo.
 					// Así mantenemos el updated_at original.
 				}
 			}

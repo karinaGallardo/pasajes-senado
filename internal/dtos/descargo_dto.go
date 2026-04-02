@@ -155,8 +155,8 @@ type ItinerarioTramos struct {
 // DescargoShowData contiene toda la información necesaria para renderizar el detalle del descargo
 type DescargoShowData struct {
 	Descargo *models.Descargo
-	Ida      []ItinerarioTramos
-	Vuelta   []ItinerarioTramos
+	Ida      []TramoView
+	Vuelta   []TramoView
 }
 
 // DescargoEditData contiene la información estructurada para el formulario de edición
