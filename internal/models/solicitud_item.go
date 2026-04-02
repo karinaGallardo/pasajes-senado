@@ -142,7 +142,8 @@ func (t SolicitudItem) CanBeApproved(user *Usuario) bool {
 	if user == nil {
 		return false
 	}
-	return user.IsAdminOrResponsable() && t.GetEstado() == "SOLICITADO"
+	st := t.GetEstado()
+	return user.IsAdminOrResponsable() && (st == "SOLICITADO" || st == "PENDIENTE")
 }
 
 func (t SolicitudItem) CanBeRejected(user *Usuario) bool {
@@ -158,7 +159,12 @@ func (t SolicitudItem) CanBeReverted(user *Usuario) bool {
 }
 
 func (t SolicitudItem) CanAssignPasaje(user *Usuario) bool {
-	return t.CanBeReverted(user)
+	if user == nil {
+		return false
+	}
+	st := t.GetEstado()
+	// Un encargado/admin puede asignar pasaje si el tramo está APROBADO y no hay uno activo.
+	return user.IsAdminOrResponsable() && st == "APROBADO" && !t.HasActivePasaje()
 }
 
 func (t SolicitudItem) GetOrigenDisplay() string {

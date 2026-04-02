@@ -1,526 +1,632 @@
 {{ define "solicitud/oficial/modal_edit" }}
 <script type="application/json" id="tramos-edit-inicial">
   {{ .TramosJSON }}
-</script>
-<script type="application/json" id="edit-form-data">
+</script><script type="application/json" id="edit-form-data">
   {{ .EditFormData }}
-</script>
-<script type="application/json" id="destinos-edit-data">
+</script><script type="application/json" id="destinos-edit-data">
   {{ .DestinosJSON }}
 </script>
 
-<div
-  x-data="oficialFormHandlerEdit()"
-  x-init="init()"
-  x-show="open"
-  class="fixed inset-0 z-50 overflow-y-auto"
-  aria-labelledby="modal-title"
-  role="dialog"
-  aria-modal="true"
-  style="display: none">
-  <!-- Backdrop -->
-  <div x-show="open" class="fixed inset-0 bg-neutral-500 bg-opacity-75 transition-opacity"></div>
+  <div
+    x-data="oficialFormHandlerEdit()"
+    x-init="init()"
+    x-show="open"
+    class="fixed inset-0 z-50 overflow-y-auto"
+    aria-labelledby="modal-title"
+    role="dialog"
+    aria-modal="true"
+    style="display: none"
+  >
+    <!-- Backdrop -->
+    <div x-show="open" class="fixed inset-0 bg-neutral-500 bg-opacity-75 transition-opacity"></div>
 
-  <div class="fixed inset-0 z-10 overflow-y-auto">
-    <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
-      <div
-        x-show="open"
-        x-transition:enter="ease-out duration-300"
-        x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-        x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
-        x-transition:leave="ease-in duration-200"
-        x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
-        x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-        class="relative transform rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-6xl">
-        <form
-          x-ref="form"
-          @submit.prevent="submitForm"
-          hx-post="/solicitudes/oficial/{{ .Solicitud.ID }}/actualizar"
-          hx-target="#modal-container"
-          hx-swap="innerHTML"
-          @htmx:after-request="loading = false; if(event.detail.xhr.status === 200) isUpdated = true"
-          method="POST"
-          autocomplete="off">
-          <input type="hidden" name="tramos_json" id="tramos_json_input_edit" value="" />
+    <div class="fixed inset-0 z-10 overflow-y-auto">
+      <div class="flex min-h-full items-end justify-center p-4 text-center sm:items-center sm:p-0">
+        <div
+          x-show="open"
+          x-transition:enter="ease-out duration-300"
+          x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+          x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+          x-transition:leave="ease-in duration-200"
+          x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+          x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+          class="relative transform rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-6xl"
+        >
+          <form
+            x-ref="form"
+            hx-post="/solicitudes/oficial/{{ .Solicitud.ID }}/actualizar"
+            hx-target="#modal-container"
+            hx-swap="innerHTML"
+            @htmx:config-request="syncTramos($event)"
+            @htmx:after-request="loading = false; if(event.detail.xhr.status === 200) isUpdated = true"
+            @submit="loading = true"
+            method="POST"
+            autocomplete="off"
+          >
+            <input type="hidden" name="tramos_json" id="tramos_json_input_edit" value="" />
 
-          <!-- Header -->
-          <div class="bg-white px-4 pt-5 pb-5 sm:p-6 border-b border-neutral-200 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-            <div class="flex items-center space-x-4">
-              <div class="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary shadow-sm border border-primary/20">
-                <i class="ph ph-note-pencil text-3xl"></i>
-              </div>
-              <div class="text-left">
-                <div class="flex items-center gap-3 mb-1">
-                  <h3 class="text-xl font-black text-neutral-900 leading-none tracking-tighter">Editar Solicitud Oficial</h3>
-                  <span class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-neutral-100 text-neutral-600 border border-neutral-200">
-                    {{ .Solicitud.Codigo }}
-                  </span>
-                </div>
-                <div class="flex items-center gap-2 flex-wrap">
-                  <span class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-primary-50 text-primary-700 border border-primary-100">
-                    {{ .Solicitud.GetTipoNombre }}
-                  </span>
-                  {{ if .Solicitud.EstadoSolicitud }}
-                  <span class="px-2 py-0.5 inline-flex items-center gap-1 text-[9px] font-black rounded-full border {{ .Solicitud.GetStatusBadgeClass }}">
-                    <i class="{{ .Solicitud.EstadoSolicitud.Icon }}"></i>
-                    {{ .Solicitud.EstadoSolicitud.Nombre }}
-                  </span>
-                  {{ end }}
-                  <span class="h-1 w-1 rounded-full bg-neutral-300 mx-1"></span>
-                  <p class="text-xs text-neutral-500 font-bold uppercase tracking-tight">{{ .Solicitud.Usuario.GetNombreCompleto }}</p>
-                </div>
-              </div>
-            </div>
-
-            <div class="flex gap-2">
-              <button
-                type="submit"
-                :disabled="loading"
-                class="bg-primary text-white px-4 py-2 rounded-md font-bold text-sm shadow-sm hover:bg-primary-700 disabled:opacity-50 transition-colors">
-                <span x-show="!loading">Guardar Cambios</span>
-                <span x-show="loading">Procesando...</span>
-              </button>
-              <button
-                @click="isUpdated ? window.location.reload() : open = false"
-                type="button"
-                class="bg-white border border-neutral-300 text-neutral-700 px-4 py-2 rounded-md font-bold text-sm hover:bg-neutral-50 transition-all">
-                Cancelar / Cerrar
-              </button>
-            </div>
-          </div>
-
-          <div class="px-6 py-6 space-y-6 bg-neutral-50/30">
-            {{ if .SuccessMessage }}
+            <!-- Header -->
             <div
-              x-data="{ show: true }"
-              x-show="show"
-              x-init="setTimeout(() => show = false, 5000)"
-              class="mb-4 p-3 bg-success-50 border border-success-200 rounded-lg flex items-center justify-between gap-3">
-              <div class="flex items-center gap-3">
-                <i class="ph ph-check-circle text-success-500 text-xl"></i>
-                <span class="text-sm font-bold text-success-600">{{ .SuccessMessage }}</span>
-              </div>
-              <button @click="show = false" type="button" class="text-success-400 hover:text-success-600">
-                <i class="ph ph-x text-sm"></i>
-              </button>
-            </div>
-            {{ end }} {{ if .ErrorMessage }}
-            <div class="mb-4 p-3 bg-danger-50 border border-danger-200 rounded-lg flex items-center gap-3">
-              <i class="ph ph-warning-circle text-danger-500 text-xl"></i>
-              <span class="text-sm font-bold text-danger-600">{{ .ErrorMessage }}</span>
-            </div>
-            {{ end }}
-            <!-- 1. GENERAL INFO SECTION -->
-            <div class="bg-white rounded-xl shadow-sm border border-neutral-200 p-4">
-              <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                <!-- Row 1: Quad inputs -->
-                <div class="space-y-1">
-                  <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">Tipo de Solicitud</label>
-                  <select
-                    name="tipo_solicitud_codigo"
-                    x-model="tipo"
-                    required
-                    class="w-full rounded-md border-neutral-300 text-sm focus:ring-primary focus:border-primary transition-all">
-                    {{ range .Tipos }}
-                    <option value="{{ .Codigo }}">{{ .Nombre }}</option>
-                    {{ end }}
-                  </select>
+              class="bg-white px-4 pt-5 pb-5 sm:p-6 border-b border-neutral-200 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4"
+            >
+              <div class="flex items-center space-x-4">
+                <div
+                  class="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary shadow-sm border border-primary/20"
+                >
+                  <i class="ph ph-note-pencil text-3xl"></i>
                 </div>
-                <div class="space-y-1">
-                  <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">Ámbito</label>
-                  <select
-                    name="ambito_viaje_codigo"
-                    x-model="ambito"
-                    required
-                    class="w-full rounded-md border-neutral-300 text-sm focus:ring-primary focus:border-primary transition-all">
-                    <option value="">Seleccione...</option>
-                    {{ range .Ambitos }}
-                    <option value="{{ .Codigo }}">{{ .Nombre }}</option>
+                <div class="text-left">
+                  <div class="flex items-center gap-3 mb-1">
+                    <h3 class="text-xl font-black text-neutral-900 leading-none tracking-tighter">Editar Solicitud Oficial</h3>
+                    <span
+                      class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-neutral-100 text-neutral-600 border border-neutral-200"
+                    >
+                      {{ .Solicitud.Codigo }}
+                    </span>
+                  </div>
+                  <div class="flex items-center gap-2 flex-wrap">
+                    <span
+                      class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-primary-50 text-primary-700 border border-primary-100"
+                    >
+                      {{ .Solicitud.GetTipoNombre }}
+                    </span>
+                    {{ if .Solicitud.EstadoSolicitud }}
+                      <span
+                        class="px-2 py-0.5 inline-flex items-center gap-1 text-[9px] font-black rounded-full border {{ .Solicitud.GetStatusBadgeClass }}"
+                      >
+                        <i class="{{ .Solicitud.EstadoSolicitud.Icon }}"></i>
+                        {{ .Solicitud.EstadoSolicitud.Nombre }}
+                      </span>
                     {{ end }}
-                  </select>
-                </div>
-
-                <div class="space-y-1">
-                  <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">Nro(Memo/RD/Nota JG/RC)</label>
-                  <input
-                    type="text"
-                    name="autorizacion"
-                    x-model="autorizacion"
-                    class="w-full rounded-md border-neutral-300 text-sm focus:ring-primary"
-                    placeholder="Ej: Res. 001/24" />
-                </div>
-
-                <div class="space-y-1">
-                  <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">Aerolínea Sugerida</label>
-                  <select name="aerolinea" x-model="aerolinea" class="w-full rounded-md border-neutral-300 text-sm focus:ring-primary transition-all">
-                    <option value="">Cualquiera</option>
-                    {{ range .Aerolineas }}
-                    <option value="{{ .Nombre }}">{{ .Nombre }}</option>
-                    {{ end }}
-                  </select>
-                </div>
-
-                <!-- Row 2: Full width textarea -->
-                <div class="md:col-span-4 space-y-1">
-                  <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">
-                    Motivo de la Comisión {{ if .Solicitud.Usuario.IsSenador }}
-                    <span class="text-neutral-400 font-normal lowercase opacity-70 italic">(Opcional para Senadores)</span>
-                    {{ end }}
-                  </label>
-                  <textarea
-                    name="motivo"
-                    x-model="motivo"
-                    {{
-                    if
-                    not
-                    .Solicitud.Usuario.IsSenador
-                    }}required{{
-                    end
-                    }}
-                    rows="2"
-                    class="w-full rounded-md border-neutral-300 text-sm focus:ring-primary transition-all resize-none"
-                    placeholder="{{ if .Solicitud.Usuario.IsSenador }}Ej: Gestión Parlamentaria...{{ else }}Escriba aquí el propósito detallado del viaje oficial...{{ end }}"></textarea>
+                    <span class="h-1 w-1 rounded-full bg-neutral-300 mx-1"></span>
+                    <p class="text-xs text-neutral-500 font-bold uppercase tracking-tight">
+                      {{ .Solicitud.Usuario.GetNombreCompleto }}
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <!-- 2. ITINERARY SECTIONS (IDA) -->
-            <div class="bg-white rounded-xl shadow-sm border border-neutral-200">
-              <div class="px-4 py-3 border-b border-neutral-100 bg-primary-50/30 flex justify-between items-center rounded-t-xl">
-                <div class="flex items-center gap-2 text-primary-700">
-                  <i class="ph ph-airplane-landing text-xl"></i>
-                  <h4 class="text-[10px] font-black uppercase tracking-widest">Tramos de IDA</h4>
-                </div>
+              <div class="flex gap-2">
                 <button
+                  type="submit"
+                  :disabled="loading"
+                  class="bg-primary text-white px-4 py-2 rounded-md font-bold text-sm shadow-sm hover:bg-primary-700 disabled:opacity-50 transition-colors"
+                >
+                  <span x-show="!loading">Guardar Cambios</span>
+                  <span x-show="loading">Procesando...</span>
+                </button>
+                <button
+                  @click="isUpdated ? window.location.reload() : open = false"
                   type="button"
-                  @click="addTramo('IDA')"
-                  class="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-white border border-primary-200 text-primary-700 text-[9px] font-black uppercase tracking-wider hover:bg-primary-50 transition-all">
-                  <i class="ph ph-plus-circle"></i>
-                  <span>Añadir Tramo Ida</span>
+                  class="bg-white border border-neutral-300 text-neutral-700 px-4 py-2 rounded-md font-bold text-sm hover:bg-neutral-50 transition-all"
+                >
+                  Cancelar / Cerrar
                 </button>
               </div>
+            </div>
 
-              <div>
-                <table class="w-full divide-y divide-neutral-200 table-fixed">
-                  <thead class="bg-neutral-50/50">
-                    <tr>
-                      <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase tracking-widest pl-10 w-[35%]">Origen</th>
-                      <th class="px-2 py-1 text-center text-[9px] font-black text-neutral-400 uppercase tracking-widest w-[5%]"></th>
-                      <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase tracking-widest w-[35%]">Destino</th>
-                      <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase tracking-widest w-[18%]">Salida (Fecha/Hora)</th>
-                    </tr>
-                  </thead>
-                  <tbody class="divide-y divide-neutral-100">
-                    <template x-for="item in tramosIda()" :key="'ida-' + (item.tramo.id || item.index)">
-                      <tr class="hover:bg-neutral-50/30 transition-colors relative">
-                        <!-- Origen (IDA) -->
-                        <td class="px-4 py-1.5">
-                          <div
-                            x-show="!canEditOrigin(item.index)"
-                            class="w-full bg-neutral-100 border border-neutral-200 rounded-md pl-3 pr-8 py-1 text-[11px] font-medium text-neutral-500 cursor-not-allowed flex items-center justify-between h-[28px]">
-                            <span class="truncate" x-text="item.tramo.origenLabel || '-'"></span>
-                            <i class="ph ph-lock-simple text-neutral-400"></i>
-                          </div>
-                          <div
-                            x-show="canEditOrigin(item.index)"
-                            x-data="searchableSelect({
+            <div class="px-6 py-6 space-y-6 bg-neutral-50/30">
+              {{ if .SuccessMessage }}
+                <div
+                  x-data="{ show: true }"
+                  x-show="show"
+                  x-init="setTimeout(() => show = false, 5000)"
+                  class="mb-4 p-3 bg-success-50 border border-success-200 rounded-lg flex items-center justify-between gap-3"
+                >
+                  <div class="flex items-center gap-3">
+                    <i class="ph ph-check-circle text-success-500 text-xl"></i>
+                    <span class="text-sm font-bold text-success-600">{{ .SuccessMessage }}</span>
+                  </div>
+                  <button @click="show = false" type="button" class="text-success-400 hover:text-success-600">
+                    <i class="ph ph-x text-sm"></i>
+                  </button>
+                </div>
+              {{ end }}
+              {{ if .ErrorMessage }}
+                <div class="mb-4 p-3 bg-danger-50 border border-danger-200 rounded-lg flex items-center gap-3">
+                  <i class="ph ph-warning-circle text-danger-500 text-xl"></i>
+                  <span class="text-sm font-bold text-danger-600">{{ .ErrorMessage }}</span>
+                </div>
+              {{ end }}
+              <!-- 1. GENERAL INFO SECTION -->
+              <div class="bg-white rounded-xl shadow-sm border border-neutral-200 p-4">
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                  <!-- Row 1: Quad inputs -->
+                  <div class="space-y-1">
+                    <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">
+                      Tipo de Solicitud
+                    </label>
+                    <select
+                      name="tipo_solicitud_codigo"
+                      x-model="tipo"
+                      required
+                      class="w-full rounded-md border-neutral-300 text-sm focus:ring-primary focus:border-primary transition-all"
+                    >
+                      {{ range .Tipos }}
+                        <option value="{{ .Codigo }}">{{ .Nombre }}</option>
+                      {{ end }}
+                    </select>
+                  </div>
+                  <div class="space-y-1">
+                    <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">Ámbito</label>
+                    <select
+                      name="ambito_viaje_codigo"
+                      x-model="ambito"
+                      required
+                      class="w-full rounded-md border-neutral-300 text-sm focus:ring-primary focus:border-primary transition-all"
+                    >
+                      <option value="">Seleccione...</option>
+                      {{ range .Ambitos }}
+                        <option value="{{ .Codigo }}">{{ .Nombre }}</option>
+                      {{ end }}
+                    </select>
+                  </div>
+
+                  <div class="space-y-1">
+                    <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">
+                      Nro(Memo/RD/Nota JG/RC)
+                    </label>
+                    <input
+                      type="text"
+                      name="autorizacion"
+                      x-model="autorizacion"
+                      class="w-full rounded-md border-neutral-300 text-sm focus:ring-primary"
+                      placeholder="Ej: Res. 001/24"
+                    />
+                  </div>
+
+                  <div class="space-y-1">
+                    <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">
+                      Aerolínea Sugerida
+                    </label>
+                    <select
+                      name="aerolinea"
+                      x-model="aerolinea"
+                      class="w-full rounded-md border-neutral-300 text-sm focus:ring-primary transition-all"
+                    >
+                      <option value="">Cualquiera</option>
+                      {{ range .Aerolineas }}
+                        <option value="{{ .Nombre }}">{{ .Nombre }}</option>
+                      {{ end }}
+                    </select>
+                  </div>
+
+                  <!-- Row 2: Full width textarea -->
+                  <div class="md:col-span-4 space-y-1">
+                    <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">
+                      Motivo de la Comisión
+                      {{ if .Solicitud.Usuario.IsSenador }}
+                        <span class="text-neutral-400 font-normal lowercase opacity-70 italic">(Opcional para Senadores)</span>
+                      {{ end }}
+                    </label>
+                    <textarea
+                      name="motivo"
+                      x-model="motivo"
+                      {{ if
+                        not
+                        .Solicitud.Usuario.IsSenador
+                      }}
+                        required
+                      {{ end }}
+                      rows="2"
+                      class="w-full rounded-md border-neutral-300 text-sm focus:ring-primary transition-all resize-none"
+                      placeholder="{{ if .Solicitud.Usuario.IsSenador }}
+                        Ej: Gestión Parlamentaria...
+                      {{ else }}
+                        Escriba aquí el propósito detallado del viaje oficial...
+                      {{ end }}"
+                    ></textarea>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 2. ITINERARY SECTIONS (IDA) -->
+              <div class="bg-white rounded-xl shadow-sm border border-neutral-200">
+                <div
+                  class="px-4 py-3 border-b border-neutral-100 bg-primary-50/30 flex justify-between items-center rounded-t-xl"
+                >
+                  <div class="flex items-center gap-2 text-primary-700">
+                    <i class="ph ph-airplane-landing text-xl"></i>
+                    <h4 class="text-[10px] font-black uppercase tracking-widest">Tramos de IDA</h4>
+                  </div>
+                  <button
+                    type="button"
+                    @click="addTramo('IDA')"
+                    class="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-white border border-primary-200 text-primary-700 text-[9px] font-black uppercase tracking-wider hover:bg-primary-50 transition-all"
+                  >
+                    <i class="ph ph-plus-circle"></i>
+                    <span>Añadir Tramo Ida</span>
+                  </button>
+                </div>
+
+                <div>
+                  <table class="w-full divide-y divide-neutral-200 table-fixed">
+                    <thead class="bg-neutral-50/50">
+                      <tr>
+                        <th
+                          class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase tracking-widest pl-10 w-[35%]"
+                        >
+                          Origen
+                        </th>
+                        <th
+                          class="px-2 py-1 text-center text-[9px] font-black text-neutral-400 uppercase tracking-widest w-[5%]"
+                        ></th>
+                        <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase tracking-widest w-[35%]">
+                          Destino
+                        </th>
+                        <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase tracking-widest w-[18%]">
+                          Salida (Fecha/Hora)
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-neutral-100">
+                      <template x-for="item in tramosIda()" :key="'ida-' + (item.tramo.id || item.index)">
+                        <tr class="hover:bg-neutral-50/30 transition-colors relative">
+                          <!-- Origen (IDA) -->
+                          <td class="px-4 py-1.5">
+                            <div
+                              x-show="!canEditOrigin(item.index)"
+                              class="w-full bg-neutral-100 border border-neutral-200 rounded-md pl-3 pr-8 py-1 text-[11px] font-medium text-neutral-500 cursor-not-allowed flex items-center justify-between h-[28px]"
+                            >
+                              <span class="truncate" x-text="item.tramo.origenLabel || '-'"></span>
+                              <i class="ph ph-lock-simple text-neutral-400"></i>
+                            </div>
+                            <div
+                              x-show="canEditOrigin(item.index)"
+                              x-data="searchableSelect({
                               items: [],
                               initialValue: item.tramo.origen,
                               initialLabel: item.tramo.origenLabel,
                               placeholder: 'Origen...'
                             })"
-                            x-effect="items = availableDestinos"
-                            x-init="value = item.tramo.origen; label = item.tramo.origenLabel || placeholder; $watch('value', function(v) { item.tramo.origen = v; var it = allDestinos.find(function(d) { return d.value === v; }); if (it) item.tramo.origenLabel = it.value + ' - ' + it.label; })"
-                            class="relative">
-                            <div
-                              x-show="!open"
-                              @click="open = true; $nextTick(function() { $refs.searchInput.focus() })"
-                              class="w-full bg-white border border-neutral-300 rounded-md shadow-sm pl-3 pr-8 py-1 text-left text-[11px] font-medium cursor-pointer flex items-center justify-between h-[28px]">
-                              <span class="truncate" x-text="label || placeholder"></span>
-                              <i class="ph ph-magnifying-glass text-neutral-400 text-sm"></i>
-                            </div>
-                            <input
-                              x-ref="searchInput"
-                              x-model="search"
-                              x-show="open"
-                              @click.away="open = false"
-                              @keydown.escape="open = false"
-                              @keydown.enter.prevent="if (filteredItems.length > 0) select(filteredItems[0])"
-                              type="text"
-                              class="w-full bg-white border border-primary rounded-md shadow-sm pl-3 pr-8 py-1 text-[11px] font-medium focus:outline-none focus:ring-1 focus:ring-primary h-[28px]"
-                              placeholder="Filtrar..." />
-                            <div x-show="open" class="absolute z-[100] mt-1 w-full bg-white shadow-xl rounded-lg border border-neutral-200 overflow-hidden" x-cloak>
-                              <div class="max-h-60 overflow-y-auto">
-                                <template x-for="dest in filteredItems" :key="dest.value">
-                                  <div
-                                    @click="select(dest)"
-                                    class="px-3 py-1.5 hover:bg-primary hover:text-white cursor-pointer text-[10px] font-bold border-b border-neutral-50 transition-colors">
-                                    <span x-text="dest.value + ' - ' + dest.label"></span>
-                                  </div>
-                                </template>
+                              x-effect="items = availableDestinos"
+                              x-init="value = item.tramo.origen; label = item.tramo.origenLabel || placeholder; $watch('value', function(v) { item.tramo.origen = v; var it = allDestinos.find(function(d) { return d.value === v; }); if (it) item.tramo.origenLabel = it.value + ' - ' + it.label; })"
+                              class="relative"
+                            >
+                              <div
+                                x-show="!open"
+                                @click="open = true; $nextTick(function() { $refs.searchInput.focus() })"
+                                class="w-full bg-white border border-neutral-300 rounded-md shadow-sm pl-3 pr-8 py-1 text-left text-[11px] font-medium cursor-pointer flex items-center justify-between h-[28px]"
+                              >
+                                <span class="truncate" x-text="label || placeholder"></span>
+                                <i class="ph ph-magnifying-glass text-neutral-400 text-sm"></i>
+                              </div>
+                              <input
+                                x-ref="searchInput"
+                                x-model="search"
+                                x-show="open"
+                                @click.away="open = false"
+                                @keydown.escape="open = false"
+                                @keydown.enter.prevent="if (filteredItems.length > 0) select(filteredItems[0])"
+                                type="text"
+                                class="w-full bg-white border border-primary rounded-md shadow-sm pl-3 pr-8 py-1 text-[11px] font-medium focus:outline-none focus:ring-1 focus:ring-primary h-[28px]"
+                                placeholder="Filtrar..."
+                              />
+                              <div
+                                x-show="open"
+                                class="absolute z-[100] mt-1 w-full bg-white shadow-xl rounded-lg border border-neutral-200 overflow-hidden"
+                                x-cloak
+                              >
+                                <div class="max-h-60 overflow-y-auto">
+                                  <template x-for="dest in filteredItems" :key="dest.value">
+                                    <div
+                                      @click="select(dest)"
+                                      class="px-3 py-1.5 hover:bg-primary hover:text-white cursor-pointer text-[10px] font-bold border-b border-neutral-50 transition-colors"
+                                    >
+                                      <span x-text="dest.value + ' - ' + dest.label"></span>
+                                    </div>
+                                  </template>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        </td>
+                          </td>
 
-                        <td class="px-2 py-1.5 text-center">
-                          <i class="ph ph-caret-right text-neutral-300"></i>
-                        </td>
+                          <td class="px-2 py-1.5 text-center">
+                            <i class="ph ph-caret-right text-neutral-300"></i>
+                          </td>
 
-                        <!-- Destino (IDA) -->
-                        <td class="px-4 py-1.5">
-                          <div
-                            x-show="item.tramo.estado !== 'SOLICITADO' && item.tramo.estado !== 'RECHAZADO' && !isAdmin"
-                            class="w-full bg-neutral-100 border border-neutral-200 rounded-md pl-3 pr-8 py-1 text-[11px] font-medium text-neutral-500 cursor-not-allowed flex items-center justify-between h-[28px]">
-                            <span class="truncate" x-text="item.tramo.destinoLabel || '-'"></span>
-                            <i class="ph ph-lock-simple text-neutral-400"></i>
-                          </div>
-                          <div
-                            x-show="item.tramo.estado === 'SOLICITADO' || item.tramo.estado === 'RECHAZADO' || isAdmin"
-                            x-data="searchableSelect({
+                          <!-- Destino (IDA) -->
+                          <td class="px-4 py-1.5">
+                            <div
+                              x-show="item.tramo.estado !== 'SOLICITADO' && item.tramo.estado !== 'RECHAZADO' && item.tramo.estado !== 'PENDIENTE' && !isAdmin"
+                              class="w-full bg-neutral-100 border border-neutral-200 rounded-md pl-3 pr-8 py-1 text-[11px] font-medium text-neutral-500 cursor-not-allowed flex items-center justify-between h-[28px]"
+                            >
+                              <span class="truncate" x-text="item.tramo.destinoLabel || '-'"></span>
+                              <i class="ph ph-lock-simple text-neutral-400"></i>
+                            </div>
+                            <div
+                              x-show="item.tramo.estado === 'SOLICITADO' || item.tramo.estado === 'RECHAZADO' || item.tramo.estado === 'PENDIENTE' || isAdmin"
+                              x-data="searchableSelect({
                               items: [],
                               initialValue: item.tramo.destino,
                               initialLabel: item.tramo.destinoLabel,
                               placeholder: 'Destino...'
                             })"
-                            x-effect="items = availableDestinos"
-                            x-init="value = item.tramo.destino; label = item.tramo.destinoLabel || placeholder; $watch('value', function(v) { item.tramo.destino = v; var it = allDestinos.find(function(d) { return d.value === v; }); if (it) item.tramo.destinoLabel = it.value + ' - ' + it.label; })"
-                            class="relative">
-                            <div
-                              x-show="!open"
-                              @click="open = true; $nextTick(function() { $refs.searchInput.focus() })"
-                              class="w-full bg-white border border-neutral-300 rounded-md shadow-sm pl-3 pr-8 py-1 text-left text-[11px] font-medium cursor-pointer flex items-center justify-between h-[28px]">
-                              <span class="truncate" x-text="label || placeholder"></span>
-                              <i class="ph ph-magnifying-glass text-neutral-400 text-sm"></i>
-                            </div>
-                            <input
-                              x-ref="searchInput"
-                              x-model="search"
-                              x-show="open"
-                              @click.away="open = false"
-                              @keydown.escape="open = false"
-                              @keydown.enter.prevent="if (filteredItems.length > 0) select(filteredItems[0])"
-                              type="text"
-                              class="w-full bg-white border border-primary rounded-md shadow-sm pl-3 pr-8 py-1 text-[11px] font-medium focus:outline-none focus:ring-1 focus:ring-primary h-[28px]"
-                              placeholder="Filtrar..." />
-                            <div x-show="open" class="absolute z-[100] mt-1 w-full bg-white shadow-xl rounded-lg border border-neutral-200 overflow-hidden" x-cloak>
-                              <div class="max-h-60 overflow-y-auto">
-                                <template x-for="dest in filteredItems" :key="dest.value">
-                                  <div
-                                    @click="select(dest)"
-                                    class="px-3 py-1.5 hover:bg-primary hover:text-white cursor-pointer text-[10px] font-bold border-b border-neutral-50 transition-colors">
-                                    <span x-text="dest.value + ' - ' + dest.label"></span>
-                                  </div>
-                                </template>
+                              x-effect="items = availableDestinos"
+                              x-init="value = item.tramo.destino; label = item.tramo.destinoLabel || placeholder; $watch('value', function(v) { item.tramo.destino = v; var it = allDestinos.find(function(d) { return d.value === v; }); if (it) item.tramo.destinoLabel = it.value + ' - ' + it.label; })"
+                              class="relative"
+                            >
+                              <div
+                                x-show="!open"
+                                @click="open = true; $nextTick(function() { $refs.searchInput.focus() })"
+                                class="w-full bg-white border border-neutral-300 rounded-md shadow-sm pl-3 pr-8 py-1 text-left text-[11px] font-medium cursor-pointer flex items-center justify-between h-[28px]"
+                              >
+                                <span class="truncate" x-text="label || placeholder"></span>
+                                <i class="ph ph-magnifying-glass text-neutral-400 text-sm"></i>
+                              </div>
+                              <input
+                                x-ref="searchInput"
+                                x-model="search"
+                                x-show="open"
+                                @click.away="open = false"
+                                @keydown.escape="open = false"
+                                @keydown.enter.prevent="if (filteredItems.length > 0) select(filteredItems[0])"
+                                type="text"
+                                class="w-full bg-white border border-primary rounded-md shadow-sm pl-3 pr-8 py-1 text-[11px] font-medium focus:outline-none focus:ring-1 focus:ring-primary h-[28px]"
+                                placeholder="Filtrar..."
+                              />
+                              <div
+                                x-show="open"
+                                class="absolute z-[100] mt-1 w-full bg-white shadow-xl rounded-lg border border-neutral-200 overflow-hidden"
+                                x-cloak
+                              >
+                                <div class="max-h-60 overflow-y-auto">
+                                  <template x-for="dest in filteredItems" :key="dest.value">
+                                    <div
+                                      @click="select(dest)"
+                                      class="px-3 py-1.5 hover:bg-primary hover:text-white cursor-pointer text-[10px] font-bold border-b border-neutral-50 transition-colors"
+                                    >
+                                      <span x-text="dest.value + ' - ' + dest.label"></span>
+                                    </div>
+                                  </template>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        </td>
+                          </td>
 
-                        <!-- Salida (IDA) -->
-                        <td class="px-4 py-1.5">
-                          <input
-                            type="text"
-                            x-flatpickr
-                            x-model="item.tramo.fechaSalida"
-                            :disabled="item.tramo.estado !== 'SOLICITADO' && item.tramo.estado !== 'RECHAZADO' && !isAdmin"
-                            :class="(item.tramo.estado !== 'SOLICITADO' && item.tramo.estado !== 'RECHAZADO' && !isAdmin) ? 'bg-neutral-100 text-neutral-500 cursor-not-allowed' : 'bg-white'"
-                            class="w-full rounded-md border-neutral-300 text-[11px] py-1 h-[28px] focus:ring-primary shadow-sm"
-                            placeholder="Seleccione fecha..." />
-                        </td>
+                          <!-- Salida (IDA) -->
+                          <td class="px-4 py-1.5">
+                            <input
+                              type="text"
+                              x-datepicker="{ position: 'top center' }"
+                              x-model="item.tramo.fechaSalida"
+                              :disabled="item.tramo.estado !== 'SOLICITADO' && item.tramo.estado !== 'RECHAZADO' && item.tramo.estado !== 'PENDIENTE' && !isAdmin"
+                              :class="(item.tramo.estado !== 'SOLICITADO' && item.tramo.estado !== 'RECHAZADO' && item.tramo.estado !== 'PENDIENTE' && !isAdmin) ? 'bg-neutral-100 text-neutral-500 cursor-not-allowed' : 'bg-white'"
+                              class="w-full rounded-md border-neutral-300 text-[11px] py-1 h-[28px] focus:ring-primary shadow-sm"
+                              placeholder="Seleccione fecha..."
+                            />
+                          </td>
 
-                        <td class="px-4 py-1.5 text-right">
-                          <button
-                            type="button"
-                            x-show="canRemoveTramo(item.index)"
-                            @click="removeTramo(item.index)"
-                            class="p-1 text-danger-400 hover:text-danger-700 hover:bg-danger-50 rounded-lg transition-all"
-                            title="Eliminar tramo">
-                            <i class="ph ph-trash text-base"></i>
-                          </button>
-                        </td>
-                      </tr>
-                    </template>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <!-- 2. ITINERARY SECTIONS (VUELTA) -->
-            <div class="bg-white rounded-xl shadow-sm border border-neutral-200">
-              <div class="px-4 py-3 border-b border-neutral-100 bg-secondary-50/30 flex justify-between items-center rounded-t-xl">
-                <div class="flex items-center gap-2 text-secondary-700">
-                  <i class="ph ph-airplane-takeoff text-xl"></i>
-                  <h4 class="text-[10px] font-black uppercase tracking-widest">Tramos de VUELTA</h4>
+                          <td class="px-4 py-1.5 text-right">
+                            <button
+                              type="button"
+                              x-show="canRemoveTramo(item.index)"
+                              @click="removeTramo(item.index)"
+                              class="p-1 text-danger-400 hover:text-danger-700 hover:bg-danger-50 rounded-lg transition-all"
+                              title="Eliminar tramo"
+                            >
+                              <i class="ph ph-trash text-base"></i>
+                            </button>
+                          </td>
+                        </tr>
+                      </template>
+                    </tbody>
+                  </table>
                 </div>
-                <button
-                  type="button"
-                  @click="addTramo('VUELTA')"
-                  class="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-white border border-secondary-200 text-secondary-700 text-[9px] font-black uppercase tracking-wider hover:bg-secondary-50 transition-all">
-                  <i class="ph ph-plus-circle"></i>
-                  <span>Añadir Tramo Vuelta</span>
-                </button>
               </div>
 
-              <div>
-                <table class="w-full divide-y divide-neutral-200 table-fixed">
-                  <thead class="bg-neutral-50/50">
-                    <tr>
-                      <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase tracking-widest pl-10 w-[35%]">Origen</th>
-                      <th class="px-2 py-1 text-center text-[9px] font-black text-neutral-400 uppercase tracking-widest w-[5%]"></th>
-                      <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase tracking-widest w-[35%]">Destino</th>
-                      <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase tracking-widest w-[18%]">Salida (Fecha/Hora)</th>
-                    </tr>
-                  </thead>
-                  <tbody class="divide-y divide-neutral-100">
-                    <template x-for="item in tramosVuelta()" :key="'vuelta-' + (item.tramo.id || item.index)">
-                      <tr class="hover:bg-neutral-50/30 transition-colors relative">
-                        <!-- Origen (VUELTA) -->
-                        <td class="px-4 py-1.5">
-                          <div
-                            x-show="!canEditOrigin(item.index)"
-                            class="w-full bg-neutral-100 border border-neutral-200 rounded-md pl-3 pr-8 py-1 text-[11px] font-medium text-neutral-500 cursor-not-allowed flex items-center justify-between h-[28px]">
-                            <span class="truncate" x-text="item.tramo.origenLabel || '-'"></span>
-                            <i class="ph ph-lock-simple text-neutral-400"></i>
-                          </div>
-                          <div
-                            x-show="canEditOrigin(item.index)"
-                            x-data="searchableSelect({
+              <!-- 2. ITINERARY SECTIONS (VUELTA) -->
+              <div class="bg-white rounded-xl shadow-sm border border-neutral-200">
+                <div
+                  class="px-4 py-3 border-b border-neutral-100 bg-secondary-50/30 flex justify-between items-center rounded-t-xl"
+                >
+                  <div class="flex items-center gap-2 text-secondary-700">
+                    <i class="ph ph-airplane-takeoff text-xl"></i>
+                    <h4 class="text-[10px] font-black uppercase tracking-widest">Tramos de VUELTA</h4>
+                  </div>
+                  <button
+                    type="button"
+                    @click="addTramo('VUELTA')"
+                    class="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-white border border-secondary-200 text-secondary-700 text-[9px] font-black uppercase tracking-wider hover:bg-secondary-50 transition-all"
+                  >
+                    <i class="ph ph-plus-circle"></i>
+                    <span>Añadir Tramo Vuelta</span>
+                  </button>
+                </div>
+
+                <div>
+                  <table class="w-full divide-y divide-neutral-200 table-fixed">
+                    <thead class="bg-neutral-50/50">
+                      <tr>
+                        <th
+                          class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase tracking-widest pl-10 w-[35%]"
+                        >
+                          Origen
+                        </th>
+                        <th
+                          class="px-2 py-1 text-center text-[9px] font-black text-neutral-400 uppercase tracking-widest w-[5%]"
+                        ></th>
+                        <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase tracking-widest w-[35%]">
+                          Destino
+                        </th>
+                        <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase tracking-widest w-[18%]">
+                          Salida (Fecha/Hora)
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-neutral-100">
+                      <template x-for="item in tramosVuelta()" :key="'vuelta-' + (item.tramo.id || item.index)">
+                        <tr class="hover:bg-neutral-50/30 transition-colors relative">
+                          <!-- Origen (VUELTA) -->
+                          <td class="px-4 py-1.5">
+                            <div
+                              x-show="!canEditOrigin(item.index)"
+                              class="w-full bg-neutral-100 border border-neutral-200 rounded-md pl-3 pr-8 py-1 text-[11px] font-medium text-neutral-500 cursor-not-allowed flex items-center justify-between h-[28px]"
+                            >
+                              <span class="truncate" x-text="item.tramo.origenLabel || '-'"></span>
+                              <i class="ph ph-lock-simple text-neutral-400"></i>
+                            </div>
+                            <div
+                              x-show="canEditOrigin(item.index)"
+                              x-data="searchableSelect({
                               items: [],
                               initialValue: item.tramo.origen,
                               initialLabel: item.tramo.origenLabel,
                               placeholder: 'Origen...'
                             })"
-                            x-effect="items = availableDestinos"
-                            x-init="value = item.tramo.origen; label = item.tramo.origenLabel || placeholder; $watch('value', function(v) { item.tramo.origen = v; var it = allDestinos.find(function(d) { return d.value === v; }); if (it) item.tramo.origenLabel = it.value + ' - ' + it.label; })"
-                            class="relative">
-                            <div
-                              x-show="!open"
-                              @click="open = true; $nextTick(function() { $refs.searchInput.focus() })"
-                              class="w-full bg-white border border-neutral-300 rounded-md shadow-sm pl-3 pr-8 py-1 text-left text-[11px] font-medium cursor-pointer flex items-center justify-between h-[28px]">
-                              <span class="truncate" x-text="label || placeholder"></span>
-                              <i class="ph ph-magnifying-glass text-neutral-400 text-sm"></i>
-                            </div>
-                            <input
-                              x-ref="searchInput"
-                              x-model="search"
-                              x-show="open"
-                              @click.away="open = false"
-                              @keydown.escape="open = false"
-                              @keydown.enter.prevent="if (filteredItems.length > 0) select(filteredItems[0])"
-                              type="text"
-                              class="w-full bg-white border border-primary rounded-md shadow-sm pl-3 pr-8 py-1 text-[11px] font-medium focus:outline-none focus:ring-1 focus:ring-primary h-[28px]"
-                              placeholder="Filtrar..." />
-                            <div x-show="open" class="absolute z-[100] mt-1 w-full bg-white shadow-xl rounded-lg border border-neutral-200 overflow-hidden" x-cloak>
-                              <div class="max-h-60 overflow-y-auto">
-                                <template x-for="dest in filteredItems" :key="dest.value">
-                                  <div
-                                    @click="select(dest)"
-                                    class="px-3 py-1.5 hover:bg-primary hover:text-white cursor-pointer text-[10px] font-bold border-b border-neutral-50 transition-colors">
-                                    <span x-text="dest.value + ' - ' + dest.label"></span>
-                                  </div>
-                                </template>
+                              x-effect="items = availableDestinos"
+                              x-init="value = item.tramo.origen; label = item.tramo.origenLabel || placeholder; $watch('value', function(v) { item.tramo.origen = v; var it = allDestinos.find(function(d) { return d.value === v; }); if (it) item.tramo.origenLabel = it.value + ' - ' + it.label; })"
+                              class="relative"
+                            >
+                              <div
+                                x-show="!open"
+                                @click="open = true; $nextTick(function() { $refs.searchInput.focus() })"
+                                class="w-full bg-white border border-neutral-300 rounded-md shadow-sm pl-3 pr-8 py-1 text-left text-[11px] font-medium cursor-pointer flex items-center justify-between h-[28px]"
+                              >
+                                <span class="truncate" x-text="label || placeholder"></span>
+                                <i class="ph ph-magnifying-glass text-neutral-400 text-sm"></i>
+                              </div>
+                              <input
+                                x-ref="searchInput"
+                                x-model="search"
+                                x-show="open"
+                                @click.away="open = false"
+                                @keydown.escape="open = false"
+                                @keydown.enter.prevent="if (filteredItems.length > 0) select(filteredItems[0])"
+                                type="text"
+                                class="w-full bg-white border border-primary rounded-md shadow-sm pl-3 pr-8 py-1 text-[11px] font-medium focus:outline-none focus:ring-1 focus:ring-primary h-[28px]"
+                                placeholder="Filtrar..."
+                              />
+                              <div
+                                x-show="open"
+                                class="absolute z-[100] mt-1 w-full bg-white shadow-xl rounded-lg border border-neutral-200 overflow-hidden"
+                                x-cloak
+                              >
+                                <div class="max-h-60 overflow-y-auto">
+                                  <template x-for="dest in filteredItems" :key="dest.value">
+                                    <div
+                                      @click="select(dest)"
+                                      class="px-3 py-1.5 hover:bg-primary hover:text-white cursor-pointer text-[10px] font-bold border-b border-neutral-50 transition-colors"
+                                    >
+                                      <span x-text="dest.value + ' - ' + dest.label"></span>
+                                    </div>
+                                  </template>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        </td>
+                          </td>
 
-                        <td class="px-2 py-1.5 text-center">
-                          <i class="ph ph-caret-right text-neutral-300"></i>
-                        </td>
+                          <td class="px-2 py-1.5 text-center">
+                            <i class="ph ph-caret-right text-neutral-300"></i>
+                          </td>
 
-                        <!-- Destino (VUELTA) -->
-                        <td class="px-4 py-1.5">
-                          <div
-                            x-show="item.tramo.estado !== 'SOLICITADO' && item.tramo.estado !== 'RECHAZADO' && !isAdmin"
-                            class="w-full bg-neutral-100 border border-neutral-200 rounded-md pl-3 pr-8 py-1 text-[11px] font-medium text-neutral-500 cursor-not-allowed flex items-center justify-between h-[28px]">
-                            <span class="truncate" x-text="item.tramo.destinoLabel || '-'"></span>
-                            <i class="ph ph-lock-simple text-neutral-400"></i>
-                          </div>
-                          <div
-                            x-show="item.tramo.estado === 'SOLICITADO' || item.tramo.estado === 'RECHAZADO' || isAdmin"
-                            x-data="searchableSelect({
+                          <!-- Destino (VUELTA) -->
+                          <td class="px-4 py-1.5">
+                            <div
+                              x-show="item.tramo.estado !== 'SOLICITADO' && item.tramo.estado !== 'RECHAZADO' && item.tramo.estado !== 'PENDIENTE' && !isAdmin"
+                              class="w-full bg-neutral-100 border border-neutral-200 rounded-md pl-3 pr-8 py-1 text-[11px] font-medium text-neutral-500 cursor-not-allowed flex items-center justify-between h-[28px]"
+                            >
+                              <span class="truncate" x-text="item.tramo.destinoLabel || '-'"></span>
+                              <i class="ph ph-lock-simple text-neutral-400"></i>
+                            </div>
+                            <div
+                              x-show="item.tramo.estado === 'SOLICITADO' || item.tramo.estado === 'RECHAZADO' || item.tramo.estado === 'PENDIENTE' || isAdmin"
+                              x-data="searchableSelect({
                               items: [],
                               initialValue: item.tramo.destino,
                               initialLabel: item.tramo.destinoLabel,
                               placeholder: 'Destino...'
                             })"
-                            x-effect="items = availableDestinos"
-                            x-init="value = item.tramo.destino; label = item.tramo.destinoLabel || placeholder; $watch('value', function(v) { item.tramo.destino = v; var it = allDestinos.find(function(d) { return d.value === v; }); if (it) item.tramo.destinoLabel = it.value + ' - ' + it.label; })"
-                            class="relative">
-                            <div
-                              x-show="!open"
-                              @click="open = true; $nextTick(function() { $refs.searchInput.focus() })"
-                              class="w-full bg-white border border-neutral-300 rounded-md shadow-sm pl-3 pr-8 py-1 text-left text-[11px] font-medium cursor-pointer flex items-center justify-between h-[28px]">
-                              <span class="truncate" x-text="label || placeholder"></span>
-                              <i class="ph ph-magnifying-glass text-neutral-400 text-sm"></i>
-                            </div>
-                            <input
-                              x-ref="searchInput"
-                              x-model="search"
-                              x-show="open"
-                              @click.away="open = false"
-                              @keydown.escape="open = false"
-                              @keydown.enter.prevent="if (filteredItems.length > 0) select(filteredItems[0])"
-                              type="text"
-                              class="w-full bg-white border border-primary rounded-md shadow-sm pl-3 pr-8 py-1 text-[11px] font-medium focus:outline-none focus:ring-1 focus:ring-primary h-[28px]"
-                              placeholder="Filtrar..." />
-                            <div x-show="open" class="absolute z-[100] mt-1 w-full bg-white shadow-xl rounded-lg border border-neutral-200 overflow-hidden" x-cloak>
-                              <div class="max-h-60 overflow-y-auto">
-                                <template x-for="dest in filteredItems" :key="dest.value">
-                                  <div
-                                    @click="select(dest)"
-                                    class="px-3 py-1.5 hover:bg-primary hover:text-white cursor-pointer text-[10px] font-bold border-b border-neutral-50 transition-colors">
-                                    <span x-text="dest.value + ' - ' + dest.label"></span>
-                                  </div>
-                                </template>
+                              x-effect="items = availableDestinos"
+                              x-init="value = item.tramo.destino; label = item.tramo.destinoLabel || placeholder; $watch('value', function(v) { item.tramo.destino = v; var it = allDestinos.find(function(d) { return d.value === v; }); if (it) item.tramo.destinoLabel = it.value + ' - ' + it.label; })"
+                              class="relative"
+                            >
+                              <div
+                                x-show="!open"
+                                @click="open = true; $nextTick(function() { $refs.searchInput.focus() })"
+                                class="w-full bg-white border border-neutral-300 rounded-md shadow-sm pl-3 pr-8 py-1 text-left text-[11px] font-medium cursor-pointer flex items-center justify-between h-[28px]"
+                              >
+                                <span class="truncate" x-text="label || placeholder"></span>
+                                <i class="ph ph-magnifying-glass text-neutral-400 text-sm"></i>
+                              </div>
+                              <input
+                                x-ref="searchInput"
+                                x-model="search"
+                                x-show="open"
+                                @click.away="open = false"
+                                @keydown.escape="open = false"
+                                @keydown.enter.prevent="if (filteredItems.length > 0) select(filteredItems[0])"
+                                type="text"
+                                class="w-full bg-white border border-primary rounded-md shadow-sm pl-3 pr-8 py-1 text-[11px] font-medium focus:outline-none focus:ring-1 focus:ring-primary h-[28px]"
+                                placeholder="Filtrar..."
+                              />
+                              <div
+                                x-show="open"
+                                class="absolute z-[100] mt-1 w-full bg-white shadow-xl rounded-lg border border-neutral-200 overflow-hidden"
+                                x-cloak
+                              >
+                                <div class="max-h-60 overflow-y-auto">
+                                  <template x-for="dest in filteredItems" :key="dest.value">
+                                    <div
+                                      @click="select(dest)"
+                                      class="px-3 py-1.5 hover:bg-primary hover:text-white cursor-pointer text-[10px] font-bold border-b border-neutral-50 transition-colors"
+                                    >
+                                      <span x-text="dest.value + ' - ' + dest.label"></span>
+                                    </div>
+                                  </template>
+                                </div>
                               </div>
                             </div>
-                          </div>
-                        </td>
+                          </td>
 
-                        <!-- Salida (VUELTA) -->
-                        <td class="px-4 py-1.5">
-                          <input
-                            type="text"
-                            x-flatpickr
-                            x-model="item.tramo.fechaSalida"
-                            :readonly="item.tramo.estado !== 'SOLICITADO' && item.tramo.estado !== 'RECHAZADO' && !isAdmin"
-                            :class="(item.tramo.estado !== 'SOLICITADO' && item.tramo.estado !== 'RECHAZADO' && !isAdmin) ? 'bg-neutral-100 text-neutral-500 cursor-not-allowed' : 'bg-white'"
-                            class="w-full rounded-md border-neutral-300 text-[11px] py-1 h-[28px] focus:ring-primary shadow-sm"
-                            placeholder="Seleccione fecha..." />
-                        </td>
+                          <!-- Salida (VUELTA) -->
+                          <td class="px-4 py-1.5">
+                            <input
+                              type="text"
+                              x-datepicker="{ position: 'top center' }"
+                              x-model="item.tramo.fechaSalida"
+                              :disabled="item.tramo.estado !== 'SOLICITADO' && item.tramo.estado !== 'RECHAZADO' && item.tramo.estado !== 'PENDIENTE' && !isAdmin"
+                              :class="(item.tramo.estado !== 'SOLICITADO' && item.tramo.estado !== 'RECHAZADO' && item.tramo.estado !== 'PENDIENTE' && !isAdmin) ? 'bg-neutral-100 text-neutral-500 cursor-not-allowed' : 'bg-white'"
+                              class="w-full rounded-md border-neutral-300 text-[11px] py-1 h-[28px] focus:ring-primary shadow-sm"
+                              placeholder="Seleccione fecha..."
+                            />
+                          </td>
 
-                        <td class="px-4 py-1.5">
-                          <button
-                            type="button"
-                            @click="removeTramo(item.index)"
-                            class="p-1 text-danger-400 hover:text-danger-700 hover:bg-danger-50 rounded-lg transition-all"
-                            title="Eliminar tramo">
-                            <i class="ph ph-trash text-base"></i>
-                          </button>
-                        </td>
-                      </tr>
-                    </template>
-                  </tbody>
-                </table>
-              </div>
+                          <td class="px-4 py-1.5">
+                            <button
+                              type="button"
+                              @click="removeTramo(item.index)"
+                              class="p-1 text-danger-400 hover:text-danger-700 hover:bg-danger-50 rounded-lg transition-all"
+                              title="Eliminar tramo"
+                            >
+                              <i class="ph ph-trash text-base"></i>
+                            </button>
+                          </td>
+                        </tr>
+                      </template>
+                    </tbody>
+                  </table>
+                </div>
 
-              <!-- Empty state for Vuelta -->
-              <div x-show="tramosVuelta().length === 0" class="px-4 py-6 text-center bg-neutral-50/50">
-                <p class="text-[10px] text-neutral-400 uppercase font-black tracking-widest">No se han añadido tramos de vuelta</p>
-              </div>
+                <!-- Empty state for Vuelta -->
+                <div x-show="tramosVuelta().length === 0" class="px-4 py-6 text-center bg-neutral-50/50">
+                  <p class="text-[10px] text-neutral-400 uppercase font-black tracking-widest">
+                    No se han añadido tramos de vuelta
+                  </p>
+                </div>
 
-              <!-- Footer / Hint -->
-              <div class="px-4 py-2 bg-neutral-50/50 border-t border-neutral-100 flex justify-between items-center">
-                <p class="text-[10px] text-neutral-400 italic">* El sistema conecta automáticamente el destino de un tramo con el origen del siguiente.</p>
+                <!-- Footer / Hint -->
+                <div class="px-4 py-2 bg-neutral-50/50 border-t border-neutral-100 flex justify-between items-center">
+                  <p class="text-[10px] text-neutral-400 italic">
+                    * El sistema conecta automáticamente el destino de un tramo con el origen del siguiente.
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
     </div>
-  </div>
 
   <script>
     function oficialFormHandlerEdit() {
@@ -610,18 +716,11 @@
           var tramo = this.tramos[index];
           if (tramo.estado && tramo.estado !== "SOLICITADO" && tramo.estado !== "RECHAZADO") return false;
 
-          if (tramo.tipo === "IDA")
-            return (
-              this.tramos.filter(function (t) {
-                return t.tipo === "IDA";
-              }).length > 1
-            );
-          return true;
+          return this.tramos.length > 1;
         },
 
         removeTramo(index) {
           this.tramos.splice(index, 1);
-          this.syncChain();
         },
 
         canEditOrigin(index) {
@@ -649,27 +748,31 @@
             });
         },
 
-        submitForm() {
+        syncTramos(event) {
+          var data = JSON.stringify(
+            this.tramos.map(function (t) {
+              return {
+                id: t.id || "",
+                origen: t.origen || "",
+                destino: t.destino || "",
+                fecha_salida: t.fechaSalida || "",
+                tipo: t.tipo,
+                estado: t.estado || "SOLICITADO",
+              };
+            }),
+          );
+
+          // Update actual input for non-HTMX fallbacks
           var el = document.getElementById("tramos_json_input_edit");
-          if (el)
-            el.value = JSON.stringify(
-              this.tramos.map(function (t) {
-                return {
-                  id: t.id || "",
-                  origen: t.origen || "",
-                  destino: t.destino || "",
-                  fecha_salida: t.fechaSalida || "",
-                  tipo: t.tipo || "IDA",
-                  estado: t.estado || "SOLICITADO",
-                };
-              }),
-            );
-          this.loading = true;
-          // Trigger HTMX dispatch
-          this.$refs.form.dispatchEvent(new Event("submit", { bubbles: true, cancelable: true }));
+          if (el) el.value = data;
+
+          // Crucial: Update HTMX parameters directly
+          if (event && event.detail && event.detail.parameters) {
+            event.detail.parameters["tramos_json"] = data;
+          }
         },
       };
     }
   </script>
-</div>
+  </div>
 {{ end }}

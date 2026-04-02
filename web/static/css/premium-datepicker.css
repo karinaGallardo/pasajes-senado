@@ -1,0 +1,100 @@
+/**
+ * Air Datepicker Premium Senate Theme
+ * Custom CSS Variables for a High-End UX
+ */
+:root {
+    --adp-background-color: #ffffff;
+    --adp-color: #1a1a1a;
+    --adp-accent-color: #03738C; /* Senado Teal/Primary */
+    --adp-border-color: #e2e8f0;
+    --adp-border-radius: 12px;
+    --adp-width: 280px;
+    --adp-z-index: 1000;
+
+    /* Day cells */
+    --adp-day-name-color: #94a3b8;
+    --adp-day-cell-height: 38px;
+    --adp-day-cell-width: 100%;
+
+    /* Header & Navigation */
+    --adp-nav-color-secondary: #64748b;
+    --adp-nav-height: 48px;
+
+    /* Fonts */
+    --adp-font-family: 'Inter', system-ui, sans-serif;
+    --adp-font-size: 13px;
+
+    /* Transitions */
+    --adp-transition-duration: 200ms;
+}
+
+.air-datepicker {
+    border: 1px solid var(--adp-border-color);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.08);
+}
+
+.air-datepicker-nav--title {
+    font-weight: 700 !important;
+    text-transform: uppercase;
+    letter-spacing: 0.025em;
+    font-size: 11px;
+}
+
+.air-datepicker-nav--title i {
+    font-style: normal;
+    color: var(--adp-nav-color-secondary);
+    margin-left: 4px;
+}
+
+.air-datepicker-cell.-current- {
+    color: var(--adp-accent-color);
+    font-weight: 700;
+    background: #f0f9fa;
+}
+
+.air-datepicker-cell.-selected- {
+    background: var(--adp-accent-color) !important;
+    color: #fff !important;
+    box-shadow: 0 4px 6px -1px rgba(3, 115, 140, 0.3) !important;
+}
+
+.air-datepicker-cell.-day-.-other-month- {
+    opacity: 0.3;
+}
+
+/* Time Picker Styling */
+.air-datepicker-time {
+    border-top: 1px solid #f1f5f9;
+    padding-top: 8px;
+    margin-top: 4px;
+}
+
+.air-datepicker-time--current-ampm {
+    text-transform: uppercase;
+    font-weight: 800;
+    color: var(--adp-accent-color);
+    font-size: 10px;
+    letter-spacing: 0.05em;
+}
+
+.air-datepicker-button {
+    color: var(--adp-accent-color);
+    font-weight: 700;
+    font-size: 11px;
+    text-transform: uppercase;
+}
+
+.air-datepicker-button:hover {
+    background: #f0f9fa;
+    color: #025a6e;
+}
+
+/* Animation */
+.air-datepicker.-active- {
+    animation: adp-fade-in 0.2s ease-out;
+}
+
+@keyframes adp-fade-in {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}

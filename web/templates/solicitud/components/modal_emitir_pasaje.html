@@ -1,12 +1,9 @@
-{{ define "solicitud/components/modal_editar_pasaje" }}
+{{ define "solicitud/components/modal_emitir_pasaje" }}
   <div
     x-data="modalPasaje({
-      id: '{{ .Pasaje.ID }}',
-      ruta: '{{ .Pasaje.GetRutaDisplay }}',
-      ruta_id: '{{ if .Pasaje.RutaID }}{{ .Pasaje.RutaID }}{{ end }}',
-      aerolinea_id: '{{ .Pasaje.AerolineaID }}',
-      agencia_id: '{{ .Pasaje.AgenciaID }}',
-      costo: {{ .Pasaje.Costo }},
+      ruta_id: '{{ .Form.RutaID }}',
+      aerolinea_id: '{{ .Form.AerolineaID }}',
+      agencia_id: '{{ .Form.AgenciaID }}',
       fares: {{ .Fares | json }}
   })"
     x-cloak
@@ -47,52 +44,52 @@
                     <span class="text-xs font-bold">{{ .ErrorMessage }}</span>
                   </div>
                 {{ end }}
+
+
                 <div class="flex items-center justify-between mb-6 border-b pb-4">
                   <div class="flex items-center gap-4">
                     <div class="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary shadow-inner">
-                      <i class="ph ph-note-pencil text-2xl"></i>
+                      <i class="ph ph-airplane text-2xl"></i>
                     </div>
                     <div>
-                      <h3 class="text-lg font-bold text-neutral-900 leading-tight" id="modal-title-edit">
-                        Editar Detalles del Pasaje
-                      </h3>
+                      <h3 class="text-lg font-bold text-neutral-900 leading-tight" id="modal-title">Asignar Nuevo Pasaje</h3>
                       <div class="mt-1 flex flex-col gap-1 text-[11px] text-neutral-500">
-                        {{ if .Pasaje.SolicitudItem }}
-                          <span class="flex items-center gap-1.5">
-                            <i class="ph ph-calendar-blank shrink-0 text-neutral-400"></i>
-                            <span>
-                              Viaje solicitado:
-                              <b class="text-neutral-700">{{ fechaHora .Pasaje.SolicitudItem.Fecha }}</b>
-                            </span>
+                        <span class="flex items-center gap-1.5">
+                          <i class="ph ph-calendar-blank shrink-0 text-neutral-400"></i>
+                          <span>
+                            Viaje solicitado:
+                            <b class="text-neutral-700">
+                              {{ if .SelectedItem }}{{ fechaHora .SelectedItem.Fecha }}{{ else }}-{{ end }}
+                            </b>
                           </span>
-                          {{ if .Pasaje.SolicitudItem.Solicitud.CupoDerechoItem }}
-                            <span class="flex items-center gap-1.5">
-                              <i class="ph ph-ticket shrink-0 text-neutral-400"></i>
-                              <span>
-                                Cupo asignado:
-                                <b class="text-neutral-700">
-                                  {{ .Pasaje.SolicitudItem.Solicitud.CupoDerechoItem.Mes | nombreMes }}
-                                  {{ .Pasaje.SolicitudItem.Solicitud.CupoDerechoItem.Gestion }},
-                                  {{ .Pasaje.SolicitudItem.Solicitud.CupoDerechoItem.Semana }}
-                                </b>
-                                <span class="text-neutral-400">
-                                  ({{ rangoSemanaCorto .Pasaje.SolicitudItem.Solicitud.CupoDerechoItem.FechaDesde .Pasaje.SolicitudItem.Solicitud.CupoDerechoItem.FechaHasta }})
-                                </span>
+                        </span>
+                        {{ if .Solicitud.CupoDerechoItem }}
+                          <span class="flex items-center gap-1.5">
+                            <i class="ph ph-ticket shrink-0 text-neutral-400"></i>
+                            <span>
+                              Cupo asignado:
+                              <b class="text-neutral-700">
+                                {{ .Solicitud.CupoDerechoItem.Mes | nombreMes }} {{ .Solicitud.CupoDerechoItem.Gestion }},
+                                {{ .Solicitud.CupoDerechoItem.Semana }}
+                              </b>
+                              <span class="text-neutral-400">
+                                ({{ rangoSemanaCorto .Solicitud.CupoDerechoItem.FechaDesde .Solicitud.CupoDerechoItem.FechaHasta }})
                               </span>
                             </span>
-                          {{ end }}
+                          </span>
                         {{ end }}
                       </div>
                     </div>
                   </div>
-                  <div class="flex items-center gap-3">
+                  <div class="flex items-center gap-2">
                     <button
-                      id="saveBtnModalPasaje"
                       type="button"
-                      @click="document.getElementById('editPasajeForm').requestSubmit()"
+                      @click="document.getElementById('createPasajeForm').requestSubmit()"
                       x-bind:disabled="!canSave"
                       x-bind:class="{ 'opacity-50 cursor-not-allowed': !canSave }"
-                      class="inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary text-sm font-bold text-white hover:bg-primary-800 transition-colors shadow-sm"
+                      class="inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-primary text-sm font-bold text-white hover:bg-primary-800 focus:outline-none transition-colors"
+                      :title="!fileName ? 'Debe cargar el pasaje para continuar' : ''"
+                      x-cloak
                     >
                       <span class="htmx-indicator-none">Guardar</span>
                       <span class="htmx-indicator flex items-center">
@@ -100,10 +97,11 @@
                         <span x-text="processingImage ? 'Procesando...' : 'Guardando...'"></span>
                       </span>
                     </button>
+
                     <button
                       @click="open = false"
                       type="button"
-                      class="text-neutral-400 hover:text-neutral-600 transition-colors cursor-pointer p-2 hover:bg-neutral-100 rounded-md ml-1"
+                      class="text-neutral-400 hover:text-neutral-600 p-2 hover:bg-neutral-100 rounded-md transition-colors ml-1"
                     >
                       <i class="ph ph-x text-2xl"></i>
                     </button>
@@ -111,79 +109,81 @@
                 </div>
 
                 <form
-                  id="editPasajeForm"
-                  action="/pasajes/update"
-                  hx-post="/pasajes/update"
+                  id="createPasajeForm"
+                  action="/solicitudes/{{ .Solicitud.ID }}/pasajes"
+                  hx-post="/solicitudes/{{ .Solicitud.ID }}/pasajes"
                   hx-target="#modal-container"
                   hx-swap="innerHTML"
-                  hx-indicator="#saveBtnModalPasaje"
+                  hx-indicator="find button"
                   method="POST"
                   enctype="multipart/form-data"
                   autocomplete="off"
                 >
                   <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
-                  <input type="hidden" name="id" x-model="id" />
 
-                  <div class="grid grid-cols-6 gap-6">
-                    {{ if .Pasaje.SolicitudItem }}
-                      <div class="col-span-6 flex items-stretch gap-3">
-                        <!-- Pasajero -->
-                        <div
-                          class="flex-1 bg-primary-50 p-2.5 rounded-lg border border-primary-100 flex flex-col justify-center min-w-0"
-                        >
-                          <span class="text-[10px] font-bold text-primary-600 uppercase tracking-widest leading-none mb-1">
-                            Pasajero
-                          </span>
-                          <span class="text-sm font-black text-neutral-800 truncate">
-                            {{ .Pasaje.SolicitudItem.Solicitud.Usuario.GetNombreCompleto }}
-                          </span>
-                        </div>
+                  <div class="grid grid-cols-6 gap-x-6 gap-y-4">
+                    <div class="col-span-6 flex items-stretch gap-3">
+                      <!-- Pasajero -->
+                      <div
+                        class="flex-1 bg-primary-50 p-2.5 rounded-lg border border-primary-100 flex flex-col justify-center min-w-0"
+                      >
+                        <span class="text-[10px] font-bold text-primary-600 uppercase tracking-widest leading-none mb-1">
+                          Pasajero
+                        </span>
+                        <span class="text-sm font-black text-neutral-800 truncate">
+                          {{ .Solicitud.Usuario.GetNombreCompleto }}
+                        </span>
+                      </div>
 
-                        <!-- Segmento -->
-                        <div
-                          class="flex-[1.5] bg-neutral-50 p-2.5 rounded-lg border border-neutral-200 shadow-sm flex items-center min-w-0"
-                        >
+                      <!-- Segmento -->
+                      <div
+                        class="flex-[1.5] bg-neutral-50 p-2.5 rounded-lg border border-neutral-200 shadow-sm flex items-center min-w-0"
+                      >
+                        <input type="hidden" name="solicitud_item_id" value="{{ .SelectedItem.ID }}" />
+
+                        {{ if .SelectedItem }}
                           <div class="flex items-center gap-3 w-full">
                             <div
-                              class="h-8 w-8 shrink-0 rounded flex items-center justify-center bg-white shadow-sm {{ .Pasaje.SolicitudItem.GetColorClass }}"
+                              class="h-8 w-8 shrink-0 rounded flex items-center justify-center bg-white shadow-sm {{ .SelectedItem.GetColorClass }}"
                             >
-                              <i class="ph {{ .Pasaje.SolicitudItem.GetIcon }} text-lg"></i>
+                              <i class="ph {{ .SelectedItem.GetIcon }} text-lg"></i>
                             </div>
                             <div class="min-w-0">
                               <span
                                 class="text-[9px] font-black uppercase text-neutral-400 tracking-tighter block leading-none mb-0.5"
                               >
-                                {{ .Pasaje.SolicitudItem.Tipo }}
+                                {{ .SelectedItem.Tipo }}
                               </span>
                               <h4 class="text-xs font-bold text-neutral-900 leading-tight truncate">
-                                {{ .Pasaje.SolicitudItem.GetOrigenDisplay }}
+                                {{ .SelectedItem.GetOrigenDisplay }}
                                 <i class="ph ph-arrow-right mx-0.5 text-neutral-300"></i>
-                                {{ .Pasaje.SolicitudItem.GetDestinoDisplay }}
+                                {{ .SelectedItem.GetDestinoDisplay }}
                               </h4>
                             </div>
                           </div>
-                        </div>
+                        {{ else }}
+                          <p class="text-[10px] text-danger-600 font-bold italic">Tramo no identificado</p>
+                        {{ end }}
                       </div>
-                    {{ end }}
+                    </div>
+
                     <div
                       class="col-span-6"
                       x-data="searchableSelect({
-                          items: [
-                              {{ range .Rutas }}
+                        items: [
+                            {{ range .Rutas }}
                         { value: '{{ .ID }}', label: '{{ .Tramo }}' },
                       {{ end }}
-                          ],
-                          initialValue: '{{ if .Pasaje.RutaID }}{{ .Pasaje.RutaID }}{{ end }}',
-                          initialLabel: '{{ .Pasaje.GetRutaDisplay }}'
-                      })"
+                        ],
+                        initialValue: '{{ .Form.RutaID }}',
+                        initialLabel: '{{ .Form.Ruta }}'
+                    })"
                       x-modelable="value"
                       x-model="ruta_id"
-                      @searchable-select-change="ruta = $event.detail.label"
                     >
-                      <label class="block text-sm font-medium text-neutral-700">Ruta (Origen - Destino)</label>
+                      <label class="block text-sm font-medium text-neutral-700">Ruta (Incluyendo Escalas)</label>
                       <div class="relative mt-1">
                         <input type="hidden" name="ruta_id" :value="value" />
-                        <input type="hidden" name="ruta" :value="label" />
 
                         <div class="relative">
                           <div
@@ -209,7 +209,7 @@
                           <input
                             x-ref="searchInput"
                             type="text"
-                            x-model.debounce.300ms="search"
+                            x-model="search"
                             x-show="open"
                             @click.away="open = false"
                             @keydown.escape="open = false"
@@ -245,21 +245,22 @@
                     <div
                       class="col-span-3"
                       x-data="searchableSelect({
-                         items: [
-                           {{ range .Agencias }}
+                        items: [
+                            {{ range .Agencias }}
                         { value: '{{ .ID }}', label: '{{ .Nombre }}' },
                       {{ end }}
-                         ],
-                         initialValue: '{{ .Pasaje.AgenciaID }}',
-                         initialLabel: '{{ if .Pasaje.Agencia }}{{ .Pasaje.Agencia.Nombre }}{{ end }}',
-                         placeholder: '-- Seleccionar --'
-                       })"
+                        ],
+                        initialValue: '{{ .Form.AgenciaID }}',
+                        initialLabel: '{{ range .Agencias }}{{ if eq .ID $.Form.AgenciaID }}{{ .Nombre }}{{ end }}{{ end }}',
+                        placeholder: '-- Seleccionar --'
+                    })"
                       x-modelable="value"
                       x-model="agencia_id"
                     >
                       <label class="block text-sm font-medium text-neutral-700">Agencia Emisora</label>
                       <div class="relative mt-1">
                         <input type="hidden" name="agencia_id" :value="value" required />
+
                         <div class="relative">
                           <div
                             @click="open = true; $nextTick(function() { $refs.searchInput.focus() })"
@@ -280,10 +281,11 @@
                               />
                             </svg>
                           </div>
+
                           <input
                             x-ref="searchInput"
                             type="text"
-                            x-model.debounce.300ms="search"
+                            x-model="search"
                             x-show="open"
                             @click.away="open = false"
                             @keydown.escape="open = false"
@@ -291,6 +293,7 @@
                             placeholder="Buscar agencia..."
                             class="w-full rounded-md border border-secondary bg-white py-2 pl-3 pr-10 shadow-sm focus:outline-none focus:ring-1 focus:ring-secondary sm:text-sm"
                           />
+
                           <ul
                             x-show="open"
                             class="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
@@ -318,21 +321,22 @@
                     <div
                       class="col-span-3"
                       x-data="searchableSelect({
-                         items: [
-                           {{ range .Aerolineas }}
+                        items: [
+                            {{ range .Aerolineas }}
                         { value: '{{ .ID }}', label: '{{ .Nombre }}' },
                       {{ end }}
-                         ],
-                         initialValue: '{{ .Pasaje.AerolineaID }}',
-                         initialLabel: '{{ if .Pasaje.Aerolinea }}{{ .Pasaje.Aerolinea.Nombre }}{{ end }}',
-                         placeholder: '-- Seleccionar --'
-                       })"
+                        ],
+                        initialValue: '{{ .Form.AerolineaID }}',
+                        initialLabel: '{{ range .Aerolineas }}{{ if eq .ID $.Form.AerolineaID }}{{ .Nombre }}{{ end }}{{ end }}',
+                        placeholder: '-- Seleccionar --'
+                    })"
                       x-modelable="value"
                       x-model="aerolinea_id"
                     >
                       <label class="block text-sm font-medium text-neutral-700">Aerolínea</label>
                       <div class="relative mt-1">
                         <input type="hidden" name="aerolinea_id" :value="value" required />
+
                         <div class="relative">
                           <div
                             @click="open = true; $nextTick(function() { $refs.searchInput.focus() })"
@@ -353,10 +357,11 @@
                               />
                             </svg>
                           </div>
+
                           <input
                             x-ref="searchInput"
                             type="text"
-                            x-model.debounce.300ms="search"
+                            x-model="search"
                             x-show="open"
                             @click.away="open = false"
                             @keydown.escape="open = false"
@@ -364,6 +369,7 @@
                             placeholder="Buscar aerolínea..."
                             class="w-full rounded-md border border-secondary bg-white py-2 pl-3 pr-10 shadow-sm focus:outline-none focus:ring-1 focus:ring-secondary sm:text-sm"
                           />
+
                           <ul
                             x-show="open"
                             class="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
@@ -387,6 +393,7 @@
                         </div>
                       </div>
                     </div>
+
                     <div class="col-span-3">
                       <label :for="$id('emision')" class="block text-sm font-medium text-neutral-700">
                         Fecha Emisión Billete
@@ -395,8 +402,8 @@
                         :id="$id('emision')"
                         type="text"
                         name="fecha_emision"
-                        value="{{ .Pasaje.FechaEmision.Format "2006-01-02" }}"
-                        x-datepicker="{ timepicker: false, position: 'top' }"
+                        value="{{ .Form.FechaEmision }}"
+                        x-datepicker="{ timepicker: false, position: 'top center' }"
                         required
                         class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md border p-2 bg-white"
                         placeholder="Seleccione fecha..."
@@ -409,7 +416,7 @@
                         :id="$id('billete')"
                         type="text"
                         name="numero_billete"
-                        value="{{ .Pasaje.NumeroBillete }}"
+                        value="{{ .Form.NumeroBillete }}"
                         required
                         autocomplete="off"
                         class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md border p-2"
@@ -423,8 +430,8 @@
                         :id="$id('vuelo')"
                         type="text"
                         name="fecha_vuelo"
-                        value="{{ .Pasaje.FechaVuelo.Format "2006-01-02 15:04" }}"
-                        x-datepicker="{ position: 'top' }"
+                        value="{{ .Form.FechaVuelo }}"
+                        x-datepicker="{ position: 'top center' }"
                         required
                         class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md border p-2 bg-white"
                         placeholder="Seleccione fecha y hora..."
@@ -437,7 +444,7 @@
                         :id="$id('num-vuelo')"
                         type="text"
                         name="numero_vuelo"
-                        value="{{ .Pasaje.NumeroVuelo }}"
+                        value="{{ .Form.NumeroVuelo }}"
                         required
                         autocomplete="off"
                         @input="$el.value = $el.value.toUpperCase()"
@@ -470,8 +477,8 @@
                       />
                     </div>
 
-                    <input type="hidden" name="codigo_reserva" value="{{ .Pasaje.CodigoReserva }}" />
-                    <input type="hidden" name="numero_factura" value="{{ .Pasaje.NumeroFactura }}" />
+                    <input type="hidden" name="codigo_reserva" value="" />
+                    <input type="hidden" name="numero_factura" value="" />
 
                     <div class="col-span-6">
                       <label :for="$id('glosa')" class="block text-sm font-medium text-neutral-700">
@@ -484,7 +491,7 @@
                         class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md border p-2"
                         placeholder="Detalles adicionales..."
                       >
-                {{ .Pasaje.Glosa }}</textarea
+{{ .Form.Glosa }}</textarea
                       >
                     </div>
 
@@ -500,6 +507,7 @@
                           type="file"
                           name="archivo"
                           accept="application/pdf"
+                          required
                           class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
                           @change="await handleFile($el)"
                         />
@@ -511,7 +519,7 @@
                             <i class="ph ph-cloud-arrow-up text-3xl"></i>
                           </div>
                           <div class="flex text-sm text-neutral-600 justify-center">
-                            <span class="font-bold text-primary group-hover:underline">Cargar Nuevo Pasaje (PDF)</span>
+                            <span class="font-bold text-primary group-hover:underline">Cargar Pasaje (PDF)</span>
                           </div>
                           <p class="text-[10px] text-neutral-400 font-medium">Solo archivos PDF autorizados</p>
                         </div>
@@ -523,7 +531,7 @@
                             <i class="ph ph-file-pdf text-3xl"></i>
                           </div>
                           <p class="text-xs font-bold text-neutral-900 truncate px-4" x-text="fileName"></p>
-                          <p class="text-[10px] text-success-600 font-black uppercase tracking-widest">✓ Listo para actualizar</p>
+                          <p class="text-[10px] text-success-600 font-black uppercase tracking-widest">✓ Listo para procesar</p>
                         </div>
                       </div>
                     </div>

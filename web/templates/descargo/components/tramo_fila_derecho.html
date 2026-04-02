@@ -137,11 +137,12 @@
 
     <td class="px-2 py-1">
       <input
-        type="date"
+        type="text"
         name="tramo_fecha[]"
         value="{{ .Tramo.Fecha }}"
         x-bind="bindInput"
         {{ if .Tramo.IsOriginal }}readonly{{ end }}
+        x-datepicker="{ position: 'top center' }"
         class="w-full text-[11px] border border-neutral-300 rounded py-0.5 px-1 focus:ring-primary h-9 {{ if .Tramo.IsOriginal }}
           bg-neutral-50 text-neutral-500 cursor-not-allowed
         {{ end }}"
@@ -226,20 +227,23 @@
                 <input
                   type="file"
                   name="tramo_archivo_{{ .Tramo.ID }}"
+                  accept="application/pdf"
                   x-bind="bindArchivo"
                   class="hidden"
-                  @change="await window.handleSingleUpload($event, $data); if($el.files[0] && $el.files[0].type.startsWith('image/')) { localUrl = URL.createObjectURL($el.files[0]) }"
+                  @change="await window.handleSingleUpload($event, $data);
+                  if($el.files[0]) {
+                    localUrl = URL.createObjectURL($el.files[0])
+                  }
+                  "
                 />
 
                 <input type="hidden" name="tramo_archivo_existente_{{ .Tramo.ID }}" value="{{ .Tramo.Archivo }}" />
-                <img x-show="localUrl" :src="localUrl" class="w-full h-full object-cover" />
-                <div x-show="!localUrl && processingImage" class="flex items-center justify-center">
-                  <i class="ph ph-circle-notch animate-spin text-xl text-primary-500"></i>
-                </div>
+
+                <i x-show="fileName || '{{ .Tramo.Archivo }}'" class="ph ph-file-pdf text-xl font-bold text-success-600"></i>
+
                 <i
-                  x-show="!localUrl && !processingImage"
-                  class="ph ph-upload-simple text-xl font-bold"
-                  :class="(fileName || '{{ .Tramo.Archivo }}') ? 'text-success-600' : 'text-neutral-400'"
+                  x-show="!fileName && !'{{ .Tramo.Archivo }}'"
+                  class="ph ph-upload-simple text-xl font-bold text-neutral-400"
                 ></i>
               </label>
             </div>

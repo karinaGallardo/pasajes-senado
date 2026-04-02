@@ -95,7 +95,7 @@ func (ctrl *PasajeController) renderCreateModalWithError(c *gin.Context, solicit
 	agencias, _ := ctrl.agenciaService.GetAllActive(c.Request.Context())
 	rutas, _ := ctrl.rutaService.GetAll(c.Request.Context())
 
-	utils.Render(c, "solicitud/components/modal_crear_pasaje", gin.H{
+	utils.Render(c, "solicitud/components/modal_emitir_pasaje", gin.H{
 		"Solicitud":       solicitud,
 		"Aerolineas":      aerolineas,
 		"Agencias":        agencias,
@@ -286,7 +286,7 @@ func (ctrl *PasajeController) GetCreateModal(c *gin.Context) {
 	itemID := c.Query("item_id")
 	selectedItem := solicitud.GetItemByID(itemID)
 
-	utils.Render(c, "solicitud/components/modal_crear_pasaje", gin.H{
+	utils.Render(c, "solicitud/components/modal_emitir_pasaje", gin.H{
 		"Solicitud":    solicitud,
 		"Aerolineas":   aerolineas,
 		"Agencias":     agencias,

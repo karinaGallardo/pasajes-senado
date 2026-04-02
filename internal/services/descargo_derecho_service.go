@@ -89,7 +89,6 @@ func (s *DescargoDerechoService) GetShowData(ctx context.Context, id string) (*d
 	}, nil
 }
 
-
 func (s *DescargoDerechoService) AutoCreateFromSolicitud(ctx context.Context, solicitud *models.Solicitud, userID string) (*models.Descargo, error) {
 	// Verificar si ya existe
 	existe, _ := s.repo.FindBySolicitudID(ctx, solicitud.ID)

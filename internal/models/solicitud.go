@@ -149,17 +149,17 @@ func (s *Solicitud) UpdateStatusBasedOnItems() {
 		s.TipoItinerarioCodigo = "SOLO_VUELTA"
 	}
 
-	// Unificamos criterio: Para estar completamente Aprobado/Emitido/Finalizado,
-	// debe tener ambos tramos (Ida y Vuelta). Si falta uno, es Parcial.
+	// Unificamos criterio: Si TODOS los tramos están en un estado final, 
+	// la solicitud hereda ese estado global, sin importar si es solo IDA o solo VUELTA.
 	newState := "SOLICITADO"
 
-	if allFinalized && hasIda && hasVuelta {
+	if allFinalized {
 		newState = "FINALIZADO"
-	} else if allEmitidos && hasIda && hasVuelta {
+	} else if allEmitidos {
 		newState = "EMITIDO"
-	} else if allApproved && hasIda && hasVuelta {
+	} else if allApproved {
 		newState = "APROBADO"
-	} else if hasApproved || (allApproved && (!hasIda || !hasVuelta)) || (allEmitidos && (!hasIda || !hasVuelta)) {
+	} else if hasApproved {
 		newState = "PARCIALMENTE_APROBADO"
 	} else if allRejected {
 		newState = "RECHAZADO"

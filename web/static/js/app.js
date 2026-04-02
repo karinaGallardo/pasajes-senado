@@ -148,47 +148,70 @@ document.addEventListener("alpine:init", function () {
     };
   });
 
-  Alpine.directive("flatpickr", (el, { expression }, { evaluate }) => {
+  /**
+   * x-datepicker: Premium Calendar Directive using Air Datepicker v3
+   */
+  Alpine.directive("datepicker", (el, { expression }, { evaluate }) => {
     let options = {};
     if (typeof expression === "string" && expression.trim() !== "") {
       options = evaluate(expression) || {};
     }
-    const defaultOptions = {
-      locale: "es",
-      dateFormat: "Y-m-d H:i", // Keep server format in 24h
-      enableTime: true,
-      time_24hr: false, // Enable AM/PM toggle
-      altInput: true,
-      altFormat: "d/m/Y h:i K", // Formato estándar Bolivia: 01/03/2026 02:30 PM
-      allowInput: true,
-      static: true, // Crucial for components inside modals
-      position: "auto right",
-      plugins: [
-        new confirmDatePlugin({
-          confirmText: "Aceptar",
-          showAlways: false,
-          theme: "light",
-        }),
-      ],
-    };
 
-    const fp = flatpickr(el, {
-      ...defaultOptions,
-      ...options,
-      onChange: (selectedDates, dateStr) => {
-        el.value = dateStr;
+    const defaultOptions = {
+      locale: window.airDatepickerLocaleEs || "es", // "es" is loaded from CDN
+      timepicker: true,
+      timeFormat: "HH:mm",
+      dateFormat: "yyyy-MM-dd",
+      minutesStep: 5,
+      autoClose: false,
+      position: "bottom center",
+      navTitles: {
+        days: "<strong>MMMM</strong> <i>yyyy</i>",
+      },
+      prevHtml: '<i class="ph ph-caret-left"></i>',
+      nextHtml: '<i class="ph ph-caret-right"></i>',
+      buttons: [
+        {
+          content: "Hoy",
+          className: "custom-button-today",
+          onClick: (dp) => {
+            dp.setViewDate(new Date());
+            dp.selectDate(new Date());
+          },
+        },
+        "clear",
+      ],
+      onSelect({ date, formattedDate, datepicker }) {
+        // Sync back with input for HTMX/Alpine
+        el.value = formattedDate;
         el.dispatchEvent(new Event("input", { bubbles: true }));
         el.dispatchEvent(new Event("change", { bubbles: true }));
       },
-    });
+    };
 
-    // Watch for external value changes
-    el._fp_cleanup = Alpine.effect(() => {
+    const mergedOptions = { ...defaultOptions, ...options };
+
+    // Auto-detect container to avoid scrolling issues in modals
+    if (!mergedOptions.container) {
+      mergedOptions.container = document.querySelector("#modal-container") || "body";
+    }
+
+    // Setup Air Datepicker
+    const dp = new AirDatepicker(el, mergedOptions);
+
+    // Clean up when element is removed
+    el._dp_instance = dp;
+    el._dp_cleanup = Alpine.effect(() => {
       const val = el.getAttribute("value") || el.value;
-      if (val && fp.input.value !== val) {
-        fp.setDate(val, false);
+      if (val && dp.selectedDates.length === 0) {
+        dp.selectDate(val, { silent: true });
       }
     });
+
+    // Cleanup on destroy
+    return () => {
+      if (dp) dp.destroy();
+    };
   });
 
   Alpine.directive("tooltip", (el, { expression, modifiers }) => {
