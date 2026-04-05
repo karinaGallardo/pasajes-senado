@@ -1,48 +1,59 @@
-{{ define "usuarios/senadores" }} {{ template "layout_header" . }}
+{{ define "usuarios/senadores" }}
+  {{ template "layout_header" . }}
 
-<div class="space-y-6" x-data="{ activeTab: '{{ .Rol }}', syncConfirm: false, syncing: false }">
-  <!-- Header -->
-  <div class="flex items-center justify-between">
-    <div>
-      <h1 class="text-2xl font-bold text-neutral-900">{{ .Title }}</h1>
-      <p class="mt-1 text-sm text-neutral-500">
-        {{ if eq .Rol "SENADOR" }} Administración de senadores y sus datos de contacto. {{ else }} Administración de funcionarios públicos y personal administrativo. {{ end }}
-      </p>
-    </div>
-    <div class="flex space-x-3">
-      <!-- Sync Button (HTMX Modal) -->
-      {{ if .AuthUser.IsAdminOrResponsable }}
-      <button
-        type="button"
-        hx-get="/usuarios/senadores/sync-modal"
-        hx-target="#modal-container"
-        class="inline-flex items-center px-4 py-2 border border-transparent text-sm leading-5 font-bold rounded-lg text-white bg-primary hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary shadow-md transition-all transform active:scale-95 cursor-pointer">
-        <i class="ph ph-arrows-clockwise text-xl -ml-1 mr-2"></i>
-        <span>Sincronizar Senadores</span>
-      </button>
-      {{ end }}
-    </div>
-  </div>
 
-  <!-- Table Container with Loading Indicator -->
-  <div id="usuarios-table-container" class="relative min-h-[200px]">
-    <div id="table-loader" class="htmx-indicator absolute inset-0 bg-white/60 backdrop-blur-[1px] z-20 flex items-center justify-center rounded-lg transition-opacity duration-200">
-      <div class="flex flex-col items-center">
-        <i class="ph ph-spinner animate-spin text-4xl text-primary"></i>
-        <span class="mt-3 text-sm font-bold text-primary-800 uppercase tracking-wider">Cargando Lista...</span>
+  <div class="space-y-6" x-data="{ activeTab: '{{ if .IsSenador }}SENADOR{{ else }}FUNCIONARIO{{ end }}', syncConfirm: false, syncing: false }">
+    <!-- Header -->
+    <div class="flex items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-neutral-900">{{ .Title }}</h1>
+        <p class="mt-1 text-sm text-neutral-500">
+          {{ if .IsSenador }}
+            Administración de senadores y sus datos de contacto.
+          {{ else }}
+            Administración de funcionarios públicos y personal administrativo.
+          {{ end }}
+        </p>
+      </div>
+      <div class="flex space-x-3">
+        <!-- Sync Button (HTMX Modal) -->
+        {{ if .AuthUser.IsAdminOrResponsable }}
+          <button
+            type="button"
+            hx-get="/usuarios/senadores/sync-modal"
+            hx-target="#modal-container"
+            class="inline-flex items-center px-4 py-2 border border-transparent text-sm leading-5 font-bold rounded-lg text-white bg-primary hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary shadow-md transition-all transform active:scale-95 cursor-pointer"
+          >
+            <i class="ph ph-arrows-clockwise text-xl -ml-1 mr-2"></i>
+            <span>Sincronizar Senadores</span>
+          </button>
+        {{ end }}
       </div>
     </div>
 
-    <div
-      id="main-table"
-      hx-get="/usuarios/senadores/table"
-      hx-trigger="load, reloadTable from:body, keyup delay:500ms changed from:#global-search-input"
-      hx-include="#global-search-input"
-      hx-indicator="#table-loader">
-      {{ template "usuarios/table_senadores" .Result }}
+    <!-- Table Container with Loading Indicator -->
+    <div id="usuarios-table-container" class="relative min-h-[200px]">
+      <div
+        id="table-loader"
+        class="htmx-indicator absolute inset-0 bg-white/60 backdrop-blur-[1px] z-20 flex items-center justify-center rounded-lg transition-opacity duration-200"
+      >
+        <div class="flex flex-col items-center">
+          <i class="ph ph-spinner animate-spin text-4xl text-primary"></i>
+          <span class="mt-3 text-sm font-bold text-primary-800 uppercase tracking-wider">Cargando Lista...</span>
+        </div>
+      </div>
+
+      <div
+        id="main-table"
+        hx-get="/usuarios/senadores/table"
+        hx-trigger="load, reloadTable from:body, keyup delay:500ms changed from:#global-search-input"
+        hx-include="#global-search-input"
+        hx-indicator="#table-loader"
+      >
+        {{ template "usuarios/table_senadores" .Result }}
+      </div>
     </div>
   </div>
-</div>
 
-{{ template "layout_footer" . }}
+  {{ template "layout_footer" . }}
 {{ end }}

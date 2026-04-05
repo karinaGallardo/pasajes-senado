@@ -59,9 +59,9 @@ func main() {
 	c := cron.New(cron.WithLocation(loc))
 	alertaService := container.AlertaService
 
-	// "0 9 * * 1-5" means: At 09:00 AM, Mon through Fri
+	// "0 9 * * 1-5" means: At 09:00, Mon through Fri
 	_, err = c.AddFunc("0 9 * * 1-5", func() {
-		slog.Info("[Scheduler] Ejecutando alertas de descargo programadas (9:00 AM Mon-Fri)...")
+		slog.Info("[Scheduler] Ejecutando alertas de descargo programadas (09:00 Mon-Fri)...")
 		workerPool.Submit(&services.AlertaDescargoJob{Service: alertaService})
 	})
 	if err != nil {
@@ -69,7 +69,7 @@ func main() {
 	}
 
 	c.Start()
-	slog.Info("[Scheduler] Programador iniciado: Alertas diarias Mon-Fri 09:00 AM America/La_Paz.")
+	slog.Info("[Scheduler] Programador iniciado: Alertas diarias Mon-Fri 09:00 America/La_Paz.")
 
 	itinerarioService := container.TipoItinerarioService
 	if err := itinerarioService.EnsureDefaults(context.Background()); err != nil {

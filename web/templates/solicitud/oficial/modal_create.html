@@ -28,17 +28,30 @@
             <input type="hidden" name="tramos_json" id="tramos_json_input" value="" />
             <input type="hidden" name="target_user_id" value="{{ .TargetUser.ID }}" />
 
+            <script type="application/json" id="destinos-create-data">
+              {{ json .Destinos }}
+            </script>            <script type="application/json" id="create-meta-data">
+              {
+                "isAdmin": {{ .IsAdmin }}
+              }
+            </script>
+
             <!-- Header -->
             <div
               class="bg-white px-4 pt-5 pb-4 sm:p-6 border-b border-neutral-200 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4"
             >
-              <div class="flex items-center">
-                <div class="h-10 w-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-600">
-                  <i class="ph ph-airplane-tilt text-2xl"></i>
+              <div class="flex items-center space-x-4">
+                <div
+                  class="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary shadow-sm border border-primary/20"
+                >
+                  <i class="ph ph-airplane-tilt text-3xl"></i>
                 </div>
-                <div class="ml-4 text-left">
-                  <h3 class="text-lg font-bold text-neutral-900">Nueva Solicitud Oficial</h3>
-                  <p class="text-sm text-neutral-500">Itinerario para {{ .TargetUser.GetNombreCompleto }}</p>
+                <div class="text-left">
+                  <h3 class="text-xl font-black text-neutral-900 leading-none tracking-tighter">Nueva Solicitud Oficial</h3>
+                  <p class="text-xs text-neutral-500 font-bold uppercase tracking-tight mt-1">
+                    Itinerario para
+                    {{ .TargetUser.GetNombreCompleto }}
+                  </p>
                 </div>
               </div>
 
@@ -46,7 +59,7 @@
                 <button
                   type="submit"
                   :disabled="loading"
-                  class="bg-primary text-white px-4 py-2 rounded-md font-bold text-sm shadow-sm hover:bg-primary-700 disabled:opacity-50 transition-colors"
+                  class="bg-primary text-white px-4 py-2 rounded-sm font-bold text-sm shadow-sm hover:bg-primary-700 disabled:opacity-50 transition-colors"
                 >
                   <span x-show="!loading">Guardar Solicitud</span>
                   <span x-show="loading">Procesando...</span>
@@ -54,7 +67,7 @@
                 <button
                   @click="open = false"
                   type="button"
-                  class="bg-white border border-neutral-300 text-neutral-700 px-4 py-2 rounded-md font-bold text-sm hover:bg-neutral-50"
+                  class="bg-white border border-neutral-300 text-neutral-700 px-4 py-2 rounded-sm font-bold text-sm hover:bg-neutral-50"
                 >
                   Cancelar
                 </button>
@@ -74,7 +87,7 @@
                       name="tipo_solicitud_codigo"
                       x-model="tipo"
                       required
-                      class="w-full rounded-md border-neutral-300 text-sm focus:ring-primary focus:border-primary transition-all"
+                      class="w-full rounded-sm border border-accent-200 text-xs bg-white shadow-sm focus:ring-primary focus:border-primary transition-all py-1.5 px-3 cursor-pointer"
                     >
                       {{ range .Tipos }}
                         <option value="{{ .Codigo }}">{{ .Nombre }}</option>
@@ -87,7 +100,7 @@
                       name="ambito_viaje_codigo"
                       x-model="ambito"
                       required
-                      class="w-full rounded-md border-neutral-300 text-sm focus:ring-primary focus:border-primary transition-all"
+                      class="w-full rounded-sm border border-accent-200 text-xs bg-white shadow-sm focus:ring-primary focus:border-primary transition-all py-1.5 px-3 cursor-pointer"
                     >
                       <option value="">Seleccione...</option>
                       {{ range .Ambitos }}
@@ -104,7 +117,8 @@
                       type="text"
                       name="autorizacion"
                       x-model="autorizacion"
-                      class="w-full rounded-md border-neutral-300 text-sm focus:ring-primary"
+                      required
+                      class="w-full rounded-sm border border-accent-200 text-xs bg-white shadow-sm focus:ring-primary focus:border-primary py-1.5 px-3"
                       placeholder="Ej: Res. 001/24"
                     />
                   </div>
@@ -114,13 +128,13 @@
                       Aerolínea Sugerida
                     </label>
                     <select
-                      name="aerolinea"
+                      name="aerolinea_id"
                       x-model="aerolinea"
-                      class="w-full rounded-md border-neutral-300 text-sm focus:ring-primary transition-all"
+                      class="w-full rounded-sm border border-accent-200 text-xs bg-white shadow-sm focus:ring-primary focus:border-primary transition-all py-1.5 px-3 cursor-pointer"
                     >
                       <option value="">Cualquiera</option>
                       {{ range .Aerolineas }}
-                        <option value="{{ .Nombre }}">{{ .Nombre }}</option>
+                        <option value="{{ .ID }}">{{ .Nombre }}</option>
                       {{ end }}
                     </select>
                   </div>
@@ -136,14 +150,11 @@
                     <textarea
                       name="motivo"
                       x-model="motivo"
-                      {{ if
-                        not
-                        .TargetUser.IsSenador
-                      }}
+                      {{ if not .TargetUser.IsSenador }}
                         required
                       {{ end }}
                       rows="2"
-                      class="w-full rounded-md border-neutral-300 text-sm focus:ring-primary transition-all resize-none"
+                      class="w-full rounded-sm border border-accent-200 text-xs bg-white shadow-sm focus:ring-primary focus:border-primary transition-all py-1.5 px-3 resize-none"
                       placeholder="{{ if .TargetUser.IsSenador }}
                         Ej: Gestión Parlamentaria...
                       {{ else }}
@@ -166,7 +177,7 @@
                   <button
                     type="button"
                     @click="addTramo('IDA')"
-                    class="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-white border border-primary-200 text-primary-700 text-[9px] font-black uppercase tracking-wider hover:bg-primary-50 transition-all"
+                    class="inline-flex items-center gap-1 px-2 py-1 rounded-sm bg-white border border-primary-200 text-primary-700 text-[9px] font-black uppercase tracking-wider hover:bg-primary-50 transition-all"
                   >
                     <i class="ph ph-plus-circle"></i>
                     <span>Añadir Tramo Ida</span>
@@ -222,7 +233,7 @@
                               <div
                                 x-show="!open"
                                 @click="open = true; $nextTick(function() { $refs.searchInput.focus() })"
-                                class="w-full bg-white border border-neutral-300 rounded-md shadow-sm pl-3 pr-8 py-1 text-left text-[11px] font-medium cursor-pointer flex items-center justify-between h-[28px]"
+                                class="w-full bg-white border border-accent-200 rounded-sm shadow-sm pl-3 pr-8 py-1 text-left text-[11px] font-medium cursor-pointer flex items-center justify-between h-[28px]"
                               >
                                 <span class="truncate" x-text="label || placeholder"></span>
                                 <i class="ph ph-magnifying-glass text-neutral-400 text-sm"></i>
@@ -235,7 +246,7 @@
                                 @keydown.escape="open = false"
                                 @keydown.enter.prevent="if (filteredItems.length > 0) select(filteredItems[0])"
                                 type="text"
-                                class="w-full bg-white border border-primary rounded-md shadow-sm pl-3 pr-8 py-1 text-[11px] font-medium focus:outline-none focus:ring-1 focus:ring-primary h-[28px]"
+                                class="w-full bg-white border border-primary rounded-sm shadow-sm pl-3 pr-8 py-1 text-[11px] font-medium focus:outline-none focus:ring-1 focus:ring-primary h-[28px]"
                                 placeholder="Filtrar..."
                               />
                               <div
@@ -283,7 +294,7 @@
                               <div
                                 x-show="!open"
                                 @click="open = true; $nextTick(function() { $refs.searchInput.focus() })"
-                                class="w-full bg-white border border-neutral-300 rounded-md shadow-sm pl-3 pr-8 py-1 text-left text-[11px] font-medium cursor-pointer flex items-center justify-between h-[28px]"
+                                class="w-full bg-white border border-accent-200 rounded-sm shadow-sm pl-3 pr-8 py-1 text-left text-[11px] font-medium cursor-pointer flex items-center justify-between h-[28px]"
                               >
                                 <span class="truncate" x-text="label || placeholder"></span>
                                 <i class="ph ph-magnifying-glass text-neutral-400 text-sm"></i>
@@ -296,7 +307,7 @@
                                 @keydown.escape="open = false"
                                 @keydown.enter.prevent="if (filteredItems.length > 0) select(filteredItems[0])"
                                 type="text"
-                                class="w-full bg-white border border-primary rounded-md shadow-sm pl-3 pr-8 py-1 text-[11px] font-medium focus:outline-none focus:ring-1 focus:ring-primary h-[28px]"
+                                class="w-full bg-white border border-primary rounded-sm shadow-sm pl-3 pr-8 py-1 text-[11px] font-medium focus:outline-none focus:ring-1 focus:ring-primary h-[28px]"
                                 placeholder="Filtrar..."
                               />
                               <div
@@ -326,7 +337,7 @@
                               :name="'tramos['+item.originalIndex+'].fecha_salida'"
                               x-model="item.tramo.fechaSalida"
                               required
-                              class="w-full rounded-md border-neutral-300 text-[11px] py-1 h-[28px] focus:ring-primary shadow-sm bg-white"
+                              class="w-full rounded-sm border-accent-200 text-[11px] py-1 h-[28px] focus:ring-primary shadow-sm bg-white"
                               placeholder="Seleccione fecha..."
                             />
                           </td>
@@ -366,7 +377,7 @@
                   <button
                     type="button"
                     @click="addTramo('VUELTA')"
-                    class="inline-flex items-center gap-1 px-2 py-1 rounded-md bg-white border border-secondary-200 text-secondary-700 text-[9px] font-black uppercase tracking-wider hover:bg-secondary-50 transition-all"
+                    class="inline-flex items-center gap-1 px-2 py-1 rounded-sm bg-white border border-secondary-200 text-secondary-700 text-[9px] font-black uppercase tracking-wider hover:bg-secondary-50 transition-all"
                   >
                     <i class="ph ph-plus-circle"></i>
                     <span>Añadir Tramo Vuelta</span>
@@ -422,7 +433,7 @@
                               <div
                                 x-show="!open"
                                 @click="open = true; $nextTick(function() { $refs.searchInput.focus() })"
-                                class="w-full bg-white border border-neutral-300 rounded-md shadow-sm pl-3 pr-8 py-1 text-left text-[11px] font-medium cursor-pointer flex items-center justify-between h-[28px]"
+                                class="w-full bg-white border border-accent-200 rounded-sm shadow-sm pl-3 pr-8 py-1 text-left text-[11px] font-medium cursor-pointer flex items-center justify-between h-[28px]"
                               >
                                 <span class="truncate" x-text="label || placeholder"></span>
                                 <i class="ph ph-magnifying-glass text-neutral-400 text-sm"></i>
@@ -435,7 +446,7 @@
                                 @keydown.escape="open = false"
                                 @keydown.enter.prevent="if (filteredItems.length > 0) select(filteredItems[0])"
                                 type="text"
-                                class="w-full bg-white border border-primary rounded-md shadow-sm pl-3 pr-8 py-1 text-[11px] font-medium focus:outline-none focus:ring-1 focus:ring-primary h-[28px]"
+                                class="w-full bg-white border border-primary rounded-sm shadow-sm pl-3 pr-8 py-1 text-[11px] font-medium focus:outline-none focus:ring-1 focus:ring-primary h-[28px]"
                                 placeholder="Filtrar..."
                               />
                               <div
@@ -483,7 +494,7 @@
                               <div
                                 x-show="!open"
                                 @click="open = true; $nextTick(function() { $refs.searchInput.focus() })"
-                                class="w-full bg-white border border-neutral-300 rounded-md shadow-sm pl-3 pr-8 py-1 text-left text-[11px] font-medium cursor-pointer flex items-center justify-between h-[28px]"
+                                class="w-full bg-white border border-accent-200 rounded-sm shadow-sm pl-3 pr-8 py-1 text-left text-[11px] font-medium cursor-pointer flex items-center justify-between h-[28px]"
                               >
                                 <span class="truncate" x-text="label || placeholder"></span>
                                 <i class="ph ph-magnifying-glass text-neutral-400 text-sm"></i>
@@ -496,7 +507,7 @@
                                 @keydown.escape="open = false"
                                 @keydown.enter.prevent="if (filteredItems.length > 0) select(filteredItems[0])"
                                 type="text"
-                                class="w-full bg-white border border-primary rounded-md shadow-sm pl-3 pr-8 py-1 text-[11px] font-medium focus:outline-none focus:ring-1 focus:ring-primary h-[28px]"
+                                class="w-full bg-white border border-primary rounded-sm shadow-sm pl-3 pr-8 py-1 text-[11px] font-medium focus:outline-none focus:ring-1 focus:ring-primary h-[28px]"
                                 placeholder="Filtrar..."
                               />
                               <div
@@ -525,7 +536,7 @@
                               x-datepicker="{ position: 'top center' }"
                               :name="'tramos['+item.originalIndex+'].fecha_salida'"
                               x-model="item.tramo.fechaSalida"
-                              class="w-full rounded-md border-neutral-300 text-[11px] py-1 focus:ring-primary shadow-sm bg-white"
+                              class="w-full rounded-sm border-accent-200 text-[11px] py-1 h-[28px] focus:ring-primary shadow-sm bg-white"
                               placeholder="Seleccione fecha..."
                             />
                           </td>
@@ -566,125 +577,144 @@
       </div>
     </div>
 
-  <script>
-    function oficialFormHandler() {
-      return {
-        open: true,
-        loading: false,
-        tipo: 'COMISION',
-        ambito: 'NACIONAL',
-        motivo: '',
-        autorizacion: 'COMISION',
-        aerolinea: '',
-        allDestinos: [
-          {{ range $i, $d := .Destinos }}{{ if $i }},{{ end }}
-          { value: '{{ $d.IATA }}', label: '{{ $d.GetLabel }}', ambito: '{{ $d.AmbitoCodigo }}' }
-          {{ end }}
-        ],
-        tramos: [],
+    <script>
+      function oficialFormHandler() {
+        return {
+          open: true,
+          loading: false,
+          tipo: "COMISION",
+          ambito: "NACIONAL",
+          motivo: "",
+          autorizacion: "",
+          aerolinea: "",
+          isAdmin: false,
+          allDestinos: [],
+          tramos: [],
 
-        get availableDestinos() {
-          if (!this.ambito) return [];
-          if (this.ambito === 'INTERNACIONAL') return this.allDestinos;
-          return this.allDestinos.filter(d => d.ambito === 'NACIONAL');
-        },
+          get availableDestinos() {
+            if (!this.ambito) return [];
+            if (this.ambito === "INTERNACIONAL") return this.allDestinos;
+            return this.allDestinos.filter((d) => d.ambito === "NACIONAL");
+          },
 
-        init() {
-          this.tramos = [];
-        },
+          init() {
+            this.tramos = [];
 
-        getTramosByType(type) {
-          return this.tramos
-            .map(function(t, i) { return { originalIndex: i, tramo: t }; })
-            .filter(function(item) { return item.tramo.tipo === type; });
-        },
+            var metaEl = document.getElementById("create-meta-data");
+            if (metaEl && metaEl.textContent) {
+              try {
+                var m = JSON.parse(metaEl.textContent);
+                this.isAdmin = !!m.isAdmin;
+              } catch (e) {}
+            }
 
-        addTramo(tipo) {
-          let lastDest = '';
-          let lastDestLabel = '';
+            var destinosEl = document.getElementById("destinos-create-data");
+            if (destinosEl && destinosEl.textContent) {
+              try {
+                var list = JSON.parse(destinosEl.textContent);
+                this.allDestinos = list.map(function (d) {
+                  return { value: d.IATA, label: d.IATA + " - " + d.Ciudad, ambito: d.AmbitoCodigo };
+                });
+              } catch (e) {}
+            }
+          },
 
-          if (this.tramos.length > 0) {
-            const last = this.tramos[this.tramos.length - 1];
-            lastDest = last.destino;
-            lastDestLabel = last.destinoLabel;
-          }
+          getTramosByType(type) {
+            return this.tramos
+              .map(function (t, i) {
+                return { originalIndex: i, tramo: t };
+              })
+              .filter(function (item) {
+                return item.tramo.tipo === type;
+              });
+          },
 
-          this.tramos.push({
-            tipo: tipo,
-            origen: lastDest,
-            origenLabel: lastDestLabel,
-            destino: '',
-            destinoLabel: '',
-            fechaSalida: ''
-          });
-        },
+          addTramo(tipo) {
+            let lastDest = "";
+            let lastDestLabel = "";
 
-        canRemoveTramo(index) {
-          return this.tramos.length > 1;
-        },
+            if (this.tramos.length > 0) {
+              const last = this.tramos[this.tramos.length - 1];
+              lastDest = last.destino;
+              lastDestLabel = last.destinoLabel;
+            }
 
-        removeTramo(index) {
-          this.tramos.splice(index, 1);
-        },
-
-        canEditOrigin(index) {
-          return true;
-        },
-
-        tramosIda() {
-          return this.tramos
-            .map(function (t, i) {
-              return { tramo: t, index: i };
-            })
-            .filter(function (x) {
-              return x.tramo.tipo === "IDA";
+            this.tramos.push({
+              tipo: tipo,
+              origen: lastDest,
+              origenLabel: lastDestLabel,
+              destino: "",
+              destinoLabel: "",
+              fechaSalida: "",
             });
-        },
-        tramosVuelta() {
-          return this.tramos
-            .map(function (t, i) {
-              return { tramo: t, index: i };
-            })
-            .filter(function (x) {
-              return x.tramo.tipo === "VUELTA";
+          },
+
+          canRemoveTramo(index) {
+            return this.tramos.length > 1;
+          },
+
+          removeTramo(index) {
+            this.tramos.splice(index, 1);
+          },
+
+          canEditOrigin(index) {
+            return true;
+          },
+
+          tramosIda() {
+            return this.tramos
+              .map(function (t, i) {
+                return { tramo: t, index: i };
+              })
+              .filter(function (x) {
+                return x.tramo.tipo === "IDA";
+              });
+          },
+          tramosVuelta() {
+            return this.tramos
+              .map(function (t, i) {
+                return { tramo: t, index: i };
+              })
+              .filter(function (x) {
+                return x.tramo.tipo === "VUELTA";
+              });
+          },
+
+          syncTramos(event) {
+            var data = JSON.stringify(
+              this.tramos.map(function (t) {
+                return {
+                  origen: t.origen || "",
+                  destino: t.destino || "",
+                  fecha_salida: t.fechaSalida || "",
+                  tipo: t.tipo || "IDA",
+                };
+              }),
+            );
+
+            // Update actual input for non-HTMX
+            var el = document.getElementById("tramos_json_input");
+            if (el) el.value = data;
+
+            // Crucial: Update HTMX parameters directly
+            if (event && event.detail && event.detail.parameters) {
+              event.detail.parameters["tramos_json"] = data;
+            }
+          },
+
+          submitForm() {
+            if (this.loading) return;
+
+            // Sincronizar antes de enviar (para el input hidden por si acaso)
+            this.syncTramos();
+
+            this.loading = true;
+            this.$nextTick(() => {
+              this.$refs.form.submit();
             });
-        },
-
-        syncTramos(event) {
-          var data = JSON.stringify(
-            this.tramos.map(function (t) {
-              return {
-                origen: t.origen || "",
-                destino: t.destino || "",
-                fecha_salida: t.fechaSalida || "",
-                tipo: t.tipo || "IDA",
-              };
-            }),
-          );
-
-          // Update actual input for non-HTMX
-          var el = document.getElementById("tramos_json_input");
-          if (el) el.value = data;
-
-          // Crucial: Update HTMX parameters directly
-          if (event && event.detail && event.detail.parameters) {
-            event.detail.parameters["tramos_json"] = data;
-          }
-        },
-
-        submitForm() {
-          if (this.loading) return;
-
-          // Sincronizar antes de enviar (para el input hidden por si acaso)
-          this.syncTramos();
-
-          this.loading = true;
-          this.$nextTick(() => {
-            this.$refs.form.submit();
-          });
-        },
+          },
+        };
       }
-    }
-  </script>
+    </script>
   </div>
 {{ end }}

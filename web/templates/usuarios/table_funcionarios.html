@@ -1,152 +1,187 @@
 {{ define "usuarios/table_funcionarios" }}
-<div class="table-container">
-  <table class="table-ui">
-    <thead>
-      <tr>
-        <th scope="col" class="w-10">#</th>
-        <th scope="col">Usuario / CI</th>
-        <th scope="col">Nombre Completo</th>
-        <th scope="col" class="hidden md:table-cell">Rol</th>
-        <th scope="col" class="hidden lg:table-cell">Cargo / Destino</th>
-        <th scope="col" class="text-right w-20">Acciones</th>
-      </tr>
-    </thead>
-    <tbody>
-      {{ range $index, $user := .Result.Usuarios }}
-      <tr>
-        <td class="font-mono text-neutral-400">
-          {{ if $.Result.Page }} {{ sum (sum (mul (sub $.Result.Page 1) $.Result.Limit) $index) 1 }} {{ else }} {{ inc $index }} {{ end }}
-        </td>
-        <td>
-          <div class="flex items-center">
-            <div class="flex-shrink-0 h-8 w-8">
-              <span class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-neutral-100 border border-neutral-200">
-                <span class="text-xs font-bold text-neutral-600 uppercase">{{ printf "%.1s" $user.Username }}</span>
-              </span>
-            </div>
-            <div class="ml-3">
-              <div class="flex items-center gap-1.5">
-                <span class="text-xs font-bold text-neutral-900 leading-none">{{ $user.Username }}</span>
-                {{ if $user.IsBlocked }}
-                <span class="px-1.5 py-0.5 rounded text-[8px] font-black bg-danger-50 text-danger-600 border border-danger-100 uppercase tracking-tighter">Bloqueado</span>
-                {{ end }}
+  <div class="table-container">
+    <table class="table-ui">
+      <thead>
+        <tr>
+          <th scope="col" class="w-10">#</th>
+          <th scope="col">Usuario / CI</th>
+          <th scope="col">Nombre Completo</th>
+          <th scope="col" class="hidden md:table-cell">Rol</th>
+          <th scope="col" class="hidden lg:table-cell">Cargo / Destino</th>
+          <th scope="col" class="text-right w-20">Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{ range $index, $user := .Result.Usuarios }}
+          <tr>
+            <td class="font-mono text-neutral-400">
+              {{ if $.Result.Page }}
+                {{ sum (sum (mul (sub $.Result.Page 1) $.Result.Limit) $index) 1 }}
+              {{ else }}
+                {{ inc $index }}
+              {{ end }}
+            </td>
+            <td>
+              <div class="flex items-center">
+                <div class="flex-shrink-0 h-8 w-8">
+                  <span
+                    class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-neutral-100 border border-neutral-200"
+                  >
+                    <span class="text-xs font-bold text-neutral-600 uppercase">{{ printf "%.1s" $user.Username }}</span>
+                  </span>
+                </div>
+                <div class="ml-3">
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-xs font-bold text-neutral-900 leading-none">{{ $user.Username }}</span>
+                    {{ if $user.IsBlocked }}
+                      <span
+                        class="px-1.5 py-0.5 rounded text-[8px] font-black bg-danger-50 text-danger-600 border border-danger-100 uppercase tracking-tighter"
+                      >
+                        Bloqueado
+                      </span>
+                    {{ end }}
+                  </div>
+                  <div class="text-[10px] text-neutral-400 font-medium mt-0.5">{{ $user.CI }}</div>
+                </div>
               </div>
-              <div class="text-[10px] text-neutral-400 font-medium mt-0.5">{{ $user.CI }}</div>
-            </div>
-          </div>
-        </td>
-        <td>
-          <div class="text-xs font-bold text-neutral-800 uppercase leading-none">{{ $user.GetNombreCompleto }}</div>
-          <div class="text-[10px] text-neutral-400 mt-1 truncate max-w-[150px]">{{ if $user.Email }}{{ $user.Email }}{{ else }}-{{ end }}</div>
-        </td>
-        <td class="hidden md:table-cell">
-          {{ if $user.Rol }}
-          <span class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-primary-50 text-primary-700 border border-primary-100 uppercase tracking-wider">{{ $user.Rol.Codigo }}</span>
-          {{ else }}
-          <span class="px-2 py-0.5 text-[10px] font-medium rounded-full bg-neutral-50 text-neutral-400 border border-neutral-200">Sin Rol</span>
-          {{ end }}
-        </td>
-        <td class="hidden lg:table-cell">
-          {{ if $user.Cargo }}
-          <div class="text-[10px] text-neutral-700 font-bold uppercase truncate max-w-[180px]">{{ $user.Cargo.Descripcion }}</div>
-          {{ end }}
-          {{ if $user.Oficina }}
-          <div class="text-[9px] text-neutral-400 mt-0.5 truncate max-w-[180px]">{{ $user.Oficina.Detalle }}</div>
-          {{ end }}
-          {{ if not (or $user.Cargo $user.Oficina) }}
-          <span class="text-neutral-300 italic text-[10px]">No especificado</span>
-          {{ end }}
-        </td>
-        <td class="text-right">
-          <div class="flex justify-end items-center gap-1">
-            {{ if $.AuthUser.CanCreateSolicitudFor $user }}
-            <button
-              type="button"
-              class="btn-xs btn-primary"
-              hx-get="/solicitudes/oficial/modal-crear?target_user_id={{ $user.ID }}"
-              hx-target="#modal-container"
-              title="Solicitud Oficial">
-              <i class="ph ph-airplane text-sm"></i>
-              <span class="hidden sm:inline">Oficial</span>
-            </button>
-            {{ end }}
-            
-            {{ if $user.IsBlocked }}
-            <button
-              type="button"
-              class="btn-xs btn-danger"
-              hx-post="/usuarios/{{ $user.ID }}/unblock"
-              hx-confirm="¿Está seguro de desbloquear?"
-              title="Desbloquear">
-              <i class="ph ph-lock-key-open"></i>
-            </button>
-            {{ end }}
+            </td>
+            <td>
+              <div class="text-xs font-bold text-neutral-800 uppercase leading-none">{{ $user.GetNombreCompleto }}</div>
+              <div class="text-[10px] text-neutral-400 mt-1 truncate max-w-[150px]">
+                {{ if $user.Email }}{{ $user.Email }}{{ else }}-{{ end }}
+              </div>
+            </td>
+            <td class="hidden md:table-cell">
+              {{ if $user.Rol }}
+                <span
+                  class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-primary-50 text-primary-700 border border-primary-100 uppercase tracking-wider"
+                >
+                  {{ $user.Rol.Codigo }}
+                </span>
+              {{ else }}
+                <span
+                  class="px-2 py-0.5 text-[10px] font-medium rounded-full bg-neutral-50 text-neutral-400 border border-neutral-200"
+                >
+                  Sin Rol
+                </span>
+              {{ end }}
+            </td>
+            <td class="hidden lg:table-cell">
+              {{ if $user.Cargo }}
+                <div class="text-[10px] text-neutral-700 font-bold uppercase truncate max-w-[180px]">
+                  {{ $user.Cargo.Descripcion }}
+                </div>
+              {{ end }}
+              {{ if $user.Oficina }}
+                <div class="text-[9px] text-neutral-400 mt-0.5 truncate max-w-[180px]">{{ $user.Oficina.Detalle }}</div>
+              {{ end }}
+              {{ if not (or $user.Cargo $user.Oficina) }}
+                <span class="text-neutral-300 italic text-[10px]">No especificado</span>
+              {{ end }}
+            </td>
+            <td class="text-right">
+              <div class="flex justify-end items-center gap-1">
+                {{ if $.AuthUser.CanCreateSolicitudFor $user }}
+                  <button
+                    type="button"
+                    class="btn-xs btn-primary"
+                    hx-get="/solicitudes/oficial/modal-crear?target_user_id={{ $user.ID }}"
+                    hx-target="#modal-container"
+                    title="Solicitud Oficial"
+                  >
+                    <i class="ph ph-airplane text-sm"></i>
+                    <span class="hidden sm:inline">Oficial</span>
+                  </button>
+                {{ end }}
 
-            <button
-              type="button"
-              hx-get="/usuarios/{{ $user.ID }}/editar"
-              hx-target="#modal-container"
-              class="btn-xs btn-white"
-              title="Editar">
-              <i class="ph ph-pencil-simple"></i>
-            </button>
-          </div>
-        </td>
-      </tr>
-      {{ else }}
-      <tr>
-        <td colspan="6" class="py-12 text-center text-neutral-400 italic">No se encontraron funcionarios</td>
-      </tr>
-      {{ end }}
-    </tbody>
-  </table>
-</div>
+                {{ if $user.IsBlocked }}
+                  <button
+                    type="button"
+                    class="btn-xs btn-danger"
+                    hx-post="/usuarios/{{ $user.ID }}/unblock"
+                    hx-confirm="¿Está seguro de desbloquear?"
+                    title="Desbloquear"
+                  >
+                    <i class="ph ph-lock-key-open"></i>
+                  </button>
+                {{ end }}
 
-{{ if .Result.TotalPages }}
-<div class="table-pagination">
-  <div class="text-[11px] text-neutral-500 font-medium">
-    Mostrando <span class="font-bold text-neutral-900">{{ len .Result.Usuarios }}</span> de <span class="font-bold text-neutral-900">{{ .Result.Total }}</span>
+
+                <button
+                  type="button"
+                  hx-get="/usuarios/{{ $user.ID }}/editar"
+                  hx-target="#modal-container"
+                  class="btn-xs btn-white"
+                  title="Editar"
+                >
+                  <i class="ph ph-pencil-simple"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        {{ else }}
+          <tr>
+            <td colspan="6" class="py-12 text-center text-neutral-400 italic">No se encontraron funcionarios</td>
+          </tr>
+        {{ end }}
+      </tbody>
+    </table>
   </div>
 
-  <div class="flex items-center gap-4">
-    <div class="flex items-center gap-2">
-      <span class="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Ver:</span>
-      <select
-        name="limit"
-        class="text-xs bg-white border border-neutral-200 rounded px-2 py-1 focus:ring-1 focus:ring-primary outline-none"
-        hx-get="/usuarios/funcionarios/table"
-        hx-include="#global-search-input"
-        hx-target="#main-table">
-        <option value="10" {{ if eq .Result.Limit 10 }}selected{{ end }}>10</option>
-        <option value="20" {{ if eq .Result.Limit 20 }}selected{{ end }}>20</option>
-        <option value="50" {{ if eq .Result.Limit 50 }}selected{{ end }}>50</option>
-      </select>
-    </div>
-
-    <div class="flex items-center gap-1">
-      {{ if gt .Result.Page 1 }}
-      <button
-        hx-get="/usuarios/funcionarios/table?page={{ sub .Result.Page 1 }}&q={{ .Result.SearchTerm }}&limit={{ .Result.Limit }}"
-        hx-target="#main-table"
-        class="w-8 h-8 flex items-center justify-center rounded border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-600 transition-colors">
-        <i class="ph ph-caret-left font-bold"></i>
-      </button>
-      {{ end }}
-
-      <div class="px-3 h-8 flex items-center bg-white border border-neutral-200 rounded text-xs font-bold text-neutral-700">
-        {{ .Result.Page }} <span class="text-neutral-300 mx-2">/</span> {{ .Result.TotalPages }}
+  {{ if .Result.TotalPages }}
+    <div class="table-pagination">
+      <div class="text-[11px] text-neutral-500 font-medium">
+        Mostrando
+        <span class="font-bold text-neutral-900">{{ len .Result.Usuarios }}</span>
+        de
+        <span class="font-bold text-neutral-900">{{ .Result.Total }}</span>
       </div>
 
-      {{ if lt .Result.Page .Result.TotalPages }}
-      <button
-        hx-get="/usuarios/funcionarios/table?page={{ sum .Result.Page 1 }}&q={{ .Result.SearchTerm }}&limit={{ .Result.Limit }}"
-        hx-target="#main-table"
-        class="w-8 h-8 flex items-center justify-center rounded border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-600 transition-colors">
-        <i class="ph ph-caret-right font-bold"></i>
-      </button>
-      {{ end }}
+      <div class="flex items-center gap-4">
+        <div class="flex items-center gap-2">
+          <span class="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Ver:</span>
+          <select
+            name="limit"
+            class="text-xs bg-white border border-neutral-200 rounded px-2 py-1 focus:ring-1 focus:ring-primary outline-none"
+            hx-get="/usuarios/funcionarios/table"
+            hx-include="#global-search-input"
+            hx-target="#main-table"
+          >
+            <option value="10" {{ if eq .Result.Limit 10 }}selected{{ end }}>10</option>
+            <option value="20" {{ if eq .Result.Limit 20 }}selected{{ end }}>20</option>
+            <option value="50" {{ if eq .Result.Limit 50 }}selected{{ end }}>50</option>
+          </select>
+        </div>
+
+        <div class="flex items-center gap-1">
+          {{ if gt .Result.Page 1 }}
+            <button
+              hx-get="/usuarios/funcionarios/table?page={{ sub .Result.Page 1 }}&q={{ .Result.SearchTerm }}&limit={{ .Result.Limit }}"
+              hx-target="#main-table"
+              class="w-8 h-8 flex items-center justify-center rounded border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-600 transition-colors"
+            >
+              <i class="ph ph-caret-left font-bold"></i>
+            </button>
+          {{ end }}
+
+
+          <div class="px-3 h-8 flex items-center bg-white border border-neutral-200 rounded text-xs font-bold text-neutral-700">
+            {{ .Result.Page }}
+            <span class="text-neutral-300 mx-2">/</span>
+            {{ .Result.TotalPages }}
+          </div>
+
+          {{ if lt .Result.Page .Result.TotalPages }}
+            <button
+              hx-get="/usuarios/funcionarios/table?page={{ sum .Result.Page 1 }}&q={{ .Result.SearchTerm }}&limit={{ .Result.Limit }}"
+              hx-target="#main-table"
+              class="w-8 h-8 flex items-center justify-center rounded border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-600 transition-colors"
+            >
+              <i class="ph ph-caret-right font-bold"></i>
+            </button>
+          {{ end }}
+        </div>
+      </div>
     </div>
-  </div>
-</div>
-{{ end }}
+  {{ end }}
 {{ end }}

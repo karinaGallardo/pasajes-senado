@@ -70,7 +70,6 @@ func (s *DescargoDerechoService) GetShowData(ctx context.Context, id string) (*d
 			EsModificacion:  item.EsModificacion,
 			MontoDevolucion: item.MontoDevolucion,
 			Moneda:          item.Moneda,
-			Orden:           item.Orden,
 			PasajeID:        utils.DerefString(item.PasajeID),
 			SolicitudItemID: utils.DerefString(item.SolicitudItemID),
 		}
@@ -128,8 +127,7 @@ func (s *DescargoDerechoService) SyncItineraryFromSolicitud(ctx context.Context,
 	existingMap := make(map[string]bool)
 	for _, det := range descargo.Tramos {
 		if det.PasajeID != nil {
-			key := fmt.Sprintf("%s_%d", *det.PasajeID, det.Orden)
-			existingMap[key] = true
+			existingMap[*det.PasajeID] = true
 		}
 	}
 
@@ -146,11 +144,8 @@ func (s *DescargoDerechoService) SyncItineraryFromSolicitud(ctx context.Context,
 			tipo := tipoPrefix + "_ORIGINAL"
 
 			tramosVuelo := p.GetTramosRuta()
-			for i := range tramosVuelo {
-				orden := p.Orden*100 + i
-				key := fmt.Sprintf("%s_%d", p.ID, orden)
-
-				if !existingMap[key] {
+			for range tramosVuelo {
+				if !existingMap[p.ID] {
 					tVuelo := p.FechaVuelo
 					descargo.Tramos = append(descargo.Tramos, models.DescargoTramo{
 						Tipo:            models.TipoDescargoTramo(tipo),
@@ -159,9 +154,8 @@ func (s *DescargoDerechoService) SyncItineraryFromSolicitud(ctx context.Context,
 						SolicitudItemID: &item.ID,
 						Fecha:           &tVuelo,
 						Billete:         strings.ToUpper(strings.TrimSpace(p.NumeroBillete)),
-						Orden:           orden,
 					})
-					existingMap[key] = true
+					existingMap[p.ID] = true
 					modified = true
 				}
 			}
@@ -193,20 +187,9 @@ func (s *DescargoDerechoService) UpdateDerecho(ctx context.Context, id string, r
 
 	// 2. Data Cleansing & Mapping
 	existingMap := make(map[string]models.DescargoTramo)
-	maxOrdenIda := -1
-	maxOrdenVuelta := -1
 
 	for _, d := range descargo.Tramos {
 		existingMap[d.ID] = d
-		if strings.HasPrefix(string(d.Tipo), "VUELTA") {
-			if d.Orden > maxOrdenVuelta {
-				maxOrdenVuelta = d.Orden
-			}
-		} else {
-			if d.Orden > maxOrdenIda {
-				maxOrdenIda = d.Orden
-			}
-		}
 	}
 
 	// 3. Process Structured Itinerary Rows
@@ -244,19 +227,7 @@ func (s *DescargoDerechoService) UpdateDerecho(ctx context.Context, id string, r
 			}
 		}
 
-		// 5. Logical Ordering for new manual segments
-		ordenRow := row.Orden
-		if idRow == "" {
-			if strings.HasPrefix(string(tipoRow), "VUELTA") {
-				maxOrdenVuelta++
-				ordenRow = maxOrdenVuelta
-			} else {
-				maxOrdenIda++
-				ordenRow = maxOrdenIda
-			}
-		}
-
-		// 6. Atomic Entity Assembly
+		// 5. Atomic Entity Assembly
 		det := models.DescargoTramo{
 			DescargoID:        id,
 			Tipo:              tipoRow,
@@ -271,7 +242,6 @@ func (s *DescargoDerechoService) UpdateDerecho(ctx context.Context, id string, r
 			EsModificacion:    row.EsModificacion,
 			MontoDevolucion:   row.MontoDevolucion,
 			Moneda:            row.Moneda,
-			Orden:             ordenRow,
 		}
 		det.ID = idRow
 		tramosProcesados = append(tramosProcesados, det)
@@ -335,7 +305,6 @@ func (s *DescargoDerechoService) GetEditData(ctx context.Context, id string) (*d
 			EsModificacion:  item.EsModificacion,
 			MontoDevolucion: item.MontoDevolucion,
 			Moneda:          item.Moneda,
-			Orden:           item.Orden,
 			PasajeID:        utils.DerefString(item.PasajeID),
 			SolicitudItemID: utils.DerefString(item.SolicitudItemID),
 		}

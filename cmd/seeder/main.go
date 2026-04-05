@@ -260,6 +260,7 @@ func seedViaticosAndConfig() {
 		{Clave: "GESTION_ACTUAL", Valor: "2026", Tipo: "INT"},
 		{Clave: "BANCO_CUENTA_DEVOLUCION", Valor: "10000005588211", Tipo: "STRING"},
 		{Clave: "BANCO_NOMBRE_DEVOLUCION", Valor: "BANCO UNIÓN S.A.", Tipo: "STRING"},
+		{Clave: "SEDES_AUTORIZADAS", Valor: "LPB", Tipo: "STRING"},
 	}
 
 	for _, cf := range confList {

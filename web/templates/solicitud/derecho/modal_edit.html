@@ -23,165 +23,138 @@
       <div
         class="inline-block align-bottom bg-white rounded-md px-4 pt-5 pb-4 text-left shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full sm:p-6"
         x-data="{
-        error: '',
-        {{ $ida := .Solicitud.GetItemIda }}
-        {{ $vuelta := .Solicitud.GetItemVuelta }}
-        {{ $stIda := `` }}{{ if $ida }}{{ $stIda = $ida.GetEstado }}{{ end }}
-        {{ $stVuelta := `` }}{{ if $vuelta }}{{ $stVuelta = $vuelta.GetEstado }}{{ end }}
-        fechaIda: '{{ if .Solicitud.GetFechaIda }}{{ .Solicitud.GetFechaIda.Format `2006-01-02 15:04` }}{{ end }}',
-        fechaVuelta: '{{ if .Solicitud.GetFechaVuelta }}{{ .Solicitud.GetFechaVuelta.Format `2006-01-02 15:04` }}{{ end }}',
-        isSubmitting: false,
-        isEdit: true,
-        isUpdated: {{ if .SuccessMessage }}
-          true
-        {{ else }}
-          false
-        {{ end }},
-        canEditIda: {{ if .CanEditIda }}
-          true
-        {{ else }}
-          false
-        {{ end }},
-        canEditVuelta: {{ if .CanEditVuelta }}
-          true
-        {{ else }}
-          false
-        {{ end }},
-        idaProgramada: {{ if and $ida (eq $ida.GetEstado `PENDIENTE`) }}
-          false
-        {{ else }}
-          true
-        {{ end }},
-        vueltaProgramada: {{ if and $vuelta (eq $vuelta.GetEstado `PENDIENTE`) }}
-          false
-        {{ else }}
-          true
-        {{ end }},
-        tipoItinerario: '{{ .Solicitud.TipoItinerarioCodigo }}',
-        editId: '{{ .Solicitud.ID }}',
-        selectedAerolinea: '{{ .Solicitud.AerolineaSugerida }}',
-        idaStatus: '{{ $stIda }}',
-        vueltaStatus: '{{ $stVuelta }}',
-        selectedWeekLabel: `{{ .Item.Semana }}: del {{ if .Item.FechaDesde }}{{ .Item.FechaDesde.Format "02/01/2006" }}{{ end }}
-         al {{ if .Item.FechaHasta }}{{ .Item.FechaHasta.Format "02/01/2006" }}{{ end }}`,
+          error: '',
+          {{ $ida := .Solicitud.GetItemIda }}
+          {{ $vuelta := .Solicitud.GetItemVuelta }}
+          fechaIda: '{{ if .Solicitud.GetFechaIda }}{{ .Solicitud.GetFechaIda.Format `2006-01-02 15:04` }}{{ end }}',
+          fechaVuelta: '{{ if .Solicitud.GetFechaVuelta }}{{ .Solicitud.GetFechaVuelta.Format `2006-01-02 15:04` }}{{ end }}',
+          isSubmitting: false,
+          isUpdated: {{ boolJS .SuccessMessage }},
+          canEditIda: {{ boolJS .CanEditIda }},
+          canEditVuelta: {{ boolJS .CanEditVuelta }},
 
-        // Ruta Asimétrica (Cargada con precisión desde el controlador)
-        origenIdaCiudad: '{{ .Origen.Ciudad }}',
-        origenIdaIATA: '{{ .Origen.IATA }}',
-        origenIdaAero: '{{ .Origen.Aeropuerto }}',
+          idaProgramada: {{ boolJS .IsIdaProgramada }},
+          vueltaProgramada: {{ boolJS .IsVueltaProgramada }},
 
-        destinoVueltaCiudad: '{{ .Destino.Ciudad }}',
-        destinoVueltaIATA: '{{ .Destino.IATA }}',
-        destinoVueltaAero: '{{ .Destino.Aeropuerto }}',
+          selectedAerolinea: '{{ if .Solicitud.AerolineaID }}{{ deref .Solicitud.AerolineaID }}{{ end }}',
+          idaStatus: '{{ if $ida }}{{ $ida.GetEstado }}{{ end }}',
+          vueltaStatus: '{{ if $vuelta }}{{ $vuelta.GetEstado }}{{ end }}',
 
-        lpbCiudad: '{{ .LPBCity }}',
-        lpbIATA: '{{ .LPBIATA }}',
-        lpbAero: 'Aeropuerto Int. El Alto',
+          origenIdaCiudad: '{{ .Origen.Ciudad }}',
+          origenIdaIATA: '{{ .Origen.IATA }}',
+          destinoVueltaCiudad: '{{ .Destino.Ciudad }}',
+          destinoVueltaIATA: '{{ .Destino.IATA }}',
 
-        origenesAutorizados: {{ json .OrigenesAutorizados }},
-        showIdaSelector: false,
-        showVueltaSelector: false,
+          sedeCiudad: '{{ .Sede.Ciudad }}',
+          sedeIATA: '{{ .Sede.IATA }}',
 
-        setOrigenIda(dest) {
-          this.origenIdaCiudad = dest.ciudad;
-          this.origenIdaIATA = dest.iata;
-          this.origenIdaAero = dest.aeropuerto;
-          this.showIdaSelector = false;
-        },
+          origenesAutorizados: {{ json .OrigenesAutorizados }},
+          sedesAutorizadas: {{ json .SedesAutorizadas }},
+          showIdaSelector: false,
+          showSedeSelector: false,
+          showVueltaSelector: false,
 
-        setDestinoVuelta(dest) {
-          this.destinoVueltaCiudad = dest.ciudad;
-          this.destinoVueltaIATA = dest.iata;
-          this.destinoVueltaAero = dest.aeropuerto;
-          this.showVueltaSelector = false;
-        },
-
-        validateForm() {
-          return this.error === '';
-        }
-      }"
+          setOrigenIda(dest) {
+            this.origenIdaCiudad = dest.ciudad;
+            this.origenIdaIATA = dest.iata;
+            this.showIdaSelector = false;
+          },
+          setSede(dest) {
+            this.sedeCiudad = dest.ciudad;
+            this.sedeIATA = dest.iata;
+            this.showSedeSelector = false;
+          },
+          setDestinoVuelta(dest) {
+            this.destinoVueltaCiudad = dest.ciudad;
+            this.destinoVueltaIATA = dest.iata;
+            this.showVueltaSelector = false;
+          },
+          validateForm() { return this.error === ''; },
+          parseDate(str) { return str ? new Date(str.replace(' ', 'T')) : new Date(NaN); }
+        }"
         x-init="error = ''"
       >
         <div
           class="flex flex-col h-full"
           x-effect="
-           const now = new Date();
-           const isAdmin = {{ if .IsAdmin }}
-            true
-          {{ else }}
-            false
-          {{ end }};
-           let err = '';
+            const now = new Date();
+            const canManageSystem = {{ .CanManageSystem }};
+            let err = '';
 
-           if (idaProgramada && fechaIda) {
-             const departureDate = new Date(fechaIda.replace(' ', 'T'));
-             if (!isAdmin && canEditIda && departureDate < now) {
-               err = 'La fecha y hora de salida ya ha pasado.';
-             }
-           }
+            if (canEditIda && idaProgramada) {
+              if (!fechaIda) {
+                err = 'Debe ingresar la fecha de salida.';
+              } else {
+                const dStart = parseDate(fechaIda);
+                if (isNaN(dStart.getTime())) err = 'Fecha de salida inválida.';
+                else if (!canManageSystem && dStart < now) err = 'La fecha de salida ya ha pasado.';
+              }
+            }
 
-           if (!err && idaProgramada && fechaIda && vueltaProgramada && fechaVuelta) {
-             const departureDate = new Date(fechaIda.replace(' ', 'T'));
-             const returnDate = new Date(fechaVuelta.replace(' ', 'T'));
-             const diffMs = returnDate.getTime() - departureDate.getTime();
-             const diffHours = diffMs / (1000 * 60 * 60);
+            if (!err && canEditVuelta && vueltaProgramada) {
+              if (!fechaVuelta) {
+                err = 'Debe ingresar la fecha de retorno.';
+              } else {
+                const dEnd = parseDate(fechaVuelta);
+                if (isNaN(dEnd.getTime())) err = 'Fecha de retorno inválida.';
+                else if (!canManageSystem && dEnd < now) err = 'La fecha de retorno ya ha pasado.';
+              }
+            }
 
-             if (diffHours < 4) {
-               err = 'Debe haber al menos 4 horas de diferencia entre el tramo de ida y vuelta.';
-             }
-           }
-           error = err;
-        "
+            if (!err && idaProgramada && fechaIda && vueltaProgramada && fechaVuelta) {
+              const d1 = parseDate(fechaIda);
+              const d2 = parseDate(fechaVuelta);
+              if (!isNaN(d1.getTime()) && !isNaN(d2.getTime()) && ((d2 - d1) / 3600000) < 4) {
+                err = 'Debe haber al menos 4 horas entre tramos.';
+              }
+            }
+
+            if (!err && !idaProgramada && !vueltaProgramada) {
+              err = 'Debe programar al menos un tramo (Ida o Vuelta).';
+            }
+
+            error = err;
+          "
         >
           <div class="flex items-center justify-between mb-4 border-b pb-4">
             <div class="flex items-center space-x-4">
               <div
-                class="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary shadow-sm border border-primary/20"
+                class="h-12 w-12 rounded-md bg-primary/10 flex items-center justify-center text-primary shadow-sm border border-primary/20"
               >
                 <i class="ph ph-airplane-tilt text-3xl"></i>
               </div>
               <div>
                 <div class="flex items-center gap-3 mb-1">
-                  <h3 class="text-xl font-black text-neutral-900 leading-none tracking-tighter">
-                    {{ if not .Solicitud.GetFechaVuelta }}Agendar Retorno{{ else }}Editar Solicitud{{ end }}
-                  </h3>
+                  <h3 class="text-xl font-black text-neutral-900 leading-none tracking-tighter">Editar solicitud</h3>
                   <span
-                    class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-neutral-100 text-neutral-600 border border-neutral-200"
+                    class="px-3 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-neutral-100 text-neutral-600 border border-neutral-200"
                   >
                     {{ .Solicitud.Codigo }}
                   </span>
                 </div>
-                <div class="flex items-center gap-2 flex-wrap">
-                  <span
-                    class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-primary-50 text-primary-700 border border-primary-100"
-                  >
-                    {{ .Solicitud.GetTipoNombre }}
-                  </span>
-                  <span
-                    class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-neutral-100 text-neutral-600 border border-neutral-200"
-                  >
-                    {{ .Solicitud.GetTipoItinerarioNombre }}
-                  </span>
-                  {{ if .Solicitud.EstadoSolicitud }}
+                <div class="mt-1 space-y-1">
+                  <div class="flex items-center gap-2">
                     <span
-                      class="px-2 py-0.5 inline-flex items-center gap-1 text-[9px] font-black rounded-full border {{ .Solicitud.GetStatusBadgeClass }}"
+                      class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-neutral-100 text-neutral-600 border border-neutral-200"
                     >
-                      <i class="{{ .Solicitud.EstadoSolicitud.Icon }}"></i>
-                      {{ .Solicitud.EstadoSolicitud.Nombre }}
+                      {{ .Solicitud.GetTipoItinerarioNombre }}
                     </span>
-                  {{ end }}
-                  <span class="h-1 w-1 rounded-full bg-neutral-300 mx-1"></span>
-                  <p class="text-xs text-neutral-500 font-medium tracking-tight">
-                    {{ .TargetUser.GetNombreCompleto }} •
-                    <span class="text-neutral-400 font-bold uppercase tracking-tighter">
-                      {{ .Item.Semana }} /
-                      {{ .Item.Mes | nombreMes }}
-                      {{ .Item.Gestion }}
-                    </span>
-                    <span class="text-primary-600 font-bold ml-1 border-l border-neutral-200 pl-2 leading-none inline-block">
-                      {{ rangoSemana .Item.FechaDesde .Item.FechaHasta }}
-                    </span>
-                  </p>
+                    {{ if .Solicitud.EstadoSolicitud }}
+                      <p class="text-[13px] font-medium tracking-tight flex items-center gap-1">
+                        <i class="{{ .Solicitud.EstadoSolicitud.Icon }}"></i>
+                        {{ .Solicitud.EstadoSolicitud.Nombre }}
+                      </p>
+                    {{ end }}
+                  </div>
+                  <div class="flex items-center gap-2 text-neutral-600">
+                    <p class="text-[12px] font-medium tracking-tight">
+                      {{ .Solicitud.Usuario.GetNombreCompleto }}
+                    </p>
+                    <span class="h-1 w-1 rounded-full bg-neutral-500"></span>
+                    <p class="text-[12px] font-medium tracking-tight">
+                      {{ .CupoItem.GetWeekLabel }}
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -190,20 +163,21 @@
               <button
                 type="submit"
                 form="pasajeForm"
-                :disabled="isSubmitting"
-                :class="isSubmitting ? 'opacity-50 cursor-not-allowed bg-neutral-400' : 'bg-primary hover:bg-primary-800'"
-                class="inline-flex items-center justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-bold rounded-md text-white transition-colors"
+                :disabled="isSubmitting || error !== ''"
+                :class="(isSubmitting || error !== '') ? 'opacity-50 cursor-not-allowed bg-neutral-400' : 'bg-primary hover:bg-primary-800'"
+                class="inline-flex items-center justify-center px-4 py-2 border border-transparent shadow-sm text-sm font-black rounded-md text-white transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
               >
                 <i x-show="isSubmitting" class="ph ph-spinner animate-spin mr-2"></i>
+                <i x-show="!isSubmitting" class="ph ph-check-circle mr-2 text-lg"></i>
                 <span>Actualizar</span>
               </button>
 
               <button
                 @click="isUpdated ? window.location.reload() : open = false"
                 type="button"
-                class="flex items-center gap-2 text-neutral-500 hover:text-neutral-700 text-sm font-bold px-3 py-2 bg-neutral-100 hover:bg-neutral-200 rounded-md transition-all ml-1"
+                class="inline-flex items-center justify-center px-4 py-2 border border-neutral-200 shadow-sm text-sm font-black rounded-md text-neutral-600 bg-neutral-100 hover:bg-neutral-200 transition-all focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-neutral-500"
               >
-                <i class="ph ph-x text-lg"></i>
+                <i class="ph ph-x mr-2 text-lg"></i>
                 <span>Cerrar</span>
               </button>
             </div>
@@ -234,507 +208,546 @@
               <div
                 x-data="{ show: true }"
                 x-show="show"
-                x-init="setTimeout(() => show = false, 5000)"
-                class="p-3 bg-success-50 border border-success-200 rounded-lg flex items-center justify-between gap-3"
+                x-transition:enter="transition ease-out duration-300"
+                x-transition:enter-start="opacity-0 -translate-y-2"
+                x-transition:enter-end="opacity-100 translate-y-0"
+                x-transition:leave="transition ease-in duration-200"
+                x-transition:leave-start="opacity-100 translate-y-0"
+                x-transition:leave-end="opacity-0 -translate-y-2"
+                class="bg-success-50 border border-success-200 rounded-md p-4 mb-4 flex items-center justify-between gap-3 shadow-sm"
               >
                 <div class="flex items-center gap-3">
-                  <i class="ph ph-check-circle text-success-500 text-xl"></i>
-                  <span class="text-sm font-bold text-success-600">{{ .SuccessMessage }}</span>
+                  <div class="h-8 w-8 rounded-full bg-success-100 flex items-center justify-center text-success-600">
+                    <i class="ph ph-check-circle text-xl"></i>
+                  </div>
+                  <p class="text-sm font-black text-success-800">
+                    {{ .SuccessMessage }}
+                  </p>
                 </div>
-                <button @click="show = false" type="button" class="text-success-400 hover:text-success-600">
-                  <i class="ph ph-x text-sm"></i>
+                <button type="button" @click="show = false" class="text-success-400 hover:text-success-600 transition-colors">
+                  <i class="ph ph-x text-lg"></i>
                 </button>
               </div>
             {{ end }}
             {{ if .ErrorMessage }}
-              <div class="p-3 bg-danger-50 border border-danger-200 rounded-lg flex items-center gap-3">
+              <div class="p-3 bg-danger-50 border border-danger-200 rounded-md flex items-center gap-3">
                 <i class="ph ph-warning-circle text-danger-500 text-xl"></i>
                 <span class="text-sm font-bold text-danger-600">{{ .ErrorMessage }}</span>
               </div>
             {{ end }}
 
 
-            <div x-show="error" class="p-3 bg-danger-50 border border-danger-200 rounded-lg flex items-center gap-3">
-              <i class="ph ph-warning-circle text-danger-500 text-xl"></i>
-              <span x-text="error" class="text-sm font-bold text-danger-600"></span>
-            </div>
-          </div>
-
-          <div id="modal-form-container">
-            <form
-              id="pasajeForm"
-              method="POST"
-              :hx-post="isEdit ? ('/solicitudes/derecho/' + editId + '/actualizar') : '/solicitudes/derecho'"
-              hx-target="#modal-container"
-              hx-swap="innerHTML"
-              class="bg-white rounded-md shadow-sm border border-neutral-200 mt-0 p-2 space-y-2"
-              @submit="if(!validateForm()) { $event.preventDefault(); } else { isSubmitting = true; }"
-              @htmx:after-request="isSubmitting = false; if(event.detail.xhr.status === 200) isUpdated = true"
-              x-transition:enter="transition ease-out duration-300"
-              x-transition:enter-start="opacity-0 translate-y-4"
-              x-transition:enter-end="opacity-100 translate-y-0"
+            <!-- Mensaje de Error Dinámico -->
+            <div
+              x-show="error"
+              x-cloak
+              x-transition
+              class="bg-danger-50 border border-danger-200 rounded-md p-4 flex items-center gap-3"
             >
-              <div class="p-2 pt-0 space-y-2">
-                <!-- VALORES POR DEFECTO (HIDDEN) -->
-                <input type="hidden" name="tipo_solicitud_codigo" value="{{ .TipoSolicitud.Codigo }}" />
-                <input type="hidden" name="ambito_viaje_codigo" value="{{ .Ambito.Codigo }}" />
-                <input type="hidden" name="cupo_derecho_item_id" value="{{ .Item.ID }}" />
-                <input type="hidden" name="target_user_id" value="{{ .TargetUser.ID }}" />
-                <input type="hidden" name="return_url" value="{{ .ReturnURL }}" />
+              <i class="ph ph-warning-circle text-danger-500 text-xl"></i>
+              <p class="text-sm font-bold text-danger-800" x-text="error"></p>
+            </div>
 
-                <!-- SECCIÓN A: RESUMEN DE DERECHO -->
-                <section class="bg-primary-50/50 p-4 rounded-xl border border-primary-100/50 flex flex-wrap gap-6 items-center">
-                  <div class="flex items-center space-x-2">
-                    <span class="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Concepto:</span>
-                    <span class="px-2 py-0.5 bg-white border border-neutral-200 rounded text-xs font-bold text-neutral-600">
-                      {{ .Concepto.Nombre }}
-                    </span>
-                  </div>
-                  <div class="flex items-center space-x-2">
-                    <span class="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Tipo:</span>
-                    <span class="px-2 py-0.5 bg-white border border-neutral-200 rounded text-xs font-bold text-neutral-600">
-                      {{ .TipoSolicitud.Nombre }}
-                    </span>
-                  </div>
-                </section>
+            <div id="modal-form-container">
+              <form
+                id="pasajeForm"
+                method="POST"
+                hx-post="/solicitudes/derecho/{{ .Solicitud.ID }}/actualizar"
+                hx-target="#modal-container"
+                hx-swap="innerHTML"
+                class="bg-white rounded-md shadow-sm border border-neutral-200 mt-0 p-2 space-y-2"
+                @submit="if(!validateForm()) { $event.preventDefault(); } else { isSubmitting = true; }"
+                @htmx:after-request="isSubmitting = false; if(event.detail.xhr.status === 200) isUpdated = true"
+                x-transition:enter="transition ease-out duration-300"
+                x-transition:enter-start="opacity-0 translate-y-4"
+                x-transition:enter-end="opacity-100 translate-y-0"
+              >
+                <div class="p-2 pt-0 space-y-2">
+                  <!-- VALORES POR DEFECTO (HIDDEN) -->
+                  <input type="hidden" name="tipo_solicitud_codigo" value="{{ .TipoSolicitud.Codigo }}" />
+                  <input type="hidden" name="ambito_viaje_codigo" value="{{ .Ambito.Codigo }}" />
+                  <input type="hidden" name="cupo_derecho_item_id" value="{{ .CupoItem.ID }}" />
+                  <input type="hidden" name="target_user_id" value="{{ .TargetUser.ID }}" />
+                  <input type="hidden" name="return_url" value="{{ .ReturnURL }}" />
+                  <input type="hidden" name="sede_iata" :value="sedeIATA" />
 
-                <!-- VISUALIZACIÓN DE RUTA (ASIMÉTRICA) -->
-                <section class="bg-white p-6 rounded-2xl border border-neutral-100 shadow-sm relative group mb-4">
-                  <div class="relative flex items-center justify-between gap-2">
-                    <!-- 1. ORIGEN IDA -->
-                    <div class="flex-1 relative">
-                      <div class="flex items-center space-x-2">
-                        <div
-                          class="h-10 w-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shadow-inner"
-                        >
-                          <i class="ph ph-map-pin text-xl"></i>
+                  <!-- SECCIÓN A: RESUMEN DE DERECHO -->
+                  <section class="bg-primary-50/50 p-4 rounded-md border border-primary-100/50 flex flex-wrap gap-6 items-center">
+                    <div class="flex items-center space-x-2">
+                      <span class="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Concepto:</span>
+                      <span class="px-2 py-0.5 bg-white border border-neutral-200 rounded text-xs font-bold text-neutral-600">
+                        {{ .Concepto.Nombre }}
+                      </span>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                      <span class="text-[10px] font-bold text-neutral-400 uppercase tracking-wider">Tipo:</span>
+                      <span class="px-2 py-0.5 bg-white border border-neutral-200 rounded text-xs font-bold text-neutral-600">
+                        {{ .TipoSolicitud.Nombre }}
+                      </span>
+                    </div>
+                  </section>
+
+                  <!-- VISUALIZACIÓN DE RUTA (ASIMÉTRICA) -->
+                  <section class="bg-white p-6 rounded-2xl border border-neutral-100 shadow-sm relative group mb-4">
+                    <div class="relative flex items-center justify-between gap-2">
+                      <!-- 1. ORIGEN IDA -->
+                      <div class="flex-1 relative">
+                        <div class="flex items-center space-x-2">
+                          <div
+                            class="h-10 w-10 rounded-md bg-primary/10 flex items-center justify-center text-primary shadow-inner"
+                          >
+                            <i class="ph ph-map-pin text-xl"></i>
+                          </div>
+                          <div class="flex-1 min-w-0">
+                            <div class="flex items-center gap-1">
+                              <h4 class="text-[9px] font-black text-primary uppercase tracking-widest leading-none">Salida</h4>
+                              <button
+                                type="button"
+                                @click="showIdaSelector = !showIdaSelector"
+                                class="p-0.5 hover:bg-primary-50 text-neutral-400 hover:text-primary rounded transition-colors"
+                                :disabled="!canEditIda"
+                                :class="!canEditIda ? 'opacity-0' : ''"
+                              >
+                                <i class="ph ph-note-pencil text-[15px]"></i>
+                              </button>
+                            </div>
+                            <div class="text-lg font-black text-neutral-800 leading-none truncate" x-text="origenIdaCiudad"></div>
+                            <div class="text-[10px] font-bold text-primary" x-text="origenIdaIATA"></div>
+                          </div>
                         </div>
-                        <div class="flex-1 min-w-0">
+
+                        <!-- Selector Ida -->
+                        <div
+                          x-show="showIdaSelector"
+                          @click.away="showIdaSelector = false"
+                          class="absolute top-full left-0 mt-2 w-56 bg-white border border-neutral-200 rounded-md shadow-xl z-50 overflow-hidden"
+                          x-cloak
+                          x-transition
+                        >
+                          <div class="bg-neutral-50 px-2 py-1.5 border-b border-neutral-100">
+                            <span class="text-[9px] font-black text-neutral-500 uppercase">Origen Autorizado</span>
+                          </div>
+                          <div class="max-h-40 overflow-y-auto">
+                            <template x-for="dest in origenesAutorizados" :key="dest.iata">
+                              <button
+                                type="button"
+                                @click="setOrigenIda(dest)"
+                                class="w-full text-left px-3 py-1.5 hover:bg-primary-50 transition-colors border-b border-neutral-50 last:border-0 group"
+                              >
+                                <div class="flex items-center justify-between">
+                                  <span
+                                    class="text-xs font-bold text-neutral-700 group-hover:text-primary"
+                                    x-text="dest.ciudad"
+                                  ></span>
+                                  <span class="text-[9px] font-black text-neutral-400" x-text="dest.iata"></span>
+                                </div>
+                              </button>
+                            </template>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Flecha/Conexión Ida -->
+                      <div class="flex items-center text-neutral-300">
+                        <i class="ph ph-caret-right text-xs"></i>
+                      </div>
+
+                      <!-- 2. SEDE (ELIGIELA) - DINÁMICA -->
+                      <div class="flex-1 text-center px-2 relative">
+                        <div class="inline-flex flex-col items-center">
                           <div class="flex items-center gap-1">
-                            <h4 class="text-[9px] font-black text-primary uppercase tracking-widest leading-none">Salida</h4>
+                            <div
+                              @click="showSedeSelector = !showSedeSelector"
+                              class="h-8 w-8 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-400 mb-1 border border-neutral-200 hover:border-primary hover:text-primary transition-all cursor-pointer shadow-sm"
+                            >
+                              <i class="ph ph-buildings text-sm"></i>
+                            </div>
                             <button
                               type="button"
-                              @click="showIdaSelector = !showIdaSelector"
+                              @click="showSedeSelector = !showSedeSelector"
                               class="p-0.5 hover:bg-primary-50 text-neutral-400 hover:text-primary rounded transition-colors"
-                              :disabled="!canEditIda"
-                              :class="!canEditIda ? 'opacity-0' : ''"
                             >
-                              <i class="ph ph-note-pencil text-[10px]"></i>
+                              <i class="ph ph-note-pencil text-[15px]"></i>
                             </button>
                           </div>
-                          <div class="text-lg font-black text-neutral-800 leading-none truncate" x-text="origenIdaCiudad"></div>
-                          <div class="text-[10px] font-bold text-primary" x-text="origenIdaIATA"></div>
+                          <div class="text-xs font-black text-neutral-500 leading-none uppercase" x-text="sedeCiudad"></div>
+                          <div class="text-[9px] font-bold text-neutral-400" x-text="sedeIATA"></div>
                         </div>
-                      </div>
 
-                      <!-- Selector Ida -->
-                      <div
-                        x-show="showIdaSelector"
-                        @click.away="showIdaSelector = false"
-                        class="absolute top-full left-0 mt-2 w-56 bg-white border border-neutral-200 rounded-lg shadow-xl z-50 overflow-hidden"
-                        x-cloak
-                        x-transition
-                      >
-                        <div class="bg-neutral-50 px-2 py-1.5 border-b border-neutral-100">
-                          <span class="text-[9px] font-black text-neutral-500 uppercase">Origen Autorizado</span>
-                        </div>
-                        <div class="max-h-40 overflow-y-auto">
-                          <template x-for="dest in origenesAutorizados" :key="dest.iata">
-                            <button
-                              type="button"
-                              @click="setOrigenIda(dest)"
-                              class="w-full text-left px-3 py-1.5 hover:bg-primary-50 transition-colors border-b border-neutral-50 last:border-0 group"
-                            >
-                              <div class="flex items-center justify-between">
-                                <span
-                                  class="text-xs font-bold text-neutral-700 group-hover:text-primary"
-                                  x-text="dest.ciudad"
-                                ></span>
-                                <span class="text-[9px] font-black text-neutral-400" x-text="dest.iata"></span>
-                              </div>
-                            </button>
-                          </template>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- Flecha/Conexión Ida -->
-                    <div class="flex items-center text-neutral-300">
-                      <i class="ph ph-caret-right text-xs"></i>
-                    </div>
-
-                    <!-- 2. SEDE (LA PAZ) - FIJA -->
-                    <div class="flex-1 text-center px-2">
-                      <div class="inline-flex flex-col items-center">
+                        <!-- Selector Sede -->
                         <div
-                          class="h-8 w-8 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-400 mb-1 border border-neutral-200"
+                          x-show="showSedeSelector"
+                          @click.away="showSedeSelector = false"
+                          class="absolute top-full left-1/2 -translate-x-1/2 mt-2 w-56 bg-white border border-neutral-200 rounded-md shadow-xl z-50 overflow-hidden origin-top"
+                          x-cloak
+                          x-transition:enter="transition ease-out duration-200"
+                          x-transition:enter-start="opacity-0 scale-95 -translate-x-1/2"
+                          x-transition:enter-end="opacity-100 scale-100 -translate-x-1/2"
+                          x-transition:leave="transition ease-in duration-150"
+                          x-transition:leave-start="opacity-100 scale-100 -translate-x-1/2"
+                          x-transition:leave-end="opacity-0 scale-95 -translate-x-1/2"
                         >
-                          <i class="ph ph-buildings text-sm"></i>
+                          <div class="bg-neutral-50 px-2 py-1.5 border-b border-neutral-100">
+                            <span class="text-[9px] font-black text-neutral-500 uppercase">Cambiar Sede Senado</span>
+                          </div>
+                          <div class="max-h-40 overflow-y-auto">
+                            <template x-for="dest in sedesAutorizadas" :key="dest.iata">
+                              <button
+                                type="button"
+                                @click="setSede(dest)"
+                                class="w-full text-center px-3 py-1.5 hover:bg-primary-50 transition-colors border-b border-neutral-50 last:border-0 group"
+                              >
+                                <div class="flex items-center justify-between">
+                                  <span
+                                    class="text-xs font-bold text-neutral-700 group-hover:text-primary"
+                                    x-text="dest.ciudad"
+                                  ></span>
+                                  <span class="text-[9px] font-black text-neutral-400" x-text="dest.iata"></span>
+                                </div>
+                              </button>
+                            </template>
+                          </div>
                         </div>
-                        <div class="text-xs font-black text-neutral-500 leading-none uppercase" x-text="lpbCiudad"></div>
-                        <div class="text-[9px] font-bold text-neutral-400" x-text="lpbIATA"></div>
                       </div>
-                    </div>
 
-                    <!-- Flecha/Conexión Vuelta -->
-                    <div class="flex items-center text-neutral-300">
-                      <i class="ph ph-caret-right text-xs"></i>
-                    </div>
+                      <!-- Flecha/Conexión Vuelta -->
+                      <div class="flex items-center text-neutral-300">
+                        <i class="ph ph-caret-right text-xs"></i>
+                      </div>
 
-                    <!-- 3. DESTINO VUELTA -->
-                    <div class="flex-1 text-right relative">
-                      <div class="flex items-center justify-end space-x-2">
-                        <div class="flex-1 min-w-0">
-                          <div class="flex items-center justify-end gap-1">
-                            <button
-                              type="button"
-                              @click="showVueltaSelector = !showVueltaSelector"
-                              class="p-0.5 hover:bg-secondary-50 text-neutral-400 hover:text-secondary rounded transition-colors"
-                              :disabled="!canEditVuelta"
-                              :class="!canEditVuelta ? 'opacity-0' : ''"
-                            >
-                              <i class="ph ph-note-pencil text-[10px]"></i>
-                            </button>
-                            <h4 class="text-[9px] font-black text-secondary uppercase tracking-widest leading-none">Retorno</h4>
+                      <!-- 3. DESTINO VUELTA -->
+                      <div class="flex-1 text-right relative">
+                        <div class="flex items-center justify-end space-x-2">
+                          <div class="flex-1 min-w-0">
+                            <div class="flex items-center justify-end gap-1">
+                              <button
+                                type="button"
+                                @click="showVueltaSelector = !showVueltaSelector"
+                                class="p-0.5 hover:bg-secondary-50 text-neutral-400 hover:text-secondary rounded transition-colors"
+                                :disabled="!canEditVuelta"
+                                :class="!canEditVuelta ? 'opacity-0' : ''"
+                              >
+                                <i class="ph ph-note-pencil text-[15px]"></i>
+                              </button>
+                              <h4 class="text-[9px] font-black text-secondary uppercase tracking-widest leading-none">Retorno</h4>
+                            </div>
+                            <div
+                              class="text-lg font-black text-neutral-800 leading-none truncate"
+                              x-text="destinoVueltaCiudad"
+                            ></div>
+                            <div class="text-[10px] font-bold text-secondary" x-text="destinoVueltaIATA"></div>
                           </div>
                           <div
-                            class="text-lg font-black text-neutral-800 leading-none truncate"
-                            x-text="destinoVueltaCiudad"
-                          ></div>
-                          <div class="text-[10px] font-bold text-secondary" x-text="destinoVueltaIATA"></div>
+                            class="h-10 w-10 rounded-md bg-secondary/10 flex items-center justify-center text-secondary shadow-inner"
+                          >
+                            <i class="ph ph-navigation-arrow text-xl"></i>
+                          </div>
                         </div>
-                        <div
-                          class="h-10 w-10 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary shadow-inner"
-                        >
-                          <i class="ph ph-navigation-arrow text-xl"></i>
-                        </div>
-                      </div>
 
-                      <!-- Selector Vuelta -->
-                      <div
-                        x-show="showVueltaSelector"
-                        @click.away="showVueltaSelector = false"
-                        class="absolute top-full right-0 mt-2 w-56 bg-white border border-neutral-200 rounded-lg shadow-xl z-50 overflow-hidden"
-                        x-cloak
-                        x-transition
-                      >
-                        <div class="bg-neutral-50 px-2 py-1.5 border-b border-neutral-100 text-right">
-                          <span class="text-[9px] font-black text-neutral-500 uppercase">Destino Autorizado</span>
-                        </div>
-                        <div class="max-h-40 overflow-y-auto">
-                          <template x-for="dest in origenesAutorizados" :key="dest.iata">
-                            <button
-                              type="button"
-                              @click="setDestinoVuelta(dest)"
-                              class="w-full text-right px-3 py-1.5 hover:bg-secondary-50 transition-colors border-b border-neutral-50 last:border-0 group"
-                            >
-                              <div class="flex items-center justify-between">
-                                <span class="text-[9px] font-black text-neutral-400" x-text="dest.iata"></span>
-                                <span
-                                  class="text-xs font-bold text-neutral-700 group-hover:text-secondary"
-                                  x-text="dest.ciudad"
-                                ></span>
-                              </div>
-                            </button>
-                          </template>
+                        <!-- Selector Vuelta -->
+                        <div
+                          x-show="showVueltaSelector"
+                          @click.away="showVueltaSelector = false"
+                          class="absolute top-full right-0 mt-2 w-56 bg-white border border-neutral-200 rounded-md shadow-xl z-50 overflow-hidden"
+                          x-cloak
+                          x-transition
+                        >
+                          <div class="bg-neutral-50 px-2 py-1.5 border-b border-neutral-100 text-right">
+                            <span class="text-[9px] font-black text-neutral-500 uppercase">Destino Autorizado</span>
+                          </div>
+                          <div class="max-h-40 overflow-y-auto">
+                            <template x-for="dest in origenesAutorizados" :key="dest.iata">
+                              <button
+                                type="button"
+                                @click="setDestinoVuelta(dest)"
+                                class="w-full text-right px-3 py-1.5 hover:bg-secondary-50 transition-colors border-b border-neutral-50 last:border-0 group"
+                              >
+                                <div class="flex items-center justify-between">
+                                  <span class="text-[9px] font-black text-neutral-400" x-text="dest.iata"></span>
+                                  <span
+                                    class="text-xs font-bold text-neutral-700 group-hover:text-secondary"
+                                    x-text="dest.ciudad"
+                                  ></span>
+                                </div>
+                              </button>
+                            </template>
+                          </div>
                         </div>
                       </div>
                     </div>
-                  </div>
-                </section>
+                  </section>
 
-                <!-- TRAYECTOS / ITINERARIO -->
-                <section class="space-y-4">
-                  <div class="flex items-center justify-between mb-2 mt-2">
-                    <span class="text-xs font-bold text-secondary uppercase tracking-widest">Itinerario de Viaje</span>
-                    <div class="h-px bg-neutral-100 flex-1 ml-4 mr-4"></div>
-                  </div>
+                  <!-- TRAYECTOS / ITINERARIO -->
+                  <section class="space-y-4">
+                    <div class="flex items-center justify-between mb-2">
+                      <span class="text-xs font-bold text-secondary uppercase tracking-widest">Configuración de Tramos</span>
+                      <div class="h-px bg-neutral-100 flex-1 ml-4 mr-4"></div>
+                    </div>
 
-                  <div class="rounded-xl border border-neutral-200">
-                    <table class="min-w-full divide-y divide-neutral-200">
-                      <thead class="bg-neutral-50">
-                        <tr>
-                          <th
-                            class="px-4 py-3 text-left text-[10px] font-bold text-neutral-500 uppercase tracking-wider w-1/3 rounded-tl-xl"
-                          >
-                            Tramo / Ruta
-                          </th>
-                          <th class="px-4 py-3 text-center text-[10px] font-bold text-neutral-500 uppercase tracking-wider">
-                            ¿Programar?
-                          </th>
-                          <th
-                            class="px-4 py-3 text-left text-[10px] font-bold text-neutral-500 uppercase tracking-wider rounded-tr-xl w-1/2"
-                          >
-                            Fecha y Hora
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody class="bg-white divide-y divide-neutral-200">
-                        <!-- IDA -->
-                        <tr>
-                          <td class="px-4 py-4 whitespace-nowrap">
-                            <div class="flex items-center space-x-3">
-                              <div class="h-8 w-8 rounded bg-primary/10 flex items-center justify-center text-primary">
-                                <i class="ph ph-airplane text-lg transform rotate-45"></i>
-                              </div>
-                              <div>
-                                <div class="flex items-center gap-2">
-                                  <div class="text-sm font-black text-neutral-800 tracking-tight">
-                                    <span x-text="origenIdaIATA"></span>
-                                    <i class="ph ph-arrow-right text-[10px] mx-1 text-neutral-400"></i>
-                                    <span x-text="lpbIATA"></span>
-                                  </div>
-                                  <span
-                                    class="px-1.5 py-0.5 rounded-sm bg-primary-100 text-primary-700 text-[8px] font-black uppercase tracking-tighter"
-                                  >
-                                    IDA
-                                  </span>
-                                </div>
-                                <div class="text-[10px] font-bold text-neutral-400 uppercase tracking-tighter">
-                                  <span x-text="origenIdaCiudad"></span>
-                                  •
-                                  <span x-text="lpbCiudad"></span>
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-                          <td class="px-4 py-4 text-center whitespace-nowrap">
-                            <template x-if="canEditIda">
-                              <label class="inline-flex items-center cursor-pointer">
-                                <input type="checkbox" x-model="idaProgramada" class="sr-only peer" />
-                                <div
-                                  class="relative w-11 h-6 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"
-                                ></div>
-                              </label>
-                            </template>
-                            <template x-if="!canEditIda">
-                              <div class="flex flex-col items-center">
-                                <span
-                                  class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-tighter {{ if $ida }}
-                                    {{ $ida.GetStatusBadgeClass }}
-                                  {{ end }}"
-                                  x-text="idaStatus || 'N/A'"
-                                ></span>
-                                <span class="text-[8px] font-bold text-neutral-400 uppercase mt-1">No editable</span>
-                              </div>
-                            </template>
-                          </td>
-                          <td class="px-4 py-4">
-                            <div x-show="idaProgramada">
-                              <input
-                                type="text"
-                                x-model="fechaIda"
-                                :disabled="!canEditIda"
-                                :class="!canEditIda ? 'bg-neutral-100 cursor-not-allowed opacity-75' : 'bg-neutral-50 hover:bg-neutral-100'"
-                                x-datepicker="{ position: 'top center' }"
-                                class="w-full px-3 py-1.5 border border-neutral-200 rounded-lg text-xs font-bold text-neutral-700 font-mono focus:ring-2 focus:ring-primary/20 transition-all"
-                              />
-                            </div>
-                            <span
-                              x-show="!idaProgramada"
-                              class="text-[10px] font-black text-neutral-400 uppercase italic tracking-widest pl-2"
+                    <div class="rounded-md border border-neutral-200 overflow-hidden shadow-sm">
+                      <table class="min-w-full divide-y divide-neutral-200">
+                        <thead class="bg-neutral-50/80">
+                          <tr>
+                            <th
+                              class="px-4 py-3 text-left text-[10px] font-black text-neutral-500 uppercase tracking-widest w-1/3"
                             >
-                              Sin fecha definida (Por confirmar)
-                            </span>
-                            <input
-                              type="hidden"
-                              name="fecha_salida"
-                              :value="!idaProgramada ? '' : (fechaIda ? fechaIda.replace(' ', 'T') : '')"
-                            />
-                            <input type="hidden" name="ida_por_confirmar" :value="!idaProgramada" />
-                          </td>
-                        </tr>
-
-                        <!-- VUELTA -->
-                        <tr>
-                          <td class="px-4 py-4 whitespace-nowrap">
-                            <div class="flex items-center space-x-3 text-secondary">
-                              <div class="h-8 w-8 rounded bg-secondary/10 flex items-center justify-center text-secondary">
-                                <i class="ph ph-airplane text-lg transform -rotate-135"></i>
-                              </div>
-                              <div>
-                                <div class="flex items-center gap-2">
-                                  <div class="text-sm font-black text-neutral-800 tracking-tight">
-                                    <span x-text="lpbIATA"></span>
-                                    <i class="ph ph-arrow-right text-[10px] mx-1 text-neutral-400"></i>
-                                    <span x-text="destinoVueltaIATA"></span>
-                                  </div>
-                                  <span
-                                    class="px-1.5 py-0.5 rounded-sm bg-secondary-100 text-secondary-700 text-[8px] font-black uppercase tracking-tighter"
-                                  >
-                                    VUELTA
-                                  </span>
-                                </div>
-                                <div class="text-[10px] font-bold text-neutral-400 uppercase tracking-tighter">
-                                  <span x-text="lpbCiudad"></span>
-                                  •
-                                  <span x-text="destinoVueltaCiudad"></span>
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-                          <td class="px-4 py-4 text-center whitespace-nowrap">
-                            <template x-if="canEditVuelta">
-                              <label class="inline-flex items-center cursor-pointer">
-                                <input type="checkbox" x-model="vueltaProgramada" class="sr-only peer" />
-                                <div
-                                  class="relative w-11 h-6 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-secondary"
-                                ></div>
-                              </label>
-                            </template>
-                            <template x-if="!canEditVuelta">
-                              <div class="flex flex-col items-center">
-                                <span
-                                  class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-tighter {{ if $vuelta }}
-                                    {{ $vuelta.GetStatusBadgeClass }}
-                                  {{ end }}"
-                                  x-text="vueltaStatus || 'N/A'"
-                                ></span>
-                                <span class="text-[8px] font-bold text-neutral-400 uppercase mt-1">No editable</span>
-                              </div>
-                            </template>
-                          </td>
-                          <td class="px-4 py-4">
-                            <div x-show="vueltaProgramada">
-                              <input
-                                type="text"
-                                x-model="fechaVuelta"
-                                :disabled="!canEditVuelta"
-                                :class="!canEditVuelta ? 'bg-neutral-100 cursor-not-allowed opacity-75' : 'bg-neutral-50 hover:bg-neutral-100'"
-                                x-datepicker="{ position: 'top center' }"
-                                class="w-full px-3 py-1.5 border border-neutral-200 rounded-lg text-xs font-bold text-neutral-700 font-mono focus:ring-2 focus:ring-secondary/20 transition-all"
-                              />
-                            </div>
-                            <span
-                              x-show="!vueltaProgramada"
-                              class="text-[10px] font-black text-neutral-400 uppercase italic tracking-widest pl-2"
+                              Tramo / Ruta
+                            </th>
+                            <th class="px-4 py-3 text-center text-[10px] font-black text-neutral-500 uppercase tracking-widest">
+                              Habilitar
+                            </th>
+                            <th
+                              class="px-4 py-3 text-left text-[10px] font-black text-neutral-500 uppercase tracking-widest w-1/2"
                             >
-                              Sin fecha definida (Por confirmar)
-                            </span>
-                            <input
-                              type="hidden"
-                              name="fecha_retorno"
-                              :value="!vueltaProgramada ? '' : (fechaVuelta ? fechaVuelta.replace(' ', 'T') : '')"
-                            />
-                            <input type="hidden" name="vuelta_por_confirmar" :value="!vueltaProgramada" />
-                          </td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
-                </section>
+                              Programación
+                            </th>
+                          </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-neutral-200">
+                          <!-- IDA -->
+                          <tr class="hover:bg-neutral-50/30 transition-colors">
+                            <td class="px-4 py-4 whitespace-nowrap">
+                              <div class="flex items-center space-x-3">
+                                <div
+                                  class="h-10 w-10 rounded-md bg-primary/10 flex items-center justify-center text-primary border border-primary/20 shadow-sm"
+                                >
+                                  <i class="ph ph-airplane text-xl transform rotate-45"></i>
+                                </div>
+                                <div>
+                                  <div class="flex items-center gap-2 mb-0.5">
+                                    <div class="text-sm font-black text-neutral-800 tracking-tight leading-none">
+                                      <span x-text="origenIdaIATA"></span>
+                                      <i class="ph ph-arrow-right text-[10px] mx-1 text-neutral-300"></i>
+                                      <span x-text="sedeIATA"></span>
+                                    </div>
+                                    <span
+                                      class="px-1.5 py-0.5 rounded-sm bg-primary-100 text-primary-700 text-[8px] font-black uppercase tracking-tighter"
+                                    >
+                                      IDA
+                                    </span>
+                                  </div>
+                                  <div class="text-[9px] font-bold text-neutral-400 uppercase tracking-tighter leading-none">
+                                    <span x-text="origenIdaCiudad"></span>
+                                    •
+                                    <span x-text="sedeCiudad"></span>
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                            <td class="px-4 py-4 text-center whitespace-nowrap">
+                              <template x-if="canEditIda">
+                                <label class="inline-flex items-center cursor-pointer">
+                                  <input type="checkbox" x-model="idaProgramada" class="sr-only peer" />
+                                  <div
+                                    class="relative w-11 h-6 bg-neutral-200 rounded-full peer-checked:bg-primary transition-all after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full shadow-inner"
+                                  ></div>
+                                </label>
+                              </template>
+                              <template x-if="!canEditIda">
+                                <div class="flex flex-col items-center">
+                                  <span
+                                    class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-tighter {{ if $ida }}
+                                      {{ $ida.GetStatusBadgeClass }}
+                                    {{ end }}"
+                                    x-text="idaStatus || 'N/A'"
+                                  ></span>
+                                  <span class="text-[8px] font-bold text-neutral-400 uppercase mt-1">Bloqueado</span>
+                                </div>
+                              </template>
+                            </td>
+                            <td class="px-4 py-4">
+                              <div x-show="idaProgramada">
+                                <input
+                                  type="text"
+                                  x-model="fechaIda"
+                                  :disabled="!canEditIda"
+                                  :class="!canEditIda ? 'bg-neutral-50 cursor-not-allowed opacity-75' : 'bg-neutral-50 hover:bg-white hover:border-primary/40'"
+                                  x-datepicker="{ position: 'top center', time24h: true, format: 'yyyy-mm-dd HH:mm' }"
+                                  class="w-full px-3 py-2 border border-neutral-200 rounded-md text-xs font-bold text-neutral-700 font-mono shadow-sm focus:ring-4 focus:ring-primary/10 focus:border-primary transition-all"
+                                />
+                              </div>
+                              <span
+                                x-show="!idaProgramada"
+                                class="text-[10px] font-black text-neutral-400 uppercase italic tracking-widest pl-2"
+                              >
+                                Por confirmar
+                              </span>
+                              <input
+                                type="hidden"
+                                name="fecha_salida"
+                                :value="!idaProgramada ? '' : (fechaIda ? fechaIda.replace(' ', 'T') : '')"
+                              />
+                              <input type="hidden" name="ida_por_confirmar" :value="!idaProgramada" />
+                            </td>
+                          </tr>
 
-                <!-- SECCIÓN C: DESTINO Y JUSTIFICACIÓN -->
-                <section>
-                  <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    <!-- Hidden fields required for update (always present) -->
-                    <input type="hidden" name="origen_ida_cod" :value="origenIdaIATA" />
-                    <input type="hidden" name="destino_vuelta_cod" :value="destinoVueltaIATA" />
-                    <input type="hidden" name="tipo_itinerario_codigo" :value="tipoItinerario" />
+                          <!-- VUELTA -->
+                          <tr class="hover:bg-neutral-50/30 transition-colors">
+                            <td class="px-4 py-4 whitespace-nowrap">
+                              <div class="flex items-center space-x-3 text-secondary">
+                                <div
+                                  class="h-10 w-10 rounded-md bg-secondary/10 flex items-center justify-center text-secondary border border-secondary/20 shadow-sm"
+                                >
+                                  <i class="ph ph-airplane text-xl transform -rotate-135"></i>
+                                </div>
+                                <div>
+                                  <div class="flex items-center gap-2 mb-0.5">
+                                    <div class="text-sm font-black text-neutral-800 tracking-tight leading-none">
+                                      <span x-text="sedeIATA"></span>
+                                      <i class="ph ph-arrow-right text-[10px] mx-1 text-neutral-300"></i>
+                                      <span x-text="destinoVueltaIATA"></span>
+                                    </div>
+                                    <span
+                                      class="px-1.5 py-0.5 rounded-sm bg-secondary-100 text-secondary-700 text-[8px] font-black uppercase tracking-tighter"
+                                    >
+                                      VUELTA
+                                    </span>
+                                  </div>
+                                  <div class="text-[9px] font-bold text-neutral-400 uppercase tracking-tighter leading-none">
+                                    <span x-text="sedeCiudad"></span>
+                                    •
+                                    <span x-text="destinoVueltaCiudad"></span>
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                            <td class="px-4 py-4 text-center whitespace-nowrap">
+                              <template x-if="canEditVuelta">
+                                <label class="inline-flex items-center cursor-pointer">
+                                  <input type="checkbox" x-model="vueltaProgramada" class="sr-only peer" />
+                                  <div
+                                    class="relative w-11 h-6 bg-neutral-200 rounded-full peer-checked:bg-secondary transition-all after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full shadow-inner"
+                                  ></div>
+                                </label>
+                              </template>
+                              <template x-if="!canEditVuelta">
+                                <div class="flex flex-col items-center">
+                                  <span
+                                    class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-tighter {{ if $vuelta }}
+                                      {{ $vuelta.GetStatusBadgeClass }}
+                                    {{ end }}"
+                                    x-text="vueltaStatus || 'N/A'"
+                                  ></span>
+                                  <span class="text-[8px] font-bold text-neutral-400 uppercase mt-1">Bloqueado</span>
+                                </div>
+                              </template>
+                            </td>
+                            <td class="px-4 py-4">
+                              <div x-show="vueltaProgramada">
+                                <input
+                                  type="text"
+                                  x-model="fechaVuelta"
+                                  :disabled="!canEditVuelta"
+                                  :class="!canEditVuelta ? 'bg-neutral-50 cursor-not-allowed opacity-75' : 'bg-neutral-50 hover:bg-white hover:border-secondary/40'"
+                                  x-datepicker="{ position: 'top center', time24h: true, format: 'yyyy-mm-dd HH:mm' }"
+                                  class="w-full px-3 py-2 border border-neutral-200 rounded-md text-xs font-bold text-neutral-700 font-mono shadow-sm focus:ring-4 focus:ring-secondary/10 focus:border-secondary transition-all"
+                                />
+                              </div>
+                              <span
+                                x-show="!vueltaProgramada"
+                                class="text-[10px] font-black text-neutral-400 uppercase italic tracking-widest pl-2"
+                              >
+                                Por confirmar
+                              </span>
+                              <input
+                                type="hidden"
+                                name="fecha_retorno"
+                                :value="!vueltaProgramada ? '' : (fechaVuelta ? fechaVuelta.replace(' ', 'T') : '')"
+                              />
+                              <input type="hidden" name="vuelta_por_confirmar" :value="!vueltaProgramada" />
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </section>
 
-                    <div class="md:col-span-2 space-y-1.5">
-                      <label class="block text-xs font-bold text-neutral-500 uppercase tracking-tight">Línea Aérea</label>
-                      {{ $initVal := "" }}
-                      {{ $initLabel := "Cualquier línea aérea" }}
-                      {{ if .Solicitud }}
-                        {{ if .Solicitud.AerolineaSugerida }}
-                          {{ $initVal =
-                            .Solicitud.AerolineaSugerida
-                          }}
+                  <!-- SECCIÓN C: LÍNEA AÉREA -->
+                  <section class="bg-neutral-50/50 p-6 rounded-2xl border border-neutral-200/60 shadow-sm">
+                    <div class="grid grid-cols-1 gap-6">
+                      <!-- Campos ocultos necesarios para la actualización -->
+                      <input type="hidden" name="origen_ida_cod" :value="origenIdaIATA" />
+                      <input type="hidden" name="destino_vuelta_cod" :value="destinoVueltaIATA" />
 
+                      <div class="space-y-2">
+                        <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest pl-1">
+                          Preferencia de Línea Aérea
+                        </label>
+                        {{ $initVal := "" }}
+                        {{ $initLabel := "Cualquier línea aérea" }}
+                        {{ if .Solicitud.AerolineaID }}
+                          {{ $initVal = deref .Solicitud.AerolineaID }}
                           {{ range .Aerolineas }}{{ if eq .ID $initVal }}{{ $initLabel = .Nombre }}{{ end }}{{ end }}
                         {{ end }}
 
-                      {{ end }}
 
-
-                      <div
-                        class="relative group"
-                        x-data="searchableSelect({
-                      items: [{ value: '', label: 'Cualquier línea aérea' },{{ range .Aerolineas }}
-                          { value: '{{ .ID }}', label: '{{ .Nombre }}' },
-                        {{ end }}],
-                      initialValue: '{{ $initVal }}',
-                      initialLabel: '{{ $initLabel }}',
-                      placeholder: 'Cualquier línea aérea'
-                    })"
-                        x-init="$watch('value', function(v) { selectedAerolinea = v })"
-                      >
-                        <div class="relative">
-                          <div
-                            x-show="!open"
-                            @click="open = true; $nextTick(function() { $refs.searchInput.focus() })"
-                            class="w-full px-4 py-2.5 bg-white border border-neutral-200 rounded-md shadow-sm h-[42px] flex items-center justify-between cursor-pointer focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all"
-                          >
-                            <span class="block truncate text-sm font-bold text-neutral-700" x-text="label"></span>
-                            <span
-                              class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-neutral-400 group-hover:text-primary transition-colors"
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                <path
-                                  fill-rule="evenodd"
-                                  d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z"
-                                  clip-rule="evenodd"
-                                />
-                              </svg>
-                            </span>
-                          </div>
-                          <input
-                            x-ref="searchInput"
-                            x-model="search"
-                            x-show="open"
-                            @click.away="open = false"
-                            @keydown.escape="open = false"
-                            @keydown.enter.prevent="if (filteredItems.length > 0) select(filteredItems[0])"
-                            type="text"
-                            class="w-full px-4 py-2.5 bg-white border border-primary rounded-md shadow-sm h-[42px] text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary/20"
-                            placeholder="Buscar aerolínea..."
-                          />
-
-                          <div
-                            x-show="open"
-                            class="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
-                            x-cloak
-                          >
-                            <template x-for="item in filteredItems" :key="item.value">
-                              <div
-                                @click="select(item)"
-                                class="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-primary-50 hover:text-primary-900 text-neutral-900 group"
-                              >
-                                <span
-                                  :class="{'font-semibold': value === item.value, 'font-bold': value === item.value}"
-                                  class="block truncate"
-                                  x-text="item.label"
-                                ></span>
-                                <span
-                                  x-show="value === item.value"
-                                  class="absolute inset-y-0 right-0 flex items-center pr-4 text-primary"
-                                >
-                                  <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
-                                    <path
-                                      fill-rule="evenodd"
-                                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                                      clip-rule="evenodd"
-                                    />
-                                  </svg>
-                                </span>
-                              </div>
-                            </template>
+                        <div
+                          class="relative group"
+                          x-data="searchableSelect({
+                          items: [{ value: '', label: 'Cualquier línea aérea' },{{ range .Aerolineas }}
+                            { value: '{{ .ID }}', label: '{{ .Nombre }}' },
+                          {{ end }}],
+                          initialValue: '{{ $initVal }}',
+                          initialLabel: '{{ $initLabel }}',
+                          placeholder: 'Buscar aerolínea...'
+                        })"
+                          x-init="$watch('value', function(v) { selectedAerolinea = v })"
+                        >
+                          <div class="relative">
                             <div
-                              x-show="filteredItems.length === 0"
-                              class="cursor-default select-none relative py-2 pl-3 pr-9 text-neutral-500 italic"
+                              x-show="!open"
+                              @click="open = true; $nextTick(function() { $refs.searchInput.focus() })"
+                              class="w-full px-4 py-3 bg-white border border-neutral-200 rounded-md shadow-sm flex items-center justify-between cursor-pointer hover:border-primary/40 focus-within:ring-4 focus-within:ring-primary/10 transition-all"
                             >
-                              No se encontraron resultados
+                              <span class="block truncate text-sm font-bold text-neutral-700" x-text="label"></span>
+                              <i class="ph ph-caret-down text-neutral-400 group-hover:text-primary transition-colors"></i>
+                            </div>
+                            <input
+                              x-ref="searchInput"
+                              x-model="search"
+                              x-show="open"
+                              @click.away="open = false"
+                              @keydown.escape="open = false"
+                              @keydown.enter.prevent="if (filteredItems.length > 0) select(filteredItems[0])"
+                              type="text"
+                              class="w-full px-4 py-3 bg-white border-2 border-primary rounded-md shadow-lg text-sm font-bold focus:outline-none focus:ring-4 focus:ring-primary/10"
+                              placeholder="Escribe para buscar..."
+                            />
+
+                            <div
+                              x-show="open"
+                              class="absolute z-50 mt-2 max-h-60 w-full overflow-auto rounded-md bg-white p-1 shadow-2xl ring-1 ring-black/5 focus:outline-none"
+                              x-cloak
+                              x-transition
+                            >
+                              <template x-for="item in filteredItems" :key="item.value">
+                                <div
+                                  @click="select(item)"
+                                  class="cursor-pointer select-none relative py-2.5 pl-4 pr-10 rounded-md hover:bg-primary-50 hover:text-primary-900 text-neutral-700 transition-colors group"
+                                >
+                                  <span
+                                    :class="{'font-black text-primary': value === item.value}"
+                                    class="block truncate text-sm font-bold"
+                                    x-text="item.label"
+                                  ></span>
+                                  <span
+                                    x-show="value === item.value"
+                                    class="absolute inset-y-0 right-0 flex items-center pr-4 text-primary"
+                                  >
+                                    <i class="ph ph-check-circle-fill text-lg"></i>
+                                  </span>
+                                </div>
+                              </template>
                             </div>
                           </div>
                         </div>
+                        <input type="hidden" name="aerolinea_id" :value="selectedAerolinea" />
                       </div>
-                      <input type="hidden" name="aerolinea_sugerida" :value="selectedAerolinea" />
                     </div>
-                  </div>
-                </section>
-              </div>
-            </form>
+                  </section>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       </div>

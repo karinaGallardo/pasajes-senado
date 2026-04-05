@@ -80,10 +80,9 @@ func (s *RutaService) Create(ctx context.Context, origenIATA string, escalasIATA
 		DestinoIATA: destinoIATA,
 	}
 
-	for i, e := range escalas {
+	for _, e := range escalas {
 		newRuta.Escalas = append(newRuta.Escalas, models.RutaEscala{
 			DestinoIATA: e.IATA,
-			Orden:       i + 1,
 		})
 	}
 

@@ -182,6 +182,11 @@ func (ctrl *SolicitudController) renderIndex(c *gin.Context, concepto string, ti
 		}
 	}
 
+	// Hydrate permissions for all items in the list
+	for i := range solicitudes {
+		solicitudes[i].HydratePermissions(authUser)
+	}
+
 	linkBase := "/solicitudes"
 	switch concepto {
 	case "DERECHO":
@@ -191,13 +196,13 @@ func (ctrl *SolicitudController) renderIndex(c *gin.Context, concepto string, ti
 	}
 
 	utils.Render(c, template, gin.H{
-		"Title":                title,
-		"Result":               result,
-		"Usuarios":             usuariosMap,
-		"Status":               status,
-		"Concepto":             concepto,
-		"LinkBase":             linkBase,
-		"IsAdminOrResponsable": authUser.IsAdminOrResponsable(),
+		"Title":             title,
+		"Result":            result,
+		"Usuarios":          usuariosMap,
+		"Status":            status,
+		"Concepto":          concepto,
+		"LinkBase":          linkBase,
+		"AvailableStatuses": models.GetAvailableStatuses(),
 	})
 }
 func (ctrl *SolicitudController) GetPendingStats(c *gin.Context) {
@@ -219,9 +224,16 @@ func (ctrl *SolicitudController) GetPendingStats(c *gin.Context) {
 
 func (ctrl *SolicitudController) GetRegularizacionModal(c *gin.Context) {
 	id := c.Param("id")
+	authUser := appcontext.AuthUser(c)
 	solicitud, err := ctrl.service.GetByID(c.Request.Context(), id)
 	if err != nil {
 		c.String(404, "Solicitud no encontrada")
+		return
+	}
+
+	solicitud.HydratePermissions(authUser)
+	if !solicitud.Permissions.CanRegularize {
+		c.String(403, "No tiene permisos para regularizar fechas")
 		return
 	}
 
@@ -232,6 +244,19 @@ func (ctrl *SolicitudController) GetRegularizacionModal(c *gin.Context) {
 
 func (ctrl *SolicitudController) UpdateRegularizacionDates(c *gin.Context) {
 	id := c.Param("id")
+	authUser := appcontext.AuthUser(c)
+	solicitud, err := ctrl.service.GetByID(c.Request.Context(), id)
+	if err != nil {
+		c.String(404, "Solicitud no encontrada")
+		return
+	}
+
+	solicitud.HydratePermissions(authUser)
+	if !solicitud.Permissions.CanRegularize {
+		c.String(403, "No tiene permisos para realizar esta acción")
+		return
+	}
+
 	fecha := c.PostForm("fecha_regularizacion")
 
 	if err := ctrl.service.UpdateSolicitudDates(c.Request.Context(), id, fecha, fecha); err != nil {
@@ -249,6 +274,18 @@ func (ctrl *SolicitudController) Delete(c *gin.Context) {
 	authUser := appcontext.AuthUser(c)
 	if authUser == nil {
 		c.JSON(401, gin.H{"error": "No autorizado"})
+		return
+	}
+
+	solicitud, err := ctrl.service.GetByID(c.Request.Context(), id)
+	if err != nil {
+		c.JSON(404, gin.H{"error": "Solicitud no encontrada"})
+		return
+	}
+
+	solicitud.HydratePermissions(authUser)
+	if !solicitud.Permissions.CanDelete {
+		c.JSON(403, gin.H{"error": "No tiene permisos para eliminar esta solicitud"})
 		return
 	}
 
@@ -270,5 +307,63 @@ func (ctrl *SolicitudController) Delete(c *gin.Context) {
 		c.Header("HX-Trigger", "reloadTable, refresh-stats")
 	}
 
+	c.Status(200)
+}
+
+func (ctrl *SolicitudController) Finalize(c *gin.Context) {
+	id := c.Param("id")
+	authUser := appcontext.AuthUser(c)
+	if authUser == nil {
+		c.JSON(401, gin.H{"error": "No autorizado"})
+		return
+	}
+
+	solicitud, err := ctrl.service.GetByID(c.Request.Context(), id)
+	if err != nil {
+		c.JSON(404, gin.H{"error": "Solicitud no encontrada"})
+		return
+	}
+
+	solicitud.HydratePermissions(authUser)
+	if !solicitud.Permissions.CanFinalize {
+		c.JSON(403, gin.H{"error": "No tiene permisos para finalizar esta solicitud"})
+		return
+	}
+
+	if err := ctrl.service.Finalize(c.Request.Context(), id); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.Header("HX-Refresh", "true")
+	c.Status(200)
+}
+
+func (ctrl *SolicitudController) RevertFinalize(c *gin.Context) {
+	id := c.Param("id")
+	authUser := appcontext.AuthUser(c)
+	if authUser == nil {
+		c.JSON(401, gin.H{"error": "No autorizado"})
+		return
+	}
+
+	solicitud, err := ctrl.service.GetByID(c.Request.Context(), id)
+	if err != nil {
+		c.JSON(404, gin.H{"error": "Solicitud no encontrada"})
+		return
+	}
+
+	solicitud.HydratePermissions(authUser)
+	if !solicitud.Permissions.CanRevertFinalize {
+		c.JSON(403, gin.H{"error": "No tiene permisos para revertir la finalización"})
+		return
+	}
+
+	if err := ctrl.service.RevertFinalize(c.Request.Context(), id); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.Header("HX-Refresh", "true")
 	c.Status(200)
 }

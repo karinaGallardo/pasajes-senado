@@ -380,22 +380,7 @@ func (ctrl *CupoController) GetTransferModal(c *gin.Context) {
 	})
 }
 
-type Permissions struct {
-	CanManage          bool
-	CanTransfer        bool
-	CanRevert          bool
-	CanPrint           bool
-	CanTomarCupo       bool
-	CanAsignarCupo     bool
-	CanCreate          bool
-	CanCreateVuelta    bool
-	CanCreateIdaVuelta bool
-	CanEdit            bool
-	CanEditVuelta      bool
-	CanView            bool
-	CanViewVuelta      bool
-	CanDescargo        bool
-}
+type Permissions = models.CupoDerechoItemPermissions
 
 type CupoDerechoItemView struct {
 	models.CupoDerechoItem
@@ -449,8 +434,6 @@ func (ctrl *CupoController) DerechoByYear(c *gin.Context) {
 		idParaCupos = *targetUser.TitularID
 	}
 
-	hasOrigin := targetUser.OrigenIATA != nil && *targetUser.OrigenIATA != ""
-
 	items, _ := ctrl.service.GetCuposDerechoByUsuarioAndGestion(c.Request.Context(), idParaCupos, gestion)
 
 	mesesNames := utils.GetMonthNames()
@@ -476,81 +459,12 @@ func (ctrl *CupoController) DerechoByYear(c *gin.Context) {
 		}
 	}
 
-	isViewerAdminOrResponsable := authUser.IsAdminOrResponsable()
-	isViewerSuplente := strings.Contains(authUser.Tipo, "SUPLENTE")
-	isTargetSuplente := strings.Contains(targetUser.Tipo, "SUPLENTE")
-	isEncargado := targetUser.EncargadoID != nil && *targetUser.EncargadoID == authUser.ID
-
 	for i := 1; i <= 12; i++ {
 		// Populate Permissions for each item
 		for j := range grouped[i].Items {
 			item := &grouped[i].Items[j]
-			perms := Permissions{}
-			modelItem := item.CupoDerechoItem
-
-			isDisponible := modelItem.IsDisponible()
-			isVencido := modelItem.IsVencido()
-			isTransferido := modelItem.EsTransferido
-			isOwner := modelItem.SenAsignadoID == targetUser.ID
 			targetHasQuota := grouped[i].TargetHasQuota
-
-			// 1. Admin Actions
-			if isViewerAdminOrResponsable {
-				if isTransferido && modelItem.CanBeReverted() {
-					perms.CanRevert = true
-				}
-				if modelItem.GetSolicitud() != nil {
-					perms.CanPrint = true
-				}
-			}
-
-			// 2. Tomar / Asignar Cupo (Para el Target Suplente)
-			hasTitular := targetUser.TitularID != nil
-			if isDisponible && (isViewerAdminOrResponsable || !isVencido) && hasTitular && modelItem.SenAsignadoID == *targetUser.TitularID {
-				// Opción 1: El mismo suplente toma su cupo (Solo si no tiene cupo)
-				if isTargetSuplente && !targetHasQuota && isViewerSuplente && authUser.ID == targetUser.ID {
-					perms.CanTomarCupo = true
-				}
-
-				// Opción 2: Encargado asigna (Solo si no tiene cupo)
-				if isEncargado && !targetHasQuota && isTargetSuplente {
-					perms.CanAsignarCupo = true
-				}
-
-				// Opción 3: Admin/Responsable asigna (Solo si no tiene cupo)
-				if isViewerAdminOrResponsable && !targetHasQuota && isTargetSuplente && !isTransferido {
-					perms.CanAsignarCupo = true
-				}
-			}
-
-			// 3. Transferencia (Admin/Responsable)
-			if isViewerAdminOrResponsable && !isTransferido && !perms.CanAsignarCupo {
-				perms.CanTransfer = true
-			}
-
-			// 4. Solicitudes (Owner, Admin or Encargado)
-			if isOwner || isViewerAdminOrResponsable || isEncargado {
-				sol := modelItem.GetSolicitud()
-
-				// Creation
-				if sol == nil {
-					if hasOrigin && (isViewerAdminOrResponsable || (!isVencido && (isOwner || isEncargado))) {
-						perms.CanCreate = true
-						perms.CanCreateIdaVuelta = true
-					}
-				} else {
-					// Edit/View permissions
-					if sol.CanEdit(authUser) {
-						perms.CanEdit = true
-					}
-					if sol.CanView(authUser) {
-						perms.CanView = true
-						perms.CanPrint = true
-					}
-				}
-			}
-
-			item.Permissions = perms
+			item.Permissions = item.CupoDerechoItem.GetPermissions(authUser, targetUser, targetHasQuota)
 		}
 	}
 
@@ -631,8 +545,6 @@ func (ctrl *CupoController) DerechoByMonth(c *gin.Context) {
 		idParaCupos = *targetUser.TitularID
 	}
 
-	hasOrigin := targetUser.OrigenIATA != nil && *targetUser.OrigenIATA != ""
-
 	items, err := ctrl.service.GetCuposDerechoByUsuario(c.Request.Context(), idParaCupos, gestion, mes)
 	if err != nil {
 		fmt.Printf("Error obteniendo cupos: %v\n", err)
@@ -660,80 +572,10 @@ func (ctrl *CupoController) DerechoByMonth(c *gin.Context) {
 		}
 	}
 
-	isViewerAdminOrResponsable := authUser.IsAdminOrResponsable()
-	isViewerSuplente := strings.Contains(authUser.Tipo, "SUPLENTE")
-	isTargetSuplente := strings.Contains(targetUser.Tipo, "SUPLENTE")
-	isEncargado := targetUser.EncargadoID != nil && *targetUser.EncargadoID == authUser.ID
-
-	// Populate Permissions
 	for j := range currentMonthGroup.Items {
 		item := &currentMonthGroup.Items[j]
-		perms := Permissions{}
-		modelItem := item.CupoDerechoItem
-
-		isDisponible := modelItem.IsDisponible()
-		isVencido := modelItem.IsVencido()
-		isTransferido := modelItem.EsTransferido
-		isOwner := modelItem.SenAsignadoID == targetUser.ID
 		targetHasQuota := currentMonthGroup.TargetHasQuota
-
-		// 1. Admin Actions (Calculo base)
-		if isViewerAdminOrResponsable {
-			if isTransferido && modelItem.CanBeReverted() {
-				perms.CanRevert = true
-			}
-			if modelItem.GetSolicitud() != nil {
-				perms.CanPrint = true
-			}
-		}
-
-		// 2. Tomar / Asignar Cupo (Para el Target Suplente)
-		hasTitular := targetUser.TitularID != nil
-		if isDisponible && (isViewerAdminOrResponsable || !isVencido) && hasTitular && modelItem.SenAsignadoID == *targetUser.TitularID {
-			// Opción 1: El mismo suplente toma su cupo (Solo si no tiene cupo)
-			if isTargetSuplente && !targetHasQuota && isViewerSuplente && authUser.ID == targetUser.ID {
-				perms.CanTomarCupo = true
-			}
-
-			// Opción 2: Encargado asigna (Solo si no tiene cupo)
-			if isEncargado && !targetHasQuota && isTargetSuplente {
-				perms.CanAsignarCupo = true
-			}
-
-			// Opción 3: Admin/Responsable asigna (Solo si no tiene cupo)
-			if isViewerAdminOrResponsable && !targetHasQuota && isTargetSuplente && !isTransferido {
-				perms.CanAsignarCupo = true
-			}
-		}
-
-		// 3. Transferencia (Admin/Responsable)
-		if isViewerAdminOrResponsable && !isTransferido && !perms.CanAsignarCupo {
-			perms.CanTransfer = true
-		}
-
-		// 4. Solicitudes (Owner, Admin or Encargado)
-		if isOwner || isViewerAdminOrResponsable || isEncargado {
-			sol := modelItem.GetSolicitud()
-
-			// Creation
-			if sol == nil {
-				if hasOrigin && (isViewerAdminOrResponsable || (!isVencido && (isOwner || isEncargado))) {
-					perms.CanCreate = true
-					perms.CanCreateIdaVuelta = true
-				}
-			} else {
-				// Edit/View permissions
-				if sol.CanEdit(authUser) {
-					perms.CanEdit = true
-				}
-				if sol.CanView(authUser) {
-					perms.CanView = true
-					perms.CanPrint = true
-				}
-			}
-		}
-
-		item.Permissions = perms
+		item.Permissions = item.CupoDerechoItem.GetPermissions(authUser, targetUser, targetHasQuota)
 	}
 
 	displayMonths := []*MonthGroup{currentMonthGroup}

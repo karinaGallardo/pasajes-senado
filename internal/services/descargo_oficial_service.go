@@ -68,8 +68,7 @@ func (s *DescargoOficialService) SyncItineraryFromSolicitud(ctx context.Context,
 	existingMap := make(map[string]bool)
 	for _, det := range descargo.Tramos {
 		if det.PasajeID != nil {
-			key := fmt.Sprintf("%s_%d", *det.PasajeID, det.Orden)
-			existingMap[key] = true
+			existingMap[*det.PasajeID] = true
 		}
 	}
 
@@ -87,11 +86,8 @@ func (s *DescargoOficialService) SyncItineraryFromSolicitud(ctx context.Context,
 			tipo := tipoPrefix + "_ORIGINAL"
 
 			tramosVuelo := p.GetTramosRuta()
-			for i := range tramosVuelo {
-				orden := p.Orden*100 + i
-				key := fmt.Sprintf("%s_%d", p.ID, orden)
-
-				if !existingMap[key] {
+			for range tramosVuelo {
+				if !existingMap[p.ID] {
 					tVuelo := p.FechaVuelo
 					descargo.Tramos = append(descargo.Tramos, models.DescargoTramo{
 						Tipo:            models.TipoDescargoTramo(tipo),
@@ -100,9 +96,8 @@ func (s *DescargoOficialService) SyncItineraryFromSolicitud(ctx context.Context,
 						SolicitudItemID: &item.ID,
 						Fecha:           &tVuelo,
 						Billete:         strings.ToUpper(strings.TrimSpace(p.NumeroBillete)),
-						Orden:           orden,
 					})
-					existingMap[key] = true
+					existingMap[p.ID] = true
 					modified = true
 				}
 			}
@@ -154,9 +149,9 @@ func (s *DescargoOficialService) UpdateOficial(ctx context.Context, id string, r
 	// 3. Anexos & Terrestre Details
 	if len(anexoPaths) > 0 {
 		var anexos []models.AnexoDescargo
-		for i, path := range anexoPaths {
+		for _, path := range anexoPaths {
 			if path != "" {
-				anexos = append(anexos, models.AnexoDescargo{DescargoOficialID: descargo.Oficial.ID, Archivo: path, Orden: i})
+				anexos = append(anexos, models.AnexoDescargo{DescargoOficialID: descargo.Oficial.ID, Archivo: path})
 			}
 		}
 		s.repo.ClearAnexos(ctx, descargo.Oficial.ID)
@@ -236,7 +231,6 @@ func (s *DescargoOficialService) UpdateOficial(ctx context.Context, id string, r
 			EsModificacion:    row.EsModificacion,
 			MontoDevolucion:   row.MontoDevolucion,
 			Moneda:            row.Moneda,
-			Orden:             row.Orden,
 		}
 		det.ID = idRow
 		tramosProcesados = append(tramosProcesados, det)
@@ -287,7 +281,6 @@ func (s *DescargoOficialService) PrepareItinerarioOficial(descargo *models.Desca
 				EsModificacion:  item.EsModificacion,
 				MontoDevolucion: item.MontoDevolucion,
 				Moneda:          item.Moneda,
-				Orden:           item.Orden,
 				PasajeID:        utils.DerefString(item.PasajeID),
 				SolicitudItemID: utils.DerefString(item.SolicitudItemID),
 			}

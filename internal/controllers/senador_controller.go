@@ -38,7 +38,7 @@ func (ctrl *SenadorController) Index(c *gin.Context) {
 	searchTerm := c.Query("q")
 	msg := c.Query("msg")
 
-	usuarios, err := ctrl.userService.GetByRoleType(c.Request.Context(), "SENADOR")
+	usuarios, err := ctrl.userService.GetByRoleType(c.Request.Context(), models.RolSenador)
 	if err != nil {
 		// log.Printf("Error: %v", err)
 	}
@@ -46,13 +46,12 @@ func (ctrl *SenadorController) Index(c *gin.Context) {
 	result := gin.H{
 		"Usuarios":    usuarios,
 		"CurrentYear": time.Now().Year(),
-		"AuthUser":    authUser,
 	}
 
 	utils.Render(c, "usuarios/senadores", gin.H{
 		"Title":      "Senadores",
 		"Result":     result,
-		"Rol":        "SENADOR",
+		"IsSenador":  true,
 		"Msg":        msg,
 		"SearchTerm": searchTerm,
 	})
@@ -67,7 +66,7 @@ func (ctrl *SenadorController) Table(c *gin.Context) {
 
 	searchTerm := c.Query("q")
 
-	usuarios, err := ctrl.userService.GetByRoleType(c.Request.Context(), "SENADOR")
+	usuarios, err := ctrl.userService.GetByRoleType(c.Request.Context(), models.RolSenador)
 	if err != nil {
 		// log.Printf("Error: %v", err)
 	}
@@ -101,7 +100,6 @@ func (ctrl *SenadorController) Table(c *gin.Context) {
 	result := gin.H{
 		"Usuarios":    usuarios,
 		"CurrentYear": time.Now().Year(),
-		"AuthUser":    authUser,
 	}
 
 	utils.Render(c, "usuarios/table_senadores", result)
@@ -144,6 +142,7 @@ func (ctrl *SenadorController) GetSyncModal(c *gin.Context) {
 		return
 	}
 	utils.Render(c, "usuarios/components/modal_sync_confirm", gin.H{
-		"Rol": "SENADOR",
+		"SyncUrl":    "/usuarios/senadores/sync",
+		"TargetName": "Senadores",
 	})
 }

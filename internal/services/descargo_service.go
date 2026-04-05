@@ -188,8 +188,8 @@ func (s *DescargoService) processTicketItemsForView(item *models.SolicitudItem, 
 	pasajes := item.Pasajes
 
 	sort.Slice(pasajes, func(i, j int) bool {
-		if pasajes[i].Orden != pasajes[j].Orden {
-			return pasajes[i].Orden < pasajes[j].Orden
+		if pasajes[i].Seq != pasajes[j].Seq {
+			return pasajes[i].Seq < pasajes[j].Seq
 		}
 		return pasajes[i].CreatedAt.Before(pasajes[j].CreatedAt)
 	})
@@ -203,7 +203,7 @@ func (s *DescargoService) processTicketItemsForView(item *models.SolicitudItem, 
 		// Se eliminó la clasificación por PasajeAnteriorID ya que ahora se revierte y edita el pasaje original
 
 		tramosVuelo := p.GetTramosRuta()
-		for j, seg := range tramosVuelo {
+		for _, seg := range tramosVuelo {
 			parts := strings.Split(seg, " - ")
 			rv := dtos.RutaView{Display: seg}
 			if len(parts) == 2 {
@@ -219,7 +219,6 @@ func (s *DescargoService) processTicketItemsForView(item *models.SolicitudItem, 
 				RutaID:          utils.DerefString(p.RutaID),
 				Fecha:           p.FechaVuelo.Format("2006-01-02"),
 				Billete:         p.NumeroBillete,
-				Orden:           j,
 				EsDevolucion:    false,
 				EsModificacion:  false,
 				MontoDevolucion: 0,

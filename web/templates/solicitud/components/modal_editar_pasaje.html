@@ -192,18 +192,7 @@
                             class="w-full rounded-md border border-neutral-300 bg-white py-2 pl-3 pr-10 shadow-sm focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary sm:text-sm cursor-pointer flex items-center justify-between min-h-[38px]"
                           >
                             <span x-text="label || 'Seleccione una ruta'"></span>
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              class="h-5 w-5 text-neutral-400"
-                              viewBox="0 0 20 20"
-                              fill="currentColor"
-                            >
-                              <path
-                                fill-rule="evenodd"
-                                d="M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
-                                clip-rule="evenodd"
-                              />
-                            </svg>
+                            <i class="ph ph-caret-up-down text-sm text-neutral-400"></i>
                           </div>
 
                           <input
@@ -267,18 +256,7 @@
                             class="w-full rounded-md border border-neutral-300 bg-white py-2 pl-3 pr-10 shadow-sm focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary sm:text-sm cursor-pointer flex items-center justify-between min-h-[38px]"
                           >
                             <span x-text="label || placeholder"></span>
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              class="h-5 w-5 text-neutral-400"
-                              viewBox="0 0 20 20"
-                              fill="currentColor"
-                            >
-                              <path
-                                fill-rule="evenodd"
-                                d="M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
-                                clip-rule="evenodd"
-                              />
-                            </svg>
+                            <i class="ph ph-caret-up-down text-sm text-neutral-400"></i>
                           </div>
                           <input
                             x-ref="searchInput"
@@ -340,18 +318,7 @@
                             class="w-full rounded-md border border-neutral-300 bg-white py-2 pl-3 pr-10 shadow-sm focus:border-secondary focus:outline-none focus:ring-1 focus:ring-secondary sm:text-sm cursor-pointer flex items-center justify-between min-h-[38px]"
                           >
                             <span x-text="label || placeholder"></span>
-                            <svg
-                              xmlns="http://www.w3.org/2000/svg"
-                              class="h-5 w-5 text-neutral-400"
-                              viewBox="0 0 20 20"
-                              fill="currentColor"
-                            >
-                              <path
-                                fill-rule="evenodd"
-                                d="M10 3a1 1 0 01.707.293l3 3a1 1 0 01-1.414 1.414L10 5.414 7.707 7.707a1 1 0 01-1.414-1.414l3-3A1 1 0 0110 3zm-3.707 9.293a1 1 0 011.414 0L10 14.586l2.293-2.293a1 1 0 011.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z"
-                                clip-rule="evenodd"
-                              />
-                            </svg>
+                            <i class="ph ph-caret-up-down text-sm text-neutral-400"></i>
                           </div>
                           <input
                             x-ref="searchInput"
@@ -394,11 +361,12 @@
                       <input
                         :id="$id('emision')"
                         type="text"
+                        readonly
                         name="fecha_emision"
                         value="{{ .Pasaje.FechaEmision.Format "2006-01-02" }}"
                         x-datepicker="{ timepicker: false, position: 'top' }"
                         required
-                        class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md border p-2 bg-white"
+                        class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md border p-2 bg-white cursor-pointer"
                         placeholder="Seleccione fecha..."
                       />
                     </div>
@@ -422,11 +390,12 @@
                       <input
                         :id="$id('vuelo')"
                         type="text"
+                        readonly
                         name="fecha_vuelo"
-                        value="{{ .Pasaje.FechaVuelo.Format "2006-01-02 15:04" }}"
+                        value="{{ .Pasaje.FechaVuelo.Format `2006-01-02 15:04` }}"
                         x-datepicker="{ position: 'top' }"
                         required
-                        class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md border p-2 bg-white"
+                        class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md border p-2 bg-white cursor-pointer"
                         placeholder="Seleccione fecha y hora..."
                       />
                     </div>

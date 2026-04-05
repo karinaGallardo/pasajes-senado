@@ -22,7 +22,7 @@ func (r *PasajeRepository) Create(ctx context.Context, pasaje *models.Pasaje) er
 
 func (r *PasajeRepository) FindBySolicitudID(ctx context.Context, solicitudID string) ([]models.Pasaje, error) {
 	var pasajes []models.Pasaje
-	err := r.db.WithContext(ctx).Where("solicitud_id = ?", solicitudID).Find(&pasajes).Error
+	err := r.db.WithContext(ctx).Where("solicitud_id = ?", solicitudID).Order("seq ASC").Find(&pasajes).Error
 	return pasajes, err
 }
 
@@ -37,6 +37,7 @@ func (r *PasajeRepository) FindByID(ctx context.Context, id string) (*models.Pas
 		Preload("Aerolinea").
 		Preload("RutaPasaje.Origen").
 		Preload("RutaPasaje.Destino").
+		Preload("RutaPasaje.Escalas", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
 		Preload("RutaPasaje.Escalas.Destino").
 		Preload("SolicitudItem.Origen.Ambito").
 		Preload("SolicitudItem.Destino.Ambito").
@@ -79,6 +80,7 @@ func (r *PasajeRepository) FindConsolidado(ctx context.Context, filter dtos.Repo
 		Preload("Agencia").
 		Preload("RutaPasaje.Origen").
 		Preload("RutaPasaje.Destino").
+		Preload("RutaPasaje.Escalas", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
 		Preload("RutaPasaje.Escalas.Destino").
 		Preload("SolicitudItem.Origen").
 		Preload("SolicitudItem.Destino").

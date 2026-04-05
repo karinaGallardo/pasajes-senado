@@ -18,6 +18,9 @@ type DetalleViatico struct {
 	SubTotal   float64 `gorm:"type:decimal(10,2);not null"`
 
 	CategoriaID *string `gorm:"size:36"`
+
+	// Seq is an auto-incrementing field managed by DB to ensure atomic sequential ordering
+	Seq int64 `gorm:"autoIncrement;not null;<-:false"`
 }
 
 func (DetalleViatico) TableName() string {

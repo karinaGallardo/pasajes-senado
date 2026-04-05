@@ -42,12 +42,12 @@ func (r *UsuarioRepository) FindAll(ctx context.Context) ([]models.Usuario, erro
 func FilterByRoleType(roleType string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		switch roleType {
-		case "SENADOR":
-			return db.Where("tipo = ?", "SENADOR_TITULAR")
-		case "FUNCIONARIO":
+		case models.RolSenador:
+			return db.Where("tipo = ?", models.TipoSenadorTitular)
+		case models.RolFuncionario:
 			return db.Where("tipo IN ? OR rol_codigo IN ?",
-				[]string{"FUNCIONARIO", "FUNCIONARIO_PERMANENTE", "FUNCIONARIO_EVENTUAL"},
-				[]string{"ADMIN", "TECNICO", "USUARIO", "FUNCIONARIO", "RESPONSABLE"})
+				[]string{models.TipoFuncionario, models.TipoFuncionarioPermanente, models.TipoFuncionarioEventual},
+				[]string{models.RolAdmin, models.RolTecnico, models.RolUsuario, models.RolFuncionario, models.RolResponsable})
 		default:
 			return db
 		}
@@ -113,7 +113,7 @@ func (r *UsuarioRepository) SearchStaff(ctx context.Context, query string) ([]mo
 		Preload("Rol").
 		Preload("Cargo").
 		Preload("Oficina").
-		Scopes(FilterByRoleType("FUNCIONARIO"), SearchUsuario(query)).
+		Scopes(FilterByRoleType(models.RolFuncionario), SearchUsuario(query)).
 		Limit(20).
 		Find(&usuarios).Error
 	return usuarios, err
@@ -124,18 +124,18 @@ func (r *UsuarioRepository) FindByRoleType(ctx context.Context, roleType string)
 	query := r.db.WithContext(ctx).Preload("Rol").Preload("Genero").Preload("Origen").Preload("Departamento")
 
 	switch roleType {
-	case "SENADOR":
+	case models.RolSenador:
 		query = query.Preload("Titular").
 			Preload("Cargo").Preload("Oficina").
 			Preload("Suplentes").Preload("Suplentes.Origen").Preload("Suplentes.Departamento").
 			Preload("Suplentes.Cargo").Preload("Suplentes.Oficina").
-			Where("tipo = ?", "SENADOR_TITULAR").
+			Where("tipo = ?", models.TipoSenadorTitular).
 			Order("lastname ASC, firstname ASC")
-	case "FUNCIONARIO":
+	case models.RolFuncionario:
 		query = query.Preload("Cargo").Preload("Oficina").
 			Where("tipo IN ? OR rol_codigo IN ?",
-				[]string{"FUNCIONARIO", "FUNCIONARIO_PERMANENTE", "FUNCIONARIO_EVENTUAL"},
-				[]string{"ADMIN", "TECNICO", "USUARIO", "FUNCIONARIO", "RESPONSABLE"}).
+				[]string{models.TipoFuncionario, models.TipoFuncionarioPermanente, models.TipoFuncionarioEventual},
+				[]string{models.RolAdmin, models.RolTecnico, models.RolUsuario, models.RolFuncionario, models.RolResponsable}).
 			Order("lastname ASC, firstname ASC")
 	default:
 		query = query.Order("created_at desc")
@@ -200,13 +200,21 @@ func (r *UsuarioRepository) SyncOrigenesAlternativos(ctx context.Context, usuari
 
 func (r *UsuarioRepository) FindByCI(ctx context.Context, ci string) (*models.Usuario, error) {
 	var usuario models.Usuario
-	err := r.db.WithContext(ctx).Preload("Rol").Where("ci = ?", ci).First(&usuario).Error
+	err := r.db.WithContext(ctx).
+		Preload("Rol").
+		Where("ci = ?", ci).
+		First(&usuario).
+		Error
 	return &usuario, err
 }
 
 func (r *UsuarioRepository) FindByUsername(ctx context.Context, username string) (*models.Usuario, error) {
 	var user models.Usuario
-	err := r.db.WithContext(ctx).Preload("Rol").Where("username = ?", username).First(&user).Error
+	err := r.db.WithContext(ctx).
+		Preload("Rol").
+		Where("username = ?", username).
+		First(&user).
+		Error
 	return &user, err
 }
 
@@ -264,13 +272,14 @@ func (r *UsuarioRepository) Restore(ctx context.Context, usuario *models.Usuario
 
 func (r *UsuarioRepository) FindAllSenators(ctx context.Context) ([]models.Usuario, error) {
 	var usuarios []models.Usuario
-	err := r.db.WithContext(ctx).Where("tipo IN ?", []string{"SENADOR_TITULAR", "SENADOR_SUPLENTE"}).Find(&usuarios).Error
+	err := r.db.WithContext(ctx).
+		Where("tipo IN ?", []string{models.TipoSenadorTitular, models.TipoSenadorSuplente}).Find(&usuarios).Error
 	return usuarios, err
 }
 
 func (r *UsuarioRepository) FindAdminsAndResponsables(ctx context.Context) ([]models.Usuario, error) {
 	var usuarios []models.Usuario
-	err := r.db.WithContext(ctx).Where("rol_codigo IN ?", []string{"ADMIN", "RESPONSABLE"}).
+	err := r.db.WithContext(ctx).Where("rol_codigo IN ?", []string{models.RolAdmin, models.RolResponsable}).
 		Find(&usuarios).Error
 	return usuarios, err
 }

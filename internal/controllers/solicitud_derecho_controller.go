@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"sistema-pasajes/internal/appcontext"
@@ -8,33 +9,34 @@ import (
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/services"
 	"sistema-pasajes/internal/utils"
-	"sort"
-	"time"
-
 	"strings"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
 
 type SolicitudDerechoController struct {
-	solicitudService      *services.SolicitudService
-	destinoService        *services.DestinoService
-	conceptoService       *services.ConceptoService
-	tipoSolicitudService  *services.TipoSolicitudService
-	ambitoService         *services.AmbitoService
-	cupoService           *services.CupoService
-	userService           *services.UsuarioService
-	peopleService         *services.PeopleService
-	reportService         *services.ReportService
-	aerolineaService      *services.AerolineaService
-	agenciaService        *services.AgenciaService
-	tipoItinerarioService *services.TipoItinerarioService
-	rutaService           *services.RutaService
-	descargoService       *services.DescargoService
+	solicitudService        *services.SolicitudService
+	solicitudDerechoService *services.SolicitudDerechoService
+	destinoService          *services.DestinoService
+	conceptoService         *services.ConceptoService
+	tipoSolicitudService    *services.TipoSolicitudService
+	ambitoService           *services.AmbitoService
+	cupoService             *services.CupoService
+	userService             *services.UsuarioService
+	peopleService           *services.PeopleService
+	reportService           *services.ReportService
+	aerolineaService        *services.AerolineaService
+	agenciaService          *services.AgenciaService
+	tipoItinerarioService   *services.TipoItinerarioService
+	rutaService             *services.RutaService
+	descargoService         *services.DescargoService
+	configuracionService    *services.ConfiguracionService
 }
 
 func NewSolicitudDerechoController(
 	solicitudService *services.SolicitudService,
+	solicitudDerechoService *services.SolicitudDerechoService,
 	destinoService *services.DestinoService,
 	conceptoService *services.ConceptoService,
 	tipoSolicitudService *services.TipoSolicitudService,
@@ -48,64 +50,47 @@ func NewSolicitudDerechoController(
 	tipoItinerarioService *services.TipoItinerarioService,
 	rutaService *services.RutaService,
 	descargoService *services.DescargoService,
+	configuracionService *services.ConfiguracionService,
 ) *SolicitudDerechoController {
 	return &SolicitudDerechoController{
-		solicitudService:      solicitudService,
-		destinoService:        destinoService,
-		conceptoService:       conceptoService,
-		tipoSolicitudService:  tipoSolicitudService,
-		ambitoService:         ambitoService,
-		cupoService:           cupoService,
-		userService:           userService,
-		peopleService:         peopleService,
-		reportService:         reportService,
-		aerolineaService:      aerolineaService,
-		agenciaService:        agenciaService,
-		tipoItinerarioService: tipoItinerarioService,
-		rutaService:           rutaService,
-		descargoService:       descargoService,
+		solicitudService:        solicitudService,
+		solicitudDerechoService: solicitudDerechoService,
+		destinoService:          destinoService,
+		conceptoService:         conceptoService,
+		tipoSolicitudService:    tipoSolicitudService,
+		ambitoService:           ambitoService,
+		cupoService:             cupoService,
+		userService:             userService,
+		peopleService:           peopleService,
+		reportService:           reportService,
+		aerolineaService:        aerolineaService,
+		agenciaService:          agenciaService,
+		tipoItinerarioService:   tipoItinerarioService,
+		rutaService:             rutaService,
+		descargoService:         descargoService,
+		configuracionService:    configuracionService,
 	}
 }
 
 func (ctrl *SolicitudDerechoController) GetCreateModal(c *gin.Context) {
 	itemID := c.Param("item_id")
-	itinerarioCode := c.Param("itinerario_code")
-
-	item, _ := ctrl.cupoService.GetCupoDerechoItemByID(c.Request.Context(), itemID)
-	itinerario, _ := ctrl.tipoItinerarioService.GetByCodigo(c.Request.Context(), itinerarioCode)
-	targetUser, _ := ctrl.userService.GetByID(c.Request.Context(), item.SenAsignadoID)
+	cupoItem, _ := ctrl.cupoService.GetCupoDerechoItemByID(c.Request.Context(), itemID)
+	targetUser, _ := ctrl.userService.GetByID(c.Request.Context(), cupoItem.SenAsignadoID)
 
 	aerolineas, _ := ctrl.aerolineaService.GetAllActive(c.Request.Context())
 	tipoSolicitud, ambitoNac, _ := ctrl.tipoSolicitudService.GetByCodigoAndAmbito(c.Request.Context(), "USO_CUPO", "NACIONAL")
 
-	// Calculate Min/Max Dates for Calendar
-	// Calculate Min/Max Dates for Calendar (Extended Range: +/- 2 weeks)
-	var minDateIda string
-	if item.FechaDesde != nil {
-		minDateIda = item.FechaDesde.AddDate(0, 0, -14).Format("2006-01-02")
-	} else {
-		minDateIda = time.Now().AddDate(0, 0, -14).Format("2006-01-02")
-	}
-
-	var maxDateIda string
-	if item.FechaHasta != nil {
-		maxDateIda = item.FechaHasta.AddDate(0, 0, 14).Format("2006-01-02")
-	}
-
-	minDateVuelta := minDateIda
-	maxDateVuelta := maxDateIda
-
 	var origen, destino *models.Destino
 	userLoc, _ := ctrl.destinoService.GetByIATA(c.Request.Context(), targetUser.GetOrigenIATA())
-	lpbLoc, _ := ctrl.destinoService.GetByIATA(c.Request.Context(), "LPB")
-
-	if itinerario.Codigo == "SOLO_IDA" || itinerario.Codigo == "IDA_VUELTA" {
-		origen = userLoc
-		destino = lpbLoc
-	} else {
-		origen = lpbLoc
-		destino = userLoc
+	sedesAutorizadas := ctrl.getSedesAutorizadas(c.Request.Context())
+	var sedeDefault *models.Destino
+	if len(sedesAutorizadas) > 0 {
+		sedeDefault = &sedesAutorizadas[0]
 	}
+
+	// Default orientation: from Senator's origin to first authorized sede
+	origen = userLoc
+	destino = sedeDefault
 
 	// Preparar Orígenes Autorizados para el Senador
 	origenesAutorizados := []models.Destino{}
@@ -126,20 +111,16 @@ func (ctrl *SolicitudDerechoController) GetCreateModal(c *gin.Context) {
 	utils.Render(c, "solicitud/derecho/modal_create", gin.H{
 		"TargetUser":          targetUser,
 		"Aerolineas":          aerolineas,
-		"Item":                item,
+		"CupoItem":            cupoItem,
 		"Concepto":            tipoSolicitud.ConceptoViaje,
 		"TipoSolicitud":       tipoSolicitud,
 		"Ambito":              ambitoNac,
-		"Itinerario":          itinerario,
 		"Origen":              origen,
 		"Destino":             destino,
 		"OrigenesAutorizados": origenesAutorizados,
-		"IsEdit":              false,
+		"SedesAutorizadas":    sedesAutorizadas,
+		"Sede":                sedeDefault,
 		"ReturnURL":           referer,
-		"MinDateIda":          minDateIda,
-		"MaxDateIda":          maxDateIda,
-		"MinDateVuelta":       minDateVuelta,
-		"MaxDateVuelta":       maxDateVuelta,
 		"DefaultDateIda":      time.Now().AddDate(0, 0, 1).Format("2006-01-02"),
 		"DefaultDateVuelta":   time.Now().AddDate(0, 0, 4).Format("2006-01-02"),
 	})
@@ -159,7 +140,7 @@ func (ctrl *SolicitudDerechoController) Store(c *gin.Context) {
 
 	authUser := appcontext.AuthUser(c)
 
-	solicitud, err := ctrl.solicitudService.CreateDerecho(c.Request.Context(), req, authUser)
+	solicitud, err := ctrl.solicitudDerechoService.CreateDerecho(c.Request.Context(), req, authUser)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Error creando solicitud: "+err.Error())
 		return
@@ -182,61 +163,71 @@ func (ctrl *SolicitudDerechoController) GetEditModal(c *gin.Context) {
 	}
 
 	authUser := appcontext.AuthUser(c)
-	if !authUser.CanEditSolicitud(*solicitud) {
+	solicitud.HydratePermissions(authUser)
+	if !solicitud.Permissions.CanEdit {
 		c.String(http.StatusForbidden, "No tiene permisos para editar esta solicitud")
 		return
 	}
 
-	item, _ := ctrl.cupoService.GetCupoDerechoItemByID(c.Request.Context(), *solicitud.CupoDerechoItemID)
+	// Cargar datos complementarios
+	cupoItem, _ := ctrl.cupoService.GetCupoDerechoItemByID(c.Request.Context(), *solicitud.CupoDerechoItemID)
 	aerolineas, _ := ctrl.aerolineaService.GetAllActive(c.Request.Context())
+	sedesAutorizadas := ctrl.getSedesAutorizadas(c.Request.Context())
+	referer := c.Request.Referer()
 
-	origenIATA := solicitud.Usuario.GetOrigenIATA()
-	userLoc, _ := ctrl.destinoService.GetByIATA(c.Request.Context(), origenIATA)
-	lpbLoc, _ := ctrl.destinoService.GetByIATA(c.Request.Context(), "LPB")
+	var sedeDefault *models.Destino
+	if len(sedesAutorizadas) > 0 {
+		sedeDefault = &sedesAutorizadas[0]
+	}
 
-	itin := solicitud.TipoItinerario
+	// Hidratar permisos de los ítems una sola vez
+	for i := range solicitud.Items {
+		solicitud.Items[i].HydratePermissions(authUser)
+	}
 
-	// Extraer específicamente origen de IDA y destino de VUELTA para la visualización asimétrica
-	var origen, destino *models.Destino
+	userLoc, _ := ctrl.destinoService.GetByIATA(c.Request.Context(), solicitud.Usuario.GetOrigenIATA())
 	ida := solicitud.GetItemIda()
 	vuelta := solicitud.GetItemVuelta()
+	itin := solicitud.TipoItinerario
 
-	if ida != nil && ida.Origen != nil {
+	// Determinar Origen, Destino y Sede con fallbacks limpios
+	var origen, destino, sede *models.Destino
+
+	if ida != nil {
 		origen = ida.Origen
-	} else if userLoc != nil {
+		sede = ida.Destino
+	}
+
+	if vuelta != nil {
+		if origen == nil {
+			origen = vuelta.Destino
+		}
+		destino = vuelta.Destino
+		if sede == nil {
+			sede = vuelta.Origen
+		}
+	}
+
+	// Fallback final para visualización inicial
+	if origen == nil {
 		origen = userLoc
 	}
 
-	if vuelta != nil && vuelta.Destino != nil {
-		destino = vuelta.Destino
-	} else if ida != nil && ida.Destino != nil {
-		// Fallback al destino de la ida si no hay vuelta (vuelos solo ida)
-		destino = ida.Destino
-	} else if lpbLoc != nil {
-		destino = lpbLoc
+	if destino == nil {
+		if vuelta != nil && vuelta.Destino != nil {
+			destino = vuelta.Destino
+		} else if ida != nil && ida.Destino != nil {
+			destino = ida.Destino
+		} else {
+			destino = sedeDefault
+		}
 	}
 
-	var minDateIda string
-	if item.FechaDesde != nil {
-		minDateIda = item.FechaDesde.AddDate(0, 0, -14).Format("2006-01-02")
-	} else {
-		minDateIda = time.Now().AddDate(0, 0, -14).Format("2006-01-02")
+	if sede == nil {
+		sede = sedeDefault
 	}
 
-	var maxDateIda string
-	if item.FechaHasta != nil {
-		maxDateIda = item.FechaHasta.AddDate(0, 0, 14).Format("2006-01-02")
-	}
-
-	minDateVuelta := minDateIda
-	maxDateVuelta := maxDateIda
-
-	referer := c.Request.Referer()
-
-	canEditIda := ida == nil || ida.CanEdit()
-	canEditVuelta := vuelta == nil || vuelta.CanEdit()
-
-	// Preparar Orígenes Autorizados
+	// Orígenes alternativos autorizados
 	origenesAutorizados := []models.Destino{}
 	if userLoc != nil {
 		origenesAutorizados = append(origenesAutorizados, *userLoc)
@@ -247,13 +238,21 @@ func (ctrl *SolicitudDerechoController) GetEditModal(c *gin.Context) {
 		}
 	}
 
+	// Calcular banderas especializadas para solicitudes de Derecho (Ida/Vuelta únicas)
+	canEditIda := (ida != nil && ida.CanEdit())
+	canEditVuelta := (vuelta != nil && vuelta.CanEdit())
+	isIdaProgramada := (ida != nil && !ida.IsPendiente())
+	isVueltaProgramada := (vuelta != nil && !vuelta.IsPendiente())
+
 	utils.Render(c, "solicitud/derecho/modal_edit", gin.H{
 		"Aerolineas":          aerolineas,
-		"AuthUser":            authUser,
 		"TargetUser":          &solicitud.Usuario,
-		"Item":                item,
+		"CupoItem":            cupoItem,
 		"Solicitud":           solicitud,
-		"IsEdit":              true,
+		"CanEditIda":          canEditIda,
+		"CanEditVuelta":       canEditVuelta,
+		"IsIdaProgramada":     isIdaProgramada,
+		"IsVueltaProgramada":  isVueltaProgramada,
 		"Concepto":            solicitud.TipoSolicitud.ConceptoViaje,
 		"TipoSolicitud":       solicitud.TipoSolicitud,
 		"Ambito":              solicitud.AmbitoViaje,
@@ -261,17 +260,9 @@ func (ctrl *SolicitudDerechoController) GetEditModal(c *gin.Context) {
 		"ReturnURL":           referer,
 		"Origen":              origen,
 		"Destino":             destino,
-		"LPBCity":             "LA PAZ",
-		"LPBIATA":             "LPB",
+		"Sede":                sede,
+		"SedesAutorizadas":    sedesAutorizadas,
 		"OrigenesAutorizados": origenesAutorizados,
-		"MinDateIda":          minDateIda,
-		"MaxDateIda":          maxDateIda,
-		"MinDateVuelta":       minDateVuelta,
-		"MaxDateVuelta":       maxDateVuelta,
-		"IsDerecho":           solicitud.GetConceptoCodigo() == "DERECHO",
-		"CanEditIda":          canEditIda,
-		"CanEditVuelta":       canEditVuelta,
-		"IsAdmin":             authUser.IsAdminOrResponsable() || (solicitud.UsuarioID != authUser.ID),
 	})
 }
 
@@ -284,140 +275,15 @@ func (ctrl *SolicitudDerechoController) Update(c *gin.Context) {
 		return
 	}
 
-	var fechaIda *time.Time
-	var err error
-	if req.FechaIda != "" && !req.IdaPorConfirmar {
-		fechaIda, err = utils.ParseDateTime(req.FechaIda)
-		if err != nil {
-			c.String(http.StatusBadRequest, "Formato fecha salida inválido")
-			return
-		}
-	}
-
-	var fechaVuelta *time.Time
-	if req.FechaVuelta != "" && !req.VueltaPorConfirmar {
-		fechaVuelta, err = utils.ParseDateTime(req.FechaVuelta)
-		if err != nil {
-			c.String(http.StatusBadRequest, "Formato fecha retorno inválido")
-			return
-		}
-		if fechaVuelta != nil && fechaIda != nil && !fechaVuelta.After(*fechaIda) {
-			c.String(http.StatusBadRequest, "La fecha de retorno debe ser posterior a la de salida")
-			return
-		}
-	}
-
-	solicitud, err := ctrl.solicitudService.GetByID(c.Request.Context(), id)
-	if err != nil {
-		c.String(http.StatusInternalServerError, "Error: "+err.Error())
-		return
-	}
-
 	authUser := appcontext.AuthUser(c)
-	if !authUser.CanEditSolicitud(*solicitud) {
-		c.String(http.StatusForbidden, "No tiene permisos para editar esta solicitud o el estado actual no lo permite")
-		return
-	}
-
-	currentStatus := solicitud.GetEstado()
-
-	if req.TipoItinerarioCodigo != "" {
-		solicitud.TipoItinerarioCodigo = req.TipoItinerarioCodigo
-	}
-
-	if currentStatus == "SOLICITADO" || currentStatus == "APROBADO" || currentStatus == "PARCIALMENTE_APROBADO" || currentStatus == "RECHAZADO" {
-		solicitud.TipoSolicitudCodigo = req.TipoSolicitudCodigo
-		solicitud.AmbitoViajeCodigo = req.AmbitoViajeCodigo
-		solicitud.AerolineaSugerida = req.AerolineaSugerida
-		if req.Motivo != "" {
-			solicitud.Motivo = req.Motivo
-		}
-
-		req.OrigenIdaIATA = strings.ToUpper(strings.TrimSpace(req.OrigenIdaIATA))
-		req.DestinoVueltaIATA = strings.ToUpper(strings.TrimSpace(req.DestinoVueltaIATA))
-
-		origIda, _ := ctrl.destinoService.GetByIATA(c.Request.Context(), req.OrigenIdaIATA)
-		destVuelta, _ := ctrl.destinoService.GetByIATA(c.Request.Context(), req.DestinoVueltaIATA)
-		lpb, _ := ctrl.destinoService.GetByIATA(c.Request.Context(), "LPB")
-
-		// Forzamos que existan ambos tramos para DERECHO
-		if solicitud.GetItemIda() == nil {
-			solicitud.Items = append(solicitud.Items, models.SolicitudItem{
-				SolicitudID:  solicitud.ID,
-				Tipo:         models.TipoSolicitudItemIda,
-				OrigenIATA:   req.OrigenIdaIATA,
-				DestinoIATA:  "LPB",
-				EstadoCodigo: utils.Ptr("PENDIENTE"),
-			})
-		}
-		if solicitud.GetItemVuelta() == nil {
-			solicitud.Items = append(solicitud.Items, models.SolicitudItem{
-				SolicitudID:  solicitud.ID,
-				Tipo:         models.TipoSolicitudItemVuelta,
-				OrigenIATA:   "LPB",
-				DestinoIATA:  req.DestinoVueltaIATA,
-				EstadoCodigo: utils.Ptr("PENDIENTE"),
-			})
-		}
-
-		// Sync per-item fields
-		for i := range solicitud.Items {
-			it := &solicitud.Items[i]
-
-			// Solo permitir edición de tramos que NO estén procesados (aprobados/emitidos/etc)
-			canEditItem := it.CanEdit()
-			if !canEditItem {
-				continue
-			}
-
-			switch it.Tipo {
-			case models.TipoSolicitudItemIda:
-				it.OrigenIATA = req.OrigenIdaIATA
-				it.DestinoIATA = "LPB"
-				if origIda != nil {
-					it.Origen = origIda
-				}
-				if lpb != nil {
-					it.Destino = lpb
-				}
-				if req.IdaPorConfirmar {
-					it.EstadoCodigo = utils.Ptr("PENDIENTE")
-					it.Fecha = nil
-				} else {
-					it.EstadoCodigo = utils.Ptr("SOLICITADO")
-					it.Fecha = fechaIda
-				}
-			case models.TipoSolicitudItemVuelta:
-				it.OrigenIATA = "LPB"
-				it.DestinoIATA = req.DestinoVueltaIATA
-				if lpb != nil {
-					it.Origen = lpb
-				}
-				if destVuelta != nil {
-					it.Destino = destVuelta
-				}
-				if req.VueltaPorConfirmar {
-					it.EstadoCodigo = utils.Ptr("PENDIENTE")
-					it.Fecha = nil
-				} else {
-					it.EstadoCodigo = utils.Ptr("SOLICITADO")
-					it.Fecha = fechaVuelta
-				}
-			}
-		}
-	}
-
-	// If it was APPROVED, PARCIAL or REJECTED, revert to SOLICITADO to trigger re-approval of adjustments
-	if currentStatus == "APROBADO" || currentStatus == "PARCIALMENTE_APROBADO" || currentStatus == "RECHAZADO" {
-		solicitud.EstadoSolicitudCodigo = utils.Ptr("SOLICITADO")
-	}
-
-	if err := ctrl.solicitudService.Update(c.Request.Context(), solicitud); err != nil {
-		c.String(http.StatusInternalServerError, "Error actualizando: "+err.Error())
+	solicitud, err := ctrl.solicitudDerechoService.UpdateDerecho(c.Request.Context(), id, req, authUser)
+	if err != nil {
+		c.String(http.StatusBadRequest, "Error: "+err.Error())
 		return
 	}
 
 	utils.SetSuccessMessage(c, "Solicitud actualizada correctamente")
+	c.Header("HX-Trigger", "solicitudUpdated") // Opcional si necesitas disparar algún evento
 
 	// If HTMX request, re-render the edit modal with updated data
 	if c.GetHeader("HX-Request") == "true" {
@@ -432,45 +298,9 @@ func (ctrl *SolicitudDerechoController) Update(c *gin.Context) {
 	c.Redirect(http.StatusFound, targetURL)
 }
 
-type StepView struct {
-	Icon         string
-	Label        string
-	WrapperClass string
-	LabelClass   string
-}
-
-type StatusCardView struct {
-	BorderClass string
-	TextClass   string
-}
-
-type SolicitudPermissions struct {
-	CanEdit           bool
-	CanApproveReject  bool
-	CanRevertApproval bool
-	CanMakeDescargo   bool
-	CanAssignPasaje   bool
-	CanAssignViatico  bool
-	IsAdminOrResp     bool
-}
-
-type PasajePermissions struct {
-	CanEdit         bool
-	CanMarkUsado    bool
-	CanValidateUso  bool
-	CanDevolver     bool
-	CanAnular       bool
-	CanEmitir       bool
-	ShowActionsMenu bool
-}
-
-type PasajeView struct {
-	models.Pasaje
-	Perms            PasajePermissions
-	StatusColorClass string // e.g. "bg-success-100 text-success-800"
-}
-
 func (ctrl *SolicitudDerechoController) Show(c *gin.Context) {
+	authUser := appcontext.AuthUser(c)
+
 	id := c.Param("id")
 	solicitud, err := ctrl.solicitudService.GetByID(c.Request.Context(), id)
 
@@ -479,179 +309,29 @@ func (ctrl *SolicitudDerechoController) Show(c *gin.Context) {
 		return
 	}
 
-	authUser := appcontext.AuthUser(c)
-
-	// --- 0. Sort Items (IDA first, then VUELTA) ---
-	sort.Slice(solicitud.Items, func(i, j int) bool {
-		ti := string(solicitud.Items[i].Tipo)
-		tj := string(solicitud.Items[j].Tipo)
-
-		if ti == "IDA" && tj == "VUELTA" {
-			return true
-		}
-		if ti == "VUELTA" && tj == "IDA" {
-			return false
-		}
-
-		if solicitud.Items[i].Fecha != nil && solicitud.Items[j].Fecha != nil {
-			return solicitud.Items[i].Fecha.Before(*solicitud.Items[j].Fecha)
-		}
-		return false
-	})
-
-	st := "SOLICITADO"
-	if solicitud.EstadoSolicitudCodigo != nil {
-		st = *solicitud.EstadoSolicitudCodigo
-	}
-
 	if !solicitud.CanView(authUser) {
 		c.String(http.StatusForbidden, "No tiene permiso para ver esta solicitud")
 		return
 	}
+	solicitud.HydratePermissions(authUser)
 
-	perms := SolicitudPermissions{
-		CanEdit:           authUser.CanEditSolicitud(*solicitud),
-		CanApproveReject:  authUser.CanApproveReject(),
-		CanRevertApproval: solicitud.CanRevertApproval(authUser),
-		CanAssignPasaje:   authUser.IsAdminOrResponsable(),
-		CanMakeDescargo:   solicitud.CanMakeDescargo(authUser),
-		IsAdminOrResp:     authUser.IsAdminOrResponsable(),
-	}
-
-	approvalLabel := "Acciones"
-
-	// --- 2. Stepper Logic ---
-	// Helper to create step style
-	makeStep := func(active, completed bool, colorBase, icon, label string) StepView {
-		sv := StepView{
-			Icon:  icon,
-			Label: label,
-		}
-		if active || completed {
-			sv.WrapperClass = fmt.Sprintf("bg-%s-500 text-white border-none", colorBase)
-			sv.LabelClass = fmt.Sprintf("text-%s-500", colorBase)
-		} else {
-			sv.WrapperClass = "bg-white border-2 border-neutral-200 text-neutral-400"
-			sv.LabelClass = "text-neutral-400"
-		}
-		return sv
-	}
-
-	steps := make(map[string]StepView)
-
-	// Step 1: Solicitado (Always active/completed) (Blue -> Primary)
-	steps["Solicitado"] = makeStep(true, true, "secondary", "ph ph-file-text text-lg", "Solicitado")
-
-	// Step 2: Aprobado / Parcial / Rechazado
-	rejected := st == "RECHAZADO"
-	parcial := st == "PARCIALMENTE_APROBADO"
-
-	if rejected {
-		steps["Aprobado"] = StepView{
-			Icon:         "ph ph-x text-xl font-bold",
-			Label:        "Rechazado",
-			WrapperClass: "bg-danger-500 text-white border-none",
-			LabelClass:   "text-danger-500",
-		}
-	} else if parcial {
-		steps["Aprobado"] = StepView{
-			Icon:         "ph ph-check-square-offset text-xl",
-			Label:        "Parcial",
-			WrapperClass: "bg-violet-500 text-white border-none",
-			LabelClass:   "text-violet-500",
-		}
-	} else {
-		// Aprobado is active if state is APROBADO, EMITIDO, or FINALIZADO
-		isAp := st == "APROBADO" || st == "EMITIDO" || st == "FINALIZADO"
-		steps["Aprobado"] = makeStep(isAp, isAp, "success", "ph ph-check text-xl font-bold", "Aprobado")
-	}
-
-	// Step 3: Emitido (Teal -> Secondary)
-	isEm := st == "EMITIDO" || st == "FINALIZADO"
-	steps["Emitido"] = makeStep(isEm, isEm, "secondary", "ph ph-ticket text-xl", "Emitido")
-
-	// Step 4: Finalizado (Gray -> Neutral)
-	isFin := st == "FINALIZADO"
-	steps["Finalizado"] = makeStep(isFin, isFin, "neutral", "ph ph-flag-checkered text-xl", "Finalizado")
-
-	showNextSteps := !rejected
-
-	// --- 3. Status Card Logic ---
-	statusCard := StatusCardView{}
-	switch st {
-	case "SOLICITADO":
-		statusCard.BorderClass = "border-primary-500"
-		statusCard.TextClass = "text-primary-700"
-	case "RECHAZADO":
-		statusCard.BorderClass = "border-danger-500"
-		statusCard.TextClass = "text-danger-700"
-	case "APROBADO":
-		statusCard.BorderClass = "border-success-500"
-		statusCard.TextClass = "text-success-700"
-	case "PARCIALMENTE_APROBADO":
-		statusCard.BorderClass = "border-violet-500"
-		statusCard.TextClass = "text-violet-700"
-	case "EMITIDO":
-		statusCard.BorderClass = "border-secondary-500"
-		statusCard.TextClass = "text-secondary-700"
-	case "FINALIZADO":
-		statusCard.BorderClass = "border-neutral-500"
-		statusCard.TextClass = "text-neutral-700"
-	default:
-		statusCard.BorderClass = "border-neutral-200"
-		statusCard.TextClass = "text-neutral-900"
-	}
+	// --- 2. Stepper & Status Logic delegated to Model ---
+	steps, showNextSteps := solicitud.GetStepperData()
+	statusCard := solicitud.GetStatusCardData()
 
 	// --- 4. Pasajes Views (con permisos pre-calculados) ---
 	var pasajesViews []PasajeView
 	for _, item := range solicitud.Items {
 		for i := range item.Pasajes {
 			p := &item.Pasajes[i]
-			pCode := ""
-			if p.EstadoPasajeCodigo != nil {
-				pCode = *p.EstadoPasajeCodigo
-			}
-
 			pv := PasajeView{Pasaje: *p}
 
 			// Status Color logic
-			if p.EstadoPasaje != nil {
-				pv.StatusColorClass = fmt.Sprintf("bg-%s-100 text-%s-800", p.EstadoPasaje.Color, p.EstadoPasaje.Color)
-			} else {
-				// Fallback logic
-				switch pCode {
-				case "REGISTRADO":
-					pv.StatusColorClass = "bg-secondary-100 text-secondary-800"
-				case "EMITIDO":
-					pv.StatusColorClass = "bg-success-100 text-success-800"
-				case "USADO":
-					pv.StatusColorClass = "bg-primary-100 text-primary-800"
-				case "ANULADO":
-					pv.StatusColorClass = "bg-neutral-100 text-neutral-800"
-				default:
-					pv.StatusColorClass = "bg-neutral-100 text-neutral-800"
-				}
-			}
+			pv.StatusColorClass = p.GetStatusBadgeClass()
 
-			// Permissions logic for this pasaje
-			pPerms := PasajePermissions{}
-
-			if item.GetEstado() != "REPROGRAMADO" {
-				canEmitir := authUser.IsAdminOrResponsable() && pCode == "REGISTRADO"
-				pPerms.CanEdit = authUser.IsAdminOrResponsable() && pCode == "REGISTRADO"
-				pPerms.CanMarkUsado = authUser.CanMarkUsado(*solicitud) && pCode == "EMITIDO"
-				pPerms.CanValidateUso = false // Removed state
-				pPerms.CanDevolver = authUser.IsAdminOrResponsable() && pCode == "EMITIDO"
-				pPerms.CanAnular = authUser.IsAdminOrResponsable() && (pCode == "REGISTRADO" || pCode == "EMITIDO")
-				pPerms.CanEmitir = canEmitir // New permission
-
-				// Actions Menu Visibility
-				pPerms.ShowActionsMenu = pPerms.CanEdit || pPerms.CanMarkUsado || pPerms.CanDevolver || pPerms.CanAnular || pPerms.CanEmitir
-			} else {
-				pPerms.ShowActionsMenu = false
-			}
-
-			pv.Perms = pPerms
+			// Permissions logic for this pasaje delegated to Model
+			p.HydratePermissions(authUser)
+			pv.Perms = *p.Permissions
 			pasajesViews = append(pasajesViews, pv)
 		}
 	}
@@ -680,39 +360,34 @@ func (ctrl *SolicitudDerechoController) Show(c *gin.Context) {
 	}
 
 	utils.Render(c, "solicitud/derecho/show", gin.H{
-		"Title":      "Detalle Solicitud (Derecho) #" + id,
-		"Solicitud":  solicitud,
-		"Usuarios":   usuariosMap,
-		"DescargoID": descargoID,
-
-		// New View Data
-		"Perms":         perms,
+		"Title":         "Detalle Solicitud (Derecho) #" + id,
+		"Solicitud":     solicitud,
+		"Usuarios":      usuariosMap,
+		"DescargoID":    descargoID,
 		"Steps":         steps,
 		"ShowNextSteps": showNextSteps,
 		"StatusCard":    statusCard,
 		"PasajesView":   pasajesViews,
-		"ApprovalLabel": approvalLabel,
-
-		"Aerolineas": aerolineas,
+		"Aerolineas":    aerolineas,
 	})
 }
 
 func (ctrl *SolicitudDerechoController) Approve(c *gin.Context) {
 	id := c.Param("id")
-	ctx := c.Request.Context()
-	solicitud, err := ctrl.solicitudService.GetByID(ctx, id)
+	authUser := appcontext.AuthUser(c)
+	solicitud, err := ctrl.solicitudService.GetByID(c.Request.Context(), id)
 	if err != nil {
 		c.String(http.StatusNotFound, "Solicitud no encontrada")
 		return
 	}
 
-	authUser := appcontext.AuthUser(c)
-	if authUser == nil || !solicitud.CanApprove(authUser) {
+	solicitud.HydratePermissions(authUser)
+	if !solicitud.Permissions.CanApproveReject {
 		c.String(http.StatusForbidden, "No tiene permisos para aprobar esta solicitud en su estado actual")
 		return
 	}
 
-	if err := ctrl.solicitudService.Approve(ctx, id); err != nil {
+	if err := ctrl.solicitudService.Approve(c.Request.Context(), id); err != nil {
 		c.String(http.StatusInternalServerError, "Error al aprobar la solicitud: "+err.Error())
 		return
 	}
@@ -723,10 +398,18 @@ func (ctrl *SolicitudDerechoController) Approve(c *gin.Context) {
 func (ctrl *SolicitudDerechoController) RevertApproval(c *gin.Context) {
 	id := c.Param("id")
 	authUser := appcontext.AuthUser(c)
-	if authUser == nil || !authUser.IsAdminOrResponsable() {
+	solicitud, err := ctrl.solicitudService.GetByID(c.Request.Context(), id)
+	if err != nil {
+		c.String(http.StatusNotFound, "Solicitud no encontrada")
+		return
+	}
+
+	solicitud.HydratePermissions(authUser)
+	if !solicitud.Permissions.CanRevertApproval {
 		c.String(http.StatusForbidden, "No tiene permisos para realizar esta acción")
 		return
 	}
+
 	if err := ctrl.solicitudService.RevertApproval(c.Request.Context(), id); err != nil {
 		c.String(http.StatusInternalServerError, "Error al revertir aprobación: "+err.Error())
 		return
@@ -737,20 +420,20 @@ func (ctrl *SolicitudDerechoController) RevertApproval(c *gin.Context) {
 
 func (ctrl *SolicitudDerechoController) Reject(c *gin.Context) {
 	id := c.Param("id")
-	ctx := c.Request.Context()
-	solicitud, err := ctrl.solicitudService.GetByID(ctx, id)
+	authUser := appcontext.AuthUser(c)
+	solicitud, err := ctrl.solicitudService.GetByID(c.Request.Context(), id)
 	if err != nil {
 		c.String(http.StatusNotFound, "Solicitud no encontrada")
 		return
 	}
 
-	authUser := appcontext.AuthUser(c)
-	if authUser == nil || !solicitud.CanApprove(authUser) { // Same logic: can only reject if can approve
+	solicitud.HydratePermissions(authUser)
+	if !solicitud.Permissions.CanApproveReject {
 		c.String(http.StatusForbidden, "No tiene permisos para rechazar esta solicitud en su estado actual")
 		return
 	}
 
-	if err := ctrl.solicitudService.Reject(ctx, id); err != nil {
+	if err := ctrl.solicitudService.Reject(c.Request.Context(), id); err != nil {
 		c.String(http.StatusInternalServerError, "Error al rechazar la solicitud: "+err.Error())
 		return
 	}
@@ -794,15 +477,16 @@ func (ctrl *SolicitudDerechoController) Print(c *gin.Context) {
 
 func (ctrl *SolicitudDerechoController) Destroy(c *gin.Context) {
 	id := c.Param("id")
+	authUser := appcontext.AuthUser(c)
 	solicitud, err := ctrl.solicitudService.GetByID(c.Request.Context(), id)
 	if err != nil {
 		c.String(http.StatusNotFound, "Solicitud no encontrada")
 		return
 	}
 
-	authUser := appcontext.AuthUser(c)
-	if authUser == nil {
-		c.String(http.StatusUnauthorized, "No autorizado")
+	solicitud.HydratePermissions(authUser)
+	if !solicitud.Permissions.CanDelete {
+		c.String(http.StatusForbidden, "No tiene permisos para eliminar esta solicitud")
 		return
 	}
 
@@ -819,10 +503,18 @@ func (ctrl *SolicitudDerechoController) ApproveItem(c *gin.Context) {
 	id := c.Param("id")
 	itemID := c.Param("item_id")
 	authUser := appcontext.AuthUser(c)
-	if authUser == nil || !authUser.CanApproveReject() {
+	solicitud, err := ctrl.solicitudService.GetByID(c.Request.Context(), id)
+	if err != nil {
+		c.String(http.StatusNotFound, "Solicitud no encontrada")
+		return
+	}
+
+	solicitud.HydratePermissions(authUser)
+	if !solicitud.Permissions.CanApproveReject {
 		c.String(http.StatusForbidden, "No tiene permisos para realizar esta acción")
 		return
 	}
+
 	if err := ctrl.solicitudService.ApproveItem(c.Request.Context(), id, itemID); err != nil {
 		c.String(http.StatusInternalServerError, "Error al aprobar el tramo: "+err.Error())
 		return
@@ -835,10 +527,18 @@ func (ctrl *SolicitudDerechoController) RejectItem(c *gin.Context) {
 	id := c.Param("id")
 	itemID := c.Param("item_id")
 	authUser := appcontext.AuthUser(c)
-	if authUser == nil || !authUser.CanApproveReject() {
+	solicitud, err := ctrl.solicitudService.GetByID(c.Request.Context(), id)
+	if err != nil {
+		c.String(http.StatusNotFound, "Solicitud no encontrada")
+		return
+	}
+
+	solicitud.HydratePermissions(authUser)
+	if !solicitud.Permissions.CanApproveReject {
 		c.String(http.StatusForbidden, "No tiene permisos para realizar esta acción")
 		return
 	}
+
 	if err := ctrl.solicitudService.RejectItem(c.Request.Context(), id, itemID); err != nil {
 		c.String(http.StatusInternalServerError, "Error al rechazar el tramo: "+err.Error())
 		return
@@ -851,10 +551,18 @@ func (ctrl *SolicitudDerechoController) RevertApprovalItem(c *gin.Context) {
 	id := c.Param("id")
 	itemID := c.Param("item_id")
 	authUser := appcontext.AuthUser(c)
-	if authUser == nil || !authUser.IsAdminOrResponsable() {
+	solicitud, err := ctrl.solicitudService.GetByID(c.Request.Context(), id)
+	if err != nil {
+		c.String(http.StatusNotFound, "Solicitud no encontrada")
+		return
+	}
+
+	solicitud.HydratePermissions(authUser)
+	if !solicitud.Permissions.CanRevertApproval {
 		c.String(http.StatusForbidden, "No tiene permisos para realizar esta acción")
 		return
 	}
+
 	if err := ctrl.solicitudService.RevertApprovalItem(c.Request.Context(), id, itemID); err != nil {
 		c.String(http.StatusInternalServerError, "Error al revertir aprobación del tramo: "+err.Error())
 		return
@@ -865,9 +573,16 @@ func (ctrl *SolicitudDerechoController) RevertApprovalItem(c *gin.Context) {
 
 func (ctrl *SolicitudDerechoController) GetItemRegularizacionModal(c *gin.Context) {
 	itemID := c.Param("item_id")
+	authUser := appcontext.AuthUser(c)
 	item, err := ctrl.solicitudService.GetItemByID(c.Request.Context(), itemID)
 	if err != nil {
 		c.String(404, "Tramo no encontrado")
+		return
+	}
+
+	item.Solicitud.HydratePermissions(authUser)
+	if !item.Solicitud.Permissions.CanRegularize {
+		c.String(403, "No tiene permisos para regularizar fechas")
 		return
 	}
 
@@ -879,6 +594,19 @@ func (ctrl *SolicitudDerechoController) GetItemRegularizacionModal(c *gin.Contex
 
 func (ctrl *SolicitudDerechoController) UpdateItemRegularizacionDates(c *gin.Context) {
 	itemID := c.Param("item_id")
+	authUser := appcontext.AuthUser(c)
+	item, err := ctrl.solicitudService.GetItemByID(c.Request.Context(), itemID)
+	if err != nil {
+		c.String(404, "Tramo no encontrado")
+		return
+	}
+
+	item.Solicitud.HydratePermissions(authUser)
+	if !item.Solicitud.Permissions.CanRegularize {
+		c.String(403, "No tiene permisos para realizar esta acción")
+		return
+	}
+
 	fecha := c.PostForm("fecha_regularizacion")
 
 	if err := ctrl.solicitudService.UpdateSolicitudItemDates(c.Request.Context(), itemID, fecha, fecha); err != nil {
@@ -890,33 +618,33 @@ func (ctrl *SolicitudDerechoController) UpdateItemRegularizacionDates(c *gin.Con
 	c.Status(200)
 }
 
-func (ctrl *SolicitudDerechoController) GetReprogramarModalSolicitudItem(c *gin.Context) {
-	id := c.Param("id")
-	item, err := ctrl.solicitudService.GetItemByID(c.Request.Context(), id)
-	if err != nil {
-		c.String(http.StatusNotFound, "Tramo no encontrado")
-		return
+func (ctrl *SolicitudDerechoController) getSedesAutorizadas(ctx context.Context) []models.Destino {
+	sedesAutorizadas := []models.Destino{}
+
+	// Obtener configuración de sedes (ej: "LPB,SRE,TJA")
+	sedesStr := ctrl.configuracionService.GetValue(ctx, "SEDES_AUTORIZADAS")
+	var sedesCodes []string
+
+	if sedesStr == "" {
+		// Fallback por defecto si no hay configuración
+		sedesCodes = []string{"LPB"}
+	} else {
+		// Limpiar y separar códigos
+		parts := strings.Split(sedesStr, ",")
+		for _, p := range parts {
+			code := strings.ToUpper(strings.TrimSpace(p))
+			if code != "" {
+				sedesCodes = append(sedesCodes, code)
+			}
+		}
 	}
 
-	utils.Render(c, "solicitud/components/modal_reprogramar_pasaje", gin.H{
-		"SolicitudItem": item,
-		"Tipo":          item.Tipo,
-	})
-}
-
-func (ctrl *SolicitudDerechoController) ReprogramarItem(c *gin.Context) {
-	var req dtos.ReprogramarSolicitudItemRequest
-	if err := c.ShouldBind(&req); err != nil {
-		c.Redirect(http.StatusFound, "/solicitudes?error=DatosInvalidos")
-		return
+	// Buscar destinos correspondientes
+	for _, code := range sedesCodes {
+		if s, err := ctrl.destinoService.GetByIATA(ctx, code); err == nil && s != nil {
+			sedesAutorizadas = append(sedesAutorizadas, *s)
+		}
 	}
 
-	if err := ctrl.solicitudService.ReprogramarItem(c.Request.Context(), req); err != nil {
-		utils.SetErrorMessage(c, "Error: "+err.Error())
-		c.Redirect(http.StatusFound, "/solicitudes")
-		return
-	}
-
-	utils.SetSuccessMessage(c, "Reprogramación de tramo solicitada exitosamente")
-	c.Redirect(http.StatusFound, c.Request.Header.Get("Referer"))
+	return sedesAutorizadas
 }

@@ -3,6 +3,7 @@ package services
 import (
 	"context"
 	"log/slog"
+	"sistema-pasajes/internal/dtos"
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
 	"sistema-pasajes/internal/utils"
@@ -17,16 +18,6 @@ type UsuarioService struct {
 	destinoRepo   *repositories.DestinoRepository
 	cargoRepo     *repositories.CargoRepository
 	oficinaRepo   *repositories.OficinaRepository
-}
-
-type UserEditContext struct {
-	Usuario      *models.Usuario
-	Roles        []models.Rol
-	Destinos     []models.Destino
-	Funcionarios []models.Usuario
-	Cargos       []models.Cargo
-	Oficinas     []models.Oficina
-	Permissions  map[string]bool
 }
 
 func NewUsuarioService(
@@ -51,15 +42,10 @@ func NewUsuarioService(
 	}
 }
 
-type SyncResult struct {
-	Count     int
-	Conflicts []string
-}
-
-func (s *UsuarioService) SyncStaff(ctx context.Context) (SyncResult, error) {
+func (s *UsuarioService) SyncStaff(ctx context.Context) (dtos.SyncResult, error) {
 	mongoStaff, err := s.peopleRepo.WithContext(ctx).FindAllActiveStaff()
 	if err != nil {
-		return SyncResult{}, err
+		return dtos.SyncResult{}, err
 	}
 
 	mongoMap := make(map[string]models.MongoPersonaView)
@@ -70,7 +56,7 @@ func (s *UsuarioService) SyncStaff(ctx context.Context) (SyncResult, error) {
 		}
 	}
 
-	pgUsers, _ := s.repo.FindByRoleType(ctx, "FUNCIONARIO")
+	pgUsers, _ := s.repo.FindByRoleType(ctx, models.RolFuncionario)
 	for _, user := range pgUsers {
 		if user.IsSenador() {
 			continue
@@ -80,7 +66,7 @@ func (s *UsuarioService) SyncStaff(ctx context.Context) (SyncResult, error) {
 		}
 	}
 
-	var result SyncResult
+	var result dtos.SyncResult
 	for ci, mStaff := range mongoMap {
 		user, err := s.repo.FindByCIUnscoped(ctx, ci)
 		exists := err == nil
@@ -178,7 +164,7 @@ func (s *UsuarioService) SyncStaff(ctx context.Context) (SyncResult, error) {
 		}
 
 		if user.RolCodigo == nil {
-			rol := "FUNCIONARIO"
+			rol := models.RolFuncionario
 			user.RolCodigo = &rol
 		}
 
@@ -190,10 +176,10 @@ func (s *UsuarioService) SyncStaff(ctx context.Context) (SyncResult, error) {
 	return result, nil
 }
 
-func (s *UsuarioService) SyncSenators(ctx context.Context) (SyncResult, error) {
+func (s *UsuarioService) SyncSenators(ctx context.Context) (dtos.SyncResult, error) {
 	mongoSenators, err := s.peopleRepo.WithContext(ctx).FindAllActiveSenators()
 	if err != nil {
-		return SyncResult{}, err
+		return dtos.SyncResult{}, err
 	}
 
 	mongoMap := make(map[string]models.MongoPersonaView)
@@ -204,7 +190,7 @@ func (s *UsuarioService) SyncSenators(ctx context.Context) (SyncResult, error) {
 		}
 	}
 
-	var result SyncResult
+	var result dtos.SyncResult
 
 	err = s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.UsuarioRepository) error {
 		pgSenators, _ := repoTx.FindAllSenators(ctx)
@@ -309,7 +295,7 @@ func (s *UsuarioService) SyncSenators(ctx context.Context) (SyncResult, error) {
 			}
 
 			if user.RolCodigo == nil {
-				senadorRole := "SENADOR"
+				senadorRole := models.RolSenador
 				user.RolCodigo = &senadorRole
 			}
 
@@ -358,7 +344,7 @@ func (s *UsuarioService) SyncSenators(ctx context.Context) (SyncResult, error) {
 	})
 
 	if err != nil {
-		return SyncResult{}, err
+		return dtos.SyncResult{}, err
 	}
 
 	return result, nil
@@ -415,7 +401,7 @@ func (s *UsuarioService) GetCommonCatalogs(ctx context.Context) ([]models.Destin
 		return nil, nil, err
 	}
 
-	funcionarios, err := s.repo.FindByRoleType(ctx, "FUNCIONARIO")
+	funcionarios, err := s.repo.FindByRoleType(ctx, models.RolFuncionario)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -439,7 +425,7 @@ func (s *UsuarioService) SearchStaff(ctx context.Context, query string) ([]model
 	return s.repo.SearchStaff(ctx, query)
 }
 
-func (s *UsuarioService) GetEditContext(ctx context.Context, userID string, authUser *models.Usuario) (*UserEditContext, error) {
+func (s *UsuarioService) GetEditContext(ctx context.Context, userID string, authUser *models.Usuario) (*dtos.UserEditContext, error) {
 	usuario, err := s.repo.FindByID(ctx, userID)
 	if err != nil {
 		return nil, err
@@ -447,11 +433,11 @@ func (s *UsuarioService) GetEditContext(ctx context.Context, userID string, auth
 
 	roles, _ := s.rolRepo.FindAll(ctx)
 	destinos, _ := s.destinoRepo.FindAll(ctx)
-	funcionarios, _ := s.repo.FindByRoleType(ctx, "FUNCIONARIO")
+	funcionarios, _ := s.repo.FindByRoleType(ctx, models.RolFuncionario)
 	cargos, _ := s.cargoRepo.FindAll(ctx)
 	oficinas, _ := s.oficinaRepo.FindAll(ctx)
 
-	perms := usuario.GetPermissionsFor(authUser)
+	perms := usuario.GetPermissions(authUser)
 	permissions := map[string]bool{
 		"CanChangeRol":    perms.CanChangeRol,
 		"CanChangeOrigin": perms.CanChangeOrigin,
@@ -466,7 +452,7 @@ func (s *UsuarioService) GetEditContext(ctx context.Context, userID string, auth
 		"HasPhone":        perms.HasPhone,
 	}
 
-	return &UserEditContext{
+	return &dtos.UserEditContext{
 		Usuario:      usuario,
 		Roles:        roles,
 		Destinos:     destinos,

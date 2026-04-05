@@ -1,10 +1,25 @@
 package models
 
-import "time"
+import (
+	"fmt"
+	"time"
+)
+
+// PasajePermissions define las acciones permitidas sobre un pasaje según el rol y estado.
+type PasajePermissions struct {
+	CanEdit         bool
+	CanMarkUsado    bool
+	CanDevolver     bool
+	CanAnular       bool
+	CanEmitir       bool
+	CanValidateUso  bool
+	ShowActionsMenu bool
+}
 
 type Pasaje struct {
 	BaseModel
-	SolicitudID string `gorm:"not null;size:36"`
+	SolicitudID string     `gorm:"not null;size:36;index"`
+	Solicitud   *Solicitud `gorm:"foreignKey:SolicitudID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
 
 	SolicitudItemID *string        `gorm:"size:36;index"`
 	SolicitudItem   *SolicitudItem `gorm:"foreignKey:SolicitudItemID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
@@ -36,7 +51,13 @@ type Pasaje struct {
 	Glosa             string  `gorm:"type:text"`
 	NumeroFactura     string  `gorm:"size:50;index"`
 	CostoPenalidad    float64 `gorm:"type:decimal(10,2);default:0"`
-	Orden             int     `gorm:"default:0"`
+
+	// Seq is an auto-incrementing field managed by DB to ensure atomic sequential ordering
+	Seq int64 `gorm:"autoIncrement;not null;<-:false"`
+
+	// Contexto de runtime (no persistido)
+	authUser    *Usuario           `gorm:"-"`
+	Permissions *PasajePermissions `gorm:"-"`
 }
 
 func (p Pasaje) GetRutaDisplay() string {
@@ -74,32 +95,74 @@ func (p Pasaje) GetEstadoCodigo() string {
 	return *p.EstadoPasajeCodigo
 }
 
-func (p Pasaje) CanBeEdited(user *Usuario) bool {
+func (p Pasaje) getAuthUser(u ...*Usuario) *Usuario {
+	if len(u) > 0 {
+		return u[0]
+	}
+	return p.authUser
+}
+
+func (p Pasaje) CanBeEdited(u ...*Usuario) bool {
+	user := p.getAuthUser(u...)
 	if user == nil {
 		return false
 	}
 	return user.IsAdminOrResponsable() && p.GetEstado() == "REGISTRADO"
 }
 
-func (p Pasaje) CanBeEmitted(user *Usuario) bool {
+func (p Pasaje) CanBeEmitted(u ...*Usuario) bool {
+	user := p.getAuthUser(u...)
 	if user == nil {
 		return false
 	}
 	return user.IsAdminOrResponsable() && p.GetEstado() == "REGISTRADO"
 }
 
-func (p Pasaje) CanBeReverted(user *Usuario) bool {
+func (p Pasaje) CanBeReverted(u ...*Usuario) bool {
+	user := p.getAuthUser(u...)
 	if user == nil {
 		return false
 	}
 	return user.IsAdminOrResponsable() && p.GetEstado() == "EMITIDO"
 }
 
-func (p Pasaje) CanBeAnulado(user *Usuario) bool {
+func (p Pasaje) CanBeAnulado(u ...*Usuario) bool {
+	user := p.getAuthUser(u...)
 	if user == nil {
 		return false
 	}
 	return user.IsAdminOrResponsable() && p.GetEstado() == "REGISTRADO"
+}
+
+func (p Pasaje) CanMarkUsado(u ...*Usuario) bool {
+	user := p.getAuthUser(u...)
+	// Necesitamos la solicitud para el contexto de dueño/creador
+	sol := p.Solicitud
+	if user == nil || sol == nil {
+		return false
+	}
+
+	// Solo pasajes emitidos pueden marcarse como usados
+	if p.GetEstado() != "EMITIDO" {
+		return false
+	}
+	// Admin/Responsable puede siempre
+	if user.IsAdminOrResponsable() {
+		return true
+	}
+	// El dueño de la solicitud
+	if user.ID == sol.UsuarioID {
+		return true
+	}
+	// El creador
+	if sol.CreatedBy != nil && *sol.CreatedBy == user.ID {
+		return true
+	}
+	// El asistente/encargado del usuario
+	if sol.Usuario.EncargadoID != nil && *sol.Usuario.EncargadoID == user.ID {
+		return true
+	}
+	return false
 }
 
 func (p Pasaje) IsDischargeable() bool {
@@ -117,5 +180,46 @@ func (p Pasaje) GetStatusBannerClass() string {
 		return "bg-primary-600"
 	default:
 		return "bg-secondary-600"
+	}
+}
+
+// GetPermissions calcula el conjunto de permisos para un usuario específico sobre este pasaje.
+func (p Pasaje) GetPermissions(u ...*Usuario) PasajePermissions {
+	perms := PasajePermissions{
+		CanEdit:        p.CanBeEdited(u...),
+		CanMarkUsado:   p.CanMarkUsado(u...),
+		CanDevolver:    p.CanBeReverted(u...),
+		CanAnular:      p.CanBeAnulado(u...),
+		CanEmitir:      p.CanBeEmitted(u...),
+		CanValidateUso: false, // Campo deprecado o para uso futuro
+	}
+	perms.ShowActionsMenu = perms.CanEdit || perms.CanMarkUsado || perms.CanDevolver || perms.CanAnular || perms.CanEmitir
+	return perms
+}
+
+func (p *Pasaje) HydratePermissions(u ...*Usuario) {
+	if len(u) > 0 {
+		p.authUser = u[0]
+	}
+	perms := p.GetPermissions()
+	p.Permissions = &perms
+}
+
+// GetStatusBadgeClass retorna las clases de CSS para los badges según el estado del pasaje.
+func (p Pasaje) GetStatusBadgeClass() string {
+	if p.EstadoPasaje != nil {
+		return fmt.Sprintf("bg-%s-100 text-%s-800", p.EstadoPasaje.Color, p.EstadoPasaje.Color)
+	}
+	switch p.GetEstado() {
+	case "REGISTRADO":
+		return "bg-secondary-100 text-secondary-800"
+	case "EMITIDO":
+		return "bg-success-100 text-success-800"
+	case "USADO":
+		return "bg-primary-100 text-primary-800"
+	case "ANULADO":
+		return "bg-neutral-100 text-neutral-800"
+	default:
+		return "bg-neutral-100 text-neutral-800"
 	}
 }

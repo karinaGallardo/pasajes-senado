@@ -53,27 +53,27 @@ func SearchDescargo(term string) func(db *gorm.DB) *gorm.DB {
 func (r *DescargoRepository) FindBySolicitudID(ctx context.Context, solicitudID string) (*models.Descargo, error) {
 	var descargo models.Descargo
 	err := r.db.WithContext(ctx).
-		Preload("Tramos", func(db *gorm.DB) *gorm.DB { return db.Order("orden ASC") }).
+		Preload("Tramos", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
 		Preload("Tramos.RutaPasaje.Origen").
 		Preload("Tramos.RutaPasaje.Destino").
-		Preload("Tramos.RutaPasaje.Escalas", func(db *gorm.DB) *gorm.DB { return db.Order("orden ASC") }).
+		Preload("Tramos.RutaPasaje.Escalas", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
 		Preload("Tramos.RutaPasaje.Escalas.Destino").
 		Preload("Solicitud").
 		Preload("Solicitud.TipoSolicitud.ConceptoViaje").
 		Preload("Solicitud.CupoDerechoItem").
-		Preload("Solicitud.Items").
+		Preload("Solicitud.Items", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
+		Preload("Solicitud.Items.Pasajes", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
 		Preload("Solicitud.Items.Origen").
 		Preload("Solicitud.Items.Destino").
 		Preload("Solicitud.Items.Pasajes.RutaPasaje.Origen").
 		Preload("Solicitud.Items.Pasajes.RutaPasaje.Destino").
-		Preload("Solicitud.Items.Pasajes.RutaPasaje.Escalas", func(db *gorm.DB) *gorm.DB { return db.Order("orden ASC") }).
+		Preload("Solicitud.Items.Pasajes.RutaPasaje.Escalas", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
 		Preload("Solicitud.Items.Pasajes.RutaPasaje.Escalas.Destino").
 		Preload("Solicitud.Items.Pasajes.RutaPasaje").
-		Preload("Solicitud.Items.Pasajes").
 		Preload("Solicitud.Usuario.Encargado").
 		Preload("Oficial").
-		Preload("Oficial.Anexos").
-		Preload("Oficial.TransportesTerrestres").
+		Preload("Oficial.Anexos", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
+		Preload("Oficial.TransportesTerrestres", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
 		Where("solicitud_id = ?", solicitudID).First(&descargo).Error
 	return &descargo, err
 }
@@ -81,10 +81,10 @@ func (r *DescargoRepository) FindBySolicitudID(ctx context.Context, solicitudID 
 func (r *DescargoRepository) FindByID(ctx context.Context, id string) (*models.Descargo, error) {
 	var descargo models.Descargo
 	err := r.db.WithContext(ctx).
-		Preload("Tramos", func(db *gorm.DB) *gorm.DB { return db.Order("orden ASC") }).
+		Preload("Tramos", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
 		Preload("Tramos.RutaPasaje.Origen").
 		Preload("Tramos.RutaPasaje.Destino").
-		Preload("Tramos.RutaPasaje.Escalas", func(db *gorm.DB) *gorm.DB { return db.Order("orden ASC") }).
+		Preload("Tramos.RutaPasaje.Escalas", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
 		Preload("Tramos.RutaPasaje.Escalas.Destino").
 		Preload("Solicitud").
 		Preload("Solicitud.TipoSolicitud.ConceptoViaje").
@@ -92,21 +92,21 @@ func (r *DescargoRepository) FindByID(ctx context.Context, id string) (*models.D
 		Preload("Solicitud.Usuario.Cargo").
 		Preload("Solicitud.Usuario.Oficina").
 		Preload("Solicitud.CupoDerechoItem").
-		Preload("Solicitud.Items").
+		Preload("Solicitud.Items", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
+		Preload("Solicitud.Items.Pasajes", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
 		Preload("Solicitud.Items.Origen").
 		Preload("Solicitud.Items.Destino").
 		Preload("Solicitud.Items.Pasajes.RutaPasaje.Origen").
 		Preload("Solicitud.Items.Pasajes.RutaPasaje.Destino").
-		Preload("Solicitud.Items.Pasajes.RutaPasaje.Escalas", func(db *gorm.DB) *gorm.DB { return db.Order("orden ASC") }).
+		Preload("Solicitud.Items.Pasajes.RutaPasaje.Escalas", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
 		Preload("Solicitud.Items.Pasajes.RutaPasaje.Escalas.Destino").
 		Preload("Solicitud.Items.Pasajes.RutaPasaje").
-		Preload("Solicitud.Items.Pasajes").
 		Preload("Solicitud.Usuario.Encargado").
 		Preload("Solicitud.Viaticos").
 		Preload("Solicitud.Viaticos.Detalles").
 		Preload("Oficial").
-		Preload("Oficial.Anexos").
-		Preload("Oficial.TransportesTerrestres").
+		Preload("Oficial.Anexos", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
+		Preload("Oficial.TransportesTerrestres", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
 		First(&descargo, "id = ?", id).Error
 	return &descargo, err
 }
@@ -117,24 +117,24 @@ func (r *DescargoRepository) FindAll(ctx context.Context) ([]models.Descargo, er
 		Preload("Solicitud.TipoSolicitud.ConceptoViaje").
 		Preload("Solicitud.Usuario").
 		Preload("Solicitud.CupoDerechoItem").
-		Preload("Solicitud.Items").
+		Preload("Solicitud.Items", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
+		Preload("Solicitud.Items.Pasajes", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
 		Preload("Solicitud.Items.Origen").
 		Preload("Solicitud.Items.Destino").
 		Preload("Solicitud.Items.Pasajes.RutaPasaje.Origen").
 		Preload("Solicitud.Items.Pasajes.RutaPasaje.Destino").
-		Preload("Solicitud.Items.Pasajes.RutaPasaje.Escalas", func(db *gorm.DB) *gorm.DB { return db.Order("orden ASC") }).
+		Preload("Solicitud.Items.Pasajes.RutaPasaje.Escalas", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
 		Preload("Solicitud.Items.Pasajes.RutaPasaje.Escalas.Destino").
 		Preload("Solicitud.Items.Pasajes.RutaPasaje").
-		Preload("Solicitud.Items.Pasajes").
 		Preload("Solicitud.Usuario.Encargado").
-		Preload("Tramos", func(db *gorm.DB) *gorm.DB { return db.Order("orden ASC") }).
+		Preload("Tramos", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
 		Preload("Tramos.RutaPasaje.Origen").
 		Preload("Tramos.RutaPasaje.Destino").
-		Preload("Tramos.RutaPasaje.Escalas", func(db *gorm.DB) *gorm.DB { return db.Order("orden ASC") }).
+		Preload("Tramos.RutaPasaje.Escalas", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
 		Preload("Tramos.RutaPasaje.Escalas.Destino").
 		Preload("Oficial").
-		Preload("Oficial.Anexos").
-		Preload("Oficial.TransportesTerrestres").
+		Preload("Oficial.Anexos", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
+		Preload("Oficial.TransportesTerrestres", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
 		Order("created_at desc").Find(&descargos).Error
 	return descargos, err
 }
@@ -159,24 +159,24 @@ func (r *DescargoRepository) FindPaginated(ctx context.Context, page, limit int,
 		Preload("Solicitud.TipoSolicitud.ConceptoViaje").
 		Preload("Solicitud.Usuario").
 		Preload("Solicitud.CupoDerechoItem").
-		Preload("Solicitud.Items").
+		Preload("Solicitud.Items", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
+		Preload("Solicitud.Items.Pasajes", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
 		Preload("Solicitud.Items.Origen").
 		Preload("Solicitud.Items.Destino").
 		Preload("Solicitud.Items.Pasajes.RutaPasaje.Origen").
 		Preload("Solicitud.Items.Pasajes.RutaPasaje.Destino").
-		Preload("Solicitud.Items.Pasajes.RutaPasaje.Escalas", func(db *gorm.DB) *gorm.DB { return db.Order("orden ASC") }).
+		Preload("Solicitud.Items.Pasajes.RutaPasaje.Escalas", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
 		Preload("Solicitud.Items.Pasajes.RutaPasaje.Escalas.Destino").
 		Preload("Solicitud.Items.Pasajes.RutaPasaje").
-		Preload("Solicitud.Items.Pasajes").
 		Preload("Solicitud.Usuario.Encargado").
-		Preload("Tramos", func(db *gorm.DB) *gorm.DB { return db.Order("orden ASC") }).
+		Preload("Tramos", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
 		Preload("Tramos.RutaPasaje.Origen").
 		Preload("Tramos.RutaPasaje.Destino").
-		Preload("Tramos.RutaPasaje.Escalas", func(db *gorm.DB) *gorm.DB { return db.Order("orden ASC") }).
+		Preload("Tramos.RutaPasaje.Escalas", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
 		Preload("Tramos.RutaPasaje.Escalas.Destino").
 		Preload("Oficial").
-		Preload("Oficial.Anexos").
-		Preload("Oficial.TransportesTerrestres").
+		Preload("Oficial.Anexos", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
+		Preload("Oficial.TransportesTerrestres", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
 		Scopes(SearchDescargo(searchTerm))
 
 	// Scope by user IDs when provided (non-admin)

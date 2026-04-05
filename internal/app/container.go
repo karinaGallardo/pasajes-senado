@@ -12,36 +12,38 @@ import (
 // Container holds all instantiated services and controllers
 type Container struct {
 	// Services
-	CupoService            *services.CupoService
-	UsuarioService         *services.UsuarioService
-	ReportService          *services.ReportService
-	ConfiguracionService   *services.ConfiguracionService
-	SolicitudService       *services.SolicitudService
-	CompensacionService    *services.CompensacionService
-	DescargoService        *services.DescargoService
-	DescargoDerechoService *services.DescargoDerechoService
-	DescargoOficialService *services.DescargoOficialService
-	RolService             *services.RolService
-	DestinoService         *services.DestinoService
-	OrganigramaService     *services.OrganigramaService
-	PeopleService          *services.PeopleService
-	TipoSolicitudService   *services.TipoSolicitudService
-	AmbitoService          *services.AmbitoService
-	AerolineaService       *services.AerolineaService
-	AgenciaService         *services.AgenciaService
-	TipoItinerarioService  *services.TipoItinerarioService
-	RutaService            *services.RutaService
-	AuthService            *services.AuthService
-	PasajeService          *services.PasajeService
-	ViaticoService         *services.ViaticoService
-	CatViaticoService      *services.CategoriaViaticoService
-	NotificationService    *services.NotificationService
-	EmailService           *services.EmailService
-	AlertaService          *services.AlertaService
-	ConceptoService        *services.ConceptoService
-	EstadoPasajeService    *services.EstadoPasajeService
-	AuditService           *services.AuditService
-	PushService            *services.PushService
+	CupoService             *services.CupoService
+	UsuarioService          *services.UsuarioService
+	ReportService           *services.ReportService
+	ConfiguracionService    *services.ConfiguracionService
+	SolicitudService        *services.SolicitudService
+	SolicitudDerechoService *services.SolicitudDerechoService
+	SolicitudOficialService *services.SolicitudOficialService
+	CompensacionService     *services.CompensacionService
+	DescargoService         *services.DescargoService
+	DescargoDerechoService  *services.DescargoDerechoService
+	DescargoOficialService  *services.DescargoOficialService
+	RolService              *services.RolService
+	DestinoService          *services.DestinoService
+	OrganigramaService      *services.OrganigramaService
+	PeopleService           *services.PeopleService
+	TipoSolicitudService    *services.TipoSolicitudService
+	AmbitoService           *services.AmbitoService
+	AerolineaService        *services.AerolineaService
+	AgenciaService          *services.AgenciaService
+	TipoItinerarioService   *services.TipoItinerarioService
+	RutaService             *services.RutaService
+	AuthService             *services.AuthService
+	PasajeService           *services.PasajeService
+	ViaticoService          *services.ViaticoService
+	CatViaticoService       *services.CategoriaViaticoService
+	NotificationService     *services.NotificationService
+	EmailService            *services.EmailService
+	AlertaService           *services.AlertaService
+	ConceptoService         *services.ConceptoService
+	EstadoPasajeService     *services.EstadoPasajeService
+	AuditService            *services.AuditService
+	PushService             *services.PushService
 
 	// Controllers
 	CupoController             *controllers.CupoController
@@ -125,24 +127,39 @@ func NewContainer(db *gorm.DB, mongoRRHH *mongo.Database, mongoChat *mongo.Datab
 
 	solicitudService := services.NewSolicitudService(
 		solicitudRepo,
+		itemRepo,
+		solicitudItemRepo,
+		emailService,
+		auditService,
+	)
+	rolService := services.NewRolService(rolRepo)
+	destinoService := services.NewDestinoService(destinoRepo)
+
+	solicitudDerechoService := services.NewSolicitudDerechoService(
+		solicitudRepo,
 		tipoSolicitudRepo,
 		userRepo,
 		itemRepo,
 		tipoItinRepo,
 		codigoSecuenciaRepo,
-		solicitudItemRepo,
-		pasajeRepo,
-		emailService,
 		notifService,
-		auditService,
+		emailService,
+		solicitudService,
+		destinoService,
+	)
+	solicitudOficialService := services.NewSolicitudOficialService(
+		solicitudRepo,
+		userRepo,
+		tipoItinRepo,
+		codigoSecuenciaRepo,
+		notifService,
+		solicitudService,
 	)
 
 	compensacionService := services.NewCompensacionService(compensacionRepo, catCompensacionRepo)
 	descargoService := services.NewDescargoService(descargoRepo, solicitudService, userService, auditService)
 	descargoDerechoService := services.NewDescargoDerechoService(descargoRepo, solicitudService, auditService)
 	descargoOficialService := services.NewDescargoOficialService(descargoRepo, solicitudService, auditService)
-	rolService := services.NewRolService(rolRepo)
-	destinoService := services.NewDestinoService(destinoRepo)
 	organigramaService := services.NewOrganigramaService(cargoRepo, oficinaRepo)
 	tipoSolicitudService := services.NewTipoSolicitudService(tipoSolicitudRepo)
 	ambitoService := services.NewAmbitoService(ambitoRepo)
@@ -185,6 +202,7 @@ func NewContainer(db *gorm.DB, mongoRRHH *mongo.Database, mongoChat *mongo.Datab
 
 	solicitudDerechoCtrl := controllers.NewSolicitudDerechoController(
 		solicitudService,
+		solicitudDerechoService,
 		destinoService,
 		conceptoService,
 		tipoSolicitudService,
@@ -198,10 +216,12 @@ func NewContainer(db *gorm.DB, mongoRRHH *mongo.Database, mongoChat *mongo.Datab
 		tipoItinerarioService,
 		rutaService,
 		descargoService,
+		configService,
 	)
 
 	solicitudOficialCtrl := controllers.NewSolicitudOficialController(
 		solicitudService,
+		solicitudOficialService,
 		destinoService,
 		tipoSolicitudService,
 		ambitoService,
@@ -250,7 +270,7 @@ func NewContainer(db *gorm.DB, mongoRRHH *mongo.Database, mongoChat *mongo.Datab
 	aerolineaCtrl := controllers.NewAerolineaController(aerolineaService)
 	agenciaCtrl := controllers.NewAgenciaController(agenciaService)
 	rutaCtrl := controllers.NewRutaController(rutaService, aerolineaService, destinoService)
-	configCtrl := controllers.NewConfiguracionController(configService, emailService)
+	configCtrl := controllers.NewConfiguracionController(configService, emailService, destinoService)
 	catCompCtrl := controllers.NewCategoriaCompensacionController(compensacionService)
 	orgCtrl := controllers.NewOrganigramaController(organigramaService)
 	catViaticoCtrl := controllers.NewCategoriaViaticoController(catViaticoService, viaticoService)
@@ -261,36 +281,38 @@ func NewContainer(db *gorm.DB, mongoRRHH *mongo.Database, mongoChat *mongo.Datab
 
 	return &Container{
 		// Services
-		CupoService:            cupoService,
-		UsuarioService:         userService,
-		ReportService:          reportService,
-		ConfiguracionService:   configService,
-		SolicitudService:       solicitudService,
-		CompensacionService:    compensacionService,
-		DescargoService:        descargoService,
-		DescargoDerechoService: descargoDerechoService,
-		DescargoOficialService: descargoOficialService,
-		RolService:             rolService,
-		DestinoService:         destinoService,
-		OrganigramaService:     organigramaService,
-		PeopleService:          peopleService,
-		TipoSolicitudService:   tipoSolicitudService,
-		AmbitoService:          ambitoService,
-		AerolineaService:       aerolineaService,
-		AgenciaService:         agenciaService,
-		TipoItinerarioService:  tipoItinerarioService,
-		RutaService:            rutaService,
-		AuthService:            authService,
-		PasajeService:          pasajeService,
-		ViaticoService:         viaticoService,
-		CatViaticoService:      catViaticoService,
-		NotificationService:    notifService,
-		EmailService:           emailService,
-		AlertaService:          alertaService,
-		ConceptoService:        conceptoService,
-		EstadoPasajeService:    estadoPasajeService,
-		AuditService:           auditService,
-		PushService:            pushService,
+		CupoService:             cupoService,
+		UsuarioService:          userService,
+		ReportService:           reportService,
+		ConfiguracionService:    configService,
+		SolicitudService:        solicitudService,
+		SolicitudDerechoService: solicitudDerechoService,
+		SolicitudOficialService: solicitudOficialService,
+		CompensacionService:     compensacionService,
+		DescargoService:         descargoService,
+		DescargoDerechoService:  descargoDerechoService,
+		DescargoOficialService:  descargoOficialService,
+		RolService:              rolService,
+		DestinoService:          destinoService,
+		OrganigramaService:      organigramaService,
+		PeopleService:           peopleService,
+		TipoSolicitudService:    tipoSolicitudService,
+		AmbitoService:           ambitoService,
+		AerolineaService:        aerolineaService,
+		AgenciaService:          agenciaService,
+		TipoItinerarioService:   tipoItinerarioService,
+		RutaService:             rutaService,
+		AuthService:             authService,
+		PasajeService:           pasajeService,
+		ViaticoService:          viaticoService,
+		CatViaticoService:       catViaticoService,
+		NotificationService:     notifService,
+		EmailService:            emailService,
+		AlertaService:           alertaService,
+		ConceptoService:         conceptoService,
+		EstadoPasajeService:     estadoPasajeService,
+		AuditService:            auditService,
+		PushService:             pushService,
 
 		// Controllers
 		CupoController:             cupoCtrl,

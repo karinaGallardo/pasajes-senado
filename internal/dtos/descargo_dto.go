@@ -39,7 +39,6 @@ type CreateDescargoRequest struct {
 	TramoFecha           []string                `form:"tramo_fecha[]"`
 	TramoBillete         []string                `form:"tramo_billete[]"`
 	TramoPaseNumero      []string                `form:"tramo_pase_numero[]"`
-	TramoOrden           []string                `form:"tramo_orden[]"`
 	TramoDevolucion      []string                `form:"tramo_devolucion[]"`
 	TramoModificacion    []string                `form:"tramo_modificacion[]"`
 	TramoMontoDevolucion []string                `form:"tramo_monto_devolucion[]"`
@@ -59,7 +58,6 @@ type TramoRowDTO struct {
 	PaseNumero      string
 	MontoDevolucion float64
 	Moneda          string
-	Orden           int
 	PasajeID        string
 	SolicitudItemID string
 	EsDevolucion    bool
@@ -100,7 +98,6 @@ func (r *CreateDescargoRequest) ToTramoRows(archivoPaths []string) []TramoRowDTO
 		}
 
 		monto, _ := strconv.ParseFloat(get(r.TramoMontoDevolucion, i), 64)
-		orden, _ := strconv.Atoi(get(r.TramoOrden, i))
 
 		rows = append(rows, TramoRowDTO{
 			ID:              rawID,
@@ -111,7 +108,6 @@ func (r *CreateDescargoRequest) ToTramoRows(archivoPaths []string) []TramoRowDTO
 			PaseNumero:      get(r.TramoPaseNumero, i),
 			MontoDevolucion: monto,
 			Moneda:          get(r.TramoMoneda, i),
-			Orden:           orden,
 			PasajeID:        get(r.TramoPasajeID, i),
 			SolicitudItemID: get(r.TramoSolicitudItemID, i),
 			EsDevolucion:    devoMap[rawID],
@@ -136,7 +132,6 @@ func (r *CreateDescargoRequest) Bind(c *gin.Context) error {
 	r.TramoFecha = c.PostFormArray("tramo_fecha[]")
 	r.TramoBillete = c.PostFormArray("tramo_billete[]")
 	r.TramoPaseNumero = c.PostFormArray("tramo_pase_numero[]")
-	r.TramoOrden = c.PostFormArray("tramo_orden[]")
 	r.TramoDevolucion = c.PostFormArray("tramo_devolucion[]")
 	r.TramoModificacion = c.PostFormArray("tramo_modificacion[]")
 	r.TramoMontoDevolucion = c.PostFormArray("tramo_monto_devolucion[]")

@@ -39,6 +39,11 @@ func (ctrl *ViaticoController) Index(c *gin.Context) {
 		return
 	}
 
+	authUser := appcontext.AuthUser(c)
+	for i := range viaticos {
+		viaticos[i].HydratePermissions(authUser)
+	}
+
 	utils.Render(c, "viatico/index", gin.H{
 		"Title":    "Gestión de Viáticos",
 		"Viaticos": viaticos,
@@ -69,6 +74,9 @@ func (ctrl *ViaticoController) Create(c *gin.Context) {
 
 	categorias, _ := ctrl.viaticoService.GetCategorias(c.Request.Context())
 	zonas, _ := ctrl.viaticoService.GetZonas(c.Request.Context())
+
+	authUser := appcontext.AuthUser(c)
+	solicitud.HydratePermissions(authUser)
 
 	utils.Render(c, "viatico/modal_create", gin.H{
 		"Title":       "Asignación de Viáticos",
@@ -103,7 +111,7 @@ func (ctrl *ViaticoController) Store(c *gin.Context) {
 
 	sol, _ := ctrl.solService.GetByID(c.Request.Context(), solicitudID)
 	path := "derecho"
-	if sol != nil && sol.GetConceptoCodigo() == "OFICIAL" {
+	if sol != nil && sol.IsOficial() {
 		path = "oficial"
 	}
 	c.Redirect(http.StatusFound, "/solicitudes/"+path+"/"+solicitudID+"/detalle")
@@ -124,6 +132,9 @@ func (ctrl *ViaticoController) Print(c *gin.Context) {
 			c.Status(http.StatusOK)
 			return
 		}
+		authUser := appcontext.AuthUser(c)
+		viatico.HydratePermissions(authUser)
+
 		utils.Render(c, "viatico/modal_print", gin.H{
 			"Viatico": viatico,
 		})

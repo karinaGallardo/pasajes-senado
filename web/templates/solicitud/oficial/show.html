@@ -29,7 +29,7 @@
               {{ fechaHora .Solicitud.CreatedAt }} por
               <span class="font-semibold text-neutral-600 tracking-tight">{{ .Solicitud.Usuario.GetNombreCompleto }}</span>
             </span>
-            {{ if .Perms.IsAdminOrResp }}
+            {{ if .Solicitud.Permissions.CanRegularize }}
               <button
                 hx-get="/solicitudes/{{ .Solicitud.ID }}/regularizacion-modal"
                 hx-target="body"
@@ -51,7 +51,7 @@
         </div>
       </div>
       <div class="flex flex-wrap items-center gap-2">
-        {{ if .Perms.CanApproveReject }}
+        {{ if .Solicitud.Permissions.CanApproveReject }}
           {{ if eq .Solicitud.GetEstado "SOLICITADO" }}
             <button
               type="button"
@@ -75,7 +75,7 @@
             </button>
           {{ end }}
         {{ end }}
-        {{ if .Perms.CanAssignViatico }}
+        {{ if .Solicitud.Permissions.CanAssignViatico }}
           <button
             type="button"
             hx-get="/solicitudes/{{ .Solicitud.ID }}/viaticos/nuevo"
@@ -86,7 +86,7 @@
             <span>Viáticos</span>
           </button>
         {{ end }}
-        {{ if .Perms.CanEdit }}
+        {{ if .Solicitud.Permissions.CanEdit }}
           <button
             type="button"
             hx-get="/solicitudes/oficial/{{ .Solicitud.ID }}/modal-editar"
@@ -97,7 +97,7 @@
             <span>Editar</span>
           </button>
         {{ end }}
-        {{ if .Solicitud.CanDelete .AuthUser }}
+        {{ if .Solicitud.Permissions.CanDelete }}
           <button
             type="button"
             hx-delete="/solicitudes/{{ .Solicitud.ID }}"
@@ -108,6 +108,30 @@
           >
             <i class="ph ph-trash text-sm group-hover:scale-110 transition-transform"></i>
             <span>Eliminar</span>
+          </button>
+        {{ end }}
+        {{ if .Solicitud.Permissions.CanFinalize }}
+          <button
+            type="button"
+            hx-post="/solicitudes/{{ .Solicitud.ID }}/finalizar"
+            hx-confirm="¿Está seguro de FINALIZAR esta solicitud? Ya no podrá ser editada."
+            hx-target="body"
+            class="btn-sm btn-secondary rounded-sm"
+          >
+            <i class="ph ph-flag-checkered text-sm"></i>
+            <span>Finalizar</span>
+          </button>
+        {{ end }}
+        {{ if .Solicitud.Permissions.CanRevertFinalize }}
+          <button
+            type="button"
+            hx-post="/solicitudes/{{ .Solicitud.ID }}/revertir-finalizacion"
+            hx-confirm="¿Está seguro de REVERTIR la finalización?"
+            hx-target="body"
+            class="btn-sm btn-white text-warning-700 border-warning-200 rounded-sm"
+          >
+            <i class="ph ph-arrow-u-up-left text-sm"></i>
+            <span>Revertir Fin.</span>
           </button>
         {{ end }}
         <button
@@ -124,7 +148,7 @@
             <i class="ph ph-eye text-sm"></i>
             <span>Ver Descargo</span>
           </a>
-        {{ else if .Perms.CanMakeDescargo }}
+        {{ else if .Solicitud.Permissions.CanMakeDescargo }}
           <a href="/descargos/oficial/nuevo/{{ .Solicitud.ID }}" class="btn-sm btn-primary rounded-sm">
             <i class="ph ph-file-plus text-sm"></i>
             <span>Crear Descargo</span>
@@ -211,7 +235,7 @@
       <div class="bg-white shadow sm:rounded-lg border border-neutral-200">
         <div class="px-6 py-4 border-b border-neutral-200 bg-neutral-50 flex justify-between items-center">
           <h3 class="text-sm font-bold text-neutral-800 uppercase tracking-wider">Itinerario y Pasajes</h3>
-          {{ if .Perms.CanRevertApproval }}
+          {{ if .Solicitud.Permissions.CanRevertApproval }}
             <button
               type="button"
               hx-post="/solicitudes/oficial/{{ .Solicitud.ID }}/revertir-aprobacion"
@@ -255,7 +279,7 @@
                     </h4>
                     <p class="text-[11px] text-neutral-500 font-medium flex items-center gap-1.5">
                       <span>{{ if .Fecha }}{{ fechaHora .Fecha }}{{ else }}Fecha no programada{{ end }}</span>
-                      {{ if $.Perms.IsAdminOrResp }}
+                      {{ if $.Solicitud.Permissions.CanRegularize }}
                         <button
                           hx-get="/solicitudes/{{ $.Solicitud.ID }}/items/{{ .ID }}/regularizacion-modal"
                           hx-target="body"
@@ -273,7 +297,7 @@
 
                 <!-- Tramo Actions -->
                 <div class="flex items-center gap-2">
-                  {{ if .CanBeApproved $.AuthUser }}
+                  {{ if .Permissions.CanApprove }}
                     <button
                       type="button"
                       hx-post="/solicitudes/oficial/{{ $.Solicitud.ID }}/items/{{ .ID }}/aprobar"
@@ -295,7 +319,7 @@
                       Rechazar
                     </button>
                   {{ end }}
-                  {{ if .CanBeReverted $.AuthUser }}
+                  {{ if .Permissions.CanRevert }}
                     <button
                       type="button"
                       hx-post="/solicitudes/oficial/{{ $.Solicitud.ID }}/items/{{ .ID }}/revertir-aprobacion"
@@ -307,7 +331,7 @@
                       Revertir
                     </button>
                   {{ end }}
-                  {{ if .CanAssignPasaje $.AuthUser }}
+                  {{ if $.Solicitud.Permissions.CanAssignPasaje }}
                     <button
                       type="button"
                       hx-get="/solicitudes/{{ $.Solicitud.ID }}/pasajes/nuevo?item_id={{ .ID }}"
@@ -424,8 +448,7 @@
                                 {{ printf "%.2f" .Costo }}
                               </p>
                             </div>
-                            <!-- Inline Actions -->
-                            <div class="flex items-center gap-2 md:pl-6 md:border-l border-neutral-100 shrink-0">
+                                                     <div class="flex items-center gap-2 md:pl-6 md:border-l border-neutral-100 shrink-0">
                               {{ if .Archivo }}
                                 <button
                                   type="button"
@@ -437,7 +460,7 @@
                                   <i class="ph ph-file-pdf text-lg font-bold"></i>
                                 </button>
                               {{ end }}
-                              {{ if .CanBeEmitted $.AuthUser }}
+                              {{ if .Permissions.CanEmitir }}
                                 <button
                                   type="button"
                                   @click="$dispatch('pasaje-action', { action: 'emitir', id: '{{ .ID }}' })"
@@ -447,7 +470,7 @@
                                   <i class="ph ph-paper-plane-right text-lg font-bold"></i>
                                 </button>
                               {{ end }}
-                              {{ if .CanBeEdited $.AuthUser }}
+                              {{ if .Permissions.CanEdit }}
                                 <button
                                   type="button"
                                   hx-get="/pasajes/{{ .ID }}/editar"
@@ -458,7 +481,7 @@
                                   <i class="ph ph-pencil-simple text-lg font-bold"></i>
                                 </button>
                               {{ end }}
-                              {{ if .CanBeReverted $.AuthUser }}
+                              {{ if .Permissions.CanDevolver }}
                                 <button
                                   type="button"
                                   @click="$dispatch('pasaje-action', { action: 'revertir_emision', id: '{{ .ID }}' })"
@@ -468,7 +491,7 @@
                                   <i class="ph ph-arrow-counter-clockwise text-lg font-bold"></i>
                                 </button>
                               {{ end }}
-                              {{ if .CanBeAnulado $.AuthUser }}
+                              {{ if .Permissions.CanAnular }}
                                 <button
                                   type="button"
                                   @click="$dispatch('pasaje-action', { action: 'anular', id: '{{ .ID }}' })"
@@ -478,7 +501,7 @@
                                   <i class="ph ph-trash-simple text-lg font-bold"></i>
                                 </button>
                               {{ end }}
-                            </div>
+                            </div>                      </div>
                           </div>
                         </div>
                       </div>
@@ -621,10 +644,12 @@
                 <div>
                   <p class="text-[10px] text-neutral-400 uppercase font-bold">Aerolínea Sugerida</p>
                   <p class="text-sm font-medium text-neutral-800">
-                    {{ if .Solicitud.AerolineaSugerida }}
-                      {{ .Solicitud.AerolineaSugerida }}
+                    {{ if .Solicitud.Aerolinea }}
+                      <span class="text-neutral-900 font-bold">
+                        {{ if .Solicitud.Aerolinea.Sigla }}{{ .Solicitud.Aerolinea.Sigla }}{{ else }}{{ .Solicitud.Aerolinea.Nombre }}{{ end }}
+                      </span>
                     {{ else }}
-                      <span class="text-neutral-400 italic">Sin preferencia</span>
+                      <span class="text-neutral-400 italic font-normal">Sin preferencia</span>
                     {{ end }}
                   </p>
                 </div>

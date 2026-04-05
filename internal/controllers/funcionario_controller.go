@@ -3,6 +3,7 @@ package controllers
 import (
 	"net/http"
 	"sistema-pasajes/internal/appcontext"
+	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/services"
 	"sistema-pasajes/internal/utils"
 	"strconv"
@@ -39,7 +40,7 @@ func (ctrl *FuncionarioController) Index(c *gin.Context) {
 
 	msg := c.Query("msg")
 
-	result, err := ctrl.userService.GetPaginated(c.Request.Context(), "FUNCIONARIO", page, limit, searchTerm)
+	result, err := ctrl.userService.GetPaginated(c.Request.Context(), models.RolFuncionario, page, limit, searchTerm)
 	if err != nil {
 		// log.Printf("Error: %v", err)
 	}
@@ -47,7 +48,7 @@ func (ctrl *FuncionarioController) Index(c *gin.Context) {
 	utils.Render(c, "usuarios/funcionarios", gin.H{
 		"Title":      "Funcionarios",
 		"Result":     result,
-		"Rol":        "FUNCIONARIO",
+		"IsSenador":  false,
 		"Msg":        msg,
 		"SearchTerm": searchTerm,
 	})
@@ -64,7 +65,7 @@ func (ctrl *FuncionarioController) Table(c *gin.Context) {
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "5"))
 
-	result, err := ctrl.userService.GetPaginated(c.Request.Context(), "FUNCIONARIO", page, limit, searchTerm)
+	result, err := ctrl.userService.GetPaginated(c.Request.Context(), models.RolFuncionario, page, limit, searchTerm)
 	if err != nil {
 		// log.Printf("Error: %v", err)
 	}
@@ -109,6 +110,7 @@ func (ctrl *FuncionarioController) GetSyncModal(c *gin.Context) {
 		return
 	}
 	utils.Render(c, "usuarios/components/modal_sync_confirm", gin.H{
-		"Rol": "FUNCIONARIO",
+		"SyncUrl":    "/usuarios/funcionarios/sync",
+		"TargetName": "Funcionarios",
 	})
 }

@@ -38,11 +38,11 @@ func (r *ViaticoRepository) Delete(ctx context.Context, id string) error {
 func (r *ViaticoRepository) FindByID(ctx context.Context, id string) (*models.Viatico, error) {
 	var viatico models.Viatico
 	err := r.db.WithContext(ctx).
-		Preload("Detalles").
+		Preload("Detalles", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
 		Preload("Usuario").
 		Preload("Usuario.Rol").
 		Preload("Solicitud").
-		Preload("Solicitud.Items").
+		Preload("Solicitud.Items", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
 		Preload("Solicitud.Items.Origen").
 		Preload("Solicitud.Items.Destino").
 		First(&viatico, "id = ?", id).Error
@@ -51,7 +51,7 @@ func (r *ViaticoRepository) FindByID(ctx context.Context, id string) (*models.Vi
 
 func (r *ViaticoRepository) FindBySolicitudID(ctx context.Context, solicitudID string) ([]models.Viatico, error) {
 	var viaticos []models.Viatico
-	err := r.db.WithContext(ctx).Preload("Detalles").Where("solicitud_id = ?", solicitudID).Find(&viaticos).Error
+	err := r.db.WithContext(ctx).Preload("Detalles", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).Where("solicitud_id = ?", solicitudID).Find(&viaticos).Error
 	return viaticos, err
 }
 

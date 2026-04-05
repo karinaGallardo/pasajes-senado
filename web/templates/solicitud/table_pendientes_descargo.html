@@ -1,172 +1,210 @@
 {{ define "solicitud/table_pendientes_descargo" }}
-<table class="min-w-full divide-y divide-neutral-200">
-  <thead class="bg-neutral-50">
-    <tr>
-      <th scope="col" class="px-3 py-3 text-left text-xs font-bold text-neutral-500 uppercase tracking-wider">Código</th>
-      <th scope="col" class="px-3 py-3 text-left text-xs font-bold text-neutral-500 uppercase tracking-wider hidden md:table-cell">Beneficiario</th>
-      <th scope="col" class="px-3 py-3 text-center text-xs font-bold text-neutral-500 uppercase tracking-wider hidden md:table-cell">Tipo</th>
-      <th scope="col" class="px-3 py-3 text-left text-xs font-bold text-neutral-500 uppercase tracking-wider">Ruta / Concepto</th>
-      <th scope="col" class="px-3 py-3 text-center text-xs font-bold text-neutral-500 uppercase tracking-wider">Últ. Vuelo</th>
-      <th scope="col" class="px-3 py-3 text-center text-xs font-bold text-neutral-500 uppercase tracking-wider">Plazo Descargo</th>
-      <th scope="col" class="px-3 py-3 text-right text-xs font-bold text-neutral-500 uppercase tracking-wider">Acciones</th>
-    </tr>
-  </thead>
-  <tbody class="bg-white divide-y divide-neutral-100">
-    {{ range .Result.Solicitudes }}
-    <tr class="hover:bg-neutral-50 transition-colors">
-      <td class="px-3 py-3 whitespace-nowrap">
-        <span class="text-xs font-bold text-primary">{{ .Codigo }}</span>
-      </td>
-      <td class="px-3 py-3 whitespace-nowrap hidden md:table-cell">
-        <div class="flex flex-col">
-          <span class="text-xs font-bold text-neutral-700 uppercase tracking-tight">{{ if .Usuario }}{{ .Usuario.GetNombreCompleto }}{{ else }}N/A{{ end }}</span>
-          <span class="text-[10px] text-neutral-400 capitalize">{{ if .Usuario }}{{ .Usuario.GetRolName }}{{ end }}</span>
-        </div>
-      </td>
-      <td class="px-3 py-3 whitespace-nowrap text-center text-xs text-neutral-500 hidden md:table-cell">
-        <span class="px-2 py-0.5 rounded-full bg-neutral-100 text-[10px] font-bold uppercase">{{ .GetConceptoCodigo }}</span>
-      </td>
-      <td class="px-3 py-3">
-        <div class="flex flex-col">
-          <span class="text-xs font-medium text-neutral-700 truncate max-w-[150px]">{{ .GetRutaSimple }}</span>
-          <span class="text-[9px] text-neutral-400 truncate max-w-[150px]">{{ .TipoSolicitud.ConceptoViaje.Nombre }}</span>
-        </div>
-      </td>
-      <td class="px-3 py-3 whitespace-nowrap text-center text-xs font-medium text-neutral-700">{{ .GetUltimoVueloFecha }}</td>
-      <td class="px-3 py-3 whitespace-nowrap text-center">
-        <div class="flex flex-col items-center gap-1">
-          {{ $days := .GetDiasRestantesDescargo }} {{ if lt $days 0 }}
-          <span class="px-2 py-1 rounded bg-danger-100 text-danger-700 font-bold text-[10px] border border-danger-200" title="Vencido">{{ abs $days }} DÍAS MORA</span>
-          {{ else }}
-          <span class="px-2 py-1 rounded bg-success-50 text-success-700 font-bold text-[10px] border border-success-200" title="Días restantes">{{ $days }} DÍAS REST.</span>
-          {{ if not .Descargo }}
-          <span class="px-1.5 py-0.5 rounded bg-neutral-100 text-neutral-500 font-black text-[8px] border border-neutral-200 uppercase flex items-center gap-0.5">
-            <i class="ph ph-plus-circle text-xs"></i>
-            Sin Iniciar
-          </span>
-          {{ else }}
-          <span
-            class="px-1.5 py-0.5 rounded {{ .Descargo.GetEstadoBadgeClass }} font-black text-[8px] border uppercase flex items-center gap-0.5 {{ if and (not .HasCompleteDescargo) (eq .Descargo.Estado `BORRADOR`) }}cursor-help{{ end }}"
-            {{
-            if
-            and
-            (not
-            .HasCompleteDescargo)
-            (eq
-            .Descargo.Estado
-            `BORRADOR`)
-            }}x-tooltip.left="{{ .GetDescargoMissingItems }}"
-            {{
-            end
-            }}>
-            <i class="{{ .Descargo.GetEstadoIcon }} text-xs"></i>
-            {{ .Descargo.GetEstadoLabel }}
-          </span>
-          {{ end }}
-          {{ end }}
-        </div>
-      </td>
-      <td class="px-3 py-3 whitespace-nowrap text-xs font-medium text-right">
-        <a
-          href="/solicitudes/{{ lower .GetConceptoCodigo }}/{{ .ID }}/detalle"
-          class="inline-flex items-center gap-1 text-primary hover:text-primary-700 transition-colors"
-          title="Ver detalle">
-          <i class="ph ph-eye text-lg"></i>
-          <span>Ver Trámite</span>
-        </a>
-      </td>
-    </tr>
-    {{ else }}
-    <tr>
-      <td colspan="7" class="px-6 py-12 text-center">
-        <div class="flex flex-col items-center justify-center">
-          <i class="ph ph-check-circle text-4xl text-success-400 mb-2"></i>
-          <p class="text-neutral-500 text-sm">No hay solicitudes para la búsqueda.</p>
-        </div>
-      </td>
-    </tr>
-    {{ end }}
-  </tbody>
-</table>
+  <table class="min-w-full divide-y divide-neutral-200">
+    <thead class="bg-neutral-50">
+      <tr>
+        <th scope="col" class="px-3 py-3 text-left text-xs font-bold text-neutral-500 uppercase tracking-wider">Código</th>
+        <th
+          scope="col"
+          class="px-3 py-3 text-left text-xs font-bold text-neutral-500 uppercase tracking-wider hidden md:table-cell"
+        >
+          Beneficiario
+        </th>
+        <th
+          scope="col"
+          class="px-3 py-3 text-center text-xs font-bold text-neutral-500 uppercase tracking-wider hidden md:table-cell"
+        >
+          Tipo
+        </th>
+        <th scope="col" class="px-3 py-3 text-left text-xs font-bold text-neutral-500 uppercase tracking-wider">
+          Ruta / Concepto
+        </th>
+        <th scope="col" class="px-3 py-3 text-center text-xs font-bold text-neutral-500 uppercase tracking-wider">Últ. Vuelo</th>
+        <th scope="col" class="px-3 py-3 text-center text-xs font-bold text-neutral-500 uppercase tracking-wider">
+          Plazo Descargo
+        </th>
+        <th scope="col" class="px-3 py-3 text-right text-xs font-bold text-neutral-500 uppercase tracking-wider">Acciones</th>
+      </tr>
+    </thead>
+    <tbody class="bg-white divide-y divide-neutral-100">
+      {{ range .Result.Solicitudes }}
+        <tr class="hover:bg-neutral-50 transition-colors">
+          <td class="px-3 py-3 whitespace-nowrap">
+            <span class="text-xs font-bold text-primary">{{ .Codigo }}</span>
+          </td>
+          <td class="px-3 py-3 whitespace-nowrap hidden md:table-cell">
+            <div class="flex flex-col">
+              <span class="text-xs font-bold text-neutral-700 uppercase tracking-tight">
+                {{ if .Usuario }}{{ .Usuario.GetNombreCompleto }}{{ else }}N/A{{ end }}
+              </span>
+              <span class="text-[10px] text-neutral-400 capitalize">{{ if .Usuario }}{{ .Usuario.GetRolName }}{{ end }}</span>
+            </div>
+          </td>
+          <td class="px-3 py-3 whitespace-nowrap text-center text-xs text-neutral-500 hidden md:table-cell">
+            <span class="px-2 py-0.5 rounded-full bg-neutral-100 text-[10px] font-bold uppercase">{{ .GetConceptoCodigo }}</span>
+          </td>
+          <td class="px-3 py-3">
+            <div class="flex flex-col">
+              <span class="text-xs font-medium text-neutral-700 truncate max-w-[150px]">{{ .GetRutaSimple }}</span>
+              <span class="text-[9px] text-neutral-400 truncate max-w-[150px]">{{ .TipoSolicitud.ConceptoViaje.Nombre }}</span>
+            </div>
+          </td>
+          <td class="px-3 py-3 whitespace-nowrap text-center text-xs font-medium text-neutral-700">{{ .GetUltimoVueloFecha }}</td>
+          <td class="px-3 py-3 whitespace-nowrap text-center">
+            <div class="flex flex-col items-center gap-1">
+              {{ $days := .GetDiasRestantesDescargo }}
+              {{ if lt $days 0 }}
+                <span
+                  class="px-2 py-1 rounded bg-danger-100 text-danger-700 font-bold text-[10px] border border-danger-200"
+                  title="Vencido"
+                >
+                  {{ abs $days }} DÍAS MORA
+                </span>
+              {{ else }}
+                <span
+                  class="px-2 py-1 rounded bg-success-50 text-success-700 font-bold text-[10px] border border-success-200"
+                  title="Días restantes"
+                >
+                  {{ $days }} DÍAS REST.
+                </span>
+                {{ if not .Descargo }}
+                  <span
+                    class="px-1.5 py-0.5 rounded bg-neutral-100 text-neutral-500 font-black text-[8px] border border-neutral-200 uppercase flex items-center gap-0.5"
+                  >
+                    <i class="ph ph-plus-circle text-xs"></i>
+                    Sin Iniciar
+                  </span>
+                {{ else }}
+                  <span
+                    class="px-1.5 py-0.5 rounded {{ .Descargo.GetEstadoBadgeClass }} font-black text-[8px] border uppercase flex items-center gap-0.5 {{ if and (not .HasCompleteDescargo) (eq .Descargo.Estado `BORRADOR`) }}
+                      cursor-help
+                    {{ end }}"
+                    {{ if
+                      and
+                      (not
+                      .HasCompleteDescargo)
+                      (eq
+                      .Descargo.Estado
+                      `BORRADOR`)
+                    }}
+                      x-tooltip.left="{{ .GetDescargoMissingItems }}"
+                    {{ end }}
+                  >
+                    <i class="{{ .Descargo.GetEstadoIcon }} text-xs"></i>
+                    {{ .Descargo.GetEstadoLabel }}
+                  </span>
+                {{ end }}
+              {{ end }}
+            </div>
+          </td>
+          <td class="px-3 py-3 whitespace-nowrap text-xs font-medium text-right">
+            <a
+              href="/solicitudes/{{ lower .GetConceptoCodigo }}/{{ .ID }}/detalle"
+              class="inline-flex items-center gap-1 text-primary hover:text-primary-700 transition-colors"
+              title="Ver detalle"
+            >
+              <i class="ph ph-eye text-lg"></i>
+              <span>Ver Trámite</span>
+            </a>
+          </td>
+        </tr>
+      {{ else }}
+        <tr>
+          <td colspan="7" class="px-6 py-12 text-center">
+            <div class="flex flex-col items-center justify-center">
+              <i class="ph ph-check-circle text-4xl text-success-400 mb-2"></i>
+              <p class="text-neutral-500 text-sm">No hay solicitudes para la búsqueda.</p>
+            </div>
+          </td>
+        </tr>
+      {{ end }}
+    </tbody>
+  </table>
 
-{{ if .Result.TotalPages }}
-<div class="px-6 py-4 bg-neutral-50 border-t border-neutral-200 flex flex-col sm:flex-row items-center justify-between gap-4">
-  <!-- Total count -->
-  <div class="text-sm text-neutral-500">
-    Mostrando
-    <span class="font-bold text-neutral-900">{{ len .Result.Solicitudes }}</span>
-    de
-    <span class="font-bold text-neutral-900">{{ .Result.Total }}</span>
-    resultados {{ if .Result.SearchTerm }} para "
-    <span class="italic">{{ .Result.SearchTerm }}</span>
-    "{{ end }}
-  </div>
+  {{ if .Result.TotalPages }}
+    <div class="px-6 py-4 bg-neutral-50 border-t border-neutral-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+      <!-- Total count -->
+      <div class="text-sm text-neutral-500">
+        Mostrando
+        <span class="font-bold text-neutral-900">{{ len .Result.Solicitudes }}</span>
+        de
+        <span class="font-bold text-neutral-900">{{ .Result.Total }}</span>
+        resultados
+        {{ if .Result.SearchTerm }}
+          para "
+          <span class="italic">{{ .Result.SearchTerm }}</span>
+          "
+        {{ end }}
+      </div>
 
-  <div class="flex items-center space-x-2">
-    <!-- Items per page selector -->
-    <div class="flex items-center space-x-2 mr-4">
-      <label for="limit" class="text-xs text-neutral-500">Mostrar:</label>
-      <select
-        name="limit"
-        id="limit"
-        class="text-xs border-neutral-300 rounded-md py-1 pl-2 pr-6 focus:ring-primary focus:border-primary shadow-sm"
-        hx-get="{{ $.LinkBase }}/table"
-        hx-include="#global-search-input"
-        hx-target="#main-table"
-        hx-indicator="#table-loader">
-        <option value="5" {{ if eq .Result.Limit 5 }}selected{{ end }}>5</option>
-        <option value="10" {{ if eq .Result.Limit 10 }}selected{{ end }}>10</option>
-        <option value="20" {{ if eq .Result.Limit 20 }}selected{{ end }}>20</option>
-        <option value="50" {{ if eq .Result.Limit 50 }}selected{{ end }}>50</option>
-      </select>
+      <div class="flex items-center space-x-2">
+        <!-- Items per page selector -->
+        <div class="flex items-center space-x-2 mr-4">
+          <label for="limit" class="text-xs text-neutral-500">Mostrar:</label>
+          <select
+            name="limit"
+            id="limit"
+            class="text-xs border-neutral-300 rounded-md py-1 pl-2 pr-6 focus:ring-primary focus:border-primary shadow-sm"
+            hx-get="{{ $.LinkBase }}/table"
+            hx-include="#global-search-input"
+            hx-target="#main-table"
+            hx-indicator="#table-loader"
+          >
+            <option value="5" {{ if eq .Result.Limit 5 }}selected{{ end }}>5</option>
+            <option value="10" {{ if eq .Result.Limit 10 }}selected{{ end }}>10</option>
+            <option value="20" {{ if eq .Result.Limit 20 }}selected{{ end }}>20</option>
+            <option value="50" {{ if eq .Result.Limit 50 }}selected{{ end }}>50</option>
+          </select>
+        </div>
+
+        <!-- Pagination controls -->
+        {{ if gt .Result.Page 1 }}
+          <button
+            type="button"
+            hx-get="{{ $.LinkBase }}/table?page={{ sub .Result.Page 1 }}&q={{ .Result.SearchTerm }}&limit={{ .Result.Limit }}"
+            hx-target="#main-table"
+            hx-indicator="#table-loader"
+            class="p-2 bg-white border border-neutral-300 rounded-md text-neutral-700 hover:bg-neutral-50 transition-colors shadow-sm cursor-pointer"
+            title="Anterior"
+          >
+            <i class="ph ph-caret-left text-lg"></i>
+          </button>
+        {{ end }}
+
+
+        <div
+          class="px-2 py-1 bg-white border border-neutral-300 rounded-md text-sm font-bold text-neutral-700 shadow-sm flex items-center"
+        >
+          <span class="text-primary-600 mr-2">Pág.</span>
+          <input
+            type="number"
+            name="page"
+            value="{{ .Result.Page }}"
+            min="1"
+            max="{{ .Result.TotalPages }}"
+            class="w-16 h-7 text-center text-sm border-neutral-300 rounded-md focus:ring-primary focus:border-primary p-0 m-0"
+            hx-get="{{ $.LinkBase }}/table"
+            hx-include="#global-search-input, [name='limit']"
+            hx-target="#main-table"
+            hx-indicator="#table-loader"
+            hx-trigger="change delay:300ms, keyup[key=='Enter']"
+          />
+          <span class="text-neutral-400 mx-2">/</span>
+          <span>{{ .Result.TotalPages }}</span>
+        </div>
+
+        {{ if lt .Result.Page .Result.TotalPages }}
+          <button
+            type="button"
+            hx-get="{{ $.LinkBase }}/table?page={{ sum .Result.Page 1 }}&q={{ .Result.SearchTerm }}&limit={{ .Result.Limit }}"
+            hx-target="#main-table"
+            hx-indicator="#table-loader"
+            class="p-2 bg-white border border-neutral-300 rounded-md text-neutral-700 hover:bg-neutral-50 transition-colors shadow-sm cursor-pointer"
+            title="Siguiente"
+          >
+            <i class="ph ph-caret-right text-lg"></i>
+          </button>
+        {{ end }}
+      </div>
     </div>
-
-    <!-- Pagination controls -->
-    {{ if gt .Result.Page 1 }}
-    <button
-      type="button"
-      hx-get="{{ $.LinkBase }}/table?page={{ sub .Result.Page 1 }}&q={{ .Result.SearchTerm }}&limit={{ .Result.Limit }}"
-      hx-target="#main-table"
-      hx-indicator="#table-loader"
-      class="p-2 bg-white border border-neutral-300 rounded-md text-neutral-700 hover:bg-neutral-50 transition-colors shadow-sm cursor-pointer"
-      title="Anterior">
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
-      </svg>
-    </button>
-    {{ end }}
-
-    <div class="px-2 py-1 bg-white border border-neutral-300 rounded-md text-sm font-bold text-neutral-700 shadow-sm flex items-center">
-      <span class="text-primary-600 mr-2">Pág.</span>
-      <input
-        type="number"
-        name="page"
-        value="{{ .Result.Page }}"
-        min="1"
-        max="{{ .Result.TotalPages }}"
-        class="w-16 h-7 text-center text-sm border-neutral-300 rounded-md focus:ring-primary focus:border-primary p-0 m-0"
-        hx-get="{{ $.LinkBase }}/table"
-        hx-include="#global-search-input, [name='limit']"
-        hx-target="#main-table"
-        hx-indicator="#table-loader"
-        hx-trigger="change delay:300ms, keyup[key=='Enter']" />
-      <span class="text-neutral-400 mx-2">/</span>
-      <span>{{ .Result.TotalPages }}</span>
-    </div>
-
-    {{ if lt .Result.Page .Result.TotalPages }}
-    <button
-      type="button"
-      hx-get="{{ $.LinkBase }}/table?page={{ sum .Result.Page 1 }}&q={{ .Result.SearchTerm }}&limit={{ .Result.Limit }}"
-      hx-target="#main-table"
-      hx-indicator="#table-loader"
-      class="p-2 bg-white border border-neutral-300 rounded-md text-neutral-700 hover:bg-neutral-50 transition-colors shadow-sm cursor-pointer"
-      title="Siguiente">
-      <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-      </svg>
-    </button>
-    {{ end }}
-  </div>
-</div>
-{{ end }} {{ end }}
+  {{ end }}
+{{ end }}

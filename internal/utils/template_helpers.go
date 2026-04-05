@@ -38,7 +38,44 @@ func TemplateFuncs() template.FuncMap {
 		"checked":          Checked,
 		"deviceIcon":       DeviceIcon,
 		"dict":             Dict,
+		"ternary":          Ternary,
+		"boolJS":           BoolJS,
 	}
+}
+
+// BoolJS convierte un valor a un booleano literal de JavaScript (true/false) sin comillas.
+func BoolJS(v interface{}) template.JS {
+	if IsTrue(v) {
+		return template.JS("true")
+	}
+	return template.JS("false")
+}
+
+// Ternary es un operador ternario básico para plantillas: ternary(cond, trueVal, falseVal).
+func Ternary(cond interface{}, trueVal, falseVal interface{}) interface{} {
+	if IsTrue(cond) {
+		return trueVal
+	}
+	return falseVal
+}
+
+// IsTrue es una utilidad interna para evaluar la "veracidad" de un valor en Go templates.
+func IsTrue(v interface{}) bool {
+	switch val := v.(type) {
+	case bool:
+		return val
+	case string:
+		return val != "" && val != "false" && val != "0"
+	case int:
+		return val != 0
+	case int64:
+		return val != 0
+	case float64:
+		return val != 0
+	case nil:
+		return false
+	}
+	return v != nil
 }
 
 // FormatCurrency formatea un float64 a string con miles y 2 decimales.
@@ -83,8 +120,8 @@ func FormatDate(t *time.Time) string {
 	return t.Format("02/01/2006")
 }
 
-// FormatDateTimeES formatea fechas a formato texto en español con AM/PM.
-// Ejemplo: "dom, 08 feb 2026, 12:56 PM"
+// FormatDateTimeES formatea fechas a formato texto en español (24h).
+// Ejemplo: "dom, 08 feb 2026, 12:56"
 func FormatDateTimeES(val interface{}) string {
 	var t time.Time
 	switch v := val.(type) {
@@ -105,14 +142,14 @@ func FormatDateTimeES(val interface{}) string {
 		month = month[:3]
 	}
 
-	// Format: "dom, 08 feb 2026, 12:56 PM"
-	// La hora en Go con PM/AM se hace con "03:04 PM"
+	// Format: "dom, 08 feb 2026, 12:56"
+	// La hora en Go (24h) se hace con "15:04"
 	return fmt.Sprintf("%s, %s %s %d, %s",
 		day,
 		t.Format("02"),
 		month,
 		t.Year(),
-		t.Format("03:04 PM"))
+		t.Format("15:04"))
 }
 
 // DerefString desreferencia un string pointer de forma segura. Retorna "" si es nil.
@@ -232,19 +269,19 @@ func FormatWeekRangeShort(ini, fin *time.Time) string {
 		DayNameShort(fin), fin.Day())
 }
 
-// FormatDateTimeLongES formatea una fecha a formato largo y legible.
-// Ejemplo: "domingo, 08 de febrero de 2026 a las 12:56 PM"
+// FormatDateTimeLongES formatea una fecha a formato largo y legible (24h).
+// Ejemplo: "domingo, 08 de febrero de 2026 a las 12:56"
 func FormatDateTimeLongES(t time.Time) string {
 	day := DayNameLong(&t)
 	month := GetMonthName(t.Month())
 
-	// Format: "domingo, 08 de febrero de 2026 a las 12:56 PM"
+	// Format: "domingo, 08 de febrero de 2026 a las 12:56"
 	return fmt.Sprintf("%s, %02d de %s de %d a las %s",
 		day,
 		t.Day(),
 		strings.ToLower(month),
 		t.Year(),
-		t.Format("03:04 PM"))
+		t.Format("15:04"))
 }
 
 // DayNameLong retorna el nombre completo del día en español.

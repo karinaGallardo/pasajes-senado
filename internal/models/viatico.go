@@ -1,6 +1,14 @@
 package models
 
-import "time"
+import (
+	"time"
+)
+
+type ViaticoPermissions struct {
+	CanEdit   bool
+	CanDelete bool
+	CanPrint  bool
+}
 
 type Viatico struct {
 	BaseModel
@@ -31,8 +39,42 @@ type Viatico struct {
 	Estado string `gorm:"size:50;default:'BORRADOR';index"`
 
 	Detalles []DetalleViatico `gorm:"foreignKey:ViaticoID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE;"`
+
+	// Contexto de runtime (no persistido)
+	authUser    *Usuario            `gorm:"-"`
+	Permissions *ViaticoPermissions `gorm:"-"`
 }
 
 func (Viatico) TableName() string {
 	return "viaticos"
+}
+
+func (v Viatico) GetPermissions(u ...*Usuario) ViaticoPermissions {
+	user := v.getAuthUser(u...)
+	if user == nil {
+		return ViaticoPermissions{}
+	}
+
+	canMod := user.IsAdminOrResponsable() && v.Estado == "BORRADOR"
+
+	return ViaticoPermissions{
+		CanEdit:   canMod,
+		CanDelete: canMod,
+		CanPrint:  v.Estado != "ANULADO",
+	}
+}
+
+func (v *Viatico) HydratePermissions(u ...*Usuario) {
+	if len(u) > 0 {
+		v.authUser = u[0]
+	}
+	p := v.GetPermissions()
+	v.Permissions = &p
+}
+
+func (v Viatico) getAuthUser(u ...*Usuario) *Usuario {
+	if len(u) > 0 {
+		return u[0]
+	}
+	return v.authUser
 }

@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"sistema-pasajes/internal/appcontext"
 	"sistema-pasajes/internal/dtos"
 	"sistema-pasajes/internal/services"
 	"sistema-pasajes/internal/utils"
@@ -49,7 +50,7 @@ func (ctrl *PasajeController) Store(c *gin.Context) {
 		}
 		utils.SetErrorMessage(c, "Datos inválidos")
 		solicitud, _ := ctrl.solicitudService.GetByID(c.Request.Context(), solicitudID)
-		if solicitud != nil && solicitud.GetConceptoCodigo() == "OFICIAL" {
+		if solicitud != nil && solicitud.IsOficial() {
 			c.Redirect(http.StatusFound, fmt.Sprintf("/solicitudes/oficial/%s/detalle", solicitudID))
 		} else {
 			c.Redirect(http.StatusFound, fmt.Sprintf("/solicitudes/derecho/%s/detalle", solicitudID))
@@ -74,7 +75,7 @@ func (ctrl *PasajeController) Store(c *gin.Context) {
 
 	solicitud, _ := ctrl.solicitudService.GetByID(c.Request.Context(), solicitudID)
 	targetURL := ""
-	if solicitud != nil && solicitud.GetConceptoCodigo() == "OFICIAL" {
+	if solicitud != nil && solicitud.IsOficial() {
 		targetURL = fmt.Sprintf("/solicitudes/oficial/%s/detalle", solicitudID)
 	} else {
 		targetURL = fmt.Sprintf("/solicitudes/derecho/%s/detalle", solicitudID)
@@ -94,6 +95,9 @@ func (ctrl *PasajeController) renderCreateModalWithError(c *gin.Context, solicit
 	aerolineas, _ := ctrl.aerolineaService.GetAllActive(c.Request.Context())
 	agencias, _ := ctrl.agenciaService.GetAllActive(c.Request.Context())
 	rutas, _ := ctrl.rutaService.GetAll(c.Request.Context())
+
+	authUser := appcontext.AuthUser(c)
+	solicitud.HydratePermissions(authUser)
 
 	utils.Render(c, "solicitud/components/modal_emitir_pasaje", gin.H{
 		"Solicitud":       solicitud,
@@ -232,6 +236,9 @@ func (ctrl *PasajeController) renderEditModalWithError(c *gin.Context, pasajeID 
 	agencias, _ := ctrl.agenciaService.GetAllActive(c.Request.Context())
 	rutas, _ := ctrl.rutaService.GetAll(c.Request.Context())
 
+	authUser := appcontext.AuthUser(c)
+	pasaje.HydratePermissions(authUser)
+
 	utils.Render(c, "solicitud/components/modal_editar_pasaje", gin.H{
 		"Pasaje":       pasaje,
 		"Aerolineas":   aerolineas,
@@ -284,7 +291,12 @@ func (ctrl *PasajeController) GetCreateModal(c *gin.Context) {
 	rutas, _ := ctrl.rutaService.GetAll(c.Request.Context())
 
 	itemID := c.Query("item_id")
+	authUser := appcontext.AuthUser(c)
+	solicitud.HydratePermissions(authUser)
 	selectedItem := solicitud.GetItemByID(itemID)
+	if selectedItem != nil {
+		selectedItem.HydratePermissions(authUser)
+	}
 
 	utils.Render(c, "solicitud/components/modal_emitir_pasaje", gin.H{
 		"Solicitud":    solicitud,
@@ -308,6 +320,9 @@ func (ctrl *PasajeController) GetEditModal(c *gin.Context) {
 	agencias, _ := ctrl.agenciaService.GetAllActive(c.Request.Context())
 	rutas, _ := ctrl.rutaService.GetAll(c.Request.Context())
 
+	authUser := appcontext.AuthUser(c)
+	pasaje.HydratePermissions(authUser)
+
 	utils.Render(c, "solicitud/components/modal_editar_pasaje", gin.H{
 		"Pasaje":     pasaje,
 		"Aerolineas": aerolineas,
@@ -325,6 +340,9 @@ func (ctrl *PasajeController) GetDevolverModal(c *gin.Context) {
 		return
 	}
 
+	authUser := appcontext.AuthUser(c)
+	pasaje.HydratePermissions(authUser)
+
 	utils.Render(c, "solicitud/components/modal_devolver_pasaje", gin.H{
 		"Pasaje": pasaje,
 	})
@@ -337,6 +355,9 @@ func (ctrl *PasajeController) GetUsadoModal(c *gin.Context) {
 		c.String(http.StatusNotFound, "Pasaje no encontrado")
 		return
 	}
+
+	authUser := appcontext.AuthUser(c)
+	pasaje.HydratePermissions(authUser)
 
 	utils.Render(c, "solicitud/components/modal_usado_pasaje", gin.H{
 		"Pasaje": pasaje,

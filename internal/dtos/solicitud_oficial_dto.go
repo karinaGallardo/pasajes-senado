@@ -15,6 +15,6 @@ type CreateSolicitudOficialRequest struct {
 	TargetUserID        string                `form:"target_user_id"`
 	Motivo              string                `form:"motivo"`
 	Autorizacion        string                `form:"autorizacion"`
-	AerolineaSugerida   string                `form:"aerolinea"`
+	AerolineaID         string                `form:"aerolinea_id"`
 	Tramos              []TramoOficialRequest `form:"-"`
 }

@@ -22,6 +22,20 @@
 
       <script src="/static/lib/polyfills.js"></script>
       <script src="/static/lib/htmx/htmx.min.js"></script>
+
+      <script>
+        // Apply correct sidebar width before Alpine/DOM finishes loading to avoid flicker
+        (function () {
+          const collapsed = localStorage.getItem("sidebarCollapsed") === "true";
+          document.documentElement.classList.add(collapsed ? "sidebar-collapsed" : "sidebar-expanded");
+        })();
+      </script>
+
+      <script defer src="/static/lib/alpinejs/alpine.min.js"></script>
+      <link rel="stylesheet" href="/static/css/tailwind-dist.css?v={{ .StaticVersion }}" />
+      <script src="/static/js/app.js?v={{ .StaticVersion }}"></script>
+      <script src="/static/js/sw-register.js"></script>
+
       <!-- Air Datepicker v3 -->
       <link rel="stylesheet" href="/static/lib/airdatepicker/air-datepicker.min.css">
       <link rel="stylesheet" href="/static/css/premium-datepicker.css?v={{ .StaticVersion }}">
@@ -39,19 +53,6 @@
       <script src="/static/lib/tippy/tippy-bundle.umd.min.js"></script>
       <link rel="stylesheet" href="/static/lib/tippy/tippy.css" />
       <link rel="stylesheet" href="/static/lib/tippy/shift-away.css" />
-
-      <script>
-        // Apply correct sidebar width before Alpine/DOM finishes loading to avoid flicker
-        (function () {
-          const collapsed = localStorage.getItem("sidebarCollapsed") === "true";
-          document.documentElement.classList.add(collapsed ? "sidebar-collapsed" : "sidebar-expanded");
-        })();
-      </script>
-
-      <script defer src="/static/lib/alpinejs/alpine.min.js"></script>
-      <link rel="stylesheet" href="/static/css/tailwind-dist.css?v={{ .StaticVersion }}" />
-      <script src="/static/js/app.js?v={{ .StaticVersion }}"></script>
-      <script src="/static/js/sw-register.js"></script>
 
       <style>
         [x-cloak] {

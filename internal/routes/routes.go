@@ -64,15 +64,17 @@ func SetupRoutes(r *gin.Engine, container *app.Container, loginLimiter *middlewa
 		protected.GET("/solicitudes/pendientes-descargo", solicitudCtrl.IndexPendientesDescargo)
 		protected.GET("/solicitudes/pendientes-descargo/table", solicitudCtrl.TablePendientesDescargo)
 		protected.GET("/api/solicitudes/pending-stats", solicitudCtrl.GetPendingStats)
+		protected.POST("/solicitudes/:id/finalizar", solicitudCtrl.Finalize)
+		protected.POST("/solicitudes/:id/revertir-finalizacion", solicitudCtrl.RevertFinalize)
 
 		// Solicitudes Derecho
-		protected.GET("/solicitudes/derecho/modal-crear/:item_id/:itinerario_code", solicitudDerechoCtrl.GetCreateModal)
+		protected.GET("/solicitudes/derecho/modal-crear/:item_id", solicitudDerechoCtrl.GetCreateModal)
 		protected.GET("/solicitudes/derecho/:id/detalle", solicitudDerechoCtrl.Show)
 		protected.GET("/solicitudes/derecho/:id/modal-editar", solicitudDerechoCtrl.GetEditModal)
 		protected.GET("/solicitudes/derecho/:id/print", solicitudDerechoCtrl.Print)
 
 		// Descargos Derecho
-		protected.GET("/descargos/derecho/nuevo/:id", descargoDerechoCtrl.Create)
+		protected.GET("/descargos/derecho/nuevo/:id", descargoDerechoCtrl.Store)
 		protected.GET("/descargos/derecho/:id", descargoDerechoCtrl.Show)
 		protected.GET("/descargos/derecho/:id/editar", descargoDerechoCtrl.Edit)
 		protected.POST("/descargos/derecho/:id/actualizar", descargoDerechoCtrl.Update)
@@ -101,7 +103,7 @@ func SetupRoutes(r *gin.Engine, container *app.Container, loginLimiter *middlewa
 		protected.GET("/solicitudes/oficial/:id/print", solicitudOficialCtrl.Print)
 
 		// Descargos Oficial
-		protected.GET("/descargos/oficial/nuevo/:id", descargoOficialCtrl.Create)
+		protected.GET("/descargos/oficial/nuevo/:id", descargoOficialCtrl.Store)
 		protected.GET("/descargos/oficial/:id", descargoOficialCtrl.Show)
 		protected.GET("/descargos/oficial/:id/editar", descargoOficialCtrl.Edit)
 		protected.POST("/descargos/oficial/:id/actualizar", descargoOficialCtrl.Update)
@@ -126,11 +128,9 @@ func SetupRoutes(r *gin.Engine, container *app.Container, loginLimiter *middlewa
 		protected.GET("/solicitudes/:id/pasajes/nuevo", pasajeCtrl.GetCreateModal)
 		protected.POST("/pasajes/update-status", pasajeCtrl.UpdateStatus)
 		protected.GET("/pasajes/:id/preview", pasajeCtrl.Preview)
-		protected.POST("/solicitud-items/reprogramar", solicitudDerechoCtrl.ReprogramarItem)
 		protected.POST("/pasajes/devolver", pasajeCtrl.Devolver)
 		protected.POST("/pasajes/update", pasajeCtrl.Update)
 		protected.GET("/pasajes/:id/editar", pasajeCtrl.GetEditModal)
-		protected.GET("/solicitud-items/:id/reprogramar", solicitudDerechoCtrl.GetReprogramarModalSolicitudItem)
 		protected.GET("/pasajes/:id/devolver", pasajeCtrl.GetDevolverModal)
 		protected.GET("/pasajes/:id/modal-usado", pasajeCtrl.GetUsadoModal)
 

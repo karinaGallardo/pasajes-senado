@@ -1,92 +1,214 @@
 /**
  * Air Datepicker Premium Senate Theme
  * Custom CSS Variables for a High-End UX
+ * ID: cinnabar-red-theme
  */
 :root {
     --adp-background-color: #ffffff;
     --adp-color: #1a1a1a;
-    --adp-accent-color: #03738C; /* Senado Teal/Primary */
+    --adp-accent-color: #893026; /* Rojo Cinnabar Official */
+    --adp-secondary-color: #e8620b; /* Naranja Jaffa Official */
     --adp-border-color: #e2e8f0;
     --adp-border-radius: 12px;
-    --adp-width: 280px;
+    --adp-width: 256px;
     --adp-z-index: 1000;
 
     /* Day cells */
     --adp-day-name-color: #94a3b8;
-    --adp-day-cell-height: 38px;
+    --adp-day-cell-height: 32px;
     --adp-day-cell-width: 100%;
 
     /* Header & Navigation */
     --adp-nav-color-secondary: #64748b;
-    --adp-nav-height: 48px;
+    --adp-nav-height: 40px;
 
     /* Fonts */
-    --adp-font-family: 'Inter', system-ui, sans-serif;
-    --adp-font-size: 13px;
+    --adp-font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    --adp-font-size: 11.5px; /* Compact & Professional */
 
     /* Transitions */
-    --adp-transition-duration: 200ms;
+    --adp-transition-duration: 150ms;
 }
 
 .air-datepicker {
+    /* SOBREESCRIBIR VARIABLES NATIVAS PARA MATAR EL CELESTE */
+    --adp-accent-color: #893026 !important;
+    --adp-background-color-selected: #893026 !important;
+    --adp-background-color-selected-hover: #722a21 !important;
+    --adp-background-color-in-range: #fef2f1 !important;
+    --adp-background-color-in-range-focused: #fce8e6 !important;
+    --adp-border-color-inline: #e2e8f0 !important;
+    --adp-cell-background-color-hover: #fef2f2 !important;
+    --adp-cell-background-color-selected: #893026 !important;
+
     border: 1px solid var(--adp-border-color);
-    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+/* El puntero (flechita) también debe ser rojo si está sobre un área de acción */
+.air-datepicker--pointer::after {
+    background: #fff; /* Fondo blanco global */
 }
 
 .air-datepicker-nav--title {
-    font-weight: 700 !important;
+    font-weight: 800 !important;
     text-transform: uppercase;
-    letter-spacing: 0.025em;
-    font-size: 11px;
+    letter-spacing: 0.05em;
+    font-size: 10px;
+    color: var(--adp-accent-color);
 }
 
 .air-datepicker-nav--title i {
     font-style: normal;
-    color: var(--adp-nav-color-secondary);
-    margin-left: 4px;
+    color: #94a3b8;
+    margin-left: 2px;
+    font-weight: 400;
 }
 
 .air-datepicker-cell.-current- {
-    color: var(--adp-accent-color);
-    font-weight: 700;
-    background: #f0f9fa;
+    color: var(--adp-accent-color) !important;
+    font-weight: 900 !important;
+    background: transparent !important;
+    border-bottom: 2px solid var(--adp-accent-color);
+    border-radius: 0;
+}
+
+.air-datepicker-cell.-current-.-focus- {
+    background: #fef2f2 !important;
+}
+
+.air-datepicker-cell.-focus- {
+    background: #fef2f2 !important;
+    color: var(--adp-accent-color) !important;
 }
 
 .air-datepicker-cell.-selected- {
     background: var(--adp-accent-color) !important;
     color: #fff !important;
-    box-shadow: 0 4px 6px -1px rgba(3, 115, 140, 0.3) !important;
+    font-weight: 700;
+    box-shadow: 0 4px 6px -1px rgba(137, 48, 38, 0.3) !important;
+}
+
+.air-datepicker-cell.-selected-.-focus- {
+    background: #893026 !important;
+}
+
+.air-datepicker-cell.-in-range- {
+    background: #fef2f1 !important;
+}
+
+/* Navigation Hover Override */
+.air-datepicker-nav--action:hover {
+    background: #fef2f2 !important;
+    color: var(--adp-accent-color) !important;
+}
+
+.air-datepicker-nav--title:hover {
+    background: #fef2f2 !important;
+    color: var(--adp-accent-color) !important;
 }
 
 .air-datepicker-cell.-day-.-other-month- {
-    opacity: 0.3;
+    opacity: 0.2;
+}
+
+.air-datepicker-cell.-day-.-other-month-.-selected- {
+    opacity: 1;
+}
+
+/* Time Slider Overrides (Premium Orange Thumb) */
+.air-datepicker-time--row input[type='range'] {
+    -webkit-appearance: none;
+    appearance: none;
+    background: #eef2f6; /* Track background */
+    height: 4px;
+    border-radius: 4px;
+    outline: none;
+    cursor: pointer;
+}
+
+/* Chrome, Safari, Edge, Opera */
+.air-datepicker-time--row input[type='range']::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: var(--adp-secondary-color);
+    border: 2px solid #fff;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(232, 98, 11, 0.4);
+    transition: transform 0.1s ease;
+}
+
+.air-datepicker-time--row input[type='range']:active::-webkit-slider-thumb {
+    transform: scale(1.15);
+}
+
+/* Firefox */
+.air-datepicker-time--row input[type='range']::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    background: var(--adp-secondary-color);
+    border: 2px solid #fff;
+    border-radius: 50%;
+    box-shadow: 0 2px 4px rgba(232, 98, 11, 0.4);
+    cursor: pointer;
 }
 
 /* Time Picker Styling */
 .air-datepicker-time {
-    border-top: 1px solid #f1f5f9;
-    padding-top: 8px;
-    margin-top: 4px;
+    border-top: 1px solid #e2e8f0;
+    padding: 12px 6px;
+    background-color: #fbfcfd;
 }
 
 .air-datepicker-time--current-ampm {
     text-transform: uppercase;
-    font-weight: 800;
+    font-weight: 1000;
     color: var(--adp-accent-color);
-    font-size: 10px;
+    font-size: 9px;
     letter-spacing: 0.05em;
 }
 
 .air-datepicker-button {
-    color: var(--adp-accent-color);
-    font-weight: 700;
-    font-size: 11px;
+    color: var(--adp-nav-color-secondary);
+    font-weight: 800;
+    font-size: 10px;
     text-transform: uppercase;
+    letter-spacing: 0.025em;
 }
 
 .air-datepicker-button:hover {
-    background: #f0f9fa;
-    color: #025a6e;
+    background: #fef2f2;
+    color: var(--adp-accent-color);
+}
+
+/* Custom Buttons Styling */
+.custom-button-apply {
+    background-color: var(--adp-accent-color);
+    color: white !important;
+    border-radius: 8px;
+    margin: 4px;
+    padding: 6px 12px;
+    box-shadow: 0 4px 6px -1px rgba(137, 48, 38, 0.2);
+    transition: all 0.2s ease;
+    border: none;
+    cursor: pointer;
+}
+
+.custom-button-apply:hover {
+    background-color: #722a21 !important;
+    transform: translateY(-1px);
+    box-shadow: 0 10px 15px -3px rgba(137, 48, 38, 0.4);
+}
+
+.custom-button-today {
+    font-weight: 800 !important;
+    color: #64748b !important;
+}
+
+.custom-button-today:hover {
+    color: var(--adp-accent-color) !important;
 }
 
 /* Animation */

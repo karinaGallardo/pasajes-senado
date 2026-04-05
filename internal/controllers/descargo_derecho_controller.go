@@ -47,7 +47,7 @@ func NewDescargoDerechoController(
 	}
 }
 
-func (ctrl *DescargoDerechoController) Create(c *gin.Context) {
+func (ctrl *DescargoDerechoController) Store(c *gin.Context) {
 	solicitudID := c.Param("id")
 	if solicitudID == "" {
 		c.Redirect(http.StatusFound, "/solicitudes")
@@ -86,6 +86,12 @@ func (ctrl *DescargoDerechoController) Show(c *gin.Context) {
 		return
 	}
 
+	authUser := appcontext.AuthUser(c)
+	data.Descargo.HydratePermissions(authUser)
+	if data.Descargo.Solicitud != nil {
+		data.Descargo.Solicitud.HydratePermissions(authUser)
+	}
+
 	utils.Render(c, "descargo/derecho/show", gin.H{
 		"Title":      "Detalle de Descargo (Derecho)",
 		"Descargo":   data.Descargo,
@@ -101,6 +107,12 @@ func (ctrl *DescargoDerechoController) Edit(c *gin.Context) {
 	if err != nil {
 		c.Redirect(http.StatusFound, "/descargos")
 		return
+	}
+
+	authUser := appcontext.AuthUser(c)
+	data.Descargo.HydratePermissions(authUser)
+	if data.Descargo.Solicitud != nil {
+		data.Descargo.Solicitud.HydratePermissions(authUser)
 	}
 
 	utils.Render(c, "descargo/derecho/edit", gin.H{
@@ -127,7 +139,8 @@ func (ctrl *DescargoDerechoController) Update(c *gin.Context) {
 		return
 	}
 
-	if !descargo.IsEditable() {
+	descargo.HydratePermissions(authUser)
+	if !descargo.Permissions.CanEdit {
 		c.Redirect(http.StatusFound, "/descargos/derecho/"+id+"?error=EstadoNoPermitido")
 		return
 	}
@@ -196,6 +209,10 @@ func (ctrl *DescargoDerechoController) Index(c *gin.Context) {
 
 	result, _ := ctrl.descargoService.GetPaginatedScoped(c.Request.Context(), authUser, page, limit, searchTerm)
 
+	for i := range result.Descargos {
+		result.Descargos[i].HydratePermissions(authUser)
+	}
+
 	utils.Render(c, "descargo/index", gin.H{
 		"Title":    "Bandeja de Descargos",
 		"Result":   result,
@@ -216,6 +233,10 @@ func (ctrl *DescargoDerechoController) Table(c *gin.Context) {
 
 	result, _ := ctrl.descargoService.GetPaginatedScoped(c.Request.Context(), authUser, page, limit, searchTerm)
 
+	for i := range result.Descargos {
+		result.Descargos[i].HydratePermissions(authUser)
+	}
+
 	utils.Render(c, "descargo/table_descargos", gin.H{
 		"Result":   result,
 		"LinkBase": "/descargos",
@@ -228,6 +249,15 @@ func (ctrl *DescargoDerechoController) Submit(c *gin.Context) {
 	if authUser == nil {
 		c.Redirect(http.StatusFound, "/auth/login")
 		return
+	}
+
+	descargo, _ := ctrl.descargoService.GetByID(c.Request.Context(), id)
+	if descargo != nil {
+		descargo.HydratePermissions(authUser)
+		if !descargo.Permissions.CanSubmit {
+			c.Redirect(http.StatusFound, "/descargos/derecho/"+id+"?error=SinPermisoEnvio")
+			return
+		}
 	}
 
 	if err := ctrl.descargoService.Submit(c.Request.Context(), id, authUser.ID); err != nil {
@@ -245,6 +275,15 @@ func (ctrl *DescargoDerechoController) Approve(c *gin.Context) {
 	if authUser == nil || !authUser.IsAdminOrResponsable() {
 		c.Redirect(http.StatusFound, "/auth/login")
 		return
+	}
+
+	descargo, _ := ctrl.descargoService.GetByID(c.Request.Context(), id)
+	if descargo != nil {
+		descargo.HydratePermissions(authUser)
+		if !descargo.Permissions.CanApprove {
+			c.Redirect(http.StatusFound, "/descargos/derecho/"+id+"?error=SinPermisoAprobacion")
+			return
+		}
 	}
 
 	if err := ctrl.descargoService.Approve(c.Request.Context(), id, authUser.ID); err != nil {
@@ -266,6 +305,15 @@ func (ctrl *DescargoDerechoController) Reject(c *gin.Context) {
 
 	observaciones := c.PostForm("observaciones")
 
+	descargo, _ := ctrl.descargoService.GetByID(c.Request.Context(), id)
+	if descargo != nil {
+		descargo.HydratePermissions(authUser)
+		if !descargo.Permissions.CanReject {
+			c.Redirect(http.StatusFound, "/descargos/derecho/"+id+"?error=SinPermisoRechazo")
+			return
+		}
+	}
+
 	if err := ctrl.descargoService.Reject(c.Request.Context(), id, authUser.ID, observaciones); err != nil {
 		log.Printf("Error rechazando descargo derecho: %v", err)
 		c.Redirect(http.StatusFound, "/descargos/derecho/"+id+"?error=ErrorRechazo")
@@ -281,6 +329,15 @@ func (ctrl *DescargoDerechoController) RevertApproval(c *gin.Context) {
 	if authUser == nil || !authUser.IsAdminOrResponsable() {
 		c.String(http.StatusForbidden, "No tiene permisos para realizar esta acción")
 		return
+	}
+
+	descargo, _ := ctrl.descargoService.GetByID(c.Request.Context(), id)
+	if descargo != nil {
+		descargo.HydratePermissions(authUser)
+		if !descargo.Permissions.CanRevert {
+			c.String(http.StatusForbidden, "No tiene permisos para revertir este descargo")
+			return
+		}
 	}
 
 	if err := ctrl.descargoService.RevertToDraft(c.Request.Context(), id, authUser.ID); err != nil {
@@ -354,7 +411,6 @@ func (ctrl *DescargoDerechoController) NuevaFila(c *gin.Context) {
 			MontoDevolucion: 0.0,
 			Moneda:          "Bs.",
 			Archivo:         "",
-			Orden:           0,
 			PasajeID:        "",
 		},
 	})

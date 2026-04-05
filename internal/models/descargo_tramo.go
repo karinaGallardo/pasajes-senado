@@ -29,16 +29,12 @@ type DescargoTramo struct {
 	EsModificacion    bool              `gorm:"default:false"`
 	MontoDevolucion   float64           `gorm:"type:decimal(10,2);default:0"`
 	Moneda            string            `gorm:"size:10;default:'Bs.'"`
-	Orden             int               `gorm:"default:0"`
+	// Seq is an auto-incrementing field managed by DB to ensure atomic sequential ordering
+	Seq int64 `gorm:"autoIncrement;not null;<-:false"`
 }
 
 func (d DescargoTramo) GetRutaDisplay() string {
 	if d.RutaPasaje != nil {
-		tramos := d.RutaPasaje.GetTramos()
-		// If we have enough tramos, return the specific one for this order
-		if len(tramos) > 0 && d.Orden < len(tramos) {
-			return tramos[d.Orden]
-		}
 		return d.RutaPasaje.GetRutaDisplay()
 	}
 	return "Ruta no especificada"
@@ -108,8 +104,7 @@ func (d DescargoTramo) HasChanges(other DescargoTramo) bool {
 		d.EsDevolucion != other.EsDevolucion ||
 		d.EsModificacion != other.EsModificacion ||
 		d.MontoDevolucion != other.MontoDevolucion ||
-		d.Moneda != other.Moneda ||
-		d.Orden != other.Orden {
+		d.Moneda != other.Moneda {
 		return true
 	}
 

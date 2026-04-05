@@ -241,10 +241,9 @@ func (s *PasajeService) UpdateStatus(ctx context.Context, id string, status stri
 	if status == "EMITIDO" && pasaje.SolicitudItemID != nil {
 		s.solicitudItemRepo.UpdateStatus(ctx, *pasaje.SolicitudItemID, "EMITIDO")
 
-		// Recalculate Solicitud global status
+		// Recalculate Solicitud global status via GORM Hooks
 		sol, err := s.solicitudRepo.FindByID(ctx, pasaje.SolicitudID)
 		if err == nil && sol != nil {
-			sol.UpdateStatusBasedOnItems()
 			s.solicitudRepo.Update(ctx, sol)
 		}
 	}
@@ -254,10 +253,9 @@ func (s *PasajeService) UpdateStatus(ctx context.Context, id string, status stri
 		// Revert item back to APROBADO (previous state)
 		s.solicitudItemRepo.UpdateStatus(ctx, *pasaje.SolicitudItemID, "APROBADO")
 
-		// Recalculate Solicitud global status
+		// Recalculate Solicitud global status via GORM Hooks
 		sol, err := s.solicitudRepo.FindByID(ctx, pasaje.SolicitudID)
 		if err == nil && sol != nil {
-			sol.UpdateStatusBasedOnItems()
 			s.solicitudRepo.Update(ctx, sol)
 		}
 	}

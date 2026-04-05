@@ -213,7 +213,7 @@ func (ctrl *UsuarioController) UpdateOrigin(c *gin.Context) {
 
 	isEncargado := targetUser.IsManagedBy(authUser)
 	isPrivileged := authUser.IsAdminOrResponsable()
-	isSelf := authUser.IsOwner(targetID)
+	isSelf := authUser.IsSelf(targetID)
 
 	if !isEncargado && !isPrivileged && !isSelf {
 		c.JSON(http.StatusForbidden, gin.H{"error": "No tiene permisos para modificar este usuario"})

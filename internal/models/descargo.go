@@ -11,6 +11,15 @@ const (
 	EstadoDescargoAprobado   EstadoDescargo = "APROBADO"
 )
 
+type DescargoPermissions struct {
+	CanEdit    bool
+	CanSubmit  bool
+	CanApprove bool
+	CanReject  bool
+	CanRevert  bool
+	CanPrint   bool
+}
+
 type Descargo struct {
 	BaseModel
 	SolicitudID string     `gorm:"not null;size:36;uniqueIndex"`
@@ -30,6 +39,10 @@ type Descargo struct {
 
 	// Detalle opcional para informes oficiales (PV-06)
 	Oficial *DescargoOficial `gorm:"foreignKey:DescargoID"`
+
+	// Contexto de runtime (no persistido)
+	authUser    *Usuario             `gorm:"-"`
+	Permissions *DescargoPermissions `gorm:"-"`
 }
 
 func (d Descargo) HasChanges(other Descargo) bool {
@@ -243,7 +256,38 @@ func (d Descargo) GetEstadoDescripcion() string {
 	return d.Estado.Info().Descripcion
 }
 
-// --- Permission Helpers ---
+func (d Descargo) GetPermissions(u ...*Usuario) DescargoPermissions {
+	user := d.getAuthUser(u...)
+	if user == nil {
+		return DescargoPermissions{}
+	}
+
+	canMod := d.IsEditable() && d.isOwnerOrAdmin(user)
+
+	return DescargoPermissions{
+		CanEdit:    canMod,
+		CanSubmit:  canMod,
+		CanApprove: d.CanApprove(user),
+		CanReject:  d.CanReject(user),
+		CanRevert:  d.CanRevert(user),
+		CanPrint:   d.Estado != EstadoDescargoBorrador,
+	}
+}
+
+func (d *Descargo) HydratePermissions(u ...*Usuario) {
+	if len(u) > 0 {
+		d.authUser = u[0]
+	}
+	p := d.GetPermissions()
+	d.Permissions = &p
+}
+
+func (d Descargo) getAuthUser(u ...*Usuario) *Usuario {
+	if len(u) > 0 {
+		return u[0]
+	}
+	return d.authUser
+}
 
 func (d Descargo) IsEditable() bool {
 	return d.Estado == EstadoDescargoBorrador || d.Estado == EstadoDescargoRechazado

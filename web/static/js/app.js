@@ -23,6 +23,12 @@ document.addEventListener("alpine:init", function () {
       processingImage: false,
       fares: config.fares || {},
 
+      parseDate(str) {
+        if (!str) return new Date(NaN);
+        // Standardize separator to T for ISO parsing if it's space
+        return new Date(str.replace(" ", "T"));
+      },
+
       init() {
         console.log("Modal Pasaje Initialized:", this.id ? "Edit" : "Create");
       },
@@ -175,11 +181,19 @@ document.addEventListener("alpine:init", function () {
           content: "Hoy",
           className: "custom-button-today",
           onClick: (dp) => {
-            dp.setViewDate(new Date());
-            dp.selectDate(new Date());
+            const now = new Date();
+            dp.setViewDate(now);
+            dp.selectDate(now);
           },
         },
         "clear",
+        {
+          content: "Aceptar",
+          className: "custom-button-apply",
+          onClick: (dp) => {
+            dp.hide();
+          },
+        },
       ],
       onSelect({ date, formattedDate, datepicker }) {
         // Sync back with input for HTMX/Alpine
@@ -188,6 +202,10 @@ document.addEventListener("alpine:init", function () {
         el.dispatchEvent(new Event("change", { bubbles: true }));
       },
     };
+
+    // Force readonly to prevent manual bypass and ensure data integrity
+    el.readOnly = true;
+    el.classList.add("cursor-pointer");
 
     const mergedOptions = { ...defaultOptions, ...options };
 

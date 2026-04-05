@@ -11,23 +11,27 @@ import (
 )
 
 type ConfiguracionController struct {
-	service      *services.ConfiguracionService
-	emailService *services.EmailService
+	service        *services.ConfiguracionService
+	emailService   *services.EmailService
+	destinoService *services.DestinoService
 }
 
-func NewConfiguracionController(service *services.ConfiguracionService, emailService *services.EmailService) *ConfiguracionController {
+func NewConfiguracionController(service *services.ConfiguracionService, emailService *services.EmailService, destinoService *services.DestinoService) *ConfiguracionController {
 	return &ConfiguracionController{
-		service:      service,
-		emailService: emailService,
+		service:        service,
+		emailService:   emailService,
+		destinoService: destinoService,
 	}
 }
 
 func (ctrl *ConfiguracionController) Index(c *gin.Context) {
 	configs, _ := ctrl.service.GetAll(c.Request.Context())
+	destinosNacionales, _ := ctrl.destinoService.GetByAmbito(c.Request.Context(), "NACIONAL")
 
 	utils.Render(c, "admin/configuracion", gin.H{
-		"Configs": configs,
-		"Title":   "Configuración del Sistema",
+		"Configs":            configs,
+		"DestinosNacionales": destinosNacionales,
+		"Title":              "Configuración del Sistema",
 	})
 }
 

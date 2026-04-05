@@ -2,8 +2,10 @@ package services
 
 import (
 	"context"
+	"fmt"
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
+	"strings"
 )
 
 type NotificationService struct {
@@ -66,4 +68,31 @@ func (s *NotificationService) NotifyAdmins(ctx context.Context, title, message, 
 		}
 	}
 	return nil
+}
+
+func (s *NotificationService) NotifySolicitudCreated(ctx context.Context, sol *models.Solicitud) error {
+	title := "Nueva Solicitud: " + sol.Codigo
+
+	benefName := sol.UsuarioID
+	if sol.Usuario.ID != "" {
+		benefName = sol.Usuario.GetNombreResumido()
+	}
+
+	concepto := "PASAJES"
+	if sol.TipoSolicitudCodigo != "" {
+		concepto = strings.ToUpper(sol.TipoSolicitudCodigo)
+	}
+
+	message := fmt.Sprintf("<ul class='list-none space-y-0.5 mt-1'><li><strong>Beneficiario:</strong> %s</li><li><strong>Fecha:</strong> %s</li><li><strong>Tipo:</strong> %s</li></ul>",
+		benefName,
+		sol.CreatedAt.Format("02/01/2006 15:04"),
+		concepto)
+
+	solPath := "derecho"
+	if sol.IsOficial() {
+		solPath = "oficial"
+	}
+	targetURL := fmt.Sprintf("/solicitudes/%s/%s/detalle", solPath, sol.ID)
+
+	return s.NotifyAdmins(ctx, title, message, "new_solicitud", targetURL)
 }

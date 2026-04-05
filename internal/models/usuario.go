@@ -53,6 +53,10 @@ type Usuario struct {
 
 	LoginAttempts int  `gorm:"default:0" json:"login_attempts"`
 	IsBlocked     bool `gorm:"default:false" json:"is_blocked"`
+
+	// Contexto de runtime (no persistido)
+	authUser    *Usuario         `gorm:"-"`
+	Permissions *UserPermissions `gorm:"-"`
 }
 
 func (u *Usuario) AfterFind(tx *gorm.DB) (err error) {
@@ -122,39 +126,64 @@ func (u Usuario) GetRolName() string {
 	return u.Tipo
 }
 
+const (
+	RolAdmin       = "ADMIN"
+	RolResponsable = "RESPONSABLE"
+	RolSenador     = "SENADOR"
+	RolFuncionario = "FUNCIONARIO"
+	RolTecnico     = "TECNICO"
+	RolUsuario     = "USUARIO"
+)
+
+const (
+	TipoSenadorTitular        = "SENADOR_TITULAR"
+	TipoSenadorSuplente       = "SENADOR_SUPLENTE"
+	TipoFuncionario           = "FUNCIONARIO"
+	TipoFuncionarioPermanente = "FUNCIONARIO_PERMANENTE"
+	TipoFuncionarioEventual   = "FUNCIONARIO_EVENTUAL"
+)
+
 func (u *Usuario) IsAdmin() bool {
-	return u.RolCodigo != nil && *u.RolCodigo == "ADMIN"
+	return u.RolCodigo != nil && *u.RolCodigo == RolAdmin
 }
 
 func (u *Usuario) IsResponsable() bool {
-	return u.RolCodigo != nil && *u.RolCodigo == "RESPONSABLE"
+	return u.RolCodigo != nil && *u.RolCodigo == RolResponsable
 }
 
 func (u *Usuario) IsSenador() bool {
-	return u.RolCodigo != nil && *u.RolCodigo == "SENADOR"
+	// Es senador si tiene el rol SENADOR o si su tipo contiene la palabra SENADOR
+	return (u.RolCodigo != nil && *u.RolCodigo == RolSenador) || strings.Contains(u.Tipo, "SENADOR")
 }
 
 func (u *Usuario) IsAdminOrResponsable() bool {
 	return u.IsAdmin() || u.IsResponsable()
 }
 
-func (u *Usuario) IsAlternativo(iata string) bool {
-	for _, o := range u.OrigenesAlternativos {
-		if o.DestinoIATA == iata {
-			return true
-		}
-	}
-	return false
+func (u *Usuario) IsFuncionario() bool {
+	return u.RolCodigo != nil && (*u.RolCodigo == RolFuncionario || *u.RolCodigo == RolTecnico)
+}
+
+func (u *Usuario) IsUsuario() bool {
+	return u.RolCodigo != nil && *u.RolCodigo == RolUsuario
+}
+
+func (u *Usuario) CanManageSystem() bool {
+	return u.IsAdminOrResponsable()
+}
+
+func (u *Usuario) CanManageUsers() bool {
+	return u.IsAdmin()
 }
 
 // --- Gestión de Tipos y Roles ---
 
-func (u *Usuario) IsTitular() bool {
-	return u.Tipo == "SENADOR_TITULAR"
+func (u *Usuario) IsSenadorTitular() bool {
+	return u.Tipo == TipoSenadorTitular
 }
 
-func (u *Usuario) IsSuplente() bool {
-	return u.Tipo == "SENADOR_SUPLENTE"
+func (u *Usuario) IsSenadorSuplente() bool {
+	return u.Tipo == TipoSenadorSuplente
 }
 
 // --- Predicados de Relación ---
@@ -166,14 +195,14 @@ func (u *Usuario) IsManagedBy(authUser *Usuario) bool {
 	return *u.EncargadoID == authUser.ID
 }
 
-func (u *Usuario) IsAssistantOf(senador *Usuario) bool {
+func (u *Usuario) IsEncargadoOf(senador *Usuario) bool {
 	if senador == nil || senador.EncargadoID == nil {
 		return false
 	}
 	return *senador.EncargadoID == u.ID
 }
 
-func (u *Usuario) IsOwner(id string) bool {
+func (u *Usuario) IsSelf(id string) bool {
 	return u.ID == id
 }
 
@@ -191,69 +220,6 @@ func (u *Usuario) RecordFailedLogin(maxAttempts int) {
 	}
 }
 
-func (u *Usuario) CanManagePasajes(s Solicitud) bool {
-	return u.IsAdminOrResponsable()
-}
-
-func (u *Usuario) CanMarkUsado(s Solicitud) bool {
-	if u.IsAdminOrResponsable() {
-		return true
-	}
-
-	if u.ID == s.UsuarioID {
-		return true
-	}
-
-	if s.Usuario.EncargadoID != nil && *s.Usuario.EncargadoID == u.ID {
-		return true
-	}
-
-	if s.CreatedBy != nil && *s.CreatedBy == u.ID {
-		return true
-	}
-
-	return false
-}
-
-func (u *Usuario) CanEditSolicitud(s Solicitud) bool {
-	st := s.GetEstado()
-
-	// All users (including Admin) must follow the state rules for editing.
-	// Only editable in these specific states.
-	isEditableState := (st == "SOLICITADO" || st == "RECHAZADO" || st == "PARCIALMENTE_APROBADO")
-
-	if !isEditableState {
-		return false
-	}
-
-	// 1. Admins and Responsables can edit any request in an editable state
-	if u.IsAdminOrResponsable() {
-		return true
-	}
-
-	// 2. Ownership / Assistant Check for regular users and assistants
-	// Owner of the solicitation
-	if u.ID == s.UsuarioID {
-		return true
-	}
-
-	// Creator of the solicitation
-	if s.CreatedBy != nil && *s.CreatedBy == u.ID {
-		return true
-	}
-
-	// Assigned assistant (Encargado) for the senator
-	if s.Usuario.EncargadoID != nil && *s.Usuario.EncargadoID == u.ID {
-		return true
-	}
-
-	return false
-}
-
-func (u *Usuario) CanApproveReject() bool {
-	return u.IsAdminOrResponsable()
-}
-
 func (u *Usuario) CanCreateSolicitudFor(targetUser *Usuario) bool {
 	if u.IsAdminOrResponsable() {
 		return true
@@ -263,7 +229,7 @@ func (u *Usuario) CanCreateSolicitudFor(targetUser *Usuario) bool {
 		return true
 	}
 
-	if targetUser.EncargadoID != nil && *targetUser.EncargadoID == u.ID {
+	if u.IsEncargadoOf(targetUser) {
 		return true
 	}
 
@@ -293,13 +259,29 @@ type UserPermissions struct {
 	HasPhone   bool
 }
 
-func (u *Usuario) GetPermissionsFor(authUser *Usuario) UserPermissions {
+func (u Usuario) getAuthUser(user ...*Usuario) *Usuario {
+	if len(user) > 0 {
+		return user[0]
+	}
+	return u.authUser
+}
+
+func (u *Usuario) HydratePermissions(user ...*Usuario) {
+	if len(user) > 0 {
+		u.authUser = user[0]
+	}
+	p := u.GetPermissions()
+	u.Permissions = &p
+}
+
+func (u Usuario) GetPermissions(user ...*Usuario) UserPermissions {
+	authUser := u.getAuthUser(user...)
 	if authUser == nil {
 		return UserPermissions{}
 	}
 
 	isAdmin := authUser.IsAdminOrResponsable()
-	isSelf := authUser.ID == u.ID
+	isSelf := authUser.IsSelf(u.ID)
 	isEncargado := u.IsManagedBy(authUser)
 
 	// El contacto lo puede editar el propio usuario, su encargado (asistente) o un admin

@@ -15,27 +15,130 @@
     {{ range .Configs }}
     <li class="px-6 py-4 flex items-center justify-between hover:bg-neutral-50 group">
       <div class="flex-1 pr-4">
-        <div class="font-medium text-neutral-900">{{ .Clave }}</div>
-        <div class="text-xs text-neutral-500">
+        <div class="font-bold text-primary-800 flex items-center gap-2">
+          {{ .Clave }}
+          {{ if eq .Clave "SEDES_AUTORIZADAS" }}
+          <span class="px-1.5 py-0.5 rounded-full bg-primary-100 text-primary-700 text-[10px] font-black uppercase tracking-wider border border-primary-200">
+            Configuración de Sedes
+          </span>
+          {{ end }}
+        </div>
+        <div class="text-xs text-neutral-500 mt-1">
           Valor actual:
-          <span class="font-mono bg-neutral-100 px-1 rounded">{{ .Valor }}</span>
+          <span class="font-mono bg-neutral-100 px-1.5 py-0.5 rounded text-neutral-700 border border-neutral-200">{{ .Valor }}</span>
         </div>
       </div>
 
+      {{ if eq .Clave "SEDES_AUTORIZADAS" }}
+      <!-- CASO ESPECIAL: SEDES (Selector dinámico) -->
+      <form
+        action="/admin/configuracion"
+        method="POST"
+        class="w-full max-w-lg"
+        x-data="{
+          editing: false,
+          selectedSedes: '{{ .Valor }}'.split(',').filter(s => s !== ''),
+          allDestinos: {{ json $.DestinosNacionales }},
+          init() {
+            // Asegurar que LPB siempre esté presente
+            if (!this.selectedSedes.includes('LPB')) {
+              this.selectedSedes.unshift('LPB');
+            }
+          },
+          toggleSede(iata) {
+            if (iata === 'LPB') return; // La Paz es obligatoria
+            if (this.selectedSedes.includes(iata)) {
+              this.selectedSedes = this.selectedSedes.filter(s => s !== iata);
+            } else {
+              this.selectedSedes.push(iata);
+            }
+          }
+        }"
+      >
+        <input type="hidden" name="clave" value="{{ .Clave }}" />
+        <input type="hidden" name="valor" :value="selectedSedes.join(',')" />
+
+        <div x-show="!editing" class="flex flex-wrap items-center justify-end gap-2">
+          <div class="flex flex-wrap gap-1 mr-4 max-w-[300px] justify-end">
+            <template x-for="s in selectedSedes" :key="s">
+              <span
+                class="px-2 py-0.5 rounded-md text-[11px] font-bold border flex items-center gap-1"
+                :class="s === 'LPB' ? 'bg-primary text-white border-primary shadow-sm' : 'bg-primary/10 text-primary border-primary/20'"
+              >
+                <i x-show="s === 'LPB'" class="ph ph-lock-key text-[9px]"></i>
+                <span x-text="s"></span>
+              </span>
+            </template>
+            <span x-show="selectedSedes.length === 0" class="text-neutral-400 italic text-xs">Ninguna sede seleccionada</span>
+          </div>
+          <button type="button" @click="editing = true" class="text-primary-600 hover:text-primary-800 text-sm font-bold flex items-center gap-1 bg-primary-50 px-3 py-1.5 rounded-md transition-colors">
+            <i class="ph ph-note-pencil"></i>
+            Gestionar Sedes
+          </button>
+        </div>
+
+        <div x-show="editing" class="bg-neutral-50 p-4 rounded-xl border border-neutral-200 shadow-inner" style="display: none">
+          <div class="mb-3 flex items-center justify-between">
+            <span class="text-[11px] font-black text-neutral-500 uppercase tracking-widest">Sedes autorizadas (La Paz obligatoria):</span>
+            <span class="text-[10px] font-bold text-primary" x-text="selectedSedes.length + ' seleccionadas'"></span>
+          </div>
+
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
+            <template x-for="dest in allDestinos" :key="dest.iata">
+              <button
+                type="button"
+                @click="toggleSede(dest.iata)"
+                :disabled="dest.iata === 'LPB'"
+                :class="{
+                  'bg-primary text-white border-primary shadow-md cursor-default': dest.iata === 'LPB',
+                  'bg-primary text-white border-primary shadow-sm': selectedSedes.includes(dest.iata) && dest.iata !== 'LPB',
+                  'bg-white text-neutral-600 border-neutral-200 opacity-60': !selectedSedes.includes(dest.iata)
+                }"
+                class="flex flex-col items-center p-2 border rounded-lg transition-all hover:scale-[1.02] relative"
+              >
+                <!-- Lock Icon for LPB -->
+                <i x-show="dest.iata === 'LPB'" class="ph-fill ph-lock-key absolute top-1 right-1 text-[8px] text-white/70"></i>
+                
+                <div class="text-[11px] font-black leading-none" x-text="dest.ciudad"></div>
+                <div class="text-[9px] font-bold mt-0.5 uppercase" x-text="dest.iata" :class="selectedSedes.includes(dest.iata) ? 'text-primary-100' : 'text-neutral-400'"></div>
+              </button>
+            </template>
+          </div>
+
+          <div class="flex justify-end space-x-2">
+            <button type="submit" class="bg-primary text-white px-4 py-2 rounded-md text-xs font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:bg-primary-700 transition-all">
+              Guardar Cambios
+            </button>
+            <button type="button" @click="editing = false" class="text-neutral-500 hover:text-neutral-700 text-[11px] font-bold px-3 py-2 uppercase tracking-tight">
+              Cancelar
+            </button>
+          </div>
+        </div>
+      </form>
+      {{ else }}
+      <!-- CASO GENERAL -->
       <form action="/admin/configuracion" method="POST" class="flex items-center space-x-2" x-data="{ editing: false }">
         <input type="hidden" name="clave" value="{{ .Clave }}" />
 
         <div x-show="!editing" class="flex items-center">
-          <span class="text-neutral-700 font-mono mr-4">{{ .Valor }}</span>
-          <button type="button" @click="editing = true" class="text-primary-600 hover:text-primary-800 text-sm font-medium">Editar</button>
+          <span class="text-neutral-700 font-mono mr-4 font-bold">{{ .Valor }}</span>
+          <button type="button" @click="editing = true" class="text-primary-600 hover:text-primary-800 text-sm font-bold flex items-center gap-1">
+            <i class="ph ph-note-pencil"></i>
+            Editar
+          </button>
         </div>
 
         <div x-show="editing" class="flex items-center space-x-2" style="display: none">
-          <input type="text" name="valor" value="{{ .Valor }}" class="w-32 rounded-md border-neutral-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 text-sm" />
-          <button type="submit" class="bg-primary-600 text-white px-3 py-1.5 rounded text-xs hover:bg-primary-700">Guardar</button>
-          <button type="button" @click="editing = false" class="text-neutral-500 hover:text-neutral-700 text-xs">Cancelar</button>
+          <input
+            type="text"
+            name="valor"
+            value="{{ .Valor }}"
+            class="w-32 rounded-md border-neutral-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 text-sm font-bold" />
+          <button type="submit" class="bg-primary text-white px-3 py-1.5 rounded-md text-xs font-bold hover:bg-primary-700 shadow-sm transition-colors">Guardar</button>
+          <button type="button" @click="editing = false" class="text-neutral-500 hover:text-neutral-700 text-xs font-bold">Cancelar</button>
         </div>
       </form>
+      {{ end }}
     </li>
     {{ end }}
   </ul>

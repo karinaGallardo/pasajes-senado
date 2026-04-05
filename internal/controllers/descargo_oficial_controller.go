@@ -41,7 +41,7 @@ func NewDescargoOficialController(
 	}
 }
 
-func (ctrl *DescargoOficialController) Create(c *gin.Context) {
+func (ctrl *DescargoOficialController) Store(c *gin.Context) {
 	solicitudID := c.Param("id")
 	if solicitudID == "" {
 		c.Redirect(http.StatusFound, "/solicitudes")
@@ -91,6 +91,12 @@ func (ctrl *DescargoOficialController) Show(c *gin.Context) {
 		bancoNombre = "BANCO UNIÓN S.A."
 	}
 
+	authUser := appcontext.AuthUser(c)
+	descargo.HydratePermissions(authUser)
+	if descargo.Solicitud != nil {
+		descargo.Solicitud.HydratePermissions(authUser)
+	}
+
 	utils.Render(c, "descargo/oficial/show", gin.H{
 		"Title":                "Detalle de Descargo (Oficial)",
 		"Descargo":             descargo,
@@ -135,6 +141,12 @@ func (ctrl *DescargoOficialController) Edit(c *gin.Context) {
 		bancoNombre = "BANCO UNIÓN S.A."
 	}
 
+	authUser := appcontext.AuthUser(c)
+	descargo.HydratePermissions(authUser)
+	if descargo.Solicitud != nil {
+		descargo.Solicitud.HydratePermissions(authUser)
+	}
+
 	utils.Render(c, "descargo/oficial/edit", gin.H{
 		"Title":                "Editar Descargo (Oficial)",
 		"Descargo":             descargo,
@@ -160,7 +172,8 @@ func (ctrl *DescargoOficialController) Update(c *gin.Context) {
 		return
 	}
 
-	if !descargo.IsEditable() {
+	descargo.HydratePermissions(authUser)
+	if !descargo.Permissions.CanEdit {
 		c.Redirect(http.StatusFound, "/descargos/oficial/"+id+"?error=EstadoNoPermitido")
 		return
 	}
@@ -225,6 +238,15 @@ func (ctrl *DescargoOficialController) Submit(c *gin.Context) {
 		return
 	}
 
+	descargo, _ := ctrl.descargoService.GetByID(c.Request.Context(), id)
+	if descargo != nil {
+		descargo.HydratePermissions(authUser)
+		if !descargo.Permissions.CanSubmit {
+			c.Redirect(http.StatusFound, "/descargos/oficial/"+id+"?error=SinPermisoEnvio")
+			return
+		}
+	}
+
 	if err := ctrl.descargoService.Submit(c.Request.Context(), id, authUser.ID); err != nil {
 		log.Printf("Error enviando descargo oficial: %v", err)
 		c.Redirect(http.StatusFound, "/descargos/oficial/"+id+"?error=ErrorEnvio")
@@ -240,6 +262,15 @@ func (ctrl *DescargoOficialController) Approve(c *gin.Context) {
 	if authUser == nil || !authUser.IsAdminOrResponsable() {
 		c.Redirect(http.StatusFound, "/auth/login")
 		return
+	}
+
+	descargo, _ := ctrl.descargoService.GetByID(c.Request.Context(), id)
+	if descargo != nil {
+		descargo.HydratePermissions(authUser)
+		if !descargo.Permissions.CanApprove {
+			c.Redirect(http.StatusFound, "/descargos/oficial/"+id+"?error=SinPermisoAprobacion")
+			return
+		}
 	}
 
 	if err := ctrl.descargoService.Approve(c.Request.Context(), id, authUser.ID); err != nil {
@@ -261,6 +292,15 @@ func (ctrl *DescargoOficialController) Reject(c *gin.Context) {
 
 	observaciones := c.PostForm("observaciones")
 
+	descargo, _ := ctrl.descargoService.GetByID(c.Request.Context(), id)
+	if descargo != nil {
+		descargo.HydratePermissions(authUser)
+		if !descargo.Permissions.CanReject {
+			c.Redirect(http.StatusFound, "/descargos/oficial/"+id+"?error=SinPermisoRechazo")
+			return
+		}
+	}
+
 	if err := ctrl.descargoService.Reject(c.Request.Context(), id, authUser.ID, observaciones); err != nil {
 		log.Printf("Error rechazando descargo oficial: %v", err)
 		c.Redirect(http.StatusFound, "/descargos/oficial/"+id+"?error=ErrorRechazo")
@@ -276,6 +316,15 @@ func (ctrl *DescargoOficialController) RevertApproval(c *gin.Context) {
 	if authUser == nil || !authUser.IsAdminOrResponsable() {
 		c.String(http.StatusForbidden, "No tiene permisos para realizar esta acción")
 		return
+	}
+
+	descargo, _ := ctrl.descargoService.GetByID(c.Request.Context(), id)
+	if descargo != nil {
+		descargo.HydratePermissions(authUser)
+		if !descargo.Permissions.CanRevert {
+			c.String(http.StatusForbidden, "No tiene permisos para revertir este descargo")
+			return
+		}
 	}
 
 	if err := ctrl.descargoService.RevertToDraft(c.Request.Context(), id, authUser.ID); err != nil {
@@ -303,7 +352,6 @@ func (ctrl *DescargoOficialController) NuevaFila(c *gin.Context) {
 			Billete:         "",
 			Pase:            "",
 			Archivo:         "",
-			Orden:           0,
 			PasajeID:        "",
 		},
 	})

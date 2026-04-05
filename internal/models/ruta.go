@@ -59,13 +59,4 @@ func (r Ruta) GetTramos() []string {
 	return tramos
 }
 
-type RutaEscala struct {
-	BaseModel
-	RutaID      string  `gorm:"size:36;not null;index"`
-	DestinoIATA string  `gorm:"size:5;not null"`
-	Destino     Destino `gorm:"foreignKey:DestinoIATA;references:IATA"`
-	Orden       int     `gorm:"not null"`
-}
-
-func (Ruta) TableName() string       { return "rutas" }
-func (RutaEscala) TableName() string { return "ruta_escalas" }
+func (Ruta) TableName() string { return "rutas" }

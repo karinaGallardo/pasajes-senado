@@ -6,10 +6,11 @@ import (
 	"time"
 
 	// csrf "github.com/utrack/gin-csrf"
+	"regexp"
+
 	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
-	"regexp"
 )
 
 var bootTime = time.Now().Unix()
@@ -46,18 +47,14 @@ func Render(c *gin.Context, templateName string, data gin.H) {
 	authUser := appcontext.AuthUser(c)
 	if authUser != nil {
 		data["AuthUser"] = authUser
-		role := ""
-		if authUser.Rol != nil {
-			role = authUser.Rol.Codigo
-		}
-		data["IsAdmin"] = role == "ADMIN"
-		data["IsResponsable"] = role == "RESPONSABLE"
-		data["IsUsuario"] = role == "USUARIO"
-		data["IsSenador"] = role == "SENADOR"
-		data["IsFuncionario"] = role == "FUNCIONARIO"
+		data["IsAdmin"] = authUser.IsAdmin()
+		data["IsResponsable"] = authUser.IsResponsable()
+		data["IsUsuario"] = authUser.IsUsuario()
+		data["IsSenador"] = authUser.IsSenador()
+		data["IsFuncionario"] = authUser.IsFuncionario()
 
-		data["CanManageSystem"] = role == "ADMIN" || role == "RESPONSABLE"
-		data["CanManageUsers"] = role == "ADMIN"
+		data["CanManageSystem"] = authUser.CanManageSystem()
+		data["CanManageUsers"] = authUser.CanManageUsers()
 	}
 
 	session := sessions.Default(c)

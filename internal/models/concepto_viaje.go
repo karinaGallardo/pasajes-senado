@@ -12,3 +12,11 @@ type ConceptoViaje struct {
 }
 
 func (ConceptoViaje) TableName() string { return "concepto_viajes" }
+
+func (cv ConceptoViaje) IsDerecho() bool {
+	return cv.Codigo == "DERECHO"
+}
+
+func (cv ConceptoViaje) IsOficial() bool {
+	return cv.Codigo == "OFICIAL"
+}

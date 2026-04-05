@@ -1,8 +1,6 @@
 package utils
 
 // Ptr retorna un puntero al valor proporcionado.
-//
-//go:fix inline
 func Ptr[T any](v T) *T {
 	return &v
 }

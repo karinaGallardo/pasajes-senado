@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -36,16 +37,27 @@ func ParseDateTime(val string) (*time.Time, error) {
 	if val == "" {
 		return nil, nil
 	}
-	// Formato T (usado en inputs datetime-local o modales específicos)
+	// Normalizar a mayúsculas para facilitar el parseo de AM/PM
+	val = strings.ToUpper(val)
+	// Formater T (usado en inputs datetime-local o modales específicos)
 	if t, err := time.ParseInLocation("2006-01-02T15:04", val, time.Local); err == nil {
 		return &t, nil
 	}
-	// Formato espacio (default de Flatpickr)
+	// Formato espacio (default de Flatpickr/AirDatepicker 24h)
 	if t, err := time.ParseInLocation("2006-01-02 15:04", val, time.Local); err == nil {
+		return &t, nil
+	}
+	// Formato 12h (AM/PM) con espacio
+	if t, err := time.ParseInLocation("2006-01-02 03:04 PM", val, time.Local); err == nil {
+		return &t, nil
+	}
+	// Formato 12h (AM/PM) con T
+	if t, err := time.ParseInLocation("2006-01-02T03:04 PM", val, time.Local); err == nil {
 		return &t, nil
 	}
 	return nil, fmt.Errorf("formato de fecha y hora inválido: %s", val)
 }
+
 func StrToInt(s string, def int) int {
 	if s == "" {
 		return def

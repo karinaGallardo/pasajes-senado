@@ -21,7 +21,6 @@ type TramoView struct {
 	EsModificacion  bool
 	MontoDevolucion float64
 	Moneda          string
-	Orden           int
 	PasajeID        string
 	SolicitudItemID string
 }

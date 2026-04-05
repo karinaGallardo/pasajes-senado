@@ -10,3 +10,11 @@ type TipoItinerario struct {
 }
 
 func (TipoItinerario) TableName() string { return "tipo_itinerarios" }
+
+func (tl TipoItinerario) HasIda() bool {
+	return tl.Codigo != "SOLO_VUELTA"
+}
+
+func (tl TipoItinerario) HasVuelta() bool {
+	return tl.Codigo != "SOLO_IDA"
+}

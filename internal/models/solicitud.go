@@ -1,8 +1,12 @@
 package models
 
 import (
+	"errors"
+	"fmt"
 	"strings"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 type Solicitud struct {
@@ -34,14 +38,181 @@ type Solicitud struct {
 
 	Motivo string `gorm:"type:text"`
 
-	AerolineaSugerida string `gorm:"size:100;comment:Aerolinea sugerida para todos los tramos"`
+	AerolineaID *string    `gorm:"size:36;index;default:null"`
+	Aerolinea   *Aerolinea `gorm:"foreignKey:AerolineaID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;<-:false"`
 
 	// New Decoupled Items
 	Items []SolicitudItem `gorm:"foreignKey:SolicitudID"`
+
+	// Contexto de runtime (no persistido)
+	authUser    *Usuario              `gorm:"-"`
+	Permissions *SolicitudPermissions `gorm:"-"`
+}
+
+type SolicitudPermissions struct {
+	CanEdit           bool
+	CanApproveReject  bool
+	CanRevertApproval bool
+	CanMakeDescargo   bool
+	CanAssignPasaje   bool
+	CanAssignViatico  bool
+	CanPrint          bool
+	CanDelete         bool
+	CanFinalize       bool
+	CanRevertFinalize bool
+	CanRegularize     bool
+}
+
+type StepView struct {
+	Icon         string
+	Label        string
+	WrapperClass string
+	LabelClass   string
+}
+
+type StatusCardView struct {
+	BorderClass string
+	TextClass   string
+}
+
+func (s Solicitud) getAuthUser(u ...*Usuario) *Usuario {
+	if len(u) > 0 {
+		return u[0]
+	}
+	return s.authUser
+}
+
+func (s Solicitud) GetPermissions(u ...*Usuario) SolicitudPermissions {
+	return SolicitudPermissions{
+		CanEdit:           s.CanEdit(u...),
+		CanApproveReject:  s.CanApprove(u...),
+		CanRevertApproval: s.CanRevertApproval(u...),
+		CanMakeDescargo:   s.CanMakeDescargo(u...),
+		CanAssignPasaje:   s.CanAssignPasaje(u...),
+		CanAssignViatico:  s.CanAssignViatico(u...),
+		CanPrint:          s.CanPrint(u...),
+		CanDelete:         s.CanDelete(u...),
+		CanFinalize:       s.CanFinalize(u...),
+		CanRevertFinalize: s.CanRevertFinalize(u...),
+		CanRegularize:     s.getAuthUser(u...) != nil && s.getAuthUser(u...).IsAdminOrResponsable(),
+	}
+}
+
+func (s *Solicitud) HydratePermissions(u ...*Usuario) {
+	if len(u) > 0 {
+		s.authUser = u[0]
+	}
+	p := s.GetPermissions()
+	s.Permissions = &p
+}
+
+// GetStatusCardClasses retorna las clases de borde y texto para las tarjetas de estado del sistema.
+func (s Solicitud) GetStatusCardClasses() (borderClass, textClass string) {
+	color := "neutral"
+	if s.EstadoSolicitud != nil && s.EstadoSolicitud.Color != "" {
+		color = s.EstadoSolicitud.Color
+	} else if s.EstadoSolicitudCodigo != nil {
+		// Fallback manual si no tiene la relación cargada
+		switch *s.EstadoSolicitudCodigo {
+		case "SOLICITADO":
+			color = "primary"
+		case "RECHAZADO":
+			color = "danger"
+		case "APROBADO":
+			color = "success"
+		case "PARCIALMENTE_APROBADO":
+			color = "violet"
+		case "EMITIDO":
+			color = "secondary"
+		case "FINALIZADO":
+			color = "neutral"
+		}
+	}
+
+	borderClass = fmt.Sprintf("border-%s-500", color)
+	textClass = fmt.Sprintf("text-%s-700", color)
+	return
+}
+
+func (s Solicitud) GetStatusCardData() StatusCardView {
+	b, t := s.GetStatusCardClasses()
+	return StatusCardView{
+		BorderClass: b,
+		TextClass:   t,
+	}
+}
+
+func (s Solicitud) GetStepperData() (map[string]StepView, bool) {
+	st := s.GetEstado()
+
+	makeStep := func(active, completed bool, colorBase, icon, label string) StepView {
+		sv := StepView{
+			Icon:  icon,
+			Label: label,
+		}
+		if active || completed {
+			sv.WrapperClass = fmt.Sprintf("bg-%s-500 text-white border-none", colorBase)
+			sv.LabelClass = fmt.Sprintf("text-%s-500", colorBase)
+		} else {
+			sv.WrapperClass = "bg-white border-2 border-neutral-200 text-neutral-400"
+			sv.LabelClass = "text-neutral-400"
+		}
+		return sv
+	}
+
+	steps := make(map[string]StepView)
+	steps["Solicitado"] = makeStep(true, true, "secondary", "ph ph-file-text text-lg", "Solicitado")
+
+	rejected := st == "RECHAZADO"
+	parcial := st == "PARCIALMENTE_APROBADO"
+
+	if rejected {
+		steps["Aprobado"] = StepView{
+			Icon:         "ph ph-x text-xl font-bold",
+			Label:        "Rechazado",
+			WrapperClass: "bg-danger-500 text-white border-none",
+			LabelClass:   "text-danger-500",
+		}
+	} else if parcial {
+		steps["Aprobado"] = StepView{
+			Icon:         "ph ph-check-square-offset text-xl",
+			Label:        "Parcial",
+			WrapperClass: "bg-violet-500 text-white border-none",
+			LabelClass:   "text-violet-500",
+		}
+	} else {
+		isAp := st == "APROBADO" || st == "EMITIDO" || st == "FINALIZADO"
+		steps["Aprobado"] = makeStep(isAp, isAp, "success", "ph ph-check text-xl font-bold", "Aprobado")
+	}
+
+	isEm := st == "EMITIDO" || st == "FINALIZADO"
+	steps["Emitido"] = makeStep(isEm, isEm, "secondary", "ph ph-ticket text-xl", "Emitido")
+
+	isFin := st == "FINALIZADO"
+	steps["Finalizado"] = makeStep(isFin, isFin, "neutral", "ph ph-flag-checkered text-xl", "Finalizado")
+
+	return steps, !rejected
+}
+
+type StatusFilter struct {
+	Codigo string
+	Nombre string
+	Class  string
 }
 
 func (Solicitud) TableName() string {
 	return "solicitudes"
+}
+
+// Hooks
+func (s *Solicitud) BeforeSave(tx *gorm.DB) (err error) {
+	s.UpdateStatusBasedOnItems()
+	return nil
+}
+
+func (s *Solicitud) BeforeUpdate(tx *gorm.DB) (err error) {
+	s.UpdateStatusBasedOnItems()
+	return nil
 }
 
 func (s Solicitud) GetEstado() string {
@@ -49,6 +220,13 @@ func (s Solicitud) GetEstado() string {
 		return "SOLICITADO"
 	}
 	return *s.EstadoSolicitudCodigo
+}
+
+func (s Solicitud) GetEstadoNombre() string {
+	if s.EstadoSolicitud != nil && s.EstadoSolicitud.Nombre != "" {
+		return s.EstadoSolicitud.Nombre
+	}
+	return s.GetEstado()
 }
 
 func (s Solicitud) GetEstadoCodigo() string {
@@ -100,8 +278,58 @@ func (s *Solicitud) UpdateStatusBasedOnItems() {
 		return
 	}
 
-	hasIda := false
-	hasVuelta := false
+	// Detección de Itinerario Inteligente: Analizamos qué tramos están HABILITADOS (no pendientes)
+	hasItemIda := false
+	hasItemVuelta := false
+	hasAnyNonPending := false
+
+	for _, item := range s.Items {
+		// Solo contamos tramos que NO están pendientes (tienen fecha o han sido habilitados)
+		if item.GetEstado() != "PENDIENTE" {
+			hasAnyNonPending = true
+			switch item.Tipo {
+			case TipoSolicitudItemIda:
+				hasItemIda = true
+			case TipoSolicitudItemVuelta:
+				hasItemVuelta = true
+			}
+		}
+	}
+
+	// Si hay tramos habilitados, calculamos basado en ellos.
+	if hasAnyNonPending {
+		if hasItemIda && hasItemVuelta {
+			s.TipoItinerarioCodigo = "IDA_VUELTA"
+		} else if hasItemIda {
+			s.TipoItinerarioCodigo = "SOLO_IDA"
+		} else if hasItemVuelta {
+			s.TipoItinerarioCodigo = "SOLO_VUELTA"
+		}
+	} else {
+		// Fallback: Si TODO está pendiente, detectamos por existencia física de los registros
+		hasPhysicalIda := false
+		hasPhysicalVuelta := false
+		for _, item := range s.Items {
+			switch item.Tipo {
+			case TipoSolicitudItemIda:
+				hasPhysicalIda = true
+			case TipoSolicitudItemVuelta:
+				hasPhysicalVuelta = true
+			}
+		}
+
+		if hasPhysicalIda && hasPhysicalVuelta {
+			s.TipoItinerarioCodigo = "IDA_VUELTA"
+		} else if hasPhysicalIda {
+			s.TipoItinerarioCodigo = "SOLO_IDA"
+		} else if hasPhysicalVuelta {
+			s.TipoItinerarioCodigo = "SOLO_VUELTA"
+		} else {
+			s.TipoItinerarioCodigo = "IDA_VUELTA" // Default estratégico por contexto Senado
+		}
+	}
+
+	// Estados Individuales para cálculo de Estado Global
 	allApproved := true
 	allRejected := true
 	allFinalized := true
@@ -110,12 +338,6 @@ func (s *Solicitud) UpdateStatusBasedOnItems() {
 
 	for _, item := range s.Items {
 		st := item.GetEstado()
-		if item.Tipo == TipoSolicitudItemIda {
-			hasIda = true
-		}
-		if item.Tipo == TipoSolicitudItemVuelta {
-			hasVuelta = true
-		}
 
 		// Consideramos estados de aprobación (Aprobado, Emitido, Finalizado)
 		isApp := (st == "APROBADO" || st == "EMITIDO" || st == "FINALIZADO")
@@ -139,17 +361,7 @@ func (s *Solicitud) UpdateStatusBasedOnItems() {
 		}
 	}
 
-	// Update Itinerary Type Informatively (if it was a Derecho)
-	// Generally applicable: if has both, IDA_VUELTA. If only IDA, SOLO_IDA. If only VUELTA, SOLO_VUELTA.
-	if hasIda && hasVuelta {
-		s.TipoItinerarioCodigo = "IDA_VUELTA"
-	} else if hasIda {
-		s.TipoItinerarioCodigo = "SOLO_IDA"
-	} else if hasVuelta {
-		s.TipoItinerarioCodigo = "SOLO_VUELTA"
-	}
-
-	// Unificamos criterio: Si TODOS los tramos están en un estado final, 
+	// Unificamos criterio: Si TODOS los tramos están en un estado final,
 	// la solicitud hereda ese estado global, sin importar si es solo IDA o solo VUELTA.
 	newState := "SOLICITADO"
 
@@ -168,6 +380,172 @@ func (s *Solicitud) UpdateStatusBasedOnItems() {
 	}
 
 	s.EstadoSolicitudCodigo = &newState
+}
+
+// Actions
+
+func (s *Solicitud) CanApprove(u ...*Usuario) bool {
+	user := s.getAuthUser(u...)
+	if user == nil || !user.IsAdminOrResponsable() {
+		return false
+	}
+	estado := s.GetEstado()
+	return estado == "SOLICITADO" || estado == "PARCIALMENTE_APROBADO"
+}
+
+func (s *Solicitud) CanReject(u ...*Usuario) bool {
+	return s.CanApprove(u...) // Misma lógica: se rechaza si se puede aprobar
+}
+
+func (s *Solicitud) CanRevertApproval(u ...*Usuario) bool {
+	user := s.getAuthUser(u...)
+	if user == nil || !user.IsAdminOrResponsable() {
+		return false
+	}
+	st := s.GetEstado()
+	canRevertState := st == "APROBADO" || st == "PARCIALMENTE_APROBADO" || st == "EMITIDO"
+	return canRevertState && !s.HasEmittedPasaje()
+}
+
+func (s *Solicitud) Approve() error {
+	// Usamos el nuevo método de permiso (aunque en procesos internos pasemos nil al usuario si no aplica check de rol)
+	st := s.GetEstado()
+	if st != "SOLICITADO" && st != "PARCIALMENTE_APROBADO" {
+		return errors.New("la solicitud no está en un estado que permita aprobación")
+	}
+
+	hasIda := s.GetItemIda() != nil
+	hasVuelta := s.GetItemVuelta() != nil
+	// Si tiene ambos tramos, aprobamos ambos por defecto.
+	// Si solo hay uno, aprobamos los que están en SOLICITADO y no son marcados como PENDIENTE (sin fecha).
+	approveAll := hasIda && hasVuelta
+
+	for i := range s.Items {
+		item := &s.Items[i]
+		shouldApprove := false
+
+		if approveAll {
+			shouldApprove = true
+		} else {
+			// Approve only if it has a confirmed date (i.e., not PENDING placeholder)
+			if item.GetEstado() != "PENDIENTE" {
+				shouldApprove = true
+			}
+		}
+
+		if shouldApprove && item.GetEstado() == "SOLICITADO" {
+			item.Approve()
+		}
+	}
+	s.UpdateStatusBasedOnItems()
+	return nil
+}
+
+func (s *Solicitud) Reject() error {
+	if s.GetEstado() != "SOLICITADO" && s.GetEstado() != "PARCIALMENTE_APROBADO" {
+		return errors.New("la solicitud no está en un estado que permita rechazo")
+	}
+	for i := range s.Items {
+		s.Items[i].Reject()
+	}
+	s.UpdateStatusBasedOnItems()
+	return nil
+}
+
+func (s *Solicitud) Finalize() error {
+	if s.GetEstado() != "EMITIDO" {
+		return errors.New("la solicitud debe estar en estado EMITIDO para ser finalizada")
+	}
+	for i := range s.Items {
+		s.Items[i].Finalize()
+	}
+	s.UpdateStatusBasedOnItems()
+	return nil
+}
+
+func (s *Solicitud) RevertApproval() error {
+	// Revertir solo si no tiene pasajes emitidos (esto lo valida el servicio usualmente, pero pongamos base aquí)
+	if s.GetEstado() == "FINALIZADO" {
+		return errors.New("no se puede revertir una solicitud ya finalizada")
+	}
+
+	for i := range s.Items {
+		item := &s.Items[i]
+		if item.GetEstado() == "APROBADO" {
+			item.RevertApproval()
+		}
+	}
+	s.UpdateStatusBasedOnItems()
+	return nil
+}
+
+func (s *Solicitud) RevertFinalize() error {
+	if s.GetEstado() != "FINALIZADO" {
+		return errors.New("la solicitud no está en estado FINALIZADO")
+	}
+	for i := range s.Items {
+		item := &s.Items[i]
+		item.RevertFinalize()
+	}
+	s.UpdateStatusBasedOnItems()
+	return nil
+}
+
+func (s *Solicitud) ApproveItem(itemID string) bool {
+	for i := range s.Items {
+		if s.Items[i].ID == itemID {
+			s.Items[i].Approve()
+			s.UpdateStatusBasedOnItems()
+			return true
+		}
+	}
+	return false
+}
+
+func (s *Solicitud) RejectItem(itemID string) bool {
+	for i := range s.Items {
+		if s.Items[i].ID == itemID {
+			s.Items[i].Reject()
+			s.UpdateStatusBasedOnItems()
+			return true
+		}
+	}
+	return false
+}
+
+func (s *Solicitud) RevertApprovalItem(itemID string) bool {
+	for i := range s.Items {
+		if s.Items[i].ID == itemID {
+			s.Items[i].RevertApproval()
+			s.UpdateStatusBasedOnItems()
+			return true
+		}
+	}
+	return false
+}
+
+func (s *Solicitud) AreAllItemsInactive() bool {
+	if len(s.Items) == 0 {
+		return true
+	}
+	for _, it := range s.Items {
+		st := it.GetEstado()
+		// Consideramos inactivos: RECHAZADO, CANCELADO, PENDIENTE
+		if st != "RECHAZADO" && st != "CANCELADO" && st != "PENDIENTE" {
+			return false
+		}
+	}
+	return true
+}
+
+func (s *Solicitud) GetEditableItemIDs() []string {
+	var ids []string
+	for _, it := range s.Items {
+		if it.CanEdit() {
+			ids = append(ids, it.ID)
+		}
+	}
+	return ids
 }
 
 func (s Solicitud) GetFechaIda() *time.Time {
@@ -211,19 +589,26 @@ func (s Solicitud) GetOrigen() *Destino {
 }
 
 func (s Solicitud) GetDestino() *Destino {
-	// Look for VUELTA leg first (this is the final destination for round-trips)
+	// En giras u oficiales, el destino es el destino del ÚLTIMO tramo de IDA.
+	var lastIda *SolicitudItem
 	for i := range s.Items {
-		if s.Items[i].Tipo == TipoSolicitudItemVuelta {
+		if strings.ToUpper(string(s.Items[i].Tipo)) == "IDA" {
+			lastIda = &s.Items[i]
+		}
+	}
+
+	if lastIda != nil {
+		return lastIda.Destino
+	}
+
+	// Fallback a VUELTA solo si no hay IDA (caso rarísimo)
+	for i := range s.Items {
+		if strings.ToUpper(string(s.Items[i].Tipo)) == "VUELTA" {
 			return s.Items[i].Destino
 		}
 	}
-	// Fallback to IDA leg's destination (for one-way trips)
-	for i := range s.Items {
-		if s.Items[i].Tipo == TipoSolicitudItemIda {
-			return s.Items[i].Destino
-		}
-	}
-	// Fallback to last item's destination
+
+	// Fallback final
 	if len(s.Items) > 0 {
 		return s.Items[len(s.Items)-1].Destino
 	}
@@ -309,12 +694,34 @@ func (s Solicitud) GetItemIda() *SolicitudItem {
 }
 
 func (s Solicitud) GetItemVuelta() *SolicitudItem {
+	// Para el regreso, buscamos el ÚLTIMO ítem de tipo VUELTA (el retorno final)
+	var lastVuelta *SolicitudItem
 	for i := range s.Items {
 		if strings.ToUpper(string(s.Items[i].Tipo)) == "VUELTA" {
-			return &s.Items[i]
+			lastVuelta = &s.Items[i]
 		}
 	}
-	return nil
+	return lastVuelta
+}
+
+func (s Solicitud) GetAllItemsIda() []*SolicitudItem {
+	var items []*SolicitudItem
+	for i := range s.Items {
+		if strings.ToUpper(string(s.Items[i].Tipo)) == "IDA" {
+			items = append(items, &s.Items[i])
+		}
+	}
+	return items
+}
+
+func (s Solicitud) GetAllItemsVuelta() []*SolicitudItem {
+	var items []*SolicitudItem
+	for i := range s.Items {
+		if strings.ToUpper(string(s.Items[i].Tipo)) == "VUELTA" {
+			items = append(items, &s.Items[i])
+		}
+	}
+	return items
 }
 
 func (s Solicitud) GetMaxFechaVueloEmitida() *time.Time {
@@ -340,19 +747,11 @@ func (s Solicitud) GetUltimoVueloFecha() string {
 	return maxDate.Format("02/01/2006")
 }
 
-// GetDiasRestantesDescargo calcula cuántos días hábiles le quedan para presentar.
-// Retorna un número negativo si ya venció.
 func (s Solicitud) GetDiasRestantesDescargo() int {
 	maxDate := s.GetMaxFechaVueloEmitida()
 	if maxDate == nil {
 		return 999
 	}
-
-	// 1. Obtener fecha límite (8 días hábiles desde el último vuelo)
-	// Como no puedo importar utils aquí directamente (circular dependency),
-	// haré la lógica simple o asumiré que se calcula fuera.
-	// Pero mejor la pongo aquí si puedo o uso una función auxiliar.
-	// Nota: No puedo importar utils. Calculemos aquí.
 
 	diasLimite := 0
 	limite := *maxDate
@@ -410,12 +809,42 @@ func (s Solicitud) CanView(user *Usuario) bool {
 	return false
 }
 
-func (s Solicitud) CanEdit(user *Usuario) bool {
+func (s Solicitud) CanMarkUsado(u *Usuario) bool {
+	if u == nil {
+		return false
+	}
+	if u.IsAdminOrResponsable() {
+		return true
+	}
+	if u.ID == s.UsuarioID {
+		return true
+	}
+	if s.Usuario.EncargadoID != nil && *s.Usuario.EncargadoID == u.ID {
+		return true
+	}
+	if s.CreatedBy != nil && *s.CreatedBy == u.ID {
+		return true
+	}
+	return false
+}
+
+func (s Solicitud) CanEdit(u ...*Usuario) bool {
+	user := s.getAuthUser(u...)
+	if user == nil {
+		return false
+	}
+	// El Administrador o Responsable siempre tiene poder de edición administrativa
+	if user.IsAdminOrResponsable() {
+		return s.CanView(user)
+	}
+
+	// Para usuarios normales, solo si está en estados editables
 	estado := s.GetEstado()
 	isEditableState := (estado == "SOLICITADO" || estado == "RECHAZADO" || estado == "PARCIALMENTE_APROBADO")
 	if !isEditableState {
 		return false
 	}
+
 	return s.CanView(user)
 }
 
@@ -423,8 +852,9 @@ func (s Solicitud) IsDeletableState() bool {
 	return s.GetEstado() == "SOLICITADO"
 }
 
-func (s Solicitud) CanDelete(user *Usuario) bool {
-	if !s.IsDeletableState() {
+func (s Solicitud) CanDelete(u ...*Usuario) bool {
+	user := s.getAuthUser(u...)
+	if user == nil || !s.IsDeletableState() {
 		return false
 	}
 	if user.IsAdminOrResponsable() {
@@ -436,25 +866,23 @@ func (s Solicitud) CanDelete(user *Usuario) bool {
 	return false
 }
 
-func (s Solicitud) CanApprove(user *Usuario) bool {
-	if !user.CanApproveReject() {
+func (s Solicitud) CanAssignPasaje(u ...*Usuario) bool {
+	user := s.getAuthUser(u...)
+	if user == nil || !user.IsAdminOrResponsable() {
 		return false
 	}
-	estado := s.GetEstado()
-	return estado == "SOLICITADO" || estado == "PARCIALMENTE_APROBADO"
+	st := s.GetEstado()
+	// Solo tiene sentido asignar pasajes en flujos aprobados o activos
+	return st == "APROBADO" || st == "PARCIALMENTE_APROBADO" || st == "EMITIDO" || st == "FINALIZADO"
 }
 
-func (s Solicitud) CanReject(user *Usuario) bool {
-	return s.CanApprove(user)
-}
-
-func (s Solicitud) CanAssignPasaje(user *Usuario) bool {
-	// Solo Responsables o Admins pueden asignar pasajes electrónicos
-	return user.IsAdminOrResponsable()
-}
-
-func (s Solicitud) CanAssignViatico(user *Usuario) bool {
-	return user.IsAdminOrResponsable()
+func (s Solicitud) CanAssignViatico(u ...*Usuario) bool {
+	user := s.getAuthUser(u...)
+	if user == nil || !user.IsAdminOrResponsable() {
+		return false
+	}
+	st := s.GetEstado()
+	return st == "APROBADO" || st == "PARCIALMENTE_APROBADO" || st == "EMITIDO" || st == "FINALIZADO"
 }
 
 func (s Solicitud) HasEmittedPasaje() bool {
@@ -468,40 +896,39 @@ func (s Solicitud) HasEmittedPasaje() bool {
 	return false
 }
 
-func (s Solicitud) CanRevertApproval(user *Usuario) bool {
-	if !user.IsAdminOrResponsable() {
-		return false
-	}
-	st := s.GetEstado()
-	canRevertState := st == "APROBADO" || st == "PARCIALMENTE_APROBADO" || st == "EMITIDO"
-	return canRevertState && !s.HasEmittedPasaje()
-}
-
-func (s Solicitud) CanMakeDescargo(user *Usuario) bool {
+func (s Solicitud) CanMakeDescargo(u ...*Usuario) bool {
+	user := s.getAuthUser(u...)
 	return s.HasEmittedPasaje() && s.CanView(user)
 }
 
-func (s Solicitud) CanPrint(user *Usuario) bool {
+func (s Solicitud) CanPrint(u ...*Usuario) bool {
+	user := s.getAuthUser(u...)
 	// Solo se imprime si está aprobada o emitida
 	st := s.GetEstado()
-	canPrintState := st == "APROBADO" || st == "PARCIALMENTE_APROBADO" || st == "EMITIDO" || st == "FINALIZADO"
-	return canPrintState && s.CanView(user)
+	return (st == "APROBADO" || st == "EMITIDO" || st == "FINALIZADO" || st == "PARCIALMENTE_APROBADO") && s.CanView(user)
+}
+
+func (s Solicitud) CanFinalize(u ...*Usuario) bool {
+	user := s.getAuthUser(u...)
+	if user == nil || !user.IsAdminOrResponsable() {
+		return false
+	}
+	return s.GetEstado() == "EMITIDO"
+}
+
+func (s Solicitud) CanRevertFinalize(u ...*Usuario) bool {
+	user := s.getAuthUser(u...)
+	if user == nil || !user.IsAdminOrResponsable() {
+		return false
+	}
+	return s.GetEstado() == "FINALIZADO"
 }
 
 func (s Solicitud) GetTipoItinerarioNombre() string {
-	switch s.TipoItinerarioCodigo {
-	case "IDA_VUELTA":
-		return "Ida y Vuelta"
-	case "SOLO_IDA":
-		return "Solo Ida"
-	case "SOLO_VUELTA":
-		return "Solo Vuelta"
-	default:
-		if s.TipoItinerario != nil {
-			return s.TipoItinerario.Nombre
-		}
-		return s.TipoItinerarioCodigo
+	if s.TipoItinerario != nil && s.TipoItinerario.Nombre != "" {
+		return s.TipoItinerario.Nombre
 	}
+	return s.TipoItinerarioCodigo
 }
 
 func (s Solicitud) IsSoloIda() bool {
@@ -516,6 +943,30 @@ func (s Solicitud) IsIdaVuelta() bool {
 	return s.TipoItinerarioCodigo == "IDA_VUELTA"
 }
 
+func (s Solicitud) IsSolicitado() bool {
+	return s.GetEstado() == "SOLICITADO"
+}
+
+func (s Solicitud) IsAprobado() bool {
+	return s.GetEstado() == "APROBADO"
+}
+
+func (s Solicitud) IsParcialmenteAprobado() bool {
+	return s.GetEstado() == "PARCIALMENTE_APROBADO"
+}
+
+func (s Solicitud) IsRechazado() bool {
+	return s.GetEstado() == "RECHAZADO"
+}
+
+func (s Solicitud) IsEmitido() bool {
+	return s.GetEstado() == "EMITIDO"
+}
+
+func (s Solicitud) IsFinalizado() bool {
+	return s.GetEstado() == "FINALIZADO"
+}
+
 // --- Display Helpers ---
 
 func (s Solicitud) IsDerecho() bool {
@@ -527,21 +978,30 @@ func (s Solicitud) IsOficial() bool {
 }
 
 func (s Solicitud) GetStatusBadgeClass() string {
-	switch s.GetEstado() {
-	case "SOLICITADO":
-		return "bg-primary-100 text-primary-700"
-	case "RECHAZADO":
-		return "bg-danger-100 text-danger-700"
-	case "APROBADO":
-		return "bg-success-100 text-success-700 font-bold"
-	case "PARCIALMENTE_APROBADO":
-		return "bg-violet-100 text-violet-700"
-	case "EMITIDO":
-		return "bg-secondary-100 text-secondary-700 font-bold"
-	case "FINALIZADO":
-		return "bg-neutral-800 text-white"
-	default:
-		return "bg-neutral-100 text-neutral-600"
+	if s.EstadoSolicitud != nil && s.EstadoSolicitud.Color != "" {
+		color := s.EstadoSolicitud.Color
+		// Casos especiales (neutral black, success bold, etc)
+		if color == "neutral-800" || color == "black" {
+			return "bg-neutral-800 text-white"
+		}
+		if s.GetEstado() == "APROBADO" || s.GetEstado() == "EMITIDO" {
+			return fmt.Sprintf("bg-%s-100 text-%s-700 font-bold", color, color)
+		}
+		return fmt.Sprintf("bg-%s-100 text-%s-700", color, color)
+	}
+
+	// Fallback por defecto si no hay relación cargada
+	return "bg-neutral-100 text-neutral-600"
+}
+
+func GetAvailableStatuses() []StatusFilter {
+	// Nota: Estos filtros podrían moverse a un repositorio para ser cargados desde la DB
+	return []StatusFilter{
+		{Codigo: "SOLICITADO", Nombre: "Solicitados", Class: "bg-primary"},
+		{Codigo: "APROBADO", Nombre: "Aprobados", Class: "bg-success-600"},
+		{Codigo: "EMITIDO", Nombre: "Emitidos", Class: "bg-secondary"},
+		{Codigo: "RECHAZADO", Nombre: "Rechazados", Class: "bg-danger-600"},
+		{Codigo: "FINALIZADO", Nombre: "Finalizados", Class: "bg-neutral-600"},
 	}
 }
 
@@ -677,8 +1137,8 @@ func (s *Solicitud) GetChanges(old Solicitud) map[string]any {
 	if s.AmbitoViajeCodigo != old.AmbitoViajeCodigo {
 		changes["ambito_viaje_codigo"] = s.AmbitoViajeCodigo
 	}
-	if s.AerolineaSugerida != old.AerolineaSugerida {
-		changes["aerolinea_sugerida"] = s.AerolineaSugerida
+	if s.AerolineaID != old.AerolineaID {
+		changes["aerolinea_id"] = s.AerolineaID
 	}
 	if s.Motivo != old.Motivo {
 		changes["motivo"] = s.Motivo

@@ -1,43 +1,54 @@
-{{ define "usuarios/edit" }} {{ template "layout_header" . }}
-<div class="max-w-3xl mx-auto mt-8 bg-white shadow-lg rounded-md overflow-visible">
-  <div class="px-6 py-4 border-b border-neutral-200">
-    <h2 class="text-xl font-bold text-neutral-800">Editar Usuario</h2>
-    <p class="text-sm text-neutral-500">
-      Editando perfil de
-      <strong>{{ .Usuario.GetNombreCompleto }}</strong>
-      {{ if .Usuario.Departamento }} -
-      <span class="text-primary font-bold">{{ .Usuario.Departamento.Nombre }}</span>
-      {{ end }} ({{ .Usuario.Username }})
-    </p>
-  </div>
-
-  <form action="/usuarios/{{ .Usuario.ID }}/actualizar" method="POST" class="p-6">
-    <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
-
-    <div class="mb-4">
-      <label for="rol_codigo" class="block text-sm font-medium text-neutral-700">Rol Asignado</label>
-      {{ if .Usuario.IsSenador }}
-      <div class="mt-1 block w-full py-2.5 px-3 border border-neutral-100 bg-neutral-50 rounded-md shadow-sm text-neutral-500 sm:text-sm flex items-center justify-between group">
-        <span class="font-medium">{{ if .Usuario.Rol }}{{ .Usuario.Rol.Nombre }}{{ else }}Senador{{ end }}</span>
-        <span class="text-[9px] bg-neutral-200 px-2 py-0.5 rounded-full text-neutral-400 uppercase font-bold tracking-tighter">Rol Protegido</span>
-      </div>
-      <input type="hidden" name="rol_codigo" value="{{ if .Usuario.RolCodigo }}{{ deref .Usuario.RolCodigo }}{{ end }}" />
-      {{ else }}
-      <select
-        id="rol_codigo"
-        name="rol_codigo"
-        class="mt-1 block w-full py-2 px-3 border border-neutral-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm">
-        {{ $currentRol := "" }}{{ if .Usuario.RolCodigo }}{{ $currentRol = deref .Usuario.RolCodigo }}{{ end }} {{ range .Roles }}
-        <option value="{{ .Codigo }}" {{ if eq .Codigo $currentRol }}selected{{ end }}>{{ .Nombre }}</option>
+{{ define "usuarios/edit" }}
+  {{ template "layout_header" . }}
+  <div class="max-w-3xl mx-auto mt-8 bg-white shadow-lg rounded-md overflow-visible">
+    <div class="px-6 py-4 border-b border-neutral-200">
+      <h2 class="text-xl font-bold text-neutral-800">Editar Usuario</h2>
+      <p class="text-sm text-neutral-500">
+        Editando perfil de
+        <strong>{{ .Usuario.GetNombreCompleto }}</strong>
+        {{ if .Usuario.Departamento }}
+          -
+          <span class="text-primary font-bold">{{ .Usuario.Departamento.Nombre }}</span>
         {{ end }}
-      </select>
-      {{ end }}
+        ({{ .Usuario.Username }})
+      </p>
     </div>
 
-    {{ if .Usuario.IsSenador }}
-    <div
-      class="mb-4"
-      x-data="searchableSelect({
+    <form action="/usuarios/{{ .Usuario.ID }}/actualizar" method="POST" class="p-6">
+      <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
+
+      <div class="mb-4">
+        <label for="rol_codigo" class="block text-sm font-medium text-neutral-700">Rol Asignado</label>
+        {{ if .Usuario.IsSenador }}
+          <div
+            class="mt-1 block w-full py-2.5 px-3 border border-neutral-100 bg-neutral-50 rounded-md shadow-sm text-neutral-500 sm:text-sm flex items-center justify-between group"
+          >
+            <span class="font-medium">{{ if .Usuario.Rol }}{{ .Usuario.Rol.Nombre }}{{ else }}Senador{{ end }}</span>
+            <span
+              class="text-[9px] bg-neutral-200 px-2 py-0.5 rounded-full text-neutral-400 uppercase font-bold tracking-tighter"
+            >
+              Rol Protegido
+            </span>
+          </div>
+          <input type="hidden" name="rol_codigo" value="{{ if .Usuario.RolCodigo }}{{ deref .Usuario.RolCodigo }}{{ end }}" />
+        {{ else }}
+          <select
+            id="rol_codigo"
+            name="rol_codigo"
+            class="mt-1 block w-full py-2 px-3 border border-neutral-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+          >
+            {{ $currentRol := "" }}{{ if .Usuario.RolCodigo }}{{ $currentRol = deref .Usuario.RolCodigo }}{{ end }}
+            {{ range .Roles }}
+              <option value="{{ .Codigo }}" {{ if eq .Codigo $currentRol }}selected{{ end }}>{{ .Nombre }}</option>
+            {{ end }}
+          </select>
+        {{ end }}
+      </div>
+
+      {{ if .Usuario.IsSenador }}
+        <div
+          class="mb-4"
+          x-data="searchableSelect({
         items: {{ json .Destinos }}.map(function(d) {
           return {
             value: d.iata,
@@ -47,60 +58,68 @@
         }),
         initialValue: '{{ if .Usuario.OrigenIATA }}{{ deref .Usuario.OrigenIATA }}{{ end }}',
         initialLabel: '{{ if .Usuario.Origen }}{{ .Usuario.Origen.GetNombreDisplay }}{{ end }}'
-      })">
-      <label class="block text-sm font-medium text-neutral-700">Lugar de Origen</label>
-      <div class="relative mt-1">
-        <input type="hidden" name="origen" :value="value" />
+      })"
+        >
+          <label class="block text-sm font-medium text-neutral-700">Lugar de Origen</label>
+          <div class="relative mt-1">
+            <input type="hidden" name="origen" :value="value" />
 
-        <div class="relative">
-          <div
-            @click="open = true; $nextTick(function() { $refs.searchInput.focus() })"
-            x-show="!open"
-            x-cloak
-            class="w-full rounded-md border border-neutral-300 bg-white py-2 px-3 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary sm:text-sm cursor-pointer flex items-center justify-between min-h-[38px]">
-            <span x-text="label"></span>
-            <i class="ph ph-caret-up-down text-neutral-400"></i>
+            <div class="relative">
+              <div
+                @click="open = true; $nextTick(function() { $refs.searchInput.focus() })"
+                x-show="!open"
+                x-cloak
+                class="w-full rounded-md border border-neutral-300 bg-white py-2 px-3 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary sm:text-sm cursor-pointer flex items-center justify-between min-h-[38px]"
+              >
+                <span x-text="label"></span>
+                <i class="ph ph-caret-up-down text-neutral-400"></i>
+              </div>
+
+              <input
+                x-ref="searchInput"
+                id="origen_search_input"
+                type="text"
+                x-model.debounce.250ms="search"
+                x-show="open"
+                x-cloak
+                readonly
+                autocomplete="new-password"
+                @focus="$el.removeAttribute('readonly')"
+                @blur="$el.setAttribute('readonly', 'true')"
+                @click.away="open = false"
+                @keydown.escape="open = false"
+                @keydown.enter.prevent="if (filteredItems.length > 0) select(filteredItems[0])"
+                placeholder="Buscar destino..."
+                class="w-full rounded-md border border-primary bg-white py-2 px-3 shadow-sm focus:outline-none focus:ring-1 focus:ring-primary sm:text-sm"
+              />
+
+              <ul
+                x-show="open"
+                class="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm border border-neutral-100"
+                x-cloak
+              >
+                <li
+                  @click="select(null)"
+                  class="cursor-pointer select-none relative py-2 pl-3 pr-9 border-b border-neutral-50 hover:bg-neutral-50 text-neutral-400 italic text-xs"
+                >
+                  -- No asignado --
+                </li>
+                <template x-for="(item, index) in filteredItems" :key="index">
+                  <li
+                    @click="select(item)"
+                    class="cursor-pointer select-none relative py-2 pl-3 pr-9 border-b border-neutral-50 last:border-0 hover:bg-primary hover:text-white transition-colors group"
+                  >
+                    <span class="font-medium block truncate" x-text="item.label"></span>
+                  </li>
+                </template>
+              </ul>
+            </div>
           </div>
-
-          <input
-            x-ref="searchInput"
-            id="origen_search_input"
-            type="text"
-            x-model.debounce.250ms="search"
-            x-show="open"
-            x-cloak
-            readonly
-            autocomplete="new-password"
-            @focus="$el.removeAttribute('readonly')"
-            @blur="$el.setAttribute('readonly', 'true')"
-            @click.away="open = false"
-            @keydown.escape="open = false"
-            @keydown.enter.prevent="if (filteredItems.length > 0) select(filteredItems[0])"
-            placeholder="Buscar destino..."
-            class="w-full rounded-md border border-primary bg-white py-2 px-3 shadow-sm focus:outline-none focus:ring-1 focus:ring-primary sm:text-sm" />
-
-          <ul
-            x-show="open"
-            class="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm border border-neutral-100"
-            x-cloak>
-            <li @click="select(null)" class="cursor-pointer select-none relative py-2 pl-3 pr-9 border-b border-neutral-50 hover:bg-neutral-50 text-neutral-400 italic text-xs">
-              -- No asignado --
-            </li>
-            <template x-for="(item, index) in filteredItems" :key="index">
-              <li
-                @click="select(item)"
-                class="cursor-pointer select-none relative py-2 pl-3 pr-9 border-b border-neutral-50 last:border-0 hover:bg-primary hover:text-white transition-colors group">
-                <span class="font-medium block truncate" x-text="item.label"></span>
-              </li>
-            </template>
-          </ul>
         </div>
-      </div>
-    </div>
 
-    <div
-      class="mb-4"
-      x-data="searchableSelect({
+        <div
+          class="mb-4"
+          x-data="searchableSelect({
         items: {{ json .Funcionarios }}.map(function(f) {
           return {
             value: f.id,
@@ -111,175 +130,212 @@
         initialValue: '{{ if .Usuario.EncargadoID }}{{ .Usuario.EncargadoID }}{{ end }}',
         initialLabel: '{{ if .Usuario.Encargado }}{{ .Usuario.Encargado.GetNombreCompleto }}{{ end }}',
         disabled: false
-      })">
-      <label class="block text-sm font-medium text-neutral-700">Encargado de Trámites</label>
-      <p class="text-[11px] text-neutral-500 mb-2 leading-tight">Busque por nombre o CI al funcionario que gestionará los pasajes.</p>
+      })"
+        >
+          <label class="block text-sm font-medium text-neutral-700">Encargado de Trámites</label>
+          <p class="text-[11px] text-neutral-500 mb-2 leading-tight">
+            Busque por nombre o CI al funcionario que gestionará los pasajes.
+          </p>
 
-      <div class="relative mt-1">
-        <input type="hidden" name="encargado_id" :value="value" />
+          <div class="relative mt-1">
+            <input type="hidden" name="encargado_id" :value="value" />
 
-        <div class="relative">
-          <div
-            @click="if (!disabled) { open = true; $nextTick(function() { $refs.searchInput.focus() }) }"
-            x-show="!open"
-            x-cloak
-            class="w-full rounded-md border border-neutral-300 bg-white py-2.5 pl-3 pr-10 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary sm:text-sm cursor-pointer flex items-center justify-between min-h-[38px]"
-            :class="{ 'bg-neutral-100 cursor-not-allowed text-neutral-500': disabled }">
-            <span x-text="label"></span>
-            <i class="ph ph-caret-up-down text-neutral-400"></i>
+            <div class="relative">
+              <div
+                @click="if (!disabled) { open = true; $nextTick(function() { $refs.searchInput.focus() }) }"
+                x-show="!open"
+                x-cloak
+                class="w-full rounded-md border border-neutral-300 bg-white py-2.5 pl-3 pr-10 shadow-sm focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary sm:text-sm cursor-pointer flex items-center justify-between min-h-[38px]"
+                :class="{ 'bg-neutral-100 cursor-not-allowed text-neutral-500': disabled }"
+              >
+                <span x-text="label"></span>
+                <i class="ph ph-caret-up-down text-neutral-400"></i>
+              </div>
+
+              <input
+                x-ref="searchInput"
+                id="encargado_search_input"
+                type="text"
+                x-model.debounce.250ms="search"
+                x-show="open"
+                x-cloak
+                readonly
+                autocomplete="new-password"
+                @focus="$el.removeAttribute('readonly')"
+                @blur="$el.setAttribute('readonly', 'true')"
+                @click.away="open = false"
+                @keydown.escape="open = false"
+                placeholder="Buscar funcionario..."
+                class="w-full rounded-md border border-primary bg-white py-2.5 pl-3 pr-10 shadow-sm focus:outline-none focus:ring-1 focus:ring-primary sm:text-sm"
+              />
+
+              <ul
+                x-show="open"
+                class="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm border border-neutral-100"
+                x-cloak
+              >
+                <li
+                  @click="select(null)"
+                  class="cursor-pointer select-none relative py-2.5 pl-3 pr-9 border-b border-neutral-50 hover:bg-neutral-50 text-neutral-400 italic text-xs"
+                >
+                  -- Sin encargado asignado --
+                </li>
+                <template x-for="(item, index) in filteredItems" :key="index">
+                  <li
+                    @click="select(item)"
+                    class="cursor-pointer select-none relative py-2.5 pl-3 pr-9 border-b border-neutral-50 last:border-0 hover:bg-primary hover:text-white transition-colors group"
+                  >
+                    <div class="flex flex-col">
+                      <span class="font-bold block truncate text-neutral-800 group-hover:text-white" x-text="item.label"></span>
+                      <span
+                        class="text-[10px] text-neutral-400 group-hover:text-primary-100 font-medium"
+                        x-text="'CI: ' + item.extra"
+                      ></span>
+                    </div>
+                  </li>
+                </template>
+              </ul>
+            </div>
           </div>
-
-          <input
-            x-ref="searchInput"
-            id="encargado_search_input"
-            type="text"
-            x-model.debounce.250ms="search"
-            x-show="open"
-            x-cloak
-            readonly
-            autocomplete="new-password"
-            @focus="$el.removeAttribute('readonly')"
-            @blur="$el.setAttribute('readonly', 'true')"
-            @click.away="open = false"
-            @keydown.escape="open = false"
-            placeholder="Buscar funcionario..."
-            class="w-full rounded-md border border-primary bg-white py-2.5 pl-3 pr-10 shadow-sm focus:outline-none focus:ring-1 focus:ring-primary sm:text-sm" />
-
-          <ul
-            x-show="open"
-            class="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm border border-neutral-100"
-            x-cloak>
-            <li @click="select(null)" class="cursor-pointer select-none relative py-2.5 pl-3 pr-9 border-b border-neutral-50 hover:bg-neutral-50 text-neutral-400 italic text-xs">
-              -- Sin encargado asignado --
-            </li>
-            <template x-for="(item, index) in filteredItems" :key="index">
-              <li
-                @click="select(item)"
-                class="cursor-pointer select-none relative py-2.5 pl-3 pr-9 border-b border-neutral-50 last:border-0 hover:bg-primary hover:text-white transition-colors group">
-                <div class="flex flex-col">
-                  <span class="font-bold block truncate text-neutral-800 group-hover:text-white" x-text="item.label"></span>
-                  <span class="text-[10px] text-neutral-400 group-hover:text-primary-100 font-medium" x-text="'CI: ' + item.extra"></span>
-                </div>
-              </li>
-            </template>
-          </ul>
         </div>
-      </div>
-    </div>
 
-    <div
-      class="mb-4 pt-4 border-t border-neutral-100"
-      x-data='multiDestinoSelect({
+        <div
+          class="mb-4 pt-4 border-t border-neutral-100"
+          x-data="multiDestinoSelect({
         allDestinos: [
           {{ range .Destinos }}
-          { iata: {{ .IATA | json }}, ciudad: {{ .Ciudad | json }}, aeropuerto: {{ .Aeropuerto | json }} },
+            { iata: {{ .IATA | json }}, ciudad: {{ .Ciudad | json }}, aeropuerto: {{ .Aeropuerto | json }} },
           {{ end }}
         ],
         selected: [
           {{ if .Usuario.OrigenesAlternativos }}
             {{ range .Usuario.OrigenesAlternativos }}
-            { iata: {{ .DestinoIATA | json }}, ciudad: {{ if .Destino }}{{ .Destino.Ciudad | json }}{{ else }}{{ .DestinoIATA | json }}{{ end }}, aeropuerto: {{ if .Destino }}{{ .Destino.Aeropuerto | json }}{{ else }}""{{ end }} },
+              { iata: {{ .DestinoIATA | json }}, ciudad:
+              {{ if .Destino }}{{ .Destino.Ciudad | json }}{{ else }}{{ .DestinoIATA | json }}{{ end }}, aeropuerto:
+              {{ if .Destino }}{{ .Destino.Aeropuerto | json }}{{ else }}""{{ end }} },
             {{ end }}
           {{ end }}
         ]
-      })'>
-      <label class="block text-sm font-bold text-neutral-800 uppercase tracking-tight mb-2">Orígenes Alternativos (Pasajes por Derecho)</label>
-      <p class="text-[11px] text-neutral-500 mb-4 leading-tight">
-        Ciudades desde las cuales el senador está autorizado a solicitar pasajes por derecho además de su origen titular.
-      </p>
+      })"
+        >
+          <label class="block text-sm font-bold text-neutral-800 uppercase tracking-tight mb-2">
+            Orígenes Alternativos (Pasajes por Derecho)
+          </label>
+          <p class="text-[11px] text-neutral-500 mb-4 leading-tight">
+            Ciudades desde las cuales el senador está autorizado a solicitar pasajes por derecho además de su origen titular.
+          </p>
 
-      <!-- Tags Container -->
-      <div class="flex flex-wrap gap-2 p-2 bg-neutral-50 rounded-lg border border-neutral-200 min-h-[46px] mb-2">
-        <template x-for="s in selected" :key="s.iata">
-          <div class="inline-flex items-center bg-primary text-white text-[11px] font-bold px-2 py-1 rounded-md shadow-sm group">
-            <span x-text="s.ciudad + ' - ' + (s.aeropuerto ? s.aeropuerto : '') + ' (' + s.iata + ')'"></span>
-            <button type="button" @click="remove(s.iata)" class="ml-1.5 hover:text-primary-100 focus:outline-none">
-              <i class="ph ph-x-circle text-xs"></i>
-            </button>
-            <input type="hidden" name="origenes_alternativos" :value="s.iata" />
-          </div>
-        </template>
+          <!-- Tags Container -->
+          <div class="flex flex-wrap gap-2 p-2 bg-neutral-50 rounded-lg border border-neutral-200 min-h-[46px] mb-2">
+            <template x-for="s in selected" :key="s.iata">
+              <div
+                class="inline-flex items-center bg-primary text-white text-[11px] font-bold px-2 py-1 rounded-md shadow-sm group"
+              >
+                <span x-text="s.ciudad + ' - ' + (s.aeropuerto ? s.aeropuerto : '') + ' (' + s.iata + ')'"></span>
+                <button type="button" @click="remove(s.iata)" class="ml-1.5 hover:text-primary-100 focus:outline-none">
+                  <i class="ph ph-x-circle text-xs"></i>
+                </button>
+                <input type="hidden" name="origenes_alternativos" :value="s.iata" />
+              </div>
+            </template>
 
-        <div x-show="selected.length === 0" class="text-xs text-neutral-400 italic flex items-center px-2">Ningún origen alternativo seleccionado</div>
-      </div>
-
-      <!-- Search Input -->
-      <div class="relative">
-        <div class="flex items-center">
-          <div class="relative flex-1">
-            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-neutral-400">
-              <i class="ph ph-magnifying-glass"></i>
+            <div x-show="selected.length === 0" class="text-xs text-neutral-400 italic flex items-center px-2">
+              Ningún origen alternativo seleccionado
             </div>
-            <input
-              type="text"
-              x-ref="searchInput"
-              x-model.debounce.150ms="search"
-              @focus="open = true; $el.removeAttribute('readonly')"
-              @blur="$el.setAttribute('readonly', 'true')"
-              @click.away="open = false"
-              @keydown.escape="open = false"
-              readonly
-              autocomplete="new-password"
-              class="block w-full pl-10 pr-3 py-2 border border-neutral-300 rounded-lg leading-5 bg-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm font-medium transition-all"
-              placeholder="Buscar ciudad o aeropuerto..." />
           </div>
-        </div>
 
-        <!-- Dropdown -->
-        <div
-          x-show="open && filtered.length > 0"
-          class="absolute z-10 mt-1 w-full bg-white shadow-xl max-h-60 rounded-lg py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm"
-          x-cloak
-          x-transition>
-          <template x-for="d in filtered" :key="d.iata">
-            <div @click="add(d)" class="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-primary hover:text-white transition-colors group">
-              <div class="flex flex-col">
-                <div class="flex items-center justify-between">
-                  <span class="block truncate font-bold text-sm" x-text="d.ciudad"></span>
-                  <span class="text-[10px] font-black opacity-60 uppercase" x-text="d.iata"></span>
+          <!-- Search Input -->
+          <div class="relative">
+            <div class="flex items-center">
+              <div class="relative flex-1">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-neutral-400">
+                  <i class="ph ph-magnifying-glass"></i>
                 </div>
-                <div class="text-[10px] opacity-70 truncate group-hover:text-primary-100 mt-0.5" x-text="d.aeropuerto"></div>
+                <input
+                  type="text"
+                  x-ref="searchInput"
+                  x-model.debounce.150ms="search"
+                  @focus="open = true; $el.removeAttribute('readonly')"
+                  @blur="$el.setAttribute('readonly', 'true')"
+                  @click.away="open = false"
+                  @keydown.escape="open = false"
+                  readonly
+                  autocomplete="new-password"
+                  class="block w-full pl-10 pr-3 py-2 border border-neutral-300 rounded-lg leading-5 bg-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm font-medium transition-all"
+                  placeholder="Buscar ciudad o aeropuerto..."
+                />
               </div>
             </div>
-          </template>
+
+            <!-- Dropdown -->
+            <div
+              x-show="open && filtered.length > 0"
+              class="absolute z-10 mt-1 w-full bg-white shadow-xl max-h-60 rounded-lg py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm"
+              x-cloak
+              x-transition
+            >
+              <template x-for="d in filtered" :key="d.iata">
+                <div
+                  @click="add(d)"
+                  class="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-primary hover:text-white transition-colors group"
+                >
+                  <div class="flex flex-col">
+                    <div class="flex items-center justify-between">
+                      <span class="block truncate font-bold text-sm" x-text="d.ciudad"></span>
+                      <span class="text-[10px] font-black opacity-60 uppercase" x-text="d.iata"></span>
+                    </div>
+                    <div class="text-[10px] opacity-70 truncate group-hover:text-primary-100 mt-0.5" x-text="d.aeropuerto"></div>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </div>
+        </div>
+      {{ end }}
+
+
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 pt-4 border-t border-neutral-100">
+        <div class="md:col-span-2">
+          <label for="email" class="block text-sm font-medium text-neutral-700">Email</label>
+          <input
+            type="email"
+            name="email"
+            id="email"
+            value="{{ .Usuario.Email }}"
+            autocomplete="off"
+            class="mt-1 block w-full py-2.5 px-3 border border-neutral-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+            placeholder="correo@ejemplo.com"
+          />
+        </div>
+        <div>
+          <label for="phone" class="block text-sm font-medium text-neutral-700">Celular</label>
+          <input
+            type="text"
+            name="phone"
+            id="phone"
+            value="{{ .Usuario.Phone }}"
+            autocomplete="off"
+            class="mt-1 block w-full py-2.5 px-3 border border-neutral-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+            placeholder="70000000"
+          />
         </div>
       </div>
-    </div>
-    {{ end }}
 
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 pt-4 border-t border-neutral-100">
-      <div class="md:col-span-2">
-        <label for="email" class="block text-sm font-medium text-neutral-700">Email</label>
-        <input
-          type="email"
-          name="email"
-          id="email"
-          value="{{ .Usuario.Email }}"
-          autocomplete="off"
-          class="mt-1 block w-full py-2.5 px-3 border border-neutral-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
-          placeholder="correo@ejemplo.com" />
+      <div class="flex justify-end gap-3 mt-8 pt-4 border-t border-neutral-100">
+        <a
+          href="/usuarios"
+          class="bg-white border border-neutral-300 text-neutral-700 px-4 py-2 rounded-md hover:bg-neutral-50 font-medium text-sm shadow-sm"
+        >
+          Cancelar
+        </a>
+        <button
+          type="submit"
+          class="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-700 font-medium text-sm shadow-sm focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+        >
+          Guardar Cambios
+        </button>
       </div>
-      <div>
-        <label for="phone" class="block text-sm font-medium text-neutral-700">Celular</label>
-        <input
-          type="text"
-          name="phone"
-          id="phone"
-          value="{{ .Usuario.Phone }}"
-          autocomplete="off"
-          class="mt-1 block w-full py-2.5 px-3 border border-neutral-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
-          placeholder="70000000" />
-      </div>
-    </div>
-
-    <div class="flex justify-end gap-3 mt-8 pt-4 border-t border-neutral-100">
-      <a href="/usuarios" class="bg-white border border-neutral-300 text-neutral-700 px-4 py-2 rounded-md hover:bg-neutral-50 font-medium text-sm shadow-sm">Cancelar</a>
-      <button
-        type="submit"
-        class="bg-primary text-white px-4 py-2 rounded-md hover:bg-primary-700 font-medium text-sm shadow-sm focus:ring-2 focus:ring-offset-2 focus:ring-primary">
-        Guardar Cambios
-      </button>
-    </div>
-  </form>
-</div>
-{{ template "layout_footer" . }} {{ end }}
+    </form>
+  </div>
+  {{ template "layout_footer" . }}
+{{ end }}

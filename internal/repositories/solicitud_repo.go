@@ -2,8 +2,10 @@ package repositories
 
 import (
 	"context"
+	"fmt"
 	"sistema-pasajes/internal/models"
 	"strings"
+	"time"
 
 	"gorm.io/gorm"
 )
@@ -44,6 +46,28 @@ func (r *SolicitudRepository) Create(ctx context.Context, solicitud *models.Soli
 	return r.db.WithContext(ctx).Create(solicitud).Error
 }
 
+func (r *SolicitudRepository) CreateWithSequenceCode(ctx context.Context, solicitud *models.Solicitud, prefix string, seqRepo *CodigoSecuenciaRepository) error {
+	currentYear := time.Now().Year()
+	for {
+		nextVal, err := seqRepo.WithTx(r.db).GetNext(ctx, currentYear, prefix)
+		if err != nil {
+			return err
+		}
+		solicitud.Codigo = fmt.Sprintf("%s-%d%04d", prefix, currentYear%100, nextVal)
+
+		// Verificar si ya existe (incluyendo eliminados) para evitar errores de clave duplicada
+		exists, err := r.ExistsByCodigo(ctx, solicitud.Codigo)
+		if err != nil {
+			return err
+		}
+		if !exists {
+			break
+		}
+	}
+
+	return r.Create(ctx, solicitud)
+}
+
 func SearchSolicitud(term string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		if term == "" {
@@ -65,7 +89,9 @@ func SearchSolicitud(term string) func(db *gorm.DB) *gorm.DB {
 func (r *SolicitudRepository) FindAll(ctx context.Context, status string, concepto string) ([]models.Solicitud, error) {
 	var solicitudes []models.Solicitud
 	query := r.db.WithContext(ctx).Preload("Usuario").
-		Preload("Items").
+		Preload("Items", func(db *gorm.DB) *gorm.DB {
+			return db.Order("seq ASC")
+		}).
 		Preload("Items.Origen").
 		Preload("Items.Destino").
 		Preload("Items.Estado").
@@ -75,6 +101,7 @@ func (r *SolicitudRepository) FindAll(ctx context.Context, status string, concep
 		Preload("Items.Pasajes.RutaPasaje").
 		Preload("TipoSolicitud.ConceptoViaje").
 		Preload("EstadoSolicitud").
+		Preload("Aerolinea").
 		Order("created_at desc")
 
 	if status != "" {
@@ -93,7 +120,9 @@ func (r *SolicitudRepository) FindAll(ctx context.Context, status string, concep
 func (r *SolicitudRepository) FindByUserID(ctx context.Context, userID string, status string, concepto string) ([]models.Solicitud, error) {
 	var solicitudes []models.Solicitud
 	query := r.db.WithContext(ctx).Preload("Usuario").
-		Preload("Items").
+		Preload("Items", func(db *gorm.DB) *gorm.DB {
+			return db.Order("seq ASC")
+		}).
 		Preload("Items.Origen").
 		Preload("Items.Destino").
 		Preload("Items.Estado").
@@ -103,6 +132,7 @@ func (r *SolicitudRepository) FindByUserID(ctx context.Context, userID string, s
 		Preload("Items.Pasajes.RutaPasaje").
 		Preload("TipoSolicitud.ConceptoViaje").
 		Preload("EstadoSolicitud").
+		Preload("Aerolinea").
 		Order("created_at desc").Where("usuario_id = ?", userID)
 
 	if status != "" {
@@ -125,12 +155,15 @@ func (r *SolicitudRepository) FindByCupoDerechoItemID(ctx context.Context, itemI
 		Preload("Usuario.Oficina").
 		Preload("Usuario.Departamento").
 		Preload("Usuario.Origen").
-		Preload("Items").
+		Preload("Items", func(db *gorm.DB) *gorm.DB {
+			return db.Order("seq ASC")
+		}).
 		Preload("Items.Origen").
 		Preload("Items.Destino").
 		Preload("TipoItinerario").
 		Preload("TipoSolicitud.ConceptoViaje").
 		Preload("EstadoSolicitud").
+		Preload("Aerolinea").
 		Preload("CupoDerechoItem").
 		Where("cupo_derecho_item_id = ?", itemID).
 		Find(&solicitudes).Error
@@ -140,7 +173,9 @@ func (r *SolicitudRepository) FindByCupoDerechoItemID(ctx context.Context, itemI
 func (r *SolicitudRepository) FindByUserIdOrAccesibleByEncargadoID(ctx context.Context, userID string, status string, concepto string) ([]models.Solicitud, error) {
 	var solicitudes []models.Solicitud
 	query := r.db.WithContext(ctx).Preload("Usuario").
-		Preload("Items").
+		Preload("Items", func(db *gorm.DB) *gorm.DB {
+			return db.Order("seq ASC")
+		}).
 		Preload("Items.Origen").
 		Preload("Items.Destino").
 		Preload("Items.Estado").
@@ -150,6 +185,7 @@ func (r *SolicitudRepository) FindByUserIdOrAccesibleByEncargadoID(ctx context.C
 		Preload("Items.Pasajes.RutaPasaje").
 		Preload("TipoSolicitud.ConceptoViaje").
 		Preload("EstadoSolicitud").
+		Preload("Aerolinea").
 		Order("created_at desc").
 		Where(
 			"solicitudes.usuario_id = ? OR solicitudes.created_by = ? OR solicitudes.usuario_id IN (?)",
@@ -178,7 +214,9 @@ func (r *SolicitudRepository) FindPaginated(ctx context.Context, userID string, 
 	baseQuery := r.db.WithContext(ctx).Model(&models.Solicitud{}).
 		Joins("LEFT JOIN usuarios ON solicitudes.usuario_id = usuarios.id").
 		Preload("Usuario").
-		Preload("Items").
+		Preload("Items", func(db *gorm.DB) *gorm.DB {
+			return db.Order("seq ASC")
+		}).
 		Preload("Items.Origen").
 		Preload("Items.Destino").
 		Preload("Items.Estado").
@@ -188,6 +226,7 @@ func (r *SolicitudRepository) FindPaginated(ctx context.Context, userID string, 
 		Preload("Items.Pasajes.RutaPasaje").
 		Preload("TipoSolicitud.ConceptoViaje").
 		Preload("EstadoSolicitud").
+		Preload("Aerolinea").
 		Scopes(SearchSolicitud(searchTerm))
 
 	if !isAdmin {
@@ -235,6 +274,12 @@ func (r *SolicitudRepository) FindByID(ctx context.Context, id string) (*models.
 	err := r.db.WithContext(ctx).Preload("Usuario").
 		Preload("Usuario.Encargado").
 		Preload("Usuario.OrigenesAlternativos.Destino").
+		Preload("Items", func(db *gorm.DB) *gorm.DB {
+			return db.Order("seq ASC")
+		}).
+		Preload("Items.Pasajes", func(db *gorm.DB) *gorm.DB {
+			return db.Order("seq ASC")
+		}).
 		Preload("Items.Origen.Ambito").
 		Preload("Items.Destino.Ambito").
 		Preload("Items.Pasajes.Aerolinea").
@@ -244,11 +289,13 @@ func (r *SolicitudRepository) FindByID(ctx context.Context, id string) (*models.
 		Preload("Items.Pasajes.RutaPasaje.Destino").
 		Preload("Items.Pasajes.RutaPasaje.Escalas.Destino").
 		Preload("Items.Pasajes.RutaPasaje").
-		Preload("Items.Pasajes").
 		Preload("Viaticos").
-		Preload("Viaticos.Detalles").
+		Preload("Viaticos.Detalles", func(db *gorm.DB) *gorm.DB {
+			return db.Order("seq ASC")
+		}).
 		Preload("TipoSolicitud.ConceptoViaje").
 		Preload("EstadoSolicitud").
+		Preload("Aerolinea").
 		Preload("TipoItinerario").
 		Preload("AmbitoViaje").
 		Preload("CupoDerechoItem").
@@ -260,7 +307,7 @@ func (r *SolicitudRepository) FindByID(ctx context.Context, id string) (*models.
 }
 
 func (r *SolicitudRepository) Update(ctx context.Context, solicitud *models.Solicitud) error {
-	return r.db.WithContext(ctx).Save(solicitud).Error
+	return r.db.WithContext(ctx).Session(&gorm.Session{FullSaveAssociations: true}).Save(solicitud).Error
 }
 
 func (r *SolicitudRepository) UpdateStatus(ctx context.Context, id string, status string) error {
@@ -284,7 +331,12 @@ func (r *SolicitudRepository) ExistsByCodigo(ctx context.Context, codigo string)
 func (r *SolicitudRepository) FindPendientesDeDescargo(ctx context.Context) ([]models.Solicitud, error) {
 	var solicitudes []models.Solicitud
 	err := r.db.WithContext(ctx).Preload("Usuario.Encargado").
-		Preload("Items.Pasajes").
+		Preload("Items", func(db *gorm.DB) *gorm.DB {
+			return db.Order("seq ASC")
+		}).
+		Preload("Items.Pasajes", func(db *gorm.DB) *gorm.DB {
+			return db.Order("seq ASC")
+		}).
 		Preload("TipoSolicitud.ConceptoViaje").
 		Preload("Descargo.Tramos").
 		Preload("Descargo.Oficial").
@@ -300,7 +352,12 @@ func (r *SolicitudRepository) FindPendientesDeDescargoUI(ctx context.Context, us
 	var solicitudes []models.Solicitud
 	query := r.db.WithContext(ctx).Preload("Usuario").
 		Preload("Usuario.Rol").
-		Preload("Items.Pasajes").
+		Preload("Items", func(db *gorm.DB) *gorm.DB {
+			return db.Order("seq ASC")
+		}).
+		Preload("Items.Pasajes", func(db *gorm.DB) *gorm.DB {
+			return db.Order("seq ASC")
+		}).
 		Preload("Items.Origen").
 		Preload("Items.Destino").
 		Preload("Items.Pasajes.RutaPasaje.Origen").
@@ -309,6 +366,7 @@ func (r *SolicitudRepository) FindPendientesDeDescargoUI(ctx context.Context, us
 		Preload("Items.Pasajes.RutaPasaje").
 		Preload("TipoSolicitud.ConceptoViaje").
 		Preload("EstadoSolicitud").
+		Preload("Aerolinea").
 		Preload("Descargo.Tramos").
 		Preload("Descargo.Oficial").
 		Joins("LEFT JOIN descargos ON solicitudes.id = descargos.solicitud_id").
@@ -337,7 +395,12 @@ func (r *SolicitudRepository) FindPendientesDeDescargoPaginated(ctx context.Cont
 	baseQuery := r.db.WithContext(ctx).Model(&models.Solicitud{}).
 		Preload("Usuario").
 		Preload("Usuario.Rol").
-		Preload("Items.Pasajes").
+		Preload("Items", func(db *gorm.DB) *gorm.DB {
+			return db.Order("seq ASC")
+		}).
+		Preload("Items.Pasajes", func(db *gorm.DB) *gorm.DB {
+			return db.Order("seq ASC")
+		}).
 		Preload("Items.Origen").
 		Preload("Items.Destino").
 		Preload("Items.Pasajes.RutaPasaje.Origen").
@@ -346,6 +409,7 @@ func (r *SolicitudRepository) FindPendientesDeDescargoPaginated(ctx context.Cont
 		Preload("Items.Pasajes.RutaPasaje").
 		Preload("TipoSolicitud.ConceptoViaje").
 		Preload("EstadoSolicitud").
+		Preload("Aerolinea").
 		Preload("Descargo.Tramos").
 		Preload("Descargo.Oficial").
 		Joins("LEFT JOIN descargos ON solicitudes.id = descargos.solicitud_id").

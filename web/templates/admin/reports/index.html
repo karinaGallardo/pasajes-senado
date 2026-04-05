@@ -1,235 +1,247 @@
-{{ define "admin/reports/index" }} {{ template "layout_header" . }}
+{{ define "admin/reports/index" }}
+  {{ template "layout_header" . }}
 
-<div class="max-w-4xl mx-auto py-8">
-  <div class="mb-8">
-    <h1 class="text-2xl font-black text-neutral-900 uppercase tracking-tight flex items-center">
-      <i class="ph ph-chart-bar text-primary mr-3 text-3xl"></i>
-      Reportes del Sistema
-    </h1>
-    <p class="mt-2 text-neutral-500">Genere informes detallados y consolidados para conciliación y auditoría.</p>
-  </div>
 
-  <div class="grid grid-cols-1 gap-8">
-    <!-- Card Reporte Consolidado -->
-    <div class="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
-      <div class="p-6 border-b border-neutral-100 flex items-center justify-between bg-neutral-50/50">
-        <div class="flex items-center">
-          <div class="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center text-primary-600 mr-4">
-            <i class="ph ph-file-xls text-2xl"></i>
+  <div class="max-w-4xl mx-auto py-8">
+    <div class="mb-8">
+      <h1 class="text-2xl font-black text-neutral-900 uppercase tracking-tight flex items-center">
+        <i class="ph ph-chart-bar text-primary mr-3 text-3xl"></i>
+        Reportes del Sistema
+      </h1>
+      <p class="mt-2 text-neutral-500">Genere informes detallados y consolidados para conciliación y auditoría.</p>
+    </div>
+
+    <div class="grid grid-cols-1 gap-8">
+      <!-- Card Reporte Consolidado -->
+      <div class="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+        <div class="p-6 border-b border-neutral-100 flex items-center justify-between bg-neutral-50/50">
+          <div class="flex items-center">
+            <div class="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center text-primary-600 mr-4">
+              <i class="ph ph-file-xls text-2xl"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-neutral-900 uppercase tracking-tight">Consolidado de Pasajes</h3>
+              <p class="text-xs text-neutral-500">Exportación a Excel para conciliación bancaria y con agencias.</p>
+            </div>
           </div>
-          <div>
-            <h3 class="font-bold text-neutral-900 uppercase tracking-tight">Consolidado de Pasajes</h3>
-            <p class="text-xs text-neutral-500">Exportación a Excel para conciliación bancaria y con agencias.</p>
-          </div>
+        </div>
+
+        <div class="p-8">
+          <form
+            action="/admin/reports/consolidado-excel"
+            method="GET"
+            class="space-y-6"
+            id="report-form"
+            @submit="loading = true; setTimeout(() => loading = false, 3000)"
+            x-data="{ loading: false }"
+          >
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <!-- Rango de Fechas -->
+              <div>
+                <label class="block text-xs font-black text-neutral-500 uppercase mb-2">Fecha Emisión Desde</label>
+                <div class="relative">
+                  <i class="ph ph-calendar-blank absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"></i>
+                  <input
+                    type="date"
+                    name="fecha_desde"
+                    class="w-full pl-10 pr-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-black text-neutral-500 uppercase mb-2">Fecha Emisión Hasta</label>
+                <div class="relative">
+                  <i class="ph ph-calendar-blank absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"></i>
+                  <input
+                    type="date"
+                    name="fecha_hasta"
+                    class="w-full pl-10 pr-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    required
+                  />
+                </div>
+              </div>
+
+              <!-- Filtros de Entidad -->
+              <div>
+                <label class="block text-xs font-black text-neutral-500 uppercase mb-2">Aerolínea</label>
+                <div class="relative">
+                  <i class="ph ph-airplane absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"></i>
+                  <select
+                    name="aerolinea_id"
+                    class="w-full pl-10 pr-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all appearance-none cursor-pointer"
+                  >
+                    <option value="">TODAS LAS AEROLÍNEAS</option>
+                    {{ range .Aerolineas }}
+                      <option value="{{ .ID }}">{{ .Nombre }}</option>
+                    {{ end }}
+                  </select>
+                  <i class="ph ph-caret-down absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"></i>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-black text-neutral-500 uppercase mb-2">Agencia de Viajes</label>
+                <div class="relative">
+                  <i class="ph ph-buildings absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"></i>
+                  <select
+                    name="agencia_id"
+                    class="w-full pl-10 pr-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all appearance-none cursor-pointer"
+                  >
+                    <option value="">TODAS LAS AGENCIAS</option>
+                    {{ range .Agencias }}
+                      <option value="{{ .ID }}">{{ .Nombre }}</option>
+                    {{ end }}
+                  </select>
+                  <i class="ph ph-caret-down absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"></i>
+                </div>
+              </div>
+
+              <!-- Filtros de Estado y Concepto -->
+              <div>
+                <label class="block text-xs font-black text-neutral-500 uppercase mb-2">Concepto</label>
+                <div class="relative">
+                  <i class="ph ph-tag absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"></i>
+                  <select
+                    name="concepto"
+                    class="w-full pl-10 pr-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all appearance-none cursor-pointer"
+                  >
+                    <option value="ALL">TODOS LOS CONCEPTOS</option>
+                    <option value="DERECHO">PASAJES POR DERECHO</option>
+                    <option value="OFICIAL">PASAJES OFICIALES / COMISIÓN</option>
+                  </select>
+                  <i class="ph ph-caret-down absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"></i>
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-black text-neutral-500 uppercase mb-2">Estado del Pasaje</label>
+                <div class="relative">
+                  <i class="ph ph-check-circle absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"></i>
+                  <select
+                    name="estado"
+                    class="w-full pl-10 pr-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all appearance-none cursor-pointer"
+                  >
+                    <option value="ALL">TODOS LOS ESTADOS</option>
+                    <option value="EMITIDO">EMITIDOS</option>
+                    <option value="USADO">USADOS / VALIDADOS</option>
+                    <option value="ANULADO">ANULADOS / DEVUELTOS</option>
+                  </select>
+                  <i class="ph ph-caret-down absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"></i>
+                </div>
+              </div>
+            </div>
+
+            <div class="pt-6 border-t border-neutral-100 flex justify-end">
+              <button type="submit" class="btn-md btn-primary w-full md:w-auto px-8" :disabled="loading">
+                <template x-if="!loading">
+                  <div class="flex items-center">
+                    <i class="ph ph-download-simple mr-2 text-lg"></i>
+                    GENERAR REPORTE EXCEL
+                  </div>
+                </template>
+                <template x-if="loading">
+                  <div class="flex items-center">
+                    <i class="ph ph-circle-notch animate-spin -ml-1 mr-3 text-lg text-white"></i>
+                    PROCESANDO...
+                  </div>
+                </template>
+              </button>
+            </div>
+          </form>
         </div>
       </div>
 
-      <div class="p-8">
-        <form
-          action="/admin/reports/consolidado-excel"
-          method="GET"
-          class="space-y-6"
-          id="report-form"
-          @submit="loading = true; setTimeout(() => loading = false, 3000)"
-          x-data="{ loading: false }">
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <!-- Rango de Fechas -->
-            <div>
-              <label class="block text-xs font-black text-neutral-500 uppercase mb-2">Fecha Emisión Desde</label>
-              <div class="relative">
-                <i class="ph ph-calendar-blank absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"></i>
-                <input
-                  type="date"
-                  name="fecha_desde"
-                  class="w-full pl-10 pr-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                  required />
-              </div>
-            </div>
+      <!-- Nuevos Reportes -->
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Morosidad -->
+        <a
+          href="/admin/reports/morosidad-excel"
+          class="group p-6 bg-white border border-neutral-200 rounded-xl flex items-center hover:border-red-500 hover:shadow-md transition-all active:scale-95 overflow-hidden relative"
+        >
+          <div
+            class="absolute top-0 right-0 p-1 bg-red-500 text-[8px] font-black text-white uppercase tracking-tighter rotate-45 translate-x-4 -translate-y-1 w-20 text-center shadow-sm"
+          >
+            MORA
+          </div>
+          <div
+            class="w-12 h-12 bg-red-50 rounded-lg flex items-center justify-center text-red-600 mr-4 group-hover:scale-110 transition-transform"
+          >
+            <i class="ph ph-warning-octagon text-2xl"></i>
+          </div>
+          <div>
+            <h4 class="font-bold text-neutral-900 text-sm">Morosidad de Descargos</h4>
+            <p class="text-[10px] text-neutral-400 font-bold uppercase tracking-tight">VENCIDOS SIN PV-05/06</p>
+          </div>
+        </a>
 
-            <div>
-              <label class="block text-xs font-black text-neutral-500 uppercase mb-2">Fecha Emisión Hasta</label>
-              <div class="relative">
-                <i class="ph ph-calendar-blank absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"></i>
-                <input
-                  type="date"
-                  name="fecha_hasta"
-                  class="w-full pl-10 pr-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
-                  required />
-              </div>
+        <!-- Uso de Cupos -->
+        <div class="p-6 bg-white border border-neutral-200 rounded-xl" x-data="{ show: false }">
+          <div class="flex items-center mb-4">
+            <div class="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600 mr-4">
+              <i class="ph ph-users-three text-2xl"></i>
             </div>
-
-            <!-- Filtros de Entidad -->
             <div>
-              <label class="block text-xs font-black text-neutral-500 uppercase mb-2">Aerolínea</label>
-              <div class="relative">
-                <i class="ph ph-airplane absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"></i>
-                <select
-                  name="aerolinea_id"
-                  class="w-full pl-10 pr-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all appearance-none cursor-pointer">
-                  <option value="">TODAS LAS AEROLÍNEAS</option>
-                  {{ range .Aerolineas }}
-                  <option value="{{ .ID }}">{{ .Nombre }}</option>
-                  {{ end }}
-                </select>
-                <i class="ph ph-caret-down absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"></i>
-              </div>
-            </div>
-
-            <div>
-              <label class="block text-xs font-black text-neutral-500 uppercase mb-2">Agencia de Viajes</label>
-              <div class="relative">
-                <i class="ph ph-buildings absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"></i>
-                <select
-                  name="agencia_id"
-                  class="w-full pl-10 pr-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all appearance-none cursor-pointer">
-                  <option value="">TODAS LAS AGENCIAS</option>
-                  {{ range .Agencias }}
-                  <option value="{{ .ID }}">{{ .Nombre }}</option>
-                  {{ end }}
-                </select>
-                <i class="ph ph-caret-down absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"></i>
-              </div>
-            </div>
-
-            <!-- Filtros de Estado y Concepto -->
-            <div>
-              <label class="block text-xs font-black text-neutral-500 uppercase mb-2">Concepto</label>
-              <div class="relative">
-                <i class="ph ph-tag absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"></i>
-                <select
-                  name="concepto"
-                  class="w-full pl-10 pr-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all appearance-none cursor-pointer">
-                  <option value="ALL">TODOS LOS CONCEPTOS</option>
-                  <option value="DERECHO">PASAJES POR DERECHO</option>
-                  <option value="OFICIAL">PASAJES OFICIALES / COMISIÓN</option>
-                </select>
-                <i class="ph ph-caret-down absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"></i>
-              </div>
-            </div>
-
-            <div>
-              <label class="block text-xs font-black text-neutral-500 uppercase mb-2">Estado del Pasaje</label>
-              <div class="relative">
-                <i class="ph ph-check-circle absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"></i>
-                <select
-                  name="estado"
-                  class="w-full pl-10 pr-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all appearance-none cursor-pointer">
-                  <option value="ALL">TODOS LOS ESTADOS</option>
-                  <option value="EMITIDO">EMITIDOS</option>
-                  <option value="USADO">USADOS / VALIDADOS</option>
-                  <option value="ANULADO">ANULADOS / DEVUELTOS</option>
-                </select>
-                <i class="ph ph-caret-down absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"></i>
-              </div>
+              <h4 class="font-bold text-neutral-900 text-sm">Uso de Cupos p/ Senador</h4>
+              <p class="text-[10px] text-neutral-400 font-bold uppercase tracking-tight">GESTIÓN Y SALDOS</p>
             </div>
           </div>
-
-          <div class="pt-6 border-t border-neutral-100 flex justify-end">
-            <button type="submit" class="btn-md btn-primary w-full md:w-auto px-8" :disabled="loading">
-              <template x-if="!loading">
-                <div class="flex items-center">
-                  <i class="ph ph-download-simple mr-2 text-lg"></i>
-                  GENERAR REPORTE EXCEL
-                </div>
-              </template>
-              <template x-if="loading">
-                <div class="flex items-center">
-                  <svg class="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path
-                      class="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  PROCESANDO...
-                </div>
-              </template>
+          <form action="/admin/reports/cupos-excel" method="GET" class="flex gap-2">
+            <select name="mes" class="text-xs border rounded p-1 flex-1 bg-neutral-50 uppercase font-bold">
+              <option value="1">Enero</option>
+              <option value="2">Febrero</option>
+              <option value="3" selected>Marzo</option>
+              <option value="4">Abril</option>
+              <option value="5">Mayo</option>
+              <option value="6">Junio</option>
+              <option value="7">Julio</option>
+              <option value="8">Agosto</option>
+              <option value="9">Septiembre</option>
+              <option value="10">Octubre</option>
+              <option value="11">Noviembre</option>
+              <option value="12">Diciembre</option>
+            </select>
+            <input type="hidden" name="anio" value="2026" />
+            <button type="submit" class="bg-blue-600 text-white p-1 rounded hover:bg-blue-700 transition-colors">
+              <i class="ph ph-download-simple"></i>
             </button>
-          </div>
-        </form>
-      </div>
-    </div>
+          </form>
+        </div>
 
-    <!-- Nuevos Reportes -->
-    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      <!-- Morosidad -->
-      <a
-        href="/admin/reports/morosidad-excel"
-        class="group p-6 bg-white border border-neutral-200 rounded-xl flex items-center hover:border-red-500 hover:shadow-md transition-all active:scale-95 overflow-hidden relative">
-        <div
-          class="absolute top-0 right-0 p-1 bg-red-500 text-[8px] font-black text-white uppercase tracking-tighter rotate-45 translate-x-4 -translate-y-1 w-20 text-center shadow-sm">
-          MORA
-        </div>
-        <div class="w-12 h-12 bg-red-50 rounded-lg flex items-center justify-center text-red-600 mr-4 group-hover:scale-110 transition-transform">
-          <i class="ph ph-warning-octagon text-2xl"></i>
-        </div>
-        <div>
-          <h4 class="font-bold text-neutral-900 text-sm">Morosidad de Descargos</h4>
-          <p class="text-[10px] text-neutral-400 font-bold uppercase tracking-tight">VENCIDOS SIN PV-05/06</p>
-        </div>
-      </a>
-
-      <!-- Uso de Cupos -->
-      <div class="p-6 bg-white border border-neutral-200 rounded-xl" x-data="{ show: false }">
-        <div class="flex items-center mb-4">
-          <div class="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600 mr-4">
-            <i class="ph ph-users-three text-2xl"></i>
+        <!-- Estadísticas Aerolínea -->
+        <a
+          href="/admin/reports/aerolineas-excel"
+          class="group p-6 bg-white border border-neutral-200 rounded-xl flex items-center hover:border-emerald-500 hover:shadow-md transition-all active:scale-95"
+        >
+          <div
+            class="w-12 h-12 bg-emerald-50 rounded-lg flex items-center justify-center text-emerald-600 mr-4 group-hover:scale-110 transition-transform"
+          >
+            <i class="ph ph-airplane text-2xl"></i>
           </div>
           <div>
-            <h4 class="font-bold text-neutral-900 text-sm">Uso de Cupos p/ Senador</h4>
-            <p class="text-[10px] text-neutral-400 font-bold uppercase tracking-tight">GESTIÓN Y SALDOS</p>
+            <h4 class="font-bold text-neutral-900 text-sm">Estadísticas p/ Aerolínea</h4>
+            <p class="text-[10px] text-neutral-400 font-bold uppercase tracking-tight">VOLUMEN DE COMPRA</p>
           </div>
-        </div>
-        <form action="/admin/reports/cupos-excel" method="GET" class="flex gap-2">
-          <select name="mes" class="text-xs border rounded p-1 flex-1 bg-neutral-50 uppercase font-bold">
-            <option value="1">Enero</option>
-            <option value="2">Febrero</option>
-            <option value="3" selected>Marzo</option>
-            <option value="4">Abril</option>
-            <option value="5">Mayo</option>
-            <option value="6">Junio</option>
-            <option value="7">Julio</option>
-            <option value="8">Agosto</option>
-            <option value="9">Septiembre</option>
-            <option value="10">Octubre</option>
-            <option value="11">Noviembre</option>
-            <option value="12">Diciembre</option>
-          </select>
-          <input type="hidden" name="anio" value="2026" />
-          <button type="submit" class="bg-blue-600 text-white p-1 rounded hover:bg-blue-700 transition-colors">
-            <i class="ph ph-download-simple"></i>
-          </button>
-        </form>
+        </a>
       </div>
-
-      <!-- Estadísticas Aerolínea -->
-      <a
-        href="/admin/reports/aerolineas-excel"
-        class="group p-6 bg-white border border-neutral-200 rounded-xl flex items-center hover:border-emerald-500 hover:shadow-md transition-all active:scale-95">
-        <div class="w-12 h-12 bg-emerald-50 rounded-lg flex items-center justify-center text-emerald-600 mr-4 group-hover:scale-110 transition-transform">
-          <i class="ph ph-airplane text-2xl"></i>
-        </div>
-        <div>
-          <h4 class="font-bold text-neutral-900 text-sm">Estadísticas p/ Aerolínea</h4>
-          <p class="text-[10px] text-neutral-400 font-bold uppercase tracking-tight">VOLUMEN DE COMPRA</p>
-        </div>
-      </a>
     </div>
   </div>
-</div>
 
-{{ template "layout_footer" . }} {{ end }} {{ define "footer_scripts" }}
-<script>
-  // Set default dates to current month
-  document.addEventListener("DOMContentLoaded", function () {
-    const today = new Date();
-    const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+  {{ template "layout_footer" . }}
+{{ end }}
+{{ define "footer_scripts" }}
+  <script>
+    // Set default dates to current month
+    document.addEventListener("DOMContentLoaded", function () {
+      const today = new Date();
+      const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
 
-    const inputDesde = document.querySelector('input[name="fecha_desde"]');
-    const inputHasta = document.querySelector('input[name="fecha_hasta"]');
+      const inputDesde = document.querySelector('input[name="fecha_desde"]');
+      const inputHasta = document.querySelector('input[name="fecha_hasta"]');
 
-    if (inputDesde) inputDesde.value = firstDay.toISOString().split("T")[0];
-    if (inputHasta) inputHasta.value = today.toISOString().split("T")[0];
-  });
-</script>
+      if (inputDesde) inputDesde.value = firstDay.toISOString().split("T")[0];
+      if (inputHasta) inputHasta.value = today.toISOString().split("T")[0];
+    });
+  </script>
 {{ end }}

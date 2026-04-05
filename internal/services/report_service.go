@@ -193,10 +193,19 @@ func (s *ReportService) GeneratePV01(ctx context.Context, solicitud *models.Soli
 		idaItem = nil
 	}
 
+	aerolineaLabel := "-"
+	if solicitud.Aerolinea != nil {
+		if solicitud.Aerolinea.Sigla != "" {
+			aerolineaLabel = solicitud.Aerolinea.Sigla
+		} else {
+			aerolineaLabel = solicitud.Aerolinea.Nombre
+		}
+	}
+
 	pdf.Ln(2)
-	s.drawSolicitudSegment(ctx, pdf, tr, "TRAYECTO DE IDA", idaItem, solicitud.AerolineaSugerida)
+	s.drawSolicitudSegment(ctx, pdf, tr, "TRAYECTO DE IDA", idaItem, aerolineaLabel)
 	pdf.Ln(4)
-	s.drawSolicitudSegment(ctx, pdf, tr, "TRAYECTO DE VUELTA", vueltaItem, solicitud.AerolineaSugerida)
+	s.drawSolicitudSegment(ctx, pdf, tr, "TRAYECTO DE VUELTA", vueltaItem, aerolineaLabel)
 
 	pdf.Ln(8)
 
@@ -317,14 +326,12 @@ func (s *ReportService) GeneratePV02(ctx context.Context, solicitud *models.Soli
 	pdf.Ln(2)
 
 	// LINEA AEREA SUGERIDA + NACIONAL / INTERNACIONAL
-	aerolineaNombre := solicitud.AerolineaSugerida
-	if aerolineaNombre == "" {
-		aerolineaNombre = "-"
-	} else if aerolinea, err := s.aerolineaRepo.FindByID(ctx, aerolineaNombre); err == nil {
-		if aerolinea.Sigla != "" {
-			aerolineaNombre = aerolinea.Sigla
+	aerolineaNombre := "-"
+	if solicitud.Aerolinea != nil {
+		if solicitud.Aerolinea.Sigla != "" {
+			aerolineaNombre = solicitud.Aerolinea.Sigla
 		} else {
-			aerolineaNombre = aerolinea.Nombre
+			aerolineaNombre = solicitud.Aerolinea.Nombre
 		}
 	}
 	pdf.SetFont("Arial", "B", 8)
@@ -391,17 +398,13 @@ func (s *ReportService) GeneratePV02(ctx context.Context, solicitud *models.Soli
 		// Tabla mismo formato que PV-01: FECHA/HORA SOLICITUD, ESTADO, AEROLÍNEA, RUTA, FECHA VIAJE, HORA VIAJE
 		fechaSol := solicitud.CreatedAt.Format("02/01/2006")
 		horaSol := solicitud.CreatedAt.Format("15:04")
-		aerolineaNombre := solicitud.AerolineaSugerida
-		if aerolineaNombre != "" {
-			if aerolinea, err := s.aerolineaRepo.FindByID(ctx, solicitud.AerolineaSugerida); err == nil {
-				if aerolinea.Sigla != "" {
-					aerolineaNombre = aerolinea.Sigla
-				} else {
-					aerolineaNombre = aerolinea.Nombre
-				}
+		aerolineaNombre := "-"
+		if solicitud.Aerolinea != nil {
+			if solicitud.Aerolinea.Sigla != "" {
+				aerolineaNombre = solicitud.Aerolinea.Sigla
+			} else {
+				aerolineaNombre = solicitud.Aerolinea.Nombre
 			}
-		} else {
-			aerolineaNombre = "-"
 		}
 
 		pdf.SetFillColor(245, 245, 245)
