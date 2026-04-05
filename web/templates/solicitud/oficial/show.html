@@ -32,8 +32,7 @@
             {{ if .Solicitud.Permissions.CanRegularize }}
               <button
                 hx-get="/solicitudes/{{ .Solicitud.ID }}/regularizacion-modal"
-                hx-target="body"
-                hx-swap="beforeend"
+                hx-target="#modal-container"
                 class="ml-1 px-1.5 py-0.5 bg-warning-50 border border-warning-200 rounded text-[9px] font-black text-warning-700 hover:bg-warning-100 transition-all cursor-pointer flex items-center gap-1 uppercase tracking-wider shadow-sm"
                 title="Regularizar fecha sistema solicitud"
               >
@@ -80,7 +79,7 @@
             type="button"
             hx-get="/solicitudes/{{ .Solicitud.ID }}/viaticos/nuevo"
             hx-target="#modal-container"
-            class="btn-sm btn-primary rounded-sm"
+            class="btn-md btn-primary rounded-sm"
           >
             <i class="ph ph-currency-circle-dollar text-sm"></i>
             <span>Viáticos</span>
@@ -91,7 +90,7 @@
             type="button"
             hx-get="/solicitudes/oficial/{{ .Solicitud.ID }}/modal-editar"
             hx-target="#modal-container"
-            class="btn-sm btn-white rounded-sm"
+            class="btn-md btn-white rounded-sm"
           >
             <i class="ph ph-pencil-simple text-sm"></i>
             <span>Editar</span>
@@ -101,9 +100,9 @@
           <button
             type="button"
             hx-delete="/solicitudes/{{ .Solicitud.ID }}"
-            hx-confirm="¿Está seguro que desea eliminar esta solicitud oficial? Esta acción no se puede deshacer."
+            hx-confirm="¿Está seguro que desea eliminar esta solicitud? Esta acción no se puede deshacer y liberará los cupos reservados."
             hx-target="body"
-            class="group btn-sm bg-danger-50 text-danger-600 border border-danger-200 hover:bg-danger-600 hover:text-white transition-all shadow-sm rounded-sm"
+            class="group btn-md bg-danger-50 text-danger-600 border border-danger-200 hover:bg-danger-600 hover:text-white transition-all shadow-sm rounded-sm"
             title="Eliminar Solicitud"
           >
             <i class="ph ph-trash text-sm group-hover:scale-110 transition-transform"></i>
@@ -114,9 +113,10 @@
           <button
             type="button"
             hx-post="/solicitudes/{{ .Solicitud.ID }}/finalizar"
-            hx-confirm="¿Está seguro de FINALIZAR esta solicitud? Ya no podrá ser editada."
+            hx-confirm="¿Está seguro de FINALIZAR esta solicitud? Esta acción marcará todos los pasajes como usados."
             hx-target="body"
-            class="btn-sm btn-secondary rounded-sm"
+            class="btn-md bg-neutral-900 text-white hover:bg-neutral-800 transition-all shadow-sm rounded-sm"
+            title="Finalizar Solicitud"
           >
             <i class="ph ph-flag-checkered text-sm"></i>
             <span>Finalizar</span>
@@ -126,35 +126,45 @@
           <button
             type="button"
             hx-post="/solicitudes/{{ .Solicitud.ID }}/revertir-finalizacion"
-            hx-confirm="¿Está seguro de REVERTIR la finalización?"
+            hx-confirm="¿Desea revertir la finalización de esta solicitud?"
             hx-target="body"
-            class="btn-sm btn-white text-warning-700 border-warning-200 rounded-sm"
+            class="btn-md bg-warning-50 text-warning-700 border border-warning-200 hover:bg-warning-100 transition-all shadow-sm rounded-sm"
+            title="Revertir Finalización"
           >
             <i class="ph ph-arrow-u-up-left text-sm"></i>
-            <span>Revertir Fin.</span>
+            <span>Revertir Cierre</span>
           </button>
         {{ end }}
-        <button
-          type="button"
-          hx-get="/solicitudes/oficial/{{ .Solicitud.ID }}/print"
-          hx-target="#modal-container"
-          class="btn-sm btn-white border-neutral-300 rounded-sm"
-        >
-          <i class="ph ph-file-pdf text-sm"></i>
-          <span>PV-02</span>
-        </button>
+        {{ if .Solicitud.Permissions.CanPrint }}
+          <a
+            href="/solicitudes/oficial/{{ .Solicitud.ID }}/print"
+            target="_blank"
+            class="btn-md btn-white border-neutral-300 rounded-sm inline-flex items-center gap-2"
+          >
+            <i class="ph ph-printer text-sm"></i>
+            <span>Imprimir</span>
+          </a>
+        {{ end }}
         {{ if .DescargoID }}
-          <a href="/descargos/oficial/{{ .DescargoID }}" class="btn-sm btn-primary rounded-sm">
+          <a href="/descargos/oficial/{{ .DescargoID }}" class="btn-md btn-primary rounded-sm inline-flex items-center gap-2">
             <i class="ph ph-eye text-sm"></i>
             <span>Ver Descargo</span>
           </a>
         {{ else if .Solicitud.Permissions.CanMakeDescargo }}
-          <a href="/descargos/oficial/nuevo/{{ .Solicitud.ID }}" class="btn-sm btn-primary rounded-sm">
+          <a
+            href="/descargos/oficial/nuevo/{{ .Solicitud.ID }}"
+            class="btn-md btn-primary rounded-sm inline-flex items-center gap-2"
+          >
             <i class="ph ph-file-plus text-sm"></i>
             <span>Crear Descargo</span>
           </a>
         {{ end }}
-        <a href="/solicitudes" class="btn-sm btn-white border-neutral-300 rounded-sm">Volver</a>
+        <a
+          href="/solicitudes?estado={{ .Solicitud.EstadoSolicitud.Codigo }}"
+          class="btn-md btn-white border-neutral-300 rounded-sm inline-flex items-center gap-2"
+        >
+          Volver
+        </a>
       </div>
     </div>
 
@@ -282,8 +292,7 @@
                       {{ if $.Solicitud.Permissions.CanRegularize }}
                         <button
                           hx-get="/solicitudes/{{ $.Solicitud.ID }}/items/{{ .ID }}/regularizacion-modal"
-                          hx-target="body"
-                          hx-swap="beforeend"
+                          hx-target="#modal-container"
                           class="ml-2 px-1.5 py-0.5 bg-warning-50 border border-warning-100 rounded text-[9px] font-black text-warning-600 hover:bg-warning-100 transition-all cursor-pointer flex items-center gap-1 uppercase tracking-wider"
                           title="Regularizar fecha sistema"
                         >
@@ -320,28 +329,28 @@
                     </button>
                   {{ end }}
                   {{ if .Permissions.CanRevert }}
-                      <button
-                        type="button"
-                        hx-post="/solicitudes/oficial/{{ $.Solicitud.ID }}/items/{{ .ID }}/revertir-aprobacion"
-                        hx-confirm="¿Está seguro de revertir la aprobación de este tramo? Volverá a estado SOLICITADO."
-                        hx-target="body"
-                        class="btn-xs btn-white text-warning-700 border-warning-200 rounded-sm text-[13px]"
-                      >
-                        <i class="ph ph-arrow-counter-clockwise font-bold text-[18px]"></i>
-                        Revertir
-                      </button>
-                    {{ end }}
-                    {{ if .Permissions.CanAssignPasaje }}
-                      <button
-                        type="button"
-                        hx-get="/solicitudes/{{ $.Solicitud.ID }}/pasajes/nuevo?item_id={{ .ID }}"
-                        hx-target="#modal-container"
-                        class="btn-xs btn-secondary rounded-sm text-[12px]"
-                      >
-                        <i class="ph ph-ticket font-bold text-[18px]"></i>
-                        Asignar Pasaje
-                      </button>
-                    {{ end }}
+                    <button
+                      type="button"
+                      hx-post="/solicitudes/oficial/{{ $.Solicitud.ID }}/items/{{ .ID }}/revertir-aprobacion"
+                      hx-confirm="¿Está seguro de revertir la aprobación de este tramo? Volverá a estado SOLICITADO."
+                      hx-target="body"
+                      class="btn-xs btn-white text-warning-700 border-warning-200 rounded-sm text-[13px]"
+                    >
+                      <i class="ph ph-arrow-counter-clockwise font-bold text-[18px]"></i>
+                      Revertir
+                    </button>
+                  {{ end }}
+                  {{ if .Permissions.CanAssignPasaje }}
+                    <button
+                      type="button"
+                      hx-get="/solicitudes/{{ $.Solicitud.ID }}/pasajes/nuevo?item_id={{ .ID }}"
+                      hx-target="#modal-container"
+                      class="btn-xs btn-secondary rounded-sm text-[12px]"
+                    >
+                      <i class="ph ph-ticket font-bold text-[18px]"></i>
+                      Registrar Pasaje
+                    </button>
+                  {{ end }}
                 </div>
               </div>
 
@@ -396,7 +405,7 @@
 
                         <!-- Main Content -->
                         <div class="flex-1 flex flex-col md:flex-row items-center px-6 py-4 gap-6">
-                          <div class="flex-1 grid grid-cols-2 md:grid-cols-5 gap-6 w-full">
+                          <div class="flex-1 grid grid-cols-2 md:grid-cols-6 gap-6 w-full">
                             <!-- Date -->
                             <div class="space-y-1">
                               <span class="text-[8px] font-black uppercase tracking-widest text-neutral-400 block">Salida</span>
@@ -432,6 +441,14 @@
                               </p>
                             </div>
 
+                            <!-- Emision -->
+                            <div class="space-y-1">
+                              <span class="text-[8px] font-black uppercase tracking-widest text-neutral-400 block">Emisión</span>
+                              <p class="text-[12px] font-black text-neutral-900 leading-none uppercase tracking-tight">
+                                {{ if .FechaEmision }}{{ .FechaEmision.Format "02/01/2006" }}{{ else }}---{{ end }}
+                              </p>
+                            </div>
+
                             <!-- Vuelo -->
                             <div class="space-y-1">
                               <span class="text-[8px] font-black uppercase tracking-widest text-neutral-400 block">Vuelo</span>
@@ -448,13 +465,13 @@
                                 {{ printf "%.2f" .Costo }}
                               </p>
                             </div>
-                                                     <div class="flex items-center gap-2 md:pl-6 md:border-l border-neutral-100 shrink-0">
+                            <div class="flex items-center gap-2 md:pl-6 md:border-l border-neutral-100 shrink-0">
                               {{ if .Archivo }}
                                 <button
                                   type="button"
                                   hx-get="/pasajes/{{ .ID }}/preview?tipo=billete"
                                   hx-target="#modal-container"
-                                  class="w-8 h-8 flex items-center justify-center rounded-sm bg-white border border-danger-100 text-danger-500 hover:bg-danger-600 hover:text-white transition-all shadow-sm cursor-pointer"
+                                  class="w-8 h-8 flex items-center justify-center rounded-sm bg-danger-50 border border-danger-100 text-danger-600 hover:bg-danger-600 hover:text-white transition-all shadow-sm cursor-pointer"
                                   title="Ver PDF"
                                 >
                                   <i class="ph ph-file-pdf text-lg font-bold"></i>
@@ -464,7 +481,7 @@
                                 <button
                                   type="button"
                                   @click="$dispatch('pasaje-action', { action: 'emitir', id: '{{ .ID }}' })"
-                                  class="w-8 h-8 flex items-center justify-center rounded-sm bg-white border border-secondary-100 text-secondary-600 hover:bg-secondary-600 hover:text-white transition-all shadow-sm cursor-pointer"
+                                  class="w-8 h-8 flex items-center justify-center rounded-sm bg-secondary-50 border border-secondary-100 text-secondary-600 hover:bg-secondary-600 hover:text-white transition-all shadow-sm cursor-pointer"
                                   title="Enviar"
                                 >
                                   <i class="ph ph-paper-plane-right text-lg font-bold"></i>
@@ -475,33 +492,23 @@
                                   type="button"
                                   hx-get="/pasajes/{{ .ID }}/editar"
                                   hx-target="#modal-container"
-                                  class="w-8 h-8 flex items-center justify-center rounded-sm bg-white border border-neutral-200 text-neutral-500 hover:bg-neutral-800 hover:text-white transition-all shadow-sm cursor-pointer"
+                                  class="w-8 h-8 flex items-center justify-center rounded-sm bg-neutral-50 border border-neutral-200 text-neutral-600 hover:bg-neutral-800 hover:text-white transition-all shadow-sm cursor-pointer"
                                   title="Editar"
                                 >
                                   <i class="ph ph-pencil-simple text-lg font-bold"></i>
                                 </button>
                               {{ end }}
-                              {{ if .Permissions.CanDevolver }}
+                              {{ if .Permissions.CanRevertirEmision }}
                                 <button
                                   type="button"
                                   @click="$dispatch('pasaje-action', { action: 'revertir_emision', id: '{{ .ID }}' })"
-                                  class="w-8 h-8 flex items-center justify-center rounded-sm bg-white border border-warning-100 text-warning-600 hover:bg-warning-600 hover:text-white transition-all shadow-sm cursor-pointer"
+                                  class="w-8 h-8 flex items-center justify-center rounded-sm bg-warning-50 border border-warning-100 text-warning-600 hover:bg-warning-600 hover:text-white transition-all shadow-sm cursor-pointer"
                                   title="Revertir Envío"
                                 >
                                   <i class="ph ph-arrow-counter-clockwise text-lg font-bold"></i>
                                 </button>
                               {{ end }}
-                              {{ if .Permissions.CanAnular }}
-                                <button
-                                  type="button"
-                                  @click="$dispatch('pasaje-action', { action: 'anular', id: '{{ .ID }}' })"
-                                  class="w-8 h-8 flex items-center justify-center rounded-sm bg-white border border-danger-50 text-danger-300 hover:bg-danger-600 hover:text-white transition-all shadow-sm cursor-pointer"
-                                  title="Anular"
-                                >
-                                  <i class="ph ph-trash-simple text-lg font-bold"></i>
-                                </button>
-                              {{ end }}
-                            </div>                      </div>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -646,7 +653,11 @@
                   <p class="text-sm font-medium text-neutral-800">
                     {{ if .Solicitud.Aerolinea }}
                       <span class="text-neutral-900 font-bold">
-                        {{ if .Solicitud.Aerolinea.Sigla }}{{ .Solicitud.Aerolinea.Sigla }}{{ else }}{{ .Solicitud.Aerolinea.Nombre }}{{ end }}
+                        {{ if .Solicitud.Aerolinea.Sigla }}
+                          {{ .Solicitud.Aerolinea.Sigla }}
+                        {{ else }}
+                          {{ .Solicitud.Aerolinea.Nombre }}
+                        {{ end }}
                       </span>
                     {{ else }}
                       <span class="text-neutral-400 italic font-normal">Sin preferencia</span>

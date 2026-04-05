@@ -54,6 +54,17 @@
                     <div>
                       <h3 class="text-lg font-bold text-neutral-900 leading-tight" id="modal-title">Asignar Nuevo Pasaje</h3>
                       <div class="mt-1 flex flex-col gap-1 text-[11px] text-neutral-500">
+                        {{ if .Solicitud.CupoDerechoItem }}
+                          <span class="flex items-center gap-1.5">
+                            <i class="ph ph-ticket shrink-0 text-neutral-400"></i>
+                            <span>
+                              Cupo asignado:
+                              <b class="text-neutral-500">
+                                {{ .Solicitud.CupoDerechoItem.GetWeekLabel }}
+                              </b>
+                            </span>
+                          </span>
+                        {{ end }}
                         <span class="flex items-center gap-1.5">
                           <i class="ph ph-calendar-blank shrink-0 text-neutral-400"></i>
                           <span>
@@ -63,21 +74,6 @@
                             </b>
                           </span>
                         </span>
-                        {{ if .Solicitud.CupoDerechoItem }}
-                          <span class="flex items-center gap-1.5">
-                            <i class="ph ph-ticket shrink-0 text-neutral-400"></i>
-                            <span>
-                              Cupo asignado:
-                              <b class="text-neutral-700">
-                                {{ .Solicitud.CupoDerechoItem.Mes | nombreMes }} {{ .Solicitud.CupoDerechoItem.Gestion }},
-                                {{ .Solicitud.CupoDerechoItem.Semana }}
-                              </b>
-                              <span class="text-neutral-400">
-                                ({{ rangoSemanaCorto .Solicitud.CupoDerechoItem.FechaDesde .Solicitud.CupoDerechoItem.FechaHasta }})
-                              </span>
-                            </span>
-                          </span>
-                        {{ end }}
                       </div>
                     </div>
                   </div>
@@ -170,14 +166,14 @@
                     <div
                       class="col-span-6"
                       x-data="searchableSelect({
-                        items: [
-                            {{ range .Rutas }}
-                        { value: '{{ .ID }}', label: '{{ .Tramo }}' },
+                          items: [
+                              {{ range .Rutas }}
+                        { value: '{{ .ID }}', label: '{{ .GetRutaDisplay }}' },
                       {{ end }}
-                        ],
-                        initialValue: '{{ .Form.RutaID }}',
-                        initialLabel: '{{ .Form.Ruta }}'
-                    })"
+                          ],
+                          initialValue: '{{ .Form.RutaID }}',
+                          initialLabel: '{{ .Form.Ruta }}'
+                      })"
                       x-modelable="value"
                       x-model="ruta_id"
                     >

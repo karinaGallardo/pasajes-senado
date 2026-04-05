@@ -24,9 +24,10 @@ func (r *RutaRepository) FindAll(ctx context.Context) ([]models.Ruta, error) {
 	err := r.db.WithContext(ctx).
 		Preload("Origen").
 		Preload("Destino").
-		Preload("Escalas.Destino", func(db *gorm.DB) *gorm.DB {
+		Preload("Escalas", func(db *gorm.DB) *gorm.DB {
 			return db.Order("seq ASC")
 		}).
+		Preload("Escalas.Destino").
 		Preload("Contratos.Aerolinea").
 		Find(&rutas).Error
 	return rutas, err
@@ -42,9 +43,9 @@ func (r *RutaRepository) Search(ctx context.Context, query string, onlyAtomic bo
 	if onlyAtomic {
 		db = db.Where("rutas.id NOT IN (SELECT ruta_id FROM ruta_escalas)")
 	} else {
-		db = db.Preload("Escalas.Destino", func(db *gorm.DB) *gorm.DB {
+		db = db.Preload("Escalas", func(db *gorm.DB) *gorm.DB {
 			return db.Order("seq ASC")
-		})
+		}).Preload("Escalas.Destino")
 	}
 
 	err := db.Where("tramo ILIKE ? OR sigla ILIKE ? OR origen_iata ILIKE ? OR destino_iata ILIKE ?", q, q, q, q).
@@ -61,9 +62,10 @@ func (r *RutaRepository) FindByID(ctx context.Context, id string) (*models.Ruta,
 	var ruta models.Ruta
 	err := r.db.WithContext(ctx).
 		Preload("Contratos.Aerolinea").
-		Preload("Escalas.Destino", func(db *gorm.DB) *gorm.DB {
+		Preload("Escalas", func(db *gorm.DB) *gorm.DB {
 			return db.Order("seq ASC")
-		}).First(&ruta, "id = ?", id).Error
+		}).
+		Preload("Escalas.Destino").First(&ruta, "id = ?", id).Error
 	return &ruta, err
 }
 

@@ -224,8 +224,9 @@ func (t SolicitudItem) CanAssignPasaje(user *Usuario) bool {
 		return false
 	}
 	st := t.GetEstado()
-	// Un encargado/admin puede asignar pasaje si el tramo está APROBADO y no hay uno activo.
-	return user.IsAdminOrResponsable() && st == "APROBADO" && !t.HasActivePasaje()
+	// Un encargado/admin puede asignar pasaje siempre que el tramo esté APROBADO o ya tenga emisiones previas (EMITIDO).
+	// Esto permite el registro de múltiples billetes para tramos compuestos (multi-aerolínea).
+	return user.IsAdminOrResponsable() && (st == "APROBADO" || st == "EMITIDO")
 }
 
 func (t SolicitudItem) GetOrigenDisplay() string {

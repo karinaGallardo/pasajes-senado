@@ -9,8 +9,7 @@ import (
 type PasajePermissions struct {
 	CanEdit         bool
 	CanMarkUsado    bool
-	CanDevolver     bool
-	CanAnular       bool
+	CanRevertirEmision bool
 	CanEmitir       bool
 	CanValidateUso  bool
 	ShowActionsMenu bool
@@ -126,14 +125,6 @@ func (p Pasaje) CanBeReverted(u ...*Usuario) bool {
 	return user.IsAdminOrResponsable() && p.GetEstado() == "EMITIDO"
 }
 
-func (p Pasaje) CanBeAnulado(u ...*Usuario) bool {
-	user := p.getAuthUser(u...)
-	if user == nil {
-		return false
-	}
-	return user.IsAdminOrResponsable() && p.GetEstado() == "REGISTRADO"
-}
-
 func (p Pasaje) CanMarkUsado(u ...*Usuario) bool {
 	user := p.getAuthUser(u...)
 	// Necesitamos la solicitud para el contexto de dueño/creador
@@ -186,14 +177,13 @@ func (p Pasaje) GetStatusBannerClass() string {
 // GetPermissions calcula el conjunto de permisos para un usuario específico sobre este pasaje.
 func (p Pasaje) GetPermissions(u ...*Usuario) PasajePermissions {
 	perms := PasajePermissions{
-		CanEdit:        p.CanBeEdited(u...),
-		CanMarkUsado:   p.CanMarkUsado(u...),
-		CanDevolver:    p.CanBeReverted(u...),
-		CanAnular:      p.CanBeAnulado(u...),
-		CanEmitir:      p.CanBeEmitted(u...),
-		CanValidateUso: false, // Campo deprecado o para uso futuro
+		CanEdit:           p.CanBeEdited(u...),
+		CanMarkUsado:      p.CanMarkUsado(u...),
+		CanRevertirEmision: p.CanBeReverted(u...),
+		CanEmitir:         p.CanBeEmitted(u...),
+		CanValidateUso:    false, // Campo deprecado o para uso futuro
 	}
-	perms.ShowActionsMenu = perms.CanEdit || perms.CanMarkUsado || perms.CanDevolver || perms.CanAnular || perms.CanEmitir
+	perms.ShowActionsMenu = perms.CanEdit || perms.CanMarkUsado || perms.CanRevertirEmision || perms.CanEmitir
 	return perms
 }
 
