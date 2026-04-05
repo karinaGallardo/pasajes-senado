@@ -313,35 +313,35 @@
                       hx-post="/solicitudes/oficial/{{ $.Solicitud.ID }}/items/{{ .ID }}/rechazar"
                       hx-confirm="¿Rechazar este tramo?"
                       hx-target="body"
-                      class="btn-sm btn-danger rounded-sm"
+                      class="btn-xs btn-danger rounded-sm text-[13px]"
                     >
-                      <i class="ph ph-x"></i>
+                      <i class="ph ph-x-circle font-bold text-[18px]"></i>
                       Rechazar
                     </button>
                   {{ end }}
                   {{ if .Permissions.CanRevert }}
-                    <button
-                      type="button"
-                      hx-post="/solicitudes/oficial/{{ $.Solicitud.ID }}/items/{{ .ID }}/revertir-aprobacion"
-                      hx-confirm="¿Está seguro de revertir la aprobación de este tramo? Volverá a estado SOLICITADO."
-                      hx-target="body"
-                      class="btn-sm btn-white text-warning-700 border-warning-200 rounded-sm"
-                    >
-                      <i class="ph ph-arrow-u-up-left"></i>
-                      Revertir
-                    </button>
-                  {{ end }}
-                  {{ if $.Solicitud.Permissions.CanAssignPasaje }}
-                    <button
-                      type="button"
-                      hx-get="/solicitudes/{{ $.Solicitud.ID }}/pasajes/nuevo?item_id={{ .ID }}"
-                      hx-target="#modal-container"
-                      class="btn-sm btn-secondary rounded-sm"
-                    >
-                      <i class="ph ph-plus"></i>
-                      Pasaje
-                    </button>
-                  {{ end }}
+                      <button
+                        type="button"
+                        hx-post="/solicitudes/oficial/{{ $.Solicitud.ID }}/items/{{ .ID }}/revertir-aprobacion"
+                        hx-confirm="¿Está seguro de revertir la aprobación de este tramo? Volverá a estado SOLICITADO."
+                        hx-target="body"
+                        class="btn-xs btn-white text-warning-700 border-warning-200 rounded-sm text-[13px]"
+                      >
+                        <i class="ph ph-arrow-counter-clockwise font-bold text-[18px]"></i>
+                        Revertir
+                      </button>
+                    {{ end }}
+                    {{ if .Permissions.CanAssignPasaje }}
+                      <button
+                        type="button"
+                        hx-get="/solicitudes/{{ $.Solicitud.ID }}/pasajes/nuevo?item_id={{ .ID }}"
+                        hx-target="#modal-container"
+                        class="btn-xs btn-secondary rounded-sm text-[12px]"
+                      >
+                        <i class="ph ph-ticket font-bold text-[18px]"></i>
+                        Asignar Pasaje
+                      </button>
+                    {{ end }}
                 </div>
               </div>
 

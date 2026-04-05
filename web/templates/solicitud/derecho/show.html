@@ -328,7 +328,7 @@
                         Revertir
                       </button>
                     {{ end }}
-                    {{ if $.Solicitud.Permissions.CanAssignPasaje }}
+                    {{ if .Permissions.CanAssignPasaje }}
                       <button
                         type="button"
                         hx-get="/solicitudes/{{ $.Solicitud.ID }}/pasajes/nuevo?item_id={{ .ID }}"
@@ -543,11 +543,11 @@
               <p class="text-sm font-bold text-neutral-900 uppercase tracking-tight">
                 {{ .Solicitud.Usuario.GetNombreCompleto }}
               </p>
-              <span
-                class="inline-flex items-center rounded-md bg-white border border-neutral-200 px-2 py-0.5 text-[10px] font-bold text-neutral-600"
-              >
-                {{ if .Solicitud.Usuario.IsTitular }}TITULAR{{ else }}SUPLENTE{{ end }}
-              </span>
+              {{ if .Solicitud.Usuario.IsSenadorTitular }}
+                <span class="inline-flex items-center rounded-md bg-white border border-neutral-200 px-2 py-0.5 text-[10px] font-bold text-neutral-600">TITULAR</span>
+              {{ else if .Solicitud.Usuario.IsSenadorSuplente }}
+                <span class="inline-flex items-center rounded-md bg-white border border-neutral-200 px-2 py-0.5 text-[10px] font-bold text-neutral-600">SUPLENTE</span>
+              {{ end }}
             </div>
           </div>
         </div>

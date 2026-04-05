@@ -319,23 +319,7 @@ func (ctrl *SolicitudDerechoController) Show(c *gin.Context) {
 	steps, showNextSteps := solicitud.GetStepperData()
 	statusCard := solicitud.GetStatusCardData()
 
-	// --- 4. Pasajes Views (con permisos pre-calculados) ---
-	var pasajesViews []PasajeView
-	for _, item := range solicitud.Items {
-		for i := range item.Pasajes {
-			p := &item.Pasajes[i]
-			pv := PasajeView{Pasaje: *p}
-
-			// Status Color logic
-			pv.StatusColorClass = p.GetStatusBadgeClass()
-
-			// Permissions logic for this pasaje delegated to Model
-			p.HydratePermissions(authUser)
-			pv.Perms = *p.Permissions
-			pasajesViews = append(pasajesViews, pv)
-		}
-	}
-	// Dependencies
+	// dependencies
 	aerolineas, _ := ctrl.aerolineaService.GetAllActive(c.Request.Context())
 	userIDsMap := make(map[string]bool)
 	if solicitud.CreatedBy != nil {
@@ -367,7 +351,6 @@ func (ctrl *SolicitudDerechoController) Show(c *gin.Context) {
 		"Steps":         steps,
 		"ShowNextSteps": showNextSteps,
 		"StatusCard":    statusCard,
-		"PasajesView":   pasajesViews,
 		"Aerolineas":    aerolineas,
 	})
 }

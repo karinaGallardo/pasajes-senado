@@ -138,21 +138,6 @@ func (ctrl *SolicitudOficialController) Show(c *gin.Context) {
 	steps, showNextSteps := solicitud.GetStepperData()
 	statusCard := solicitud.GetStatusCardData()
 
-	// --- 4. Pasajes Views ---
-	var pasajesViews []PasajeView
-	for _, item := range solicitud.Items {
-		for i := range item.Pasajes {
-			p := &item.Pasajes[i]
-			pv := PasajeView{Pasaje: *p}
-			pv.StatusColorClass = p.GetStatusBadgeClass()
-
-			// Permissions logic for this pasaje delegated to Model
-			p.HydratePermissions(authUser)
-			pv.Perms = *p.Permissions
-			pasajesViews = append(pasajesViews, pv)
-		}
-	}
-
 	aerolineas, _ := ctrl.aerolineaService.GetAllActive(c.Request.Context())
 
 	// Descargo PV-05/06: si ya existe, pasamos ID y Estado para enlaces directos
@@ -169,7 +154,6 @@ func (ctrl *SolicitudOficialController) Show(c *gin.Context) {
 		"Steps":          steps,
 		"ShowNextSteps":  showNextSteps,
 		"StatusCard":     statusCard,
-		"PasajesView":    pasajesViews,
 		"Aerolineas":     aerolineas,
 		"DescargoID":     descargoID,
 		"DescargoEstado": descargoEstado,

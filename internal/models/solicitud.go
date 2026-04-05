@@ -54,7 +54,6 @@ type SolicitudPermissions struct {
 	CanApproveReject  bool
 	CanRevertApproval bool
 	CanMakeDescargo   bool
-	CanAssignPasaje   bool
 	CanAssignViatico  bool
 	CanPrint          bool
 	CanDelete         bool
@@ -88,7 +87,6 @@ func (s Solicitud) GetPermissions(u ...*Usuario) SolicitudPermissions {
 		CanApproveReject:  s.CanApprove(u...),
 		CanRevertApproval: s.CanRevertApproval(u...),
 		CanMakeDescargo:   s.CanMakeDescargo(u...),
-		CanAssignPasaje:   s.CanAssignPasaje(u...),
 		CanAssignViatico:  s.CanAssignViatico(u...),
 		CanPrint:          s.CanPrint(u...),
 		CanDelete:         s.CanDelete(u...),
@@ -104,6 +102,17 @@ func (s *Solicitud) HydratePermissions(u ...*Usuario) {
 	}
 	p := s.GetPermissions()
 	s.Permissions = &p
+
+	// Hidratar items y sus pasajes recursivamente
+	for i := range s.Items {
+		item := &s.Items[i]
+		item.HydratePermissions(s.getAuthUser())
+
+		// Hidratar pasajes de cada item
+		for j := range item.Pasajes {
+			item.Pasajes[j].HydratePermissions(s.getAuthUser())
+		}
+	}
 }
 
 // GetStatusCardClasses retorna las clases de borde y texto para las tarjetas de estado del sistema.
