@@ -842,13 +842,20 @@ func (s Solicitud) CanEdit(u ...*Usuario) bool {
 	if user == nil {
 		return false
 	}
-	// El Administrador o Responsable siempre tiene poder de edición administrativa
+
+	estado := s.GetEstado()
+	// No se puede editar en estados finales, independientemente del rol.
+	// Si un Admin necesita editar, debe revertir la aprobación primero.
+	if estado == "APROBADO" || estado == "EMITIDO" || estado == "FINALIZADO" {
+		return false
+	}
+
+	// El Administrador o Responsable tiene poder de edición administrativa en estados abiertos
 	if user.IsAdminOrResponsable() {
 		return s.CanView(user)
 	}
 
 	// Para usuarios normales, solo si está en estados editables
-	estado := s.GetEstado()
 	isEditableState := (estado == "SOLICITADO" || estado == "RECHAZADO" || estado == "PARCIALMENTE_APROBADO")
 	if !isEditableState {
 		return false
@@ -1027,6 +1034,15 @@ func (s Solicitud) GetStepNumber() int {
 	default:
 		return 1
 	}
+}
+
+// GetCostoTotalPasajes suma el costo de todos los pasajes (tickets) registrados en todos los ítems de la solicitud.
+func (s Solicitud) GetCostoTotalPasajes() float64 {
+	total := 0.0
+	for _, item := range s.Items {
+		total += item.GetCostoTotal()
+	}
+	return total
 }
 
 func (s Solicitud) HasCompleteDescargo() bool {

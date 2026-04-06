@@ -127,6 +127,7 @@ func (s *SolicitudDerechoService) CreateDerecho(ctx context.Context, req dtos.Cr
 		DestinoIATA:  sede,
 		Fecha:        fechaIda,
 		EstadoCodigo: utils.Ptr(stIda),
+		AerolineaID:  utils.NilIfEmpty(req.AerolineaID),
 	})
 
 	// Tramo 2: VUELTA
@@ -141,6 +142,7 @@ func (s *SolicitudDerechoService) CreateDerecho(ctx context.Context, req dtos.Cr
 		DestinoIATA:  req.DestinoVueltaIATA,
 		Fecha:        fechaVuelta,
 		EstadoCodigo: utils.Ptr(stVuelta),
+		AerolineaID:  utils.NilIfEmpty(req.AerolineaID),
 	})
 
 	if !hasProgrammed {
@@ -282,6 +284,7 @@ func (s *SolicitudDerechoService) UpdateDerecho(ctx context.Context, id string, 
 			if it.Fecha != nil {
 				hasProgrammed = true
 			}
+			it.AerolineaID = utils.NilIfEmpty(req.AerolineaID)
 		}
 
 		if !hasProgrammed {
@@ -305,6 +308,7 @@ func (s *SolicitudDerechoService) ensureDerechoItems(solicitud *models.Solicitud
 			OrigenIATA:   origenIda,
 			DestinoIATA:  sede,
 			EstadoCodigo: utils.Ptr("PENDIENTE"),
+			AerolineaID:  solicitud.AerolineaID,
 		})
 	}
 	if solicitud.GetItemVuelta() == nil {
@@ -314,6 +318,7 @@ func (s *SolicitudDerechoService) ensureDerechoItems(solicitud *models.Solicitud
 			OrigenIATA:   sede,
 			DestinoIATA:  destinoVuelta,
 			EstadoCodigo: utils.Ptr("PENDIENTE"),
+			AerolineaID:  solicitud.AerolineaID,
 		})
 	}
 }

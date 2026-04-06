@@ -7,7 +7,7 @@
     <div class="mb-6 flex items-center justify-between">
       <div>
         <div class="flex items-center gap-3">
-          <h2 class="text-3xl font-bold text-neutral-900 leading-none">{{ .Solicitud.Codigo }}</h2>
+          <h2 class="text-3xl font-black text-neutral-900 tracking-tight">{{ .Solicitud.Codigo }}</h2>
           <span
             class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-primary-50 text-primary-700 border border-primary-200 shadow-sm"
           >
@@ -137,7 +137,7 @@
           </a>
         {{ end }}
         <a
-          href="/solicitudes?estado={{ .Solicitud.EstadoSolicitud.Codigo }}"
+          href="/solicitudes/derecho?estado={{ .Solicitud.EstadoSolicitud.Codigo }}"
           class="btn-md btn-white border-neutral-300 rounded-sm inline-flex items-center gap-2"
         >
           Volver
@@ -221,7 +221,18 @@
       <!-- Itinerario y Pasajes -->
       <div class="bg-white shadow sm:rounded-lg border border-neutral-200">
         <div class="px-6 py-4 border-b border-neutral-200 bg-neutral-50 flex justify-between items-center">
-          <h3 class="text-sm font-bold text-neutral-800 uppercase tracking-wider">Pasajes Solicitados</h3>
+          <div class="flex items-center gap-4">
+            <h3 class="text-sm font-bold text-neutral-800 uppercase tracking-wider">Pasajes Solicitados</h3>
+            {{ if gt .Solicitud.GetCostoTotalPasajes 0.0 }}
+              <div
+                class="flex items-center gap-1.5 px-2 py-0.5 bg-neutral-50 border border-neutral-200 text-neutral-800 rounded shadow-sm"
+              >
+                <i class="ph ph-currency-circle-dollar text-primary-600 font-bold text-sm"></i>
+                <span class="text-[10px] font-black uppercase tracking-tighter text-neutral-400">Costo Total:</span>
+                <span class="text-xs font-black">{{ printf "%.2f" .Solicitud.GetCostoTotalPasajes }} Bs</span>
+              </div>
+            {{ end }}
+          </div>
           {{ if .Solicitud.Permissions.CanRevertApproval }}
             <button
               type="button"
@@ -264,6 +275,13 @@
                       <span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase {{ .GetStatusBadgeClass }}">
                         {{ .GetEstado }}
                       </span>
+                      {{ if gt .GetCostoTotal 0.0 }}
+                        <span
+                          class="px-2 py-0.5 rounded border border-secondary-200 bg-secondary-50 text-secondary-700 text-[10px] font-black uppercase"
+                        >
+                          Subtotal: {{ printf "%.2f" .GetCostoTotal }} Bs
+                        </span>
+                      {{ end }}
                     </div>
 
                     <div class="h-4 w-px bg-neutral-200 hidden sm:block"></div>

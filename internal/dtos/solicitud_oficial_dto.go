@@ -7,6 +7,7 @@ type TramoOficialRequest struct {
 	FechaSalida string `json:"fecha_salida"`
 	Tipo        string `json:"tipo"` // IDA o VUELTA
 	Estado      string `json:"estado"`
+	AerolineaID string `json:"aerolinea_id"`
 }
 
 type CreateSolicitudOficialRequest struct {
@@ -16,5 +17,6 @@ type CreateSolicitudOficialRequest struct {
 	Motivo              string                `form:"motivo"`
 	Autorizacion        string                `form:"autorizacion"`
 	AerolineaID         string                `form:"aerolinea_id"`
-	Tramos              []TramoOficialRequest `form:"-"`
+	TramosIda           []TramoOficialRequest `form:"-"`
+	TramosVuelta        []TramoOficialRequest `form:"-"`
 }

@@ -35,7 +35,7 @@
           x-transition:leave="ease-in duration-200"
           x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
           x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-          class="relative transform rounded-lg bg-white text-left shadow-xl transition-all sm:my-8 sm:w-full sm:max-w-6xl"
+          class="relative transform rounded-md bg-white text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-6xl overflow-visible border border-neutral-200"
         >
           <form
             x-ref="form"
@@ -48,757 +48,637 @@
             method="POST"
             autocomplete="off"
           >
-            <input type="hidden" name="tramos_json" id="tramos_json_input_edit" value="" />
+            <input type="hidden" name="tramos_ida_json" id="tramos_ida_json_input_edit" value="" />
+            <input type="hidden" name="tramos_vuelta_json" id="tramos_vuelta_json_input_edit" value="" />
 
             <!-- Header -->
-            <div
-              class="bg-white px-4 pt-5 pb-5 sm:p-6 border-b border-neutral-200 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4"
-            >
-              <div class="flex items-center space-x-4">
-                <div
-                  class="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary shadow-sm border border-primary/20"
-                >
-                  <i class="ph ph-note-pencil text-3xl"></i>
+            <div class="bg-white px-6 py-4 border-b border-neutral-100 flex items-center justify-between">
+              <div class="flex items-center gap-4">
+                <div class="h-10 w-10 rounded bg-primary-100 flex items-center justify-center text-primary">
+                  <i class="ph ph-note-pencil text-xl font-bold"></i>
                 </div>
-                <div class="text-left">
-                  <div class="flex items-center gap-3 mb-1">
-                    <h3 class="text-xl font-black text-neutral-900 leading-none tracking-tighter">Editar Solicitud Oficial</h3>
+                <div>
+                  <div class="flex items-center gap-3">
+                    <h3 class="text-sm font-black text-neutral-900 uppercase tracking-widest">Editar Solicitud Oficial</h3>
                     <span
                       class="px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-neutral-100 text-neutral-600 border border-neutral-200"
                     >
                       {{ .Solicitud.Codigo }}
                     </span>
                   </div>
-                  <div class="flex items-center gap-2 flex-wrap">
-                    <span
-                      class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-primary-50 text-primary-700 border border-primary-100"
-                    >
-                      {{ .Solicitud.GetTipoNombre }}
-                    </span>
-                    {{ if .Solicitud.EstadoSolicitud }}
-                      <span
-                        class="px-2 py-0.5 inline-flex items-center gap-1 text-[9px] font-black rounded-full border {{ .Solicitud.GetStatusBadgeClass }}"
-                      >
-                        <i class="{{ .Solicitud.EstadoSolicitud.Icon }}"></i>
-                        {{ .Solicitud.EstadoSolicitud.Nombre }}
-                      </span>
-                    {{ end }}
-                    <span class="h-1 w-1 rounded-full bg-neutral-300 mx-1"></span>
-                    <p class="text-xs text-neutral-500 font-bold uppercase tracking-tight">
+                  <div class="flex items-center gap-2 mt-0.5">
+                    <span class="text-[10px] font-bold text-neutral-400 uppercase tracking-widest">Solicitante:</span>
+                    <span class="text-[10px] font-black text-neutral-600 uppercase tracking-widest">
                       {{ .Solicitud.Usuario.GetNombreCompleto }}
-                    </p>
+                    </span>
                   </div>
                 </div>
               </div>
 
-              <div class="flex gap-2">
+              <div class="flex items-center gap-3">
                 <button
                   type="submit"
-                  :disabled="loading"
-                  class="bg-primary text-white px-4 py-2 rounded-sm font-bold text-sm shadow-sm hover:bg-primary-700 disabled:opacity-50 transition-colors"
+                  :disabled="loading || !isValid"
+                  class="group relative inline-flex items-center gap-2 bg-primary text-white px-4 py-2 rounded-md font-black text-[11px] uppercase tracking-widest hover:bg-primary-700 transition-all disabled:opacity-50 shadow-sm"
                 >
-                  <span x-show="!loading">Guardar Cambios</span>
-                  <span x-show="loading">Procesando...</span>
+                  <i x-show="!loading" class="ph ph-floppy-disk text-lg"></i>
+                  <i x-show="loading" class="ph ph-spinner animate-spin text-lg"></i>
+                  <span x-text="loading ? 'Procesando...' : 'Guardar Cambios'"></span>
                 </button>
                 <button
                   @click="isUpdated ? window.location.reload() : open = false"
                   type="button"
-                  class="bg-white border border-neutral-300 text-neutral-700 px-4 py-2 rounded-sm font-bold text-sm hover:bg-neutral-50 transition-all"
+                  class="bg-white border border-neutral-300 text-neutral-600 px-4 py-2 rounded-md font-black text-[11px] uppercase tracking-widest hover:bg-neutral-50 transition-all shadow-sm"
                 >
-                  Cancelar / Cerrar
+                  Cerrar
                 </button>
               </div>
             </div>
 
-            <div class="px-6 py-6 space-y-6 bg-neutral-50/30">
+            <div class="px-4 py-3 space-y-4 bg-neutral-50/20">
               {{ if .SuccessMessage }}
                 <div
                   x-data="{ show: true }"
                   x-show="show"
                   x-init="setTimeout(() => show = false, 5000)"
-                  class="mb-4 p-3 bg-success-50 border border-success-200 rounded-lg flex items-center justify-between gap-3"
+                  class="p-3 bg-emerald-50 border border-emerald-200 rounded-md flex items-center justify-between gap-3 shadow-sm animate-in fade-in slide-in-from-top-2 duration-300"
                 >
                   <div class="flex items-center gap-3">
-                    <i class="ph ph-check-circle text-success-500 text-xl"></i>
-                    <span class="text-sm font-bold text-success-600">{{ .SuccessMessage }}</span>
+                    <div class="h-8 w-8 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600">
+                      <i class="ph ph-check-circle text-xl font-bold"></i>
+                    </div>
+                    <div>
+                      <p class="text-[11px] font-black text-emerald-800 uppercase tracking-widest leading-none mb-0.5">
+                        Operación Exitosa
+                      </p>
+                      <p class="text-[10px] font-bold text-emerald-600 uppercase tracking-tight">{{ .SuccessMessage }}</p>
+                    </div>
                   </div>
-                  <button @click="show = false" type="button" class="text-success-400 hover:text-success-600">
-                    <i class="ph ph-x text-sm"></i>
+                  <button
+                    @click="show = false"
+                    type="button"
+                    class="text-emerald-400 hover:text-emerald-600 p-1 transition-colors"
+                  >
+                    <i class="ph ph-x-circle text-lg"></i>
                   </button>
                 </div>
               {{ end }}
+
               {{ if .ErrorMessage }}
-                <div class="mb-4 p-3 bg-danger-50 border border-danger-200 rounded-lg flex items-center gap-3">
-                  <i class="ph ph-warning-circle text-danger-500 text-xl"></i>
-                  <span class="text-sm font-bold text-danger-600">{{ .ErrorMessage }}</span>
+                <div
+                  class="p-3 bg-rose-50 border border-rose-200 rounded-md flex items-center gap-3 shadow-sm animate-in fade-in slide-in-from-top-2 duration-300"
+                >
+                  <div class="h-8 w-8 rounded-full bg-rose-100 flex items-center justify-center text-rose-600">
+                    <i class="ph ph-warning-circle text-xl font-bold"></i>
+                  </div>
+                  <div>
+                    <p class="text-[11px] font-black text-rose-800 uppercase tracking-widest leading-none mb-0.5">Atención</p>
+                    <p class="text-[10px] font-bold text-rose-600 uppercase tracking-tight">{{ .ErrorMessage }}</p>
+                  </div>
                 </div>
               {{ end }}
-              <!-- 1. GENERAL INFO SECTION -->
-              <div class="bg-white rounded-xl shadow-sm border border-neutral-200 p-4">
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
-                  <!-- Row 1: Quad inputs -->
-                  <div class="space-y-1">
-                    <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">
-                      Tipo de Solicitud
-                    </label>
-                    <select
-                      name="tipo_solicitud_codigo"
-                      x-model="tipo"
-                      required
-                      class="w-full rounded-sm border border-accent-200 text-xs bg-white shadow-sm focus:ring-primary focus:border-primary transition-all py-1.5 px-3 cursor-pointer"
-                    >
-                      {{ range .Tipos }}
-                        <option value="{{ .Codigo }}">{{ .Nombre }}</option>
-                      {{ end }}
-                    </select>
-                  </div>
-                  <div class="space-y-1">
-                    <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">Ámbito</label>
-                    <select
-                      name="ambito_viaje_codigo"
-                      x-model="ambito"
-                      required
-                      class="w-full rounded-sm border border-accent-200 text-xs bg-white shadow-sm focus:ring-primary focus:border-primary transition-all py-1.5 px-3 cursor-pointer"
-                    >
-                      <option value="">Seleccione...</option>
-                      {{ range .Ambitos }}
-                        <option value="{{ .Codigo }}">{{ .Nombre }}</option>
-                      {{ end }}
-                    </select>
+
+
+              <!-- 1. Datos Generales -->
+              <section class="space-y-4">
+                <div class="flex items-center gap-2 mb-1">
+                  <div class="w-1 h-4 bg-primary rounded-full"></div>
+                  <h4 class="text-xs font-black text-neutral-900 uppercase tracking-widest">Información de la Solicitud</h4>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 bg-white p-0">
+                  <div
+                    class="space-y-1.5"
+                    x-data="{ open: false, selectedLabel: '' }"
+                    x-init="selectedLabel = '{{ .Solicitud.GetTipoNombre }}'"
+                  >
+                    <label class="block text-[10px] font-black text-neutral-600 uppercase tracking-widest ml-1">Tipo</label>
+                    <div class="relative">
+                      <select
+                        name="tipo_solicitud_codigo"
+                        x-model="tipo"
+                        class="w-full bg-neutral-50/50 border border-neutral-300 rounded-md px-4 py-2 text-xs font-bold focus:ring-1 focus:ring-primary/20 focus:border-primary appearance-none cursor-pointer"
+                      >
+                        {{ range .Tipos }}
+                          <option value="{{ .Codigo }}">{{ .Nombre }}</option>
+                        {{ end }}
+                      </select>
+                      <i
+                        class="ph ph-caret-down absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"
+                      ></i>
+                    </div>
                   </div>
 
-                  <div class="space-y-1">
-                    <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">
-                      Nro(Memo/RD/Nota JG/RC)
+                  <div class="space-y-1.5">
+                    <label class="block text-[10px] font-black text-neutral-600 uppercase tracking-widest ml-1">Ámbito</label>
+                    <div class="relative">
+                      <select
+                        name="ambito_viaje_codigo"
+                        x-model="ambito"
+                        class="w-full bg-neutral-50/50 border border-neutral-300 rounded-md px-4 py-2 text-xs font-bold focus:ring-1 focus:ring-primary/20 focus:border-primary appearance-none cursor-pointer"
+                      >
+                        {{ range .Ambitos }}
+                          <option value="{{ .Codigo }}">{{ .Nombre }}</option>
+                        {{ end }}
+                      </select>
+                      <i
+                        class="ph ph-caret-down absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none"
+                      ></i>
+                    </div>
+                  </div>
+
+                  <div class="space-y-1.5">
+                    <label class="block text-[10px] font-black text-neutral-600 uppercase tracking-widest ml-1">
+                      Nro(Memo/RD/Nota)
                     </label>
                     <input
                       type="text"
                       name="autorizacion"
                       x-model="autorizacion"
-                      required
-                      class="w-full rounded-sm border border-accent-200 text-xs bg-white shadow-sm focus:ring-primary focus:border-primary py-1.5 px-3"
-                      placeholder="Ej: Res. 001/24"
+                      class="w-full bg-neutral-50/50 border border-neutral-300 rounded-md px-4 py-2 text-xs font-bold focus:ring-1 focus:ring-primary/20 focus:border-primary"
                     />
                   </div>
 
-                  <div class="space-y-1">
-                    <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">
-                      Aerolínea Sugerida
-                    </label>
-                    <select
-                      name="aerolinea_id"
-                      x-model="aerolinea"
-                      class="w-full rounded-sm border border-accent-200 text-xs bg-white shadow-sm focus:ring-primary focus:border-primary transition-all py-1.5 px-3 cursor-pointer"
-                    >
-                      <option value="">Cualquiera</option>
-                      {{ range .Aerolineas }}
-                        <option value="{{ .ID }}">{{ .Nombre }}</option>
-                      {{ end }}
-                    </select>
-                  </div>
-
-                  <!-- Row 2: Full width textarea -->
-                  <div class="md:col-span-4 space-y-1">
-                    <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">
-                      Motivo de la Comisión
-                      {{ if .Solicitud.Usuario.IsSenador }}
-                        <span class="text-neutral-400 font-normal lowercase opacity-70 italic">(Opcional para Senadores)</span>
-                      {{ end }}
+                  <div class="md:col-span-3 space-y-1.5">
+                    <label class="block text-[10px] font-black text-neutral-600 uppercase tracking-widest ml-1">
+                      Motivo Detallado
                     </label>
                     <textarea
                       name="motivo"
                       x-model="motivo"
-                      {{ if not .Solicitud.Usuario.IsSenador }}
-                        required
-                      {{ end }}
                       rows="2"
-                      class="w-full rounded-sm border border-accent-200 text-xs bg-white shadow-sm focus:ring-primary focus:border-primary transition-all py-1.5 px-3 resize-none"
-                      placeholder="{{ if .Solicitud.Usuario.IsSenador }}
-                        Ej: Gestión Parlamentaria...
-                      {{ else }}
-                        Escriba aquí el propósito detallado del viaje oficial...
-                      {{ end }}"
+                      class="w-full bg-neutral-50/50 border border-neutral-300 rounded-md px-4 py-2 text-xs font-bold focus:ring-1 focus:ring-primary/20 focus:border-primary resize-none"
                     ></textarea>
                   </div>
                 </div>
-              </div>
+              </section>
 
-              <!-- 2. ITINERARY SECTIONS (IDA) -->
-              <div class="bg-white rounded-xl shadow-sm border border-neutral-200">
-                <div
-                  class="px-4 py-3 border-b border-neutral-100 bg-primary-50/30 flex justify-between items-center rounded-t-xl"
-                >
-                  <div class="flex items-center gap-2 text-primary-700">
-                    <i class="ph ph-airplane-landing text-xl"></i>
-                    <h4 class="text-[10px] font-black uppercase tracking-widest">Tramos de IDA</h4>
+              <!-- 2. ITINERARIOS -->
+              <section class="space-y-6">
+                <!-- Tramos de IDA -->
+                <div class="bg-white rounded-md border border-neutral-300 shadow-sm overflow-visible">
+                  <div class="px-4 py-2 border-b border-neutral-200 bg-neutral-50/50 flex justify-between items-center">
+                    <div class="flex items-center gap-2">
+                      <i class="ph ph-airplane-landing text-primary text-base font-bold"></i>
+                      <h4 class="text-[10px] font-black text-neutral-800 uppercase tracking-widest">Itinerario de IDA</h4>
+                    </div>
+                    <button
+                      type="button"
+                      @click="addTramo('IDA')"
+                      class="group inline-flex items-center gap-1.5 px-3 py-1 rounded bg-primary text-white text-[9px] font-black uppercase tracking-widest hover:bg-primary-700 transition-all shadow-sm"
+                    >
+                      <i class="ph ph-plus-circle text-sm"></i>
+                      <span>Añadir Tramo</span>
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    @click="addTramo('IDA')"
-                    class="inline-flex items-center gap-1 px-2 py-1 rounded-sm bg-white border border-primary-200 text-primary-700 text-[9px] font-black uppercase tracking-wider hover:bg-primary-50 transition-all"
-                  >
-                    <i class="ph ph-plus-circle"></i>
-                    <span>Añadir Tramo Ida</span>
-                  </button>
-                </div>
 
-                <div>
-                  <table class="w-full divide-y divide-neutral-200 table-fixed">
-                    <thead class="bg-neutral-50/50">
-                      <tr>
-                        <th
-                          class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase tracking-widest pl-10 w-[35%]"
-                        >
-                          Origen
-                        </th>
-                        <th
-                          class="px-2 py-1 text-center text-[9px] font-black text-neutral-400 uppercase tracking-widest w-[5%]"
-                        ></th>
-                        <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase tracking-widest w-[35%]">
-                          Destino
-                        </th>
-                        <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase tracking-widest w-[18%]">
-                          Salida (Fecha/Hora)
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody class="divide-y divide-neutral-100">
-                      <template x-for="item in tramosIda()" :key="'ida-' + (item.tramo.id || item.index)">
-                        <tr class="hover:bg-neutral-50/30 transition-colors relative">
-                          <!-- Origen (IDA) -->
-                          <td class="px-4 py-1.5">
-                            <div
-                              x-show="!canEditOrigin(item.index)"
-                              class="w-full bg-neutral-100 border border-neutral-200 rounded-sm pl-3 pr-8 py-1 text-[11px] font-medium text-neutral-500 cursor-not-allowed flex items-center justify-between h-[28px]"
-                            >
-                              <span class="truncate" x-text="item.tramo.origenLabel || '-'"></span>
-                              <i class="ph ph-lock-simple text-neutral-400"></i>
-                            </div>
-                            <div
-                              x-show="canEditOrigin(item.index)"
-                              x-data="searchableSelect({
-                              items: [],
-                              initialValue: item.tramo.origen,
-                              initialLabel: item.tramo.origenLabel,
-                              placeholder: 'Origen...'
-                            })"
-                              x-effect="items = availableDestinos"
-                              x-init="value = item.tramo.origen; label = item.tramo.origenLabel || placeholder; $watch('value', function(v) { item.tramo.origen = v; var it = allDestinos.find(function(d) { return d.value === v; }); if (it) item.tramo.origenLabel = it.value + ' - ' + it.label; })"
-                              class="relative"
-                            >
-                              <div
-                                x-show="!open"
-                                @click="open = true; $nextTick(function() { $refs.searchInput.focus() })"
-                                class="w-full bg-white border border-accent-200 rounded-sm shadow-sm pl-3 pr-8 py-1 text-left text-[11px] font-medium cursor-pointer flex items-center justify-between h-[28px]"
-                              >
-                                <span class="truncate" x-text="label || placeholder"></span>
-                                <i class="ph ph-magnifying-glass text-neutral-400 text-sm"></i>
-                              </div>
-                              <input
-                                x-ref="searchInput"
-                                x-model="search"
-                                x-show="open"
-                                @click.away="open = false"
-                                @keydown.escape="open = false"
-                                @keydown.enter.prevent="if (filteredItems.length > 0) select(filteredItems[0])"
-                                type="text"
-                                class="w-full bg-white border border-primary rounded-sm shadow-sm pl-3 pr-8 py-1 text-[11px] font-medium focus:outline-none focus:ring-1 focus:ring-primary h-[28px]"
-                                placeholder="Filtrar..."
-                              />
-                              <div
-                                x-show="open"
-                                class="absolute z-[100] mt-1 w-full bg-white shadow-xl rounded-lg border border-neutral-200 overflow-hidden"
-                                x-cloak
-                              >
-                                <div class="max-h-60 overflow-y-auto">
-                                  <template x-for="dest in filteredItems" :key="dest.value">
-                                    <div
-                                      @click="select(dest)"
-                                      class="px-3 py-1.5 hover:bg-primary hover:text-white cursor-pointer text-[10px] font-bold border-b border-neutral-50 transition-colors"
-                                    >
-                                      <span x-text="dest.value + ' - ' + dest.label"></span>
-                                    </div>
-                                  </template>
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-
-                          <td class="px-2 py-1.5 text-center">
-                            <i class="ph ph-caret-right text-neutral-300"></i>
-                          </td>
-
-                          <!-- Destino (IDA) -->
-                          <td class="px-4 py-1.5">
-                            <div
-                              x-show="!isTramoEditable(item.tramo)"
-                              class="w-full bg-neutral-100 border border-neutral-200 rounded-sm pl-3 pr-8 py-1 text-[11px] font-medium text-neutral-500 cursor-not-allowed flex items-center justify-between h-[28px]"
-                            >
-                              <span class="truncate" x-text="item.tramo.destinoLabel || '-'"></span>
-                              <i class="ph ph-lock-simple text-neutral-400"></i>
-                            </div>
-                            <div
-                              x-show="isTramoEditable(item.tramo)"
-                              x-data="searchableSelect({
-                              items: [],
-                              initialValue: item.tramo.destino,
-                              initialLabel: item.tramo.destinoLabel,
-                              placeholder: 'Destino...'
-                            })"
-                              x-effect="items = availableDestinos"
-                              x-init="value = item.tramo.destino; label = item.tramo.destinoLabel || placeholder; $watch('value', function(v) { item.tramo.destino = v; var it = allDestinos.find(function(d) { return d.value === v; }); if (it) item.tramo.destinoLabel = it.value + ' - ' + it.label; })"
-                              class="relative"
-                            >
-                              <div
-                                x-show="!open"
-                                @click="open = true; $nextTick(function() { $refs.searchInput.focus() })"
-                                class="w-full bg-white border border-accent-200 rounded-sm shadow-sm pl-3 pr-8 py-1 text-left text-[11px] font-medium cursor-pointer flex items-center justify-between h-[28px]"
-                              >
-                                <span class="truncate" x-text="label || placeholder"></span>
-                                <i class="ph ph-magnifying-glass text-neutral-400 text-sm"></i>
-                              </div>
-                              <input
-                                x-ref="searchInput"
-                                x-model="search"
-                                x-show="open"
-                                @click.away="open = false"
-                                @keydown.escape="open = false"
-                                @keydown.enter.prevent="if (filteredItems.length > 0) select(filteredItems[0])"
-                                type="text"
-                                class="w-full bg-white border border-primary rounded-sm shadow-sm pl-3 pr-8 py-1 text-[11px] font-medium focus:outline-none focus:ring-1 focus:ring-primary h-[28px]"
-                                placeholder="Filtrar..."
-                              />
-                              <div
-                                x-show="open"
-                                class="absolute z-[100] mt-1 w-full bg-white shadow-xl rounded-lg border border-neutral-200 overflow-hidden"
-                                x-cloak
-                              >
-                                <div class="max-h-60 overflow-y-auto">
-                                  <template x-for="dest in filteredItems" :key="dest.value">
-                                    <div
-                                      @click="select(dest)"
-                                      class="px-3 py-1.5 hover:bg-primary hover:text-white cursor-pointer text-[10px] font-bold border-b border-neutral-50 transition-colors"
-                                    >
-                                      <span x-text="dest.value + ' - ' + dest.label"></span>
-                                    </div>
-                                  </template>
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-
-                          <!-- Salida (IDA) -->
-                          <td class="px-4 py-1.5">
-                            <input
-                              type="text"
-                              readonly
-                              x-datepicker="{ position: 'top center' }"
-                              x-model="item.tramo.fechaSalida"
-                              :disabled="item.tramo.estado !== 'SOLICITADO' && item.tramo.estado !== 'RECHAZADO' && item.tramo.estado !== 'PENDIENTE' && !isAdmin"
-                              :class="(item.tramo.estado !== 'SOLICITADO' && item.tramo.estado !== 'RECHAZADO' && item.tramo.estado !== 'PENDIENTE' && !isAdmin) ? 'bg-neutral-100 text-neutral-500 cursor-not-allowed border-neutral-200' : 'bg-white cursor-pointer border-accent-200'"
-                              class="w-full rounded-sm border text-[11px] py-1 h-[28px] focus:ring-primary shadow-sm"
-                              placeholder="Seleccione fecha..."
-                            />
-                          </td>
-
-                          <td class="px-4 py-1.5 text-right">
-                            <button
-                              type="button"
-                              x-show="canRemoveTramo(item.index)"
-                              @click="removeTramo(item.index)"
-                              class="p-1 text-danger-400 hover:text-danger-700 hover:bg-danger-50 rounded-sm transition-all"
-                              title="Eliminar tramo"
-                            >
-                              <i class="ph ph-trash text-base"></i>
-                            </button>
-                          </td>
+                  <div class="overflow-visible pb-4">
+                    <table class="w-full border-collapse">
+                      <thead>
+                        <tr class="border-b border-neutral-100">
+                          <th
+                            class="px-4 py-2 text-left text-[9px] font-black text-neutral-400 uppercase tracking-widest w-[28%]"
+                          >
+                            Origen
+                          </th>
+                          <th class="w-[2%]"></th>
+                          <th
+                            class="px-4 py-2 text-left text-[9px] font-black text-neutral-400 uppercase tracking-widest w-[28%]"
+                          >
+                            Destino
+                          </th>
+                          <th
+                            class="px-4 py-2 text-left text-[9px] font-black text-neutral-400 uppercase tracking-widest w-[20%]"
+                          >
+                            Aerolínea
+                          </th>
+                          <th
+                            class="px-4 py-2 text-left text-[9px] font-black text-neutral-400 uppercase tracking-widest w-[16%]"
+                          >
+                            Fecha Salida
+                          </th>
+                          <th class="px-4 py-2 w-[6%]"></th>
                         </tr>
-                      </template>
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-
-              <!-- 2. ITINERARY SECTIONS (VUELTA) -->
-              <div class="bg-white rounded-xl shadow-sm border border-neutral-200">
-                <div
-                  class="px-4 py-3 border-b border-neutral-100 bg-secondary-50/30 flex justify-between items-center rounded-t-xl"
-                >
-                  <div class="flex items-center gap-2 text-secondary-700">
-                    <i class="ph ph-airplane-takeoff text-xl"></i>
-                    <h4 class="text-[10px] font-black uppercase tracking-widest">Tramos de VUELTA</h4>
+                      </thead>
+                      <tbody class="divide-y divide-neutral-50">
+                        <template x-for="(item, index) in tramos.filter(t => t.tipo === 'IDA')" :key="item.id">
+                          <tr class="group hover:bg-neutral-50/50 transition-colors">
+                            <td class="px-4 py-2">
+                              <template x-if="isTramoEditable(item)">
+                                {{ template "searchable_select_field" dict "Value" "item.origen" "Label" "item.origenLabel" "Placeholder" "Origen..." }}
+                              </template>
+                              <template x-if="!isTramoEditable(item)">
+                                <div
+                                  class="bg-neutral-100 border border-neutral-200 rounded-md px-3 py-1.5 text-xs font-bold text-neutral-500 h-[32px] flex items-center justify-between"
+                                >
+                                  <span x-text="item.origenLabel"></span>
+                                  <i class="ph ph-lock-simple text-neutral-400"></i>
+                                </div>
+                              </template>
+                            </td>
+                            <td class="text-center">
+                              <i class="ph ph-caret-right text-neutral-300 font-bold"></i>
+                            </td>
+                            <td class="px-4 py-2">
+                              <template x-if="isTramoEditable(item)">
+                                {{ template "searchable_select_field" dict "Value" "item.destino" "Label" "item.destinoLabel" "Placeholder" "Destino..." }}
+                              </template>
+                              <template x-if="!isTramoEditable(item)">
+                                <div
+                                  class="bg-neutral-100 border border-neutral-200 rounded-md px-3 py-1.5 text-xs font-bold text-neutral-500 h-[32px] flex items-center justify-between"
+                                >
+                                  <span x-text="item.destinoLabel"></span>
+                                  <i class="ph ph-lock-simple text-neutral-400"></i>
+                                </div>
+                              </template>
+                            </td>
+                            <td class="px-4 py-2">
+                              <div class="relative">
+                                <select
+                                  x-model="item.aerolinea_id"
+                                  :disabled="!isTramoEditable(item)"
+                                  class="w-full bg-neutral-50/50 border border-neutral-300 rounded-md px-3 py-1.5 text-xs font-bold focus:ring-1 focus:ring-primary/20 focus:border-primary appearance-none cursor-pointer disabled:bg-neutral-100 disabled:text-neutral-400"
+                                >
+                                  <option value="">Cualquiera</option>
+                                  {{ range .Aerolineas }}
+                                    <option value="{{ .ID }}">{{ .Sigla }}</option>
+                                  {{ end }}
+                                </select>
+                                <i
+                                  class="ph ph-caret-down absolute right-2 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none text-[10px]"
+                                ></i>
+                              </div>
+                            </td>
+                            <td class="px-4 py-2">
+                              <input
+                                type="text"
+                                x-model="item.fecha_salida"
+                                x-datepicker="{ position: 'top center', timepicker: true }"
+                                :disabled="!isTramoEditable(item)"
+                                class="w-full bg-neutral-50/50 border border-neutral-300 rounded-md px-3 py-1.5 text-xs font-bold focus:ring-1 focus:ring-primary/20 focus:border-primary transition-all disabled:bg-neutral-100 disabled:text-neutral-400"
+                                placeholder="aaaa-mm-dd hh:mm"
+                              />
+                            </td>
+                            <td class="px-4 py-2 text-right">
+                              <button
+                                type="button"
+                                x-show="isTramoEditable(item) && tramos.length > 1"
+                                @click="removeTramo(item.id)"
+                                class="p-1.5 text-neutral-400 hover:text-danger-500 hover:bg-danger-50 rounded transition-all"
+                              >
+                                <i class="ph ph-trash text-lg"></i>
+                              </button>
+                            </td>
+                          </tr>
+                        </template>
+                      </tbody>
+                    </table>
                   </div>
-                  <button
-                    type="button"
-                    @click="addTramo('VUELTA')"
-                    class="inline-flex items-center gap-1 px-2 py-1 rounded-sm bg-white border border-secondary-200 text-secondary-700 text-[9px] font-black uppercase tracking-wider hover:bg-secondary-50 transition-all"
-                  >
-                    <i class="ph ph-plus-circle"></i>
-                    <span>Añadir Tramo Vuelta</span>
-                  </button>
                 </div>
 
-                <div>
-                  <table class="w-full divide-y divide-neutral-200 table-fixed">
-                    <thead class="bg-neutral-50/50">
-                      <tr>
-                        <th
-                          class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase tracking-widest pl-10 w-[35%]"
-                        >
-                          Origen
-                        </th>
-                        <th
-                          class="px-2 py-1 text-center text-[9px] font-black text-neutral-400 uppercase tracking-widest w-[5%]"
-                        ></th>
-                        <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase tracking-widest w-[35%]">
-                          Destino
-                        </th>
-                        <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase tracking-widest w-[18%]">
-                          Salida (Fecha/Hora)
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody class="divide-y divide-neutral-100">
-                      <template x-for="item in tramosVuelta()" :key="'vuelta-' + (item.tramo.id || item.index)">
-                        <tr class="hover:bg-neutral-50/30 transition-colors relative">
-                          <!-- Origen (VUELTA) -->
-                          <td class="px-4 py-1.5">
-                            <div
-                              x-show="!canEditOrigin(item.index)"
-                              class="w-full bg-neutral-100 border border-neutral-200 rounded-sm pl-3 pr-8 py-1 text-[11px] font-medium text-neutral-500 cursor-not-allowed flex items-center justify-between h-[28px]"
-                            >
-                              <span class="truncate" x-text="item.tramo.origenLabel || '-'"></span>
-                              <i class="ph ph-lock-simple text-neutral-400"></i>
-                            </div>
-                            <div
-                              x-show="canEditOrigin(item.index)"
-                              x-data="searchableSelect({
-                              items: [],
-                              initialValue: item.tramo.origen,
-                              initialLabel: item.tramo.origenLabel,
-                              placeholder: 'Origen...'
-                            })"
-                              x-effect="items = availableDestinos"
-                              x-init="value = item.tramo.origen; label = item.tramo.origenLabel || placeholder; $watch('value', function(v) { item.tramo.origen = v; var it = allDestinos.find(function(d) { return d.value === v; }); if (it) item.tramo.origenLabel = it.value + ' - ' + it.label; })"
-                              class="relative"
-                            >
-                              <div
-                                x-show="!open"
-                                @click="open = true; $nextTick(function() { $refs.searchInput.focus() })"
-                                class="w-full bg-white border border-accent-200 rounded-sm shadow-sm pl-3 pr-8 py-1 text-left text-[11px] font-medium cursor-pointer flex items-center justify-between h-[28px]"
-                              >
-                                <span class="truncate" x-text="label || placeholder"></span>
-                                <i class="ph ph-magnifying-glass text-neutral-400 text-sm"></i>
-                              </div>
-                              <input
-                                x-ref="searchInput"
-                                x-model="search"
-                                x-show="open"
-                                @click.away="open = false"
-                                @keydown.escape="open = false"
-                                @keydown.enter.prevent="if (filteredItems.length > 0) select(filteredItems[0])"
-                                type="text"
-                                class="w-full bg-white border border-primary rounded-sm shadow-sm pl-3 pr-8 py-1 text-[11px] font-medium focus:outline-none focus:ring-1 focus:ring-primary h-[28px]"
-                                placeholder="Filtrar..."
-                              />
-                              <div
-                                x-show="open"
-                                class="absolute z-[100] mt-1 w-full bg-white shadow-xl rounded-lg border border-neutral-200 overflow-hidden"
-                                x-cloak
-                              >
-                                <div class="max-h-60 overflow-y-auto">
-                                  <template x-for="dest in filteredItems" :key="dest.value">
-                                    <div
-                                      @click="select(dest)"
-                                      class="px-3 py-1.5 hover:bg-primary hover:text-white cursor-pointer text-[10px] font-bold border-b border-neutral-50 transition-colors"
-                                    >
-                                      <span x-text="dest.value + ' - ' + dest.label"></span>
-                                    </div>
-                                  </template>
-                                </div>
-                              </div>
-                            </div>
-                          </td>
+                <!-- Tramos de VUELTA -->
+                <div class="bg-white rounded-md border border-neutral-300 shadow-sm overflow-visible">
+                  <div class="px-4 py-2 border-b border-neutral-200 bg-neutral-50/50 flex justify-between items-center">
+                    <div class="flex items-center gap-2">
+                      <i class="ph ph-airplane-takeoff text-secondary text-base font-bold"></i>
+                      <h4 class="text-[10px] font-black text-neutral-800 uppercase tracking-widest">Itinerario de VUELTA</h4>
+                    </div>
+                    <button
+                      type="button"
+                      @click="addTramo('VUELTA')"
+                      class="group inline-flex items-center gap-1.5 px-3 py-1 rounded bg-secondary text-white text-[9px] font-black uppercase tracking-widest hover:bg-secondary-700 transition-all shadow-sm"
+                    >
+                      <i class="ph ph-plus-circle text-sm"></i>
+                      <span>Añadir Tramo</span>
+                    </button>
+                  </div>
 
-                          <td class="px-2 py-1.5 text-center">
-                            <i class="ph ph-caret-right text-neutral-300"></i>
-                          </td>
-
-                          <!-- Destino (VUELTA) -->
-                          <td class="px-4 py-1.5">
-                            <div
-                              x-show="!isTramoEditable(item.tramo)"
-                              class="w-full bg-neutral-100 border border-neutral-200 rounded-sm pl-3 pr-8 py-1 text-[11px] font-medium text-neutral-500 cursor-not-allowed flex items-center justify-between h-[28px]"
-                            >
-                              <span class="truncate" x-text="item.tramo.destinoLabel || '-'"></span>
-                              <i class="ph ph-lock-simple text-neutral-400"></i>
-                            </div>
-                            <div
-                              x-show="isTramoEditable(item.tramo)"
-                              x-data="searchableSelect({
-                              items: [],
-                              initialValue: item.tramo.destino,
-                              initialLabel: item.tramo.destinoLabel,
-                              placeholder: 'Destino...'
-                            })"
-                              x-effect="items = availableDestinos"
-                              x-init="value = item.tramo.destino; label = item.tramo.destinoLabel || placeholder; $watch('value', function(v) { item.tramo.destino = v; var it = allDestinos.find(function(d) { return d.value === v; }); if (it) item.tramo.destinoLabel = it.value + ' - ' + it.label; })"
-                              class="relative"
-                            >
-                              <div
-                                x-show="!open"
-                                @click="open = true; $nextTick(function() { $refs.searchInput.focus() })"
-                                class="w-full bg-white border border-accent-200 rounded-sm shadow-sm pl-3 pr-8 py-1 text-left text-[11px] font-medium cursor-pointer flex items-center justify-between h-[28px]"
-                              >
-                                <span class="truncate" x-text="label || placeholder"></span>
-                                <i class="ph ph-magnifying-glass text-neutral-400 text-sm"></i>
-                              </div>
-                              <input
-                                x-ref="searchInput"
-                                x-model="search"
-                                x-show="open"
-                                @click.away="open = false"
-                                @keydown.escape="open = false"
-                                @keydown.enter.prevent="if (filteredItems.length > 0) select(filteredItems[0])"
-                                type="text"
-                                class="w-full bg-white border border-primary rounded-sm shadow-sm pl-3 pr-8 py-1 text-[11px] font-medium focus:outline-none focus:ring-1 focus:ring-primary h-[28px]"
-                                placeholder="Filtrar..."
-                              />
-                              <div
-                                x-show="open"
-                                class="absolute z-[100] mt-1 w-full bg-white shadow-xl rounded-lg border border-neutral-200 overflow-hidden"
-                                x-cloak
-                              >
-                                <div class="max-h-60 overflow-y-auto">
-                                  <template x-for="dest in filteredItems" :key="dest.value">
-                                    <div
-                                      @click="select(dest)"
-                                      class="px-3 py-1.5 hover:bg-primary hover:text-white cursor-pointer text-[10px] font-bold border-b border-neutral-50 transition-colors"
-                                    >
-                                      <span x-text="dest.value + ' - ' + dest.label"></span>
-                                    </div>
-                                  </template>
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-
-                          <td class="px-4 py-1.5">
-                            <input
-                              type="text"
-                              readonly
-                              x-datepicker="{ position: 'top center' }"
-                              x-model="item.tramo.fechaSalida"
-                              :disabled="!isTramoEditable(item.tramo)"
-                              :class="!isTramoEditable(item.tramo) ? 'bg-neutral-100 text-neutral-500 cursor-not-allowed border-neutral-200' : 'bg-white cursor-pointer border-accent-200'"
-                              type="button"
-                              @click="removeTramo(item.index)"
-                              class="p-1 text-danger-400 hover:text-danger-700 hover:bg-danger-50 rounded-lg transition-all"
-                              title="Eliminar tramo"
-                            >
-                              <i class="ph ph-trash text-base"></i>
-                            </button>
-                          </td>
+                  <div class="overflow-visible pb-4">
+                    <table class="w-full border-collapse">
+                      <thead>
+                        <tr class="border-b border-neutral-100">
+                          <th
+                            class="px-4 py-2 text-left text-[9px] font-black text-neutral-400 uppercase tracking-widest w-[28%]"
+                          >
+                            Origen
+                          </th>
+                          <th class="w-[2%]"></th>
+                          <th
+                            class="px-4 py-2 text-left text-[9px] font-black text-neutral-400 uppercase tracking-widest w-[28%]"
+                          >
+                            Destino
+                          </th>
+                          <th
+                            class="px-4 py-2 text-left text-[9px] font-black text-neutral-400 uppercase tracking-widest w-[20%]"
+                          >
+                            Aerolínea
+                          </th>
+                          <th
+                            class="px-4 py-2 text-left text-[9px] font-black text-neutral-400 uppercase tracking-widest w-[16%]"
+                          >
+                            Fecha Salida
+                          </th>
+                          <th class="px-4 py-2 w-[6%]"></th>
                         </tr>
-                      </template>
-                    </tbody>
-                  </table>
-                </div>
+                      </thead>
+                      <tbody class="divide-y divide-neutral-50">
+                        <template x-for="(item, index) in tramos.filter(t => t.tipo === 'VUELTA')" :key="item.id">
+                          <tr class="group hover:bg-neutral-50/50 transition-colors">
+                            <td class="px-4 py-2">
+                              <template x-if="isTramoEditable(item)">
+                                {{ template "searchable_select_field" dict "Value" "item.origen" "Label" "item.origenLabel" "Placeholder" "Origen..." }}
+                              </template>
+                              <template x-if="!isTramoEditable(item)">
+                                <div
+                                  class="bg-neutral-100 border border-neutral-200 rounded-md px-3 py-1.5 text-xs font-bold text-neutral-500 h-[32px] flex items-center justify-between"
+                                >
+                                  <span x-text="item.origenLabel"></span>
+                                  <i class="ph ph-lock-simple text-neutral-400"></i>
+                                </div>
+                              </template>
+                            </td>
+                            <td class="text-center">
+                              <i class="ph ph-caret-right text-neutral-300 font-bold"></i>
+                            </td>
+                            <td class="px-4 py-2">
+                              <template x-if="isTramoEditable(item)">
+                                {{ template "searchable_select_field" dict "Value" "item.destino" "Label" "item.destinoLabel" "Placeholder" "Destino..." }}
+                              </template>
+                              <template x-if="!isTramoEditable(item)">
+                                <div
+                                  class="bg-neutral-100 border border-neutral-200 rounded-md px-3 py-1.5 text-xs font-bold text-neutral-500 h-[32px] flex items-center justify-between"
+                                >
+                                  <span x-text="item.destinoLabel"></span>
+                                  <i class="ph ph-lock-simple text-neutral-400"></i>
+                                </div>
+                              </template>
+                            </td>
+                            <td class="px-4 py-2">
+                              <div class="relative">
+                                <select
+                                  x-model="item.aerolinea_id"
+                                  :disabled="!isTramoEditable(item)"
+                                  class="w-full bg-neutral-50/50 border border-neutral-300 rounded-md px-3 py-1.5 text-xs font-bold focus:ring-1 focus:ring-primary/20 focus:border-primary appearance-none cursor-pointer disabled:bg-neutral-100 disabled:text-neutral-400"
+                                >
+                                  <option value="">Cualquiera</option>
+                                  {{ range .Aerolineas }}
+                                    <option value="{{ .ID }}">{{ .Sigla }}</option>
+                                  {{ end }}
+                                </select>
+                                <i
+                                  class="ph ph-caret-down absolute right-2 top-1/2 -translate-y-1/2 text-neutral-400 pointer-events-none text-[10px]"
+                                ></i>
+                              </div>
+                            </td>
+                            <td class="px-4 py-2">
+                              <input
+                                type="text"
+                                x-model="item.fecha_salida"
+                                x-datepicker="{ position: 'top center', timepicker: true }"
+                                :disabled="!isTramoEditable(item)"
+                                class="w-full bg-neutral-50/50 border border-neutral-300 rounded-md px-3 py-1.5 text-xs font-bold focus:ring-1 focus:ring-primary/20 focus:border-primary transition-all disabled:bg-neutral-100 disabled:text-neutral-400"
+                                placeholder="aaaa-mm-dd hh:mm"
+                              />
+                            </td>
+                            <td class="px-4 py-2 text-right">
+                              <button
+                                type="button"
+                                x-show="isTramoEditable(item) && tramos.length > 1"
+                                @click="removeTramo(item.id)"
+                                class="p-1.5 text-neutral-400 hover:text-danger-500 hover:bg-danger-50 rounded transition-all"
+                              >
+                                <i class="ph ph-trash text-lg"></i>
+                              </button>
+                            </td>
+                          </tr>
+                        </template>
+                      </tbody>
+                    </table>
+                  </div>
 
-                <!-- Empty state for Vuelta -->
-                <div x-show="tramosVuelta().length === 0" class="px-4 py-6 text-center bg-neutral-50/50">
-                  <p class="text-[10px] text-neutral-400 uppercase font-black tracking-widest">
-                    No se han añadido tramos de vuelta
-                  </p>
+                  <!-- Empty state para el modal de edición si no hubiera tramos (raro pero posible) -->
+                  <div
+                    x-show="tramos.filter(t => t.tipo === 'VUELTA').length === 0"
+                    class="px-4 py-6 text-center bg-neutral-50/50"
+                  >
+                    <p class="text-[10px] text-neutral-400 uppercase font-black tracking-widest italic">
+                      No se han registrado tramos de vuelta
+                    </p>
+                  </div>
                 </div>
-
-                <!-- Footer / Hint -->
-                <div class="px-4 py-2 bg-neutral-50/50 border-t border-neutral-100 flex justify-between items-center">
-                  <p class="text-[10px] text-neutral-400 italic">
-                    * El sistema conecta automáticamente el destino de un tramo con el origen del siguiente.
-                  </p>
-                </div>
-              </div>
+              </section>
             </div>
           </form>
         </div>
       </div>
     </div>
 
-  <script>
-    function oficialFormHandlerEdit() {
-      return {
-        open: true,
-        loading: false,
-        isUpdated: false,
-        ambito: "",
-        tipo: "",
-        motivo: "",
-        autorizacion: "",
-        aerolinea: "",
-        allDestinos: [],
-        tramos: [],
-        isAdmin: false,
-        parseDate: function(str) {
-          if (!str) return new Date(NaN);
-          // Standardize separator to T for ISO parsing if it's space
-          return new Date(str.replace(" ", "T"));
-        },
+    <script>
+      function oficialFormHandlerEdit() {
+        return {
+          open: true,
+          loading: false,
+          isUpdated: false,
+          ambito: "",
+          tipo: "",
+          motivo: "",
+          autorizacion: "",
+          allDestinos: [],
+          tramos: [],
+          isAdmin: false,
 
-        formatDate: function(date) {
-          if (!date || isNaN(date.getTime())) return "";
-          const y = date.getFullYear();
-          const m = String(date.getMonth() + 1).padStart(2, "0");
-          const d = String(date.getDate()).padStart(2, "0");
-          const H = String(date.getHours()).padStart(2, "0");
-          const M = String(date.getMinutes()).padStart(2, "0");
-          return `${y}-${m}-${d} ${H}:${M}`;
-        },
+          get availableDestinos() {
+            if (!this.ambito) return [];
+            return this.allDestinos.filter((d) => this.ambito === "INTERNACIONAL" || d.ambito === "NACIONAL");
+          },
 
-        get availableDestinos() {
-          if (!this.ambito) return [];
-          if (this.ambito === "INTERNACIONAL") return this.allDestinos;
-          return this.allDestinos.filter(function (d) {
-            return d.ambito === "NACIONAL";
-          });
-        },
-
-        init() {
-          var destinosEl = document.getElementById("destinos-edit-data");
-          if (destinosEl && destinosEl.textContent) {
+          init() {
             try {
-              this.allDestinos = JSON.parse(destinosEl.textContent);
-            } catch (e) {}
-          }
-          var formEl = document.getElementById("edit-form-data");
-          if (formEl && formEl.textContent) {
-            try {
-              var d = JSON.parse(formEl.textContent);
-              this.ambito = d.ambito || "";
-              this.tipo = d.tipo || "";
-              this.motivo = d.motivo || "";
-              this.autorizacion = d.autorizacion || "";
-              this.aerolinea = d.aerolinea_id || "";
-            } catch (e) {}
-          }
+              const destinosEl = document.getElementById("destinos-edit-data");
+              if (destinosEl?.textContent) this.allDestinos = JSON.parse(destinosEl.textContent);
 
-          var metaEl = document.getElementById("edit-meta-data");
-          if (metaEl && metaEl.textContent) {
-            try {
-              var m = JSON.parse(metaEl.textContent);
-              this.isAdmin = !!m.isAdmin;
-              this.isUpdated = !!m.isUpdated;
-            } catch (e) {}
-          }
+              const formEl = document.getElementById("edit-form-data");
+              if (formEl?.textContent) {
+                const d = JSON.parse(formEl.textContent);
+                this.ambito = d.ambito || "";
+                this.tipo = d.tipo || "";
+                this.motivo = d.motivo || "";
+                this.autorizacion = d.autorizacion || "";
+              }
 
-          var el = document.getElementById("tramos-edit-inicial");
-          try {
-            var arr = el && el.textContent ? JSON.parse(el.textContent) : [];
-            if (Array.isArray(arr) && arr.length > 0) {
-              var self = this;
-              this.tramos = arr.map(function (t) {
-                var oCode = t.origen || "";
-                var dCode = t.destino || "";
+              const metaEl = document.getElementById("edit-meta-data");
+              if (metaEl?.textContent) {
+                const m = JSON.parse(metaEl.textContent);
+                this.isAdmin = !!m.isAdmin;
+                this.isUpdated = !!m.isUpdated;
+              }
 
-                // Buscar etiquetas bonitas si no vienen
-                var oDest = self.allDestinos.find(function(d) { return d.value === oCode; });
-                var dDest = self.allDestinos.find(function(d) { return d.value === dCode; });
-
-                return {
-                  id: t.id || "",
-                  tipo: t.tipo || "IDA",
-                  origen: oCode,
-                  origenLabel: t.origenLabel || (oDest ? (oDest.value + ' - ' + oDest.label) : oCode),
-                  destino: dCode,
-                  destinoLabel: t.destinoLabel || (dDest ? (dDest.value + ' - ' + dDest.label) : dCode),
-                  fechaSalida: t.fechaSalida || "",
-                  estado: t.estado || "SOLICITADO",
-                };
-              });
-              return;
+              const el = document.getElementById("tramos-edit-inicial");
+              const arr = el?.textContent ? JSON.parse(el.textContent) : [];
+              if (Array.isArray(arr) && arr.length > 0) {
+                this.tramos = arr.map((t) => {
+                  const oDest = this.allDestinos.find((d) => d.value === t.origen);
+                  const dDest = this.allDestinos.find((d) => d.value === t.destino);
+                  return {
+                    id: t.id || String(Date.now() + Math.random()),
+                    tipo: t.tipo || "IDA",
+                    origen: t.origen || "",
+                    origenLabel: t.origenLabel || (oDest ? `${oDest.value} - ${oDest.label}` : t.origen),
+                    destino: t.destino || "",
+                    destinoLabel: t.destinoLabel || (dDest ? `${dDest.value} - ${dDest.label}` : t.destino),
+                    aerolinea_id: t.aerolinea_id || "",
+                    fecha_salida: t.fechaSalida || "",
+                    estado: t.estado || "SOLICITADO",
+                    can_edit: t.can_edit === undefined ? true : t.can_edit,
+                  };
+                });
+              } else {
+                this.addTramo("IDA");
+              }
+            } catch (e) {
+              console.error("Error initializing edit form:", e);
             }
-          } catch (e) {}
-          this.tramos = [{ id: "", tipo: "IDA", origen: "", origenLabel: "", destino: "", destinoLabel: "", fechaSalida: "", estado: "SOLICITADO" }];
-        },
+          },
 
-        addTramo(tipo) {
-          var lastOrigin = "",
-            lastLabel = "";
-          if (this.tramos.length > 0) {
-            var last = this.tramos[this.tramos.length - 1];
-            lastOrigin = last.destino;
-            lastLabel = last.destinoLabel;
-          }
-          this.tramos.push({ id: "", tipo: tipo, origen: lastOrigin, origenLabel: lastLabel, destino: "", destinoLabel: "", fechaSalida: "", estado: "SOLICITADO" });
-        },
-
-        canRemoveTramo(index) {
-          if (this.isAdmin) return true;
-          var tramo = this.tramos[index];
-          if (!this.isTramoEditable(tramo)) return false;
-
-          return this.tramos.length > 1;
-        },
-
-        removeTramo(index) {
-          this.tramos.splice(index, 1);
-        },
-
-        isTramoEditable(tramo) {
-          if (this.isAdmin) return true;
-          if (!tramo || !tramo.estado) return true; // Tramos nuevos
-          const st = tramo.estado;
-          return st === "SOLICITADO" || st === "RECHAZADO" || st === "PENDIENTE";
-        },
-
-        canEditOrigin(index) {
-          return this.isTramoEditable(this.tramos[index]);
-        },
-
-        tramosIda() {
-          return this.tramos
-            .map(function (t, i) {
-              return { tramo: t, index: i };
-            })
-            .filter(function (x) {
-              return x.tramo.tipo === "IDA";
+          addTramo(tipo) {
+            this.tramos.push({
+              id: String(Date.now() + Math.random()),
+              tipo: tipo,
+              origen: "",
+              origenLabel: "",
+              destino: "",
+              destinoLabel: "",
+              aerolinea_id: "",
+              fecha_salida: "",
+              estado: "SOLICITADO",
+              can_edit: true,
             });
-        },
-        tramosVuelta() {
-          return this.tramos
-            .map(function (t, i) {
-              return { tramo: t, index: i };
-            })
-            .filter(function (x) {
-              return x.tramo.tipo === "VUELTA";
+          },
+
+          removeTramo(id) {
+            this.tramos = this.tramos.filter((t) => t.id !== id);
+          },
+
+          isTramoEditable(tramo) {
+            return !!tramo?.can_edit;
+          },
+
+          get isValid() {
+            if (!this.autorizacion) return false;
+            if (this.tramos.length === 0) return false;
+            return this.tramos.every((t) => t.origen && t.destino && t.fecha_salida);
+          },
+
+          syncTramos(event) {
+            const mapper = (t) => ({
+              id: t.id || "",
+              origen: t.origen || "",
+              destino: t.destino || "",
+              fecha_salida: t.fecha_salida || "",
+              aerolinea_id: t.aerolinea_id || "",
+              tipo: t.tipo,
+              estado: t.estado || "SOLICITADO",
             });
-        },
 
-        syncTramos(event) {
-          var data = JSON.stringify(
-            this.tramos.map(function (t) {
-              return {
-                id: t.id || "",
-                origen: t.origen || "",
-                destino: t.destino || "",
-                fecha_salida: t.fechaSalida || "",
-                tipo: t.tipo,
-                estado: t.estado || "SOLICITADO",
-              };
-            }),
-          );
+            const dataIda = JSON.stringify(this.tramos.filter((t) => t.tipo === "IDA").map(mapper));
+            const dataVuelta = JSON.stringify(this.tramos.filter((t) => t.tipo === "VUELTA").map(mapper));
 
-          // Update actual input for non-HTMX fallbacks
-          var el = document.getElementById("tramos_json_input_edit");
-          if (el) el.value = data;
+            const elIda = document.getElementById("tramos_ida_json_input_edit");
+            const elVuelta = document.getElementById("tramos_vuelta_json_input_edit");
 
-          // Crucial: Update HTMX parameters directly
-          if (event && event.detail && event.detail.parameters) {
-            event.detail.parameters["tramos_json"] = data;
-          }
-        },
-      };
-    }
-  </script>
+            if (elIda) elIda.value = dataIda;
+            if (elVuelta) elVuelta.value = dataVuelta;
+
+            if (event?.detail?.parameters) {
+              event.detail.parameters["tramos_ida_json"] = dataIda;
+              event.detail.parameters["tramos_vuelta_json"] = dataVuelta;
+            }
+          },
+        };
+      }
+    </script>
+  </div>
+{{ end }}
+
+{{- /* Componente Searchable Select Reutilizable */ -}}
+{{ define "searchable_select_field" }}
+  <div
+    x-data="searchableSelect({
+      endpoint: '/api/catalogos/destinos',
+      getExtraParams: () => ({ ambito: ambito }),
+      initialValue: {{ .Value }},
+      initialLabel: {{ .Label }},
+      onSelect: (v) => { {{ .Value }} = v; }
+    })"
+    class="relative"
+    :class="open ? 'z-[120]' : 'z-auto'"
+  >
+    <div class="relative group">
+      <input
+        type="text"
+        x-model="search"
+        @focus="open = true; if(items.length === 0) fetchResults()"
+        @click.away="open = false"
+        @keydown.escape="open = false"
+        @keydown.arrow-down.prevent="open = true"
+        :placeholder="selectedLabel || '{{ .Placeholder }}'"
+        class="w-full bg-white border border-neutral-300 rounded-md pl-3 pr-10 py-1.5 text-xs font-bold focus:ring-1 focus:ring-primary/20 focus:border-primary transition-all placeholder:text-neutral-400 placeholder:font-normal h-[32px] overflow-hidden truncate"
+        :class="selectedLabel ? 'text-neutral-900 border-neutral-400 bg-white' : 'text-neutral-500'"
+      />
+      <div class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1.5">
+        <template x-if="value">
+          <span
+            class="px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 text-[9px] font-black tracking-tighter shadow-sm"
+            x-text="value"
+          ></span>
+        </template>
+        <i class="ph ph-magnifying-glass text-neutral-400 text-sm group-hover:text-primary transition-colors"></i>
+      </div>
+    </div>
+
+    <!-- Dropdown -->
+    <div
+      x-show="open"
+      x-transition:enter="transition ease-out duration-100"
+      x-transition:enter-start="opacity-0 scale-95"
+      x-transition:enter-end="opacity-100 scale-100"
+      class="absolute mt-1 w-full bg-white rounded-md shadow-2xl border border-neutral-200 z-[150] overflow-hidden"
+      x-cloak
+    >
+      <div class="max-h-52 overflow-y-auto custom-scrollbar">
+        <template x-if="loading">
+          <div class="p-4 text-center">
+            <div class="inline-block animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent"></div>
+            <p class="text-[10px] text-neutral-400 mt-1 font-bold">Buscando...</p>
+          </div>
+        </template>
+
+        <template x-for="item in items" :key="item.value">
+          <div
+            @click="select(item)"
+            class="px-3 py-2 hover:bg-primary-50 cursor-pointer flex items-center justify-between border-b border-neutral-50 last:border-0 group transition-colors"
+          >
+            <div class="flex flex-col">
+              <span
+                class="text-[10px] font-black text-neutral-800 group-hover:text-primary uppercase tracking-tight"
+                x-text="item.label"
+              ></span>
+              <span class="text-[9px] text-neutral-400 font-bold" x-text="item.extra"></span>
+            </div>
+            <span
+              class="text-[9px] font-black text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-100"
+              x-text="item.value"
+            ></span>
+          </div>
+        </template>
+
+        <template x-if="!loading && items.length === 0">
+          <div class="p-4 text-center">
+            <i class="ph ph-magnifying-glass text-neutral-300 text-2xl mb-1"></i>
+            <p class="text-[10px] text-neutral-400 font-black uppercase">No se encontraron resultados</p>
+          </div>
+        </template>
+      </div>
+    </div>
   </div>
 {{ end }}

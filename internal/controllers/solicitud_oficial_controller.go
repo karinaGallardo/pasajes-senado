@@ -101,22 +101,33 @@ func (ctrl *SolicitudOficialController) Store(c *gin.Context) {
 		return
 	}
 
-	if js := c.PostForm("tramos_json"); js != "" {
+	if js := c.PostForm("tramos_ida_json"); js != "" {
 		var tramos []dtos.TramoOficialRequest
 		if err := json.Unmarshal([]byte(js), &tramos); err == nil {
-			req.Tramos = tramos
+			req.TramosIda = tramos
+		}
+	}
+	if js := c.PostForm("tramos_vuelta_json"); js != "" {
+		var tramos []dtos.TramoOficialRequest
+		if err := json.Unmarshal([]byte(js), &tramos); err == nil {
+			req.TramosVuelta = tramos
 		}
 	}
 
-	_, err := ctrl.solicitudOficialService.CreateOficial(c.Request.Context(), req, authUser)
+	sol, err := ctrl.solicitudOficialService.CreateOficial(c.Request.Context(), req, authUser)
 	if err != nil {
 		utils.SetErrorMessage(c, "Error al crear la solicitud: "+err.Error())
-		c.Redirect(http.StatusFound, "/solicitudes")
+		c.Redirect(http.StatusFound, "/solicitudes/oficial")
 		return
 	}
 
 	utils.SetSuccessMessage(c, "Solicitud de Comisión Oficial creada correctamente")
-	c.Redirect(http.StatusFound, "/solicitudes")
+
+	estado := "SOLICITADO"
+	if sol.EstadoSolicitudCodigo != nil {
+		estado = *sol.EstadoSolicitudCodigo
+	}
+	c.Redirect(http.StatusFound, "/solicitudes/oficial?status="+estado)
 }
 
 func (ctrl *SolicitudOficialController) Show(c *gin.Context) {
@@ -380,11 +391,14 @@ func (ctrl *SolicitudOficialController) GetEditModal(c *gin.Context) {
 		DestinoIATA  string `json:"destino"`
 		DestinoLabel string `json:"destinoLabel"`
 		FechaSalida  string `json:"fechaSalida"`
+		AerolineaID  string `json:"aerolinea_id"`
 		Estado       string `json:"estado"`
+		CanEdit      bool   `json:"can_edit"`
 	}
 
 	var tramosIniciales []tramoInicial
 	for _, item := range solicitud.Items {
+		item.HydratePermissions(authUser)
 		tipo := "IDA"
 		if item.Tipo == models.TipoSolicitudItemVuelta {
 			tipo = "VUELTA"
@@ -401,6 +415,10 @@ func (ctrl *SolicitudOficialController) GetEditModal(c *gin.Context) {
 		if item.Fecha != nil {
 			fechaSalida = item.Fecha.Format("2006-01-02T15:04")
 		}
+		aerolineaID := ""
+		if item.AerolineaID != nil {
+			aerolineaID = *item.AerolineaID
+		}
 		tramosIniciales = append(tramosIniciales, tramoInicial{
 			ID:           item.ID,
 			Tipo:         tipo,
@@ -409,7 +427,9 @@ func (ctrl *SolicitudOficialController) GetEditModal(c *gin.Context) {
 			DestinoIATA:  item.DestinoIATA,
 			DestinoLabel: destinoLabel,
 			FechaSalida:  fechaSalida,
+			AerolineaID:  aerolineaID,
 			Estado:       item.GetEstado(),
+			CanEdit:      item.Permissions.CanEdit,
 		})
 	}
 
@@ -468,10 +488,16 @@ func (ctrl *SolicitudOficialController) Update(c *gin.Context) {
 		return
 	}
 
-	if js := c.PostForm("tramos_json"); js != "" {
+	if js := c.PostForm("tramos_ida_json"); js != "" {
 		var tramos []dtos.TramoOficialRequest
 		if err := json.Unmarshal([]byte(js), &tramos); err == nil {
-			req.Tramos = tramos
+			req.TramosIda = tramos
+		}
+	}
+	if js := c.PostForm("tramos_vuelta_json"); js != "" {
+		var tramos []dtos.TramoOficialRequest
+		if err := json.Unmarshal([]byte(js), &tramos); err == nil {
+			req.TramosVuelta = tramos
 		}
 	}
 

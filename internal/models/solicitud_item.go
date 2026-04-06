@@ -37,6 +37,9 @@ type SolicitudItem struct {
 	EstadoCodigo *string              `gorm:"size:20;index;default:'SOLICITADO'"`
 	Estado       *EstadoSolicitudItem `gorm:"foreignKey:EstadoCodigo;references:Codigo;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;<-:false"`
 
+	AerolineaID *string    `gorm:"size:36;index;default:null"`
+	Aerolinea   *Aerolinea `gorm:"foreignKey:AerolineaID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;<-:false"`
+
 	// Seq is an auto-incrementing field managed by DB to ensure atomic sequential ordering
 	Seq int64 `gorm:"autoIncrement;not null;<-:false"`
 
@@ -183,6 +186,9 @@ func (t *SolicitudItem) GetChanges(old SolicitudItem) map[string]any {
 	if t.DestinoIATA != old.DestinoIATA {
 		changes["destino_iata"] = t.DestinoIATA
 	}
+	if t.AerolineaID != old.AerolineaID {
+		changes["aerolinea_id"] = t.AerolineaID
+	}
 
 	// Comparar estados
 	if (t.EstadoCodigo == nil) != (old.EstadoCodigo == nil) ||
@@ -243,6 +249,19 @@ func (t SolicitudItem) GetDestinoDisplay() string {
 	return t.DestinoIATA
 }
 
+// GetCostoTotal suma el costo de todos los pasajes asociados a este tramo que no estén anulados.
+func (t SolicitudItem) GetCostoTotal() float64 {
+	total := 0.0
+	for _, p := range t.Pasajes {
+		estado := p.GetEstadoCodigo()
+		// No sumamos pasajes anulados o que no tengan costo registrado
+		if estado != "ANULADO" {
+			total += p.Costo
+		}
+	}
+	return total
+}
+
 // Actions
 
 func (t *SolicitudItem) Approve() {
@@ -284,7 +303,7 @@ func (t *SolicitudItem) RevertFinalize() {
 	}
 }
 
-func NewSolicitudItem(solicitudID string, tipoStr string, origen, destino string, fecha *time.Time) *SolicitudItem {
+func NewSolicitudItem(solicitudID string, tipoStr string, origen, destino string, fecha *time.Time, aerolineaID *string) *SolicitudItem {
 	tipo := TipoSolicitudItemIda
 	if tipoStr == "VUELTA" {
 		tipo = TipoSolicitudItemVuelta
@@ -302,5 +321,6 @@ func NewSolicitudItem(solicitudID string, tipoStr string, origen, destino string
 		DestinoIATA:  destino,
 		Fecha:        fecha,
 		EstadoCodigo: &st,
+		AerolineaID:  aerolineaID,
 	}
 }

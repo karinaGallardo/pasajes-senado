@@ -282,6 +282,7 @@ func (r *SolicitudRepository) FindByID(ctx context.Context, id string) (*models.
 		}).
 		Preload("Items.Origen.Ambito").
 		Preload("Items.Destino.Ambito").
+		Preload("Items.Aerolinea").
 		Preload("Items.Pasajes.Aerolinea").
 		Preload("Items.Pasajes.Agencia").
 		Preload("Items.Pasajes.EstadoPasaje").

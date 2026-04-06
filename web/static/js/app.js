@@ -84,15 +84,31 @@ document.addEventListener("alpine:init", function () {
       disabled: config.disabled || false,
       value: config.initialValue || "",
       label: config.initialLabel || config.placeholder || "Seleccione una opción",
+      selectedLabel: config.initialLabel || "",
       placeholder: config.placeholder || "Seleccione una opción",
       items: config.items || [],
       endpoint: config.endpoint || null,
+      getExtraParams: config.getExtraParams || null,
       abortController: null,
 
       init() {
+        if (this.selectedLabel) {
+          this.search = this.selectedLabel;
+        }
+
+        this.$watch("open", (isOpen) => {
+          if (isOpen) {
+            this.search = ""; // Clear for immediate typing
+          } else {
+            if (this.search === "" && this.selectedLabel) {
+              this.search = this.selectedLabel;
+            }
+          }
+        });
+
         if (this.endpoint) {
           this.$watch("search", (val) => {
-            if (val.length >= 3) {
+            if (val.length >= 2) {
               this.fetchResults();
             } else if (val.length === 0) {
               this.cancelFetch();
@@ -115,8 +131,17 @@ document.addEventListener("alpine:init", function () {
         this.loading = true;
 
         try {
-          const separator = this.endpoint.includes("?") ? "&" : "?";
-          const res = await fetch(`${this.endpoint}${separator}q=${encodeURIComponent(this.search)}`, {
+          let url = `${this.endpoint}${this.endpoint.includes("?") ? "&" : "?"}q=${encodeURIComponent(this.search)}`;
+
+          if (this.getExtraParams && typeof this.getExtraParams === "function") {
+            const extras = this.getExtraParams();
+            Object.keys(extras).forEach((key) => {
+              url += `&${key}=${encodeURIComponent(extras[key])}`;
+            });
+          }
+
+          console.log("SearchableSelect Fetching:", url);
+          const res = await fetch(url, {
             signal: this.abortController.signal,
           });
           if (!res.ok) throw new Error("Server error");
@@ -143,11 +168,18 @@ document.addEventListener("alpine:init", function () {
         });
       },
 
-      select: function (item) {
+      select(item) {
+        this.selectedLabel = item.label;
+        this.search = item.label; // Mostrar nombre legible en el input
         this.value = item ? item.value : "";
         this.label = item ? item.label : this.placeholder;
         this.open = false;
-        this.search = "";
+
+        // Ejecutar el callback de selección si existe
+        if (config.onSelect && typeof config.onSelect === "function") {
+          config.onSelect(this.value);
+        }
+
         // Dispatch unique event to avoid collision with standard "change" events
         this.$el.dispatchEvent(new CustomEvent("searchable-select-change", { detail: item || {}, bubbles: true }));
       },
@@ -261,7 +293,7 @@ document.addEventListener("alpine:init", function () {
       init() {
         if (this.endpoint) {
           this.$watch("search", (val) => {
-            if (val.length >= 3) {
+            if (val.length >= 2) {
               this.fetchResults();
             } else if (val.length === 0) {
               this.cancelFetch();
@@ -461,6 +493,70 @@ document.addEventListener("alpine:init", function () {
           }),
         );
         this.open = false;
+      }
+    },
+  }));
+
+  /**
+   * oficialFormHandler: Logic for Official Travel Request Modal
+   */
+  Alpine.data("oficialFormHandler", () => ({
+    open: true,
+    loading: false,
+    tipo: "COMISION",
+    ambito: "NACIONAL",
+    motivo: "",
+    autorizacion: "",
+    aerolinea: "",
+    tramos: [], // { id, tipo, origen, destino, fecha_salida }
+
+    init() {
+      console.log("OficialFormHandler Initialized");
+    },
+
+    addTramo(tipo) {
+      let lastDest = "";
+      if (this.tramos.length > 0) {
+        lastDest = this.tramos[this.tramos.length - 1].destino;
+      }
+
+      this.tramos.push({
+        id: String(Date.now() + Math.random()),
+        tipo: tipo,
+        origen: lastDest,
+        destino: "",
+        fecha_salida: "",
+      });
+    },
+
+    removeTramo(id) {
+      this.tramos = this.tramos.filter((t) => t.id !== id);
+    },
+
+    get isValid() {
+      // Validar campos generales básicos
+      if (!this.autorizacion || !this.tipo || !this.ambito) return false;
+
+      // Validar que haya al menos un tramo y todos estén llenos
+      if (this.tramos.length === 0) return false;
+      return this.tramos.every((t) => t.origen && t.destino && t.fecha_salida);
+    },
+
+    async submitForm() {
+      if (this.loading || !this.isValid) return;
+
+      this.loading = true;
+
+      try {
+        if (this.$refs.mainForm) {
+          this.$refs.mainForm.submit();
+        } else {
+          throw new Error("Referencia a formulario principal no encontrada");
+        }
+      } catch (e) {
+        console.error("Submit Error:", e);
+        this.loading = false;
+        alert("Hubo un error al intentar enviar el formulario");
       }
     },
   }));

@@ -46,12 +46,16 @@ func (r *DestinoRepository) Update(ctx context.Context, d *models.Destino) error
 	return r.db.WithContext(ctx).Save(d).Error
 }
 
-func (r *DestinoRepository) Search(ctx context.Context, query string) ([]models.Destino, error) {
+func (r *DestinoRepository) Search(ctx context.Context, query string, ambito string) ([]models.Destino, error) {
 	var list []models.Destino
 	words := strings.Fields(query)
 	db := r.db.WithContext(ctx).
 		Preload("Ambito").
 		Preload("Departamento")
+
+	if ambito != "" {
+		db = db.Where("ambito_codigo = ?", ambito)
+	}
 
 	for _, word := range words {
 		q := "%" + word + "%"

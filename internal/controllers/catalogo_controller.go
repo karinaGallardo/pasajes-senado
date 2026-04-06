@@ -46,11 +46,13 @@ func (ctrl *CatalogoController) GetAmbitos(c *gin.Context) {
 
 func (ctrl *CatalogoController) SearchDestinos(c *gin.Context) {
 	q := strings.TrimSpace(c.Query("q"))
-	if len(q) < 3 {
+	ambito := strings.TrimSpace(c.Query("ambito"))
+
+	if len(q) < 2 {
 		c.JSON(http.StatusOK, []any{})
 		return
 	}
-	destinos, err := ctrl.destinoService.Search(c.Request.Context(), q)
+	destinos, err := ctrl.destinoService.Search(c.Request.Context(), q, ambito)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return
