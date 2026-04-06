@@ -2,6 +2,7 @@
   {{ $readOnlyRuta := or .ReadOnlyRuta .Tramo.IsOriginal }}
   {{ $canDelete := or .CanDelete (not .Tramo.IsOriginal) }}
   {{ $readOnlyCheck := or .ReadOnlyCheck (not .Tramo.IsOriginal) }}
+  {{ $isOriginal := .Tramo.IsOriginal }}
 
 
   <tr
