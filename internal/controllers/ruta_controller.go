@@ -55,15 +55,19 @@ func (ctrl *RutaController) Search(c *gin.Context) {
 	}
 
 	type searchResult struct {
-		Value string `json:"value"`
-		Label string `json:"label"`
+		Value       string `json:"value"`
+		Label       string `json:"label"`
+		OrigenIATA  string `json:"origen_iata"`
+		DestinoIATA string `json:"destino_iata"`
 	}
 
 	results := make([]searchResult, 0, len(rutas))
 	for _, r := range rutas {
 		results = append(results, searchResult{
-			Value: r.ID,
-			Label: r.GetRutaDisplay(),
+			Value:       r.ID,
+			Label:       r.GetRutaDisplay(),
+			OrigenIATA:  r.OrigenIATA,
+			DestinoIATA: r.DestinoIATA,
 		})
 	}
 

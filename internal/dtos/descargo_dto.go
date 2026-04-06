@@ -36,8 +36,12 @@ type CreateDescargoRequest struct {
 	TramoIndex           []string                `form:"tramo_index[]"`
 	TramoID              []string                `form:"tramo_id[]"`
 	TramoRutaID          []string                `form:"tramo_ruta_id[]"`
+	TramoRutaNombre      []string                `form:"tramo_ruta_nombre[]"`
+	TramoOrigenIATA      []string                `form:"tramo_origen_iata[]"`
+	TramoDestinoIATA     []string                `form:"tramo_destino_iata[]"`
 	TramoFecha           []string                `form:"tramo_fecha[]"`
 	TramoBillete         []string                `form:"tramo_billete[]"`
+	TramoVuelo           []string                `form:"tramo_vuelo[]"`
 	TramoPaseNumero      []string                `form:"tramo_pase_numero[]"`
 	TramoDevolucion      []string                `form:"tramo_devolucion[]"`
 	TramoModificacion    []string                `form:"tramo_modificacion[]"`
@@ -53,8 +57,12 @@ type TramoRowDTO struct {
 	ID              string
 	Tipo            string
 	RutaID          string
+	RutaNombre      string
+	OrigenIATA      string
+	DestinoIATA     string
 	Fecha           string
 	Billete         string
+	Vuelo           string
 	PaseNumero      string
 	MontoDevolucion float64
 	Moneda          string
@@ -104,8 +112,12 @@ func (r *CreateDescargoRequest) ToTramoRows(archivoPaths []string) []TramoRowDTO
 			ID:              rawID,
 			Tipo:            get(r.TramoTipo, i),
 			RutaID:          get(r.TramoRutaID, i),
+			RutaNombre:      get(r.TramoRutaNombre, i),
+			OrigenIATA:      get(r.TramoOrigenIATA, i),
+			DestinoIATA:     get(r.TramoDestinoIATA, i),
 			Fecha:           get(r.TramoFecha, i),
 			Billete:         strings.ToUpper(strings.TrimSpace(get(r.TramoBillete, i))),
+			Vuelo:           get(r.TramoVuelo, i),
 			PaseNumero:      get(r.TramoPaseNumero, i),
 			MontoDevolucion: monto,
 			Moneda:          get(r.TramoMoneda, i),
@@ -133,6 +145,7 @@ func (r *CreateDescargoRequest) Bind(c *gin.Context) error {
 	r.TramoRutaID = c.PostFormArray("tramo_ruta_id[]")
 	r.TramoFecha = c.PostFormArray("tramo_fecha[]")
 	r.TramoBillete = c.PostFormArray("tramo_billete[]")
+	r.TramoVuelo = c.PostFormArray("tramo_vuelo[]")
 	r.TramoPaseNumero = c.PostFormArray("tramo_pase_numero[]")
 	r.TramoDevolucion = c.PostFormArray("tramo_devolucion[]")
 	r.TramoModificacion = c.PostFormArray("tramo_modificacion[]")
@@ -140,6 +153,8 @@ func (r *CreateDescargoRequest) Bind(c *gin.Context) error {
 	r.TramoMoneda = c.PostFormArray("tramo_moneda[]")
 	r.TramoPasajeID = c.PostFormArray("tramo_pasaje_id[]")
 	r.TramoSolicitudItemID = c.PostFormArray("tramo_solicitud_item_id[]")
+	r.TramoOrigenIATA = c.PostFormArray("tramo_origen_iata[]")
+	r.TramoDestinoIATA = c.PostFormArray("tramo_destino_iata[]")
 
 	return nil
 }

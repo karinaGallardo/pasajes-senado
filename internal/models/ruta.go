@@ -36,25 +36,29 @@ func (r Ruta) GetRutaDisplay() string {
 	return r.Tramo
 }
 
-func (r Ruta) GetTramos() []string {
+type TramoLeg struct {
+	OrigenIATA  string
+	DestinoIATA string
+}
+
+func (r Ruta) GetTramosItems() []TramoLeg {
 	if r.OrigenIATA == "" || r.DestinoIATA == "" {
-		return []string{r.Tramo}
+		return []TramoLeg{{OrigenIATA: r.OrigenIATA, DestinoIATA: r.DestinoIATA}}
 	}
 
 	var points []string
-	points = append(points, r.Origen.Ciudad+" ("+r.OrigenIATA+")")
+	points = append(points, r.OrigenIATA)
 	for _, e := range r.Escalas {
-		if e.Destino.Ciudad != "" {
-			points = append(points, e.Destino.Ciudad+" ("+e.DestinoIATA+")")
-		} else {
-			points = append(points, e.DestinoIATA)
-		}
+		points = append(points, e.DestinoIATA)
 	}
-	points = append(points, r.Destino.Ciudad+" ("+r.DestinoIATA+")")
+	points = append(points, r.DestinoIATA)
 
-	var tramos []string
+	var tramos []TramoLeg
 	for i := 0; i < len(points)-1; i++ {
-		tramos = append(tramos, points[i]+" - "+points[i+1])
+		tramos = append(tramos, TramoLeg{
+			OrigenIATA:  points[i],
+			DestinoIATA: points[i+1],
+		})
 	}
 	return tramos
 }

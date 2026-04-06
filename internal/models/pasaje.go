@@ -7,12 +7,12 @@ import (
 
 // PasajePermissions define las acciones permitidas sobre un pasaje según el rol y estado.
 type PasajePermissions struct {
-	CanEdit         bool
-	CanMarkUsado    bool
+	CanEdit            bool
+	CanMarkUsado       bool
 	CanRevertirEmision bool
-	CanEmitir       bool
-	CanValidateUso  bool
-	ShowActionsMenu bool
+	CanEmitir          bool
+	CanValidateUso     bool
+	ShowActionsMenu    bool
 }
 
 type Pasaje struct {
@@ -66,11 +66,11 @@ func (p Pasaje) GetRutaDisplay() string {
 	return "Ruta no especificada"
 }
 
-func (p Pasaje) GetTramosRuta() []string {
+func (p Pasaje) GetTramosLegs() []TramoLeg {
 	if p.RutaPasaje != nil {
-		return p.RutaPasaje.GetTramos()
+		return p.RutaPasaje.GetTramosItems()
 	}
-	return []string{"Ruta no especificada"}
+	return []TramoLeg{}
 }
 
 func (Pasaje) TableName() string {
@@ -177,11 +177,11 @@ func (p Pasaje) GetStatusBannerClass() string {
 // GetPermissions calcula el conjunto de permisos para un usuario específico sobre este pasaje.
 func (p Pasaje) GetPermissions(u ...*Usuario) PasajePermissions {
 	perms := PasajePermissions{
-		CanEdit:           p.CanBeEdited(u...),
-		CanMarkUsado:      p.CanMarkUsado(u...),
+		CanEdit:            p.CanBeEdited(u...),
+		CanMarkUsado:       p.CanMarkUsado(u...),
 		CanRevertirEmision: p.CanBeReverted(u...),
-		CanEmitir:         p.CanBeEmitted(u...),
-		CanValidateUso:    false, // Campo deprecado o para uso futuro
+		CanEmitir:          p.CanBeEmitted(u...),
+		CanValidateUso:     false, // Campo deprecado o para uso futuro
 	}
 	perms.ShowActionsMenu = perms.CanEdit || perms.CanMarkUsado || perms.CanRevertirEmision || perms.CanEmitir
 	return perms

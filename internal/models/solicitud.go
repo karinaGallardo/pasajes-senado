@@ -919,9 +919,8 @@ func (s Solicitud) CanMakeDescargo(u ...*Usuario) bool {
 
 func (s Solicitud) CanPrint(u ...*Usuario) bool {
 	user := s.getAuthUser(u...)
-	// Solo se imprime si está aprobada o emitida
-	st := s.GetEstado()
-	return (st == "APROBADO" || st == "EMITIDO" || st == "FINALIZADO" || st == "PARCIALMENTE_APROBADO") && s.CanView(user)
+	// Se puede imprimir en cualquier estado mientras se tenga permiso de ver
+	return s.CanView(user)
 }
 
 func (s Solicitud) CanFinalize(u ...*Usuario) bool {

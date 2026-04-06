@@ -375,6 +375,8 @@ document.addEventListener("alpine:init", function () {
     moneda: config.moneda || "BOB",
     route_id: config.route_id || "",
     route: config.route || "",
+    origen_iata: config.origen_iata || "",
+    destino_iata: config.destino_iata || "",
     billete: config.billete || "",
     isFullTicket: false,
     fileName: "",

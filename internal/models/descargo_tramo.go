@@ -5,7 +5,6 @@ import (
 	"time"
 )
 
-
 type TipoDescargoTramo string
 
 const (
@@ -27,21 +26,33 @@ type DescargoTramo struct {
 	SolicitudItem     *SolicitudItem    `gorm:"foreignKey:SolicitudItemID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;<-:false"`
 	Fecha             *time.Time        `gorm:"type:timestamp"`
 	Billete           string            `gorm:"size:100"`
+	NumeroVuelo       string            `gorm:"size:20"`
 	NumeroPaseAbordo  string            `gorm:"size:100"`
 	ArchivoPaseAbordo string            `gorm:"size:255"`
 	EsDevolucion      bool              `gorm:"default:false"`
 	EsModificacion    bool              `gorm:"default:false"`
 	MontoDevolucion   float64           `gorm:"type:decimal(10,2);default:0"`
 	Moneda            string            `gorm:"size:10;default:'Bs.'"`
-	// Seq is a manual field to ensure sequential ordering within a descargo
-	Seq int `gorm:"index;default:1" json:"seq"`
 
-	// RutaNombre helps to store the specific leg of a journey when a ticket covers multiple segments.
-	// Not persisted in DB (calculated at runtime from RutaPasaje or SolicitudItem).
-	RutaNombre string `gorm:"-" json:"ruta_nombre"`
+	OrigenIATA  *string  `gorm:"size:5;index" json:"origen_iata"`
+	Origen      *Destino `gorm:"foreignKey:OrigenIATA;references:IATA;<-:false" json:"origen"`
+	DestinoIATA *string  `gorm:"size:5;index" json:"destino_iata"`
+	Destino     *Destino `gorm:"foreignKey:DestinoIATA;references:IATA;<-:false" json:"destino"`
+
+	// RutaNombre helps to store the specific leg of a journey as a string (fallback)
+	RutaNombre string `gorm:"size:255" json:"ruta_nombre"`
+
+	// Sequence field to maintain deterministic order
+	Seq int `gorm:"index;default:1" json:"seq"`
 }
 
 func (d DescargoTramo) GetRutaDisplay() string {
+	if d.Origen != nil && d.Destino != nil {
+		return d.Origen.Ciudad + " (" + *d.OrigenIATA + ") - " + d.Destino.Ciudad + " (" + *d.DestinoIATA + ")"
+	}
+	if d.OrigenIATA != nil && d.DestinoIATA != nil {
+		return *d.OrigenIATA + " - " + *d.DestinoIATA
+	}
 	if d.RutaNombre != "" {
 		return d.RutaNombre
 	}
@@ -49,6 +60,20 @@ func (d DescargoTramo) GetRutaDisplay() string {
 		return d.RutaPasaje.GetRutaDisplay()
 	}
 	return "Ruta no especificada"
+}
+
+func (d DescargoTramo) GetOrigenIATA() string {
+	if d.OrigenIATA != nil {
+		return *d.OrigenIATA
+	}
+	return ""
+}
+
+func (d DescargoTramo) GetDestinoIATA() string {
+	if d.DestinoIATA != nil {
+		return *d.DestinoIATA
+	}
+	return ""
 }
 
 func (DescargoTramo) TableName() string {
@@ -180,7 +205,9 @@ func (d DescargoTramo) HasChanges(other DescargoTramo) bool {
 
 	if cmpPtr(d.RutaID, other.RutaID) ||
 		cmpPtr(d.PasajeID, other.PasajeID) ||
-		cmpPtr(d.SolicitudItemID, other.SolicitudItemID) {
+		cmpPtr(d.SolicitudItemID, other.SolicitudItemID) ||
+		cmpPtr(d.OrigenIATA, other.OrigenIATA) ||
+		cmpPtr(d.DestinoIATA, other.DestinoIATA) {
 		return true
 	}
 

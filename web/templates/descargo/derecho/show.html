@@ -344,6 +344,12 @@
                               </span>
                             </span>
                             <span class="text-neutral-400">
+                              Vuelo:
+                              <span class="text-neutral-700 font-mono font-bold">
+                                {{ if .NumeroVuelo }}{{ .NumeroVuelo }}{{ else }}-{{ end }}
+                              </span>
+                            </span>
+                            <span class="text-neutral-400">
                               Pase:
                               <span class="text-neutral-700 font-mono font-bold">
                                 {{ if .NumeroPaseAbordo }}{{ .NumeroPaseAbordo }}{{ else }}-{{ end }}
@@ -450,6 +456,12 @@
                                 Billete:
                                 <span class="text-neutral-700 font-mono font-bold">
                                   {{ if .Billete }}{{ .Billete }}{{ else }}-{{ end }}
+                                </span>
+                              </span>
+                              <span class="text-neutral-400">
+                                Vuelo:
+                                <span class="text-neutral-700 font-mono font-bold">
+                                  {{ if .NumeroVuelo }}{{ .NumeroVuelo }}{{ else }}-{{ end }}
                                 </span>
                               </span>
                               <span class="text-neutral-400">

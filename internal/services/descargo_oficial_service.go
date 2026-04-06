@@ -7,6 +7,7 @@ import (
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
 	"sistema-pasajes/internal/utils"
+	"sort"
 	"strings"
 	"time"
 )
@@ -65,20 +66,7 @@ func (s *DescargoOficialService) AutoCreateFromSolicitud(ctx context.Context, so
 }
 
 func (s *DescargoOficialService) SyncItineraryFromSolicitud(ctx context.Context, descargo *models.Descargo, solicitud *models.Solicitud) error {
-	// Construir el SET de tramos esperados desde la solicitud (pasajes EMITIDO/USADO).
-	// Clave: PasajeID + "_" + Tipo  (ambos persisten en BD → nunca son vacíos al recargar)
-	type tramoEsperado struct {
-		PasajeID        string
-		Tipo            models.TipoDescargoTramo
-		SolicitudItemID string
-		Fecha           *time.Time
-		Billete         string
-		RutaID          *string
-		RutaNombre      string
-		Seq             int
-	}
-
-	esperados := make([]tramoEsperado, 0)
+	esperados := make([]models.DescargoTramo, 0)
 	seqCounter := 1
 
 	buildEsperados := func(item *models.SolicitudItem, tipoPrefix string) {
@@ -86,22 +74,30 @@ func (s *DescargoOficialService) SyncItineraryFromSolicitud(ctx context.Context,
 			return
 		}
 		for _, p := range item.Pasajes {
-			st := p.GetEstadoCodigo()
-			if st != "EMITIDO" && st != "USADO" {
+			if !p.IsDischargeable() {
 				continue
 			}
 			tipo := models.TipoDescargoTramo(tipoPrefix + "_ORIGINAL")
-			tramosVuelo := p.GetTramosRuta()
-			for _, trLabel := range tramosVuelo {
+			legs := p.GetTramosLegs()
+			for _, leg := range legs {
 				tVuelo := p.FechaVuelo
-				esperados = append(esperados, tramoEsperado{
-					PasajeID:        p.ID,
+				pID := p.ID
+				sID := item.ID
+				orig := leg.OrigenIATA
+				dest := leg.DestinoIATA
+
+				esperados = append(esperados, models.DescargoTramo{
+					DescargoID:      descargo.ID,
+					PasajeID:        &pID,
+					RutaID:          p.RutaID,
 					Tipo:            tipo,
-					SolicitudItemID: item.ID,
+					SolicitudItemID: &sID,
 					Fecha:           &tVuelo,
 					Billete:         strings.ToUpper(strings.TrimSpace(p.NumeroBillete)),
-					RutaID:          p.RutaID,
-					RutaNombre:      trLabel,
+					NumeroVuelo:     p.NumeroVuelo,
+					OrigenIATA:      &orig,
+					DestinoIATA:     &dest,
+					RutaNombre:      orig + " - " + dest,
 					Seq:             seqCounter,
 				})
 				seqCounter++
@@ -109,17 +105,29 @@ func (s *DescargoOficialService) SyncItineraryFromSolicitud(ctx context.Context,
 		}
 	}
 
-	buildEsperados(solicitud.GetItemIda(), "IDA")
-	buildEsperados(solicitud.GetItemVuelta(), "VUELTA")
+	for _, item := range solicitud.GetAllItemsIda() {
+		buildEsperados(item, "IDA")
+	}
+	for _, item := range solicitud.GetAllItemsVuelta() {
+		buildEsperados(item, "VUELTA")
+	}
 
 	// Indexar los tramos ORIGINALES ya existentes por PasajeID + Tipo
-	// (no incluimos reprogramados ni devoluciones — esos los maneja el usuario manualmente)
-	existingByKey := make(map[string]models.DescargoTramo)
+	// En lugar de mapa plano, usamos slice para soportar pasajes con múltiples escalas
+	existingByKey := make(map[string][]models.DescargoTramo)
 	for _, det := range descargo.Tramos {
 		if det.PasajeID != nil && det.IsOriginal() {
 			key := *det.PasajeID + "_" + string(det.Tipo)
-			existingByKey[key] = det
+			existingByKey[key] = append(existingByKey[key], det)
 		}
+	}
+
+	// Ordenar las listas por ID o Seq para que el consumo sea determinista
+	for k, list := range existingByKey {
+		sort.Slice(list, func(i, j int) bool {
+			return list[i].Seq < list[j].Seq
+		})
+		existingByKey[k] = list
 	}
 
 	// Construir el nuevo slice de tramos originales fusionando existentes con esperados
@@ -127,33 +135,31 @@ func (s *DescargoOficialService) SyncItineraryFromSolicitud(ctx context.Context,
 	modified := false
 
 	for _, esp := range esperados {
-		key := esp.PasajeID + "_" + string(esp.Tipo)
-		if existing, ok := existingByKey[key]; ok {
-			// Ya existe → conservar (no duplicar)
+		key := *esp.PasajeID + "_" + string(esp.Tipo)
+		list := existingByKey[key]
+
+		if len(list) > 0 {
+			// Consumir el primero de la cola (FIFO)
+			existing := list[0]
+			existingByKey[key] = list[1:]
+
+			// Restaurar el campo volátil (no persistido en DB) para el ViewModel/Template
+			existing.RutaNombre = esp.RutaNombre
+
 			tramosOriginalesNuevos = append(tramosOriginalesNuevos, existing)
-			delete(existingByKey, key) // marcar como procesado
 		} else {
-			// Nuevo → agregar
-			pID := esp.PasajeID
-			sID := esp.SolicitudItemID
-			tramosOriginalesNuevos = append(tramosOriginalesNuevos, models.DescargoTramo{
-				DescargoID:      descargo.ID,
-				Tipo:            esp.Tipo,
-				RutaID:          esp.RutaID,
-				PasajeID:        &pID,
-				SolicitudItemID: &sID,
-				Fecha:           esp.Fecha,
-				Billete:         esp.Billete,
-				Seq:             esp.Seq,
-				RutaNombre:      esp.RutaNombre,
-			})
+			// Nuevo → agregar directamente el modelo esperado
+			tramosOriginalesNuevos = append(tramosOriginalesNuevos, esp)
 			modified = true
 		}
 	}
 
-	// Los tramos que quedaron en existingByKey ya no corresponden a ningún pasaje emitido → eliminar
-	if len(existingByKey) > 0 {
-		modified = true
+	// Los tramos que quedaron huérfanos en las colas no corresponden a pasajes emitidos → se perderán
+	for _, sobrantes := range existingByKey {
+		if len(sobrantes) > 0 {
+			modified = true
+			break
+		}
 	}
 
 	if !modified {
@@ -265,6 +271,9 @@ func (s *DescargoOficialService) UpdateOficial(ctx context.Context, id string, r
 		rutaID := utils.NilIfEmpty(row.RutaID)
 		pasajeID := utils.NilIfEmpty(row.PasajeID)
 		solItemID := utils.NilIfEmpty(row.SolicitudItemID)
+		origenIATA := utils.NilIfEmpty(row.OrigenIATA)
+		destinoIATA := utils.NilIfEmpty(row.DestinoIATA)
+		rutaNombre := row.RutaNombre
 
 		// 6. Domain Rule: Data Protection for issued segments
 		tipoRow := models.TipoDescargoTramo(row.Tipo)
@@ -273,27 +282,60 @@ func (s *DescargoOficialService) UpdateOficial(ctx context.Context, id string, r
 				// Fields from a pre-issued ticket segment are protected (read-only for business integrity)
 				tipoRow = original.Tipo
 				rutaID = original.RutaID
+				rutaNombre = original.RutaNombre
+				origenIATA = original.OrigenIATA
+				destinoIATA = original.DestinoIATA
+				vuelo := original.NumeroVuelo
 				fecha = original.Fecha
 				pasajeID = original.PasajeID
 				solItemID = original.SolicitudItemID
+
+				det := models.DescargoTramo{
+					BaseModel:         models.BaseModel{ID: idRow},
+					DescargoID:        id,
+					Tipo:              tipoRow,
+					RutaID:            rutaID,
+					PasajeID:          pasajeID,
+					SolicitudItemID:   solItemID,
+					OrigenIATA:        origenIATA,
+					DestinoIATA:       destinoIATA,
+					Fecha:             fecha,
+					Billete:           row.Billete,
+					NumeroVuelo:       vuelo,
+					NumeroPaseAbordo:  row.PaseNumero,
+					ArchivoPaseAbordo: row.ArchivoPath,
+					EsDevolucion:      row.EsDevolucion,
+					EsModificacion:    row.EsModificacion,
+					MontoDevolucion:   row.MontoDevolucion,
+					Moneda:            row.Moneda,
+					RutaNombre:        rutaNombre,
+					Seq:               row.Seq,
+				}
+				tramosProcesados = append(tramosProcesados, det)
+				continue
 			}
 		}
 
 		// 7. Atomic Entity Assembly
 		det := models.DescargoTramo{
+			BaseModel:         models.BaseModel{ID: idRow},
 			DescargoID:        id,
 			Tipo:              tipoRow,
 			RutaID:            rutaID,
 			PasajeID:          pasajeID,
 			SolicitudItemID:   solItemID,
+			OrigenIATA:        origenIATA,
+			DestinoIATA:       destinoIATA,
 			Fecha:             fecha,
 			Billete:           row.Billete,
+			NumeroVuelo:       row.Vuelo,
 			NumeroPaseAbordo:  row.PaseNumero,
 			ArchivoPaseAbordo: row.ArchivoPath,
 			EsDevolucion:      row.EsDevolucion,
 			EsModificacion:    row.EsModificacion,
 			MontoDevolucion:   row.MontoDevolucion,
 			Moneda:            row.Moneda,
+			RutaNombre:        rutaNombre,
 			Seq:               row.Seq,
 		}
 		det.ID = idRow
