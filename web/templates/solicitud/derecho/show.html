@@ -123,18 +123,18 @@
           </button>
         {{ end }}
         {{ if .DescargoID }}
-          <a href="/descargos/derecho/{{ .DescargoID }}" class="btn-md btn-primary rounded-sm inline-flex items-center gap-2">
+          <!-- <a href="/descargos/derecho/{{ .DescargoID }}" class="btn-md btn-primary rounded-sm inline-flex items-center gap-2">
             <i class="ph ph-eye text-sm"></i>
             <span>Ver Descargo</span>
-          </a>
+          </a> -->
         {{ else if .Solicitud.Permissions.CanMakeDescargo }}
-          <a
+          <!-- <a
             href="/descargos/derecho/nuevo/{{ .Solicitud.ID }}"
             class="btn-md btn-primary rounded-sm inline-flex items-center gap-2"
           >
             <i class="ph ph-file-plus text-sm"></i>
             <span>Crear Descargo</span>
-          </a>
+          </a> -->
         {{ end }}
         <a
           href="/solicitudes/derecho?estado={{ .Solicitud.EstadoSolicitud.Codigo }}"
