@@ -75,7 +75,7 @@ func (u Usuario) GetNombreCompleto() string {
 	return strings.Join(clean, " ")
 }
 
-func (u *Usuario) GetInitials() string {
+func (u Usuario) GetInitials() string {
 	var initials string
 	if len(u.Firstname) > 0 {
 		initials += string([]rune(u.Firstname)[0])

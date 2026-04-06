@@ -65,15 +65,23 @@ func (s *DescargoOficialService) AutoCreateFromSolicitud(ctx context.Context, so
 }
 
 func (s *DescargoOficialService) SyncItineraryFromSolicitud(ctx context.Context, descargo *models.Descargo, solicitud *models.Solicitud) error {
-	existingMap := make(map[string]bool)
-	for _, det := range descargo.Tramos {
-		if det.PasajeID != nil {
-			existingMap[*det.PasajeID] = true
-		}
+	// Construir el SET de tramos esperados desde la solicitud (pasajes EMITIDO/USADO).
+	// Clave: PasajeID + "_" + Tipo  (ambos persisten en BD → nunca son vacíos al recargar)
+	type tramoEsperado struct {
+		PasajeID        string
+		Tipo            models.TipoDescargoTramo
+		SolicitudItemID string
+		Fecha           *time.Time
+		Billete         string
+		RutaID          *string
+		RutaNombre      string
+		Seq             int
 	}
 
-	modified := false
-	process := func(item *models.SolicitudItem, tipoPrefix string) {
+	esperados := make([]tramoEsperado, 0)
+	seqCounter := 1
+
+	buildEsperados := func(item *models.SolicitudItem, tipoPrefix string) {
 		if item == nil {
 			return
 		}
@@ -82,35 +90,86 @@ func (s *DescargoOficialService) SyncItineraryFromSolicitud(ctx context.Context,
 			if st != "EMITIDO" && st != "USADO" {
 				continue
 			}
-
-			tipo := tipoPrefix + "_ORIGINAL"
-
+			tipo := models.TipoDescargoTramo(tipoPrefix + "_ORIGINAL")
 			tramosVuelo := p.GetTramosRuta()
-			for range tramosVuelo {
-				if !existingMap[p.ID] {
-					tVuelo := p.FechaVuelo
-					descargo.Tramos = append(descargo.Tramos, models.DescargoTramo{
-						Tipo:            models.TipoDescargoTramo(tipo),
-						RutaID:          p.RutaID,
-						PasajeID:        &p.ID,
-						SolicitudItemID: &item.ID,
-						Fecha:           &tVuelo,
-						Billete:         strings.ToUpper(strings.TrimSpace(p.NumeroBillete)),
-					})
-					existingMap[p.ID] = true
-					modified = true
-				}
+			for _, trLabel := range tramosVuelo {
+				tVuelo := p.FechaVuelo
+				esperados = append(esperados, tramoEsperado{
+					PasajeID:        p.ID,
+					Tipo:            tipo,
+					SolicitudItemID: item.ID,
+					Fecha:           &tVuelo,
+					Billete:         strings.ToUpper(strings.TrimSpace(p.NumeroBillete)),
+					RutaID:          p.RutaID,
+					RutaNombre:      trLabel,
+					Seq:             seqCounter,
+				})
+				seqCounter++
 			}
 		}
 	}
 
-	process(solicitud.GetItemIda(), "IDA")
-	process(solicitud.GetItemVuelta(), "VUELTA")
+	buildEsperados(solicitud.GetItemIda(), "IDA")
+	buildEsperados(solicitud.GetItemVuelta(), "VUELTA")
 
-	if modified {
-		return s.repo.Update(ctx, descargo)
+	// Indexar los tramos ORIGINALES ya existentes por PasajeID + Tipo
+	// (no incluimos reprogramados ni devoluciones — esos los maneja el usuario manualmente)
+	existingByKey := make(map[string]models.DescargoTramo)
+	for _, det := range descargo.Tramos {
+		if det.PasajeID != nil && det.IsOriginal() {
+			key := *det.PasajeID + "_" + string(det.Tipo)
+			existingByKey[key] = det
+		}
 	}
-	return nil
+
+	// Construir el nuevo slice de tramos originales fusionando existentes con esperados
+	tramosOriginalesNuevos := make([]models.DescargoTramo, 0, len(esperados))
+	modified := false
+
+	for _, esp := range esperados {
+		key := esp.PasajeID + "_" + string(esp.Tipo)
+		if existing, ok := existingByKey[key]; ok {
+			// Ya existe → conservar (no duplicar)
+			tramosOriginalesNuevos = append(tramosOriginalesNuevos, existing)
+			delete(existingByKey, key) // marcar como procesado
+		} else {
+			// Nuevo → agregar
+			pID := esp.PasajeID
+			sID := esp.SolicitudItemID
+			tramosOriginalesNuevos = append(tramosOriginalesNuevos, models.DescargoTramo{
+				DescargoID:      descargo.ID,
+				Tipo:            esp.Tipo,
+				RutaID:          esp.RutaID,
+				PasajeID:        &pID,
+				SolicitudItemID: &sID,
+				Fecha:           esp.Fecha,
+				Billete:         esp.Billete,
+				Seq:             esp.Seq,
+				RutaNombre:      esp.RutaNombre,
+			})
+			modified = true
+		}
+	}
+
+	// Los tramos que quedaron en existingByKey ya no corresponden a ningún pasaje emitido → eliminar
+	if len(existingByKey) > 0 {
+		modified = true
+	}
+
+	if !modified {
+		return nil
+	}
+
+	// Reconstruir el slice completo: tramos originales sincronizados + reprogramados + devoluciones (sin cambios)
+	tramosNoOriginales := make([]models.DescargoTramo, 0)
+	for _, det := range descargo.Tramos {
+		if !det.IsOriginal() {
+			tramosNoOriginales = append(tramosNoOriginales, det)
+		}
+	}
+
+	descargo.Tramos = append(tramosOriginalesNuevos, tramosNoOriginales...)
+	return s.repo.Update(ctx, descargo)
 }
 
 func (s *DescargoOficialService) UpdateOficial(ctx context.Context, id string, req dtos.CreateDescargoRequest, userID string, pasesAbordoPaths []string, anexoPaths []string) error {
@@ -124,7 +183,11 @@ func (s *DescargoOficialService) UpdateOficial(ctx context.Context, id string, r
 
 	// 1. Basic Metadata
 	descargo.Observaciones = req.Observaciones
-	descargo.Estado = models.EstadoDescargoBorrador
+	if descargo.Estado == models.EstadoDescargoRechazado {
+		descargo.Estado = models.EstadoDescargoEnRevision
+	} else {
+		descargo.Estado = models.EstadoDescargoBorrador
+	}
 	descargo.UpdatedBy = &userID
 
 	// 2. Official Report (PV-06) Specific Data
@@ -231,6 +294,7 @@ func (s *DescargoOficialService) UpdateOficial(ctx context.Context, id string, r
 			EsModificacion:    row.EsModificacion,
 			MontoDevolucion:   row.MontoDevolucion,
 			Moneda:            row.Moneda,
+			Seq:               row.Seq,
 		}
 		det.ID = idRow
 		tramosProcesados = append(tramosProcesados, det)
@@ -238,65 +302,4 @@ func (s *DescargoOficialService) UpdateOficial(ctx context.Context, id string, r
 
 	descargo.Tramos = tramosProcesados
 	return s.repo.Update(ctx, descargo)
-}
-
-func (s *DescargoOficialService) PrepareItinerarioOficial(descargo *models.Descargo) (map[string][]dtos.TramoView, map[string][]dtos.TramoView) {
-	pasajesOriginales := make(map[string][]dtos.TramoView)
-	pasajesReprogramados := make(map[string][]dtos.TramoView)
-
-	itemsByType := make(map[string][]models.DescargoTramo)
-	for _, item := range descargo.Tramos {
-		itemsByType[string(item.Tipo)] = append(itemsByType[string(item.Tipo)], item)
-	}
-
-	tiposOrdenados := []string{"IDA_ORIGINAL", "IDA_REPRO", "VUELTA_ORIGINAL", "VUELTA_REPRO"}
-	for _, tipo := range tiposOrdenados {
-		items := itemsByType[tipo]
-		for _, item := range items {
-			dateStr := ""
-			if item.Fecha != nil {
-				dateStr = item.Fecha.Format("2006-01-02")
-			}
-
-			rutaStr := item.GetRutaDisplay()
-			parts := strings.Split(rutaStr, " - ")
-			rv := dtos.RutaView{Display: rutaStr}
-			if len(parts) == 2 {
-				rv.Origen = parts[0]
-				rv.Destino = parts[1]
-			} else {
-				rv.Origen = rutaStr
-			}
-
-			cv := dtos.TramoView{
-				ID:              item.ID,
-				Tipo:            string(item.Tipo),
-				Ruta:            rv,
-				RutaID:          utils.DerefString(item.RutaID),
-				Fecha:           dateStr,
-				Billete:         item.Billete,
-				Pase:            item.NumeroPaseAbordo,
-				Archivo:         item.ArchivoPaseAbordo,
-				EsDevolucion:    item.EsDevolucion,
-				EsModificacion:  item.EsModificacion,
-				MontoDevolucion: item.MontoDevolucion,
-				Moneda:          item.Moneda,
-				PasajeID:        utils.DerefString(item.PasajeID),
-				SolicitudItemID: utils.DerefString(item.SolicitudItemID),
-			}
-
-			targetMap := pasajesOriginales
-			if strings.HasSuffix(tipo, "REPRO") {
-				targetMap = pasajesReprogramados
-			}
-
-			category := "IDA"
-			if strings.HasPrefix(tipo, "VUELTA") {
-				category = "VUELTA"
-			}
-			targetMap[category] = append(targetMap[category], cv)
-		}
-	}
-
-	return pasajesOriginales, pasajesReprogramados
 }

@@ -1,8 +1,10 @@
-{{ define "descargo/oficial/edit" }} {{ template "layout_header" . }}
+{{ define "descargo/oficial/edit" }}
+  {{ template "layout_header" . }}
 
-<div
-  class="max-w-4xl mx-auto"
-  x-data="{
+
+  <div
+    class="max-w-4xl mx-auto"
+    x-data="{
        submitting: false,
        processingImages: false,
        async handleBoardingPass(el) {
@@ -29,134 +31,153 @@
          }
          return file.name;
        }
-     }">
-  <!-- Header con acciones -->
-  <div class="md:flex md:items-center md:justify-between mb-6">
-    <div class="flex-1 min-w-0">
-      <h2 class="text-2xl font-black text-neutral-900 tracking-tight">Editar Descargo Oficial (PV-06)</h2>
-      <p class="text-[11px] font-bold text-neutral-400 uppercase tracking-widest mt-1">Solicitud #{{ .Solicitud.Codigo }}</p>
-    </div>
-    <div class="mt-4 flex flex-wrap items-center gap-3">
-      <a
-        href="/descargos"
-        class="inline-flex items-center px-4 py-2 border border-neutral-300 shadow-sm text-xs font-bold rounded-md text-neutral-700 bg-white hover:bg-neutral-50 transition-all active:scale-95 uppercase tracking-wide">
-        <i class="ph ph-arrow-left mr-2 text-base text-neutral-400"></i>
-        Volver
-      </a>
-
-      <button
-        type="submit"
-        form="descargo-form"
-        :disabled="submitting || processingImages"
-        class="inline-flex items-center px-5 py-2.5 border border-transparent shadow-lg text-xs font-black rounded-md text-white transition-all active:scale-95 uppercase tracking-widest justify-center min-w-[200px]"
-        :class="(!submitting && !processingImages) ? 'bg-primary hover:bg-primary-700 hover:shadow-primary/20' : 'bg-neutral-300 cursor-not-allowed'">
-        <template x-if="!submitting && !processingImages">
-          <span class="flex items-center font-black">
-            <i class="ph ph-floppy-disk mr-2 text-xl"></i>
-            Guardar Cambios
-          </span>
-        </template>
-        <template x-if="submitting || processingImages">
-          <span class="flex items-center">
-            <i class="ph ph-circle-notch animate-spin mr-2 text-xl"></i>
-            <span x-text="processingImages ? 'Procesando Fotos...' : 'Guardando...'"></span>
-          </span>
-        </template>
-      </button>
-    </div>
-  </div>
-
-  <form
-    id="descargo-form"
-    action="/descargos/oficial/{{ .Descargo.ID }}/actualizar"
-    method="POST"
-    enctype="multipart/form-data"
-    @submit="submitting = true"
-    class="bg-white shadow-xl rounded-2xl overflow-hidden border border-neutral-200">
-    <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
-    <input type="hidden" name="id" value="{{ .Descargo.ID }}" />
-
-    <div class="p-8 space-y-10">
-      <!-- 1. DATOS DE LA COMISIÓN -->
-      <div class="space-y-6">
-        <h3 class="text-sm font-black text-neutral-800 uppercase tracking-widest border-b-2 border-primary/20 pb-2 flex items-center gap-2">
-          <i class="ph ph-info text-primary-600"></i>
-          1. Datos de la Comisión
-        </h3>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div class="space-y-2">
-            <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">A / DIRIGIDO A:</label>
-            <input
-              type="text"
-              name="dirigido_a"
-              value="{{ .Descargo.DirigidoA }}"
-              required
-              class="block w-full border border-neutral-200 rounded-lg shadow-sm text-sm p-3 focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all" />
-          </div>
-          <div class="space-y-2">
-            <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">Nº Memorándum / Resolución</label>
-            <input
-              type="text"
-              name="nro_memorandum"
-              value="{{ .Descargo.NroMemorandum }}"
-              required
-              class="block w-full border border-neutral-200 rounded-lg shadow-sm text-sm p-3 focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all" />
-          </div>
-        </div>
+     }"
+  >
+    <!-- Header con acciones -->
+    <div class="md:flex md:items-center md:justify-between mb-6">
+      <div class="flex-1 min-w-0">
+        <h2 class="text-2xl font-black text-neutral-900 tracking-tight">Editar Descargo Oficial (PV-06)</h2>
+        <p class="text-[11px] font-bold text-neutral-400 uppercase tracking-widest mt-1">Solicitud #{{ .Solicitud.Codigo }}</p>
       </div>
+      <div class="mt-4 flex flex-wrap items-center gap-3">
+        <button
+          type="submit"
+          form="descargo-form"
+          :disabled="submitting || processingImages"
+          class="inline-flex items-center gap-2 px-4 py-2 border border-transparent shadow-sm text-[11px] font-black rounded-md text-white transition-all active:scale-95 uppercase tracking-widest justify-center"
+          :class="(!submitting && !processingImages) ? 'bg-primary hover:bg-primary-700' : 'bg-neutral-300 cursor-not-allowed'"
+        >
+          <template x-if="!submitting && !processingImages">
+            <span class="flex items-center gap-2">
+              <i class="ph ph-floppy-disk text-sm"></i>
+              Guardar Cambios
+            </span>
+          </template>
+          <template x-if="submitting || processingImages">
+            <span class="flex items-center gap-2">
+              <i class="ph ph-circle-notch animate-spin text-sm"></i>
+              <span x-text="processingImages ? 'Procesando Fotos...' : 'Guardando...'"></span>
+            </span>
+          </template>
+        </button>
+        <a
+          href="/descargos/oficial/{{ .Descargo.ID }}"
+          class="inline-flex items-center gap-2 px-4 py-2 border border-neutral-300 shadow-sm text-[11px] font-black rounded-md text-neutral-600 bg-white hover:bg-neutral-50 transition-all active:scale-95 uppercase tracking-widest"
+        >
+          <i class="ph ph-arrow-left text-sm text-neutral-400"></i>
+          Volver
+        </a>
+      </div>
+    </div>
 
-      <!-- 2. DESARROLLO DEL INFORME -->
-      <div class="space-y-6">
-        <h3 class="text-sm font-black text-neutral-800 uppercase tracking-widest border-b-2 border-primary/20 pb-2 flex items-center gap-2">
-          <i class="ph ph-file-text text-primary-600"></i>
-          2. Desarrollo del Informe
-        </h3>
+    <form
+      id="descargo-form"
+      action="/descargos/oficial/{{ .Descargo.ID }}/actualizar"
+      method="POST"
+      enctype="multipart/form-data"
+      @submit="submitting = true"
+      class="bg-white shadow-xl rounded-md overflow-hidden border border-neutral-200"
+    >
+      <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
+      <input type="hidden" name="id" value="{{ .Descargo.ID }}" />
+
+      <div class="p-8 space-y-10">
+        <!-- 1. DATOS DE LA COMISIÓN -->
         <div class="space-y-6">
-          <div class="space-y-2">
-            <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">Objetivo del Viaje</label>
-            <textarea
-              name="objetivo_viaje"
-              rows="2"
-              required
-              class="block w-full border border-neutral-200 rounded-lg shadow-sm text-sm p-3 focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all">
-{{ .Descargo.ObjetivoViaje }}</textarea
-            >
-          </div>
-          <div class="space-y-2">
-            <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">Actividades Realizadas</label>
-            <textarea
-              name="informe_actividades"
-              rows="4"
-              required
-              class="block w-full border border-neutral-200 rounded-lg shadow-sm text-sm p-3 focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all">
-{{ .Descargo.InformeActividades }}</textarea
-            >
-          </div>
+          <h3
+            class="text-sm font-black text-neutral-800 uppercase tracking-widest border-b-2 border-primary/20 pb-2 flex items-center gap-2"
+          >
+            <i class="ph ph-info text-primary-600"></i>
+            1. Datos de la Comisión
+          </h3>
           <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div class="space-y-2">
-              <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">Resultados</label>
+              <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">A / DIRIGIDO A:</label>
+              <input
+                type="text"
+                name="dirigido_a"
+                value="{{ .Descargo.Oficial.DirigidoA }}"
+                required
+                class="block w-full border border-neutral-200 rounded-md shadow-sm text-sm p-3 focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all"
+              />
+            </div>
+            <div class="space-y-2">
+              <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">
+                Nº Memorándum / Resolución
+              </label>
+              <input
+                type="text"
+                name="nro_memorandum"
+                value="{{ .Descargo.Oficial.NroMemorandum }}"
+                required
+                class="block w-full border border-neutral-200 rounded-md shadow-sm text-sm p-3 focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all"
+              />
+            </div>
+          </div>
+        </div>
+
+        <!-- 2. DESARROLLO DEL INFORME -->
+        <div class="space-y-6">
+          <h3
+            class="text-sm font-black text-neutral-800 uppercase tracking-widest border-b-2 border-primary/20 pb-2 flex items-center gap-2"
+          >
+            <i class="ph ph-file-text text-primary-600"></i>
+            2. Desarrollo del Informe
+          </h3>
+          <div class="space-y-6">
+            <div class="space-y-2">
+              <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">
+                Objetivo del Viaje
+              </label>
               <textarea
-                name="resultados_viaje"
-                rows="3"
-                class="block w-full border border-neutral-200 rounded-lg shadow-sm text-sm p-3 focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all">
-{{ .Descargo.ResultadosViaje }}</textarea
+                name="objetivo_viaje"
+                rows="2"
+                required
+                class="block w-full border border-neutral-200 rounded-md shadow-sm text-sm p-3 focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all"
+              >
+{{ .Descargo.Oficial.ObjetivoViaje }}</textarea
               >
             </div>
             <div class="space-y-2">
-              <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">Conclusiones</label>
+              <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">
+                Actividades Realizadas
+              </label>
               <textarea
-                name="conclusiones_recomendaciones"
-                rows="3"
-                class="block w-full border border-neutral-200 rounded-lg shadow-sm text-sm p-3 focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all">
-{{ .Descargo.ConclusionesRecomendaciones }}</textarea
+                name="informe_actividades"
+                rows="4"
+                required
+                class="block w-full border border-neutral-200 rounded-md shadow-sm text-sm p-3 focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all"
+              >
+{{ .Descargo.Oficial.InformeActividades }}</textarea
               >
             </div>
-          </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div class="space-y-2">
+                <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">Resultados</label>
+                <textarea
+                  name="resultados_viaje"
+                  rows="3"
+                  class="block w-full border border-neutral-200 rounded-md shadow-sm text-sm p-3 focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all"
+                >
+{{ .Descargo.Oficial.ResultadosViaje }}</textarea
+                >
+              </div>
+              <div class="space-y-2">
+                <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">Conclusiones</label>
+                <textarea
+                  name="conclusiones_recomendaciones"
+                  rows="3"
+                  class="block w-full border border-neutral-200 rounded-md shadow-sm text-sm p-3 focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all"
+                >
+{{ .Descargo.Oficial.ConclusionesRecomendaciones }}</textarea
+                >
+              </div>
+            </div>
 
-          <!-- Anexo Fotográfico -->
-          <div
-            x-data="{ 
-                existingAnexos: [{{ range .Descargo.Anexos }}'{{ .Path }}',{{ end }}],
+            <!-- Anexo Fotográfico -->
+            <div
+              x-data="{ 
+                existingAnexos: [{{ range .Descargo.Oficial.Anexos }}'{{ .Path }}',{{ end }}],
                 newAnexos: [],
                 async handleAnexos(ev) {
                   const files = Array.from(ev.target.files);
@@ -175,184 +196,360 @@
                 removeExisting(idx) { this.existingAnexos.splice(idx, 1); },
                 removeNew(idx) { this.newAnexos.splice(idx, 1); this.syncFiles(); }
             }"
-            class="pt-4 border-t border-neutral-100">
-            <label class="block text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-4">Fotos de la Comisión (-Anexo Fotográfico-)</label>
-
-            <div class="flex flex-wrap gap-4">
-              <!-- Existentes -->
-              <template x-for="(pth, idx) in existingAnexos" :key="'ex-'+idx">
-                <div class="relative w-24 h-24 rounded-lg overflow-hidden border border-neutral-200 shadow-sm group">
-                  <img :src="'/preview-file?path=' + encodeURIComponent(pth)" class="w-full h-full object-cover" />
-                  <input type="hidden" name="anexos_existentes[]" :value="pth" />
-                  <button
-                    type="button"
-                    @click="removeExisting(idx)"
-                    class="absolute top-1 right-1 bg-danger text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <i class="ph ph-trash text-[10px]"></i>
-                  </button>
-                </div>
-              </template>
-              <!-- Nuevas -->
-              <template x-for="(f, idx) in newAnexos" :key="'new-'+idx">
-                <div class="relative w-24 h-24 rounded-lg overflow-hidden border border-neutral-200 shadow-sm group">
-                  <img :src="f.url" class="w-full h-full object-cover" />
-                  <button
-                    type="button"
-                    @click="removeNew(idx)"
-                    class="absolute top-1 right-1 bg-danger text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <i class="ph ph-trash text-[10px]"></i>
-                  </button>
-                </div>
-              </template>
-              <label
-                class="w-24 h-24 flex flex-col items-center justify-center border-2 border-dashed border-neutral-200 rounded-lg cursor-pointer hover:border-primary hover:bg-primary-50 text-neutral-300 hover:text-primary transition-all">
-                <input type="file" x-ref="fileInput" name="anexos[]" multiple accept="image/*" class="hidden" @change="handleAnexos" />
-                <i class="ph ph-camera-plus text-2xl mb-1"></i>
-                <span class="text-[9px] font-black uppercase tracking-widest">Añadir</span>
+              class="pt-4 border-t border-neutral-100"
+            >
+              <label class="block text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-4">
+                Fotos de la Comisión (-Anexo Fotográfico-)
               </label>
+
+              <div class="flex flex-wrap gap-4">
+                <!-- Existentes -->
+                <template x-for="(pth, idx) in existingAnexos" :key="'ex-'+idx">
+                  <div class="relative w-24 h-24 rounded-md overflow-hidden border border-neutral-200 shadow-sm group">
+                    <img :src="'/preview-file?path=' + encodeURIComponent(pth)" class="w-full h-full object-cover" />
+                    <input type="hidden" name="anexos_existentes[]" :value="pth" />
+                    <button
+                      type="button"
+                      @click="removeExisting(idx)"
+                      class="absolute top-1 right-1 bg-danger text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <i class="ph ph-trash text-[10px]"></i>
+                    </button>
+                  </div>
+                </template>
+                <!-- Nuevas -->
+                <template x-for="(f, idx) in newAnexos" :key="'new-'+idx">
+                  <div class="relative w-24 h-24 rounded-md overflow-hidden border border-neutral-200 shadow-sm group">
+                    <img :src="f.url" class="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      @click="removeNew(idx)"
+                      class="absolute top-1 right-1 bg-danger text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <i class="ph ph-trash text-[10px]"></i>
+                    </button>
+                  </div>
+                </template>
+                <label
+                  class="w-24 h-24 flex flex-col items-center justify-center border-2 border-dashed border-neutral-200 rounded-md cursor-pointer hover:border-primary hover:bg-primary-50 text-neutral-300 hover:text-primary transition-all"
+                >
+                  <input
+                    type="file"
+                    x-ref="fileInput"
+                    name="anexos[]"
+                    multiple
+                    accept="image/*"
+                    class="hidden"
+                    @change="handleAnexos"
+                  />
+                  <i class="ph ph-camera-plus text-2xl mb-1"></i>
+                  <span class="text-[9px] font-black uppercase tracking-widest">Añadir</span>
+                </label>
+              </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <!-- 3. ITINERARIO Y PASAJES -->
-      <div class="space-y-8">
-        <h3 class="text-sm font-black text-neutral-800 uppercase tracking-widest border-b-2 border-primary/20 pb-2">3. Itinerario Efectuado (Per-Scale)</h3>
+        <!-- 3. ITINERARIO Y PASAJES -->
+        <div class="space-y-8">
+          <h3 class="text-sm font-black text-neutral-800 uppercase tracking-widest border-b-2 border-primary/20 pb-2">
+            3. Itinerario Efectuado (Per-Scale)
+          </h3>
 
-        <!-- IDA -->
-        <div class="space-y-4">
-          <div class="flex items-center gap-3">
-            <span class="bg-primary-50 text-primary-700 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">Tramos de Ida</span>
-            <div class="h-px bg-neutral-100 flex-1"></div>
+          <!-- IDA -->
+          <div class="space-y-4">
+            <div class="flex items-center gap-3">
+              <span
+                class="bg-primary-50 text-primary-700 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest"
+              >
+                Tramos de Ida
+              </span>
+              <div class="h-px bg-neutral-100 flex-1"></div>
+            </div>
+            <table class="min-w-full">
+              <thead class="bg-neutral-50/10">
+                <tr>
+                  <th class="px-2 py-1 text-[9px] font-black text-neutral-400 uppercase text-center w-10">Mod.</th>
+                  <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase w-1/3">Ruta / Conexión</th>
+                  <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase">Fecha</th>
+                  <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase">Nro Billete</th>
+                  <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase">Nro Pase</th>
+                  <th class="px-2 py-1 text-center text-[9px] font-black text-neutral-400 uppercase">Archivo</th>
+                  <th class="px-2 py-1 text-right"></th>
+                </tr>
+              </thead>
+              <tbody>
+                {{ range .TramosIdaOriginales }}
+                  {{ template "descargo/components/tramo_fila_oficial" (dict "Tramo" . "Tipo" "IDA_ORIGINAL") }}
+                {{ end }}
+              </tbody>
+              <tbody id="itin-ida-repro-container" class="border-t-2 border-neutral-50">
+                {{ range .TramosIdaReprogramados }}
+                  {{ template "descargo/components/tramo_fila_oficial" (dict "Tramo" . "Tipo" "IDA_REPRO") }}
+                {{ end }}
+              </tbody>
+            </table>
+            <div class="flex justify-start">
+              <button
+                type="button"
+                hx-get="/descargos/oficial/nueva-fila?tipo=IDA_REPRO&solicitud_item_id={{ .Solicitud.GetItemIda.ID }}"
+                hx-target="#itin-ida-repro-container"
+                hx-swap="beforeend"
+                class="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary hover:text-primary-800 transition-colors"
+              >
+                <i class="ph ph-plus-circle text-lg"></i>
+                Nueva Reprogramación / Tramo Adicional
+              </button>
+            </div>
           </div>
-          <table class="min-w-full">
-            <thead class="bg-neutral-50/10">
-              <tr>
-                <th class="px-2 py-1 text-[9px] font-black text-neutral-400 uppercase text-center w-10">Mod.</th>
-                <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase w-1/3">Ruta / Conexión</th>
-                <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase">Fecha</th>
-                <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase">Nro Billete</th>
-                <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-400 uppercase">Nro Pase</th>
-                <th class="px-2 py-1 text-center text-[9px] font-black text-neutral-400 uppercase">Archivo</th>
-                <th class="px-2 py-1 text-right"></th>
-              </tr>
-            </thead>
-            <tbody>
-              {{ range (index .PasajesOriginales "IDA") }} {{
-              template "descargo/components/tramo_fila_oficial" (dict "Scale" . "Tipo" "IDA_ORIGINAL") }} {{ end }}
-            </tbody>
-            <tbody id="itin-ida-repro-container" class="border-t-2 border-neutral-50">
-              {{ range (index .PasajesReprogramados "IDA") }} {{
-              template "descargo/components/tramo_fila_oficial" (dict "Scale" . "Tipo" "IDA_REPRO") }} {{ end }}
-            </tbody>
-          </table>
-          <div class="flex justify-start">
-            <button
-              type="button"
-              hx-get="/descargos/oficial/nueva-fila?tipo=IDA_REPRO&solicitud_item_id={{ .Solicitud.GetItemIda.ID }}"
-              hx-target="#itin-ida-repro-container"
-              hx-swap="beforeend"
-              class="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-primary hover:text-primary-800 transition-colors">
-              <i class="ph ph-plus-circle text-lg"></i>
-              Nueva Reprogramación / Tramo Adicional
-            </button>
-          </div>
+
+          <!-- VUELTA -->
+          {{ if .Solicitud.GetItemVuelta }}
+            <div class="space-y-4 pt-4">
+              <div class="flex items-center gap-3">
+                <span
+                  class="bg-secondary-50 text-secondary-700 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest"
+                >
+                  Tramos de Retorno
+                </span>
+                <div class="h-px bg-neutral-100 flex-1"></div>
+              </div>
+              <table class="min-w-full">
+                <tbody>
+                  {{ range .TramosVueltaOriginales }}
+                    {{ template "descargo/components/tramo_fila_oficial" (dict "Tramo" . "Tipo" "VUELTA_ORIGINAL") }}
+                  {{ end }}
+                </tbody>
+                <tbody id="itin-vuelta-repro-container" class="border-t-2 border-neutral-50">
+                  {{ range .TramosVueltaReprogramados }}
+                    {{ template "descargo/components/tramo_fila_oficial" (dict "Tramo" . "Tipo" "VUELTA_REPRO") }}
+                  {{ end }}
+                </tbody>
+              </table>
+              <div class="flex justify-start">
+                <button
+                  type="button"
+                  hx-get="/descargos/oficial/nueva-fila?tipo=VUELTA_REPRO&solicitud_item_id={{ .Solicitud.GetItemVuelta.ID }}"
+                  hx-target="#itin-vuelta-repro-container"
+                  hx-swap="beforeend"
+                  class="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-secondary hover:text-secondary-800 transition-colors"
+                >
+                  <i class="ph ph-plus-circle text-lg"></i>
+                  Nuevo Tramo / Retorno Adicional
+                </button>
+              </div>
+            </div>
+          {{ end }}
         </div>
 
-        <!-- VUELTA -->
-        {{ if .Solicitud.GetItemVuelta }}
-        <div class="space-y-4 pt-4">
-          <div class="flex items-center gap-3">
-            <span class="bg-secondary-50 text-secondary-700 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">Tramos de Retorno</span>
-            <div class="h-px bg-neutral-100 flex-1"></div>
-          </div>
-          <table class="min-w-full">
-            <tbody>
-              {{ range (index .PasajesOriginales "VUELTA") }} {{
-              template "descargo/components/tramo_fila_oficial" (dict "Scale" . "Tipo" "VUELTA_ORIGINAL") }} {{ end }}
-            </tbody>
-            <tbody id="itin-vuelta-repro-container" class="border-t-2 border-neutral-50">
-              {{ range (index .PasajesReprogramados "VUELTA") }} {{
-              template "descargo/components/tramo_fila_oficial" (dict "Scale" . "Tipo" "VUELTA_REPRO") }} {{ end }}
-            </tbody>
-          </table>
-          <div class="flex justify-start">
-            <button
-              type="button"
-              hx-get="/descargos/oficial/nueva-fila?tipo=VUELTA_REPRO&solicitud_item_id={{ .Solicitud.GetItemVuelta.ID }}"
-              hx-target="#itin-vuelta-repro-container"
-              hx-swap="beforeend"
-              class="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest text-secondary hover:text-secondary-800 transition-colors">
-              <i class="ph ph-plus-circle text-lg"></i>
-              Nuevo Tramo / Retorno Adicional
-            </button>
-          </div>
-        </div>
-        {{ end }}
-      </div>
-
-      <!-- 4. TRANSPORTE UTILIZADO -->
-      <div
-        x-data="{
-          activeTypes: [{{ range $i, $v := .Descargo.GetTransporteList }}{{ if $i }},{{ end }}'{{ $v }}'{{ end }}],
+        <!-- 4. TRANSPORTE UTILIZADO -->
+        <div
+          x-data="{
+          activeTypes: [{{ range $i, $v := .Descargo.Oficial.GetTransporteList }}{{ if $i }},{{ end }}'{{ $v }}'{{ end }}],
           toggle(t) {
             if(this.activeTypes.includes(t)) this.activeTypes = this.activeTypes.filter(x => x !== t);
             else this.activeTypes.push(t);
           }
       }"
-        class="space-y-4">
-        <h3 class="text-sm font-black text-neutral-800 uppercase tracking-widest border-b-2 border-primary/20 pb-2 flex items-center gap-2">
-          <i class="ph ph-bus text-primary-600"></i>
-          4. Modos de Transporte Utilizados
-        </h3>
-        <input type="hidden" name="tipo_transporte" :value="activeTypes.join(',')" />
-        <div class="flex gap-8">
-          <template x-for="t in ['AEREO', 'TERRESTRE', 'FLUVIAL']">
-            <label @click="toggle(t)" class="flex items-center gap-2 cursor-pointer group select-none">
-              <div
-                class="w-5 h-5 rounded border-2 transition-all flex items-center justify-center"
-                :class="activeTypes.includes(t) ? 'bg-primary border-primary shadow-sm' : 'border-neutral-300 group-hover:border-primary/50'">
-                <i x-show="activeTypes.includes(t)" class="ph ph-check-bold text-white text-[10px]"></i>
-              </div>
-              <span class="text-xs font-black uppercase tracking-widest" :class="activeTypes.includes(t) ? 'text-primary' : 'text-neutral-400'" x-text="t"></span>
-            </label>
-          </template>
-        </div>
-      </div>
+          class="space-y-4"
+        >
+          <h3
+            class="text-sm font-black text-neutral-800 uppercase tracking-widest border-b-2 border-primary/20 pb-2 flex items-center gap-2"
+          >
+            <i class="ph ph-bus text-primary-600"></i>
+            4. Modos de Transporte Utilizados
+          </h3>
+          <input type="hidden" name="tipo_transporte" :value="activeTypes.join(',')" />
+          <div class="flex flex-wrap gap-x-8 gap-y-4">
+            <template
+              x-for="t in [
+              { val: 'AEREO', label: 'Aéreo' },
+              { val: 'TERRESTRE_PUBLICO', label: 'Terrestre Público' },
+              { val: 'VEHICULO_OFICIAL', label: 'Vehículo Oficial' },
+              { val: 'FLUVIAL', label: 'Fluvial' }
+            ]"
+            >
+              <label @click="toggle(t.val)" class="flex items-center gap-2 cursor-pointer group select-none">
+                <div
+                  class="w-5 h-5 rounded border-2 transition-all flex items-center justify-center"
+                  :class="activeTypes.includes(t.val) ? 'bg-primary border-primary shadow-sm' : 'border-neutral-300 group-hover:border-primary/50'"
+                >
+                  <i x-show="activeTypes.includes(t.val)" class="ph ph-check-bold text-white text-[10px]"></i>
+                </div>
+                <span
+                  class="text-xs font-black uppercase tracking-widest"
+                  :class="activeTypes.includes(t.val) ? 'text-primary' : 'text-neutral-400'"
+                  x-text="t.label"
+                ></span>
+              </label>
+            </template>
+          </div>
 
-      <!-- 5. RENDICIÓN DE CUENTA -->
-      <div class="space-y-6">
-        <h3 class="text-sm font-black text-neutral-800 uppercase tracking-widest border-b-2 border-primary/20 pb-2">5. Rendición de Cuentas</h3>
-        <div class="bg-neutral-50/50 rounded-xl p-6 border border-neutral-100 flex flex-col md:flex-row gap-8 items-center">
-          <div class="flex-1 space-y-2">
-            <div class="flex items-center gap-2 mb-2">
-              <i class="ph ph-bank text-primary"></i>
-              <span class="text-[10px] font-black text-neutral-500 uppercase tracking-widest">Depósito Realizado</span>
+          <!-- Detalles de Vehículo Oficial -->
+          <div
+            x-show="activeTypes.includes('VEHICULO_OFICIAL')"
+            x-transition
+            class="pt-4 animate-in slide-in-from-top-2 duration-300"
+          >
+            <div class="bg-neutral-50 p-4 rounded-md border border-neutral-200 inline-block min-w-[250px]">
+              <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest mb-2 ml-1">
+                Placa del Vehículo Oficial
+              </label>
+              <input
+                type="text"
+                name="placa_vehiculo"
+                value="{{ .Descargo.Oficial.PlacaVehiculo }}"
+                placeholder="0000-AAA"
+                class="block w-full border border-neutral-200 rounded-md shadow-sm text-sm p-3 focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all font-mono uppercase font-black"
+              />
             </div>
-            <div class="bg-white px-4 py-3 rounded-lg border border-neutral-200">
-              <div class="flex justify-between text-[11px] font-bold text-neutral-700">
-                <span>Banco:</span>
-                <span class="uppercase font-black">{{ .BancoNombre }}</span>
+          </div>
+
+          <!-- Detalles de Transporte Terrestre Público -->
+          <div
+            x-show="activeTypes.includes('TERRESTRE_PUBLICO')"
+            x-data="{ 
+                  items: [
+                    {{ range .Descargo.Oficial.TransportesTerrestres }}
+              { fecha: '{{ .Fecha.Format "2006-01-02" }}', factura: '{{ .NroFactura }}', importe: '{{ .Importe }}', tipo:
+              '{{ .Tipo }}' },
+            {{ end }}
+                  ],
+                  addItem() { this.items.push({ fecha: '', factura: '', importe: '', tipo: 'IDA' }); },
+                  removeItem(idx) { this.items.splice(idx, 1); }
+               }"
+            x-init="if(items.length === 0) addItem()"
+            x-transition
+            class="pt-6 animate-in slide-in-from-top-2 duration-300"
+          >
+            <div class="space-y-4">
+              <div class="flex items-center justify-between">
+                <span
+                  class="text-[10px] font-black text-neutral-400 border-b border-primary/20 pb-1 uppercase tracking-widest italic"
+                >
+                  Detalle de Pasajes Terrestres / Facturas
+                </span>
+                <button
+                  type="button"
+                  @click="addItem()"
+                  class="text-primary hover:text-primary-700 text-[10px] font-black uppercase flex items-center gap-1 group"
+                >
+                  <i class="ph ph-plus-circle text-lg group-hover:scale-110 transition-transform"></i>
+                  Añadir Factura
+                </button>
               </div>
-              <div class="flex justify-between text-[11px] font-bold text-neutral-700 mt-1">
-                <span>Cuenta C.U.T.:</span>
-                <span class="font-black text-primary">{{ .BancoCuenta }}</span>
+
+              <div class="overflow-hidden rounded-md border border-neutral-200 shadow-sm bg-white">
+                <table class="min-w-full divide-y divide-neutral-200">
+                  <thead class="bg-neutral-50">
+                    <tr>
+                      <th class="px-4 py-2 text-left text-[9px] font-black text-neutral-500 uppercase tracking-widest">Fecha</th>
+                      <th class="px-4 py-1 text-left text-[9px] font-black text-neutral-500 uppercase tracking-widest">
+                        Sentido
+                      </th>
+                      <th class="px-4 py-2 text-left text-[9px] font-black text-neutral-500 uppercase tracking-widest">
+                        Nº Factura
+                      </th>
+                      <th class="px-4 py-2 text-left text-[9px] font-black text-neutral-500 uppercase tracking-widest">
+                        Importe (Bs.)
+                      </th>
+                      <th class="px-2 py-2"></th>
+                    </tr>
+                  </thead>
+                  <tbody class="divide-y divide-neutral-100">
+                    <template x-for="(item, idx) in items" :key="idx">
+                      <tr class="hover:bg-neutral-50/50 transition-colors">
+                        <td class="px-3 py-2">
+                          <input
+                            type="date"
+                            name="terrestre_fecha[]"
+                            x-model="item.fecha"
+                            class="w-full text-[11px] border-0 focus:ring-0 p-1 bg-transparent font-bold"
+                          />
+                        </td>
+                        <td class="px-3 py-2">
+                          <select
+                            name="terrestre_tipo[]"
+                            x-model="item.tipo"
+                            class="w-full text-[10px] border-0 focus:ring-0 p-1 bg-transparent font-black uppercase"
+                          >
+                            <option value="IDA">IDA</option>
+                            <option value="RETORNO">RETORNO</option>
+                            <option value="OTRO">OTRO</option>
+                          </select>
+                        </td>
+                        <td class="px-3 py-2">
+                          <input
+                            type="text"
+                            name="terrestre_factura[]"
+                            x-model="item.factura"
+                            placeholder="..."
+                            class="w-full text-[11px] border-0 focus:ring-0 p-1 bg-transparent font-mono font-bold"
+                          />
+                        </td>
+                        <td class="px-3 py-2">
+                          <input
+                            type="number"
+                            step="0.01"
+                            name="terrestre_importe[]"
+                            x-model="item.importe"
+                            placeholder="0.00"
+                            class="w-full text-[11px] border-0 focus:ring-0 p-1 bg-transparent text-right font-black"
+                          />
+                        </td>
+                        <td class="px-2 py-2 text-center text-neutral-300">
+                          <button type="button" @click="removeItem(idx)" class="hover:text-danger p-1">
+                            <i class="ph ph-x-circle text-lg"></i>
+                          </button>
+                        </td>
+                      </tr>
+                    </template>
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
-          <div class="flex-1 space-y-2">
-            <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">Nro de Boleta de Depósito</label>
-            <input
-              type="text"
-              name="nro_boleta_deposito"
-              value="{{ .Descargo.NroBoletaDeposito }}"
-              class="block w-full px-4 py-3 bg-white border-2 border-neutral-200 rounded-lg text-lg font-black focus:ring-4 focus:ring-primary/10 transition-all outline-none"
-              placeholder="00000000" />
+        </div>
+
+        <!-- 5. RENDICIÓN DE CUENTA -->
+        <div class="space-y-6">
+          <h3 class="text-sm font-black text-neutral-800 uppercase tracking-widest border-b-2 border-primary/20 pb-2">
+            5. Rendición de Cuentas
+          </h3>
+          <div class="bg-neutral-50/50 rounded-md p-6 border border-neutral-100 flex flex-col md:flex-row gap-8 items-center">
+            <div class="flex-1 space-y-2">
+              <div class="flex items-center gap-2 mb-2">
+                <i class="ph ph-bank text-primary"></i>
+                <span class="text-[10px] font-black text-neutral-500 uppercase tracking-widest">Depósito Realizado</span>
+              </div>
+              <div class="bg-white px-4 py-3 rounded-md border border-neutral-200">
+                <div class="flex justify-between text-[11px] font-bold text-neutral-700">
+                  <span>Banco:</span>
+                  <span class="uppercase font-black">{{ .BancoNombre }}</span>
+                </div>
+                <div class="flex justify-between text-[11px] font-bold text-neutral-700 mt-1">
+                  <span>Cuenta C.U.T.:</span>
+                  <span class="font-black text-primary">{{ .BancoCuenta }}</span>
+                </div>
+              </div>
+            </div>
+            <div class="flex-1 space-y-2">
+              <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">
+                Nro de Boleta de Depósito
+              </label>
+              <input
+                type="text"
+                name="nro_boleta_deposito"
+                value="{{ .Descargo.Oficial.NroBoletaDeposito }}"
+                class="block w-full px-4 py-3 bg-white border-2 border-neutral-200 rounded-md text-lg font-black focus:ring-4 focus:ring-primary/10 transition-all outline-none"
+                placeholder="00000000"
+              />
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  </form>
-</div>
+    </form>
+  </div>
 
-{{ template "layout_footer" . }} {{ end }}
+  {{ template "layout_footer" . }}
+{{ end }}

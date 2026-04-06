@@ -1,4 +1,4 @@
-{{ define "solicitud/components/modal_emitir_pasaje" }}
+{{ define "solicitud/components/modal_registrar_pasaje" }}
   <div
     x-data="modalPasaje({
       ruta_id: '{{ .Form.RutaID }}',
@@ -52,7 +52,7 @@
                       <i class="ph ph-airplane text-2xl"></i>
                     </div>
                     <div>
-                      <h3 class="text-lg font-bold text-neutral-900 leading-tight" id="modal-title">Asignar Nuevo Pasaje</h3>
+                      <h3 class="text-lg font-bold text-neutral-900 leading-tight" id="modal-title">Registrar Pasaje</h3>
                       <div class="mt-1 flex flex-col gap-1 text-[11px] text-neutral-500">
                         {{ if .Solicitud.CupoDerechoItem }}
                           <span class="flex items-center gap-1.5">

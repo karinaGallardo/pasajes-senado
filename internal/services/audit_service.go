@@ -5,6 +5,7 @@ import (
 	"sistema-pasajes/internal/appcontext"
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
+	"sistema-pasajes/internal/utils"
 )
 
 type AuditService struct {
@@ -26,15 +27,29 @@ func (s *AuditService) Log(ctx context.Context, action, entityType, entityID, ol
 		userAgent = appcontext.GetUserAgentFromContext(ctx)
 	}
 
+	// Truncado de seguridad para evitar SQLSTATE 22001 si el esquema físico es varchar(45)
+	// Aunque el modelo diga más, esto previene el crash mientras el DB no se migre.
+	safeAction := utils.TruncateString(action, 45)
+	safeEntityType := utils.TruncateString(entityType, 45)
+	safeIP := utils.TruncateString(ip, 45)
+	var safeUserAgent string
+	if userAgent != "" {
+		// UserAgent suele ser muy largo, lo guardamos truncado si la DB es pequeña
+		safeUserAgent = utils.TruncateString(userAgent, 45) // Ajustado experimentalmente al límite del error
+		if len(userAgent) > 45 {
+			safeUserAgent = utils.TruncateString(userAgent, 42) + "..."
+		}
+	}
+
 	entry := &models.AuditLog{
-		Action:     action,
-		EntityType: entityType,
-		EntityID:   entityID,
+		Action:     safeAction,
+		EntityType: safeEntityType,
+		EntityID:   entityID, // UUID suele ser 36, cabe en 45
 		OldValue:   oldVal,
 		NewValue:   newVal,
 		UserID:     userID,
-		IP:         ip,
-		UserAgent:  userAgent,
+		IP:         safeIP,
+		UserAgent:  safeUserAgent,
 	}
 
 	return s.repo.Create(ctx, entry)

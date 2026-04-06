@@ -1,6 +1,10 @@
 package models
 
-import "time"
+import (
+	"strings"
+	"time"
+)
+
 
 type TipoDescargoTramo string
 
@@ -29,11 +33,18 @@ type DescargoTramo struct {
 	EsModificacion    bool              `gorm:"default:false"`
 	MontoDevolucion   float64           `gorm:"type:decimal(10,2);default:0"`
 	Moneda            string            `gorm:"size:10;default:'Bs.'"`
-	// Seq is an auto-incrementing field managed by DB to ensure atomic sequential ordering
-	Seq int64 `gorm:"autoIncrement;not null;<-:false"`
+	// Seq is a manual field to ensure sequential ordering within a descargo
+	Seq int `gorm:"index;default:1" json:"seq"`
+
+	// RutaNombre helps to store the specific leg of a journey when a ticket covers multiple segments.
+	// Not persisted in DB (calculated at runtime from RutaPasaje or SolicitudItem).
+	RutaNombre string `gorm:"-" json:"ruta_nombre"`
 }
 
 func (d DescargoTramo) GetRutaDisplay() string {
+	if d.RutaNombre != "" {
+		return d.RutaNombre
+	}
 	if d.RutaPasaje != nil {
 		return d.RutaPasaje.GetRutaDisplay()
 	}
@@ -42,6 +53,45 @@ func (d DescargoTramo) GetRutaDisplay() string {
 
 func (DescargoTramo) TableName() string {
 	return "descargo_tramos"
+}
+
+// IsOriginal returns true if this tramo is an original segment (not a reprogrammed or returned one).
+func (d DescargoTramo) IsOriginal() bool {
+	return strings.HasSuffix(string(d.Tipo), "_ORIGINAL")
+}
+
+// IsReprogramacion returns true if this tramo is a reprogrammed segment.
+func (d DescargoTramo) IsReprogramacion() bool {
+	upper := strings.ToUpper(string(d.Tipo))
+	return strings.HasSuffix(upper, "_REPRO") || strings.HasSuffix(upper, "_REPROG")
+}
+
+// GetRutaOrigen extracts the origin from the routing label.
+func (d DescargoTramo) GetRutaOrigen() string {
+	display := d.GetRutaDisplay()
+	parts := strings.Split(display, " - ")
+	if len(parts) >= 2 {
+		return parts[0]
+	}
+	return display
+}
+
+// GetRutaDestino extracts the destination from the routing label.
+func (d DescargoTramo) GetRutaDestino() string {
+	display := d.GetRutaDisplay()
+	parts := strings.Split(display, " - ")
+	if len(parts) >= 2 {
+		return parts[len(parts)-1]
+	}
+	return ""
+}
+
+// GetFechaStr returns the date formatted as string.
+func (d DescargoTramo) GetFechaStr() string {
+	if d.Fecha != nil {
+		return d.Fecha.Format("2006-01-02")
+	}
+	return ""
 }
 
 func (d DescargoTramo) GetTipoDisplay() string {

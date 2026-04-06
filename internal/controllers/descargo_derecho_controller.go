@@ -6,11 +6,11 @@ import (
 	"net/http"
 	"sistema-pasajes/internal/appcontext"
 	"sistema-pasajes/internal/dtos"
+	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/services"
 	"sistema-pasajes/internal/utils"
 	"strconv"
 	"strings"
-
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -113,6 +113,12 @@ func (ctrl *DescargoDerechoController) Edit(c *gin.Context) {
 	data.Descargo.HydratePermissions(authUser)
 	if data.Descargo.Solicitud != nil {
 		data.Descargo.Solicitud.HydratePermissions(authUser)
+	}
+
+	// Verificación Maestra de Permisos
+	if !data.Descargo.Permissions.CanEdit {
+		c.Redirect(http.StatusFound, "/descargos/derecho/"+id+"?error=SinPermisoEdicion")
+		return
 	}
 
 	utils.Render(c, "descargo/derecho/edit", gin.H{
@@ -397,21 +403,14 @@ func (ctrl *DescargoDerechoController) NuevaFila(c *gin.Context) {
 
 	c.HTML(http.StatusOK, "descargo/components/tramo_fila_derecho", gin.H{
 		"Tipo": tipo,
-		"Tramo": dtos.TramoView{
-			ID:              index,
-			Tipo:            tipo,
-			SolicitudItemID: solicitudItemID,
+		"Tramo": models.DescargoTramo{
+			BaseModel:       models.BaseModel{ID: index},
+			Tipo:            models.TipoDescargoTramo(tipo),
+			SolicitudItemID: &solicitudItemID,
 			EsDevolucion:    false,
 			EsModificacion:  false,
-			Ruta:            dtos.RutaView{},
-			RutaID:          "",
-			Fecha:           "",
-			Billete:         "",
-			Pase:            "",
 			MontoDevolucion: 0.0,
 			Moneda:          "Bs.",
-			Archivo:         "",
-			PasajeID:        "",
 		},
 	})
 }

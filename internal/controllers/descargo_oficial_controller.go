@@ -6,8 +6,10 @@ import (
 	"net/http"
 	"sistema-pasajes/internal/appcontext"
 	"sistema-pasajes/internal/dtos"
+	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/services"
 	"sistema-pasajes/internal/utils"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -80,7 +82,26 @@ func (ctrl *DescargoOficialController) Show(c *gin.Context) {
 		return
 	}
 
-	pasajesOriginales, pasajesReprogramados := ctrl.descargoOficialService.PrepareItinerarioOficial(descargo)
+	tramosIdaOrig := make([]models.DescargoTramo, 0)
+	tramosIdaRepro := make([]models.DescargoTramo, 0)
+	tramosVueltaOrig := make([]models.DescargoTramo, 0)
+	tramosVueltaRepro := make([]models.DescargoTramo, 0)
+
+	for _, t := range descargo.Tramos {
+		if strings.HasPrefix(string(t.Tipo), "IDA") {
+			if t.IsReprogramacion() {
+				tramosIdaRepro = append(tramosIdaRepro, t)
+			} else {
+				tramosIdaOrig = append(tramosIdaOrig, t)
+			}
+		} else if strings.HasPrefix(string(t.Tipo), "VUELTA") {
+			if t.IsReprogramacion() {
+				tramosVueltaRepro = append(tramosVueltaRepro, t)
+			} else {
+				tramosVueltaOrig = append(tramosVueltaOrig, t)
+			}
+		}
+	}
 
 	bancoCuenta := ctrl.configService.GetValue(c.Request.Context(), "BANCO_CUENTA_DEVOLUCION")
 	if bancoCuenta == "" {
@@ -98,12 +119,14 @@ func (ctrl *DescargoOficialController) Show(c *gin.Context) {
 	}
 
 	utils.Render(c, "descargo/oficial/show", gin.H{
-		"Title":                "Detalle de Descargo (Oficial)",
-		"Descargo":             descargo,
-		"PasajesOriginales":    pasajesOriginales,
-		"PasajesReprogramados": pasajesReprogramados,
-		"BancoCuenta":          bancoCuenta,
-		"BancoNombre":          bancoNombre,
+		"Title":                     "Detalle de Descargo (Oficial)",
+		"Descargo":                  descargo,
+		"TramosIdaOriginales":       tramosIdaOrig,
+		"TramosIdaReprogramados":    tramosIdaRepro,
+		"TramosVueltaOriginales":    tramosVueltaOrig,
+		"TramosVueltaReprogramados": tramosVueltaRepro,
+		"BancoCuenta":               bancoCuenta,
+		"BancoNombre":               bancoNombre,
 	})
 }
 
@@ -115,22 +138,48 @@ func (ctrl *DescargoOficialController) Edit(c *gin.Context) {
 		return
 	}
 
-	if !descargo.IsEditable() {
-		c.Redirect(http.StatusFound, "/descargos/oficial/"+id)
+	authUser := appcontext.AuthUser(c)
+	descargo.HydratePermissions(authUser)
+	if descargo.Solicitud != nil {
+		descargo.Solicitud.HydratePermissions(authUser)
+	}
+
+	// 1. Verificación Maestra de Permisos (Estado + Rol/Autoría)
+	if !descargo.Permissions.CanEdit {
+		c.Redirect(http.StatusFound, "/descargos/oficial/"+id+"?error=SinPermisoEdicion")
 		return
 	}
 
-	// Sincronización proactiva de pasajes emitidos después de la creación
+	// 2. Sincronización Proactiva (Si hay nuevos pasajes tras la creación)
 	if descargo.Solicitud != nil {
+		// Pasamos el puntero; el servicio se encarga de persistir y el Slice se actualiza
 		if err := ctrl.descargoOficialService.SyncItineraryFromSolicitud(c.Request.Context(), descargo, descargo.Solicitud); err == nil {
-			// Recargar para popular Preloads de los nuevos items sincronizados
+			// Recargamos solo si es vital para asegurar que los nuevos DescargoTramo tengan sus Preloads (Ruta, etc.)
 			descargo, _ = ctrl.descargoService.GetByID(c.Request.Context(), id)
-		} else {
-			log.Printf("Error sincronizando itinerario oficial en edición: %v", err)
+			descargo.HydratePermissions(authUser)
 		}
 	}
 
-	pasajesOriginales, pasajesReprogramados := ctrl.descargoOficialService.PrepareItinerarioOficial(descargo)
+	tramosIdaOrig := make([]models.DescargoTramo, 0)
+	tramosIdaRepro := make([]models.DescargoTramo, 0)
+	tramosVueltaOrig := make([]models.DescargoTramo, 0)
+	tramosVueltaRepro := make([]models.DescargoTramo, 0)
+
+	for _, t := range descargo.Tramos {
+		if strings.HasPrefix(string(t.Tipo), "IDA") {
+			if t.IsReprogramacion() {
+				tramosIdaRepro = append(tramosIdaRepro, t)
+			} else {
+				tramosIdaOrig = append(tramosIdaOrig, t)
+			}
+		} else if strings.HasPrefix(string(t.Tipo), "VUELTA") {
+			if t.IsReprogramacion() {
+				tramosVueltaRepro = append(tramosVueltaRepro, t)
+			} else {
+				tramosVueltaOrig = append(tramosVueltaOrig, t)
+			}
+		}
+	}
 
 	bancoCuenta := ctrl.configService.GetValue(c.Request.Context(), "BANCO_CUENTA_DEVOLUCION")
 	if bancoCuenta == "" {
@@ -141,20 +190,16 @@ func (ctrl *DescargoOficialController) Edit(c *gin.Context) {
 		bancoNombre = "BANCO UNIÓN S.A."
 	}
 
-	authUser := appcontext.AuthUser(c)
-	descargo.HydratePermissions(authUser)
-	if descargo.Solicitud != nil {
-		descargo.Solicitud.HydratePermissions(authUser)
-	}
-
 	utils.Render(c, "descargo/oficial/edit", gin.H{
-		"Title":                "Editar Descargo (Oficial)",
-		"Descargo":             descargo,
-		"Solicitud":            descargo.Solicitud,
-		"PasajesOriginales":    pasajesOriginales,
-		"PasajesReprogramados": pasajesReprogramados,
-		"BancoCuenta":          bancoCuenta,
-		"BancoNombre":          bancoNombre,
+		"Title":                     "Editar Descargo (Oficial)",
+		"Descargo":                  descargo,
+		"Solicitud":                 descargo.Solicitud,
+		"TramosIdaOriginales":       tramosIdaOrig,
+		"TramosIdaReprogramados":    tramosIdaRepro,
+		"TramosVueltaOriginales":    tramosVueltaOrig,
+		"TramosVueltaReprogramados": tramosVueltaRepro,
+		"BancoCuenta":               bancoCuenta,
+		"BancoNombre":               bancoNombre,
 	})
 }
 
@@ -342,17 +387,12 @@ func (ctrl *DescargoOficialController) NuevaFila(c *gin.Context) {
 
 	c.HTML(http.StatusOK, "descargo/components/tramo_fila_oficial", gin.H{
 		"Tipo": tipo,
-		"Tramo": dtos.TramoView{
-			ID:              index,
-			SolicitudItemID: solicitudItemID,
+		"Tramo": models.DescargoTramo{
+			BaseModel:       models.BaseModel{ID: index},
+			Tipo:            models.TipoDescargoTramo(tipo),
+			SolicitudItemID: &solicitudItemID,
+			EsDevolucion:    false,
 			EsModificacion:  false,
-			Ruta:            dtos.RutaView{},
-			RutaID:          "",
-			Fecha:           "",
-			Billete:         "",
-			Pase:            "",
-			Archivo:         "",
-			PasajeID:        "",
 		},
 	})
 }

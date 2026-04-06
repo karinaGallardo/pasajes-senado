@@ -51,7 +51,7 @@
       </div>
       <div class="flex flex-wrap items-center gap-2">
         {{ if .Solicitud.Permissions.CanAssignViatico }}
-          <button
+          <!-- <button
             type="button"
             hx-get="/solicitudes/{{ .Solicitud.ID }}/viaticos/nuevo"
             hx-target="#modal-container"
@@ -59,7 +59,7 @@
           >
             <i class="ph ph-currency-circle-dollar text-sm"></i>
             <span>Viáticos</span>
-          </button>
+          </button> -->
         {{ end }}
         {{ if .Solicitud.Permissions.CanEdit }}
           <button

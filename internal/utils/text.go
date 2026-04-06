@@ -81,3 +81,14 @@ func SplitRoute(route string) []string {
 	}
 	return connections
 }
+
+// TruncateString recorta un string a la longitud máxima (si aplica).
+func TruncateString(s string, max int) string {
+	if len(s) <= max {
+		return s
+	}
+	if max <= 3 {
+		return s[:max]
+	}
+	return s[:max]
+}

@@ -99,7 +99,7 @@ func (ctrl *PasajeController) renderCreateModalWithError(c *gin.Context, solicit
 	authUser := appcontext.AuthUser(c)
 	solicitud.HydratePermissions(authUser)
 
-	utils.Render(c, "solicitud/components/modal_emitir_pasaje", gin.H{
+	utils.Render(c, "solicitud/components/modal_registrar_pasaje", gin.H{
 		"Solicitud":       solicitud,
 		"Aerolineas":      aerolineas,
 		"Agencias":        agencias,
@@ -298,7 +298,7 @@ func (ctrl *PasajeController) GetCreateModal(c *gin.Context) {
 		selectedItem.HydratePermissions(authUser)
 	}
 
-	utils.Render(c, "solicitud/components/modal_emitir_pasaje", gin.H{
+	utils.Render(c, "solicitud/components/modal_registrar_pasaje", gin.H{
 		"Solicitud":    solicitud,
 		"Aerolineas":   aerolineas,
 		"Agencias":     agencias,

@@ -11,7 +11,7 @@
       esMod: {{ .Tramo.EsModificacion }},
       monto: {{ or .Tramo.MontoDevolucion 0 }},
       moneda: '{{ or .Tramo.Moneda `BOB` }}',
-      route: '{{ .Tramo.Ruta.Display }}',
+      route: '{{ .Tramo.GetRutaDisplay }}',
       route_id: '{{ .Tramo.RutaID }}',
       billete: '{{ .Tramo.Billete }}'
     })"
@@ -21,7 +21,6 @@
     <input type="hidden" name="tramo_tipo[]" value="{{ .Tramo.Tipo }}" />
     <input type="hidden" name="tramo_id[]" value="{{ .Tramo.ID }}" />
     <input type="hidden" name="tramo_ruta_id[]" :value="route_id" />
-    <input type="hidden" name="tramo_orden[]" value="{{ or .Tramo.Orden 0 }}" />
     <input type="hidden" name="tramo_pasaje_id[]" value="{{ .Tramo.PasajeID }}" />
     <input type="hidden" name="tramo_solicitud_item_id[]" value="{{ .Tramo.SolicitudItemID }}" />
     <input type="hidden" name="tramo_devolucion[]" value="{{ .Tramo.ID }}" :disabled="!esDevolucion" />
@@ -69,8 +68,8 @@
     <td class="px-2 py-0">
       {{ if $readOnlyRuta }}
         <div class="text-[10px] leading-none font-bold text-neutral-700 uppercase whitespace-pre-line -mt-3">
-          <span class="">{{ .Tramo.Ruta.Origen }}</span>
-          <span class="">{{ .Tramo.Ruta.Destino }}</span>
+          <span class="">{{ .Tramo.GetRutaOrigen }}</span>
+          <span class="">{{ .Tramo.GetRutaDestino }}</span>
         </div>
       {{ else }}
         <div
@@ -78,7 +77,7 @@
           x-data="searchableSelect({
            endpoint: '/api/rutas/search?atomic=true',
            initialValue: '{{ .Tramo.RutaID }}',
-           initialLabel: '{{ .Tramo.Ruta.Display }}',
+           initialLabel: '{{ .Tramo.GetRutaDisplay }}',
            placeholder: 'Buscar ruta...'
          })"
           x-modelable="value"
@@ -139,7 +138,7 @@
       <input
         type="text"
         name="tramo_fecha[]"
-        value="{{ .Tramo.Fecha }}"
+        value="{{ .Tramo.GetFechaStr }}"
         x-bind="bindInput"
         {{ if .Tramo.IsOriginal }}readonly{{ end }}
         x-datepicker="{ position: 'top center' }"
@@ -167,7 +166,7 @@
       <input
         type="text"
         name="tramo_pase_numero[]"
-        value="{{ .Tramo.Pase }}"
+        value="{{ .Tramo.NumeroPaseAbordo }}"
         x-bind="bindPase"
         class="w-full text-[11px] border border-neutral-300 rounded py-0.5 px-2 focus:ring-primary h-9 font-bold"
         placeholder="Pase"
@@ -222,7 +221,7 @@
             <div class="relative group">
               <label
                 class="cursor-pointer flex items-center justify-center h-9 w-9 rounded-lg border-2 border-dashed transition-all duration-200 overflow-hidden shadow-sm"
-                :class="(fileName || '{{ .Tramo.Archivo }}') ? 'border-success-400 bg-success-50 text-success-700' : 'border-neutral-200 bg-neutral-50 text-neutral-400 hover:border-primary-300 hover:bg-white'"
+                :class="(fileName || '{{ .Tramo.ArchivoPaseAbordo }}') ? 'border-success-400 bg-success-50 text-success-700' : 'border-neutral-200 bg-neutral-50 text-neutral-400 hover:border-primary-300 hover:bg-white'"
               >
                 <input
                   type="file"
@@ -237,12 +236,12 @@
                   "
                 />
 
-                <input type="hidden" name="tramo_archivo_existente_{{ .Tramo.ID }}" value="{{ .Tramo.Archivo }}" />
+                <input type="hidden" name="tramo_archivo_existente_{{ .Tramo.ID }}" value="{{ .Tramo.ArchivoPaseAbordo }}" />
 
-                <i x-show="fileName || '{{ .Tramo.Archivo }}'" class="ph ph-file-pdf text-xl font-bold text-success-600"></i>
+                <i x-show="fileName || '{{ .Tramo.ArchivoPaseAbordo }}'" class="ph ph-file-pdf text-xl font-bold text-success-600"></i>
 
                 <i
-                  x-show="!fileName && !'{{ .Tramo.Archivo }}'"
+                  x-show="!fileName && !'{{ .Tramo.ArchivoPaseAbordo }}'"
                   class="ph ph-upload-simple text-xl font-bold text-neutral-400"
                 ></i>
               </label>
@@ -251,13 +250,13 @@
 
           <!-- Slot: Eye -->
           <div class="w-9 h-9 flex-shrink-0 flex items-center justify-center">
-            <template x-if="localUrl || '{{ .Tramo.Archivo }}'">
+            <template x-if="localUrl || '{{ .Tramo.ArchivoPaseAbordo }}'">
               <button
                 type="button"
                 @click="if(localUrl) {
                   window.open(localUrl, '_blank')
                 } else {
-                  htmx.ajax('GET', '/preview-file?path=' + encodeURIComponent('{{ .Tramo.Archivo }}'), { target: '#modal-container' })
+                  htmx.ajax('GET', '/preview-file?path=' + encodeURIComponent('{{ .Tramo.ArchivoPaseAbordo }}'), { target: '#modal-container' })
                 }"
                 class="h-9 w-9 flex items-center justify-center rounded-lg text-primary-600 hover:bg-primary-50 transition-all shadow-sm border border-neutral-100 bg-white"
               >

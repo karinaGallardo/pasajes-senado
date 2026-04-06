@@ -329,9 +329,9 @@
                       >
                         <td class="px-6 py-4 whitespace-nowrap align-top font-bold text-neutral-900">
                           <div class="flex flex-col">
-                            <span class="text-xs">{{ .Ruta.Display }}</span>
+                            <span class="text-xs">{{ .GetRutaDisplay }}</span>
                             <span class="text-[10px] text-neutral-400 font-medium">
-                              {{ if .Fecha }}{{ .Fecha }}{{ else }}-{{ end }}
+                              {{ if .GetFechaStr }}{{ .GetFechaStr }}{{ else }}-{{ end }}
                             </span>
                           </div>
                         </td>
@@ -346,7 +346,7 @@
                             <span class="text-neutral-400">
                               Pase:
                               <span class="text-neutral-700 font-mono font-bold">
-                                {{ if .Pase }}{{ .Pase }}{{ else }}-{{ end }}
+                                {{ if .NumeroPaseAbordo }}{{ .NumeroPaseAbordo }}{{ else }}-{{ end }}
                               </span>
                             </span>
                           </div>
@@ -383,10 +383,10 @@
                           {{ end }}
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right align-middle">
-                          {{ if .Archivo }}
+                          {{ if .ArchivoPaseAbordo }}
                             <button
                               type="button"
-                              hx-get="/preview-file?path={{ .Archivo }}&info_tramo_registrado={{ .Ruta.Display | urlquery }}&info_fecha_registrada={{ .Fecha }}&info_billete_registrado={{ .Billete }}&info_pase_registrado={{ .Pase }}"
+                              hx-get="/preview-file?path={{ .ArchivoPaseAbordo }}&info_tramo_registrado={{ .GetRutaDisplay | urlquery }}&info_fecha_registrada={{ .GetFechaStr }}&info_billete_registrado={{ .Billete }}&info_pase_registrado={{ .NumeroPaseAbordo }}"
                               hx-target="#modal-container"
                               class="p-1.5 rounded-lg bg-white border border-neutral-200 shadow-sm hover:bg-primary-50 hover:text-primary transition-all active:scale-90"
                             >
@@ -438,9 +438,9 @@
                         >
                           <td class="px-6 py-4 whitespace-nowrap align-top font-bold text-neutral-900">
                             <div class="flex flex-col">
-                              <span class="text-xs">{{ .Ruta.Display }}</span>
+                              <span class="text-xs">{{ .GetRutaDisplay }}</span>
                               <span class="text-[10px] text-neutral-400 font-medium">
-                                {{ if .Fecha }}{{ .Fecha }}{{ else }}-{{ end }}
+                                {{ if .GetFechaStr }}{{ .GetFechaStr }}{{ else }}-{{ end }}
                               </span>
                             </div>
                           </td>
@@ -455,7 +455,7 @@
                               <span class="text-neutral-400">
                                 Pase:
                                 <span class="text-neutral-700 font-mono font-bold">
-                                  {{ if .Pase }}{{ .Pase }}{{ else }}-{{ end }}
+                                  {{ if .NumeroPaseAbordo }}{{ .NumeroPaseAbordo }}{{ else }}-{{ end }}
                                 </span>
                               </span>
                             </div>
@@ -492,10 +492,10 @@
                             {{ end }}
                           </td>
                           <td class="px-6 py-4 whitespace-nowrap text-right align-middle">
-                            {{ if .Archivo }}
+                            {{ if .ArchivoPaseAbordo }}
                               <button
                                 type="button"
-                                hx-get="/preview-file?path={{ .Archivo }}&info_tramo_registrado={{ .Ruta.Display | urlquery }}&info_fecha_registrada={{ .Fecha }}&info_billete_registrado={{ .Billete }}&info_pase_registrado={{ .Pase }}"
+                                hx-get="/preview-file?path={{ .ArchivoPaseAbordo }}&info_tramo_registrado={{ .GetRutaDisplay | urlquery }}&info_fecha_registrada={{ .GetFechaStr }}&info_billete_registrado={{ .Billete }}&info_pase_registrado={{ .NumeroPaseAbordo }}"
                                 hx-target="#modal-container"
                                 class="p-1.5 rounded-lg bg-white border border-neutral-200 shadow-sm hover:bg-primary-50 hover:text-primary transition-all active:scale-90"
                               >

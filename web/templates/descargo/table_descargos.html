@@ -1,76 +1,105 @@
 {{ define "descargo/table_descargos" }}
-  <table class="min-w-full divide-y divide-neutral-200">
-    <thead class="bg-neutral-50">
-      <tr>
-        <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Código</th>
-        <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Solicitud</th>
-        <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Fecha Presentación</th>
-        <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Estado</th>
-        <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Acciones</th>
-      </tr>
-    </thead>
-    <tbody class="bg-white divide-y divide-neutral-200">
-      {{ range .Result.Descargos }}
-        <tr class="hover:bg-neutral-50 transition-colors">
-          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">{{ .Codigo }}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-700">
-            {{ if .Solicitud }}
-              {{ if eq .Solicitud.GetConceptoCodigo "OFICIAL" }}
-                <a href="/solicitudes/oficial/{{ .Solicitud.ID }}/detalle" class="text-primary-600 hover:underline font-bold">
-                  Solicitud
-                  #{{ .Solicitud.Codigo }}
-                </a>
-              {{ else }}
-                <a href="/solicitudes/derecho/{{ .Solicitud.ID }}/detalle" class="text-primary-600 hover:underline font-bold">
-                  Solicitud
-                  #{{ .Solicitud.Codigo }}
-                </a>
-              {{ end }}
-              <div class="text-xs text-neutral-500">{{ .Solicitud.GetOrigenCiudad }} - {{ .Solicitud.GetDestinoCiudad }}</div>
-            {{ else }}
-              <span class="text-neutral-400 italic">Desvinculada</span>
-            {{ end }}
-          </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">{{ .FechaPresentacion.Format "02/01/2006" }}</td>
-          <td class="px-6 py-4 whitespace-nowrap">
-            <div class="flex flex-col gap-1">
-              <span
-                class="px-2 inline-flex text-[10px] leading-5 font-bold rounded-full uppercase w-fit {{ .GetEstadoBadgeClass }}"
-              >
-                {{ .GetEstadoLabel }}
-              </span>
-              {{ if not .IsComplete }}
-                <span
-                  class="px-1.5 py-0.5 rounded bg-warning-50 text-warning-700 font-black text-[8px] border border-warning-200 uppercase flex items-center gap-0.5 w-fit cursor-help"
-                  x-tooltip="'{{ .GetMissingItemsHTML }}'"
-                >
-                  <i class="ph ph-warning-circle"></i>
-                  Datos Incompletos
-                </span>
-              {{ end }}
-            </div>
-          </td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-            {{ if and .Solicitud (eq .Solicitud.GetConceptoCodigo "OFICIAL") }}
-              <a href="/descargos/oficial/{{ .ID }}" class="text-primary-600 hover:text-primary-900 flex items-center">
-                <i class="ph ph-eye mr-1"></i>
-                Detalles
-              </a>
-            {{ else }}
-              <a href="/descargos/derecho/{{ .ID }}" class="text-primary-600 hover:text-primary-900 flex items-center">
-                <i class="ph ph-eye mr-1"></i>
-                Detalles
-              </a>
-            {{ end }}
-          </td>
-        </tr>
-      {{ else }}
+  <div class="overflow-x-auto">
+    <table class="min-w-full divide-y divide-neutral-200">
+      <thead class="bg-neutral-50/50">
         <tr>
-          <td colspan="5" class="px-6 py-10 text-center text-neutral-500">No hay descargos registrados para la búsqueda.</td>
+          <th scope="col" class="px-6 py-3 text-left text-[10px] font-black text-neutral-400 uppercase tracking-widest border-b border-neutral-100 italic">ID / Registro</th>
+          <th scope="col" class="px-6 py-3 text-left text-[10px] font-black text-neutral-400 uppercase tracking-widest border-b border-neutral-100 italic">Beneficiario / Titular</th>
+          <th scope="col" class="px-6 py-3 text-left text-[10px] font-black text-neutral-400 uppercase tracking-widest border-b border-neutral-100 italic">Trámite Original</th>
+          <th scope="col" class="px-6 py-3 text-left text-[10px] font-black text-neutral-400 uppercase tracking-widest border-b border-neutral-100 italic text-center">Estado Gestión</th>
+          <th scope="col" class="px-6 py-3 text-right text-[10px] font-black text-neutral-400 uppercase tracking-widest border-b border-neutral-100 italic">Acciones</th>
         </tr>
-      {{ end }}
-    </tbody>
-  </table>
+      </thead>
+      <tbody class="bg-white divide-y divide-neutral-100" x-init="$nextTick(() => { tippy('[data-tippy-content]', { allowHTML: true, theme: 'light-border', animation: 'shift-away' }); })">
+        {{ range .Result.Descargos }}
+          <tr class="group hover:bg-neutral-50/50 transition-all duration-200">
+            <td class="px-6 py-4 whitespace-nowrap">
+              <div class="flex flex-col">
+                <span class="text-xs font-black text-neutral-900 tracking-tight">#{{ .Codigo }}</span>
+                <span class="text-[10px] text-neutral-400 font-bold uppercase tracking-tighter">{{ .FechaPresentacion.Format "02/01/2006" }}</span>
+              </div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <div class="flex items-center">
+                <div class="h-8 w-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary text-xs font-black mr-3 shadow-sm group-hover:scale-110 transition-transform">
+                  {{ if .Solicitud }}{{ .Solicitud.Usuario.GetInitials }}{{ else }}?{{ end }}
+                </div>
+                <div class="flex flex-col">
+                  <p class="text-xs font-black text-neutral-800 uppercase tracking-tight leading-none">
+                    {{ if .Solicitud }}{{ .Solicitud.Usuario.GetNombreCompleto }}{{ else }}DESCONOCIDO{{ end }}
+                  </p>
+                  <span class="text-[10px] text-neutral-400 font-bold uppercase mt-1">
+                    {{ if .Solicitud }}{{ .Solicitud.Usuario.Cargo.Nombre }}{{ end }}
+                  </span>
+                </div>
+              </div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap">
+              <div class="flex flex-col">
+                {{ if .Solicitud }}
+                  {{ $isOficial := eq .Solicitud.GetConceptoCodigo "OFICIAL" }}
+                  <div class="flex items-center gap-2 mb-1">
+                    <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border {{ if $isOficial }}bg-primary-50 text-primary-700 border-primary-200{{ else }}bg-secondary-50 text-secondary-700 border-secondary-200{{ end }} shadow-sm">
+                      {{ .Solicitud.GetConceptoCodigo }}
+                    </span>
+                    <a href="/solicitudes/{{ if $isOficial }}oficial{{ else }}derecho{{ end }}/{{ .Solicitud.ID }}/detalle" 
+                       class="text-[11px] font-bold text-neutral-600 hover:text-primary transition-colors">
+                      SOL-{{ .Solicitud.Codigo }}
+                    </a>
+                  </div>
+                  <div class="flex items-center gap-1.5 opacity-60">
+                    <i class="ph ph-map-pin text-[10px] text-neutral-400"></i>
+                    <span class="text-[10px] font-bold text-neutral-500 uppercase tracking-tight">{{ .Solicitud.GetDestinoCiudad }}</span>
+                  </div>
+                {{ else }}
+                  <span class="text-[10px] text-neutral-400 italic">Solicitud no disponible</span>
+                {{ end }}
+              </div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-center">
+              <div class="flex flex-col items-center gap-1.5">
+                <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter border shadow-sm {{ .GetEstadoBadgeClass }}">
+                  {{ .GetEstadoLabel }}
+                </span>
+                {{ if not .IsComplete }}
+                  <div 
+                    class="flex items-center gap-1 px-1.5 py-0.5 rounded bg-warning-50 text-warning-700 font-black text-[8px] border border-warning-200 uppercase tracking-tighter cursor-help hover:bg-warning-100 transition-colors"
+                    data-tippy-content="{{ .GetMissingItemsHTML }}"
+                  >
+                    <i class="ph ph-warning-circle text-[10px]"></i>
+                    Incompleto
+                  </div>
+                {{ else }}
+                  <div class="flex items-center gap-1 text-[8px] font-black text-success-600 uppercase tracking-tighter">
+                    <i class="ph ph-check-circle"></i>
+                    Documentación Ok
+                  </div>
+                {{ end }}
+              </div>
+            </td>
+            <td class="px-6 py-4 whitespace-nowrap text-right">
+              {{ $isOficial := false }}{{ if .Solicitud }}{{ $isOficial = eq .Solicitud.GetConceptoCodigo "OFICIAL" }}{{ end }}
+              <a href="/descargos/{{ if $isOficial }}oficial{{ else }}derecho{{ end }}/{{ .ID }}" 
+                 class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-neutral-200 rounded-lg text-[10px] font-black text-neutral-600 uppercase tracking-widest hover:border-primary hover:text-primary shadow-sm active:scale-95 transition-all group/btn">
+                <i class="ph ph-arrow-right text-sm transition-transform group-hover/btn:translate-x-0.5"></i>
+                Gestionar
+              </a>
+            </td>
+          </tr>
+        {{ else }}
+          <tr class="bg-neutral-50/20">
+            <td colspan="5" class="px-6 py-16 text-center">
+              <div class="flex flex-col items-center">
+                <i class="ph ph-tray text-4xl text-neutral-200 mb-3"></i>
+                <h4 class="text-sm font-black text-neutral-400 uppercase tracking-widest">Sin Descargos Registrados</h4>
+                <p class="text-xs text-neutral-300 mt-1">Los trámites presentados aparecerán en este listado.</p>
+              </div>
+            </td>
+          </tr>
+        {{ end }}
+      </tbody>
+    </table>
+  </div>
 
   {{ if .Result.TotalPages }}
     <div class="px-6 py-4 bg-neutral-50 border-t border-neutral-200 flex flex-col sm:flex-row items-center justify-between gap-4">

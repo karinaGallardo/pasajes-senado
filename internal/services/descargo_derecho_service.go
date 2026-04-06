@@ -35,49 +35,12 @@ func (s *DescargoDerechoService) GetShowData(ctx context.Context, id string) (*d
 		return nil, err
 	}
 
-	// 1. Obtener tramos unificados (Originales + Repros)
-	tramos := descargo.Tramos
-
-	// 2. Clasificar en IDA y VUELTA
-	var itinerarioIda, itinerarioVuelta []dtos.TramoView
-	for _, item := range tramos {
-		// Transform models to TramoView
-		dateStr := ""
-		if item.Fecha != nil {
-			dateStr = item.Fecha.Format("2006-01-02")
-		}
-
-		rutaStr := item.GetRutaDisplay()
-		parts := strings.Split(rutaStr, " - ")
-		rv := dtos.RutaView{Display: rutaStr}
-		if len(parts) == 2 {
-			rv.Origen = parts[0]
-			rv.Destino = parts[1]
+	var itinerarioIda, itinerarioVuelta []models.DescargoTramo
+	for _, item := range descargo.Tramos {
+		if strings.HasPrefix(string(item.Tipo), "VUELTA") {
+			itinerarioVuelta = append(itinerarioVuelta, item)
 		} else {
-			rv.Origen = rutaStr
-		}
-
-		view := dtos.TramoView{
-			ID:              item.ID,
-			Tipo:            string(item.Tipo),
-			Ruta:            rv,
-			RutaID:          utils.DerefString(item.RutaID),
-			Fecha:           dateStr,
-			Billete:         item.Billete,
-			Pase:            item.NumeroPaseAbordo,
-			Archivo:         item.ArchivoPaseAbordo,
-			EsDevolucion:    item.EsDevolucion,
-			EsModificacion:  item.EsModificacion,
-			MontoDevolucion: item.MontoDevolucion,
-			Moneda:          item.Moneda,
-			PasajeID:        utils.DerefString(item.PasajeID),
-			SolicitudItemID: utils.DerefString(item.SolicitudItemID),
-		}
-
-		if strings.HasPrefix(string(item.Tipo), "VUELTA_") {
-			itinerarioVuelta = append(itinerarioVuelta, view)
-		} else {
-			itinerarioIda = append(itinerarioIda, view)
+			itinerarioIda = append(itinerarioIda, item)
 		}
 	}
 
@@ -127,11 +90,17 @@ func (s *DescargoDerechoService) SyncItineraryFromSolicitud(ctx context.Context,
 	existingMap := make(map[string]bool)
 	for _, det := range descargo.Tramos {
 		if det.PasajeID != nil {
-			existingMap[*det.PasajeID] = true
+			key := *det.PasajeID
+			if det.RutaNombre != "" {
+				key += "_" + det.RutaNombre
+			}
+			existingMap[key] = true
 		}
 	}
 
 	modified := false
+	nextSeq := len(descargo.Tramos) + 1
+
 	process := func(item *models.SolicitudItem, tipoPrefix string) {
 		if item == nil {
 			return
@@ -142,10 +111,11 @@ func (s *DescargoDerechoService) SyncItineraryFromSolicitud(ctx context.Context,
 			}
 
 			tipo := tipoPrefix + "_ORIGINAL"
-
 			tramosVuelo := p.GetTramosRuta()
-			for range tramosVuelo {
-				if !existingMap[p.ID] {
+
+			for _, trLabel := range tramosVuelo {
+				key := p.ID + "_" + trLabel
+				if !existingMap[key] {
 					tVuelo := p.FechaVuelo
 					descargo.Tramos = append(descargo.Tramos, models.DescargoTramo{
 						Tipo:            models.TipoDescargoTramo(tipo),
@@ -154,8 +124,11 @@ func (s *DescargoDerechoService) SyncItineraryFromSolicitud(ctx context.Context,
 						SolicitudItemID: &item.ID,
 						Fecha:           &tVuelo,
 						Billete:         strings.ToUpper(strings.TrimSpace(p.NumeroBillete)),
+						Seq:             nextSeq,
+						RutaNombre:      trLabel,
 					})
-					existingMap[p.ID] = true
+					nextSeq++
+					existingMap[key] = true
 					modified = true
 				}
 			}
@@ -182,7 +155,11 @@ func (s *DescargoDerechoService) UpdateDerecho(ctx context.Context, id string, r
 
 	// 1. Basic Metadata
 	descargo.Observaciones = req.Observaciones
-	descargo.Estado = models.EstadoDescargoBorrador
+	if descargo.Estado == models.EstadoDescargoRechazado {
+		descargo.Estado = models.EstadoDescargoEnRevision
+	} else {
+		descargo.Estado = models.EstadoDescargoBorrador
+	}
 	descargo.UpdatedBy = &userID
 
 	// 2. Data Cleansing & Mapping
@@ -242,6 +219,7 @@ func (s *DescargoDerechoService) UpdateDerecho(ctx context.Context, id string, r
 			EsModificacion:    row.EsModificacion,
 			MontoDevolucion:   row.MontoDevolucion,
 			Moneda:            row.Moneda,
+			Seq:               row.Seq,
 		}
 		det.ID = idRow
 		tramosProcesados = append(tramosProcesados, det)
@@ -269,50 +247,15 @@ func (s *DescargoDerechoService) GetEditData(ctx context.Context, id string) (*d
 		}
 	}
 
-	// 1. Obtener tramos unificados (Originales + Repros)
-	tramos := descargo.Tramos
-
 	// 2. Agrupar por categoría (IDA/VUELTA) pero manteniendo la estructura para el formulario
-	pasajesIda := make([]dtos.TramoView, 0)
-	pasajesVuelta := make([]dtos.TramoView, 0)
+	pasajesIda := make([]models.DescargoTramo, 0)
+	pasajesVuelta := make([]models.DescargoTramo, 0)
 
-	for _, item := range tramos {
-		dateStr := ""
-		if item.Fecha != nil {
-			dateStr = item.Fecha.Format("2006-01-02")
-		}
-
-		rutaStr := item.GetRutaDisplay()
-		parts := strings.Split(rutaStr, " - ")
-		rv := dtos.RutaView{Display: rutaStr}
-		if len(parts) == 2 {
-			rv.Origen = parts[0]
-			rv.Destino = parts[1]
-		} else {
-			rv.Origen = rutaStr
-		}
-
-		cv := dtos.TramoView{
-			ID:              item.ID,
-			Tipo:            string(item.Tipo),
-			Ruta:            rv,
-			RutaID:          utils.DerefString(item.RutaID),
-			Fecha:           dateStr,
-			Billete:         item.Billete,
-			Pase:            item.NumeroPaseAbordo,
-			Archivo:         item.ArchivoPaseAbordo,
-			EsDevolucion:    item.EsDevolucion,
-			EsModificacion:  item.EsModificacion,
-			MontoDevolucion: item.MontoDevolucion,
-			Moneda:          item.Moneda,
-			PasajeID:        utils.DerefString(item.PasajeID),
-			SolicitudItemID: utils.DerefString(item.SolicitudItemID),
-		}
-
+	for _, item := range descargo.Tramos {
 		if strings.HasPrefix(string(item.Tipo), "VUELTA") {
-			pasajesVuelta = append(pasajesVuelta, cv)
+			pasajesVuelta = append(pasajesVuelta, item)
 		} else {
-			pasajesIda = append(pasajesIda, cv)
+			pasajesIda = append(pasajesIda, item)
 		}
 	}
 

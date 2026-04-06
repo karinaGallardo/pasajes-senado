@@ -81,3 +81,17 @@ func (d DescargoOficial) HasTransportType(t string) bool {
 	}
 	return false
 }
+
+func (d DescargoOficial) GetTransporteList() []string {
+	if d.TipoTransporte == "" {
+		return []string{}
+	}
+	parts := strings.Split(d.TipoTransporte, ",")
+	var res []string
+	for _, p := range parts {
+		if s := strings.TrimSpace(p); s != "" {
+			res = append(res, s)
+		}
+	}
+	return res
+}

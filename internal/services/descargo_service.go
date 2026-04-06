@@ -5,12 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
-	"sistema-pasajes/internal/dtos"
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
-	"sistema-pasajes/internal/utils"
-	"sort"
-	"strings"
 )
 
 type DescargoService struct {
@@ -167,62 +163,4 @@ func (s *DescargoService) RevertToDraft(ctx context.Context, id string, userID s
 	}
 
 	return nil
-}
-
-func (s *DescargoService) GetItinerarioParaDescargo(ctx context.Context, solicitud *models.Solicitud) (map[string][]dtos.TramoView, map[string][]dtos.TramoView) {
-	pasajesOriginales := make(map[string][]dtos.TramoView)
-	pasajesReprogramados := make(map[string][]dtos.TramoView)
-
-	s.processTicketItemsForView(solicitud.GetItemIda(), pasajesOriginales, pasajesReprogramados)
-	s.processTicketItemsForView(solicitud.GetItemVuelta(), pasajesOriginales, pasajesReprogramados)
-
-	return pasajesOriginales, pasajesReprogramados
-}
-
-func (s *DescargoService) processTicketItemsForView(item *models.SolicitudItem, targetOrig, targetRepro map[string][]dtos.TramoView) {
-	if item == nil {
-		return
-	}
-
-	tipo := string(item.Tipo)
-	pasajes := item.Pasajes
-
-	sort.Slice(pasajes, func(i, j int) bool {
-		if pasajes[i].Seq != pasajes[j].Seq {
-			return pasajes[i].Seq < pasajes[j].Seq
-		}
-		return pasajes[i].CreatedAt.Before(pasajes[j].CreatedAt)
-	})
-
-	for _, p := range pasajes {
-		if !p.IsDischargeable() {
-			continue
-		}
-
-		targetMap := targetOrig
-		// Se eliminó la clasificación por PasajeAnteriorID ya que ahora se revierte y edita el pasaje original
-
-		tramosVuelo := p.GetTramosRuta()
-		for _, seg := range tramosVuelo {
-			parts := strings.Split(seg, " - ")
-			rv := dtos.RutaView{Display: seg}
-			if len(parts) == 2 {
-				rv.Origen = parts[0]
-				rv.Destino = parts[1]
-			} else {
-				rv.Origen = seg
-			}
-
-			targetMap[tipo] = append(targetMap[tipo], dtos.TramoView{
-				ID:              p.ID,
-				Ruta:            rv,
-				RutaID:          utils.DerefString(p.RutaID),
-				Fecha:           p.FechaVuelo.Format("2006-01-02"),
-				Billete:         p.NumeroBillete,
-				EsDevolucion:    false,
-				EsModificacion:  false,
-				MontoDevolucion: 0,
-			})
-		}
-	}
 }

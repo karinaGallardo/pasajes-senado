@@ -63,6 +63,7 @@ type TramoRowDTO struct {
 	EsDevolucion    bool
 	EsModificacion  bool
 	ArchivoPath     string
+	Seq             int
 }
 
 // ToTramoRows transforma los arreglos paralelos en una lista de objetos estructurados.
@@ -113,6 +114,7 @@ func (r *CreateDescargoRequest) ToTramoRows(archivoPaths []string) []TramoRowDTO
 			EsDevolucion:    devoMap[rawID],
 			EsModificacion:  modMap[rawID],
 			ArchivoPath:     get(archivoPaths, i),
+			Seq:             i + 1,
 		})
 	}
 	return rows
@@ -143,21 +145,21 @@ func (r *CreateDescargoRequest) Bind(c *gin.Context) error {
 }
 
 type ItinerarioTramos struct {
-	Billete string      // Nro de Billete / E-Ticket
-	Tramos  []TramoView // Tramos agrupados por este billete
+	Billete string                 // Nro de Billete / E-Ticket
+	Tramos  []models.DescargoTramo // Tramos agrupados por este billete
 }
 
 // DescargoShowData contiene toda la información necesaria para renderizar el detalle del descargo
 type DescargoShowData struct {
 	Descargo *models.Descargo
-	Ida      []TramoView
-	Vuelta   []TramoView
+	Ida      []models.DescargoTramo
+	Vuelta   []models.DescargoTramo
 }
 
 // DescargoEditData contiene la información estructurada para el formulario de edición
 type DescargoEditData struct {
 	Descargo  *models.Descargo
 	Solicitud *models.Solicitud
-	Ida       []TramoView
-	Vuelta    []TramoView
+	Ida       []models.DescargoTramo
+	Vuelta    []models.DescargoTramo
 }
