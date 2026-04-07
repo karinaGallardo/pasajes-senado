@@ -209,8 +209,7 @@ func (t SolicitudItem) CanBeApproved(user *Usuario) bool {
 	if user == nil {
 		return false
 	}
-	st := t.GetEstado()
-	return user.IsAdminOrResponsable() && (st == "SOLICITADO" || st == "PENDIENTE")
+	return user.IsAdminOrResponsable() && t.IsSolicitado()
 }
 
 func (t SolicitudItem) CanBeRejected(user *Usuario) bool {
@@ -221,18 +220,14 @@ func (t SolicitudItem) CanBeReverted(user *Usuario) bool {
 	if user == nil {
 		return false
 	}
-	st := t.GetEstado()
-	return user.IsAdminOrResponsable() && (st == "APROBADO" || st == "EMITIDO") && !t.HasActivePasaje()
+	return user.IsAdminOrResponsable() && (t.IsAprobado() || t.IsEmitido()) && !t.HasActivePasaje()
 }
 
 func (t SolicitudItem) CanAssignPasaje(user *Usuario) bool {
 	if user == nil {
 		return false
 	}
-	st := t.GetEstado()
-	// Un encargado/admin puede asignar pasaje siempre que el tramo esté APROBADO o ya tenga emisiones previas (EMITIDO).
-	// Esto permite el registro de múltiples billetes para tramos compuestos (multi-aerolínea).
-	return user.IsAdminOrResponsable() && (st == "APROBADO" || st == "EMITIDO")
+	return user.IsAdminOrResponsable() && (t.IsAprobado() || t.IsEmitido())
 }
 
 func (t SolicitudItem) GetOrigenLabel() string {

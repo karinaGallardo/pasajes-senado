@@ -49,7 +49,7 @@
         x-transition:leave-start="opacity-100 translate-y-0 scale-100"
         x-transition:leave-end="opacity-0 translate-y-[-20px] scale-95"
         x-data="{ saving: false }"
-        class="relative inline-block align-top bg-white rounded-xl text-left shadow-2xl border border-neutral-100 transform transition-all w-[92%] sm:max-w-lg md:max-w-xl sm:my-8 overflow-hidden"
+        class="relative inline-block align-top bg-white rounded-md text-left shadow-2xl border border-neutral-100 transform transition-all w-[92%] sm:max-w-lg md:max-w-xl sm:my-8 overflow-hidden"
       >
         <form
           id="usuario_edit_form_{{ .Usuario.ID }}"
@@ -108,7 +108,7 @@
             {{ if or .Success .Error }}
               <div x-show="!saving" class="mb-6 animate-in fade-in slide-in-from-top-2 duration-300">
                 <div
-                  class="flex items-center p-3 rounded-lg border text-sm font-bold {{ if .Success }}
+                  class="flex items-center p-3 rounded-md border text-sm font-bold {{ if .Success }}
                     bg-emerald-50 text-emerald-800 border-emerald-200
                   {{ else }}
                     bg-red-50 text-red-800 border-red-200
@@ -126,7 +126,7 @@
               <div class="space-y-1">
                 <label for="rol_codigo" class="block text-sm font-bold text-neutral-700">Rol Asignado</label>
                 {{ if not .CanChangeRol }}
-                  <div class="flex items-center justify-between p-3 bg-neutral-100 border border-neutral-200 rounded-lg">
+                  <div class="flex items-center justify-between p-3 bg-neutral-100 border border-neutral-200 rounded-md">
                     <span class="text-sm font-semibold text-neutral-600">
                       {{ if .Usuario.Rol }}{{ .Usuario.Rol.Nombre }}{{ else }}Sin Rol{{ end }}
                     </span>
@@ -136,7 +136,7 @@
                   <select
                     id="rol_codigo"
                     name="rol_codigo"
-                    class="block w-full py-2.5 px-3 border border-neutral-300 bg-white rounded-lg shadow-sm focus:ring-2 focus:ring-primary/20 focus:border-primary sm:text-sm transition-all"
+                    class="block w-full py-2.5 px-3 border border-neutral-300 bg-white rounded-md shadow-sm focus:ring-2 focus:ring-primary/20 focus:border-primary sm:text-sm transition-all"
                   >
                     {{ $currentRol := "" }}{{ if .Usuario.RolCodigo }}{{ $currentRol = deref .Usuario.RolCodigo }}{{ end }}
                     {{ range .Roles }}
@@ -172,7 +172,7 @@
                         <div
                           @click="open = true; $nextTick(function() { $refs.searchInput.focus() })"
                           x-show="!open"
-                          class="w-full rounded-lg border border-neutral-300 bg-white py-2.5 px-4 shadow-sm hover:border-neutral-400 focus:outline-none sm:text-sm cursor-pointer flex items-center justify-between transition-all min-h-[42px]"
+                          class="w-full rounded-md border border-neutral-300 bg-white py-2.5 px-4 shadow-sm hover:border-neutral-400 focus:outline-none sm:text-sm cursor-pointer flex items-center justify-between transition-all min-h-[42px]"
                         >
                           <span class="font-medium text-neutral-800" x-text="label"></span>
                           <i class="ph ph-caret-down text-neutral-400"></i>
@@ -190,11 +190,11 @@
                             @keydown.escape="open = false"
                             @keydown.enter.prevent="if (filteredItems.length > 0) select(filteredItems[0])"
                             placeholder="Buscar ciudad o IATA..."
-                            class="w-full rounded-lg border-2 border-primary bg-white py-2.5 px-4 shadow-md focus:outline-none sm:text-sm transition-all"
+                            class="w-full rounded-md border-2 border-primary bg-white py-2.5 px-4 shadow-md focus:outline-none sm:text-sm transition-all"
                           />
 
                           <ul
-                            class="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-xl bg-white py-1 text-base shadow-2xl ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm border border-neutral-100"
+                            class="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-2xl ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm border border-neutral-100"
                           >
                             <li
                               @click="select(null)"
@@ -224,7 +224,7 @@
                       </div>
                     </div>
                   {{ else }}
-                    <div class="flex items-center justify-between p-3 bg-neutral-100 border border-neutral-200 rounded-lg">
+                    <div class="flex items-center justify-between p-3 bg-neutral-100 border border-neutral-200 rounded-md">
                       <span class="text-sm font-semibold text-neutral-600">
                         {{ if .Usuario.Origen }}{{ .Usuario.Origen.GetNombreDisplay }}{{ else }}Sin origen asignado{{ end }}
                       </span>
@@ -259,7 +259,7 @@
                         <div
                           @click="if (!disabled) { open = true; $nextTick(function() { $refs.searchInput.focus() }) }"
                           x-show="!open"
-                          class="w-full rounded-lg border border-neutral-300 bg-white py-2.5 px-4 shadow-sm hover:border-neutral-400 focus:outline-none sm:text-sm cursor-pointer flex items-center justify-between transition-all min-h-[42px]"
+                          class="w-full rounded-md border border-neutral-300 bg-white py-2.5 px-4 shadow-sm hover:border-neutral-400 focus:outline-none sm:text-sm cursor-pointer flex items-center justify-between transition-all min-h-[42px]"
                           :class="{ 'bg-neutral-50 cursor-not-allowed opacity-75': disabled }"
                         >
                           <span class="font-medium text-neutral-800" x-text="label"></span>
@@ -277,11 +277,11 @@
                             @click.away="open = false"
                             @keydown.escape="open = false"
                             placeholder="Escriba nombre o CI..."
-                            class="w-full rounded-lg border-2 border-primary bg-white py-2.5 px-4 shadow-md focus:outline-none sm:text-sm transition-all"
+                            class="w-full rounded-md border-2 border-primary bg-white py-2.5 px-4 shadow-md focus:outline-none sm:text-sm transition-all"
                           />
 
                           <ul
-                            class="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-xl bg-white py-1 text-base shadow-2xl ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm border border-neutral-100"
+                            class="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-2xl ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm border border-neutral-100"
                           >
                             <li
                               @click="select(null)"
@@ -317,7 +317,7 @@
                       </div>
                     </div>
                   {{ else }}
-                    <div class="flex items-center justify-between p-3 bg-neutral-100 border border-neutral-200 rounded-lg">
+                    <div class="flex items-center justify-between p-3 bg-neutral-100 border border-neutral-200 rounded-md">
                       <span class="text-sm font-semibold text-neutral-600">
                         {{ if .Usuario.Encargado }}
                           {{ .Usuario.Encargado.GetNombreCompleto }}
@@ -347,7 +347,7 @@
 
                   <!-- Tags Container -->
                   <div
-                    class="flex flex-wrap gap-2 p-3 bg-neutral-50 rounded-xl border border-neutral-200 min-h-[50px] transition-all"
+                    class="flex flex-wrap gap-2 p-3 bg-neutral-50 rounded-md border border-neutral-200 min-h-[50px] transition-all"
                   >
                     <template x-for="s in selected" :key="s.iata">
                       <div
@@ -381,14 +381,14 @@
                           x-model.debounce.150ms="search"
                           @focus="open = true"
                           @click.away="open = false"
-                          class="block w-full pl-10 pr-4 py-2.5 border border-neutral-300 rounded-lg leading-5 bg-white placeholder-neutral-400 focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-medium transition-all"
+                          class="block w-full pl-10 pr-4 py-2.5 border border-neutral-300 rounded-md leading-5 bg-white placeholder-neutral-400 focus:ring-2 focus:ring-primary/20 focus:border-primary text-sm font-medium transition-all"
                           placeholder="Añadir ciudad o aeropuerto..."
                         />
                       </div>
 
                       <div
                         x-show="open && (loading || (search.length >= 3 && filtered.length > 0) || (search.length >= 3 && filtered.length === 0))"
-                        class="absolute z-50 mt-1 w-full bg-white shadow-2xl max-h-52 rounded-xl py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm border border-neutral-100"
+                        class="absolute z-50 mt-1 w-full bg-white shadow-2xl max-h-52 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm border border-neutral-100"
                         x-cloak
                       >
                         <template x-if="loading">
@@ -432,7 +432,7 @@
                     autocomplete="new-password"
                     data-lpignore="true"
                     data-form-type="other"
-                    class="block w-full py-2.5 px-4 border border-neutral-300 rounded-lg shadow-sm focus:ring-2 focus:ring-primary/20 focus:border-primary sm:text-sm transition-all"
+                    class="block w-full py-2.5 px-4 border border-neutral-300 rounded-md shadow-sm focus:ring-2 focus:ring-primary/20 focus:border-primary sm:text-sm transition-all"
                     placeholder="ejemplo@senado.bo"
                   />
                 </div>
@@ -445,7 +445,7 @@
                     value="{{ .Usuario.Phone }}"
                     autocomplete="new-password"
                     data-lpignore="true"
-                    class="block w-full py-2.5 px-4 border border-neutral-300 rounded-lg shadow-sm focus:ring-2 focus:ring-primary/20 focus:border-primary sm:text-sm transition-all"
+                    class="block w-full py-2.5 px-4 border border-neutral-300 rounded-md shadow-sm focus:ring-2 focus:ring-primary/20 focus:border-primary sm:text-sm transition-all"
                     placeholder="70000000"
                   />
                 </div>
