@@ -3,7 +3,6 @@ package dtos
 import (
 	"mime/multipart"
 	"sistema-pasajes/internal/models"
-	"strconv"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -19,16 +18,16 @@ type CreateDescargoRequest struct {
 	DirigidoA                   string `form:"dirigido_a"`
 
 	// Informe PV-06
-	NroMemorandum     string  `form:"nro_memorandum"`
-	TipoTransporte    string  `form:"tipo_transporte"` // AEREO, TERRESTRE, VEHICULO_OFICIAL
-	PlacaVehiculo     string  `form:"placa_vehiculo"`
-	MontoDevolucion   float64 `form:"monto_devolucion"`
-	NroBoletaDeposito string  `form:"nro_boleta_deposito"`
+	NroMemorandum     string `form:"nro_memorandum"`
+	TipoTransporte    string `form:"tipo_transporte"` // AEREO, TERRESTRE, VEHICULO_OFICIAL
+	PlacaVehiculo     string `form:"placa_vehiculo"`
+	NroBoletaDeposito string `form:"nro_boleta_deposito"`
 
 	// Transporte Terrestre Público
 	TransporteTerrestreFecha   []string `form:"terrestre_fecha[]"`
 	TransporteTerrestreFactura []string `form:"terrestre_factura[]"`
 	TransporteTerrestreImporte []string `form:"terrestre_importe[]"`
+	TransporteTerrestreID      []string `form:"terrestre_id[]"`
 	TransporteTerrestreTipo    []string `form:"terrestre_tipo[]"`
 
 	// Detalles del Tramo (FV-05) - Arreglos paralelos para conexiones
@@ -36,7 +35,7 @@ type CreateDescargoRequest struct {
 	TramoIndex           []string                `form:"tramo_index[]"`
 	TramoID              []string                `form:"tramo_id[]"`
 	TramoRutaID          []string                `form:"tramo_ruta_id[]"`
-	TramoRutaNombre      []string                `form:"tramo_ruta_nombre[]"`
+	TramoNombre          []string                `form:"tramo_nombre[]"`
 	TramoOrigenIATA      []string                `form:"tramo_origen_iata[]"`
 	TramoDestinoIATA     []string                `form:"tramo_destino_iata[]"`
 	TramoFecha           []string                `form:"tramo_fecha[]"`
@@ -45,11 +44,13 @@ type CreateDescargoRequest struct {
 	TramoPaseNumero      []string                `form:"tramo_pase_numero[]"`
 	TramoDevolucion      []string                `form:"tramo_devolucion[]"`
 	TramoModificacion    []string                `form:"tramo_modificacion[]"`
-	TramoMontoDevolucion []string                `form:"tramo_monto_devolucion[]"`
-	TramoMoneda          []string                `form:"tramo_moneda[]"`
 	TramoPasajeID        []string                `form:"tramo_pasaje_id[]"`
 	TramoSolicitudItemID []string                `form:"tramo_solicitud_item_id[]"`
 	TramoPaseArchivo     []*multipart.FileHeader `form:"tramo_archivo[]"`
+
+	// Neteo de Liquidación por Billete (Ingresado vía Agencia)
+	LiquidacionPasajeID         []string `form:"liquidacion_pasaje_id[]"`
+	LiquidacionCostoUtilizacion []string `form:"liquidacion_costo_utilizacion[]"`
 }
 
 // TramoRowDTO representa una fila de itinerario ya procesada y tipada.
@@ -57,15 +58,13 @@ type TramoRowDTO struct {
 	ID              string
 	Tipo            string
 	RutaID          string
-	RutaNombre      string
+	TramoNombre     string
 	OrigenIATA      string
 	DestinoIATA     string
 	Fecha           string
 	Billete         string
 	Vuelo           string
 	PaseNumero      string
-	MontoDevolucion float64
-	Moneda          string
 	PasajeID        string
 	SolicitudItemID string
 	EsDevolucion    bool
@@ -106,21 +105,17 @@ func (r *CreateDescargoRequest) ToTramoRows(archivoPaths []string) []TramoRowDTO
 			return ""
 		}
 
-		monto, _ := strconv.ParseFloat(get(r.TramoMontoDevolucion, i), 64)
-
 		rows = append(rows, TramoRowDTO{
 			ID:              rawID,
 			Tipo:            get(r.TramoTipo, i),
 			RutaID:          get(r.TramoRutaID, i),
-			RutaNombre:      get(r.TramoRutaNombre, i),
+			TramoNombre:     get(r.TramoNombre, i),
 			OrigenIATA:      get(r.TramoOrigenIATA, i),
 			DestinoIATA:     get(r.TramoDestinoIATA, i),
 			Fecha:           get(r.TramoFecha, i),
 			Billete:         strings.ToUpper(strings.TrimSpace(get(r.TramoBillete, i))),
 			Vuelo:           get(r.TramoVuelo, i),
 			PaseNumero:      get(r.TramoPaseNumero, i),
-			MontoDevolucion: monto,
-			Moneda:          get(r.TramoMoneda, i),
 			PasajeID:        get(r.TramoPasajeID, i),
 			SolicitudItemID: get(r.TramoSolicitudItemID, i),
 			EsDevolucion:    devoMap[rawID],
@@ -143,18 +138,40 @@ func (r *CreateDescargoRequest) Bind(c *gin.Context) error {
 	r.TramoTipo = c.PostFormArray("tramo_tipo[]")
 	r.TramoID = c.PostFormArray("tramo_id[]")
 	r.TramoRutaID = c.PostFormArray("tramo_ruta_id[]")
+	r.TramoNombre = c.PostFormArray("tramo_nombre[]")
 	r.TramoFecha = c.PostFormArray("tramo_fecha[]")
 	r.TramoBillete = c.PostFormArray("tramo_billete[]")
 	r.TramoVuelo = c.PostFormArray("tramo_vuelo[]")
 	r.TramoPaseNumero = c.PostFormArray("tramo_pase_numero[]")
 	r.TramoDevolucion = c.PostFormArray("tramo_devolucion[]")
 	r.TramoModificacion = c.PostFormArray("tramo_modificacion[]")
-	r.TramoMontoDevolucion = c.PostFormArray("tramo_monto_devolucion[]")
-	r.TramoMoneda = c.PostFormArray("tramo_moneda[]")
 	r.TramoPasajeID = c.PostFormArray("tramo_pasaje_id[]")
 	r.TramoSolicitudItemID = c.PostFormArray("tramo_solicitud_item_id[]")
 	r.TramoOrigenIATA = c.PostFormArray("tramo_origen_iata[]")
 	r.TramoDestinoIATA = c.PostFormArray("tramo_destino_iata[]")
+
+	// Transporte Terrestre
+	r.TransporteTerrestreFecha = c.PostFormArray("terrestre_fecha[]")
+	r.TransporteTerrestreFactura = c.PostFormArray("terrestre_factura[]")
+	r.TransporteTerrestreImporte = c.PostFormArray("terrestre_importe[]")
+	r.TransporteTerrestreTipo = c.PostFormArray("terrestre_tipo[]")
+	r.TransporteTerrestreID = c.PostFormArray("terrestre_id[]")
+
+	// Captura múltiple de Tipos de Transporte (Checkboxes)
+	tiposRaw := c.PostFormArray("tipo_transporte")
+	var tiposValidos []string
+	for _, t := range tiposRaw {
+		if t == "TERRESTRE" {
+			t = "TERRESTRE_PUBLICO"
+		}
+		if t != "" {
+			tiposValidos = append(tiposValidos, t)
+		}
+	}
+	r.TipoTransporte = strings.Join(tiposValidos, ",")
+
+	r.LiquidacionPasajeID = c.PostFormArray("liquidacion_pasaje_id[]")
+	r.LiquidacionCostoUtilizacion = c.PostFormArray("liquidacion_costo_utilizacion[]")
 
 	return nil
 }

@@ -55,6 +55,19 @@ func ParseDateTime(val string) (*time.Time, error) {
 	if t, err := time.ParseInLocation("2006-01-02T03:04 PM", val, time.Local); err == nil {
 		return &t, nil
 	}
+	// === NUEVOS FORMATOS SOPORTADOS (DD/MM/YYYY) ===
+	// Formato latino estándar (solo fecha)
+	if t, err := time.ParseInLocation("02/01/2006", val, time.Local); err == nil {
+		return &t, nil
+	}
+	// Formato latino con hora 24h
+	if t, err := time.ParseInLocation("02/01/2006 15:04", val, time.Local); err == nil {
+		return &t, nil
+	}
+	// Formato ISO estándar (solo fecha con guiones)
+	if t, err := time.ParseInLocation("2006-01-02", val, time.Local); err == nil {
+		return &t, nil
+	}
 	return nil, fmt.Errorf("formato de fecha y hora inválido: %s", val)
 }
 

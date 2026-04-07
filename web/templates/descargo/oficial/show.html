@@ -13,6 +13,25 @@
           <span class="font-semibold text-neutral-600 tracking-tight">{{ .Descargo.Solicitud.Usuario.GetNombreCompleto }}</span>
         </p>
       </div>
+      <div class="flex items-center gap-2">
+        {{ if .Descargo.CanPrint .AuthUser }}
+          <a
+            href="/descargos/oficial/{{ .Descargo.ID }}/print"
+            target="_blank"
+            class="inline-flex items-center px-4 py-2 border border-neutral-300 shadow-sm text-xs font-black rounded-md text-neutral-700 bg-white hover:bg-neutral-50 transition-all uppercase tracking-tight"
+          >
+            <i class="ph ph-printer mr-2 text-lg"></i>
+            Imprimir Descargo
+          </a>
+        {{ end }}
+        <a
+          href="/solicitudes/oficial/{{ .Descargo.SolicitudID }}/detalle"
+          class="inline-flex items-center px-4 py-2 border border-neutral-300 shadow-sm text-xs font-black rounded-md text-neutral-700 bg-white hover:bg-neutral-50 transition-all uppercase tracking-tight"
+        >
+          <i class="ph ph-arrow-left mr-2 text-lg"></i>
+          Volver a Solicitud
+        </a>
+      </div>
     </div>
 
     <!-- Status Banner -->
@@ -268,17 +287,6 @@
                 Editar Descargo
               </a>
             {{ end }}
-
-
-            <div class="border-t border-neutral-100 my-4 pt-4">
-              <a
-                href="/solicitudes/oficial/{{ .Descargo.SolicitudID }}/detalle"
-                class="w-full inline-flex justify-center items-center px-4 py-2 border border-neutral-200 text-xs font-black rounded-md text-neutral-500 bg-neutral-50 hover:bg-neutral-100 transition-all active:scale-95 uppercase tracking-tight"
-              >
-                <i class="ph ph-arrow-left mr-2 text-lg"></i>
-                Volver a Solicitud
-              </a>
-            </div>
           </div>
         </div>
       </div>
@@ -365,18 +373,10 @@
                             </div>
                             <div class="flex items-center">
                               <span class="w-12 font-bold text-neutral-400 uppercase tracking-widest italic opacity-60">
-                                Vuelo
+                                Pase
                               </span>
                               <span class="font-mono text-neutral-900 font-bold ml-1">
-                                {{ if .NumeroVuelo }}{{ .NumeroVuelo }}{{ else }}-{{ end }}
-                              </span>
-                            </div>
-                            <div class="flex items-center">
-                              <span class="w-12 font-bold text-neutral-400 uppercase tracking-widest italic opacity-60">
-                                Vuelo
-                              </span>
-                              <span class="font-mono text-neutral-900 font-bold ml-1">
-                                {{ if .NumeroVuelo }}{{ .NumeroVuelo }}{{ else }}-{{ end }}
+                                {{ if .NumeroPaseAbordo }}{{ .NumeroPaseAbordo }}{{ else }}-{{ end }}
                               </span>
                             </div>
                           </div>
@@ -427,6 +427,22 @@
                               </span>
                               <span class="font-mono text-neutral-900 font-bold ml-1">
                                 {{ if .Billete }}{{ .Billete }}{{ else }}-{{ end }}
+                              </span>
+                            </div>
+                            <div class="flex items-center">
+                              <span class="w-12 font-bold text-neutral-400 uppercase tracking-widest italic opacity-60">
+                                Vuelo
+                              </span>
+                              <span class="font-mono text-neutral-900 font-bold ml-1">
+                                {{ if .NumeroVuelo }}{{ .NumeroVuelo }}{{ else }}-{{ end }}
+                              </span>
+                            </div>
+                            <div class="flex items-center">
+                              <span class="w-12 font-bold text-neutral-400 uppercase tracking-widest italic opacity-60">
+                                Pase
+                              </span>
+                              <span class="font-mono text-neutral-900 font-bold ml-1">
+                                {{ if .NumeroPaseAbordo }}{{ .NumeroPaseAbordo }}{{ else }}-{{ end }}
                               </span>
                             </div>
                           </div>
@@ -509,6 +525,22 @@
                                 {{ if .Billete }}{{ .Billete }}{{ else }}-{{ end }}
                               </span>
                             </div>
+                            <div class="flex items-center">
+                              <span class="w-12 font-bold text-neutral-400 uppercase tracking-widest italic opacity-60">
+                                Vuelo
+                              </span>
+                              <span class="font-mono text-neutral-900 font-bold ml-1">
+                                {{ if .NumeroVuelo }}{{ .NumeroVuelo }}{{ else }}-{{ end }}
+                              </span>
+                            </div>
+                            <div class="flex items-center">
+                              <span class="w-12 font-bold text-neutral-400 uppercase tracking-widest italic opacity-60">
+                                Pase
+                              </span>
+                              <span class="font-mono text-neutral-900 font-bold ml-1">
+                                {{ if .NumeroPaseAbordo }}{{ .NumeroPaseAbordo }}{{ else }}-{{ end }}
+                              </span>
+                            </div>
                           </div>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right align-middle">
@@ -557,6 +589,22 @@
                               </span>
                               <span class="font-mono text-neutral-900 font-bold ml-1">
                                 {{ if .Billete }}{{ .Billete }}{{ else }}-{{ end }}
+                              </span>
+                            </div>
+                            <div class="flex items-center">
+                              <span class="w-12 font-bold text-neutral-400 uppercase tracking-widest italic opacity-60">
+                                Vuelo
+                              </span>
+                              <span class="font-mono text-neutral-900 font-bold ml-1">
+                                {{ if .NumeroVuelo }}{{ .NumeroVuelo }}{{ else }}-{{ end }}
+                              </span>
+                            </div>
+                            <div class="flex items-center">
+                              <span class="w-12 font-bold text-neutral-400 uppercase tracking-widest italic opacity-60">
+                                Pase
+                              </span>
+                              <span class="font-mono text-neutral-900 font-bold ml-1">
+                                {{ if .NumeroPaseAbordo }}{{ .NumeroPaseAbordo }}{{ else }}-{{ end }}
                               </span>
                             </div>
                           </div>
@@ -638,7 +686,7 @@
                         hx-get="/preview-file?path={{ .Archivo }}"
                         hx-target="#modal-container"
                       >
-                        <img src="/{{ .Archivo }}" class="w-full h-full object-cover" />
+                        <img src="/raw-file?path={{ .Archivo }}" class="w-full h-full object-cover" />
                       </div>
                     {{ end }}
                   </div>
@@ -650,93 +698,123 @@
             <div class="border-t border-neutral-100 pt-6">
               <h4 class="text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-3">4. Transporte Utilizado</h4>
               {{ if .Descargo.Oficial }}
-                <div
-                  class="p-4 rounded-xl {{ if eq .Descargo.Oficial.TipoTransporte `AEREO` }}
-                    bg-blue-50/50 border border-blue-100
-                  {{ else if eq .Descargo.Oficial.TipoTransporte `TERRESTRE_PUBLICO` }}
-                    bg-amber-50/50 border border-amber-100
-                  {{ else }}
-                    bg-neutral-50 border border-neutral-100
-                  {{ end }}"
-                >
-                  <div class="flex items-center gap-2 mb-3">
-                    <i
-                      class="ph {{ if eq .Descargo.Oficial.TipoTransporte `AEREO` }}
-                        ph-airplane-tilt text-blue-600
-                      {{ else if eq .Descargo.Oficial.TipoTransporte `TERRESTRE_PUBLICO` }}
-                        ph-bus text-amber-600
-                      {{ else }}
-                        ph-car-profile text-neutral-600
-                      {{ end }} text-xl"
-                    ></i>
-                    <span class="text-xs font-black uppercase tracking-widest text-neutral-700">
-                      Tipo:
-                      {{ .Descargo.Oficial.GetTipoTransporteDisplay }}
-                    </span>
-                  </div>
-
-                  {{ if eq .Descargo.Oficial.TipoTransporte `TERRESTRE_PUBLICO` }}
-                    {{ if .Descargo.Oficial.TransportesTerrestres }}
-                      <div class="overflow-hidden rounded-lg border border-amber-200 bg-white shadow-sm">
-                        <table class="min-w-full divide-y divide-amber-100">
-                          <thead class="bg-amber-50/50">
-                            <tr>
-                              <th
-                                class="px-4 py-2 text-left text-[10px] font-black text-amber-800 uppercase tracking-widest border-r border-amber-100/50"
-                              >
-                                Fecha
-                              </th>
-                              <th
-                                class="px-4 py-2 text-left text-[10px] font-black text-amber-800 uppercase tracking-widest border-r border-amber-100/50"
-                              >
-                                Sentido
-                              </th>
-                              <th
-                                class="px-4 py-2 text-left text-[10px] font-black text-amber-800 uppercase tracking-widest border-r border-amber-100/50"
-                              >
-                                Nº Factura
-                              </th>
-                              <th class="px-4 py-2 text-right text-[10px] font-black text-amber-800 uppercase tracking-widest">
-                                Importe (Bs.)
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody class="divide-y divide-amber-50">
-                            {{ range .Descargo.Oficial.TransportesTerrestres }}
-                              <tr class="hover:bg-amber-50/30 transition-colors">
-                                <td class="px-4 py-2 text-xs text-neutral-700 font-medium border-r border-amber-50/50">
-                                  {{ .Fecha.Format "02/01/2006" }}
-                                </td>
-                                <td class="px-4 py-2 text-xs text-neutral-700 font-medium border-r border-amber-50/50">
-                                  {{ .Tipo }}
-                                </td>
-                                <td class="px-4 py-2 text-xs text-neutral-700 font-bold border-r border-amber-50/50">
-                                  {{ .NroFactura }}
-                                </td>
-                                <td class="px-4 py-2 text-xs text-neutral-900 font-black text-right">
-                                  Bs.
-                                  {{ printf "%.2f" .Importe }}
-                                </td>
-                              </tr>
-                            {{ end }}
-                          </tbody>
-                        </table>
+                <div class="space-y-4">
+                  <!-- Bloque Terrestre Público -->
+                  {{ if .Descargo.Oficial.HasTransportType "TERRESTRE_PUBLICO" }}
+                    <div class="p-4 rounded-xl bg-amber-50/50 border border-amber-100">
+                      <div class="flex items-center gap-2 mb-3">
+                        <i class="ph ph-bus text-amber-600 text-xl"></i>
+                        <span class="text-xs font-black uppercase tracking-widest text-neutral-700">
+                          Transporte Terrestre Público (Flota/Otros)
+                        </span>
                       </div>
-                    {{ else }}
-                      <p class="text-[10px] text-amber-600 italic font-bold">Sin detalles de viajes terrestres registrados.</p>
-                    {{ end }}
+
+                      {{ if .Descargo.Oficial.TransportesTerrestres }}
+                        <div class="overflow-hidden rounded-lg border border-amber-200 bg-white shadow-sm">
+                          <table class="min-w-full divide-y divide-amber-100">
+                            <thead class="bg-amber-50/50">
+                              <tr>
+                                <th
+                                  class="px-4 py-2 text-left text-[10px] font-black text-amber-800 uppercase tracking-widest border-r border-amber-100/50"
+                                >
+                                  Fecha
+                                </th>
+                                <th
+                                  class="px-4 py-2 text-left text-[10px] font-black text-amber-800 uppercase tracking-widest border-r border-amber-100/50"
+                                >
+                                  Sentido
+                                </th>
+                                <th
+                                  class="px-4 py-2 text-left text-[10px] font-black text-amber-800 uppercase tracking-widest border-r border-amber-100/50"
+                                >
+                                  Nº Factura
+                                </th>
+                                <th
+                                  class="px-4 py-2 text-right text-[10px] font-black text-amber-800 uppercase tracking-widest border-r border-amber-100/50"
+                                >
+                                  Importe (Bs.)
+                                </th>
+                                <th class="px-4 py-2 text-center text-[10px] font-black text-amber-800 uppercase tracking-widest">
+                                  Comprobante
+                                </th>
+                              </tr>
+                            </thead>
+                            <tbody class="divide-y divide-amber-50">
+                              {{ range .Descargo.Oficial.TransportesTerrestres }}
+                                <tr class="hover:bg-amber-50/30 transition-colors">
+                                  <td class="px-4 py-2 text-xs text-neutral-700 font-medium border-r border-amber-50/50">
+                                    {{ .Fecha.Format "02/01/2006" }}
+                                  </td>
+                                  <td class="px-4 py-2 text-xs text-neutral-700 font-medium border-r border-amber-50/50">
+                                    {{ .Tipo }}
+                                  </td>
+                                  <td class="px-4 py-2 text-xs text-neutral-700 font-bold border-r border-amber-50/50">
+                                    {{ .NroFactura }}
+                                  </td>
+                                  <td
+                                    class="px-4 py-2 text-xs text-neutral-900 font-black text-right border-r border-amber-50/50"
+                                  >
+                                    Bs.
+                                    {{ printf "%.2f" .Importe }}
+                                  </td>
+                                  <td class="px-4 py-2 text-center">
+                                    {{ if .Archivo }}
+                                      <button
+                                        type="button"
+                                        @click="htmx.ajax('GET', '/preview-file?path=' + encodeURIComponent('{{ .Archivo }}'), { target: '#modal-container' })"
+                                        class="text-primary hover:scale-110 transition-transform inline-flex rounded-lg p-1 hover:bg-primary-50"
+                                        title="Ver Comprobante PDF"
+                                      >
+                                        <i class="ph ph-file-pdf text-xl"></i>
+                                      </button>
+                                    {{ else }}
+                                      <span class="text-[9px] text-neutral-300 italic">N/A</span>
+                                    {{ end }}
+                                  </td>
+                                </tr>
+                              {{ end }}
+                            </tbody>
+                          </table>
+                        </div>
+                      {{ else }}
+                        <p class="text-[10px] text-amber-600 italic font-bold">Sin detalles de viajes terrestres registrados.</p>
+                      {{ end }}
+                    </div>
                   {{ end }}
 
-                  {{ if eq .Descargo.Oficial.TipoTransporte "VEHICULO_OFICIAL" }}
-                    <div class="flex items-center gap-3">
-                      <div class="bg-white px-4 py-2 rounded-lg border-2 border-dashed border-neutral-300">
-                        <span class="text-[10px] font-black text-neutral-400 uppercase block leading-none mb-1">PLACA</span>
-                        <span class="text-sm font-black text-neutral-800 tracking-widest">
-                          {{ if .Descargo.Oficial.PlacaVehiculo }}
-                            {{ .Descargo.Oficial.PlacaVehiculo }}
-                          {{ else }}
-                            SIN REGISTRAR
-                          {{ end }}
+
+                  <!-- Bloque Vehículo Oficial -->
+                  {{ if .Descargo.Oficial.HasTransportType "VEHICULO_OFICIAL" }}
+                    <div class="p-4 rounded-xl bg-neutral-50 border border-neutral-100">
+                      <div class="flex items-center gap-2 mb-3">
+                        <i class="ph ph-car-profile text-neutral-600 text-xl"></i>
+                        <span class="text-xs font-black uppercase tracking-widest text-neutral-700">
+                          Vehículo Oficial del Senado
+                        </span>
+                      </div>
+                      <div class="flex items-center gap-3">
+                        <div class="bg-white px-4 py-2 rounded-lg border-2 border-dashed border-neutral-300">
+                          <span class="text-[10px] font-black text-neutral-400 uppercase block leading-none mb-1">PLACA</span>
+                          <span class="text-sm font-black text-neutral-800 tracking-widest">
+                            {{ if .Descargo.Oficial.PlacaVehiculo }}
+                              {{ .Descargo.Oficial.PlacaVehiculo }}
+                            {{ else }}
+                              SIN REGISTRAR
+                            {{ end }}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  {{ end }}
+
+
+                  <!-- Bloque Aéreo (Si aplica) -->
+                  {{ if .Descargo.Oficial.HasTransportType "AEREO" }}
+                    <div class="p-4 rounded-xl bg-blue-50/50 border border-blue-100">
+                      <div class="flex items-center gap-2">
+                        <i class="ph ph-airplane-tilt text-blue-600 text-xl"></i>
+                        <span class="text-xs font-black uppercase tracking-widest text-neutral-700">
+                          Transporte Aéreo (Detallado arriba en Itinerario)
                         </span>
                       </div>
                     </div>
@@ -747,18 +825,16 @@
               {{ end }}
             </div>
 
-            {{ if and .Descargo.Oficial (gt .Descargo.Oficial.MontoDevolucion 0.0) }}
+            {{ if gt .Descargo.GetTotalReintegroPasajes 0.0 }}
               <div
                 class="bg-warning-50 border border-warning-200 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4"
               >
                 <div class="space-y-1">
-                  <h4 class="text-[10px] font-black text-warning-600 uppercase tracking-widest">
-                    Devolución de Pasajes/Viáticos
-                  </h4>
+                  <h4 class="text-[10px] font-black text-warning-600 uppercase tracking-widest">Reintegro al Senado (Pasajes)</h4>
                   <div class="flex items-baseline gap-2">
                     <span class="text-2xl font-black text-warning-700">
                       Bs.
-                      {{ printf "%.2f" .Descargo.Oficial.MontoDevolucion }}
+                      {{ printf "%.2f" .Descargo.GetTotalReintegroPasajes }}
                     </span>
                     <span class="text-[10px] text-warning-500 font-bold uppercase tracking-tighter">
                       (Boleta N° {{ .Descargo.Oficial.NroBoletaDeposito }})

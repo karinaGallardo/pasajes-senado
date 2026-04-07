@@ -10,14 +10,13 @@
     x-data="itineraryRow({
       esDevo: {{ .Tramo.EsDevolucion }},
       esMod: {{ .Tramo.EsModificacion }},
-      monto: {{ or .Tramo.MontoDevolucion 0.0 }},
-      moneda: '{{ or .Tramo.Moneda `BOB` }}',
-      route: '{{ .Tramo.GetRutaDisplay }}',
+      tramo_nombre: '{{ .Tramo.TramoNombre }}',
       route_id: '{{ .Tramo.RutaID }}',
       origen_iata: '{{ .Tramo.GetOrigenIATA }}',
       destino_iata: '{{ .Tramo.GetDestinoIATA }}',
       billete: '{{ .Tramo.Billete }}',
-      vuelo: '{{ .Tramo.NumeroVuelo }}'
+      vuelo: '{{ .Tramo.NumeroVuelo }}',
+      pase: '{{ .Tramo.NumeroPaseAbordo }}'
     })"
     @update-totals.window="checkFullStatus()"
     x-bind="bindFade"
@@ -25,11 +24,15 @@
     <input type="hidden" name="tramo_tipo[]" value="{{ .Tramo.Tipo }}" />
     <input type="hidden" name="tramo_id[]" value="{{ .Tramo.ID }}" />
     <input type="hidden" name="tramo_ruta_id[]" :value="route_id" />
-    <input type="hidden" name="tramo_ruta_nombre[]" :value="route" />
+    <input type="hidden" name="tramo_nombre[]" :value="tramo_nombre" />
     <input type="hidden" name="tramo_origen_iata[]" :value="origen_iata" />
     <input type="hidden" name="tramo_destino_iata[]" :value="destino_iata" />
-    <input type="hidden" name="tramo_pasaje_id[]" value="{{ .Tramo.PasajeID }}" />
-    <input type="hidden" name="tramo_solicitud_item_id[]" value="{{ .Tramo.SolicitudItemID }}" />
+    <input type="hidden" name="tramo_pasaje_id[]" value="{{ if .Tramo.PasajeID }}{{ .Tramo.PasajeID }}{{ end }}" />
+    <input
+      type="hidden"
+      name="tramo_solicitud_item_id[]"
+      value="{{ if .Tramo.SolicitudItemID }}{{ .Tramo.SolicitudItemID }}{{ end }}"
+    />
     <input type="hidden" name="tramo_devolucion[]" value="{{ .Tramo.ID }}" :disabled="!esDevolucion" />
 
     <td class="px-2 py-1 text-center border-r border-neutral-100 bg-neutral-50/30">
@@ -74,19 +77,18 @@
 
     <td class="px-2 py-0">
       {{ if $readOnlyRuta }}
-        <div class="text-[10px] leading-none font-bold text-neutral-700 uppercase whitespace-pre-line -mt-3">
-          <span class="">{{ .Tramo.GetRutaOrigen }}</span>
-          <span class="">{{ .Tramo.GetRutaDestino }}</span>
+        <div class="text-[10px] leading-tight font-bold text-neutral-700 uppercase whitespace-pre-line">
+          {{ .Tramo.TramoNombre }}
         </div>
       {{ else }}
         <div
           class="relative min-w-[220px]"
-          @searchable-select-change="route = $event.detail.label; origen_iata = $event.detail.origen_iata; destino_iata = $event.detail.destino_iata"
+          @searchable-select-change="tramo_nombre = $event.detail.label; origen_iata = $event.detail.origen_iata; destino_iata = $event.detail.destino_iata"
           x-data="searchableSelect({
            endpoint: '/api/rutas/search?atomic=true',
            initialValue: '{{ .Tramo.RutaID }}',
-           initialLabel: '{{ .Tramo.GetRutaDisplay }}',
-           placeholder: 'Buscar ruta...'
+           initialLabel: '{{ .Tramo.TramoNombre }}',
+           placeholder: 'Buscar tramo...'
          })"
           x-modelable="value"
           x-model="route_id"
@@ -96,10 +98,10 @@
               @click="if(!esDevolucion && !esModificacion) { open = true; $nextTick(() => $refs.searchInput.focus()) }"
               x-show="!open"
               class="w-full bg-white border border-neutral-300 rounded px-2 py-1.5 text-[10px] cursor-pointer focus:ring-1 focus:ring-primary min-h-[38px] flex items-center justify-between transition-all hover:border-primary-300 shadow-sm"
-              :class="{ 'opacity-50 grayscale bg-neutral-100 cursor-not-allowed': esDevolucion || esModificacion, 'border-primary-200 bg-primary-50/10': label && label !== 'Buscar ruta...' }"
+              :class="{ 'opacity-50 grayscale bg-neutral-100 cursor-not-allowed': esDevolucion || esModificacion, 'border-primary-200 bg-primary-50/10': label && label !== 'Buscar tramo...' }"
             >
               <span
-                x-text="(label || 'Seleccionar Ruta').split(' - ').join('\n')"
+                x-text="(label || 'Seleccionar Tramo')"
                 class="whitespace-pre-line font-bold text-neutral-800 uppercase leading-none"
               ></span>
               <i class="ph ph-caret-down text-neutral-400"></i>
@@ -114,7 +116,7 @@
               @click.away="open = false"
               @keydown.escape="open = false"
               @keydown.enter.prevent="if (filteredItems.length > 0) select(filteredItems[0])"
-              placeholder="Buscar ruta..."
+              placeholder="Buscar tramo..."
               class="w-full rounded border border-primary-500 bg-white py-1.5 px-2 shadow-sm focus:outline-none focus:ring-1 focus:ring-primary-500 text-[10px] font-bold uppercase"
             />
 
@@ -131,7 +133,7 @@
                 >
                   <span
                     class="block font-bold uppercase whitespace-pre-line text-[10px] leading-tight"
-                    x-text="item.label.split(' - ').join('\n')"
+                    x-text="item.label"
                   ></span>
                 </li>
               </template>
@@ -148,9 +150,13 @@
         name="tramo_fecha[]"
         value="{{ .Tramo.GetFechaStr }}"
         x-bind="bindInput"
-        {{ if .Tramo.IsOriginal }}readonly{{ end }}
-        x-datepicker="{ position: 'top center' }"
-        class="w-full text-[11px] border border-neutral-300 rounded py-0.5 px-1 focus:ring-primary h-9 {{ if .Tramo.IsOriginal }}
+        {{ if $isOriginal }}
+          readonly
+        {{ else }}
+          x-datepicker="{ position: 'top center', enableTime: true }"
+        {{ end }}
+        autocomplete="off"
+        class="w-full text-center text-[10px] border border-neutral-300 rounded py-0.5 px-0.5 h-9 {{ if $isOriginal }}
           bg-neutral-50 text-neutral-500 cursor-not-allowed
         {{ end }}"
       />
@@ -163,7 +169,8 @@
         value="{{ .Tramo.Billete }}"
         x-bind="bindInput"
         {{ if $isOriginal }}readonly{{ end }}
-        class="w-full text-center text-[11px] border border-neutral-300 rounded py-0.5 px-1 h-9 {{ if $isOriginal }}
+        autocomplete="off"
+        class="w-full text-center text-[10px] border border-neutral-300 rounded py-0.5 px-1 h-9 {{ if $isOriginal }}
           bg-neutral-50 text-neutral-500 cursor-not-allowed
         {{ end }}"
         placeholder="Billete"
@@ -175,10 +182,9 @@
         type="text"
         name="tramo_vuelo[]"
         x-model="vuelo"
-        {{ if $isOriginal }}readonly{{ end }}
-        class="w-full text-center text-[11px] border border-neutral-300 rounded py-0.5 px-1 h-9 {{ if $isOriginal }}
-          bg-neutral-50 text-neutral-500 cursor-not-allowed
-        {{ end }}"
+        autocomplete="off"
+        x-bind="bindVuelo"
+        class="w-full text-center text-[11px] border border-neutral-300 rounded py-0.5 px-1 h-9 transition-all"
         placeholder="Vuelo"
       />
     </td>
@@ -187,19 +193,17 @@
       <input
         type="text"
         name="tramo_pase_numero[]"
-        value="{{ .Tramo.NumeroPaseAbordo }}"
+        x-model="pase"
+        autocomplete="off"
         x-bind="bindPase"
-        class="w-full text-[11px] border border-neutral-300 rounded py-0.5 px-2 focus:ring-primary h-9 font-bold"
-        placeholder="Pase"
+        class="w-full text-center text-[11px] border border-neutral-300 rounded py-0.5 px-1 h-9 font-bold text-primary uppercase font-mono transition-all"
+        placeholder="N° Pase"
       />
     </td>
 
     <td class="px-2 py-1 text-center border-r border-neutral-100 bg-neutral-50/10">
       <div class="flex flex-col items-center justify-center h-full min-h-[45px]">
         {{ if .Tramo.IsOriginal }}
-          <input type="hidden" name="tramo_moneda[]" value="{{ or .Tramo.Moneda `BOB` }}" />
-          <input type="hidden" name="tramo_monto_devolucion[]" value="{{ or .Tramo.MontoDevolucion 0 }}" />
-
           <template x-if="esModificacion">
             <span class="text-[8px] font-bold text-warning-600 uppercase leading-none">Tramo Modificado</span>
           </template>
@@ -208,28 +212,7 @@
           </template>
           <span x-show="!esModificacion && !esDevolucion" class="text-neutral-300">-</span>
         {{ else if .Tramo.IsReprogramacion }}
-          <div class="relative group w-full max-w-[130px]">
-            <div class="flex items-center gap-0.5">
-              <select
-                name="tramo_moneda[]"
-                x-model="moneda"
-                class="text-[9px] font-bold text-neutral-500 bg-neutral-100 border border-neutral-300 rounded-l py-1.5 px-1 focus:ring-0 focus:outline-none h-8 border-r-0"
-              >
-                <option value="BOB">Bs.</option>
-                <option value="USD">USD</option>
-                <option value="EUR">EUR</option>
-              </select>
-              <input
-                type="number"
-                step="0.01"
-                name="tramo_monto_devolucion[]"
-                x-model.number="monto"
-                class="w-full text-[11px] font-black border border-neutral-300 rounded-r py-1 px-1 focus:ring-warning-500 focus:border-warning-500 transition-all text-right h-8 bg-warning-50 text-warning-700"
-                placeholder="0.00"
-              />
-            </div>
-            <div class="text-[8px] font-bold text-warning-600 uppercase mt-0.5">Monto Diferencia</div>
-          </div>
+          <span class="text-[8px] font-bold text-warning-600 uppercase leading-none">Tramo Reprogramado</span>
         {{ end }}
       </div>
     </td>

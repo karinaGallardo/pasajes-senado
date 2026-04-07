@@ -37,9 +37,11 @@ type Pasaje struct {
 	FechaVuelo   time.Time  `gorm:"type:timestamp"`
 	FechaEmision *time.Time `gorm:"type:date"`
 
-	CodigoReserva string  `gorm:"size:50"`
-	NumeroBillete string  `gorm:"size:100;index"`
-	Costo         float64 `gorm:"type:decimal(10,2)"`
+	CodigoReserva    string  `gorm:"size:50"`
+	NumeroBillete    string  `gorm:"size:100;index"`
+	Costo            float64 `gorm:"type:decimal(10,2)"`
+	CostoUtilizacion float64 `gorm:"type:decimal(10,2);default:0"`
+	Diferencia       float64 `gorm:"type:decimal(10,2);default:0"`
 
 	EstadoPasajeCodigo *string       `gorm:"size:50;default:'EMITIDO'"`
 	EstadoPasaje       *EstadoPasaje `gorm:"foreignKey:EstadoPasajeCodigo;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;<-:false"`
@@ -50,6 +52,11 @@ type Pasaje struct {
 	Glosa             string  `gorm:"type:text"`
 	NumeroFactura     string  `gorm:"size:50;index"`
 	CostoPenalidad    float64 `gorm:"type:decimal(10,2);default:0"`
+
+	// Servicio de Emisión (Fee)
+	CostoServicioEmision  float64 `gorm:"type:decimal(10,2);default:0"`
+	NroFacturaEmision     string  `gorm:"size:50;index"`
+	ArchivoFacturaEmision string  `gorm:"size:255;default:''"`
 
 	// Seq is an auto-incrementing field managed by DB to ensure atomic sequential ordering
 	Seq int64 `gorm:"autoIncrement;not null;<-:false"`

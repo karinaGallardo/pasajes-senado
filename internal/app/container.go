@@ -158,8 +158,8 @@ func NewContainer(db *gorm.DB, mongoRRHH *mongo.Database, mongoChat *mongo.Datab
 
 	compensacionService := services.NewCompensacionService(compensacionRepo, catCompensacionRepo)
 	descargoService := services.NewDescargoService(descargoRepo, solicitudService, userService, auditService)
-	descargoDerechoService := services.NewDescargoDerechoService(descargoRepo, solicitudService, auditService)
-	descargoOficialService := services.NewDescargoOficialService(descargoRepo, solicitudService, auditService)
+	descargoDerechoService := services.NewDescargoDerechoService(descargoRepo, rutaRepo, solicitudService, auditService)
+	descargoOficialService := services.NewDescargoOficialService(descargoRepo, rutaRepo, solicitudService, auditService)
 	organigramaService := services.NewOrganigramaService(cargoRepo, oficinaRepo)
 	tipoSolicitudService := services.NewTipoSolicitudService(tipoSolicitudRepo)
 	ambitoService := services.NewAmbitoService(ambitoRepo)

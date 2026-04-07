@@ -674,7 +674,7 @@ func (s Solicitud) GetRutaDetallada() string {
 	if destino == nil {
 		return "-"
 	}
-	return origen.GetLabel() + " - " + destino.GetLabel()
+	return origen.GetNombreCorto() + " - " + destino.GetNombreCorto()
 }
 
 func (s Solicitud) GetOrigenLabel() string {
@@ -682,7 +682,7 @@ func (s Solicitud) GetOrigenLabel() string {
 	if obj == nil {
 		return "-"
 	}
-	return obj.GetLabel()
+	return obj.GetNombreCorto()
 }
 
 func (s Solicitud) GetDestinoLabel() string {
@@ -690,7 +690,7 @@ func (s Solicitud) GetDestinoLabel() string {
 	if obj == nil {
 		return "-"
 	}
-	return obj.GetLabel()
+	return obj.GetNombreCorto()
 }
 
 func (s Solicitud) GetItemIda() *SolicitudItem {
@@ -798,6 +798,21 @@ func (s Solicitud) GetDiasRestantesDescargo() int {
 		}
 	}
 	return restantes
+}
+
+// GetMontoTotalAsignado calcula el costo total de todos los pasajes emitidos originalmente para esta solicitud.
+func (s Solicitud) GetMontoTotalAsignado() float64 {
+	total := 0.0
+	for _, item := range s.Items {
+		for _, p := range item.Pasajes {
+			st := p.GetEstadoCodigo()
+			// Sumamos los emitidos o usados (lo que representa el gasto administrativo inicial)
+			if st == "EMITIDO" || st == "USADO" {
+				total += p.Costo
+			}
+		}
+	}
+	return total
 }
 
 // --- Authorization Logic ---

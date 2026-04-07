@@ -72,3 +72,22 @@ func ExtractDescargoAnexos(c *gin.Context, id string) []string {
 	}
 	return paths
 }
+
+// ExtractTerrestreFiles procesa los archivos de comprobantes de transporte terrestre.
+func ExtractTerrestreFiles(c *gin.Context, itemIDs []string) []string {
+	var paths []string
+	for _, idRow := range itemIDs {
+		// 1. Verificar si hay un archivo existente
+		path := c.PostForm("terrestre_archivo_existente_" + idRow)
+
+		// 2. Intentar capturar el archivo nuevo subido para esta fila
+		if file, err := c.FormFile("terrestre_archivo_" + idRow); err == nil {
+			savedPath, err := SaveUploadedFile(c, file, "uploads/terrestre", "terrestre_"+idRow+"_")
+			if err == nil {
+				path = savedPath
+			}
+		}
+		paths = append(paths, path)
+	}
+	return paths
+}

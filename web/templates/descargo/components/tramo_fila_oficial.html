@@ -10,26 +10,38 @@
 
   <tr
     class="border-b border-neutral-100 last:border-0 hover:bg-neutral-50/50 transition-colors"
-    x-data="itineraryRow({ 
-      esDevo: false, 
-      esMod: {{ .Tramo.EsModificacion }}, 
-      route: '{{ .Tramo.GetRutaDisplay }}', 
-      route_id: '{{ .Tramo.RutaID }}', 
-      origen_iata: '{{ .Tramo.GetOrigenIATA }}', 
-      destino_iata: '{{ .Tramo.GetDestinoIATA }}', 
+    x-data="itineraryRow({
+      esDevo: false,
+      esMod: {{ .Tramo.EsModificacion }},
+      tramo_nombre: '{{ .Tramo.TramoNombre }}',
+      route_id: '{{ .Tramo.RutaID }}',
+      origen_iata: '{{ .Tramo.GetOrigenIATA }}',
+      destino_iata: '{{ .Tramo.GetDestinoIATA }}',
       billete: '{{ .Tramo.Billete }}',
-      vuelo: '{{ .Tramo.NumeroVuelo }}' 
+      vuelo: '{{ .Tramo.NumeroVuelo }}',
+      pase: '{{ .Tramo.NumeroPaseAbordo }}'
     })"
+    x-init="
+      {{ if .Tramo.IsReprogramacion }}
+      route = '{{ .Tramo.TramoNombre }}';
+    {{ else }}
+      route = '{{ .Tramo.GetRutaDisplay }}';
+    {{ end }}
+    "
     x-bind="bindFade"
   >
     <input type="hidden" name="tramo_tipo[]" value="{{ .Tipo }}" />
     <input type="hidden" name="tramo_id[]" value="{{ .Tramo.ID }}" />
     <input type="hidden" name="tramo_ruta_id[]" :value="route_id" />
-    <input type="hidden" name="tramo_ruta_nombre[]" :value="route" />
+    <input type="hidden" name="tramo_nombre[]" :value="tramo_nombre" />
     <input type="hidden" name="tramo_origen_iata[]" :value="origen_iata" />
     <input type="hidden" name="tramo_destino_iata[]" :value="destino_iata" />
-    <input type="hidden" name="tramo_pasaje_id[]" value="{{ .Tramo.PasajeID }}" />
-    <input type="hidden" name="tramo_solicitud_item_id[]" value="{{ .Tramo.SolicitudItemID }}" />
+    <input type="hidden" name="tramo_pasaje_id[]" value="{{ if .Tramo.PasajeID }}{{ .Tramo.PasajeID }}{{ end }}" />
+    <input
+      type="hidden"
+      name="tramo_solicitud_item_id[]"
+      value="{{ if .Tramo.SolicitudItemID }}{{ .Tramo.SolicitudItemID }}{{ end }}"
+    />
 
     <td class="px-2 py-1 text-center border-r border-neutral-100 bg-neutral-50/30">
       {{ if $readOnlyCheck }}
@@ -53,17 +65,17 @@
     <td class="px-2 py-1">
       {{ if $readOnlyRuta }}
         <div class="text-[10px] leading-tight font-bold text-neutral-700 uppercase whitespace-pre-line">
-          {{ .Tramo.GetRutaDisplay }}
+          {{ .Tramo.TramoNombre }}
         </div>
       {{ else }}
         <div
           class="relative min-w-[220px]"
-          @searchable-select-change="route = $event.detail.label; origen_iata = $event.detail.origen_iata; destino_iata = $event.detail.destino_iata"
+          @searchable-select-change="tramo_nombre = $event.detail.label; origen_iata = $event.detail.origen_iata; destino_iata = $event.detail.destino_iata"
           x-data="searchableSelect({
            endpoint: '/api/rutas/search?atomic=true',
            initialValue: '{{ .Tramo.RutaID }}',
-           initialLabel: '{{ .Tramo.GetRutaDisplay }}',
-           placeholder: 'Buscar ruta...'
+           initialLabel: '{{ .Tramo.TramoNombre }}',
+           placeholder: 'Buscar tramo...'
          })"
           x-modelable="value"
           x-model="route_id"
@@ -76,7 +88,7 @@
               :class="{ 'opacity-50 grayscale bg-neutral-100 cursor-not-allowed': esModificacion, 'border-primary-200 bg-primary-50/10': label && label !== 'Buscar ruta...' }"
             >
               <span
-                x-text="(label || 'Seleccionar Ruta').split(' - ').join('\n')"
+                x-text="(label || 'Seleccionar Tramo')"
                 class="whitespace-pre-line font-bold text-neutral-800 uppercase leading-none"
               ></span>
               <i class="ph ph-caret-down text-neutral-400"></i>
@@ -90,7 +102,7 @@
               @click.away="open = false"
               @keydown.escape="open = false"
               @keydown.enter.prevent="if (filteredItems.length > 0) select(filteredItems[0])"
-              placeholder="Buscar ruta..."
+              placeholder="Buscar tramo..."
               class="w-full rounded border border-primary-500 bg-white py-1.5 px-2 shadow-sm focus:outline-none focus:ring-1 focus:ring-primary-500 text-[10px] font-bold uppercase"
             />
 
@@ -106,7 +118,7 @@
                 >
                   <span
                     class="block font-bold uppercase whitespace-pre-line text-[10px] leading-tight"
-                    x-text="item.label.split(' - ').join('\n')"
+                    x-text="item.label"
                   ></span>
                 </li>
               </template>
@@ -123,8 +135,12 @@
         name="tramo_fecha[]"
         value="{{ .Tramo.GetFechaStr }}"
         x-bind="bindInput"
-        {{ if $isOriginal }}readonly{{ end }}
-        x-datepicker="{ position: 'top center' }"
+        {{ if $isOriginal }}
+          readonly
+        {{ else }}
+          x-datepicker="{ position: 'top center', enableTime: true }"
+        {{ end }}
+        autocomplete="off"
         class="w-full text-[11px] border border-neutral-300 rounded py-0.5 px-1 h-9 {{ if $isOriginal }}
           bg-neutral-50 text-neutral-500 cursor-not-allowed
         {{ end }}"
@@ -138,6 +154,7 @@
         value="{{ .Tramo.Billete }}"
         x-bind="bindInput"
         {{ if $isOriginal }}readonly{{ end }}
+        autocomplete="off"
         class="w-full text-[11px] border border-neutral-300 rounded py-0.5 px-2 h-9 {{ if $isOriginal }}
           bg-neutral-50 text-neutral-500 cursor-not-allowed
         {{ end }}"
@@ -150,10 +167,9 @@
         type="text"
         name="tramo_vuelo[]"
         x-model="vuelo"
-        {{ if $isOriginal }}readonly{{ end }}
-        class="w-full text-[11px] border border-neutral-300 rounded py-0.5 px-2 h-9 {{ if $isOriginal }}
-          bg-neutral-50 text-neutral-500 cursor-not-allowed
-        {{ end }}"
+        autocomplete="off"
+        x-bind="bindVuelo"
+        class="w-full text-[11px] border border-neutral-300 rounded py-0.5 px-2 h-9 transition-all"
         placeholder="Vuelo"
       />
     </td>
@@ -162,9 +178,10 @@
       <input
         type="text"
         name="tramo_pase_numero[]"
-        value="{{ .Tramo.NumeroPaseAbordo }}"
+        x-model="pase"
         x-bind="bindPase"
-        class="w-full text-[11px] border border-neutral-300 rounded py-0.5 px-2 h-9 font-bold"
+        autocomplete="off"
+        class="w-full text-[11px] border border-neutral-300 rounded py-0.5 px-2 h-9 font-bold font-mono transition-all"
         placeholder="Pase"
       />
     </td>
@@ -182,6 +199,7 @@
               accept="application/pdf"
               x-bind="bindArchivo"
               class="hidden"
+              :disabled="esModificacion"
               @change="await window.handleSingleUpload($event, $data); if($el.files[0]) { localUrl = URL.createObjectURL($el.files[0]) }"
             />
 

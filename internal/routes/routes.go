@@ -41,6 +41,7 @@ func SetupRoutes(r *gin.Engine, container *app.Container, loginLimiter *middlewa
 	r.POST("/auth/login", middleware.RateLimitMiddleware(loginLimiter), authCtrl.Login)
 	r.GET("/auth/logout", authCtrl.Logout)
 	r.GET("/acerca-de", landingCtrl.ShowAbout)
+	r.GET("/raw-file", descargoDerechoCtrl.RawFile)
 
 	protected := r.Group("/")
 	protected.Use(middleware.AuthRequired())

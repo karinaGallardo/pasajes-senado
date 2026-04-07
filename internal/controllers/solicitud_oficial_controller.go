@@ -403,14 +403,8 @@ func (ctrl *SolicitudOficialController) GetEditModal(c *gin.Context) {
 		if item.Tipo == models.TipoSolicitudItemVuelta {
 			tipo = "VUELTA"
 		}
-		origenLabel := item.OrigenIATA
-		if item.Origen != nil {
-			origenLabel = item.OrigenIATA + " - " + item.Origen.GetLabel()
-		}
-		destinoLabel := item.DestinoIATA
-		if item.Destino != nil {
-			destinoLabel = item.DestinoIATA + " - " + item.Destino.GetLabel()
-		}
+		origenLabel := item.GetOrigenLabel()
+		destinoLabel := item.GetDestinoLabel()
 		fechaSalida := ""
 		if item.Fecha != nil {
 			fechaSalida = item.Fecha.Format("2006-01-02T15:04")
@@ -446,7 +440,7 @@ func (ctrl *SolicitudOficialController) GetEditModal(c *gin.Context) {
 	for _, d := range destinos {
 		destinosPayload = append(destinosPayload, map[string]string{
 			"value":  d.IATA,
-			"label":  d.GetLabel(),
+			"label":  d.GetNombreLargo(),
 			"ambito": d.AmbitoCodigo,
 		})
 	}

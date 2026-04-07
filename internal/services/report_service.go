@@ -304,7 +304,11 @@ func (s *ReportService) GeneratePV02(ctx context.Context, solicitud *models.Soli
 	}
 	s.drawLabelBox(pdf, tr, "Nro(Memo/RD/Nota JG/RC) :", authVal, 45, 55, false)
 
-	s.drawLabelBox(pdf, tr, "CONCEPTO DE VIAJE :", "OFICIAL", 45, 55, false)
+	conceptoViaje := "OFICIAL"
+	if solicitud.TipoSolicitud != nil {
+		conceptoViaje = "OFICIAL - " + strings.ToUpper(solicitud.TipoSolicitud.Nombre)
+	}
+	s.drawLabelBox(pdf, tr, "CONCEPTO DE VIAJE :", conceptoViaje, 45, 145, false)
 
 	pdf.Ln(4)
 
@@ -326,18 +330,7 @@ func (s *ReportService) GeneratePV02(ctx context.Context, solicitud *models.Soli
 	pdf.Ln(2)
 
 	// LINEA AEREA SUGERIDA + NACIONAL / INTERNACIONAL
-	aerolineaNombre := "-"
-	if solicitud.Aerolinea != nil {
-		if solicitud.Aerolinea.Sigla != "" {
-			aerolineaNombre = solicitud.Aerolinea.Sigla
-		} else {
-			aerolineaNombre = solicitud.Aerolinea.Nombre
-		}
-	}
 	pdf.SetFont("Arial", "B", 8)
-	pdf.CellFormat(45, 6, tr("LINEA AEREA SUGERIDA :"), "", 0, "R", false, 0, "")
-	pdf.SetFont("Arial", "", 9)
-	pdf.CellFormat(80, 6, "  "+tr(aerolineaNombre), "1", 0, "L", false, 0, "")
 
 	esNacional := strings.ToUpper(solicitud.AmbitoViajeCodigo) == "NACIONAL"
 	esInternacional := strings.ToUpper(solicitud.AmbitoViajeCodigo) == "INTERNACIONAL"
@@ -398,20 +391,12 @@ func (s *ReportService) GeneratePV02(ctx context.Context, solicitud *models.Soli
 		// Tabla mismo formato que PV-01: FECHA/HORA SOLICITUD, ESTADO, AEROLÍNEA, RUTA, FECHA VIAJE, HORA VIAJE
 		fechaSol := solicitud.CreatedAt.Format("02/01/2006")
 		horaSol := solicitud.CreatedAt.Format("15:04")
-		aerolineaNombre := "-"
-		if solicitud.Aerolinea != nil {
-			if solicitud.Aerolinea.Sigla != "" {
-				aerolineaNombre = solicitud.Aerolinea.Sigla
-			} else {
-				aerolineaNombre = solicitud.Aerolinea.Nombre
-			}
-		}
 
 		pdf.SetFillColor(245, 245, 245)
 		pdf.SetFont("Arial", "B", 7)
 		pdf.CellFormat(32, 8, tr("FECHA/HORA SOLICITUD"), "1", 0, "C", true, 0, "")
 		pdf.CellFormat(25, 8, tr("ESTADO"), "1", 0, "C", true, 0, "")
-		pdf.CellFormat(35, 8, tr("AEROLÍNEA"), "1", 0, "C", true, 0, "")
+		pdf.CellFormat(35, 8, tr("AEROLÍNEA SUGERIDA"), "1", 0, "C", true, 0, "")
 		pdf.CellFormat(52, 8, tr("RUTA"), "1", 0, "C", true, 0, "")
 		pdf.CellFormat(30, 8, tr("FECHA VIAJE"), "1", 0, "C", true, 0, "")
 		pdf.CellFormat(18, 8, tr("HORA VIAJE"), "1", 1, "C", true, 0, "")
@@ -425,7 +410,7 @@ func (s *ReportService) GeneratePV02(ctx context.Context, solicitud *models.Soli
 			if item.Destino != nil {
 				destStr = item.Destino.Ciudad
 			}
-			rut := fmt.Sprintf("%s  >>  %s", origenStr, destStr)
+			rut := fmt.Sprintf("%s  -  %s", origenStr, destStr)
 
 			fecha := "-"
 			hora := "-"
@@ -440,12 +425,22 @@ func (s *ReportService) GeneratePV02(ctx context.Context, solicitud *models.Soli
 			pdf.SetFont("Arial", "", 9)
 			pdf.CellFormat(32, 8, fmt.Sprintf("%s %s", fechaSol, horaSol), "1", 0, "C", false, 0, "")
 
+			// Aerolínea por tramo
+			aerolineaItem := "-"
+			if item.Aerolinea != nil {
+				if item.Aerolinea.Sigla != "" {
+					aerolineaItem = item.Aerolinea.Sigla
+				} else {
+					aerolineaItem = item.Aerolinea.Nombre
+				}
+			}
+
 			pdf.SetFont("Arial", "B", 7)
 			pdf.SetTextColor(0, 0, 128)
 			pdf.CellFormat(25, 8, tr(item.GetEstado()), "1", 0, "C", false, 0, "")
 			pdf.SetTextColor(0, 0, 0)
 			pdf.SetFont("Arial", "", 7)
-			pdf.CellFormat(35, 8, tr(aerolineaNombre), "1", 0, "C", false, 0, "")
+			pdf.CellFormat(35, 8, tr(aerolineaItem), "1", 0, "C", false, 0, "")
 			pdf.CellFormat(52, 8, tr(rut), "1", 0, "C", false, 0, "")
 			pdf.SetFont("Arial", "", 9)
 			pdf.CellFormat(30, 8, tr(fecha), "1", 0, "C", false, 0, "")
@@ -611,7 +606,6 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 		Tramos          []models.DescargoTramo
 		EsDevolucion    bool
 		EsModificacion  bool
-		MontoDevolucion float64
 	}
 	itinerariosMap := make(map[string]*ItinerarioReporte)
 	var itinerariosOrder []string
@@ -627,7 +621,6 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 		}
 		if d.EsDevolucion {
 			itinerariosMap[key].EsDevolucion = true
-			itinerariosMap[key].MontoDevolucion += d.MontoDevolucion
 		}
 		if d.EsModificacion {
 			itinerariosMap[key].EsModificacion = true
@@ -686,13 +679,13 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 			}
 
 			// Find cost and full route from Pasaje
-			cost := g.MontoDevolucion
+var cost float64
 			fullRoute := ""
-			if cost == 0 && descargo.Solicitud != nil {
+			if descargo.Solicitud != nil {
 				for _, item := range descargo.Solicitud.Items {
 					for _, p := range item.Pasajes {
 						if p.NumeroBillete == g.Billete && g.Billete != "" {
-							cost = p.Costo
+							cost = p.Diferencia
 							fullRoute = p.GetRutaDisplay()
 							break
 						}
@@ -1077,7 +1070,6 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 	type ItinerarioReporte struct {
 		Billete         string
 		Tramos          []models.DescargoTramo
-		MontoDevolucion float64
 	}
 	itinerariosMap := make(map[string]*ItinerarioReporte)
 	var itinerariosOrder []string
@@ -1092,7 +1084,7 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 			itinerariosOrder = append(itinerariosOrder, key)
 		}
 		if d.EsDevolucion {
-			itinerariosMap[key].MontoDevolucion += d.MontoDevolucion
+			// Ahorro se maneja por billete en modelo Pasaje
 		}
 		itinerariosMap[key].Tramos = append(itinerariosMap[key].Tramos, d)
 	}
@@ -1121,13 +1113,13 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 			}
 
 			// Find cost and full route from Pasaje
-			cost := g.MontoDevolucion
+var cost float64
 			fullRoute := ""
-			if cost == 0 && descargo.Solicitud != nil {
+			if descargo.Solicitud != nil {
 				for _, item := range descargo.Solicitud.Items {
 					for _, p := range item.Pasajes {
 						if p.NumeroBillete == g.Billete && g.Billete != "" {
-							cost = p.Costo
+							cost = p.Diferencia
 							fullRoute = p.GetRutaDisplay()
 							break
 						}

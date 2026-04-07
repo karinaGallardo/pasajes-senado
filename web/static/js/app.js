@@ -374,10 +374,12 @@ document.addEventListener("alpine:init", function () {
     monto: config.monto || 0,
     moneda: config.moneda || "BOB",
     route_id: config.route_id || "",
-    route: config.route || "",
+    tramo_nombre: config.tramo_nombre || "",
     origen_iata: config.origen_iata || "",
     destino_iata: config.destino_iata || "",
     billete: config.billete || "",
+    vuelo: config.vuelo || "",
+    pase: config.pase || "",
     isFullTicket: false,
     fileName: "",
     localUrl: "",
@@ -426,14 +428,21 @@ document.addEventListener("alpine:init", function () {
     get bindInput() {
       return {
         ":readonly": "esDevolucion || esModificacion",
-        ":class": "{ 'bg-neutral-100 cursor-not-allowed opacity-60': esDevolucion || esModificacion }",
+        ":class": "{ 'bg-neutral-50 text-neutral-400 cursor-not-allowed opacity-60': esDevolucion || esModificacion }",
       };
     },
 
+    get bindVuelo() {
+      return {
+        // Only disable if it's an original segment being toggled for modification
+        ":disabled": "esDevolucion",
+        ":class": "{ 'bg-neutral-50 text-neutral-400 cursor-not-allowed opacity-60': esDevolucion }",
+      };
+    },
     get bindPase() {
       return {
-        ":readonly": "esDevolucion || esModificacion",
-        ":class": "{ 'bg-neutral-100 cursor-not-allowed opacity-60': esDevolucion || esModificacion }",
+        ":disabled": "esDevolucion",
+        ":class": "{ 'bg-neutral-50 text-neutral-400 cursor-not-allowed opacity-60': esDevolucion }",
       };
     },
 

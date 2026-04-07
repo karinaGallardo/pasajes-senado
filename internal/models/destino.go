@@ -30,17 +30,23 @@ func (Destino) TableName() string {
 	return "destinos"
 }
 
-func (d Destino) GetNombreDisplay() string {
-	if d.Aeropuerto != "" {
-		return d.Ciudad + " - " + d.Aeropuerto + " (" + d.IATA + ")"
-	}
+func (d Destino) GetNombreCorto() string {
 	return d.Ciudad + " (" + d.IATA + ")"
 }
 
-func (d Destino) GetLabel() string {
-	lbl := d.Ciudad + " (" + d.IATA + ")"
-	if d.AmbitoCodigo != "NACIONAL" && d.Pais != nil {
-		lbl += ", " + *d.Pais
+// GetNombreLargo includes the airport name if available
+func (d Destino) GetNombreLargo() string {
+	if d.Aeropuerto != "" {
+		return d.Ciudad + " - " + d.Aeropuerto + " (" + d.IATA + ")"
 	}
-	return lbl
+	return d.GetNombreCorto()
+}
+
+// GetNombreDetalle includes the country info for international flights
+func (d Destino) GetNombreDetalle() string {
+	label := d.GetNombreCorto()
+	if d.AmbitoCodigo != "NACIONAL" && d.Pais != nil && *d.Pais != "" {
+		label += " [" + *d.Pais + "]"
+	}
+	return label
 }

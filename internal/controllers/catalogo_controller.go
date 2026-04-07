@@ -60,11 +60,10 @@ func (ctrl *CatalogoController) SearchDestinos(c *gin.Context) {
 
 	results := make([]map[string]any, len(destinos))
 	for i, d := range destinos {
-		iata := strings.TrimSpace(strings.ToUpper(d.IATA))
 		results[i] = map[string]any{
-			"value": iata,
-			"label": strings.TrimSpace(d.GetNombreDisplay()),
-			"extra": iata,
+			"value":  d.IATA,
+			"label":  d.GetNombreLargo(),
+			"ambito": d.AmbitoCodigo,
 		}
 	}
 

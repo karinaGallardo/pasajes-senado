@@ -21,46 +21,67 @@ type Ruta struct {
 }
 
 func (r Ruta) GetRutaDisplay() string {
-	if r.Origen.Ciudad != "" && r.Destino.Ciudad != "" {
-		parts := []string{r.Origen.Ciudad + " (" + r.Origen.IATA + ")"}
+	if r.Origen.IATA != "" && r.Destino.IATA != "" {
+		parts := []string{r.Origen.GetNombreCorto()}
 		for _, e := range r.Escalas {
-			if e.Destino.Ciudad != "" {
-				parts = append(parts, e.Destino.Ciudad+" ("+e.Destino.IATA+")")
+			if e.Destino.IATA != "" {
+				parts = append(parts, e.Destino.GetNombreCorto())
 			} else {
 				parts = append(parts, e.DestinoIATA)
 			}
 		}
-		parts = append(parts, r.Destino.Ciudad+" ("+r.Destino.IATA+")")
+		parts = append(parts, r.Destino.GetNombreCorto())
 		return strings.Join(parts, " - ")
 	}
 	return r.Tramo
 }
 
 type TramoLeg struct {
-	OrigenIATA  string
-	DestinoIATA string
+	OrigenIATA    string
+	DestinoIATA   string
+	OrigenCiudad  string
+	DestinoCiudad string
 }
 
 func (r Ruta) GetTramosItems() []TramoLeg {
-	if r.OrigenIATA == "" || r.DestinoIATA == "" {
-		return []TramoLeg{{OrigenIATA: r.OrigenIATA, DestinoIATA: r.DestinoIATA}}
+	// 1. Recolectar todos los puntos de la ruta con sus ciudades
+	type point struct {
+		iata   string
+		ciudad string
 	}
 
-	var points []string
-	points = append(points, r.OrigenIATA)
+	var points []point
+	points = append(points, point{iata: r.OrigenIATA, ciudad: r.Origen.Ciudad})
+
 	for _, e := range r.Escalas {
-		points = append(points, e.DestinoIATA)
+		points = append(points, point{iata: e.DestinoIATA, ciudad: e.Destino.Ciudad})
 	}
-	points = append(points, r.DestinoIATA)
+	points = append(points, point{iata: r.DestinoIATA, ciudad: r.Destino.Ciudad})
 
+	// 2. Generar los tramos pareados
 	var tramos []TramoLeg
 	for i := 0; i < len(points)-1; i++ {
+		p1, p2 := points[i], points[i+1]
 		tramos = append(tramos, TramoLeg{
-			OrigenIATA:  points[i],
-			DestinoIATA: points[i+1],
+			OrigenIATA:    p1.iata,
+			DestinoIATA:   p2.iata,
+			OrigenCiudad:  p1.ciudad,
+			DestinoCiudad: p2.ciudad,
 		})
 	}
 	return tramos
+}
+
+func (r TramoLeg) GetLabel() string {
+	orig := r.OrigenIATA
+	if r.OrigenCiudad != "" {
+		orig = r.OrigenCiudad + " (" + r.OrigenIATA + ")"
+	}
+	dest := r.DestinoIATA
+	if r.DestinoCiudad != "" {
+		dest = r.DestinoCiudad + " (" + r.DestinoIATA + ")"
+	}
+	return orig + " - " + dest
 }
 
 func (Ruta) TableName() string { return "rutas" }

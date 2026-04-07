@@ -10,14 +10,13 @@ type DescargoOficial struct {
 
 	NroMemorandum  string `gorm:"size:100"`
 	ObjetivoViaje  string `gorm:"type:text"`
-	TipoTransporte string `gorm:"size:50"` // AEREO, TERRESTRE, VEHICULO_OFICIAL
+	TipoTransporte string `gorm:"size:100"` // AEREO, TERRESTRE, VEHICULO_OFICIAL
 	PlacaVehiculo  string `gorm:"size:50"`
 
 	InformeActividades          string `gorm:"type:text"`
 	ResultadosViaje             string `gorm:"column:resultados_viaje;type:text"`
 	ConclusionesRecomendaciones string `gorm:"column:conclusiones_recomendaciones;type:text"`
 
-	MontoDevolucion   float64 `gorm:"type:decimal(10,2);default:0"`
 	NroBoletaDeposito string  `gorm:"size:100"`
 	DirigidoA         string  `gorm:"size:255"`
 
@@ -34,7 +33,6 @@ func (d DescargoOficial) HasChanges(other DescargoOficial) bool {
 		d.InformeActividades != other.InformeActividades ||
 		d.ResultadosViaje != other.ResultadosViaje ||
 		d.ConclusionesRecomendaciones != other.ConclusionesRecomendaciones ||
-		d.MontoDevolucion != other.MontoDevolucion ||
 		d.NroBoletaDeposito != other.NroBoletaDeposito ||
 		d.DirigidoA != other.DirigidoA
 }
@@ -87,10 +85,16 @@ func (d DescargoOficial) GetTransporteList() []string {
 		return []string{}
 	}
 	parts := strings.Split(d.TipoTransporte, ",")
+	seen := make(map[string]bool)
 	var res []string
 	for _, p := range parts {
-		if s := strings.TrimSpace(p); s != "" {
-			res = append(res, s)
+		t := strings.TrimSpace(p)
+		if t == "TERRESTRE" {
+			t = "TERRESTRE_PUBLICO"
+		}
+		if t != "" && !seen[t] {
+			seen[t] = true
+			res = append(res, t)
 		}
 	}
 	return res

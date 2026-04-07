@@ -31,16 +31,14 @@ type DescargoTramo struct {
 	ArchivoPaseAbordo string            `gorm:"size:255"`
 	EsDevolucion      bool              `gorm:"default:false"`
 	EsModificacion    bool              `gorm:"default:false"`
-	MontoDevolucion   float64           `gorm:"type:decimal(10,2);default:0"`
-	Moneda            string            `gorm:"size:10;default:'Bs.'"`
 
 	OrigenIATA  *string  `gorm:"size:5;index" json:"origen_iata"`
 	Origen      *Destino `gorm:"foreignKey:OrigenIATA;references:IATA;<-:false" json:"origen"`
 	DestinoIATA *string  `gorm:"size:5;index" json:"destino_iata"`
 	Destino     *Destino `gorm:"foreignKey:DestinoIATA;references:IATA;<-:false" json:"destino"`
 
-	// RutaNombre helps to store the specific leg of a journey as a string (fallback)
-	RutaNombre string `gorm:"size:255" json:"ruta_nombre"`
+	// TramoNombre helps to store the specific leg of a journey as a string (fallback)
+	TramoNombre string `gorm:"size:255" json:"tramo_nombre"`
 
 	// Sequence field to maintain deterministic order
 	Seq int `gorm:"index;default:1" json:"seq"`
@@ -48,13 +46,13 @@ type DescargoTramo struct {
 
 func (d DescargoTramo) GetRutaDisplay() string {
 	if d.Origen != nil && d.Destino != nil {
-		return d.Origen.Ciudad + " (" + *d.OrigenIATA + ") - " + d.Destino.Ciudad + " (" + *d.DestinoIATA + ")"
+		return d.Origen.GetNombreCorto() + " - " + d.Destino.GetNombreCorto()
 	}
 	if d.OrigenIATA != nil && d.DestinoIATA != nil {
 		return *d.OrigenIATA + " - " + *d.DestinoIATA
 	}
-	if d.RutaNombre != "" {
-		return d.RutaNombre
+	if d.TramoNombre != "" {
+		return d.TramoNombre
 	}
 	if d.RutaPasaje != nil {
 		return d.RutaPasaje.GetRutaDisplay()
@@ -114,7 +112,7 @@ func (d DescargoTramo) GetRutaDestino() string {
 // GetFechaStr returns the date formatted as string.
 func (d DescargoTramo) GetFechaStr() string {
 	if d.Fecha != nil {
-		return d.Fecha.Format("2006-01-02")
+		return d.Fecha.Format("2006-01-02 15:04")
 	}
 	return ""
 }
@@ -174,12 +172,13 @@ func (d DescargoTramo) HasChanges(other DescargoTramo) bool {
 	// Compare Main Fields
 	if d.Tipo != other.Tipo ||
 		d.Billete != other.Billete ||
+		d.TramoNombre != other.TramoNombre ||
+		d.NumeroVuelo != other.NumeroVuelo ||
 		d.NumeroPaseAbordo != other.NumeroPaseAbordo ||
 		d.ArchivoPaseAbordo != other.ArchivoPaseAbordo ||
 		d.EsDevolucion != other.EsDevolucion ||
 		d.EsModificacion != other.EsModificacion ||
-		d.MontoDevolucion != other.MontoDevolucion ||
-		d.Moneda != other.Moneda {
+		d.Seq != other.Seq {
 		return true
 	}
 

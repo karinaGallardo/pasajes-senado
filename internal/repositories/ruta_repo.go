@@ -61,6 +61,8 @@ func (r *RutaRepository) Create(ctx context.Context, ruta *models.Ruta) error {
 func (r *RutaRepository) FindByID(ctx context.Context, id string) (*models.Ruta, error) {
 	var ruta models.Ruta
 	err := r.db.WithContext(ctx).
+		Preload("Origen").
+		Preload("Destino").
 		Preload("Contratos.Aerolinea").
 		Preload("Escalas", func(db *gorm.DB) *gorm.DB {
 			return db.Order("seq ASC")
@@ -87,4 +89,10 @@ func (r *RutaRepository) GetContractsByRuta(ctx context.Context, rutaID string) 
 
 func (r *RutaRepository) DeleteContract(ctx context.Context, id string) error {
 	return r.db.WithContext(ctx).Delete(&models.RutaContrato{}, "id = ?", id).Error
+}
+
+func (r *RutaRepository) FindDestinosByIATAs(ctx context.Context, iatas []string) ([]models.Destino, error) {
+	var destinos []models.Destino
+	err := r.db.WithContext(ctx).Where("iata IN (?)", iatas).Find(&destinos).Error
+	return destinos, err
 }

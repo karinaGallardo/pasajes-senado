@@ -127,10 +127,11 @@
       action="/descargos/derecho/{{ .Descargo.ID }}/actualizar"
       method="POST"
       enctype="multipart/form-data"
-      class="mt-2 overflow-hidden"
+      class="bg-white shadow-xl rounded-md overflow-hidden border border-neutral-200 mt-2"
       @submit="submitting = true"
     >
       <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
+      <input type="hidden" name="id" value="{{ .Descargo.ID }}" />
       <input type="hidden" name="solicitud_id" value="{{ .Descargo.SolicitudID }}" />
 
       <div class="">
@@ -148,16 +149,18 @@
                   <table class="w-full table-fixed divide-y divide-neutral-200">
                     <thead class="bg-neutral-50 text-[9px] font-bold text-neutral-400 uppercase">
                       <tr>
-                        <th class="w-[45px] px-2 py-1 text-center font-black border-r border-neutral-100">Dev.</th>
-                        <th class="w-[45px] px-2 py-1 text-center font-black border-r border-neutral-100">Mod.</th>
-                        <th class="w-auto px-2 py-1 text-left font-black">Ruta / Tramo</th>
-                        <th class="w-[115px] px-2 py-1 font-black">Fecha</th>
-                        <th class="w-[125px] px-2 py-1 font-black">Billete</th>
-                        <th class="w-[80px] px-2 py-1 font-black">Vuelo</th>
-                        <th class="w-[70px] px-2 py-1 font-black">Pase</th>
-                        <th class="w-[140px] px-2 py-1 text-center font-black border-l border-neutral-100 uppercase">Monto Devolución</th>
-                        <th class="w-[85px] px-2 py-1 text-center font-black">PDF</th>
-                        <th class="w-[50px] py-1 text-center"></th>
+                        <th class="w-[45px] px-2 py-1 text-center font-black border-r border-neutral-100 uppercase">Dev.</th>
+                        <th class="w-[45px] px-2 py-1 text-center font-black border-r border-neutral-100 uppercase">Mod.</th>
+                        <th class="w-auto px-2 py-1 text-left font-black uppercase">Ruta / Tramo</th>
+                        <th class="w-[128px] px-2 py-1 font-black uppercase">Fecha</th>
+                        <th class="w-[160px] px-2 py-1 font-black uppercase">Billete</th>
+                        <th class="w-[80px] px-2 py-1 font-black uppercase">Vuelo</th>
+                        <th class="w-[70px] px-2 py-1 font-black uppercase text-center">Pase</th>
+                        <th class="w-[128px] px-2 py-1 text-center font-black border-l border-neutral-100 uppercase">
+                          Monto Dev.
+                        </th>
+                        <th class="w-[64px] px-2 py-1 text-center font-black uppercase">PDF</th>
+                        <th class="w-[45px] py-1 text-center"></th>
                       </tr>
                     </thead>
                     <tbody class="divide-y divide-neutral-100 border-b last:border-0 w-full">
@@ -189,14 +192,14 @@
                   <table class="w-full table-fixed divide-y divide-neutral-200">
                     <colgroup>
                       <col class="w-[45px]" />
-                      <col class="w-[45px]" />
+                      <col class="w-[35px]" />
                       <col class="w-auto" />
-                      <col class="w-[115px]" />
-                      <col class="w-[125px]" />
+                      <col class="w-[128px]" />
+                      <col class="w-[160px]" />
                       <col class="w-[80px]" />
                       <col class="w-[70px]" />
-                      <col class="w-[140px]" />
-                      <col class="w-[85px]" />
+                      <col class="w-[128px]" />
+                      <col class="w-[64px]" />
                       <col class="w-[45px] text-center" />
                     </colgroup>
                     <tbody id="itin-ida-repro-container" class="divide-y divide-neutral-100 border-b last:border-0 w-full">
@@ -225,16 +228,18 @@
                   <table class="w-full table-fixed divide-y divide-neutral-200">
                     <thead class="bg-neutral-50 text-[9px] font-bold text-neutral-400 uppercase">
                       <tr>
-                        <th class="w-[45px] px-2 py-1 text-center font-black border-r border-neutral-100">Dev.</th>
-                        <th class="w-[45px] px-2 py-1 text-center font-black border-r border-neutral-100">Mod.</th>
-                        <th class="w-auto px-2 py-1 text-left font-black">Ruta / Tramo</th>
-                        <th class="w-[115px] px-2 py-1 font-black">Fecha</th>
-                        <th class="w-[125px] px-2 py-1 font-black">Billete</th>
-                        <th class="w-[80px] px-2 py-1 font-black">Vuelo</th>
-                        <th class="w-[70px] px-2 py-1 font-black">Pase</th>
-                        <th class="w-[140px] px-2 py-1 text-center font-black border-l border-neutral-100 uppercase">Monto Devolución</th>
-                        <th class="w-[85px] px-2 py-1 text-center font-black">PDF</th>
-                        <th class="w-[50px] py-1 text-center"></th>
+                        <th class="w-[45px] px-2 py-1 text-center font-black border-r border-neutral-100 uppercase">Dev.</th>
+                        <th class="w-[45px] px-2 py-1 text-center font-black border-r border-neutral-100 uppercase">Mod.</th>
+                        <th class="w-auto px-2 py-1 text-left font-black uppercase">Ruta / Tramo</th>
+                        <th class="w-[128px] px-2 py-1 font-black uppercase">Fecha</th>
+                        <th class="w-[160px] px-2 py-1 font-black uppercase">Billete</th>
+                        <th class="w-[80px] px-2 py-1 font-black uppercase">Vuelo</th>
+                        <th class="w-[70px] px-2 py-1 font-black uppercase text-center">Pase</th>
+                        <th class="w-[128px] px-2 py-1 text-center font-black border-l border-neutral-100 uppercase">
+                          Monto Dev.
+                        </th>
+                        <th class="w-[64px] px-2 py-1 text-center font-black uppercase">PDF</th>
+                        <th class="w-[45px] py-1 text-center"></th>
                       </tr>
                     </thead>
                     <tbody class="divide-y divide-neutral-100 border-b last:border-0 w-full">
@@ -266,14 +271,14 @@
                   <table class="w-full table-fixed">
                     <colgroup>
                       <col class="w-[45px]" />
-                      <col class="w-[45px]" />
+                      <col class="w-[35px]" />
                       <col class="w-auto" />
-                      <col class="w-[115px]" />
-                      <col class="w-[125px]" />
+                      <col class="w-[128px]" />
+                      <col class="w-[160px]" />
                       <col class="w-[80px]" />
                       <col class="w-[70px]" />
-                      <col class="w-[140px]" />
-                      <col class="w-[85px]" />
+                      <col class="w-[128px]" />
+                      <col class="w-[64px]" />
                       <col class="w-[45px] text-center" />
                     </colgroup>
                     <tbody id="itin-vuelta-repro-container">

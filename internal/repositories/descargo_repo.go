@@ -53,7 +53,7 @@ func SearchDescargo(term string) func(db *gorm.DB) *gorm.DB {
 func (r *DescargoRepository) FindBySolicitudID(ctx context.Context, solicitudID string) (*models.Descargo, error) {
 	var descargo models.Descargo
 	err := r.db.WithContext(ctx).
-		Preload("Tramos", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
+		Preload("Tramos.RutaPasaje").
 		Preload("Tramos.RutaPasaje.Origen").
 		Preload("Tramos.RutaPasaje.Destino").
 		Preload("Tramos.RutaPasaje.Escalas", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
@@ -65,11 +65,11 @@ func (r *DescargoRepository) FindBySolicitudID(ctx context.Context, solicitudID 
 		Preload("Solicitud.Items.Pasajes", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
 		Preload("Solicitud.Items.Origen").
 		Preload("Solicitud.Items.Destino").
+		Preload("Solicitud.Items.Pasajes.RutaPasaje").
 		Preload("Solicitud.Items.Pasajes.RutaPasaje.Origen").
 		Preload("Solicitud.Items.Pasajes.RutaPasaje.Destino").
 		Preload("Solicitud.Items.Pasajes.RutaPasaje.Escalas", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
 		Preload("Solicitud.Items.Pasajes.RutaPasaje.Escalas.Destino").
-		Preload("Solicitud.Items.Pasajes.RutaPasaje").
 		Preload("Solicitud.Usuario.Encargado").
 		Preload("Oficial").
 		Preload("Oficial.Anexos", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
@@ -81,7 +81,7 @@ func (r *DescargoRepository) FindBySolicitudID(ctx context.Context, solicitudID 
 func (r *DescargoRepository) FindByID(ctx context.Context, id string) (*models.Descargo, error) {
 	var descargo models.Descargo
 	err := r.db.WithContext(ctx).
-		Preload("Tramos", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
+		Preload("Tramos.RutaPasaje").
 		Preload("Tramos.RutaPasaje.Origen").
 		Preload("Tramos.RutaPasaje.Destino").
 		Preload("Tramos.RutaPasaje.Escalas", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
@@ -96,11 +96,11 @@ func (r *DescargoRepository) FindByID(ctx context.Context, id string) (*models.D
 		Preload("Solicitud.Items.Pasajes", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
 		Preload("Solicitud.Items.Origen").
 		Preload("Solicitud.Items.Destino").
+		Preload("Solicitud.Items.Pasajes.RutaPasaje").
 		Preload("Solicitud.Items.Pasajes.RutaPasaje.Origen").
 		Preload("Solicitud.Items.Pasajes.RutaPasaje.Destino").
 		Preload("Solicitud.Items.Pasajes.RutaPasaje.Escalas", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
 		Preload("Solicitud.Items.Pasajes.RutaPasaje.Escalas.Destino").
-		Preload("Solicitud.Items.Pasajes.RutaPasaje").
 		Preload("Solicitud.Usuario.Encargado").
 		Preload("Solicitud.Viaticos").
 		Preload("Solicitud.Viaticos.Detalles").
@@ -121,13 +121,13 @@ func (r *DescargoRepository) FindAll(ctx context.Context) ([]models.Descargo, er
 		Preload("Solicitud.Items.Pasajes", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
 		Preload("Solicitud.Items.Origen").
 		Preload("Solicitud.Items.Destino").
+		Preload("Solicitud.Items.Pasajes.RutaPasaje").
 		Preload("Solicitud.Items.Pasajes.RutaPasaje.Origen").
 		Preload("Solicitud.Items.Pasajes.RutaPasaje.Destino").
 		Preload("Solicitud.Items.Pasajes.RutaPasaje.Escalas", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
 		Preload("Solicitud.Items.Pasajes.RutaPasaje.Escalas.Destino").
-		Preload("Solicitud.Items.Pasajes.RutaPasaje").
 		Preload("Solicitud.Usuario.Encargado").
-		Preload("Tramos", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
+		Preload("Tramos.RutaPasaje").
 		Preload("Tramos.RutaPasaje.Origen").
 		Preload("Tramos.RutaPasaje.Destino").
 		Preload("Tramos.RutaPasaje.Escalas", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
@@ -163,13 +163,13 @@ func (r *DescargoRepository) FindPaginated(ctx context.Context, page, limit int,
 		Preload("Solicitud.Items.Pasajes", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
 		Preload("Solicitud.Items.Origen").
 		Preload("Solicitud.Items.Destino").
+		Preload("Solicitud.Items.Pasajes.RutaPasaje").
 		Preload("Solicitud.Items.Pasajes.RutaPasaje.Origen").
 		Preload("Solicitud.Items.Pasajes.RutaPasaje.Destino").
 		Preload("Solicitud.Items.Pasajes.RutaPasaje.Escalas", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
 		Preload("Solicitud.Items.Pasajes.RutaPasaje.Escalas.Destino").
-		Preload("Solicitud.Items.Pasajes.RutaPasaje").
 		Preload("Solicitud.Usuario.Encargado").
-		Preload("Tramos", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
+		Preload("Tramos.RutaPasaje").
 		Preload("Tramos.RutaPasaje.Origen").
 		Preload("Tramos.RutaPasaje.Destino").
 		Preload("Tramos.RutaPasaje.Escalas", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
@@ -214,14 +214,14 @@ func (r *DescargoRepository) Update(ctx context.Context, descargo *models.Descar
 			return err
 		}
 
-		// 2. Actualizar la cabecera SOLO si cambió algo
 		if descargo.HasChanges(existing) {
-			if err := tx.Model(descargo).Select("*").Omit("Tramos", "Oficial", "Anexos", "Terrestres", "CreatedAt", "CreatedBy").Updates(descargo).Error; err != nil {
+			if err := tx.Model(descargo).Select("*").
+				Omit("Tramos", "Oficial", "Anexos", "Terrestres", "CreatedAt", "CreatedBy").
+				Updates(descargo).Error; err != nil {
 				return err
 			}
 		}
 
-		// 2. Obtener IDs actuales para borrar los que ya no vienen en el formulario
 		var newIDs []string
 		for _, det := range descargo.Tramos {
 			if det.ID != "" {
@@ -229,7 +229,6 @@ func (r *DescargoRepository) Update(ctx context.Context, descargo *models.Descar
 			}
 		}
 
-		// Borrar los que no están en la nueva lista
 		query := tx.Where("descargo_id = ?", descargo.ID)
 		if len(newIDs) > 0 {
 			query = query.Where("id NOT IN ?", newIDs)
@@ -238,7 +237,6 @@ func (r *DescargoRepository) Update(ctx context.Context, descargo *models.Descar
 			return err
 		}
 
-		// 3. Cargar los detalles actuales de la DB para comparar (Dirty Tracking como Eloquent)
 		var existingDetails []models.DescargoTramo
 		if err := tx.Where("descargo_id = ?", descargo.ID).Find(&existingDetails).Error; err != nil {
 			return err
@@ -249,29 +247,22 @@ func (r *DescargoRepository) Update(ctx context.Context, descargo *models.Descar
 			existingMap[ed.ID] = ed
 		}
 
-		// 4. Guardar/Actualizar cada detalle de forma inteligente
 		for i := range descargo.Tramos {
 			det := &descargo.Tramos[i]
 			det.DescargoID = descargo.ID
 
-			// Si el ID empieza con "new_", es un registro nuevo (generado en Alpine)
 			if det.ID == "" || strings.HasPrefix(det.ID, "new_") {
-				det.ID = "" // Limpiar el ID temporal para que GORM genere uno (UUID)
+				det.ID = ""
 				if err := tx.Create(det).Error; err != nil {
 					return err
 				}
 			} else {
-				// Es un registro que ya existía: ¿ha cambiado algo realmente?
 				if existing, ok := existingMap[det.ID]; ok {
 					if det.HasChanges(existing) {
-						// Solo disparamos el UPDATE si hay cambios en los datos de negocio
-						// Esto protege la integridad de updated_at para auditoría
 						if err := tx.Model(det).Select("*").Omit("CreatedAt", "CreatedBy").Updates(det).Error; err != nil {
 							return err
 						}
 					}
-					// Si HasChanges es false, saltamos el UPDATE por completo.
-					// Así mantenemos el updated_at original.
 				}
 			}
 		}
@@ -296,6 +287,12 @@ func (r *DescargoRepository) UpdateOficial(ctx context.Context, oficial *models.
 	return nil
 }
 
+func (r *DescargoRepository) FindOficialByDescargoID(ctx context.Context, descargoID string) (*models.DescargoOficial, error) {
+	var oficial models.DescargoOficial
+	err := r.db.WithContext(ctx).First(&oficial, "descargo_id = ?", descargoID).Error
+	return &oficial, err
+}
+
 func (r *DescargoRepository) DeleteDetallesNotIn(ctx context.Context, descargoID string, ids []string) error {
 	query := r.db.WithContext(ctx).Where("descargo_id = ?", descargoID)
 	if len(ids) > 0 {
@@ -310,4 +307,21 @@ func (r *DescargoRepository) ClearAnexos(ctx context.Context, oficialID string) 
 
 func (r *DescargoRepository) ClearTransportesTerrestres(ctx context.Context, oficialID string) error {
 	return r.db.WithContext(ctx).Where("descargo_oficial_id = ?", oficialID).Delete(&models.TransporteTerrestreDescargo{}).Error
+}
+func (r *DescargoRepository) SaveAnexos(ctx context.Context, anexos []models.AnexoDescargo) error {
+	if len(anexos) == 0 {
+		return nil
+	}
+	return r.db.WithContext(ctx).Create(&anexos).Error
+}
+
+func (r *DescargoRepository) SaveTransportesTerrestres(ctx context.Context, terrestres []models.TransporteTerrestreDescargo) error {
+	if len(terrestres) == 0 {
+		return nil
+	}
+	return r.db.WithContext(ctx).Create(&terrestres).Error
+}
+
+func (r *DescargoRepository) GetDB() *gorm.DB {
+	return r.db
 }

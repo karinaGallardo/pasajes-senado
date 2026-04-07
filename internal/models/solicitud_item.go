@@ -235,18 +235,18 @@ func (t SolicitudItem) CanAssignPasaje(user *Usuario) bool {
 	return user.IsAdminOrResponsable() && (st == "APROBADO" || st == "EMITIDO")
 }
 
-func (t SolicitudItem) GetOrigenDisplay() string {
-	if t.Origen != nil {
-		return t.Origen.Ciudad + " (" + t.Origen.IATA + ")"
+func (t SolicitudItem) GetOrigenLabel() string {
+	if t.Origen == nil {
+		return t.OrigenIATA
 	}
-	return t.OrigenIATA
+	return t.Origen.GetNombreCorto()
 }
 
-func (t SolicitudItem) GetDestinoDisplay() string {
-	if t.Destino != nil {
-		return t.Destino.Ciudad + " (" + t.Destino.IATA + ")"
+func (t SolicitudItem) GetDestinoLabel() string {
+	if t.Destino == nil {
+		return t.DestinoIATA
 	}
-	return t.DestinoIATA
+	return t.Destino.GetNombreCorto()
 }
 
 // GetCostoTotal suma el costo de todos los pasajes asociados a este tramo que no estén anulados.

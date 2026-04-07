@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"net/url"
+	"os"
 	"sistema-pasajes/internal/appcontext"
 	"sistema-pasajes/internal/dtos"
 	"sistema-pasajes/internal/models"
@@ -153,6 +155,7 @@ func (ctrl *DescargoDerechoController) Update(c *gin.Context) {
 
 	var req dtos.CreateDescargoRequest
 	if err := req.Bind(c); err != nil {
+		log.Printf("[ERROR] Bind error en Descargo Derecho (ID: %s): %v", id, err)
 		c.Redirect(http.StatusFound, "/descargos/derecho/"+id+"/editar?error=DatosInvalidos")
 		return
 	}
@@ -354,6 +357,29 @@ func (ctrl *DescargoDerechoController) RevertApproval(c *gin.Context) {
 	c.Redirect(http.StatusFound, "/descargos/derecho/"+id)
 }
 
+func (ctrl *DescargoDerechoController) RawFile(c *gin.Context) {
+	path := c.Query("path")
+	if path == "" {
+		c.String(http.StatusBadRequest, "Ruta de archivo requerida")
+		return
+	}
+
+	// Seguridad básica: Impedir que salgan de la carpeta uploads
+	if !strings.HasPrefix(path, "uploads/") && !strings.HasPrefix(path, "/uploads/") {
+		c.String(http.StatusForbidden, "Acceso denegado a esta ruta")
+		return
+	}
+
+	cleanPath := strings.TrimPrefix(path, "/")
+	if _, err := os.Stat(cleanPath); err != nil {
+		c.String(http.StatusNotFound, "Archivo no encontrado físicamente")
+		return
+	}
+
+	// Servir archivo plano (mantiene mime-type automático)
+	c.File(cleanPath)
+}
+
 func (ctrl *DescargoDerechoController) PreviewFile(c *gin.Context) {
 	path := c.Query("path")
 	if path == "" {
@@ -361,10 +387,8 @@ func (ctrl *DescargoDerechoController) PreviewFile(c *gin.Context) {
 		return
 	}
 
-	fullPath := path
-	if !strings.HasPrefix(path, "http") && !strings.HasPrefix(path, "/") {
-		fullPath = "/" + path
-	}
+	// Preparamos la URL del recurso puro para el src de la imagen/iframe
+	rawFileUrl := "/raw-file?path=" + url.QueryEscape(path)
 
 	lowerPath := strings.ToLower(path)
 	isPDF := strings.HasSuffix(lowerPath, ".pdf")
@@ -381,7 +405,7 @@ func (ctrl *DescargoDerechoController) PreviewFile(c *gin.Context) {
 
 	utils.Render(c, "solicitud/components/modal_preview_archivo", gin.H{
 		"Title":                 title,
-		"FilePath":              fullPath,
+		"FilePath":              rawFileUrl, // Ahora apunta al endpoint puro
 		"IsPDF":                 isPDF,
 		"IsImage":               isImage,
 		"InfoRuta":              c.Query("ruta"),
@@ -409,8 +433,6 @@ func (ctrl *DescargoDerechoController) NuevaFila(c *gin.Context) {
 			SolicitudItemID: &solicitudItemID,
 			EsDevolucion:    false,
 			EsModificacion:  false,
-			MontoDevolucion: 0.0,
-			Moneda:          "Bs.",
 		},
 	})
 }

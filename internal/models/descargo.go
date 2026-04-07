@@ -319,6 +319,11 @@ func (d Descargo) CanRevert(user *Usuario) bool {
 	return d.Estado == EstadoDescargoAprobado && user.IsAdminOrResponsable()
 }
 
+func (d Descargo) CanPrint(user *Usuario) bool {
+	// Solo se puede imprimir si no está en borrador o si el usuario tiene privilegios para ver previsualizaciones
+	return d.Estado != EstadoDescargoBorrador
+}
+
 func (d Descargo) isOwnerOrAdmin(user *Usuario) bool {
 	if user == nil {
 		return false
@@ -398,4 +403,16 @@ func (d Descargo) GetTransporteDisplay() string {
 		return d.Oficial.GetTipoTransporteDisplay()
 	}
 	return " - "
+}
+
+func (d Descargo) GetTotalReintegroPasajes() float64 {
+	totalValue := 0.0
+	if d.Solicitud != nil {
+		for _, item := range d.Solicitud.Items {
+			for _, p := range item.Pasajes {
+				totalValue += p.Diferencia
+			}
+		}
+	}
+	return totalValue
 }

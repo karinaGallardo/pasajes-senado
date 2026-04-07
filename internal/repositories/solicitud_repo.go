@@ -95,10 +95,13 @@ func (r *SolicitudRepository) FindAll(ctx context.Context, status string, concep
 		Preload("Items.Origen").
 		Preload("Items.Destino").
 		Preload("Items.Estado").
+		Preload("Items.Pasajes.RutaPasaje").
 		Preload("Items.Pasajes.RutaPasaje.Origen").
 		Preload("Items.Pasajes.RutaPasaje.Destino").
+		Preload("Items.Pasajes.RutaPasaje.Escalas", func(db *gorm.DB) *gorm.DB {
+			return db.Order("seq ASC")
+		}).
 		Preload("Items.Pasajes.RutaPasaje.Escalas.Destino").
-		Preload("Items.Pasajes.RutaPasaje").
 		Preload("TipoSolicitud.ConceptoViaje").
 		Preload("EstadoSolicitud").
 		Preload("Aerolinea").
@@ -126,10 +129,13 @@ func (r *SolicitudRepository) FindByUserID(ctx context.Context, userID string, s
 		Preload("Items.Origen").
 		Preload("Items.Destino").
 		Preload("Items.Estado").
+		Preload("Items.Pasajes.RutaPasaje").
 		Preload("Items.Pasajes.RutaPasaje.Origen").
 		Preload("Items.Pasajes.RutaPasaje.Destino").
+		Preload("Items.Pasajes.RutaPasaje.Escalas", func(db *gorm.DB) *gorm.DB {
+			return db.Order("seq ASC")
+		}).
 		Preload("Items.Pasajes.RutaPasaje.Escalas.Destino").
-		Preload("Items.Pasajes.RutaPasaje").
 		Preload("TipoSolicitud.ConceptoViaje").
 		Preload("EstadoSolicitud").
 		Preload("Aerolinea").
@@ -179,10 +185,13 @@ func (r *SolicitudRepository) FindByUserIdOrAccesibleByEncargadoID(ctx context.C
 		Preload("Items.Origen").
 		Preload("Items.Destino").
 		Preload("Items.Estado").
+		Preload("Items.Pasajes.RutaPasaje").
 		Preload("Items.Pasajes.RutaPasaje.Origen").
 		Preload("Items.Pasajes.RutaPasaje.Destino").
+		Preload("Items.Pasajes.RutaPasaje.Escalas", func(db *gorm.DB) *gorm.DB {
+			return db.Order("seq ASC")
+		}).
 		Preload("Items.Pasajes.RutaPasaje.Escalas.Destino").
-		Preload("Items.Pasajes.RutaPasaje").
 		Preload("TipoSolicitud.ConceptoViaje").
 		Preload("EstadoSolicitud").
 		Preload("Aerolinea").
@@ -220,10 +229,13 @@ func (r *SolicitudRepository) FindPaginated(ctx context.Context, userID string, 
 		Preload("Items.Origen").
 		Preload("Items.Destino").
 		Preload("Items.Estado").
+		Preload("Items.Pasajes.RutaPasaje").
 		Preload("Items.Pasajes.RutaPasaje.Origen").
 		Preload("Items.Pasajes.RutaPasaje.Destino").
+		Preload("Items.Pasajes.RutaPasaje.Escalas", func(db *gorm.DB) *gorm.DB {
+			return db.Order("seq ASC")
+		}).
 		Preload("Items.Pasajes.RutaPasaje.Escalas.Destino").
-		Preload("Items.Pasajes.RutaPasaje").
 		Preload("TipoSolicitud.ConceptoViaje").
 		Preload("EstadoSolicitud").
 		Preload("Aerolinea").
@@ -286,10 +298,13 @@ func (r *SolicitudRepository) FindByID(ctx context.Context, id string) (*models.
 		Preload("Items.Pasajes.Aerolinea").
 		Preload("Items.Pasajes.Agencia").
 		Preload("Items.Pasajes.EstadoPasaje").
+		Preload("Items.Pasajes.RutaPasaje").
 		Preload("Items.Pasajes.RutaPasaje.Origen").
 		Preload("Items.Pasajes.RutaPasaje.Destino").
+		Preload("Items.Pasajes.RutaPasaje.Escalas", func(db *gorm.DB) *gorm.DB {
+			return db.Order("seq ASC")
+		}).
 		Preload("Items.Pasajes.RutaPasaje.Escalas.Destino").
-		Preload("Items.Pasajes.RutaPasaje").
 		Preload("Viaticos").
 		Preload("Viaticos.Detalles", func(db *gorm.DB) *gorm.DB {
 			return db.Order("seq ASC")
@@ -361,10 +376,13 @@ func (r *SolicitudRepository) FindPendientesDeDescargoUI(ctx context.Context, us
 		}).
 		Preload("Items.Origen").
 		Preload("Items.Destino").
+		Preload("Items.Pasajes.RutaPasaje").
 		Preload("Items.Pasajes.RutaPasaje.Origen").
 		Preload("Items.Pasajes.RutaPasaje.Destino").
+		Preload("Items.Pasajes.RutaPasaje.Escalas", func(db *gorm.DB) *gorm.DB {
+			return db.Order("seq ASC")
+		}).
 		Preload("Items.Pasajes.RutaPasaje.Escalas.Destino").
-		Preload("Items.Pasajes.RutaPasaje").
 		Preload("TipoSolicitud.ConceptoViaje").
 		Preload("EstadoSolicitud").
 		Preload("Aerolinea").
@@ -404,10 +422,13 @@ func (r *SolicitudRepository) FindPendientesDeDescargoPaginated(ctx context.Cont
 		}).
 		Preload("Items.Origen").
 		Preload("Items.Destino").
+		Preload("Items.Pasajes.RutaPasaje").
 		Preload("Items.Pasajes.RutaPasaje.Origen").
 		Preload("Items.Pasajes.RutaPasaje.Destino").
+		Preload("Items.Pasajes.RutaPasaje.Escalas", func(db *gorm.DB) *gorm.DB {
+			return db.Order("seq ASC")
+		}).
 		Preload("Items.Pasajes.RutaPasaje.Escalas.Destino").
-		Preload("Items.Pasajes.RutaPasaje").
 		Preload("TipoSolicitud.ConceptoViaje").
 		Preload("EstadoSolicitud").
 		Preload("Aerolinea").

@@ -127,6 +127,7 @@ func (ctrl *DescargoOficialController) Show(c *gin.Context) {
 		"TramosVueltaReprogramados": tramosVueltaRepro,
 		"BancoCuenta":               bancoCuenta,
 		"BancoNombre":               bancoNombre,
+		"User":                      authUser,
 	})
 }
 
@@ -200,6 +201,7 @@ func (ctrl *DescargoOficialController) Edit(c *gin.Context) {
 		"TramosVueltaReprogramados": tramosVueltaRepro,
 		"BancoCuenta":               bancoCuenta,
 		"BancoNombre":               bancoNombre,
+		"User":                      authUser,
 	})
 }
 
@@ -225,15 +227,17 @@ func (ctrl *DescargoOficialController) Update(c *gin.Context) {
 
 	var req dtos.CreateDescargoRequest
 	if err := req.Bind(c); err != nil {
+		log.Printf("[ERROR] Bind error en Descargo Oficial (ID: %s): %v", id, err)
 		c.Redirect(http.StatusFound, "/descargos/oficial/"+id+"/editar?error=DatosInvalidos")
 		return
 	}
 
 	// Delegar recolección de archivos a sus respectivos dueños
 	pasesAbordoPaths := utils.ExtractDescargoFiles(c, req.TramoID)
+	terrestrePaths := utils.ExtractTerrestreFiles(c, req.TransporteTerrestreID)
 	anexoPaths := utils.ExtractDescargoAnexos(c, id)
 
-	if err := ctrl.descargoOficialService.UpdateOficial(c.Request.Context(), id, req, authUser.ID, pasesAbordoPaths, anexoPaths); err != nil {
+	if err := ctrl.descargoOficialService.UpdateOficial(c.Request.Context(), id, req, authUser.ID, pasesAbordoPaths, terrestrePaths, anexoPaths); err != nil {
 		c.Redirect(http.StatusFound, "/descargos/oficial/"+id+"/editar?error=ErrorActualizacion")
 		return
 	}
