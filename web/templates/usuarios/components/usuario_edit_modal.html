@@ -2,15 +2,15 @@
   <div
     id="usuario_edit_modal_root"
     x-data="{
-    modalOpen: false,
-    ready: false
-  }"
+      modalOpen: false,
+      ready: false
+    }"
     x-init="
-    $nextTick(() => {
-      ready = true;
-      modalOpen = true;
-    })
-  "
+      $nextTick(() => {
+        ready = true;
+        modalOpen = true;
+      })
+    "
     x-show="ready && modalOpen"
     class="fixed inset-0 z-50 overflow-y-auto"
     aria-labelledby="modal-title"
@@ -153,10 +153,18 @@
                   {{ if .CanChangeOrigin }}
                     <div
                       x-data="searchableSelect({
-                  endpoint: '/api/catalogos/destinos',
-                  initialValue: '{{ if .Usuario.OrigenIATA }}{{ deref .Usuario.OrigenIATA }}{{ end }}',
-                  initialLabel: '{{ if .Usuario.Origen }}{{ .Usuario.Origen.GetNombreDisplay }}{{ end }}'
-                })"
+                        endpoint: '/api/catalogos/destinos',
+                        initialValue: {{ if .Usuario.OrigenIATA }}
+                        {{ deref .Usuario.OrigenIATA | json }}
+                      {{ else }}
+                        ''
+                      {{ end }},
+                        initialLabel: {{ if .Usuario.Origen }}
+                        {{ .Usuario.Origen.GetNombreLargo | json }}
+                      {{ else }}
+                        ''
+                      {{ end }}
+                      })"
                     >
                       <div class="relative">
                         <input type="hidden" name="origen" :value="value" />
@@ -232,8 +240,16 @@
                     <div
                       x-data="searchableSelect({
                         endpoint: '/api/catalogos/staff',
-                        initialValue: '{{ if .Usuario.EncargadoID }}{{ .Usuario.EncargadoID }}{{ end }}',
-                        initialLabel: '{{ if .Usuario.Encargado }}{{ .Usuario.Encargado.GetNombreCompleto }}{{ end }}',
+                        initialValue: {{ if .Usuario.EncargadoID }}
+                        {{ .Usuario.EncargadoID | json }}
+                      {{ else }}
+                        ''
+                      {{ end }},
+                        initialLabel: {{ if .Usuario.Encargado }}
+                        {{ .Usuario.Encargado.GetNombreCompleto | json }}
+                      {{ else }}
+                        ''
+                      {{ end }},
                         disabled: false
                       })"
                     >

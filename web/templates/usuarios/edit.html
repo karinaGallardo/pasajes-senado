@@ -49,16 +49,16 @@
         <div
           class="mb-4"
           x-data="searchableSelect({
-        items: {{ json .Destinos }}.map(function(d) {
-          return {
-            value: d.iata,
-            label: d.ciudad + (d.aeropuerto ? ' - ' + d.aeropuerto : '') + ' (' + d.iata + ')',
-            extra: d.iata
-          };
-        }),
-        initialValue: '{{ if .Usuario.OrigenIATA }}{{ deref .Usuario.OrigenIATA }}{{ end }}',
-        initialLabel: '{{ if .Usuario.Origen }}{{ .Usuario.Origen.GetNombreDisplay }}{{ end }}'
-      })"
+            items: {{ json .Destinos }}.map(function(d) {
+              return {
+                value: d.iata,
+                label: d.ciudad + (d.aeropuerto ? ' - ' + d.aeropuerto : '') + ' (' + d.iata + ')',
+                extra: d.iata
+              };
+            }),
+            initialValue: '{{ if .Usuario.OrigenIATA }}{{ deref .Usuario.OrigenIATA }}{{ end }}',
+            initialLabel: '{{ if .Usuario.Origen }}{{ .Usuario.Origen.GetNombreDisplay }}{{ end }}'
+          })"
         >
           <label class="block text-sm font-medium text-neutral-700">Lugar de Origen</label>
           <div class="relative mt-1">
