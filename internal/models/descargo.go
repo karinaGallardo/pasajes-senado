@@ -464,7 +464,7 @@ func (d Descargo) GetTotalReintegroPasajes() float64 {
 	if d.Solicitud != nil {
 		for _, item := range d.Solicitud.Items {
 			for _, p := range item.Pasajes {
-				totalValue += p.Diferencia
+				totalValue += (p.MontoCredito + p.MontoReembolso)
 			}
 		}
 	}

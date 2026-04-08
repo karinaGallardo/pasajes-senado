@@ -390,7 +390,9 @@ document.addEventListener("alpine:init", function () {
         if (val) {
           this.esModificacion = false;
           this.isFullTicket = true;
-          this.monto = 0; // Reset manual amount if full refund
+          this.monto = 0;
+          this.vuelo = "";
+          this.pase = "";
         } else {
           this.isFullTicket = false;
         }
@@ -400,9 +402,9 @@ document.addEventListener("alpine:init", function () {
       this.$watch("esModificacion", (val) => {
         if (val) {
           this.esDevolucion = false;
-          // When modifying connection, reset isFullTicket
           this.isFullTicket = false;
-          // Sync other scales of the same ticket to also clear their Devolucion status
+          this.vuelo = "";
+          this.pase = "";
           if (this.billete) {
             this.$dispatch("ticket-mod-changed", { billete: this.billete, state: true });
           }
@@ -434,15 +436,15 @@ document.addEventListener("alpine:init", function () {
 
     get bindVuelo() {
       return {
-        // Only disable if it's an original segment being toggled for modification
-        ":disabled": "esDevolucion",
-        ":class": "{ 'bg-neutral-50 text-neutral-400 cursor-not-allowed opacity-60': esDevolucion }",
+        // We use readonly instead of disabled to keep the index in the POST array
+        ":readonly": "esDevolucion || esModificacion",
+        ":class": "{ 'bg-neutral-50 text-neutral-400 cursor-not-allowed opacity-60': esDevolucion || esModificacion }",
       };
     },
     get bindPase() {
       return {
-        ":disabled": "esDevolucion",
-        ":class": "{ 'bg-neutral-50 text-neutral-400 cursor-not-allowed opacity-60': esDevolucion }",
+        ":readonly": "esDevolucion || esModificacion",
+        ":class": "{ 'bg-neutral-50 text-neutral-400 cursor-not-allowed opacity-60': esDevolucion || esModificacion }",
       };
     },
 

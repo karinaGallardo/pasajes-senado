@@ -40,8 +40,9 @@ type Pasaje struct {
 	CodigoReserva    string  `gorm:"size:50"`
 	NumeroBillete    string  `gorm:"size:100;index"`
 	Costo            float64 `gorm:"type:decimal(10,2)"`
-	CostoUtilizacion float64 `gorm:"type:decimal(10,2);default:0"`
-	Diferencia       float64 `gorm:"type:decimal(10,2);default:0"`
+	CostoUtilizado   float64 `gorm:"type:decimal(10,2);default:0" json:"costo_utilizado"`
+	MontoCredito     float64 `gorm:"type:decimal(10,2);default:0" json:"monto_credito"`
+	MontoReembolso   float64 `gorm:"type:decimal(10,2);default:0" json:"monto_reembolso"`
 
 	EstadoPasajeCodigo *string       `gorm:"size:50;default:'EMITIDO'"`
 	EstadoPasaje       *EstadoPasaje `gorm:"foreignKey:EstadoPasajeCodigo;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;<-:false"`
@@ -57,6 +58,9 @@ type Pasaje struct {
 	CostoServicioEmision  float64 `gorm:"type:decimal(10,2);default:0"`
 	NroFacturaEmision     string  `gorm:"size:50;index"`
 	ArchivoFacturaEmision string  `gorm:"size:255;default:''"`
+
+	// Relación inversa para liquidación
+	DescargoTramos []DescargoTramo `gorm:"foreignKey:PasajeID;<-:false"`
 
 	// Seq is an auto-incrementing field managed by DB to ensure atomic sequential ordering
 	Seq int64 `gorm:"autoIncrement;not null;<-:false"`

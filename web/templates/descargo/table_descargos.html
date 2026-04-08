@@ -3,25 +3,57 @@
     <table class="min-w-full divide-y divide-neutral-200">
       <thead class="bg-neutral-50/50">
         <tr>
-          <th scope="col" class="px-6 py-3 text-left text-[10px] font-black text-neutral-400 uppercase tracking-widest border-b border-neutral-100 italic">ID / Registro</th>
-          <th scope="col" class="px-6 py-3 text-left text-[10px] font-black text-neutral-400 uppercase tracking-widest border-b border-neutral-100 italic">Beneficiario / Titular</th>
-          <th scope="col" class="px-6 py-3 text-left text-[10px] font-black text-neutral-400 uppercase tracking-widest border-b border-neutral-100 italic">Trámite Original</th>
-          <th scope="col" class="px-6 py-3 text-left text-[10px] font-black text-neutral-400 uppercase tracking-widest border-b border-neutral-100 italic text-center">Estado Gestión</th>
-          <th scope="col" class="px-6 py-3 text-right text-[10px] font-black text-neutral-400 uppercase tracking-widest border-b border-neutral-100 italic">Acciones</th>
+          <th
+            scope="col"
+            class="px-6 py-3 text-left text-[10px] font-black text-neutral-400 uppercase tracking-widest border-b border-neutral-100 italic"
+          >
+            ID / Registro
+          </th>
+          <th
+            scope="col"
+            class="px-6 py-3 text-left text-[10px] font-black text-neutral-400 uppercase tracking-widest border-b border-neutral-100 italic"
+          >
+            Beneficiario / Titular
+          </th>
+          <th
+            scope="col"
+            class="px-6 py-3 text-left text-[10px] font-black text-neutral-400 uppercase tracking-widest border-b border-neutral-100 italic"
+          >
+            Trámite Original
+          </th>
+          <th
+            scope="col"
+            class="px-6 py-3 text-left text-[10px] font-black text-neutral-400 uppercase tracking-widest border-b border-neutral-100 italic text-center"
+          >
+            Estado Gestión
+          </th>
+          <th
+            scope="col"
+            class="px-6 py-3 text-right text-[10px] font-black text-neutral-400 uppercase tracking-widest border-b border-neutral-100 italic"
+          >
+            Acciones
+          </th>
         </tr>
       </thead>
-      <tbody class="bg-white divide-y divide-neutral-100" x-init="$nextTick(() => { tippy('[data-tippy-content]', { allowHTML: true, theme: 'light-border', animation: 'shift-away' }); })">
+      <tbody
+        class="bg-white divide-y divide-neutral-100"
+        x-init="$nextTick(() => { tippy('[data-tippy-content]', { allowHTML: true, theme: 'light-border', animation: 'shift-away' }); })"
+      >
         {{ range .Result.Descargos }}
           <tr class="group hover:bg-neutral-50/50 transition-all duration-200">
             <td class="px-6 py-4 whitespace-nowrap">
               <div class="flex flex-col">
                 <span class="text-xs font-black text-neutral-900 tracking-tight">#{{ .Codigo }}</span>
-                <span class="text-[10px] text-neutral-400 font-bold uppercase tracking-tighter">{{ .FechaPresentacion.Format "02/01/2006" }}</span>
+                <span class="text-[10px] text-neutral-400 font-bold uppercase tracking-tighter">
+                  {{ .FechaPresentacion.Format "02/01/2006" }}
+                </span>
               </div>
             </td>
             <td class="px-6 py-4 whitespace-nowrap">
               <div class="flex items-center">
-                <div class="h-8 w-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary text-xs font-black mr-3 shadow-sm group-hover:scale-110 transition-transform">
+                <div
+                  class="h-8 w-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary text-xs font-black mr-3 shadow-sm group-hover:scale-110 transition-transform"
+                >
                   {{ if .Solicitud }}{{ .Solicitud.Usuario.GetInitials }}{{ else }}?{{ end }}
                 </div>
                 <div class="flex flex-col">
@@ -29,7 +61,11 @@
                     {{ if .Solicitud }}{{ .Solicitud.Usuario.GetNombreCompleto }}{{ else }}DESCONOCIDO{{ end }}
                   </p>
                   <span class="text-[10px] text-neutral-400 font-bold uppercase mt-1">
-                    {{ if .Solicitud }}{{ .Solicitud.Usuario.Cargo.Nombre }}{{ end }}
+                    {{ if and .Solicitud .Solicitud.Usuario.Cargo }}
+                      {{ .Solicitud.Usuario.Cargo.Descripcion }}
+                    {{ else }}
+                      SIN CARGO
+                    {{ end }}
                   </span>
                 </div>
               </div>
@@ -39,17 +75,31 @@
                 {{ if .Solicitud }}
                   {{ $isOficial := eq .Solicitud.GetConceptoCodigo "OFICIAL" }}
                   <div class="flex items-center gap-2 mb-1">
-                    <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border {{ if $isOficial }}bg-primary-50 text-primary-700 border-primary-200{{ else }}bg-secondary-50 text-secondary-700 border-secondary-200{{ end }} shadow-sm">
+                    <span
+                      class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border {{ if $isOficial }}
+                        bg-primary-50 text-primary-700 border-primary-200
+                      {{ else }}
+                        bg-secondary-50 text-secondary-700 border-secondary-200
+                      {{ end }} shadow-sm"
+                    >
                       {{ .Solicitud.GetConceptoCodigo }}
                     </span>
-                    <a href="/solicitudes/{{ if $isOficial }}oficial{{ else }}derecho{{ end }}/{{ .Solicitud.ID }}/detalle" 
-                       class="text-[11px] font-bold text-neutral-600 hover:text-primary transition-colors">
+                    <a
+                      href="/solicitudes/{{ if $isOficial }}
+                        oficial
+                      {{ else }}
+                        derecho
+                      {{ end }}/{{ .Solicitud.ID }}/detalle"
+                      class="text-[11px] font-bold text-neutral-600 hover:text-primary transition-colors"
+                    >
                       SOL-{{ .Solicitud.Codigo }}
                     </a>
                   </div>
                   <div class="flex items-center gap-1.5 opacity-60">
                     <i class="ph ph-map-pin text-[10px] text-neutral-400"></i>
-                    <span class="text-[10px] font-bold text-neutral-500 uppercase tracking-tight">{{ .Solicitud.GetDestinoCiudad }}</span>
+                    <span class="text-[10px] font-bold text-neutral-500 uppercase tracking-tight">
+                      {{ .Solicitud.GetDestinoCiudad }}
+                    </span>
                   </div>
                 {{ else }}
                   <span class="text-[10px] text-neutral-400 italic">Solicitud no disponible</span>
@@ -58,11 +108,13 @@
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-center">
               <div class="flex flex-col items-center gap-1.5">
-                <span class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter border shadow-sm {{ .GetEstadoBadgeClass }}">
+                <span
+                  class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter border shadow-sm {{ .GetEstadoBadgeClass }}"
+                >
                   {{ .GetEstadoLabel }}
                 </span>
                 {{ if not .IsComplete }}
-                  <div 
+                  <div
                     class="flex items-center gap-1 px-1.5 py-0.5 rounded bg-warning-50 text-warning-700 font-black text-[8px] border border-warning-200 uppercase tracking-tighter cursor-help hover:bg-warning-100 transition-colors"
                     data-tippy-content="{{ .GetMissingItemsHTML }}"
                   >
@@ -79,8 +131,14 @@
             </td>
             <td class="px-6 py-4 whitespace-nowrap text-right">
               {{ $isOficial := false }}{{ if .Solicitud }}{{ $isOficial = eq .Solicitud.GetConceptoCodigo "OFICIAL" }}{{ end }}
-              <a href="/descargos/{{ if $isOficial }}oficial{{ else }}derecho{{ end }}/{{ .ID }}" 
-                 class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-neutral-200 rounded-lg text-[10px] font-black text-neutral-600 uppercase tracking-widest hover:border-primary hover:text-primary shadow-sm active:scale-95 transition-all group/btn">
+              <a
+                href="/descargos/{{ if $isOficial }}
+                  oficial
+                {{ else }}
+                  derecho
+                {{ end }}/{{ .ID }}"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-neutral-200 rounded-lg text-[10px] font-black text-neutral-600 uppercase tracking-widest hover:border-primary hover:text-primary shadow-sm active:scale-95 transition-all group/btn"
+              >
                 <i class="ph ph-arrow-right text-sm transition-transform group-hover/btn:translate-x-0.5"></i>
                 Gestionar
               </a>

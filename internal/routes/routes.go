@@ -36,6 +36,7 @@ func SetupRoutes(r *gin.Engine, container *app.Container, loginLimiter *middlewa
 	catViaticoCtrl := container.CategoriaViaticoController
 	notifCtrl := container.NotificationController
 	landingCtrl := container.LandingController
+	creditoCtrl := container.CreditoPasajeController
 
 	r.GET("/auth/login", authCtrl.ShowLogin)
 	r.POST("/auth/login", middleware.RateLimitMiddleware(loginLimiter), authCtrl.Login)
@@ -52,6 +53,7 @@ func SetupRoutes(r *gin.Engine, container *app.Container, loginLimiter *middlewa
 		protected.GET("/dashboard", dashboardCtrl.Index)
 
 		protected.GET("/perfil", perfilCtrl.Show)
+		protected.GET("/perfil/creditos", creditoCtrl.ListByUser)
 
 		protected.GET("/cupos/derecho/:senador_user_id/:gestion", cupoCtrl.DerechoByYear)
 		protected.GET("/cupos/derecho/:senador_user_id/:gestion/:mes", cupoCtrl.DerechoByMonth)

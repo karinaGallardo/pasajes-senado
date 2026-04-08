@@ -43,6 +43,9 @@ func (r *PasajeRepository) FindByID(ctx context.Context, id string) (*models.Pas
 		Preload("SolicitudItem.Destino.Ambito").
 		Preload("SolicitudItem.Solicitud.CupoDerechoItem").
 		Preload("SolicitudItem.Solicitud.Usuario").
+		Preload("DescargoTramos", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
+		Preload("DescargoTramos.Origen").
+		Preload("DescargoTramos.Destino").
 		First(&pasaje, "id = ?", id).Error
 	return &pasaje, err
 }

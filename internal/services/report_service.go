@@ -24,6 +24,7 @@ type ReportService struct {
 	pasajeRepo    *repositories.PasajeRepository
 	agenciaRepo   *repositories.AgenciaRepository
 	cupoRepo      *repositories.CupoDerechoRepository
+	creditoRepo   *repositories.CreditoPasajeRepository
 	configService *ConfiguracionService
 }
 
@@ -33,6 +34,7 @@ func NewReportService(
 	pasajeRepo *repositories.PasajeRepository,
 	agenciaRepo *repositories.AgenciaRepository,
 	cupoRepo *repositories.CupoDerechoRepository,
+	creditoRepo *repositories.CreditoPasajeRepository,
 	configService *ConfiguracionService,
 ) *ReportService {
 	return &ReportService{
@@ -41,6 +43,7 @@ func NewReportService(
 		pasajeRepo:    pasajeRepo,
 		agenciaRepo:   agenciaRepo,
 		cupoRepo:      cupoRepo,
+		creditoRepo:   creditoRepo,
 		configService: configService,
 	}
 }
@@ -567,16 +570,18 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 
 		pdf.SetFont("Arial", "", 8)
 		for _, r := range rows {
-			orig, dest := "", ""
-			parts := strings.Split(r.GetRutaDisplay(), " - ")
-			if len(parts) >= 2 {
-				orig = strings.TrimSpace(parts[0])
-				dest = strings.TrimSpace(parts[1])
-			} else {
-				orig = r.GetRutaDisplay()
+			orig := r.GetRutaOrigen()
+			dest := r.GetRutaDestino()
+
+			if r.Origen != nil {
+				orig = r.Origen.GetNombreCorto()
 			}
-			pdf.CellFormat(35, 6, tr(orig), "1", 0, "C", false, 0, "")
-			pdf.CellFormat(35, 6, tr(dest), "1", 0, "C", false, 0, "")
+			if r.Destino != nil {
+				dest = r.Destino.GetNombreCorto()
+			}
+
+			pdf.CellFormat(35, 6, tr(orig), "1", 0, "L", false, 0, "")
+			pdf.CellFormat(35, 6, tr(dest), "1", 0, "L", false, 0, "")
 			fecha := ""
 			if r.Fecha != nil {
 				fecha = r.Fecha.Format("02/01/2006")
@@ -662,80 +667,70 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 	pdf.Ln(4)
 
 	pdf.SetFont("Arial", "B", 9)
-	pdf.CellFormat(190, 6, tr(" PASAJE ABIERTO-OPEN TICKET"), "B", 1, "L", false, 0, "")
+	pdf.CellFormat(190, 6, tr(" PASAJE ABIERTO / CRÉDITO DE VIAJE GENERADO (EMD)"), "B", 1, "L", false, 0, "")
+	pdf.Ln(2)
 
-	hasReturns := false
-	for _, key := range itinerariosOrder {
-		g := itinerariosMap[key]
-		if g.EsDevolucion {
-			hasReturns = true
-			tipoStr := "TRAMO"
-			if len(g.Tramos) > 0 {
-				if strings.Contains(string(g.Tramos[0].Tipo), "IDA") {
-					tipoStr = "TRAMO DE IDA"
-				} else {
-					tipoStr = "TRAMO DE RETORNO"
-				}
-			}
+	// Buscar créditos EMD reales vinculados a este descargo
+	creditos, _ := s.creditoRepo.FindByDescargoID(ctx, descargo.ID)
 
-			// Find cost and full route from Pasaje
-			var cost float64
-			fullRoute := ""
-			if descargo.Solicitud != nil {
-				for _, item := range descargo.Solicitud.Items {
-					for _, p := range item.Pasajes {
-						if p.NumeroBillete == g.Billete && g.Billete != "" {
-							cost = p.Diferencia
-							fullRoute = p.GetRutaDisplay()
-							break
-						}
-					}
-				}
-			}
-
-			// Reconstruct only returned legs for clarity
-			var routeParts []string
-			for _, det := range g.Tramos {
-				if det.EsDevolucion {
-					routeParts = append(routeParts, det.GetRutaDisplay())
-				}
-			}
-			fullRoute = strings.Join(routeParts, " ; ")
-			s.drawReturnTableSummarized(pdf, tr, tipoStr, g.Billete, fullRoute, cost)
-			pdf.Ln(1)
+	if len(creditos) > 0 {
+		for _, cred := range creditos {
+			s.drawReturnTableSummarized(pdf, tr, "CRÉDITO EMD", cred.BilletesReferencia, cred.RutaReferencia, cred.Monto)
 		}
-	}
-
-	if !hasReturns {
-		s.drawReturnTableSummarized(pdf, tr, "", "", "", 0)
+	} else {
+		// Si no hay créditos EMD, mostramos una fila indicando que todo se liquidó o no hubo ahorro
+		s.drawReturnTableSummarized(pdf, tr, "N/A", "SIN CRÉDITO", "TRAMOS COMPLETADOS O REEMBOLSO LÍQUIDO", 0)
 	}
 	pdf.Ln(4)
 
-	// --- NUEVA SECCIÓN: LIQUIDACIÓN FINANCIERA ---
+	// --- SECCIÓN: LIQUIDACIÓN FINANCIERA DETALLADA ---
 	pdf.SetFont("Arial", "B", 9)
 	pdf.SetFillColor(240, 240, 240)
-	pdf.CellFormat(190, 6, tr(" LIQUIDACIÓN FINANCIERA Y RESPALDO DE DEPÓSITO"), "1", 1, "L", true, 0, "")
+	pdf.CellFormat(190, 7, tr(" LIQUIDACIÓN FINANCIERA Y CONCILIACIÓN DE COSTOS"), "1", 1, "C", true, 0, "")
 
-	// Calcular totales para el cuadro de texto
+	// Calcular totales desglosados
 	totalEmitido := 0.0
 	totalUtilizado := 0.0
+	totalCredito := 0.0
+	totalEfectivo := 0.0
 	if descargo.Solicitud != nil {
 		for _, item := range descargo.Solicitud.Items {
 			for _, p := range item.Pasajes {
 				totalEmitido += p.Costo
-				totalUtilizado += p.CostoUtilizacion
+				totalUtilizado += p.CostoUtilizado
+				totalCredito += p.MontoCredito
+				totalEfectivo += p.MontoReembolso
 			}
 		}
 	}
 
+	pdf.SetFont("Arial", "B", 8)
+	pdf.CellFormat(95, 6, tr(" Total Valor Boletos Emitidos: "), "L,T", 0, "L", false, 0, "")
 	pdf.SetFont("Arial", "", 8)
-	pdf.CellFormat(95, 6, tr(" Total Valor de Boletos Emitidos: Bs. ")+fmt.Sprintf("%.2f", totalEmitido), "L,R", 0, "L", false, 0, "")
-	pdf.CellFormat(95, 6, tr(" Total Valor Utilizado (Consumo Real): Bs. ")+fmt.Sprintf("%.2f", totalUtilizado), "R", 1, "L", false, 0, "")
+	pdf.CellFormat(95, 6, "Bs. "+fmt.Sprintf("%.2f", totalEmitido), "R,T", 1, "R", false, 0, "")
 
 	pdf.SetFont("Arial", "B", 8)
-	pdf.CellFormat(190, 6, tr(" MONTO LÍQUIDO A DEVOLVER AL SENADO: Bs. ")+fmt.Sprintf("%.2f", descargo.MontoDevolucion), "L,R,B", 1, "L", false, 0, "")
+	pdf.CellFormat(95, 6, tr(" Total Valor Utilizado (Consumo Real): "), "L", 0, "L", false, 0, "")
+	pdf.SetFont("Arial", "", 8)
+	pdf.CellFormat(95, 6, "Bs. "+fmt.Sprintf("%.2f", totalUtilizado), "R", 1, "R", false, 0, "")
 
-	pdf.Ln(6)
+	// Desglose de ahorros
+	pdf.SetFillColor(250, 250, 250)
+	pdf.SetFont("Arial", "B", 8)
+	pdf.CellFormat(95, 6, tr(" Crédito a Favor del Senado (EMD - Cupo): "), "L,T", 0, "L", true, 0, "")
+	pdf.SetFont("Arial", "B", 8)
+	pdf.SetTextColor(0, 100, 0) // Verde oscuro para crédito
+	pdf.CellFormat(95, 6, "Bs. "+fmt.Sprintf("%.2f", totalCredito), "R,T", 1, "R", true, 0, "")
+	pdf.SetTextColor(0, 0, 0)
+
+	pdf.SetFont("Arial", "B", 8)
+	pdf.CellFormat(95, 6, tr(" Reintegro en Efectivo (Depósito Bancario): "), "L,B", 0, "L", true, 0, "")
+	pdf.SetFont("Arial", "B", 9)
+	pdf.SetTextColor(150, 0, 0) // Rojo para efectivo a devolver
+	pdf.CellFormat(95, 6, "Bs. "+fmt.Sprintf("%.2f", totalEfectivo), "R,B", 1, "R", true, 0, "")
+	pdf.SetTextColor(0, 0, 0)
+
+	pdf.Ln(4)
 
 	// --- ANEXO AUTOMÁTICO DEL COMPROBANTE DE DEPÓSITO ---
 	if descargo.MontoDevolucion > 0 && descargo.ComprobantePago != "" {
@@ -1122,7 +1117,7 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 			for _, item := range descargo.Solicitud.Items {
 				for _, p := range item.Pasajes {
 					totalEmitido += p.Costo
-					totalUtilizado += p.CostoUtilizacion
+					totalUtilizado += p.CostoUtilizado
 				}
 			}
 		}
@@ -1197,7 +1192,7 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 				for _, item := range descargo.Solicitud.Items {
 					for _, p := range item.Pasajes {
 						if p.NumeroBillete == g.Billete && g.Billete != "" {
-							cost = p.Diferencia
+							cost = p.MontoCredito + p.MontoReembolso
 							fullRoute = p.GetRutaDisplay()
 							break
 						}
@@ -1602,7 +1597,7 @@ func (s *ReportService) drawReturnTableSummarized(pdf *gofpdf.Fpdf, tr func(stri
 	pdf.SetFont("Arial", "B", 8)
 	pdf.CellFormat(90, 6, tr("RUTA COMPLETA"), "1", 0, "C", true, 0, "")
 	pdf.CellFormat(50, 6, tr("N° BILLETE"), "1", 0, "C", true, 0, "")
-	pdf.CellFormat(50, 6, tr("MONTO DEVOLUCIÓN (Bs.)"), "1", 1, "C", true, 0, "")
+	pdf.CellFormat(50, 6, tr("MONTO TOTAL RECUPERADO (Bs.)"), "1", 1, "C", true, 0, "")
 
 	pdf.SetFont("Arial", "", 8)
 	if billete != "" || ruta != "" {

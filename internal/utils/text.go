@@ -92,3 +92,23 @@ func TruncateString(s string, max int) string {
 	}
 	return s[:max]
 }
+
+// UniqueStringsJoin elimina duplicados de un slice de strings y los une con un separador.
+func UniqueStringsJoin(elements []string, sep string) string {
+	if len(elements) == 0 {
+		return ""
+	}
+
+	uniqueMap := make(map[string]bool)
+	var uniqueElements []string
+
+	for _, e := range elements {
+		e = strings.TrimSpace(e)
+		if e != "" && !uniqueMap[e] {
+			uniqueMap[e] = true
+			uniqueElements = append(uniqueElements, e)
+		}
+	}
+
+	return strings.Join(uniqueElements, sep)
+}

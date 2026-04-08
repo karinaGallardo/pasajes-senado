@@ -500,15 +500,25 @@ func (ctrl *DescargoDerechoController) Liquidar(c *gin.Context) {
 		return
 	}
 
-	var montos []float64
-	for _, mStr := range req.CostosUtilizacion {
-		m, _ := strconv.ParseFloat(mStr, 64)
-		montos = append(montos, m)
+	var montosUtil, montosCred, montosDevo []float64
+	for i := range req.PasajeIDs {
+		mu, _ := strconv.ParseFloat(utils.GetIdx(req.CostosUtilizacion, i), 64)
+		mc, _ := strconv.ParseFloat(utils.GetIdx(req.MontosCredito, i), 64)
+		md, _ := strconv.ParseFloat(utils.GetIdx(req.MontosDevolucion, i), 64)
+		montosUtil = append(montosUtil, mu)
+		montosCred = append(montosCred, mc)
+		montosDevo = append(montosDevo, md)
 	}
 
-	if err := ctrl.descargoService.Liquidate(c.Request.Context(), id, req.PasajeIDs, montos, authUser.ID); err != nil {
+	if err := ctrl.descargoService.Liquidate(c.Request.Context(), id, req.PasajeIDs, montosUtil, montosCred, montosDevo, authUser.ID); err != nil {
 		log.Printf("Error liquidando descargo: %v", err)
 		c.Redirect(http.StatusFound, "/descargos/derecho/"+id+"?error=ErrorLiquidacion")
+		return
+	}
+
+	if c.GetHeader("HX-Request") != "" {
+		c.Header("HX-Redirect", "/descargos/derecho/"+id)
+		c.Status(http.StatusOK)
 		return
 	}
 

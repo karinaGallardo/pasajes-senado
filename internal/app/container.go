@@ -44,6 +44,7 @@ type Container struct {
 	EstadoPasajeService     *services.EstadoPasajeService
 	AuditService            *services.AuditService
 	PushService             *services.PushService
+	CreditoPasajeService    *services.CreditoPasajeService
 
 	// Controllers
 	CupoController             *controllers.CupoController
@@ -72,6 +73,7 @@ type Container struct {
 	NotificationController     *controllers.NotificationController
 	LandingController          *controllers.LandingController
 	AuditController            *controllers.AuditController
+	CreditoPasajeController    *controllers.CreditoPasajeController
 	ReportController           *controllers.ReportController
 }
 
@@ -111,6 +113,7 @@ func NewContainer(db *gorm.DB, mongoRRHH *mongo.Database, mongoChat *mongo.Datab
 	estadoPasajeRepo := repositories.NewEstadoPasajeRepository(db)
 	auditRepo := repositories.NewAuditRepository(db)
 	pushRepo := repositories.NewPushRepository(db)
+	creditoRepo := repositories.NewCreditoPasajeRepository(db)
 
 	// 2. Initialize Services (Business Layer) - Injecting Repos and simple services
 	emailService := services.NewEmailService()
@@ -120,8 +123,9 @@ func NewContainer(db *gorm.DB, mongoRRHH *mongo.Database, mongoChat *mongo.Datab
 	configService := services.NewConfiguracionService(configRepo)
 	peopleService := services.NewPeopleService(peopleRepo)
 	estadoPasajeService := services.NewEstadoPasajeService(estadoPasajeRepo)
+	creditoService := services.NewCreditoPasajeService(creditoRepo)
 
-	reportService := services.NewReportService(solicitudRepo, aerolineaRepo, pasajeRepo, agenciaRepo, cupoRepo, configService)
+	reportService := services.NewReportService(solicitudRepo, aerolineaRepo, pasajeRepo, agenciaRepo, cupoRepo, creditoRepo, configService)
 	cupoService := services.NewCupoService(cupoRepo, userRepo, itemRepo, solicitudRepo)
 	userService := services.NewUsuarioService(userRepo, peopleRepo, deptoRepo, mongoUserRepo, rolRepo, destinoRepo, cargoRepo, oficinaRepo)
 
@@ -157,7 +161,7 @@ func NewContainer(db *gorm.DB, mongoRRHH *mongo.Database, mongoChat *mongo.Datab
 	)
 
 	compensacionService := services.NewCompensacionService(compensacionRepo, catCompensacionRepo)
-	descargoService := services.NewDescargoService(descargoRepo, pasajeRepo, solicitudService, userService, auditService)
+	descargoService := services.NewDescargoService(descargoRepo, pasajeRepo, creditoRepo, solicitudService, userService, auditService)
 	descargoDerechoService := services.NewDescargoDerechoService(descargoRepo, rutaRepo, solicitudService, auditService)
 	descargoOficialService := services.NewDescargoOficialService(descargoRepo, rutaRepo, solicitudService, auditService)
 	organigramaService := services.NewOrganigramaService(cargoRepo, oficinaRepo)
@@ -278,6 +282,7 @@ func NewContainer(db *gorm.DB, mongoRRHH *mongo.Database, mongoChat *mongo.Datab
 	notifCtrl := controllers.NewNotificationController(notifService, pushService)
 	landingCtrl := controllers.NewLandingController()
 	auditCtrl := controllers.NewAuditController(auditService)
+	creditoCtrl := controllers.NewCreditoPasajeController(creditoService)
 	reportCtrl := controllers.NewReportController(reportService, aerolineaService, agenciaService)
 
 	return &Container{
@@ -314,6 +319,7 @@ func NewContainer(db *gorm.DB, mongoRRHH *mongo.Database, mongoChat *mongo.Datab
 		EstadoPasajeService:     estadoPasajeService,
 		AuditService:            auditService,
 		PushService:             pushService,
+		CreditoPasajeService:    creditoService,
 
 		// Controllers
 		CupoController:             cupoCtrl,
@@ -342,6 +348,7 @@ func NewContainer(db *gorm.DB, mongoRRHH *mongo.Database, mongoChat *mongo.Datab
 		NotificationController:     notifCtrl,
 		LandingController:          landingCtrl,
 		AuditController:            auditCtrl,
+		CreditoPasajeController:    creditoCtrl,
 		ReportController:           reportCtrl,
 	}
 }

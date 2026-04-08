@@ -200,6 +200,8 @@ type DescargoEditData struct {
 type LiquidarDescargoRequest struct {
 	PasajeIDs         []string `form:"pasaje_id[]"`
 	CostosUtilizacion []string `form:"pasaje_utilizado[]"`
+	MontosCredito     []string `form:"pasaje_monto_credito[]"`
+	MontosDevolucion  []string `form:"pasaje_monto_devolucion[]"`
 }
 
 // ReportarPagoRequest estructura para que el beneficiario reporte su depósito

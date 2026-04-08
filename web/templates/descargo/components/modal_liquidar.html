@@ -62,13 +62,20 @@
             pasajes: [
               {{ range .Descargo.Solicitud.Items }}
             {{ range .Pasajes }}
-              { id: '{{ .ID }}', ticket: '{{ .NumeroBillete }}', ruta: '{{ .GetRutaDisplay }}', costo: {{ .Costo }}, utilizado:
-              {{ if .CostoUtilizacion }}{{ .CostoUtilizacion }}{{ else }}{{ .Costo }}{{ end }} },
+              { id: '{{ .ID }}', ticket: '{{ .NumeroBillete }}', ruta: '{{ .GetRutaDisplay }}', costo: {{ .Costo }}, credito:
+              {{ .MontoCredito }}, efectivo: {{ .MontoReembolso }}, detalles: [
+              {{ range .DescargoTramos }}
+                { tipo: '{{ .Tipo }}', devo: {{ .EsDevolucion }}, mod: {{ .EsModificacion }}, nombre: '{{ .TramoNombre }}' },
+              {{ end }}
+              ] },
             {{ end }}
           {{ end }}
             ],
-            get totalReembolso() {
-              return this.pasajes.reduce((acc, p) => acc + (p.costo - p.utilizado), 0).toFixed(2);
+            get totalCredito() {
+              return this.pasajes.reduce((acc, p) => acc + (p.credito || 0), 0).toFixed(2);
+            },
+            get totalEfectivo() {
+              return this.pasajes.reduce((acc, p) => acc + (p.efectivo || 0), 0).toFixed(2);
             }
           }"
           @submit="loading = true"
@@ -78,101 +85,139 @@
           <div class="bg-primary-50 p-4 rounded-md border border-primary-100 flex gap-3 text-primary-900">
             <i class="ph ph-info text-xl mt-0.5 text-primary-600"></i>
             <div class="text-[11px] leading-relaxed">
-              <p class="font-black uppercase tracking-widest mb-1 text-[9px] text-primary-800">Instrucción de Fiscalización:</p>
-              Compare el costo de emisión (pago inicial) contra el costo utilizado (consumo real). La diferencia positiva generará
-              el monto que el beneficiario debe devolver al Senado.
+              <p class="font-black uppercase tracking-widest mb-1 text-[9px] text-primary-800">
+                Instrucción de Fiscalización Detallada:
+              </p>
+              Desglose el ahorro según el reporte de la aerolínea.
+              <span class="font-bold underline decoration-primary-300">El Crédito (EMD) generará un cupo de viaje</span>
+              y el
+              <span class="font-bold underline decoration-primary-300">Efectivo generará una boleta de depósito bancario</span>
+              .
             </div>
           </div>
 
           <!-- Conciliation Table -->
           <div class="overflow-x-auto border border-neutral-100 rounded-md shadow-sm">
-            <table class="w-full text-left text-xs">
-              <thead class="bg-neutral-50 text-[10px] font-black text-neutral-400 uppercase tracking-widest border-b">
+            <table class="w-full text-left text-[11px]">
+              <thead class="bg-primary-900 text-white text-[9px] font-black uppercase tracking-widest">
                 <tr>
-                  <th class="px-4 py-3 border-r">N° Ticket / Ruta</th>
-                  <th class="px-4 py-3 border-r text-center w-28">Costo Emitido</th>
-                  <th class="px-4 py-3 border-r text-center w-28">Costo Utilizado</th>
-                  <th class="px-4 py-3 text-right w-24">Diferencia</th>
+                  <th class="px-3 py-3 w-48">Pasaje / Estado Tramos</th>
+                  <th class="px-2 py-3 text-center">Costo Emisión</th>
+                  <th class="px-2 py-3 text-center bg-primary-800">CRÉDITO (A FAVOR)</th>
+                  <th class="px-2 py-3 text-center bg-primary-800">EFECTIVO (A DEVOLVER)</th>
+                  <th class="px-2 py-3 text-center border-l border-primary-700">COSTO UTILIZADO</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-neutral-100">
                 <template x-for="(p, index) in pasajes" :key="p.id">
-                  <tr class="hover:bg-neutral-50/10 transition-colors">
-                    <td class="px-4 py-3 truncate max-w-[200px]">
-                      <div class="font-black text-neutral-800" x-text="p.ticket"></div>
-                      <div class="text-[9px] text-neutral-400 font-bold uppercase tracking-widest" x-text="p.ruta"></div>
-                    </td>
-                    <td class="px-4 py-3 text-center text-neutral-500 font-bold tabular-nums">
-                      Bs.
-                      <span x-text="p.costo.toFixed(2)"></span>
-                    </td>
+                  <tr class="hover:bg-neutral-50/50 transition-colors">
                     <td class="px-3 py-3">
-                      <div class="relative group">
-                        <input type="hidden" name="pasaje_id[]" :value="p.id" />
-                        <div class="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
-                          <span class="text-[9px] font-bold text-primary-400">Bs.</span>
-                        </div>
-                        <input
-                          type="number"
-                          name="pasaje_utilizado[]"
-                          step="0.01"
-                          x-model.number="p.utilizado"
-                          class="block w-full pl-6 pr-2 py-1.5 text-[12px] font-black text-primary-900 bg-white border border-neutral-200 rounded focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 transition-all text-center tabular-nums shadow-inner"
-                        />
+                      <div class="font-black text-neutral-800" x-text="p.ticket"></div>
+                      <div class="flex flex-wrap gap-1 mt-1">
+                        <template x-for="d in p.detalles">
+                          <span
+                            class="px-1 py-0.5 rounded text-[7px] font-black uppercase tracking-tighter border"
+                            :class="d.devo ? 'bg-danger-50 text-danger-600 border-danger-100' : (d.mod ? 'bg-warning-50 text-warning-600 border-warning-100' : 'bg-success-50 text-success-600 border-success-100')"
+                            x-text="d.nombre + (d.devo ? ' (DEV)' : (d.mod ? ' (MOD)' : ''))"
+                          ></span>
+                        </template>
                       </div>
                     </td>
-                    <td class="px-4 py-3 text-right">
+                    <td class="px-2 py-3 text-center font-bold text-neutral-400 tabular-nums">
+                      <span x-text="p.costo.toFixed(2)"></span>
+                    </td>
+                    <td class="px-2 py-3 bg-primary-50/30">
+                      <input type="hidden" name="pasaje_id[]" :value="p.id" />
+                      <input
+                        type="number"
+                        name="pasaje_monto_credito[]"
+                        step="0.01"
+                        min="0"
+                        :max="p.costo"
+                        x-model.number="p.credito"
+                        class="block w-full px-2 py-1.5 text-[11px] font-black text-primary-700 bg-white border border-primary-200 rounded focus:ring-4 focus:ring-primary-500/10 text-center shadow-inner"
+                        placeholder="0.00"
+                      />
+                    </td>
+                    <td class="px-2 py-3 bg-primary-50/30">
+                      <input
+                        type="number"
+                        name="pasaje_monto_devolucion[]"
+                        step="0.01"
+                        min="0"
+                        :max="p.costo - (p.credito || 0)"
+                        x-model.number="p.efectivo"
+                        class="block w-full px-2 py-1.5 text-[11px] font-black text-neutral-700 bg-white border border-neutral-200 rounded focus:ring-4 focus:ring-neutral-500/10 text-center shadow-inner"
+                        placeholder="0.00"
+                      />
+                    </td>
+                    <td class="px-2 py-3 text-center border-l bg-neutral-50/50">
+                      <input
+                        type="hidden"
+                        name="pasaje_utilizado[]"
+                        :value="(p.costo - (p.credito || 0) - (p.efectivo || 0)).toFixed(2)"
+                      />
                       <span
-                        class="px-2 py-1 rounded text-[10px] font-black tabular-nums shadow-sm border"
-                        :class="(p.costo - p.utilizado) > 0 ? 'bg-success-50 text-success-700 border-success-200' : 'bg-neutral-50 text-neutral-400 border-neutral-100'"
-                        x-text="(p.costo - p.utilizado).toFixed(2)"
+                        class="text-[12px] font-black text-primary-900 tabular-nums"
+                        x-text="(p.costo - (p.credito || 0) - (p.efectivo || 0)).toFixed(2)"
                       ></span>
                     </td>
                   </tr>
                 </template>
               </tbody>
-              <tfoot class="bg-primary-900 text-white font-black">
-                <tr>
-                  <td colspan="3" class="px-4 py-4 text-right text-[10px] uppercase tracking-widest opacity-80">
-                    Total Devolución:
+              <tfoot class="border-t-2 border-primary-900">
+                <tr class="bg-neutral-50">
+                  <td colspan="2" class="px-3 py-3 text-right text-[9px] font-black uppercase text-neutral-400">
+                    Totales Consolidados:
                   </td>
-                  <td class="px-4 py-4 text-right text-base tracking-tighter tabular-nums">
-                    <span class="text-xs mr-0.5 opacity-60">Bs.</span>
-                    <span x-text="totalReembolso"></span>
+                  <td class="px-2 py-3 text-center font-black text-primary-700 tabular-nums">
+                    <span class="text-[8px] opacity-70">Bs.</span>
+                    <span x-text="totalCredito"></span>
+                  </td>
+                  <td class="px-2 py-3 text-center font-black text-neutral-600 tabular-nums">
+                    <span class="text-[8px] opacity-70">Bs.</span>
+                    <span x-text="totalEfectivo"></span>
+                  </td>
+                  <td class="px-2 py-3 text-center font-black text-primary-900 tabular-nums bg-primary-50">
+                    <span class="text-[8px] opacity-70">Bs.</span>
+                    <span
+                      x-text="(pasajes.reduce((acc, p) => acc + (p.costo - (p.credito||0) - (p.efectivo||0)), 0)).toFixed(2)"
+                    ></span>
                   </td>
                 </tr>
               </tfoot>
             </table>
           </div>
 
-          <!-- Final Amount Submission -->
-          <div class="bg-warning-50 p-6 rounded-md border-2 border-dashed border-warning-200 space-y-4">
-            <div class="flex items-center justify-between">
-              <div class="max-w-[280px]">
-                <label class="text-[10px] font-black text-warning-800 uppercase tracking-widest flex items-center gap-2">
-                  <i class="ph ph-money text-lg"></i>
-                  Monto Final de Liquidación
-                </label>
-                <p class="text-[10px] text-warning-700/80 font-bold leading-tight mt-1">
-                  Este monto será registrado formalmente y notificado al beneficiario para su depósito bancario.
+          <!-- Final Summary Visualizer -->
+          <div class="grid grid-cols-2 gap-4">
+            <div
+              class="bg-primary-600 p-4 rounded-md shadow-lg shadow-primary-200/50 flex items-center justify-between border-b-4 border-primary-800"
+            >
+              <div>
+                <p class="text-[9px] font-black text-primary-100 uppercase tracking-widest mb-1">Crédito a Generar (EMD):</p>
+                <p class="text-2xl font-black text-white tabular-nums">
+                  Bs.
+                  <span x-text="totalCredito"></span>
                 </p>
               </div>
-              <div class="relative w-48 group">
-                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <span class="text-warning-600 font-black text-xs uppercase">Bs.</span>
-                </div>
-                <input
-                  type="number"
-                  name="monto"
-                  step="0.01"
-                  min="0"
-                  :value="totalReembolso"
-                  readonly
-                  class="block w-full pl-12 pr-4 py-4 text-2xl font-black text-right text-warning-950 bg-white border-2 border-warning-400 rounded-md shadow-xl shadow-warning-200/50 group-hover:scale-[1.02] transition-transform"
-                />
+              <i class="ph ph-ticket text-4xl text-primary-400/40"></i>
+            </div>
+
+            <div
+              class="bg-warning-500 p-4 rounded-md shadow-lg shadow-warning-200/50 flex items-center justify-between border-b-4 border-warning-700"
+            >
+              <div>
+                <p class="text-[9px] font-black text-warning-50 uppercase tracking-widest mb-1">Devolución en Efectivo:</p>
+                <p class="text-2xl font-black text-white tabular-nums">
+                  Bs.
+                  <span x-text="totalEfectivo"></span>
+                </p>
               </div>
+              <i class="ph ph-bank text-4xl text-warning-300/40"></i>
             </div>
           </div>
+          <input type="hidden" name="monto" :value="totalEfectivo" />
 
           <!-- Actions -->
           <div class="flex items-center justify-end gap-3 pt-6 border-t border-neutral-100">

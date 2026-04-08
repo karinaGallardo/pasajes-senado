@@ -263,7 +263,8 @@ func (s Solicitud) GetConceptoCodigo() string {
 	if s.TipoSolicitud != nil && s.TipoSolicitud.ConceptoViaje != nil {
 		return s.TipoSolicitud.ConceptoViaje.Codigo
 	}
-	return ""
+	// Fallback al código de tipo si no tiene concepto cargado
+	return s.TipoSolicitudCodigo
 }
 
 func (s Solicitud) GetAmbitoViajeNombre() string {
