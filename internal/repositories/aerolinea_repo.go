@@ -21,13 +21,13 @@ func (r *AerolineaRepository) WithContext(ctx context.Context) *AerolineaReposit
 
 func (r *AerolineaRepository) FindAllActive(ctx context.Context) ([]models.Aerolinea, error) {
 	var aerolineas []models.Aerolinea
-	err := r.db.WithContext(ctx).Where("estado = ?", true).Find(&aerolineas).Error
+	err := r.db.WithContext(ctx).Where("estado = ?", true).Order("nombre ASC").Find(&aerolineas).Error
 	return aerolineas, err
 }
 
 func (r *AerolineaRepository) FindAll(ctx context.Context) ([]models.Aerolinea, error) {
 	var aerolineas []models.Aerolinea
-	err := r.db.WithContext(ctx).Find(&aerolineas).Error
+	err := r.db.WithContext(ctx).Order("nombre ASC").Find(&aerolineas).Error
 	return aerolineas, err
 }
 

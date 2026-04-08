@@ -65,7 +65,8 @@
               { id: '{{ .ID }}', ticket: '{{ .NumeroBillete }}', ruta: '{{ .GetRutaDisplay }}', costo: {{ .Costo }}, credito:
               {{ .MontoCredito }}, efectivo: {{ .MontoReembolso }}, detalles: [
               {{ range .DescargoTramos }}
-                { tipo: '{{ .Tipo }}', devo: {{ .EsDevolucion }}, mod: {{ .EsModificacion }}, nombre: '{{ .TramoNombre }}' },
+                { tipo: '{{ .Tipo }}', devo: {{ .EsDevolucion }}, mod: {{ .EsModificacion }}, nombre: '{{ .TramoNombre }}', seq:
+                {{ .Seq }} },
               {{ end }}
               ] },
             {{ end }}
@@ -118,7 +119,7 @@
                           <span
                             class="px-1 py-0.5 rounded text-[7px] font-black uppercase tracking-tighter border"
                             :class="d.devo ? 'bg-danger-50 text-danger-600 border-danger-100' : (d.mod ? 'bg-warning-50 text-warning-600 border-warning-100' : 'bg-success-50 text-success-600 border-success-100')"
-                            x-text="d.nombre + (d.devo ? ' (DEV)' : (d.mod ? ' (MOD)' : ''))"
+                            x-text="d.seq + '. ' + d.nombre + (d.devo ? ' (DEV)' : (d.mod ? ' (MOD)' : ''))"
                           ></span>
                         </template>
                       </div>

@@ -21,13 +21,13 @@ func (r *AgenciaRepository) WithContext(ctx context.Context) *AgenciaRepository 
 
 func (r *AgenciaRepository) FindAllActive(ctx context.Context) ([]models.Agencia, error) {
 	var agencias []models.Agencia
-	err := r.db.WithContext(ctx).Where("estado = ?", true).Find(&agencias).Error
+	err := r.db.WithContext(ctx).Where("estado = ?", true).Order("nombre ASC").Find(&agencias).Error
 	return agencias, err
 }
 
 func (r *AgenciaRepository) FindAll(ctx context.Context) ([]models.Agencia, error) {
 	var agencias []models.Agencia
-	err := r.db.WithContext(ctx).Find(&agencias).Error
+	err := r.db.WithContext(ctx).Order("nombre ASC").Find(&agencias).Error
 	return agencias, err
 }
 

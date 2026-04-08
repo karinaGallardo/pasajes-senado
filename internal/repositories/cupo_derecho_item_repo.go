@@ -41,7 +41,7 @@ func (r *CupoDerechoItemRepository) FindByHolderAndPeriodo(ctx context.Context, 
 		Preload("Solicitudes.Items.Estado").
 		Preload("Solicitudes.Items", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
 		Where("sen_asignado_id = ? AND gestion = ? AND mes = ?", userID, gestion, mes).
-		Order("seq ASC").
+		Order("fecha_desde ASC, seq ASC").
 		Find(&list).Error
 	return list, err
 }
@@ -53,7 +53,7 @@ func (r *CupoDerechoItemRepository) FindByHolderAndGestion(ctx context.Context, 
 		Preload("Solicitudes.TipoItinerario").
 		Preload("Solicitudes.Items", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
 		Where("sen_asignado_id = ? AND gestion = ?", userID, gestion).
-		Order("seq ASC").
+		Order("fecha_desde ASC, seq ASC").
 		Find(&list).Error
 	return list, err
 }
@@ -74,7 +74,7 @@ func (r *CupoDerechoItemRepository) FindForTitularByPeriodo(ctx context.Context,
 		Preload("Solicitudes.TipoItinerario").
 		Preload("Solicitudes.Items", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
 		Where("sen_titular_id = ? AND gestion = ? AND mes = ?", senadorID, gestion, mes).
-		Order("seq ASC").
+		Order("fecha_desde ASC, seq ASC").
 		Find(&list).Error
 	return list, err
 }
@@ -86,7 +86,7 @@ func (r *CupoDerechoItemRepository) FindForSuplenteByPeriodo(ctx context.Context
 		Preload("Solicitudes.TipoItinerario").
 		Preload("Solicitudes.Items", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
 		Where("sen_asignado_id = ? AND es_transferido = true AND gestion = ? AND mes = ?", beneficiarioID, gestion, mes).
-		Order("seq ASC").
+		Order("fecha_desde ASC, seq ASC").
 		Find(&list).Error
 	return list, err
 }
@@ -99,7 +99,7 @@ func (r *CupoDerechoItemRepository) FindForTitularByGestion(ctx context.Context,
 		Preload("Solicitudes.TipoItinerario").
 		Preload("Solicitudes.Items", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
 		Where("sen_titular_id = ? AND gestion = ?", senadorID, gestion).
-		Order("seq ASC").
+		Order("fecha_desde ASC, seq ASC").
 		Find(&list).Error
 	return list, err
 }
@@ -111,7 +111,7 @@ func (r *CupoDerechoItemRepository) FindForSuplenteByGestion(ctx context.Context
 		Preload("Solicitudes.TipoItinerario").
 		Preload("Solicitudes.Items", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
 		Where("sen_asignado_id = ? AND es_transferido = true AND gestion = ?", beneficiarioID, gestion).
-		Order("seq ASC").
+		Order("fecha_desde ASC, seq ASC").
 		Find(&list).Error
 	return list, err
 }
@@ -126,7 +126,7 @@ func (r *CupoDerechoItemRepository) FindByPeriodo(ctx context.Context, gestion, 
 		Preload("SenTitular").
 		Preload("SenAsignado").
 		Where("gestion = ? AND mes = ?", gestion, mes).
-		Order("seq ASC").
+		Order("fecha_desde ASC, seq ASC").
 		Find(&list).Error
 	return list, err
 }
@@ -142,7 +142,7 @@ func (r *CupoDerechoItemRepository) FindByID(ctx context.Context, id string) (*m
 		Preload("Solicitudes.Items.Estado").
 		Preload("Solicitudes.Items", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
 		First(&v, "id = ?", id).
-		Order("seq ASC").
+		Order("fecha_desde ASC, seq ASC").
 		Error
 	return &v, err
 }
@@ -162,7 +162,7 @@ func (r *CupoDerechoItemRepository) FindByCupoDerechoID(ctx context.Context, cup
 		Preload("Solicitudes.Items.Estado").
 		Preload("Solicitudes.Items", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
 		Where("cupo_derecho_id = ?", cupoDerechoID).
-		Order("seq ASC").
+		Order("fecha_desde ASC, seq ASC").
 		Find(&list).
 		Error
 	return list, err

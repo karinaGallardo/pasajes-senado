@@ -324,7 +324,6 @@ func (s *UsuarioService) SyncSenators(ctx context.Context) (dtos.SyncResult, err
 					titular, err := repoTx.FindByCI(ctx, titularCI)
 					if err == nil {
 						user.TitularID = &titular.ID
-						user.EncargadoID = titular.EncargadoID
 						repoTx.Save(ctx, user)
 					}
 				}
@@ -334,7 +333,6 @@ func (s *UsuarioService) SyncSenators(ctx context.Context) (dtos.SyncResult, err
 					suplente, err := repoTx.FindByCI(ctx, suplenteCI)
 					if err == nil {
 						suplente.TitularID = &user.ID
-						suplente.EncargadoID = user.EncargadoID
 						repoTx.Save(ctx, suplente)
 					}
 				}
@@ -383,7 +381,6 @@ func (s *UsuarioService) Update(ctx context.Context, usuario *models.Usuario) er
 		if usuario.Tipo == "SENADOR_TITULAR" {
 			suplente, err := repoTx.FindSuplenteByTitularID(ctx, usuario.ID)
 			if err == nil && suplente != nil {
-				suplente.EncargadoID = usuario.EncargadoID
 				if err := repoTx.Update(ctx, suplente); err != nil {
 					return err
 				}

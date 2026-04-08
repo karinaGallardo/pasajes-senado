@@ -380,9 +380,6 @@ func (ctrl *SolicitudOficialController) GetEditModal(c *gin.Context) {
 	tipos, _ := ctrl.tipoSolicitudService.GetByConcepto(c.Request.Context(), "OFICIAL")
 
 	// Items are now pre-sorted by the repository (tipo, fecha, created_at)
-	sortSlicePlaceholder := 0 // Ensuring manual removal of the next lines
-	_ = sortSlicePlaceholder
-
 	type tramoInicial struct {
 		ID           string `json:"id"`
 		Tipo         string `json:"tipo"`

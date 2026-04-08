@@ -49,7 +49,12 @@ func (r *CupoDerechoRepository) FindByTitularAndPeriodo(ctx context.Context, tit
 
 func (r *CupoDerechoRepository) FindByPeriodo(ctx context.Context, gestion, mes int) ([]models.CupoDerecho, error) {
 	var cupos []models.CupoDerecho
-	err := r.db.WithContext(ctx).Preload("SenTitular").Where("gestion = ? AND mes = ?", gestion, mes).Find(&cupos).Error
+	err := r.db.WithContext(ctx).
+		Preload("SenTitular").
+		Joins("JOIN usuarios ON usuarios.id = cupos_derecho.sen_titular_id").
+		Where("gestion = ? AND mes = ?", gestion, mes).
+		Order("usuarios.ap_paterno ASC, usuarios.ap_materno ASC, usuarios.nombres ASC").
+		Find(&cupos).Error
 	return cupos, err
 }
 

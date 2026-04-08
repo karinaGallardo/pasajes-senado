@@ -114,6 +114,7 @@ func (r *UsuarioRepository) SearchStaff(ctx context.Context, query string) ([]mo
 		Preload("Cargo").
 		Preload("Oficina").
 		Scopes(FilterByRoleType(models.RolFuncionario), SearchUsuario(query)).
+		Order("lastname ASC, firstname ASC").
 		Limit(20).
 		Find(&usuarios).Error
 	return usuarios, err
@@ -251,6 +252,7 @@ func (r *UsuarioRepository) FindByEncargadoID(ctx context.Context, encargadoID s
 		Preload("Origen").
 		Preload("Cargo").
 		Where("encargado_id = ?", encargadoID).
+		Order("lastname ASC, firstname ASC").
 		Find(&usuarios).
 		Error
 	return usuarios, err
@@ -273,7 +275,9 @@ func (r *UsuarioRepository) Restore(ctx context.Context, usuario *models.Usuario
 func (r *UsuarioRepository) FindAllSenators(ctx context.Context) ([]models.Usuario, error) {
 	var usuarios []models.Usuario
 	err := r.db.WithContext(ctx).
-		Where("tipo IN ?", []string{models.TipoSenadorTitular, models.TipoSenadorSuplente}).Find(&usuarios).Error
+		Where("tipo IN ?", []string{models.TipoSenadorTitular, models.TipoSenadorSuplente}).
+		Order("lastname ASC, firstname ASC").
+		Find(&usuarios).Error
 	return usuarios, err
 }
 
