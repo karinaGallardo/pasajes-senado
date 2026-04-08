@@ -478,16 +478,9 @@ func (ctrl *DescargoDerechoController) GetModalLiquidar(c *gin.Context) {
 		return
 	}
 
-	// Cargar la solicitud con sus items y pasajes para la conciliación
-	solicitud, err := ctrl.solicitudService.GetByID(c.Request.Context(), descargo.SolicitudID)
-	if err != nil {
-		log.Printf("Error cargando solicitud para liquidación: %v", err)
-	}
-	descargo.Solicitud = solicitud
-
 	utils.Render(c, "descargo/components/modal_liquidar", gin.H{
 		"Descargo":   descargo,
-		"Solicitud":  solicitud,
+		"ActionURL":  fmt.Sprintf("/descargos/derecho/%s/liquidar", id),
 		"csrf_token": c.GetString("csrf_token"),
 	})
 }

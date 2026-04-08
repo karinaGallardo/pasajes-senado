@@ -9,6 +9,7 @@ import (
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/services"
 	"sistema-pasajes/internal/utils"
+	"strconv"
 	"strings"
 	"time"
 
@@ -399,4 +400,158 @@ func (ctrl *DescargoOficialController) NuevaFila(c *gin.Context) {
 			EsModificacion:  false,
 		},
 	})
+}
+
+func (ctrl *DescargoOficialController) GetModalLiquidar(c *gin.Context) {
+	id := c.Param("id")
+	descargo, err := ctrl.descargoService.GetByID(c.Request.Context(), id)
+	if err != nil {
+		c.String(http.StatusNotFound, "Descargo no encontrado")
+		return
+	}
+
+	utils.Render(c, "descargo/components/modal_liquidar", gin.H{
+		"Descargo":   descargo,
+		"ActionURL":  fmt.Sprintf("/descargos/oficial/%s/liquidar", id),
+		"csrf_token": c.GetString("csrf_token"),
+	})
+}
+
+func (ctrl *DescargoOficialController) Liquidar(c *gin.Context) {
+	id := c.Param("id")
+	authUser := appcontext.AuthUser(c)
+	if authUser == nil || !authUser.IsAdminOrResponsable() {
+		c.Redirect(http.StatusFound, "/auth/login")
+		return
+	}
+
+	var req dtos.LiquidarDescargoRequest
+	if err := c.ShouldBind(&req); err != nil {
+		log.Printf("Error bind liquidación oficial: %v", err)
+		c.Redirect(http.StatusFound, "/descargos/oficial/"+id+"?error=MontoInvalido")
+		return
+	}
+
+	var montos []float64
+	for _, mStr := range req.CostosUtilizacion {
+		m, _ := strconv.ParseFloat(mStr, 64)
+		montos = append(montos, m)
+	}
+
+	if err := ctrl.descargoService.Liquidate(c.Request.Context(), id, req.PasajeIDs, montos, authUser.ID); err != nil {
+		log.Printf("Error liquidando descargo oficial: %v", err)
+		c.Redirect(http.StatusFound, "/descargos/oficial/"+id+"?error=ErrorLiquidacion")
+		return
+	}
+
+	c.Redirect(http.StatusFound, "/descargos/oficial/"+id)
+}
+
+func (ctrl *DescargoOficialController) GetModalPago(c *gin.Context) {
+	id := c.Param("id")
+	descargo, err := ctrl.descargoService.GetByID(c.Request.Context(), id)
+	if err != nil {
+		c.String(http.StatusNotFound, "Descargo no encontrado")
+		return
+	}
+
+	utils.Render(c, "descargo/components/modal_reportar_pago", gin.H{
+		"Descargo":   descargo,
+		"ActionURL":  "/descargos/oficial/" + id + "/pago",
+		"csrf_token": c.GetString("csrf_token"),
+	})
+}
+
+func (ctrl *DescargoOficialController) ReportarPago(c *gin.Context) {
+	id := c.Param("id")
+	authUser := appcontext.AuthUser(c)
+	if authUser == nil {
+		c.Redirect(http.StatusFound, "/auth/login")
+		return
+	}
+
+	file, err := c.FormFile("comprobante")
+	if err != nil {
+		c.Redirect(http.StatusFound, "/descargos/oficial/"+id+"?error=ArchivoRequerido")
+		return
+	}
+
+	// Guardar el archivo de comprobante
+	timestamp := time.Now().UnixNano()
+	savedPath, err := utils.SaveUploadedFile(c, file, "uploads/pagos", fmt.Sprintf("pago_oficial_%d_", timestamp))
+	if err != nil {
+		c.Redirect(http.StatusFound, "/descargos/oficial/"+id+"?error=ErrorArchivo")
+		return
+	}
+
+	if err := ctrl.descargoService.ReportPayment(c.Request.Context(), id, savedPath, authUser.ID); err != nil {
+		c.Redirect(http.StatusFound, "/descargos/oficial/"+id+"?error=ErrorProceso")
+		return
+	}
+
+	c.Redirect(http.StatusFound, "/descargos/oficial/"+id)
+}
+
+func (ctrl *DescargoOficialController) Finalize(c *gin.Context) {
+	id := c.Param("id")
+	authUser := appcontext.AuthUser(c)
+	if authUser == nil || !authUser.IsAdminOrResponsable() {
+		c.Redirect(http.StatusFound, "/auth/login")
+		return
+	}
+
+	if err := ctrl.descargoService.Finalize(c.Request.Context(), id, authUser.ID); err != nil {
+		c.Redirect(http.StatusFound, "/descargos/oficial/"+id+"?error=ErrorCierre")
+		return
+	}
+
+	c.Redirect(http.StatusFound, "/descargos/oficial/"+id)
+}
+
+func (ctrl *DescargoOficialController) RevertLiquidation(c *gin.Context) {
+	id := c.Param("id")
+	authUser := appcontext.AuthUser(c)
+	if authUser == nil || !authUser.IsAdminOrResponsable() {
+		c.Redirect(http.StatusFound, "/auth/login")
+		return
+	}
+
+	if err := ctrl.descargoService.RevertLiquidation(c.Request.Context(), id, authUser.ID); err != nil {
+		c.Redirect(http.StatusFound, "/descargos/oficial/"+id+"?error=ErrorReversion")
+		return
+	}
+
+	c.Redirect(http.StatusFound, "/descargos/oficial/"+id)
+}
+
+func (ctrl *DescargoOficialController) RevertPayment(c *gin.Context) {
+	id := c.Param("id")
+	authUser := appcontext.AuthUser(c)
+	if authUser == nil || !authUser.IsAdminOrResponsable() {
+		c.Redirect(http.StatusFound, "/auth/login")
+		return
+	}
+
+	if err := ctrl.descargoService.RevertPayment(c.Request.Context(), id, authUser.ID); err != nil {
+		c.Redirect(http.StatusFound, "/descargos/oficial/"+id+"?error=ErrorReversion")
+		return
+	}
+
+	c.Redirect(http.StatusFound, "/descargos/oficial/"+id)
+}
+
+func (ctrl *DescargoOficialController) RevertFinalization(c *gin.Context) {
+	id := c.Param("id")
+	authUser := appcontext.AuthUser(c)
+	if authUser == nil || !authUser.IsAdminOrResponsable() {
+		c.Redirect(http.StatusFound, "/auth/login")
+		return
+	}
+
+	if err := ctrl.descargoService.RevertFinalization(c.Request.Context(), id, authUser.ID); err != nil {
+		c.Redirect(http.StatusFound, "/descargos/oficial/"+id+"?error=ErrorReversion")
+		return
+	}
+
+	c.Redirect(http.StatusFound, "/descargos/oficial/"+id)
 }

@@ -126,6 +126,16 @@ func SetupRoutes(r *gin.Engine, container *app.Container, loginLimiter *middlewa
 		protected.POST("/descargos/oficial/:id/revertir-aprobacion", descargoOficialCtrl.RevertApproval)
 		protected.GET("/descargos/oficial/nueva-fila", descargoOficialCtrl.NuevaFila)
 
+		// Liquidación Financiera Oficial
+		protected.GET("/descargos/oficial/:id/modal-liquidar", descargoOficialCtrl.GetModalLiquidar)
+		protected.POST("/descargos/oficial/:id/liquidar", descargoOficialCtrl.Liquidar)
+		protected.GET("/descargos/oficial/:id/modal-pago", descargoOficialCtrl.GetModalPago)
+		protected.POST("/descargos/oficial/:id/pago", descargoOficialCtrl.ReportarPago)
+		protected.POST("/descargos/oficial/:id/finalizar", descargoOficialCtrl.Finalize)
+		protected.POST("/descargos/oficial/:id/revertir-liquidacion", descargoOficialCtrl.RevertLiquidation)
+		protected.POST("/descargos/oficial/:id/revertir-pago", descargoOficialCtrl.RevertPayment)
+		protected.POST("/descargos/oficial/:id/revertir-finalizacion", descargoOficialCtrl.RevertFinalization)
+
 		protected.POST("/solicitudes/oficial/:id/actualizar", solicitudOficialCtrl.Update)
 		protected.POST("/solicitudes/oficial", solicitudOficialCtrl.Store)
 		protected.POST("/solicitudes/oficial/:id/aprobar", solicitudOficialCtrl.Approve)

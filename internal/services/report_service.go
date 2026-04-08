@@ -709,7 +709,54 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 	if !hasReturns {
 		s.drawReturnTableSummarized(pdf, tr, "", "", "", 0)
 	}
-	pdf.Ln(10)
+	pdf.Ln(4)
+
+	// --- NUEVA SECCIÓN: LIQUIDACIÓN FINANCIERA ---
+	pdf.SetFont("Arial", "B", 9)
+	pdf.SetFillColor(240, 240, 240)
+	pdf.CellFormat(190, 6, tr(" LIQUIDACIÓN FINANCIERA Y RESPALDO DE DEPÓSITO"), "1", 1, "L", true, 0, "")
+
+	// Calcular totales para el cuadro de texto
+	totalEmitido := 0.0
+	totalUtilizado := 0.0
+	if descargo.Solicitud != nil {
+		for _, item := range descargo.Solicitud.Items {
+			for _, p := range item.Pasajes {
+				totalEmitido += p.Costo
+				totalUtilizado += p.CostoUtilizacion
+			}
+		}
+	}
+
+	pdf.SetFont("Arial", "", 8)
+	pdf.CellFormat(95, 6, tr(" Total Valor de Boletos Emitidos: Bs. ")+fmt.Sprintf("%.2f", totalEmitido), "L,R", 0, "L", false, 0, "")
+	pdf.CellFormat(95, 6, tr(" Total Valor Utilizado (Consumo Real): Bs. ")+fmt.Sprintf("%.2f", totalUtilizado), "R", 1, "L", false, 0, "")
+
+	pdf.SetFont("Arial", "B", 8)
+	pdf.CellFormat(190, 6, tr(" MONTO LÍQUIDO A DEVOLVER AL SENADO: Bs. ")+fmt.Sprintf("%.2f", descargo.MontoDevolucion), "L,R,B", 1, "L", false, 0, "")
+
+	pdf.Ln(6)
+
+	// --- ANEXO AUTOMÁTICO DEL COMPROBANTE DE DEPÓSITO ---
+	if descargo.MontoDevolucion > 0 && descargo.ComprobantePago != "" {
+		filePath := descargo.ComprobantePago
+		// Solo anexamos si el archivo existe
+		if _, err := os.Stat(filePath); err == nil {
+			lowerPath := strings.ToLower(filePath)
+			if strings.HasSuffix(lowerPath, ".jpg") || strings.HasSuffix(lowerPath, ".jpeg") || strings.HasSuffix(lowerPath, ".png") {
+				pdf.AddPage()
+				pdf.SetFont("Arial", "B", 10)
+				pdf.CellFormat(190, 8, tr("ANEXO: COMPROBANTE DE DEPÓSITO BANCARIO"), "B", 1, "C", false, 0, "")
+				pdf.Ln(5)
+
+				// Intentamos colocar la imagen centrada y ajustada
+				var opt gofpdf.ImageOptions
+				pdf.ImageOptions(filePath, 10, 30, 190, 0, false, opt, 0, "")
+			}
+			// Nota: Para anexar PDFs se requeriría una librería de merge como pdfcpu,
+			// de momento manejamos imágenes que es lo más común desde móviles.
+		}
+	}
 
 	sigY := 220.0
 	pdf.SetY(sigY)
@@ -1060,6 +1107,37 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 		s.drawViaticosTable(pdf, tr, solicitud.Viaticos)
 	}
 
+	pdf.Ln(4)
+
+	// --- SECCIÓN DE LIQUIDACIÓN FINANCIERA (Igual al PV-05) ---
+	if descargo.MontoDevolucion > 0 {
+		pdf.SetX(3)
+		pdf.SetFont("Arial", "B", 10)
+		pdf.SetFillColor(240, 240, 240)
+		pdf.CellFormat(210, 8, tr(" LIQUIDACIÓN FINANCIERA (CONCILIACIÓN DE COSTOS DE PASAJES)"), "1", 1, "L", true, 0, "")
+
+		totalEmitido := 0.0
+		totalUtilizado := 0.0
+		if descargo.Solicitud != nil {
+			for _, item := range descargo.Solicitud.Items {
+				for _, p := range item.Pasajes {
+					totalEmitido += p.Costo
+					totalUtilizado += p.CostoUtilizacion
+				}
+			}
+		}
+
+		pdf.SetX(3)
+		pdf.SetFont("Arial", "", 9)
+		pdf.CellFormat(105, 8, tr(" Total Valor Boletos Emitidos: Bs. ")+fmt.Sprintf("%.2f", totalEmitido), "L,R,B", 0, "L", false, 0, "")
+		pdf.CellFormat(105, 8, tr(" Total Consumo Real (Utilización): Bs. ")+fmt.Sprintf("%.2f", totalUtilizado), "R,B", 1, "L", false, 0, "")
+
+		pdf.SetX(3)
+		pdf.SetFont("Arial", "B", 10)
+		pdf.CellFormat(210, 8, tr(" MONTO LÍQUIDO A REINTEGRAR A LA C.U.T.: Bs. ")+fmt.Sprintf("%.2f", descargo.MontoDevolucion), "L,R,B", 1, "L", false, 0, "")
+		pdf.Ln(4)
+	}
+
 	pdf.SetX(3)
 	pdf.SetFont("Arial", "B", 9)
 	pdf.CellFormat(210, 6, tr(" DEVOLUCIÓN DE PASAJES (si aplica)"), "B", 1, "L", false, 0, "")
@@ -1252,6 +1330,15 @@ func (s *ReportService) GeneratePV05Complete(ctx context.Context, descargo *mode
 		}
 	}
 
+	// 2.3 Comprobante de Depósito (Si es PDF se une, si es imagen ya se incrustó en el base)
+	if descargo.MontoDevolucion > 0 && descargo.ComprobantePago != "" {
+		if strings.HasSuffix(strings.ToLower(descargo.ComprobantePago), ".pdf") {
+			if _, err := os.Stat(descargo.ComprobantePago); err == nil {
+				filesToMerge = append(filesToMerge, descargo.ComprobantePago)
+			}
+		}
+	}
+
 	// 3. Si solo hay un archivo (el base), retornarlo directamente
 	if len(filesToMerge) == 1 {
 		data, err := os.ReadFile(tmpBase.Name())
@@ -1321,6 +1408,15 @@ func (s *ReportService) GeneratePV06Complete(ctx context.Context, descargo *mode
 		if det.ArchivoPaseAbordo != "" {
 			if _, err := os.Stat(det.ArchivoPaseAbordo); err == nil {
 				filesToMerge = append(filesToMerge, det.ArchivoPaseAbordo)
+			}
+		}
+	}
+
+	// 2.3 Comprobante de Depósito (Si es PDF se une, si es imagen ya se incrustó en el base)
+	if descargo.MontoDevolucion > 0 && descargo.ComprobantePago != "" {
+		if strings.HasSuffix(strings.ToLower(descargo.ComprobantePago), ".pdf") {
+			if _, err := os.Stat(descargo.ComprobantePago); err == nil {
+				filesToMerge = append(filesToMerge, descargo.ComprobantePago)
 			}
 		}
 	}

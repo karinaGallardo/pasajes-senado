@@ -53,17 +53,17 @@
 
         <!-- Form Liquidación con Tabla dinámica -->
         <form
-          action="/descargos/derecho/{{ .Descargo.ID }}/liquidar"
-          method="POST"
+          hx-post="{{ .ActionURL }}"
+          hx-target="#modal-container"
+          hx-swap="innerHTML"
           class="p-6 pt-2 space-y-6"
           x-data="{
             loading: false,
             pasajes: [
-              {{ range .Solicitud.Items }}
+              {{ range .Descargo.Solicitud.Items }}
             {{ range .Pasajes }}
-              { id: '{{ .ID }}', ticket: '{{ .NumeroBillete }}', ruta:
-              '{{ if .RutaPasaje }}{{ .RutaPasaje.Origen.IATA }}-{{ .RutaPasaje.Destino.IATA }}{{ else }}N/A{{ end }}', costo:
-              {{ .Costo }}, utilizado: {{ .CostoUtilizacion }} },
+              { id: '{{ .ID }}', ticket: '{{ .NumeroBillete }}', ruta: '{{ .GetRutaDisplay }}', costo: {{ .Costo }}, utilizado:
+              {{ if .CostoUtilizacion }}{{ .CostoUtilizacion }}{{ else }}{{ .Costo }}{{ end }} },
             {{ end }}
           {{ end }}
             ],
