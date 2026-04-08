@@ -53,35 +53,35 @@ h1, h2, h3 {
   background-color: theme('colors.secondary.100');
   color: theme('colors.secondary.600');
   border: 1px solid theme('colors.secondary.700');
-  @apply px-2 py-0.5 rounded-full text-[10px] font-bold uppercase;
+  @apply px-2 py-0.5 rounded-sm text-[10px] font-bold uppercase;
 }
 
 .status-badge-APROBADO {
   background-color: theme('colors.success.100');
   color: theme('colors.success.600');
   border: 1px solid theme('colors.success.500');
-  @apply px-2 py-0.5 rounded-full text-[10px] font-bold uppercase;
+  @apply px-2 py-0.5 rounded-sm text-[10px] font-bold uppercase;
 }
 
 .status-badge-RECHAZADO {
   background-color: theme('colors.danger.100');
   color: theme('colors.danger.600');
   border: 1px solid theme('colors.danger.500');
-  @apply px-2 py-0.5 rounded-full text-[10px] font-bold uppercase;
+  @apply px-2 py-0.5 rounded-sm text-[10px] font-bold uppercase;
 }
 
 .status-badge-EMITIDO {
   background-color: theme('colors.info.100');
   color: theme('colors.info.DEFAULT');
   border: 1px solid theme('colors.info.500');
-  @apply px-2 py-0.5 rounded-full text-[10px] font-bold uppercase;
+  @apply px-2 py-0.5 rounded-sm text-[10px] font-bold uppercase;
 }
 
 .status-badge-REGISTRADO {
   background-color: theme('colors.primary.100');
   color: theme('colors.primary.DEFAULT');
   border: 1px solid theme('colors.primary.200');
-  @apply px-2 py-0.5 rounded-full text-[10px] font-bold uppercase;
+  @apply px-2 py-0.5 rounded-sm text-[10px] font-bold uppercase;
 }
 
 /* Estándar de Botones Pasajes GO */
@@ -132,7 +132,7 @@ h1, h2, h3 {
   .htmx-request.btn::after, 
   .btn.loading::after {
     content: "";
-    @apply absolute inset-0 m-auto w-4 h-4 border-2 border-neutral-400/30 border-t-neutral-600 rounded-full animate-spin;
+    @apply absolute inset-0 m-auto w-4 h-4 border-2 border-neutral-400/30 border-t-neutral-600 rounded-md animate-spin;
   }
   
   .btn-primary.htmx-request::after, .btn-primary.loading::after,

@@ -195,3 +195,14 @@ type DescargoEditData struct {
 	Ida       []models.DescargoTramo
 	Vuelta    []models.DescargoTramo
 }
+
+// LiquidarDescargoRequest estructura para la liquidación financiera detallada
+type LiquidarDescargoRequest struct {
+	PasajeIDs         []string `form:"pasaje_id[]"`
+	CostosUtilizacion []string `form:"pasaje_utilizado[]"`
+}
+
+// ReportarPagoRequest estructura para que el beneficiario reporte su depósito
+type ReportarPagoRequest struct {
+	Comprobante *multipart.FileHeader `form:"comprobante" binding:"required"`
+}

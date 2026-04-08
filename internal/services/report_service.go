@@ -602,10 +602,10 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 
 	// Group by Ticket consolidate devo/mod status
 	type ItinerarioReporte struct {
-		Billete         string
-		Tramos          []models.DescargoTramo
-		EsDevolucion    bool
-		EsModificacion  bool
+		Billete        string
+		Tramos         []models.DescargoTramo
+		EsDevolucion   bool
+		EsModificacion bool
 	}
 	itinerariosMap := make(map[string]*ItinerarioReporte)
 	var itinerariosOrder []string
@@ -679,7 +679,7 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 			}
 
 			// Find cost and full route from Pasaje
-var cost float64
+			var cost float64
 			fullRoute := ""
 			if descargo.Solicitud != nil {
 				for _, item := range descargo.Solicitud.Items {
@@ -1068,8 +1068,8 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 
 	// Group by Ticket consolidate devo/mod status
 	type ItinerarioReporte struct {
-		Billete         string
-		Tramos          []models.DescargoTramo
+		Billete string
+		Tramos  []models.DescargoTramo
 	}
 	itinerariosMap := make(map[string]*ItinerarioReporte)
 	var itinerariosOrder []string
@@ -1113,7 +1113,7 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 			}
 
 			// Find cost and full route from Pasaje
-var cost float64
+			var cost float64
 			fullRoute := ""
 			if descargo.Solicitud != nil {
 				for _, item := range descargo.Solicitud.Items {
@@ -1775,11 +1775,11 @@ func (s *ReportService) drawSolicitudSegment(ctx context.Context, pdf *gofpdf.Fp
 		pdf.SetFont("Arial", "", 7)
 
 		aerolineaNombre := aerolineaSugerida
-		if aerolinea, err := s.aerolineaRepo.FindByID(ctx, aerolineaSugerida); err == nil {
-			if aerolinea.Sigla != "" {
-				aerolineaNombre = aerolinea.Sigla
+		if item.Aerolinea != nil {
+			if item.Aerolinea.Sigla != "" {
+				aerolineaNombre = item.Aerolinea.Sigla
 			} else {
-				aerolineaNombre = aerolinea.Nombre
+				aerolineaNombre = item.Aerolinea.Nombre
 			}
 		}
 

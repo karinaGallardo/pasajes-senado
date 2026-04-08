@@ -5,10 +5,13 @@ import "time"
 type EstadoDescargo string
 
 const (
-	EstadoDescargoBorrador   EstadoDescargo = "BORRADOR"
-	EstadoDescargoEnRevision EstadoDescargo = "EN_REVISION"
-	EstadoDescargoRechazado  EstadoDescargo = "RECHAZADO"
-	EstadoDescargoAprobado   EstadoDescargo = "APROBADO"
+	EstadoDescargoBorrador      EstadoDescargo = "BORRADOR"
+	EstadoDescargoEnRevision    EstadoDescargo = "EN_REVISION"
+	EstadoDescargoRechazado     EstadoDescargo = "RECHAZADO"
+	EstadoDescargoAprobado      EstadoDescargo = "APROBADO"
+	EstadoDescargoPendientePago EstadoDescargo = "PENDIENTE_PAGO"
+	EstadoDescargoPagado        EstadoDescargo = "PAGO_REPORTADO"
+	EstadoDescargoFinalizado    EstadoDescargo = "FINALIZADO"
 )
 
 type DescargoPermissions struct {
@@ -18,6 +21,11 @@ type DescargoPermissions struct {
 	CanReject  bool
 	CanRevert  bool
 	CanPrint   bool
+
+	// Liquidación
+	CanLiquidate     bool
+	CanUploadPayment bool
+	CanFinalize      bool
 }
 
 type Descargo struct {
@@ -36,6 +44,11 @@ type Descargo struct {
 	Tramos []DescargoTramo `gorm:"foreignKey:DescargoID"`
 
 	Estado EstadoDescargo `gorm:"size:50;default:'BORRADOR'"`
+
+	// --- Liquidación Financiera ---
+	MontoDevolucion float64    `gorm:"column:monto_devolucion;type:decimal(10,2);default:0"`
+	ComprobantePago string     `gorm:"size:255"` // Ruta al archivo de depósito
+	FechaPago       *time.Time `gorm:"type:timestamp"`
 
 	// Detalle opcional para informes oficiales (PV-06)
 	Oficial *DescargoOficial `gorm:"foreignKey:DescargoID"`
@@ -219,6 +232,30 @@ func (e EstadoDescargo) Info() EstadoDescargoInfo {
 			BadgeClass:  "bg-success-50 text-success-700 border-success-100",
 			Icon:        "ph ph-check-circle",
 		}
+	case EstadoDescargoPendientePago:
+		return EstadoDescargoInfo{
+			Nombre:      "Pendiente de Pago",
+			Descripcion: "El monto de devolución ha sido fijado. El beneficiario debe realizar el depósito bancario.",
+			ColorClass:  "border-primary-400",
+			BadgeClass:  "bg-primary-50 text-primary-700 border-primary-100",
+			Icon:        "ph ph-bank",
+		}
+	case EstadoDescargoPagado:
+		return EstadoDescargoInfo{
+			Nombre:      "Pago Reportado",
+			Descripcion: "El beneficiario ha subido el comprobante de pago. Pendiente de verificación por Tesorería.",
+			ColorClass:  "border-info-400",
+			BadgeClass:  "bg-info-50 text-info-700 border-info-100",
+			Icon:        "ph ph-file-arrow-up",
+		}
+	case EstadoDescargoFinalizado:
+		return EstadoDescargoInfo{
+			Nombre:      "Finalizado",
+			Descripcion: "Proceso de descargo y liquidación cerrado satisfactoriamente.",
+			ColorClass:  "border-neutral-900",
+			BadgeClass:  "bg-neutral-900 text-white border-neutral-800",
+			Icon:        "ph ph-flag-checkered",
+		}
 	default:
 		return EstadoDescargoInfo{
 			Nombre:      string(e),
@@ -271,6 +308,11 @@ func (d Descargo) GetPermissions(u ...*Usuario) DescargoPermissions {
 		CanReject:  d.CanReject(user),
 		CanRevert:  d.CanRevert(user),
 		CanPrint:   d.Estado != EstadoDescargoBorrador,
+
+		// Liquidación
+		CanLiquidate:     d.CanLiquidate(user),
+		CanUploadPayment: d.CanUploadPayment(user),
+		CanFinalize:      d.CanFinalize(user),
 	}
 }
 
@@ -324,6 +366,18 @@ func (d Descargo) CanPrint(user *Usuario) bool {
 	return d.Estado != EstadoDescargoBorrador
 }
 
+func (d Descargo) CanLiquidate(user *Usuario) bool {
+	// Solo el responsable puede liquidar cuando está aprobado el informe del descargo
+	return d.Estado == EstadoDescargoAprobado && user.IsAdminOrResponsable()
+}
+
+func (d Descargo) CanUploadPayment(user *Usuario) bool {
+	if d.Estado != EstadoDescargoPendientePago {
+		return false
+	}
+	return d.isOwnerOrAdmin(user)
+}
+
 func (d Descargo) isOwnerOrAdmin(user *Usuario) bool {
 	if user == nil {
 		return false
@@ -340,7 +394,7 @@ func (d Descargo) isOwnerOrAdmin(user *Usuario) bool {
 			return true
 		}
 		// El Asistente/Encargado asignado al titular del viaje
-		if d.Solicitud.Usuario.EncargadoID != nil && *d.Solicitud.Usuario.EncargadoID == user.ID {
+		if d.Solicitud.Usuario.ID != "" && d.Solicitud.Usuario.EncargadoID != nil && *d.Solicitud.Usuario.EncargadoID == user.ID {
 			return true
 		}
 	}
@@ -415,4 +469,47 @@ func (d Descargo) GetTotalReintegroPasajes() float64 {
 		}
 	}
 	return totalValue
+}
+
+func (d Descargo) CanFinalize(u *Usuario) bool {
+	if u == nil {
+		return false
+	}
+	return u.IsAdminOrResponsable() && d.Estado == EstadoDescargoPagado
+}
+
+func (d Descargo) CanRevertPayment(u *Usuario) bool {
+	if u == nil {
+		return false
+	}
+	return u.IsAdminOrResponsable() && d.Estado == EstadoDescargoPagado
+}
+
+func (d Descargo) CanRevertLiquidation(u *Usuario) bool {
+	if u == nil {
+		return false
+	}
+	return u.IsAdminOrResponsable() && d.Estado == EstadoDescargoPendientePago
+}
+
+func (d Descargo) ShouldShowFinancialSection() bool {
+	if d.MontoDevolucion > 0 {
+		return true
+	}
+	return d.Estado == EstadoDescargoPendientePago || d.Estado == EstadoDescargoPagado || d.Estado == EstadoDescargoFinalizado
+}
+
+func (d Descargo) ShouldShowPaymentProof() bool {
+	// Solo si hay un monto real que devolver
+	if d.MontoDevolucion <= 0 {
+		return false
+	}
+	return d.Estado == EstadoDescargoPagado || d.Estado == EstadoDescargoFinalizado
+}
+
+func (d Descargo) CanRevertFinalization(u *Usuario) bool {
+	if u == nil {
+		return false
+	}
+	return u.IsAdminOrResponsable() && d.Estado == EstadoDescargoFinalizado
 }

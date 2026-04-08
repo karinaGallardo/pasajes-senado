@@ -180,7 +180,7 @@
                     name="q"
                     value="{{ .SearchTerm }}"
                     autocomplete="off"
-                    class="block w-full pl-10 pr-3 py-2 border border-base rounded-lg leading-5 bg-muted placeholder-neutral-500 focus:outline-none focus:placeholder-neutral-400 focus:border-primary focus:ring-1 focus:ring-primary sm:text-sm"
+                    class="block w-full pl-10 pr-3 py-2 border border-base rounded-md leading-5 bg-muted placeholder-neutral-500 focus:outline-none focus:placeholder-neutral-400 focus:border-primary focus:ring-1 focus:ring-primary sm:text-sm"
                     placeholder="Buscar trámites, personas..."
                     @keydown.enter="$event.preventDefault()"
                   />
@@ -191,7 +191,7 @@
               <div class="ml-4 flex items-center space-x-4">
                 <!-- Clock and Date -->
                 <div
-                  class="hidden lg:flex items-center space-x-3 px-4 py-2 bg-muted rounded-xl border border-base/50 text-main shadow-sm"
+                  class="hidden lg:flex items-center space-x-3 px-4 py-2 bg-muted rounded-md border border-base/50 text-main shadow-sm"
                   x-data="{
                     time: '',
                     date: '',
@@ -223,7 +223,7 @@
                 >
                   <div class="flex items-center gap-2 animate-pulse">
                     <div
-                      class="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-50 text-neutral-300 rounded-lg border border-neutral-100 w-32 justify-center"
+                      class="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-50 text-neutral-300 rounded-md border border-neutral-100 w-32 justify-center"
                     >
                       <i class="ph ph-clock-counter-clockwise text-lg opacity-40"></i>
                       <span class="text-xs font-bold w-5 text-center text-neutral-200">00</span>
@@ -232,7 +232,7 @@
                       </span>
                     </div>
                     <div
-                      class="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-50 text-neutral-300 rounded-lg border border-neutral-100 w-32 justify-center"
+                      class="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-50 text-neutral-300 rounded-md border border-neutral-100 w-32 justify-center"
                     >
                       <i class="ph ph-article text-lg opacity-40"></i>
                       <span class="text-xs font-bold w-5 text-center text-neutral-200">00</span>

@@ -87,6 +87,16 @@ func SetupRoutes(r *gin.Engine, container *app.Container, loginLimiter *middlewa
 		protected.POST("/descargos/derecho/:id/revertir-aprobacion", descargoDerechoCtrl.RevertApproval)
 		protected.GET("/descargos/derecho/nueva-fila", descargoDerechoCtrl.NuevaFila)
 
+		// Liquidación Financiera
+		protected.GET("/descargos/derecho/:id/modal-liquidar", descargoDerechoCtrl.GetModalLiquidar)
+		protected.POST("/descargos/derecho/:id/liquidar", descargoDerechoCtrl.Liquidar)
+		protected.GET("/descargos/derecho/:id/modal-pago", descargoDerechoCtrl.GetModalPago)
+		protected.POST("/descargos/derecho/:id/pago", descargoDerechoCtrl.ReportarPago)
+		protected.POST("/descargos/derecho/:id/finalizar", descargoDerechoCtrl.Finalize)
+		protected.POST("/descargos/derecho/:id/revertir-liquidacion", descargoDerechoCtrl.RevertLiquidation)
+		protected.POST("/descargos/derecho/:id/revertir-pago", descargoDerechoCtrl.RevertPayment)
+		protected.POST("/descargos/derecho/:id/revertir-finalizacion", descargoDerechoCtrl.RevertFinalization)
+
 		protected.POST("/solicitudes/derecho/:id/actualizar", solicitudDerechoCtrl.Update)
 		protected.POST("/solicitudes/derecho/:id/aprobar", solicitudDerechoCtrl.Approve)
 		protected.POST("/solicitudes/derecho/:id/revertir-aprobacion", solicitudDerechoCtrl.RevertApproval)

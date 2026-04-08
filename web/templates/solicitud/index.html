@@ -4,7 +4,7 @@
 
   <div class="space-y-6">
     <!-- Header Actions -->
-    <div class="flex justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-neutral-200">
+    <div class="flex justify-between items-center bg-white p-4 rounded-md shadow-sm border border-neutral-200">
       <div>
         <h2 class="text-xl font-bold text-neutral-800">{{ .Title }}</h2>
         <p class="text-sm text-neutral-500">Gestione las solicitudes de viaje</p>
@@ -21,7 +21,7 @@
     <div class="flex flex-wrap gap-2 pb-2 border-b border-neutral-100">
       <a
         href="{{ .LinkBase }}"
-        class="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-full transition-all {{ if eq .Status `` }}
+        class="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-md transition-all {{ if eq .Status `` }}
           bg-neutral-800 text-white shadow-sm
         {{ else }}
           bg-white text-neutral-500 border border-neutral-200 hover:bg-neutral-50
@@ -35,7 +35,7 @@
       {{ range .AvailableStatuses }}
         <a
           href="{{ $linkBase }}?estado={{ .Codigo }}"
-          class="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-full transition-all {{ if eq $currentStatus .Codigo }}
+          class="px-3 py-1.5 text-[10px] font-black uppercase tracking-widest rounded-md transition-all {{ if eq $currentStatus .Codigo }}
             {{ .Class }} text-white shadow-sm
           {{ else }}
             bg-white text-neutral-500 border border-neutral-200 hover:bg-neutral-50
@@ -47,7 +47,7 @@
     </div>
 
     <!-- Table -->
-    <div class="bg-white rounded-lg shadow overflow-x-auto border border-neutral-200">
+    <div class="bg-white rounded-md shadow overflow-x-auto border border-neutral-200">
       <!-- Loader indicator (can reuse existing or add a simple one) -->
       <div id="table-loader" class="htmx-indicator w-full py-4 flex justify-center items-center">
         <i class="ph ph-circle-notch animate-spin text-2xl text-primary"></i>

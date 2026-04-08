@@ -20,6 +20,8 @@ type CreateSolicitudRequest struct {
 	Autorizacion       string `form:"autorizacion"`
 	ReturnURL          string `form:"return_url"`
 	SedeIATA           string `form:"sede_iata"`
+	IdaAerolineaID     string `form:"ida_aerolinea_id"`
+	VueltaAerolineaID  string `form:"vuelta_aerolinea_id"`
 	IdaPorConfirmar    bool   `form:"ida_por_confirmar"`
 	VueltaPorConfirmar bool   `form:"vuelta_por_confirmar"`
 }
@@ -37,6 +39,8 @@ type UpdateSolicitudRequest struct {
 	ActiveTab            string `form:"active_tab"`
 	ReturnURL            string `form:"return_url"`
 	SedeIATA             string `form:"sede_iata"`
+	IdaAerolineaID       string `form:"ida_aerolinea_id"`
+	VueltaAerolineaID    string `form:"vuelta_aerolinea_id"`
 	IdaPorConfirmar      bool   `form:"ida_por_confirmar"`
 	VueltaPorConfirmar   bool   `form:"vuelta_por_confirmar"`
 }

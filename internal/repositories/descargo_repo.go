@@ -29,6 +29,17 @@ func (r *DescargoRepository) WithContext(ctx context.Context) *DescargoRepositor
 	return &DescargoRepository{db: r.db.WithContext(ctx)}
 }
 
+func (r *DescargoRepository) WithTx(tx *gorm.DB) *DescargoRepository {
+	return &DescargoRepository{db: tx}
+}
+
+func (r *DescargoRepository) RunTransaction(fn func(repo *DescargoRepository, tx *gorm.DB) error) error {
+	return r.db.Transaction(func(tx *gorm.DB) error {
+		txRepo := r.WithTx(tx)
+		return fn(txRepo, tx)
+	})
+}
+
 func (r *DescargoRepository) Create(ctx context.Context, descargo *models.Descargo) error {
 	return r.db.WithContext(ctx).Create(descargo).Error
 }

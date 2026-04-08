@@ -1,0 +1,201 @@
+{{ define "descargo/components/modal_liquidar" }}
+  <div
+    class="fixed inset-0 z-50 overflow-y-auto"
+    x-data="{ closing: false }"
+    @keydown.escape.window="closing = true; setTimeout(() => htmx.find('#modal-container').innerHTML = '', 300)"
+  >
+    <!-- Overlay -->
+    <div
+      class="fixed inset-0 bg-neutral-900/60 backdrop-blur-sm transition-opacity"
+      x-show="!closing"
+      x-transition:enter="ease-out duration-300"
+      x-transition:enter-start="opacity-0"
+      x-transition:enter-end="opacity-100"
+      x-transition:leave="ease-in duration-200"
+      x-transition:leave-start="opacity-100"
+      x-transition:leave-end="opacity-0"
+    ></div>
+
+    <div class="flex min-h-full items-center justify-center p-4">
+      <div
+        class="relative w-full max-w-2xl transform overflow-hidden rounded-md bg-white shadow-2xl transition-all"
+        x-show="!closing"
+        x-transition:enter="ease-out duration-300"
+        x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+        x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+        x-transition:leave="ease-in duration-200"
+        x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+        x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+      >
+        <!-- Header -->
+        <div class="px-6 py-4 border-b border-neutral-100 flex items-center justify-between bg-neutral-50/50">
+          <div class="flex items-center gap-3">
+            <div
+              class="w-10 h-10 rounded-md bg-warning-100 flex items-center justify-center text-warning-600 shadow-sm border border-warning-200"
+            >
+              <i class="ph ph-calculator text-2xl animate-pulse"></i>
+            </div>
+            <div>
+              <h3 class="text-sm font-black text-neutral-900 uppercase tracking-tight leading-none mb-1">
+                Liquidación Detallada de Pasajes
+              </h3>
+              <p class="text-[10px] text-neutral-500 font-bold uppercase tracking-widest leading-none">{{ .Descargo.Codigo }}</p>
+            </div>
+          </div>
+          <button
+            @click="closing = true; setTimeout(() => htmx.find('#modal-container').innerHTML = '', 300)"
+            class="group flex items-center gap-2 px-3 py-1.5 rounded-lg border border-neutral-100 bg-neutral-50 hover:bg-neutral-100 hover:border-neutral-200 transition-all"
+          >
+            <span class="text-[10px] font-black text-neutral-500 uppercase tracking-widest">Cerrar</span>
+            <i class="ph ph-x-circle text-xl text-neutral-400 group-hover:text-neutral-600 transition-colors"></i>
+          </button>
+        </div>
+
+        <!-- Form Liquidación con Tabla dinámica -->
+        <form
+          action="/descargos/derecho/{{ .Descargo.ID }}/liquidar"
+          method="POST"
+          class="p-6 pt-2 space-y-6"
+          x-data="{
+            loading: false,
+            pasajes: [
+              {{ range .Solicitud.Items }}
+            {{ range .Pasajes }}
+              { id: '{{ .ID }}', ticket: '{{ .NumeroBillete }}', ruta:
+              '{{ if .RutaPasaje }}{{ .RutaPasaje.Origen.IATA }}-{{ .RutaPasaje.Destino.IATA }}{{ else }}N/A{{ end }}', costo:
+              {{ .Costo }}, utilizado: {{ .CostoUtilizacion }} },
+            {{ end }}
+          {{ end }}
+            ],
+            get totalReembolso() {
+              return this.pasajes.reduce((acc, p) => acc + (p.costo - p.utilizado), 0).toFixed(2);
+            }
+          }"
+          @submit="loading = true"
+        >
+          <input type="hidden" name="_csrf" value="{{ $.csrf_token }}" />
+
+          <div class="bg-primary-50 p-4 rounded-md border border-primary-100 flex gap-3 text-primary-900">
+            <i class="ph ph-info text-xl mt-0.5 text-primary-600"></i>
+            <div class="text-[11px] leading-relaxed">
+              <p class="font-black uppercase tracking-widest mb-1 text-[9px] text-primary-800">Instrucción de Fiscalización:</p>
+              Compare el costo de emisión (pago inicial) contra el costo utilizado (consumo real). La diferencia positiva generará
+              el monto que el beneficiario debe devolver al Senado.
+            </div>
+          </div>
+
+          <!-- Conciliation Table -->
+          <div class="overflow-x-auto border border-neutral-100 rounded-md shadow-sm">
+            <table class="w-full text-left text-xs">
+              <thead class="bg-neutral-50 text-[10px] font-black text-neutral-400 uppercase tracking-widest border-b">
+                <tr>
+                  <th class="px-4 py-3 border-r">N° Ticket / Ruta</th>
+                  <th class="px-4 py-3 border-r text-center w-28">Costo Emitido</th>
+                  <th class="px-4 py-3 border-r text-center w-28">Costo Utilizado</th>
+                  <th class="px-4 py-3 text-right w-24">Diferencia</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-neutral-100">
+                <template x-for="(p, index) in pasajes" :key="p.id">
+                  <tr class="hover:bg-neutral-50/10 transition-colors">
+                    <td class="px-4 py-3 truncate max-w-[200px]">
+                      <div class="font-black text-neutral-800" x-text="p.ticket"></div>
+                      <div class="text-[9px] text-neutral-400 font-bold uppercase tracking-widest" x-text="p.ruta"></div>
+                    </td>
+                    <td class="px-4 py-3 text-center text-neutral-500 font-bold tabular-nums">
+                      Bs.
+                      <span x-text="p.costo.toFixed(2)"></span>
+                    </td>
+                    <td class="px-3 py-3">
+                      <div class="relative group">
+                        <input type="hidden" name="pasaje_id[]" :value="p.id" />
+                        <div class="absolute inset-y-0 left-0 pl-2 flex items-center pointer-events-none">
+                          <span class="text-[9px] font-bold text-primary-400">Bs.</span>
+                        </div>
+                        <input
+                          type="number"
+                          name="pasaje_utilizado[]"
+                          step="0.01"
+                          x-model.number="p.utilizado"
+                          class="block w-full pl-6 pr-2 py-1.5 text-[12px] font-black text-primary-900 bg-white border border-neutral-200 rounded focus:border-primary-500 focus:ring-4 focus:ring-primary-500/10 transition-all text-center tabular-nums shadow-inner"
+                        />
+                      </div>
+                    </td>
+                    <td class="px-4 py-3 text-right">
+                      <span
+                        class="px-2 py-1 rounded text-[10px] font-black tabular-nums shadow-sm border"
+                        :class="(p.costo - p.utilizado) > 0 ? 'bg-success-50 text-success-700 border-success-200' : 'bg-neutral-50 text-neutral-400 border-neutral-100'"
+                        x-text="(p.costo - p.utilizado).toFixed(2)"
+                      ></span>
+                    </td>
+                  </tr>
+                </template>
+              </tbody>
+              <tfoot class="bg-primary-900 text-white font-black">
+                <tr>
+                  <td colspan="3" class="px-4 py-4 text-right text-[10px] uppercase tracking-widest opacity-80">
+                    Total Devolución:
+                  </td>
+                  <td class="px-4 py-4 text-right text-base tracking-tighter tabular-nums">
+                    <span class="text-xs mr-0.5 opacity-60">Bs.</span>
+                    <span x-text="totalReembolso"></span>
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+
+          <!-- Final Amount Submission -->
+          <div class="bg-warning-50 p-6 rounded-md border-2 border-dashed border-warning-200 space-y-4">
+            <div class="flex items-center justify-between">
+              <div class="max-w-[280px]">
+                <label class="text-[10px] font-black text-warning-800 uppercase tracking-widest flex items-center gap-2">
+                  <i class="ph ph-money text-lg"></i>
+                  Monto Final de Liquidación
+                </label>
+                <p class="text-[10px] text-warning-700/80 font-bold leading-tight mt-1">
+                  Este monto será registrado formalmente y notificado al beneficiario para su depósito bancario.
+                </p>
+              </div>
+              <div class="relative w-48 group">
+                <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                  <span class="text-warning-600 font-black text-xs uppercase">Bs.</span>
+                </div>
+                <input
+                  type="number"
+                  name="monto"
+                  step="0.01"
+                  min="0"
+                  :value="totalReembolso"
+                  readonly
+                  class="block w-full pl-12 pr-4 py-4 text-2xl font-black text-right text-warning-950 bg-white border-2 border-warning-400 rounded-md shadow-xl shadow-warning-200/50 group-hover:scale-[1.02] transition-transform"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="flex items-center justify-end gap-3 pt-6 border-t border-neutral-100">
+            <button
+              type="button"
+              @click="closing = true; setTimeout(() => htmx.find('#modal-container').innerHTML = '', 300)"
+              class="px-6 py-2.5 text-[10px] font-black text-neutral-400 hover:text-neutral-600 hover:bg-neutral-50 rounded-md transition-all uppercase tracking-widest"
+            >
+              Cancelar
+            </button>
+            <button
+              type="submit"
+              :disabled="loading"
+              class="inline-flex items-center gap-2 px-6 py-2.5 text-[10px] font-black text-white bg-primary-600 hover:bg-primary-700 rounded-md shadow-lg shadow-primary-200/50 transition-all active:scale-95 disabled:opacity-50 uppercase tracking-widest"
+            >
+              <i class="ph ph-check-square-offset text-lg" x-show="!loading"></i>
+              <i class="ph ph-circle-notch animate-spin text-lg" x-show="loading"></i>
+              <span x-show="!loading">Guardar Liquidación</span>
+              <span x-show="loading">Procesando...</span>
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+{{ end }}

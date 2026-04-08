@@ -92,6 +92,8 @@ func (s *PasajeService) Create(ctx context.Context, solicitudID string, req dtos
 		NumeroFactura:      req.NumeroFactura,
 		Glosa:              req.Glosa,
 		Costo:              costo,
+		CostoUtilizacion:   costo,
+		Diferencia:         0.0,
 		Archivo:            filePath,
 	}
 
@@ -162,6 +164,8 @@ func (s *PasajeService) UpdateFromRequest(ctx context.Context, req dtos.UpdatePa
 	}
 
 	pasaje.Costo = utils.ParseFloat(req.Costo)
+	pasaje.CostoUtilizacion = pasaje.Costo
+	pasaje.Diferencia = 0.0
 
 	if fvPtr, err := utils.ParseDateTime(req.FechaVuelo); err == nil && fvPtr != nil {
 		pasaje.FechaVuelo = *fvPtr

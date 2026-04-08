@@ -127,7 +127,7 @@ func (s *SolicitudDerechoService) CreateDerecho(ctx context.Context, req dtos.Cr
 		DestinoIATA:  sede,
 		Fecha:        fechaIda,
 		EstadoCodigo: utils.Ptr(stIda),
-		AerolineaID:  utils.NilIfEmpty(req.AerolineaID),
+		AerolineaID:  utils.NilIfEmpty(req.IdaAerolineaID),
 	})
 
 	// Tramo 2: VUELTA
@@ -142,7 +142,7 @@ func (s *SolicitudDerechoService) CreateDerecho(ctx context.Context, req dtos.Cr
 		DestinoIATA:  req.DestinoVueltaIATA,
 		Fecha:        fechaVuelta,
 		EstadoCodigo: utils.Ptr(stVuelta),
-		AerolineaID:  utils.NilIfEmpty(req.AerolineaID),
+		AerolineaID:  utils.NilIfEmpty(req.VueltaAerolineaID),
 	})
 
 	if !hasProgrammed {
@@ -265,7 +265,9 @@ func (s *SolicitudDerechoService) UpdateDerecho(ctx context.Context, id string, 
 				} else {
 					it.EstadoCodigo = utils.Ptr("SOLICITADO")
 					it.Fecha = fechaIda
+					hasProgrammed = true
 				}
+				it.AerolineaID = utils.NilIfEmpty(req.IdaAerolineaID)
 			case models.TipoSolicitudItemVuelta:
 				it.OrigenIATA = sede
 				it.DestinoIATA = req.DestinoVueltaIATA
@@ -278,13 +280,10 @@ func (s *SolicitudDerechoService) UpdateDerecho(ctx context.Context, id string, 
 				} else {
 					it.EstadoCodigo = utils.Ptr("SOLICITADO")
 					it.Fecha = fechaVuelta
+					hasProgrammed = true
 				}
+				it.AerolineaID = utils.NilIfEmpty(req.VueltaAerolineaID)
 			}
-
-			if it.Fecha != nil {
-				hasProgrammed = true
-			}
-			it.AerolineaID = utils.NilIfEmpty(req.AerolineaID)
 		}
 
 		if !hasProgrammed {

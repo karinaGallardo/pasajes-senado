@@ -316,7 +316,7 @@ func (s *DescargoDerechoService) UpdateDerecho(ctx context.Context, id string, r
 					DestinoIATA:       original.DestinoIATA,
 					Fecha:             original.Fecha,
 					Billete:           row.Billete,
-					NumeroVuelo:       original.NumeroVuelo,
+					NumeroVuelo:       row.Vuelo,
 					NumeroPaseAbordo:  row.PaseNumero,
 					ArchivoPaseAbordo: row.ArchivoPath,
 					EsDevolucion:      row.EsDevolucion,

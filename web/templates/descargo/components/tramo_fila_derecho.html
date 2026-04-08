@@ -201,22 +201,6 @@
       />
     </td>
 
-    <td class="px-2 py-1 text-center border-r border-neutral-100 bg-neutral-50/10">
-      <div class="flex flex-col items-center justify-center h-full min-h-[45px]">
-        {{ if .Tramo.IsOriginal }}
-          <template x-if="esModificacion">
-            <span class="text-[8px] font-bold text-warning-600 uppercase leading-none">Tramo Modificado</span>
-          </template>
-          <template x-if="esDevolucion">
-            <span class="text-[8px] font-bold text-danger-500 uppercase leading-none">Devolución Pase</span>
-          </template>
-          <span x-show="!esModificacion && !esDevolucion" class="text-neutral-300">-</span>
-        {{ else if .Tramo.IsReprogramacion }}
-          <span class="text-[8px] font-bold text-warning-600 uppercase leading-none">Tramo Reprogramado</span>
-        {{ end }}
-      </div>
-    </td>
-
     <td class="px-2 py-1 text-center">
       <div class="flex items-center justify-center h-full min-h-[45px]">
         <div x-show="!esDevolucion && !esModificacion" class="flex items-center justify-center gap-1 w-[76px] mx-auto" x-cloak>

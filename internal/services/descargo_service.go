@@ -7,10 +7,14 @@ import (
 	"log/slog"
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
+	"time"
+
+	"gorm.io/gorm"
 )
 
 type DescargoService struct {
 	repo             *repositories.DescargoRepository
+	pasajeRepo       *repositories.PasajeRepository
 	solicitudService *SolicitudService
 	usuarioService   *UsuarioService
 	auditService     *AuditService
@@ -18,12 +22,14 @@ type DescargoService struct {
 
 func NewDescargoService(
 	repo *repositories.DescargoRepository,
+	pasajeRepo *repositories.PasajeRepository,
 	solicitudService *SolicitudService,
 	usuarioService *UsuarioService,
 	auditService *AuditService,
 ) *DescargoService {
 	return &DescargoService{
 		repo:             repo,
+		pasajeRepo:       pasajeRepo,
 		solicitudService: solicitudService,
 		usuarioService:   usuarioService,
 		auditService:     auditService,
@@ -162,5 +168,185 @@ func (s *DescargoService) RevertToDraft(ctx context.Context, id string, userID s
 		return s.solicitudService.RevertFinalize(ctx, descargo.SolicitudID)
 	}
 
+	return nil
+}
+
+func (s *DescargoService) Liquidate(ctx context.Context, id string, pasajeIDs []string, pasajeCostos []float64, userID string) error {
+	descargo, err := s.repo.FindByID(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	if descargo.Estado != models.EstadoDescargoAprobado {
+		return errors.New("solo se pueden liquidar descargos que ya han sido aprobados técnicamente")
+	}
+
+	return s.repo.RunTransaction(func(repo *repositories.DescargoRepository, tx *gorm.DB) error {
+		txPasajeRepo := s.pasajeRepo.WithTx(tx)
+		totalDevolucion := 0.0
+
+		// 1. Actualizar pasajes individualmente y sumar diferencias
+		for i, pID := range pasajeIDs {
+			if i >= len(pasajeCostos) {
+				continue
+			}
+
+			pasaje, err := txPasajeRepo.FindByID(ctx, pID)
+			if err != nil {
+				continue
+			}
+
+			pasaje.CostoUtilizacion = pasajeCostos[i]
+			pasaje.Diferencia = pasaje.Costo - pasaje.CostoUtilizacion
+			totalDevolucion += pasaje.Diferencia
+
+			if err := txPasajeRepo.Update(ctx, pasaje); err != nil {
+				return fmt.Errorf("error actualizando pasaje %s: %w", pID, err)
+			}
+		}
+
+		// 2. Actualizar Descargo
+		oldMonto := descargo.MontoDevolucion
+		descargo.MontoDevolucion = totalDevolucion
+
+		if totalDevolucion > 0 {
+			descargo.Estado = models.EstadoDescargoPendientePago
+		} else {
+			descargo.Estado = models.EstadoDescargoFinalizado
+		}
+		descargo.UpdatedBy = &userID
+
+		if err := repo.Update(ctx, descargo); err != nil {
+			return err
+		}
+
+		s.auditService.Log(ctx, "LIQUIDAR_DESCARGO", "descargo", id, string(models.EstadoDescargoAprobado), string(descargo.Estado), fmt.Sprintf("Monto: %.2f", totalDevolucion), fmt.Sprintf("Anterior: %.2f", oldMonto))
+		slog.Info("Descargo liquidado financieramente con desglose", "id", id, "codigo", descargo.Codigo, "monto", totalDevolucion, "user_id", userID)
+
+		return nil
+	})
+}
+
+func (s *DescargoService) RevertLiquidation(ctx context.Context, id string, userID string) error {
+	descargo, err := s.repo.FindByID(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	// Permiso según el modelo
+	adminRol := models.RolAdmin
+	if !descargo.CanRevertLiquidation(&models.Usuario{BaseModel: models.BaseModel{ID: userID}, RolCodigo: &adminRol}) {
+		return fmt.Errorf("no tiene permiso para revertir esta liquidación")
+	}
+
+	if descargo.Estado != models.EstadoDescargoPendientePago {
+		return errors.New("solo se pueden revertir liquidaciones que están en estado PENDIENTE_PAGO")
+	}
+
+	descargo.Estado = models.EstadoDescargoAprobado
+	descargo.UpdatedBy = &userID
+
+	if err := s.repo.Update(ctx, descargo); err != nil {
+		return err
+	}
+
+	s.auditService.Log(ctx, "REVERTIR_LIQUIDACION", "descargo", id, string(models.EstadoDescargoPendientePago), string(models.EstadoDescargoAprobado), "Corrección de montos", "")
+	slog.Info("Liquidación revertida para corrección", "id", id, "codigo", descargo.Codigo, "user_id", userID)
+
+	return nil
+}
+
+func (s *DescargoService) ReportPayment(ctx context.Context, id string, filePath string, userID string) error {
+	descargo, err := s.repo.FindByID(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	if descargo.Estado != models.EstadoDescargoPendientePago {
+		return errors.New("solo se puede reportar pago para descargos en estado PENDIENTE_PAGO")
+	}
+
+	now := time.Now()
+	descargo.ComprobantePago = filePath
+	descargo.FechaPago = &now
+	descargo.Estado = models.EstadoDescargoPagado
+	descargo.UpdatedBy = &userID
+
+	if err := s.repo.Update(ctx, descargo); err != nil {
+		return err
+	}
+
+	s.auditService.Log(ctx, "REPORTAR_PAGO", "descargo", id, string(models.EstadoDescargoPendientePago), string(models.EstadoDescargoPagado), filePath, "")
+	slog.Info("Pago de descargo reportado", "id", id, "codigo", descargo.Codigo, "archivo", filePath, "user_id", userID)
+
+	return nil
+}
+
+func (s *DescargoService) Finalize(ctx context.Context, id string, userID string) error {
+	descargo, err := s.repo.FindByID(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	if descargo.Estado != models.EstadoDescargoPagado {
+		return errors.New("solo se pueden finalizar descargos cuyo pago ha sido reportado")
+	}
+
+	descargo.Estado = models.EstadoDescargoFinalizado
+	descargo.UpdatedBy = &userID
+
+	if err := s.repo.Update(ctx, descargo); err != nil {
+		return err
+	}
+
+	s.auditService.Log(ctx, "FINALIZAR_DESCARGO", "descargo", id, string(models.EstadoDescargoPagado), string(models.EstadoDescargoFinalizado), "", "")
+	slog.Info("Descargo finalizado oficialmente", "id", id, "codigo", descargo.Codigo, "user_id", userID)
+
+	return nil
+}
+
+func (s *DescargoService) RevertPayment(ctx context.Context, id string, userID string) error {
+	descargo, err := s.repo.FindByID(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	// Permiso según el modelo
+	adminRol := models.RolAdmin
+	if !descargo.CanRevertPayment(&models.Usuario{BaseModel: models.BaseModel{ID: userID}, RolCodigo: &adminRol}) {
+		return fmt.Errorf("no tiene permiso para observar este pago")
+	}
+
+	oldEstado := descargo.Estado
+	descargo.Estado = models.EstadoDescargoPendientePago
+	descargo.UpdatedBy = &userID
+
+	if err := s.repo.Update(ctx, descargo); err != nil {
+		return err
+	}
+
+	s.auditService.Log(ctx, "AVISO_PAGO_INCORRECTO", "descargo", id, string(oldEstado), string(descargo.Estado), "Reversión por comprobante incorrecto", "")
+	return nil
+}
+
+func (s *DescargoService) RevertFinalization(ctx context.Context, id string, userID string) error {
+	descargo, err := s.repo.FindByID(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	if descargo.Estado != models.EstadoDescargoFinalizado {
+		return errors.New("solo se pueden revertir descargos en estado FINALIZADO")
+	}
+
+	oldEstado := descargo.Estado
+	descargo.Estado = models.EstadoDescargoAprobado
+	descargo.UpdatedBy = &userID
+
+	if err := s.repo.Update(ctx, descargo); err != nil {
+		return err
+	}
+
+	s.auditService.Log(ctx, "REVERTIR_FINALIZACION", "descargo", id, string(oldEstado), string(descargo.Estado), "Reapertura para rectificación de datos", "")
 	return nil
 }

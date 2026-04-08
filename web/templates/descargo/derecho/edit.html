@@ -14,7 +14,10 @@
           :disabled="submitting || processingImages"
           class="inline-flex items-center px-6 py-2.5 shadow-md text-sm font-bold rounded-sm text-white bg-success-600 hover:bg-success-700 disabled:opacity-75 disabled:cursor-not-allowed transition-all active:scale-95"
         >
-          <span x-show="!submitting && !processingImages">Actualizar Descargo</span>
+          <span x-show="!submitting && !processingImages" class="flex items-center gap-2">
+            <i class="ph ph-floppy-disk text-sm"></i>
+            Actualizar Descargo
+          </span>
           <span x-show="submitting || processingImages" x-cloak class="flex items-center">
             <i class="ph ph-circle-notch animate-spin mr-2"></i>
             Procesando...
@@ -24,6 +27,7 @@
           href="/descargos/derecho/{{ .Descargo.ID }}"
           class="inline-flex items-center px-6 py-2.5 border border-neutral-300 shadow-sm text-sm font-bold rounded-sm text-neutral-700 bg-white hover:bg-neutral-50 transition-colors"
         >
+          <i class="ph ph-arrow-left text-sm text-neutral-400 mr-2"></i>
           Volver
         </a>
       </div>
@@ -156,9 +160,6 @@
                         <th class="w-[160px] px-2 py-1 font-black uppercase">Billete</th>
                         <th class="w-[80px] px-2 py-1 font-black uppercase">Vuelo</th>
                         <th class="w-[70px] px-2 py-1 font-black uppercase text-center">Pase</th>
-                        <th class="w-[128px] px-2 py-1 text-center font-black border-l border-neutral-100 uppercase">
-                          Monto Dev.
-                        </th>
                         <th class="w-[64px] px-2 py-1 text-center font-black uppercase">PDF</th>
                         <th class="w-[45px] py-1 text-center"></th>
                       </tr>
@@ -198,7 +199,6 @@
                       <col class="w-[160px]" />
                       <col class="w-[80px]" />
                       <col class="w-[70px]" />
-                      <col class="w-[128px]" />
                       <col class="w-[64px]" />
                       <col class="w-[45px] text-center" />
                     </colgroup>
@@ -235,9 +235,6 @@
                         <th class="w-[160px] px-2 py-1 font-black uppercase">Billete</th>
                         <th class="w-[80px] px-2 py-1 font-black uppercase">Vuelo</th>
                         <th class="w-[70px] px-2 py-1 font-black uppercase text-center">Pase</th>
-                        <th class="w-[128px] px-2 py-1 text-center font-black border-l border-neutral-100 uppercase">
-                          Monto Dev.
-                        </th>
                         <th class="w-[64px] px-2 py-1 text-center font-black uppercase">PDF</th>
                         <th class="w-[45px] py-1 text-center"></th>
                       </tr>
@@ -277,7 +274,6 @@
                       <col class="w-[160px]" />
                       <col class="w-[80px]" />
                       <col class="w-[70px]" />
-                      <col class="w-[128px]" />
                       <col class="w-[64px]" />
                       <col class="w-[45px] text-center" />
                     </colgroup>

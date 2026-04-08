@@ -211,7 +211,7 @@
               id="pasajeForm"
               method="POST"
               action="/solicitudes/derecho"
-              class="bg-white rounded-md shadow-sm border border-neutral-200 mt-0 p-2 space-y-2"
+              class="bg-white rounded-md shadow-sm border border-neutral-200 mt-0 p-1 space-y-2"
               @submit="isSubmitting = true"
               novalidate
               autocomplete="off"
@@ -446,15 +446,20 @@
                       <thead class="bg-neutral-50">
                         <tr>
                           <th
-                            class="px-4 py-3 text-left text-[10px] font-bold text-neutral-500 uppercase tracking-wider w-1/3 rounded-tl-xl"
+                            class="px-4 py-3 text-left text-[10px] font-bold text-neutral-500 uppercase tracking-wider w-1/4 rounded-tl-xl"
                           >
                             Tramo / Ruta
                           </th>
-                          <th class="px-4 py-3 text-center text-[10px] font-bold text-neutral-500 uppercase tracking-wider">
-                            ¿Programar?
+                          <th
+                            class="px-4 py-3 text-center text-[10px] font-bold text-neutral-500 uppercase tracking-wider w-1/12"
+                          >
+                            ¿Prog?
+                          </th>
+                          <th class="px-4 py-3 text-left text-[10px] font-bold text-neutral-500 uppercase tracking-wider w-1/4">
+                            Aerolínea Sugerida
                           </th>
                           <th
-                            class="px-4 py-3 text-left text-[10px] font-bold text-neutral-500 uppercase tracking-wider rounded-tr-xl w-1/2"
+                            class="px-4 py-3 text-left text-[10px] font-bold text-neutral-500 uppercase tracking-wider rounded-tr-xl w-1/3"
                           >
                             Fecha y Hora
                           </th>
@@ -496,6 +501,17 @@
                                 class="relative w-11 h-6 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"
                               ></div>
                             </label>
+                          </td>
+                          <td class="px-4 py-4">
+                            <select
+                              name="ida_aerolinea_id"
+                              class="w-full px-3 py-1.5 bg-neutral-50 border border-neutral-200 rounded-md text-[11px] font-bold text-neutral-700 focus:ring-2 focus:ring-primary/20 transition-all cursor-pointer"
+                            >
+                              <option value="">Cualquier línea aérea</option>
+                              {{ range .Aerolineas }}
+                                <option value="{{ .ID }}">{{ .Nombre }}</option>
+                              {{ end }}
+                            </select>
                           </td>
                           <td class="px-4 py-4">
                             <div x-show="idaProgramada">
@@ -559,6 +575,17 @@
                             </label>
                           </td>
                           <td class="px-4 py-4">
+                            <select
+                              name="vuelta_aerolinea_id"
+                              class="w-full px-3 py-1.5 bg-neutral-50 border border-neutral-200 rounded-md text-[11px] font-bold text-neutral-700 focus:ring-2 focus:ring-secondary/20 transition-all cursor-pointer"
+                            >
+                              <option value="">Cualquier línea aérea</option>
+                              {{ range .Aerolineas }}
+                                <option value="{{ .ID }}">{{ .Nombre }}</option>
+                              {{ end }}
+                            </select>
+                          </td>
+                          <td class="px-4 py-4">
                             <div x-show="vueltaProgramada">
                               <input
                                 type="text"
@@ -594,81 +621,8 @@
                     <input type="hidden" name="origen_ida" :value="origenIdaIATA" />
                     <input type="hidden" name="destino_vuelta" :value="destinoVueltaIATA" />
 
-                    <div class="md:col-span-2 space-y-1.5">
-                      <label class="block text-xs font-bold text-neutral-500 uppercase tracking-tight">Línea Aérea</label>
-                      <div
-                        class="relative group"
-                        x-data="searchableSelect({
-                        items: [
-                          { value: '', label: 'Cualquier línea aérea' },
-                          {{ range .Aerolineas }}
-                          { value: '{{ .ID }}', label: '{{ .Nombre }}' },
-                        {{ end }}
-                        ],
-                        initialValue: '',
-                        initialLabel: 'Cualquier línea aérea',
-                        placeholder: 'Cualquier línea aérea'
-                      })"
-                        x-init="$watch('value', function(v) { selectedAerolinea = v })"
-                      >
-                        <div class="relative">
-                          <div
-                            x-show="!open"
-                            @click="open = true; $nextTick(function() { $refs.searchInput.focus() })"
-                            class="w-full px-4 py-2.5 bg-white border border-neutral-200 rounded-md shadow-sm h-[42px] flex items-center justify-between cursor-pointer focus-within:ring-2 focus-within:ring-primary/20 focus-within:border-primary transition-all"
-                          >
-                            <span class="block truncate text-sm font-bold text-neutral-700" x-text="label"></span>
-                            <span
-                              class="pointer-events-none absolute inset-y-0 right-0 flex items-center pr-3 text-neutral-400 group-hover:text-primary transition-colors"
-                            >
-                              <i class="ph ph-caret-down text-sm"></i>
-                            </span>
-                          </div>
-                          <input
-                            x-ref="searchInput"
-                            x-model="search"
-                            x-show="open"
-                            @click.away="open = false"
-                            @keydown.escape="open = false"
-                            @keydown.enter.prevent="if (filteredItems.length > 0) select(filteredItems[0])"
-                            type="text"
-                            class="w-full px-4 py-2.5 bg-white border border-primary rounded-md shadow-sm h-[42px] text-sm font-bold focus:outline-none focus:ring-2 focus:ring-primary/20"
-                            placeholder="Buscar aerolínea..."
-                          />
-
-                          <div
-                            x-show="open"
-                            class="absolute z-50 mt-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-base shadow-lg ring-1 ring-black ring-opacity-5 focus:outline-none sm:text-sm"
-                            x-cloak
-                          >
-                            <template x-for="item in filteredItems" :key="item.value">
-                              <div
-                                @click="select(item)"
-                                class="cursor-pointer select-none relative py-2 pl-3 pr-9 hover:bg-primary-50 hover:text-primary-900 text-neutral-900 group"
-                              >
-                                <span
-                                  :class="{'font-semibold': value === item.value, 'font-bold': value === item.value}"
-                                  class="block truncate"
-                                  x-text="item.label"
-                                ></span>
-                                <span
-                                  x-show="value === item.value"
-                                  class="absolute inset-y-0 right-0 flex items-center pr-4 text-primary"
-                                >
-                                  <i class="ph ph-check text-base"></i>
-                                </span>
-                              </div>
-                            </template>
-                            <div
-                              x-show="filteredItems.length === 0"
-                              class="cursor-default select-none relative py-2 pl-3 pr-9 text-neutral-500 italic"
-                            >
-                              No se encontraron resultados
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                      <input type="hidden" name="aerolinea_id" :value="selectedAerolinea" />
+                    <div class="md:col-span-2">
+                      <!-- Aerolíneas movidas a la tabla de itinerario -->
                     </div>
                     <input type="hidden" name="autorizacion" value="PD" />
                     <input type="hidden" name="motivo" value="" />

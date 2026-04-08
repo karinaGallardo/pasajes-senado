@@ -64,7 +64,7 @@
             hx-target="#modal-container"
             class="btn-md btn-white rounded-sm"
           >
-            <i class="ph ph-pencil-simple text-sm"></i>
+            <i class="ph ph-pencil-simple text-md"></i>
             <span>Editar</span>
           </button>
         {{ end }}
@@ -78,7 +78,7 @@
             class="group btn-md bg-danger-50 text-danger-600 border border-danger-200 hover:bg-danger-600 hover:text-white transition-all shadow-sm rounded-sm"
             title="Eliminar Solicitud"
           >
-            <i class="ph ph-trash text-sm group-hover:scale-110 transition-transform"></i>
+            <i class="ph ph-trash text-md group-hover:scale-110 transition-transform"></i>
             <span>Eliminar</span>
           </button>
         {{ end }}
@@ -92,7 +92,7 @@
             class="btn-md bg-neutral-900 text-white hover:bg-neutral-800 transition-all shadow-sm rounded-sm"
             title="Finalizar Solicitud"
           >
-            <i class="ph ph-flag-checkered text-sm"></i>
+            <i class="ph ph-flag-checkered text-md"></i>
             <span>Finalizar</span>
           </button>
         {{ end }}
@@ -106,7 +106,7 @@
             class="btn-md bg-warning-50 text-warning-700 border border-warning-200 hover:bg-warning-100 transition-all shadow-sm rounded-sm"
             title="Revertir Finalización"
           >
-            <i class="ph ph-arrow-u-up-left text-sm"></i>
+            <i class="ph ph-arrow-u-up-left text-md"></i>
             <span>Revertir Cierre</span>
           </button>
         {{ end }}
@@ -118,28 +118,29 @@
             hx-target="#modal-container"
             class="btn-md btn-white border-neutral-300 rounded-sm"
           >
-            <i class="ph ph-printer text-sm"></i>
-            <span>Imprimir</span>
+            <i class="ph ph-printer text-md"></i>
+            <span>Imprimir PV-01</span>
           </button>
         {{ end }}
         {{ if .DescargoID }}
-          <!-- <a href="/descargos/derecho/{{ .DescargoID }}" class="btn-md btn-primary rounded-sm inline-flex items-center gap-2">
+          <a href="/descargos/derecho/{{ .DescargoID }}" class="btn-md btn-primary rounded-sm inline-flex items-center gap-2">
             <i class="ph ph-eye text-sm"></i>
             <span>Ver Descargo</span>
-          </a> -->
+          </a>
         {{ else if .Solicitud.Permissions.CanMakeDescargo }}
-          <!-- <a
+          <a
             href="/descargos/derecho/nuevo/{{ .Solicitud.ID }}"
             class="btn-md btn-primary rounded-sm inline-flex items-center gap-2"
           >
-            <i class="ph ph-file-plus text-sm"></i>
+            <i class="ph ph-file-plus text-md"></i>
             <span>Crear Descargo</span>
-          </a> -->
+          </a>
         {{ end }}
         <a
           href="/solicitudes/derecho?estado={{ .Solicitud.EstadoSolicitud.Codigo }}"
           class="btn-md btn-white border-neutral-300 rounded-sm inline-flex items-center gap-2"
         >
+          <i class="ph ph-arrow-left text-md"></i>
           Volver
         </a>
       </div>
@@ -293,17 +294,25 @@
                         <span>{{ if .Destino }}{{ .Destino.Ciudad }}{{ else }}{{ .DestinoIATA }}{{ end }}</span>
                       </h4>
                       <p
-                        class="text-[11px] text-neutral-500 font-medium whitespace-nowrap hidden lg:block flex items-center gap-1.5"
+                        class="text-[11px] text-neutral-500 font-medium whitespace-nowrap flex items-center gap-1.5 lg:border-l lg:border-neutral-200 lg:pl-3"
                       >
-                        <span>
-                          <i class="ph ph-calendar-blank mr-1"></i>
-                          {{ if .Fecha }}{{ fechaHora .Fecha }}{{ else }}Fecha no definida{{ end }}
-                        </span>
+                        <i class="ph ph-globe text-primary-500 font-bold"></i>
+                        {{ if .Aerolinea }}
+                          <span class="text-neutral-700 font-bold">
+                            {{ if .Aerolinea.Sigla }}{{ .Aerolinea.Sigla }}{{ else }}{{ .Aerolinea.Nombre }}{{ end }}
+                          </span>
+                        {{ else }}
+                          <span class="text-neutral-400 italic">No especificada</span>
+                        {{ end }}
+                      </p>
+                      <p class="text-[11px] text-neutral-500 font-medium whitespace-nowrap hidden lg:flex items-center gap-1.5">
+                        <i class="ph ph-calendar-blank text-primary-500"></i>
+                        <span>{{ if .Fecha }}{{ fechaHora .Fecha }}{{ else }}Fecha no definida{{ end }}</span>
                         {{ if $.Solicitud.Permissions.CanRegularize }}
                           <button
                             hx-get="/solicitudes/{{ $.Solicitud.ID }}/items/{{ .ID }}/regularizacion-modal"
                             hx-target="#modal-container"
-                            class="ml-2 px-1.5 py-0.5 bg-warning-50 border border-warning-100 rounded-sm text-[9px] font-black text-warning-600 hover:bg-warning-100 transition-all cursor-pointer flex items-center gap-1 uppercase tracking-wider"
+                            class="ml-1 px-1.5 py-0.5 bg-warning-50 border border-warning-100 rounded-sm text-[9px] font-black text-warning-600 hover:bg-warning-100 transition-all cursor-pointer flex items-center gap-1 uppercase tracking-wider"
                             title="Regularizar fecha sistema"
                           >
                             <i class="ph ph-clock-counter-clockwise font-bold"></i>
@@ -654,31 +663,6 @@
                       <p class="text-sm font-bold">Falta programar</p>
                     </div>
                   {{ end }}
-                </div>
-              </div>
-
-              <!-- Airline -->
-              <div
-                class="flex items-start space-x-3 p-3 rounded-lg bg-neutral-50 border border-neutral-100 hover:border-neutral-200 transition-colors sm:col-span-2"
-              >
-                <div class="text-neutral-400 mt-0.5 bg-white p-1.5 rounded-md border border-neutral-100 shadow-sm">
-                  <i class="ph ph-globe text-lg"></i>
-                </div>
-                <div>
-                  <p class="text-[10px] font-bold text-neutral-500 uppercase tracking-wide">Aerolínea Sugerida</p>
-                  <p class="text-sm font-bold text-primary mt-0.5">
-                    {{ if .Solicitud.Aerolinea }}
-                      <span class="text-neutral-900 font-bold">
-                        {{ if .Solicitud.Aerolinea.Sigla }}
-                          {{ .Solicitud.Aerolinea.Sigla }}
-                        {{ else }}
-                          {{ .Solicitud.Aerolinea.Nombre }}
-                        {{ end }}
-                      </span>
-                    {{ else }}
-                      <span class="text-neutral-400 italic font-normal">Sin preferencia</span>
-                    {{ end }}
-                  </p>
                 </div>
               </div>
             </div>

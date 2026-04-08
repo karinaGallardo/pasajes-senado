@@ -112,33 +112,35 @@
           </button>
         {{ end }}
         {{ if .Solicitud.Permissions.CanPrint }}
-          <a
-            href="/solicitudes/oficial/{{ .Solicitud.ID }}/print"
-            target="_blank"
-            class="btn-md btn-white border-neutral-300 rounded-sm inline-flex items-center gap-2"
+          <button
+            type="button"
+            hx-get="/solicitudes/oficial/{{ .Solicitud.ID }}/print"
+            hx-target="#modal-container"
+            class="btn-md btn-white border-neutral-300 rounded-sm"
           >
             <i class="ph ph-printer text-sm"></i>
-            <span>Imprimir</span>
-          </a>
+            <span>Imprimir PV-02</span>
+          </button>
         {{ end }}
         {{ if .DescargoID }}
-          <!-- <a href="/descargos/oficial/{{ .DescargoID }}" class="btn-md btn-primary rounded-sm inline-flex items-center gap-2">
+          <a href="/descargos/oficial/{{ .DescargoID }}" class="btn-md btn-primary rounded-sm inline-flex items-center gap-2">
             <i class="ph ph-eye text-sm"></i>
             <span>Ver Descargo</span>
-          </a> -->
+          </a>
         {{ else if .Solicitud.Permissions.CanMakeDescargo }}
-          <!-- <a
+          <a
             href="/descargos/oficial/nuevo/{{ .Solicitud.ID }}"
             class="btn-md btn-primary rounded-sm inline-flex items-center gap-2"
           >
             <i class="ph ph-file-plus text-sm"></i>
             <span>Crear Descargo</span>
-          </a> -->
+          </a>
         {{ end }}
         <a
           href="/solicitudes/oficial?estado={{ .Solicitud.EstadoSolicitud.Codigo }}"
           class="btn-md btn-white border-neutral-300 rounded-sm inline-flex items-center gap-2"
         >
+          <i class="ph ph-arrow-left text-sm"></i>
           Volver
         </a>
       </div>
