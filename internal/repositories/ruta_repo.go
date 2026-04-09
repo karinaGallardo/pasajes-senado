@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"sistema-pasajes/internal/models"
+	"strings"
 
 	"gorm.io/gorm"
 )
@@ -35,7 +36,6 @@ func (r *RutaRepository) FindAll(ctx context.Context) ([]models.Ruta, error) {
 
 func (r *RutaRepository) Search(ctx context.Context, query string, onlyAtomic bool) ([]models.Ruta, error) {
 	var rutas []models.Ruta
-	q := "%" + query + "%"
 	db := r.db.WithContext(ctx).
 		Preload("Origen").
 		Preload("Destino")
@@ -48,9 +48,14 @@ func (r *RutaRepository) Search(ctx context.Context, query string, onlyAtomic bo
 		}).Preload("Escalas.Destino")
 	}
 
-	err := db.Where("tramo ILIKE ? OR sigla ILIKE ? OR origen_iata ILIKE ? OR destino_iata ILIKE ?", q, q, q, q).
-		Limit(20).
-		Find(&rutas).Error
+	// Multi-keyword matching logic
+	words := strings.Fields(strings.ToLower(query))
+	for _, word := range words {
+		w := "%" + word + "%"
+		db = db.Where("(tramo ILIKE ? OR sigla ILIKE ? OR origen_iata ILIKE ? OR destino_iata ILIKE ?)", w, w, w, w)
+	}
+
+	err := db.Limit(20).Find(&rutas).Error
 	return rutas, err
 }
 
