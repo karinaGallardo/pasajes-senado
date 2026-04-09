@@ -158,12 +158,21 @@ document.addEventListener("alpine:init", function () {
       get filteredItems() {
         if (this.endpoint) return this.items || [];
         if (this.search === "") return this.items || [];
-        const q = this.search.toLowerCase();
+        
+        // Split search into words and clean them
+        const words = this.search.toLowerCase().split(/\s+/).filter(w => w.length > 0);
+        if (words.length === 0) return this.items || [];
+
         return (this.items || []).filter((i) => {
-          return (
-            (i.label && i.label.toLowerCase().includes(q)) ||
-            (i.value && i.value.toLowerCase().includes(q)) ||
-            (i.extra && i.extra.toLowerCase().includes(q))
+          const label = (i.label || "").toLowerCase();
+          const value = (i.value || "").toLowerCase();
+          const extra = (i.extra || "").toLowerCase();
+          
+          // Every word must be present in at least one of the fields
+          return words.every(word => 
+            label.includes(word) || 
+            value.includes(word) || 
+            extra.includes(word)
           );
         });
       },
