@@ -89,14 +89,14 @@ h1, h2, h3 {
   .btn {
     @apply inline-flex items-center justify-center font-bold tracking-tight transition-all 
            active:scale-[0.97] disabled:opacity-50 disabled:pointer-events-none 
-           rounded-lg gap-2 focus:ring-2 focus:ring-offset-2 outline-none whitespace-nowrap;
+           rounded-md gap-2 focus:ring-2 focus:ring-offset-2 outline-none whitespace-nowrap;
   }
 
   /* Tamaños consistentes */
   .btn-xs { @apply px-2.5 py-1 text-[10px] h-7 rounded-md; }
   .btn-sm { @apply px-3 py-1.5 text-[11px] h-9; }
   .btn-md { @apply px-4 py-2 text-xs h-10; }
-  .btn-lg { @apply px-6 py-3 text-sm h-12 rounded-xl; }
+  .btn-lg { @apply px-6 py-3 text-sm h-12 rounded-md; }
 
   /* Variantes Cro-Browser & Móvil-Friendly */
   .btn-primary {
@@ -145,7 +145,7 @@ h1, h2, h3 {
   
   /* Contenedor principal con scroll responsive */
   .table-container {
-    @apply bg-white rounded-lg shadow-sm border border-neutral-200 overflow-hidden overflow-x-auto custom-scrollbar active:cursor-grabbing;
+    @apply bg-white rounded-md shadow-sm border border-neutral-200 overflow-hidden overflow-x-auto custom-scrollbar active:cursor-grabbing;
   }
 
   /* Estructura de la tabla */

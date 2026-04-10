@@ -13,10 +13,10 @@
 
     <div class="grid grid-cols-1 gap-8">
       <!-- Card Reporte Consolidado -->
-      <div class="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
+      <div class="bg-white rounded-md border border-neutral-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow">
         <div class="p-6 border-b border-neutral-100 flex items-center justify-between bg-neutral-50/50">
           <div class="flex items-center">
-            <div class="w-10 h-10 bg-primary-100 rounded-lg flex items-center justify-center text-primary-600 mr-4">
+            <div class="w-10 h-10 bg-primary-100 rounded-md flex items-center justify-center text-primary-600 mr-4">
               <i class="ph ph-file-xls text-2xl"></i>
             </div>
             <div>
@@ -44,7 +44,7 @@
                   <input
                     type="date"
                     name="fecha_desde"
-                    class="w-full pl-10 pr-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    class="w-full pl-10 pr-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-md text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                     required
                   />
                 </div>
@@ -57,7 +57,7 @@
                   <input
                     type="date"
                     name="fecha_hasta"
-                    class="w-full pl-10 pr-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                    class="w-full pl-10 pr-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-md text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                     required
                   />
                 </div>
@@ -70,7 +70,7 @@
                   <i class="ph ph-airplane absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"></i>
                   <select
                     name="aerolinea_id"
-                    class="w-full pl-10 pr-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all appearance-none cursor-pointer"
+                    class="w-full pl-10 pr-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-md text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all appearance-none cursor-pointer"
                   >
                     <option value="">TODAS LAS AEROLÍNEAS</option>
                     {{ range .Aerolineas }}
@@ -87,7 +87,7 @@
                   <i class="ph ph-buildings absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"></i>
                   <select
                     name="agencia_id"
-                    class="w-full pl-10 pr-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all appearance-none cursor-pointer"
+                    class="w-full pl-10 pr-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-md text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all appearance-none cursor-pointer"
                   >
                     <option value="">TODAS LAS AGENCIAS</option>
                     {{ range .Agencias }}
@@ -105,7 +105,7 @@
                   <i class="ph ph-tag absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"></i>
                   <select
                     name="concepto"
-                    class="w-full pl-10 pr-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all appearance-none cursor-pointer"
+                    class="w-full pl-10 pr-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-md text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all appearance-none cursor-pointer"
                   >
                     <option value="ALL">TODOS LOS CONCEPTOS</option>
                     <option value="DERECHO">PASAJES POR DERECHO</option>
@@ -121,7 +121,7 @@
                   <i class="ph ph-check-circle absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"></i>
                   <select
                     name="estado"
-                    class="w-full pl-10 pr-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-lg text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all appearance-none cursor-pointer"
+                    class="w-full pl-10 pr-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-md text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all appearance-none cursor-pointer"
                   >
                     <option value="ALL">TODOS LOS ESTADOS</option>
                     <option value="EMITIDO">EMITIDOS</option>
@@ -158,7 +158,7 @@
         <!-- Morosidad -->
         <a
           href="/admin/reports/morosidad-excel"
-          class="group p-6 bg-white border border-neutral-200 rounded-xl flex items-center hover:border-red-500 hover:shadow-md transition-all active:scale-95 overflow-hidden relative"
+          class="group p-6 bg-white border border-neutral-200 rounded-md flex items-center hover:border-red-500 hover:shadow-md transition-all active:scale-95 overflow-hidden relative"
         >
           <div
             class="absolute top-0 right-0 p-1 bg-red-500 text-[8px] font-black text-white uppercase tracking-tighter rotate-45 translate-x-4 -translate-y-1 w-20 text-center shadow-sm"
@@ -166,7 +166,7 @@
             MORA
           </div>
           <div
-            class="w-12 h-12 bg-red-50 rounded-lg flex items-center justify-center text-red-600 mr-4 group-hover:scale-110 transition-transform"
+            class="w-12 h-12 bg-red-50 rounded-md flex items-center justify-center text-red-600 mr-4 group-hover:scale-110 transition-transform"
           >
             <i class="ph ph-warning-octagon text-2xl"></i>
           </div>
@@ -177,9 +177,9 @@
         </a>
 
         <!-- Uso de Cupos -->
-        <div class="p-6 bg-white border border-neutral-200 rounded-xl" x-data="{ show: false }">
+        <div class="p-6 bg-white border border-neutral-200 rounded-md" x-data="{ show: false }">
           <div class="flex items-center mb-4">
-            <div class="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center text-blue-600 mr-4">
+            <div class="w-12 h-12 bg-blue-50 rounded-md flex items-center justify-center text-blue-600 mr-4">
               <i class="ph ph-users-three text-2xl"></i>
             </div>
             <div>
@@ -212,10 +212,10 @@
         <!-- Estadísticas Aerolínea -->
         <a
           href="/admin/reports/aerolineas-excel"
-          class="group p-6 bg-white border border-neutral-200 rounded-xl flex items-center hover:border-emerald-500 hover:shadow-md transition-all active:scale-95"
+          class="group p-6 bg-white border border-neutral-200 rounded-md flex items-center hover:border-emerald-500 hover:shadow-md transition-all active:scale-95"
         >
           <div
-            class="w-12 h-12 bg-emerald-50 rounded-lg flex items-center justify-center text-emerald-600 mr-4 group-hover:scale-110 transition-transform"
+            class="w-12 h-12 bg-emerald-50 rounded-md flex items-center justify-center text-emerald-600 mr-4 group-hover:scale-110 transition-transform"
           >
             <i class="ph ph-airplane text-2xl"></i>
           </div>

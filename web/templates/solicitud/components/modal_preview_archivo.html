@@ -22,7 +22,7 @@
       x-transition:leave="ease-in duration-200"
       x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
       x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-      class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
+      class="inline-block align-bottom bg-white rounded-md text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
       <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
         <div class="flex justify-between items-center mb-4 border-b border-neutral-100 pb-4">
           <div class="flex items-center">
@@ -123,7 +123,7 @@
           {{ if .IsPDF }}
             {{ if .IsMobile }}
               <div class="w-full h-full flex flex-col items-center justify-center p-6 text-center space-y-4">
-                <div class="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm text-primary-500">
+                <div class="w-16 h-16 bg-white rounded-md flex items-center justify-center shadow-sm text-primary-500">
                    <i class="ph ph-file-pdf text-4xl"></i>
                 </div>
                 <div>

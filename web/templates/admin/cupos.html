@@ -1,18 +1,27 @@
-{{ define "admin/cupos" }} {{ template "layout_header" . }}
+{{ define "admin/cupos" }}
+  {{ template "layout_header" . }}
 
-<div class="space-y-6" x-data="{ generating: false, resetting: false, refreshing: false }">
-  <!-- Unified Header & Controls -->
-  <div class="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-6 rounded-xl shadow-sm border border-neutral-100 gap-4">
-    <div>
-      <h1 class="text-2xl font-bold text-neutral-900">Gestión de Cupos</h1>
-      <p class="text-neutral-500 text-sm">Administración de cupos mensuales para pasajes por derecho.</p>
+
+  <div class="space-y-6" x-data="{ generating: false, resetting: false, refreshing: false }">
+    <!-- Unified Header & Controls -->
+    <div
+      class="flex flex-col md:flex-row justify-between items-start md:items-center bg-white p-6 rounded-md shadow-sm border border-neutral-100 gap-4"
+    >
+      <div>
+        <h1 class="text-2xl font-bold text-neutral-900">Gestión de Cupos</h1>
+        <p class="text-neutral-500 text-sm">Administración de cupos mensuales para pasajes por derecho.</p>
+      </div>
+
+      <div class="flex flex-col md:flex-row items-end md:items-center gap-4 w-full md:w-auto">
+        {{ template "admin/components/cupos_actions" . }}
+      </div>
     </div>
 
-    <div class="flex flex-col md:flex-row items-end md:items-center gap-4 w-full md:w-auto">{{ template "admin/components/cupos_actions" . }}</div>
+    <!-- Tabla -->
+    <div class="bg-white rounded-md shadow-sm border border-neutral-200 overflow-hidden" id="table-cupos-container">
+      {{ template "admin/components/table_cupos" . }}
+    </div>
   </div>
 
-  <!-- Tabla -->
-  <div class="bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden" id="table-cupos-container">{{ template "admin/components/table_cupos" . }}</div>
-</div>
-
-{{ template "layout_footer" . }} {{ end }}
+  {{ template "layout_footer" . }}
+{{ end }}

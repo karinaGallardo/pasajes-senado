@@ -33,7 +33,7 @@ type CreditoPasaje struct {
 	Estado             EstadoCredito `gorm:"type:varchar(20);default:'PENDIENTE';index" json:"estado"`
 
 	// Si se usa en una solicitud, guardamos la referencia
-	SolicitudUsoID *string    `gorm:"type:uuid;index" json:"solicitud_uso_id"`
+	SolicitudUsoID *string    `gorm:"size:36;index" json:"solicitud_uso_id"`
 	FechaUso       *time.Time `json:"fecha_uso"`
 
 	Observaciones string `gorm:"type:text" json:"observaciones"`

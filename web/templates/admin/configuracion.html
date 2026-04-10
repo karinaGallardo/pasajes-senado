@@ -18,7 +18,7 @@
         <div class="font-bold text-primary-800 flex items-center gap-2">
           {{ .Clave }}
           {{ if eq .Clave "SEDES_AUTORIZADAS" }}
-          <span class="px-1.5 py-0.5 rounded-full bg-primary-100 text-primary-700 text-[10px] font-black uppercase tracking-wider border border-primary-200">
+          <span class="px-1.5 py-0.5 rounded-md bg-primary-100 text-primary-700 text-[10px] font-black uppercase tracking-wider border border-primary-200">
             Configuración de Sedes
           </span>
           {{ end }}
@@ -77,7 +77,7 @@
           </button>
         </div>
 
-        <div x-show="editing" class="bg-neutral-50 p-4 rounded-xl border border-neutral-200 shadow-inner" style="display: none">
+        <div x-show="editing" class="bg-neutral-50 p-4 rounded-md border border-neutral-200 shadow-inner" style="display: none">
           <div class="mb-3 flex items-center justify-between">
             <span class="text-[11px] font-black text-neutral-500 uppercase tracking-widest">Sedes autorizadas (La Paz obligatoria):</span>
             <span class="text-[10px] font-bold text-primary" x-text="selectedSedes.length + ' seleccionadas'"></span>
@@ -94,7 +94,7 @@
                   'bg-primary text-white border-primary shadow-sm': selectedSedes.includes(dest.iata) && dest.iata !== 'LPB',
                   'bg-white text-neutral-600 border-neutral-200 opacity-60': !selectedSedes.includes(dest.iata)
                 }"
-                class="flex flex-col items-center p-2 border rounded-lg transition-all hover:scale-[1.02] relative"
+                class="flex flex-col items-center p-2 border rounded-md transition-all hover:scale-[1.02] relative"
               >
                 <!-- Lock Icon for LPB -->
                 <i x-show="dest.iata === 'LPB'" class="ph-fill ph-lock-key absolute top-1 right-1 text-[8px] text-white/70"></i>
@@ -188,7 +188,7 @@
           "
         :disabled="sending || !testEmail"
         class="bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
-        <span x-show="sending" class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
+        <span x-show="sending" class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-md"></span>
         Enviar Prueba
       </button>
     </div>

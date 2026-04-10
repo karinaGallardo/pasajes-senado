@@ -2,7 +2,14 @@
   {{ template "layout_header" . }}
 
 
-  <div class="space-y-6" x-data="{ activeTab: '{{ if .IsSenador }}SENADOR{{ else }}FUNCIONARIO{{ end }}', syncConfirm: false, syncing: false }">
+  <div
+    class="space-y-6"
+    x-data="{ activeTab: '{{ if .IsSenador }}
+      SENADOR
+    {{ else }}
+      FUNCIONARIO
+    {{ end }}', syncConfirm: false, syncing: false }"
+  >
     <!-- Header -->
     <div class="flex items-center justify-between">
       <div>
@@ -22,7 +29,7 @@
             type="button"
             hx-get="/usuarios/senadores/sync-modal"
             hx-target="#modal-container"
-            class="inline-flex items-center px-4 py-2 border border-transparent text-sm leading-5 font-bold rounded-lg text-white bg-primary hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary shadow-md transition-all transform active:scale-95 cursor-pointer"
+            class="inline-flex items-center px-4 py-2 border border-transparent text-sm leading-5 font-bold rounded-md text-white bg-primary hover:bg-primary-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary shadow-md transition-all transform active:scale-95 cursor-pointer"
           >
             <i class="ph ph-arrows-clockwise text-xl -ml-1 mr-2"></i>
             <span>Sincronizar Senadores</span>
@@ -35,7 +42,7 @@
     <div id="usuarios-table-container" class="relative min-h-[200px]">
       <div
         id="table-loader"
-        class="htmx-indicator absolute inset-0 bg-white/60 backdrop-blur-[1px] z-20 flex items-center justify-center rounded-lg transition-opacity duration-200"
+        class="htmx-indicator absolute inset-0 bg-white/60 backdrop-blur-[1px] z-20 flex items-center justify-center rounded-md transition-opacity duration-200"
       >
         <div class="flex flex-col items-center">
           <i class="ph ph-spinner animate-spin text-4xl text-primary"></i>

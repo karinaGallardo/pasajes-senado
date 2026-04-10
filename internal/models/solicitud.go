@@ -12,7 +12,7 @@ import (
 type Solicitud struct {
 	BaseModel
 	Codigo    string  `gorm:"size:12;uniqueIndex"`
-	UsuarioID string  `gorm:"size:24;not null"`
+	UsuarioID string  `gorm:"size:36;not null"`
 	Usuario   Usuario `gorm:"constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
 
 	CupoDerechoItemID *string          `gorm:"size:36;index;default:null"`
@@ -1006,6 +1006,10 @@ func (s Solicitud) IsDerecho() bool {
 
 func (s Solicitud) IsOficial() bool {
 	return s.GetConceptoCodigo() == "OFICIAL"
+}
+
+func (s Solicitud) GetConceptoSlug() string {
+	return strings.ToLower(s.GetConceptoCodigo())
 }
 
 func (s Solicitud) GetStatusBadgeClass() string {

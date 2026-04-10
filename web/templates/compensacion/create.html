@@ -1,150 +1,165 @@
-{{ define "compensacion/create" }} {{ template "layout_header" . }}
+{{ define "compensacion/create" }}
+  {{ template "layout_header" . }}
 
-<div class="max-w-2xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-  <div class="md:flex md:items-center md:justify-between mb-6">
-    <h2 class="text-2xl font-bold leading-7 text-neutral-900 sm:text-3xl sm:truncate">Nueva Compensación</h2>
+
+  <div class="max-w-2xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
+    <div class="md:flex md:items-center md:justify-between mb-6">
+      <h2 class="text-2xl font-bold leading-7 text-neutral-900 sm:text-3xl sm:truncate">Nueva Compensación</h2>
+    </div>
+
+    <form action="/compensaciones" method="POST" class="space-y-6 bg-white shadow px-4 py-5 sm:rounded-md sm:p-6">
+      <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
+      <div class="grid grid-cols-6 gap-6">
+        <div class="col-span-6">
+          <label class="block text-sm font-medium text-neutral-700">Funcionario</label>
+          <select
+            name="funcionario_id"
+            required
+            class="mt-1 block w-full py-2 px-3 border border-neutral-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-secondary focus:border-secondary sm:text-sm"
+          >
+            {{ range .Usuarios }}
+              <option value="{{ .ID }}">{{ .GetNombreCompleto }} (CI: {{ .CI }})</option>
+            {{ end }}
+          </select>
+        </div>
+
+        <div class="col-span-6 sm:col-span-3">
+          <label class="block text-sm font-medium text-neutral-700">Nombre Trámite</label>
+          <input
+            type="text"
+            name="nombre_tramite"
+            required
+            class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md p-2"
+          />
+        </div>
+
+        <div class="col-span-6 sm:col-span-3">
+          <label class="block text-sm font-medium text-neutral-700">Mes Compensación</label>
+          <select
+            name="mes"
+            class="mt-1 block w-full py-2 px-3 border border-neutral-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-secondary focus:border-secondary sm:text-sm"
+          >
+            <option value="ENERO">Enero</option>
+            <option value="FEBRERO">Febrero</option>
+            <option value="MARZO">Marzo</option>
+            <option value="ABRIL">Abril</option>
+            <option value="MAYO">Mayo</option>
+            <option value="JUNIO">Junio</option>
+            <option value="JULIO">Julio</option>
+            <option value="AGOSTO">Agosto</option>
+            <option value="SEPTIEMBRE">Septiembre</option>
+            <option value="OCTUBRE">Octubre</option>
+            <option value="NOVIEMBRE">Noviembre</option>
+            <option value="DICIEMBRE">Diciembre</option>
+          </select>
+        </div>
+
+        <div class="col-span-6 sm:col-span-3">
+          <label class="block text-sm font-medium text-neutral-700">Fecha Inicio</label>
+          <input
+            type="date"
+            name="fecha_inicio"
+            required
+            class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md p-2"
+          />
+        </div>
+
+        <div class="col-span-6 sm:col-span-3">
+          <label class="block text-sm font-medium text-neutral-700">Fecha Fin</label>
+          <input
+            type="date"
+            name="fecha_fin"
+            required
+            class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md p-2"
+          />
+        </div>
+
+        <div class="col-span-6 bg-neutral-50 p-4 rounded-md border border-neutral-200">
+          <label class="block text-sm font-bold text-neutral-700 mb-2">Cargar Monto Predefinido (Opcional)</label>
+          <select
+            id="preset_category"
+            onchange="applyPreset()"
+            class="block w-full py-2 px-3 border border-neutral-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-secondary focus:border-secondary sm:text-sm"
+          >
+            <option value="">-- Seleccionar --</option>
+            {{ range .Categorias }}
+              <option value="{{ .Monto }}">{{ .Departamento }} - {{ .TipoSenador }} (Bs {{ .Monto }})</option>
+            {{ end }}
+          </select>
+          <p class="text-xs text-neutral-500 mt-1">Seleccione una regla para autocompletar el monto total.</p>
+        </div>
+
+        <div class="col-span-6 sm:col-span-3">
+          <label class="block text-sm font-medium text-neutral-700">Total (Bs)</label>
+          <input
+            type="number"
+            step="0.01"
+            name="total"
+            id="field_total"
+            required
+            class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md p-2"
+          />
+        </div>
+
+        <div class="col-span-6 sm:col-span-3">
+          <label class="block text-sm font-medium text-neutral-700">Retención (Bs)</label>
+          <input
+            type="number"
+            step="0.01"
+            name="retencion"
+            value="0"
+            class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md p-2"
+          />
+        </div>
+
+        <div class="col-span-6">
+          <label class="block text-sm font-medium text-neutral-700">Glosa / Observaciones</label>
+          <textarea
+            name="glosa"
+            rows="3"
+            class="mt-1 shadow-sm focus:ring-secondary focus:border-secondary block w-full sm:text-sm border border-neutral-300 rounded-md p-2"
+          ></textarea>
+        </div>
+
+        <div class="col-span-6">
+          <label class="block text-sm font-medium text-neutral-700">Informe Ref.</label>
+          <input
+            type="text"
+            name="informe"
+            class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md p-2"
+            placeholder="Ej: INF-2025-001"
+          />
+        </div>
+      </div>
+
+      <div class="flex justify-end">
+        <button
+          type="button"
+          class="bg-white py-2 px-4 border border-neutral-300 rounded-md shadow-sm text-sm font-medium text-neutral-700 hover:bg-neutral-50 focus:outline-none mr-3"
+          onclick="window.history.back()"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-800 focus:outline-none"
+        >
+          Guardar
+        </button>
+      </div>
+    </form>
   </div>
 
-  <form action="/compensaciones" method="POST" class="space-y-6 bg-white shadow px-4 py-5 sm:rounded-lg sm:p-6">
-    <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
-    <div class="grid grid-cols-6 gap-6">
-      <div class="col-span-6">
-        <label class="block text-sm font-medium text-neutral-700">Funcionario</label>
-        <select
-          name="funcionario_id"
-          required
-          class="mt-1 block w-full py-2 px-3 border border-neutral-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-secondary focus:border-secondary sm:text-sm">
-          {{ range .Usuarios }}
-          <option value="{{ .ID }}">{{ .GetNombreCompleto }} (CI: {{ .CI }})</option>
-          {{ end }}
-        </select>
-      </div>
-
-      <div class="col-span-6 sm:col-span-3">
-        <label class="block text-sm font-medium text-neutral-700">Nombre Trámite</label>
-        <input
-          type="text"
-          name="nombre_tramite"
-          required
-          class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md p-2" />
-      </div>
-
-      <div class="col-span-6 sm:col-span-3">
-        <label class="block text-sm font-medium text-neutral-700">Mes Compensación</label>
-        <select
-          name="mes"
-          class="mt-1 block w-full py-2 px-3 border border-neutral-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-secondary focus:border-secondary sm:text-sm">
-          <option value="ENERO">Enero</option>
-          <option value="FEBRERO">Febrero</option>
-          <option value="MARZO">Marzo</option>
-          <option value="ABRIL">Abril</option>
-          <option value="MAYO">Mayo</option>
-          <option value="JUNIO">Junio</option>
-          <option value="JULIO">Julio</option>
-          <option value="AGOSTO">Agosto</option>
-          <option value="SEPTIEMBRE">Septiembre</option>
-          <option value="OCTUBRE">Octubre</option>
-          <option value="NOVIEMBRE">Noviembre</option>
-          <option value="DICIEMBRE">Diciembre</option>
-        </select>
-      </div>
-
-      <div class="col-span-6 sm:col-span-3">
-        <label class="block text-sm font-medium text-neutral-700">Fecha Inicio</label>
-        <input
-          type="date"
-          name="fecha_inicio"
-          required
-          class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md p-2" />
-      </div>
-
-      <div class="col-span-6 sm:col-span-3">
-        <label class="block text-sm font-medium text-neutral-700">Fecha Fin</label>
-        <input
-          type="date"
-          name="fecha_fin"
-          required
-          class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md p-2" />
-      </div>
-
-      <div class="col-span-6 bg-neutral-50 p-4 rounded-md border border-neutral-200">
-        <label class="block text-sm font-bold text-neutral-700 mb-2">Cargar Monto Predefinido (Opcional)</label>
-        <select
-          id="preset_category"
-          onchange="applyPreset()"
-          class="block w-full py-2 px-3 border border-neutral-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-secondary focus:border-secondary sm:text-sm">
-          <option value="">-- Seleccionar --</option>
-          {{ range .Categorias }}
-          <option value="{{ .Monto }}">{{ .Departamento }} - {{ .TipoSenador }} (Bs {{ .Monto }})</option>
-          {{ end }}
-        </select>
-        <p class="text-xs text-neutral-500 mt-1">Seleccione una regla para autocompletar el monto total.</p>
-      </div>
-
-      <div class="col-span-6 sm:col-span-3">
-        <label class="block text-sm font-medium text-neutral-700">Total (Bs)</label>
-        <input
-          type="number"
-          step="0.01"
-          name="total"
-          id="field_total"
-          required
-          class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md p-2" />
-      </div>
-
-      <div class="col-span-6 sm:col-span-3">
-        <label class="block text-sm font-medium text-neutral-700">Retención (Bs)</label>
-        <input
-          type="number"
-          step="0.01"
-          name="retencion"
-          value="0"
-          class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md p-2" />
-      </div>
-
-      <div class="col-span-6">
-        <label class="block text-sm font-medium text-neutral-700">Glosa / Observaciones</label>
-        <textarea
-          name="glosa"
-          rows="3"
-          class="mt-1 shadow-sm focus:ring-secondary focus:border-secondary block w-full sm:text-sm border border-neutral-300 rounded-md p-2"></textarea>
-      </div>
-
-      <div class="col-span-6">
-        <label class="block text-sm font-medium text-neutral-700">Informe Ref.</label>
-        <input
-          type="text"
-          name="informe"
-          class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md p-2"
-          placeholder="Ej: INF-2025-001" />
-      </div>
-    </div>
-
-    <div class="flex justify-end">
-      <button
-        type="button"
-        class="bg-white py-2 px-4 border border-neutral-300 rounded-md shadow-sm text-sm font-medium text-neutral-700 hover:bg-neutral-50 focus:outline-none mr-3"
-        onclick="window.history.back()">
-        Cancelar
-      </button>
-      <button
-        type="submit"
-        class="ml-3 inline-flex justify-center py-2 px-4 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-primary hover:bg-primary-800 focus:outline-none">
-        Guardar
-      </button>
-    </div>
-  </form>
-</div>
-
-<script>
-  function applyPreset() {
-    const select = document.getElementById("preset_category");
-    const totalInput = document.getElementById("field_total");
-    const val = select.value;
-    if (val) {
-      totalInput.value = val;
+  <script>
+    function applyPreset() {
+      const select = document.getElementById("preset_category");
+      const totalInput = document.getElementById("field_total");
+      const val = select.value;
+      if (val) {
+        totalInput.value = val;
+      }
     }
-  }
-</script>
+  </script>
 
-{{ template "layout_footer" . }} {{ end }}
+  {{ template "layout_footer" . }}
+{{ end }}

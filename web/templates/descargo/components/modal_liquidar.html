@@ -44,7 +44,7 @@
           </div>
           <button
             @click="closing = true; setTimeout(() => htmx.find('#modal-container').innerHTML = '', 300)"
-            class="group flex items-center gap-2 px-3 py-1.5 rounded-lg border border-neutral-100 bg-neutral-50 hover:bg-neutral-100 hover:border-neutral-200 transition-all"
+            class="group flex items-center gap-2 px-3 py-1.5 rounded-md border border-neutral-100 bg-neutral-50 hover:bg-neutral-100 hover:border-neutral-200 transition-all"
           >
             <span class="text-[10px] font-black text-neutral-500 uppercase tracking-widest">Cerrar</span>
             <i class="ph ph-x-circle text-xl text-neutral-400 group-hover:text-neutral-600 transition-colors"></i>
@@ -63,7 +63,7 @@
               {{ range .Descargo.Solicitud.Items }}
             {{ range .Pasajes }}
               { id: '{{ .ID }}', ticket: '{{ .NumeroBillete }}', ruta: '{{ .GetRutaDisplay }}', costo: {{ .Costo }}, credito:
-              {{ .MontoCredito }}, efectivo: {{ .MontoReembolso }}, detalles: [
+              {{ .MontoCredito }}, efectivo: {{ .MontoReembolso }}, penalidad: 0, detalles: [
               {{ range .DescargoTramos }}
                 { tipo: '{{ .Tipo }}', devo: {{ .EsDevolucion }}, mod: {{ .EsModificacion }}, nombre: '{{ .TramoNombre }}', seq:
                 {{ .Seq }} },
@@ -73,10 +73,13 @@
           {{ end }}
             ],
             get totalCredito() {
-              return this.pasajes.reduce((acc, p) => acc + (p.credito || 0), 0).toFixed(2);
+              return this.pasajes.reduce((acc, p) => acc + (parseFloat(p.credito) || 0), 0).toFixed(2);
             },
             get totalEfectivo() {
-              return this.pasajes.reduce((acc, p) => acc + (p.efectivo || 0), 0).toFixed(2);
+              return this.pasajes.reduce((acc, p) => acc + (parseFloat(p.efectivo) || 0), 0).toFixed(2);
+            },
+            get totalPenalidad() {
+              return this.pasajes.reduce((acc, p) => acc + (parseFloat(p.penalidad) || 0), 0).toFixed(2);
             }
           }"
           @submit="loading = true"
@@ -90,8 +93,10 @@
                 Instrucción de Fiscalización Detallada:
               </p>
               Desglose el ahorro según el reporte de la aerolínea.
-              <span class="font-bold underline decoration-primary-300">El Crédito (EMD) generará un cupo de viaje</span>
-              y el
+              {{ if not .Descargo.Solicitud.IsOficial }}
+                <span class="font-bold underline decoration-primary-300">El Crédito (EMD) generará un cupo de viaje</span>
+                y el
+              {{ end }}
               <span class="font-bold underline decoration-primary-300">Efectivo generará una boleta de depósito bancario</span>
               .
             </div>
@@ -104,7 +109,10 @@
                 <tr>
                   <th class="px-3 py-3 w-48">Pasaje / Estado Tramos</th>
                   <th class="px-2 py-3 text-center">Costo Emisión</th>
-                  <th class="px-2 py-3 text-center bg-primary-800">CRÉDITO (A FAVOR)</th>
+                  <th class="px-2 py-3 text-center bg-primary-800">PENALIDAD (CARGO)</th>
+                  {{ if not .Descargo.Solicitud.IsOficial }}
+                    <th class="px-2 py-3 text-center bg-primary-800">CRÉDITO (A FAVOR)</th>
+                  {{ end }}
                   <th class="px-2 py-3 text-center bg-primary-800">EFECTIVO (A DEVOLVER)</th>
                   <th class="px-2 py-3 text-center border-l border-primary-700">COSTO UTILIZADO</th>
                 </tr>
@@ -127,18 +135,35 @@
                     <td class="px-2 py-3 text-center font-bold text-neutral-400 tabular-nums">
                       <span x-text="p.costo.toFixed(2)"></span>
                     </td>
-                    <td class="px-2 py-3 bg-primary-50/30">
-                      <input type="hidden" name="pasaje_id[]" :value="p.id" />
+                    <td class="px-2 py-3 bg-danger-50/50">
                       <input
                         type="number"
-                        name="pasaje_monto_credito[]"
+                        name="pasaje_monto_penalidad[]"
                         step="0.01"
                         min="0"
                         :max="p.costo"
-                        x-model.number="p.credito"
-                        class="block w-full px-2 py-1.5 text-[11px] font-black text-primary-700 bg-white border border-primary-200 rounded focus:ring-4 focus:ring-primary-500/10 text-center shadow-inner"
+                        x-model.number="p.penalidad"
+                        class="block w-full px-2 py-1.5 text-[11px] font-black text-danger-700 bg-white border border-danger-200 rounded focus:ring-4 focus:ring-danger-500/10 text-center shadow-inner"
                         placeholder="0.00"
                       />
+                    </td>
+                    <td class="px-2 py-3 bg-primary-50/30">
+                      <input type="hidden" name="pasaje_id[]" :value="p.id" />
+                      {{ if not .Descargo.Solicitud.IsOficial }}
+                        <input
+                          type="number"
+                          name="pasaje_monto_credito[]"
+                          step="0.01"
+                          min="0"
+                          :max="p.costo - (p.penalidad || 0)"
+                          x-model.number="p.credito"
+                          class="block w-full px-2 py-1.5 text-[11px] font-black text-primary-700 bg-white border border-primary-200 rounded focus:ring-4 focus:ring-primary-500/10 text-center shadow-inner"
+                          placeholder="0.00"
+                        />
+                      {{ else }}
+                        <input type="hidden" name="pasaje_monto_credito[]" value="0" />
+                        <div class="text-[10px] text-neutral-400 font-bold italic">N/A</div>
+                      {{ end }}
                     </td>
                     <td class="px-2 py-3 bg-primary-50/30">
                       <input
@@ -146,7 +171,7 @@
                         name="pasaje_monto_devolucion[]"
                         step="0.01"
                         min="0"
-                        :max="p.costo - (p.credito || 0)"
+                        :max="p.costo - (p.penalidad || 0) - (p.credito || 0)"
                         x-model.number="p.efectivo"
                         class="block w-full px-2 py-1.5 text-[11px] font-black text-neutral-700 bg-white border border-neutral-200 rounded focus:ring-4 focus:ring-neutral-500/10 text-center shadow-inner"
                         placeholder="0.00"
@@ -171,10 +196,16 @@
                   <td colspan="2" class="px-3 py-3 text-right text-[9px] font-black uppercase text-neutral-400">
                     Totales Consolidados:
                   </td>
-                  <td class="px-2 py-3 text-center font-black text-primary-700 tabular-nums">
+                  <td class="px-2 py-3 text-center font-black text-danger-700 tabular-nums bg-danger-50">
                     <span class="text-[8px] opacity-70">Bs.</span>
-                    <span x-text="totalCredito"></span>
+                    <span x-text="totalPenalidad"></span>
                   </td>
+                  {{ if not .Descargo.Solicitud.IsOficial }}
+                    <td class="px-2 py-3 text-center font-black text-primary-700 tabular-nums">
+                      <span class="text-[8px] opacity-70">Bs.</span>
+                      <span x-text="totalCredito"></span>
+                    </td>
+                  {{ end }}
                   <td class="px-2 py-3 text-center font-black text-neutral-600 tabular-nums">
                     <span class="text-[8px] opacity-70">Bs.</span>
                     <span x-text="totalEfectivo"></span>
@@ -182,7 +213,7 @@
                   <td class="px-2 py-3 text-center font-black text-primary-900 tabular-nums bg-primary-50">
                     <span class="text-[8px] opacity-70">Bs.</span>
                     <span
-                      x-text="(pasajes.reduce((acc, p) => acc + (p.costo - (p.credito||0) - (p.efectivo||0)), 0)).toFixed(2)"
+                      x-text="(pasajes.reduce((acc, p) => acc + (p.costo - (parseFloat(p.penalidad)||0) - (parseFloat(p.credito)||0) - (parseFloat(p.efectivo)||0)), 0)).toFixed(2)"
                     ></span>
                   </td>
                 </tr>
@@ -191,19 +222,22 @@
           </div>
 
           <!-- Final Summary Visualizer -->
-          <div class="grid grid-cols-2 gap-4">
-            <div
-              class="bg-primary-600 p-4 rounded-md shadow-lg shadow-primary-200/50 flex items-center justify-between border-b-4 border-primary-800"
-            >
-              <div>
-                <p class="text-[9px] font-black text-primary-100 uppercase tracking-widest mb-1">Crédito a Generar (EMD):</p>
-                <p class="text-2xl font-black text-white tabular-nums">
-                  Bs.
-                  <span x-text="totalCredito"></span>
-                </p>
+          <div class="grid {{ if .Descargo.Solicitud.IsOficial }}grid-cols-1{{ else }}grid-cols-2{{ end }} gap-4">
+            {{ if not .Descargo.Solicitud.IsOficial }}
+              <div
+                class="bg-primary-600 p-4 rounded-md shadow-lg shadow-primary-200/50 flex items-center justify-between border-b-4 border-primary-800"
+              >
+                <div>
+                  <p class="text-[9px] font-black text-primary-100 uppercase tracking-widest mb-1">Crédito a Generar (EMD):</p>
+                  <p class="text-2xl font-black text-white tabular-nums">
+                    Bs.
+                    <span x-text="totalCredito"></span>
+                  </p>
+                </div>
+                <i class="ph ph-ticket text-4xl text-primary-400/40"></i>
               </div>
-              <i class="ph ph-ticket text-4xl text-primary-400/40"></i>
-            </div>
+            {{ end }}
+
 
             <div
               class="bg-warning-500 p-4 rounded-md shadow-lg shadow-warning-200/50 flex items-center justify-between border-b-4 border-warning-700"

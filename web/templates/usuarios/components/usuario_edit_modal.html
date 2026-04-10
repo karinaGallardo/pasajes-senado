@@ -351,7 +351,7 @@
                   >
                     <template x-for="s in selected" :key="s.iata">
                       <div
-                        class="inline-flex items-center bg-primary/95 text-white text-[11px] font-bold pl-3 pr-1.5 py-1.5 rounded-full shadow-sm {{ if .CanManageRoutes }}
+                        class="inline-flex items-center bg-primary/95 text-white text-[11px] font-bold pl-3 pr-1.5 py-1.5 rounded-md shadow-sm {{ if .CanManageRoutes }}
                           hover:bg-primary
                         {{ end }} transition-all"
                       >

@@ -594,7 +594,7 @@ video {
   justify-content: center;
   gap: 0.5rem;
   white-space: nowrap;
-  border-radius: 12px;
+  border-radius: 8px;
   font-weight: 700;
   letter-spacing: -0.025em;
   outline: 2px solid transparent;
@@ -661,7 +661,7 @@ video {
   justify-content: center;
   gap: 0.5rem;
   white-space: nowrap;
-  border-radius: 12px;
+  border-radius: 8px;
   font-weight: 700;
   letter-spacing: -0.025em;
   outline: 2px solid transparent;
@@ -770,7 +770,7 @@ video {
   justify-content: center;
   gap: 0.5rem;
   white-space: nowrap;
-  border-radius: 12px;
+  border-radius: 8px;
   font-weight: 700;
   letter-spacing: -0.025em;
   outline: 2px solid transparent;
@@ -879,7 +879,7 @@ video {
   justify-content: center;
   gap: 0.5rem;
   white-space: nowrap;
-  border-radius: 12px;
+  border-radius: 8px;
   font-weight: 700;
   letter-spacing: -0.025em;
   outline: 2px solid transparent;
@@ -990,7 +990,7 @@ video {
   justify-content: center;
   gap: 0.5rem;
   white-space: nowrap;
-  border-radius: 12px;
+  border-radius: 8px;
   font-weight: 700;
   letter-spacing: -0.025em;
   outline: 2px solid transparent;
@@ -1099,7 +1099,7 @@ video {
   justify-content: center;
   gap: 0.5rem;
   white-space: nowrap;
-  border-radius: 12px;
+  border-radius: 8px;
   font-weight: 700;
   letter-spacing: -0.025em;
   outline: 2px solid transparent;
@@ -1307,7 +1307,7 @@ video {
 .table-container {
   overflow: hidden;
   overflow-x: auto;
-  border-radius: 12px;
+  border-radius: 8px;
   border-width: 1px;
   --tw-border-opacity: 1;
   border-color: rgb(229 229 229 / var(--tw-border-opacity, 1));
@@ -2970,20 +2970,8 @@ video {
   border-radius: 0.25rem;
 }
 
-.rounded-2xl {
-  border-radius: 1rem;
-}
-
 .rounded-3xl {
   border-radius: 1.5rem;
-}
-
-.rounded-full {
-  border-radius: 9999px;
-}
-
-.rounded-lg {
-  border-radius: 12px;
 }
 
 .rounded-md {
@@ -10335,9 +10323,9 @@ h1, h2, h3 {
   width: 1.25rem;
 }
 
-.after\:rounded-full::after {
+.after\:rounded-md::after {
   content: var(--tw-content);
-  border-radius: 9999px;
+  border-radius: 8px;
 }
 
 .after\:border::after {
@@ -11374,10 +11362,6 @@ h1, h2, h3 {
     white-space: nowrap;
   }
 
-  .sm\:rounded-lg {
-    border-radius: 12px;
-  }
-
   .sm\:rounded-md {
     border-radius: 8px;
   }
@@ -11528,8 +11512,8 @@ h1, h2, h3 {
     justify-content: space-between;
   }
 
-  .md\:rounded-lg {
-    border-radius: 12px;
+  .md\:rounded-md {
+    border-radius: 8px;
   }
 
   .md\:border-l {

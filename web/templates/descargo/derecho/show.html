@@ -499,10 +499,18 @@
                       {{ if .IsOriginal }}
                         <tr
                           class="group hover:bg-neutral-50/80 transition-all duration-200 {{ if .EsDevolucion }}
-                          opacity-60 bg-danger-50/10 grayscale
-                        {{ end }} {{ if .EsModificacion }}bg-warning-50/30{{ end }}"
+                            opacity-60 bg-danger-50/10 grayscale
+                          {{ end }} {{ if .EsModificacion }}bg-warning-50/30{{ end }}"
                         >
-                          <td class="px-6 py-4 whitespace-nowrap align-top font-bold text-neutral-900 border-l-4 {{ if .EsDevolucion }} border-danger-500 {{ else if .EsModificacion }} border-warning-500 {{ else }} border-transparent {{ end }}">
+                          <td
+                            class="px-6 py-4 whitespace-nowrap align-top font-bold text-neutral-900 border-l-4 {{ if .EsDevolucion }}
+                              border-danger-500
+                            {{ else if .EsModificacion }}
+                              border-warning-500
+                            {{ else }}
+                              border-transparent
+                            {{ end }}"
+                          >
                             <div class="flex flex-col">
                               <span class="text-xs">{{ .GetRutaDisplay }}</span>
                               <span class="text-[10px] text-neutral-400 font-medium">
@@ -575,11 +583,15 @@
                       {{ if .IsReprogramacion }}
                         <tr class="bg-warning-50/20">
                           <td colspan="4" class="px-6 py-1 bg-warning-50/50 border-y border-warning-100">
-                            <span class="text-[9px] font-black text-warning-700 uppercase tracking-widest">Tramo Reprogramado</span>
+                            <span class="text-[9px] font-black text-warning-700 uppercase tracking-widest">
+                              Tramo Reprogramado
+                            </span>
                           </td>
                         </tr>
                         <tr class="group hover:bg-neutral-50/80 transition-all duration-200">
-                          <td class="px-6 py-4 whitespace-nowrap align-top font-bold text-neutral-900 border-l-4 border-warning-400">
+                          <td
+                            class="px-6 py-4 whitespace-nowrap align-top font-bold text-neutral-900 border-l-4 border-warning-400"
+                          >
                             <div class="flex flex-col">
                               <span class="text-xs">{{ .GetRutaDisplay }}</span>
                               <span class="text-[10px] text-neutral-400 font-medium">
@@ -610,7 +622,9 @@
                             </div>
                           </td>
                           <td class="px-6 py-4 whitespace-nowrap text-center align-middle">
-                            <span class="inline-flex items-center px-2 py-1 rounded text-[9px] font-black bg-warning-100 text-warning-700 border border-warning-200 uppercase tracking-tighter">
+                            <span
+                              class="inline-flex items-center px-2 py-1 rounded text-[9px] font-black bg-warning-100 text-warning-700 border border-warning-200 uppercase tracking-tighter"
+                            >
                               <i class="ph ph-airplane-tilt mr-1 text-xs"></i>
                               Nuevo Tramo
                             </span>
@@ -667,10 +681,18 @@
                         {{ if .IsOriginal }}
                           <tr
                             class="group hover:bg-neutral-50/80 transition-all duration-200 {{ if .EsDevolucion }}
-                            opacity-60 bg-danger-50/10 grayscale
-                          {{ end }} {{ if .EsModificacion }}bg-warning-50/30{{ end }}"
+                              opacity-60 bg-danger-50/10 grayscale
+                            {{ end }} {{ if .EsModificacion }}bg-warning-50/30{{ end }}"
                           >
-                            <td class="px-6 py-4 whitespace-nowrap align-top font-bold text-neutral-900 border-l-4 {{ if .EsDevolucion }} border-danger-500 {{ else if .EsModificacion }} border-warning-500 {{ else }} border-transparent {{ end }}">
+                            <td
+                              class="px-6 py-4 whitespace-nowrap align-top font-bold text-neutral-900 border-l-4 {{ if .EsDevolucion }}
+                                border-danger-500
+                              {{ else if .EsModificacion }}
+                                border-warning-500
+                              {{ else }}
+                                border-transparent
+                              {{ end }}"
+                            >
                               <div class="flex flex-col">
                                 <span class="text-xs">{{ .GetRutaDisplay }}</span>
                                 <span class="text-[10px] text-neutral-400 font-medium">
@@ -737,11 +759,15 @@
                         {{ if .IsReprogramacion }}
                           <tr class="bg-warning-50/20">
                             <td colspan="4" class="px-6 py-1 bg-warning-50/50 border-y border-warning-100">
-                              <span class="text-[9px] font-black text-warning-700 uppercase tracking-widest">Tramo Reprogramado</span>
+                              <span class="text-[9px] font-black text-warning-700 uppercase tracking-widest">
+                                Tramo Reprogramado
+                              </span>
                             </td>
                           </tr>
                           <tr class="group hover:bg-neutral-50/80 transition-all duration-200">
-                            <td class="px-6 py-4 whitespace-nowrap align-top font-bold text-neutral-900 border-l-4 border-warning-400">
+                            <td
+                              class="px-6 py-4 whitespace-nowrap align-top font-bold text-neutral-900 border-l-4 border-warning-400"
+                            >
                               <div class="flex flex-col">
                                 <span class="text-xs">{{ .GetRutaDisplay }}</span>
                                 <span class="text-[10px] text-neutral-400 font-medium">
@@ -766,7 +792,9 @@
                               </div>
                             </td>
                             <td class="px-6 py-4 whitespace-nowrap text-center align-middle">
-                              <span class="inline-flex items-center px-2 py-1 rounded text-[9px] font-black bg-warning-100 text-warning-700 border border-warning-200 uppercase tracking-tighter">
+                              <span
+                                class="inline-flex items-center px-2 py-1 rounded text-[9px] font-black bg-warning-100 text-warning-700 border border-warning-200 uppercase tracking-tighter"
+                              >
                                 <i class="ph ph-airplane-tilt mr-1 text-xs"></i>
                                 Nuevo Tramo
                               </span>
@@ -779,12 +807,12 @@
                                   class="p-1.5 rounded-md bg-white border border-neutral-200 shadow-sm hover:bg-primary-50 hover:text-primary transition-all active:scale-90"
                                 >
                                   <i class="ph ph-file-search text-lg"></i>
-                              </button>
-                            {{ end }}
-                          </td>
-                        </tr>
+                                </button>
+                              {{ end }}
+                            </td>
+                          </tr>
+                        {{ end }}
                       {{ end }}
-                    {{ end }}
                     </tbody>
                   </table>
                 </div>

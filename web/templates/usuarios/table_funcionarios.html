@@ -25,7 +25,7 @@
               <div class="flex items-center">
                 <div class="flex-shrink-0 h-8 w-8">
                   <span
-                    class="inline-flex items-center justify-center h-8 w-8 rounded-full bg-neutral-100 border border-neutral-200"
+                    class="inline-flex items-center justify-center h-8 w-8 rounded-md bg-neutral-100 border border-neutral-200"
                   >
                     <span class="text-xs font-bold text-neutral-600 uppercase">{{ printf "%.1s" $user.Username }}</span>
                   </span>
@@ -54,13 +54,13 @@
             <td class="hidden md:table-cell">
               {{ if $user.Rol }}
                 <span
-                  class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-primary-50 text-primary-700 border border-primary-100 uppercase tracking-wider"
+                  class="px-2 py-0.5 text-[10px] font-bold rounded-md bg-primary-50 text-primary-700 border border-primary-100 uppercase tracking-wider"
                 >
                   {{ $user.Rol.Codigo }}
                 </span>
               {{ else }}
                 <span
-                  class="px-2 py-0.5 text-[10px] font-medium rounded-full bg-neutral-50 text-neutral-400 border border-neutral-200"
+                  class="px-2 py-0.5 text-[10px] font-medium rounded-md bg-neutral-50 text-neutral-400 border border-neutral-200"
                 >
                   Sin Rol
                 </span>

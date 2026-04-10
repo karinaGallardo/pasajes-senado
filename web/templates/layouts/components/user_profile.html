@@ -1,66 +1,79 @@
 {{ define "layouts/components/user_profile" }}
-<div class="relative h-full pl-4 border-l border-neutral-200" x-data="{ open: false }">
-  <!-- Trigger Button -->
-  <button
-    @click="open = !open"
-    class="flex items-center h-full px-4 group focus:outline-none hover:bg-neutral-50 transition-colors border-b-2 border-transparent"
-    :class="{ 'bg-white !border-primary': open }">
-    <div class="text-right mr-3 hidden md:block select-none">
-      <div class="text-sm font-bold text-neutral-800 leading-tight">{{ .AuthUser.GetNombreCompleto }}</div>
-      <div class="text-[10px] font-black uppercase tracking-widest text-neutral-400 mt-0.5">{{ .AuthUser.Rol.Nombre }}</div>
-    </div>
-
-    <div class="relative">
-      <div class="h-9 w-9 rounded-lg bg-primary flex items-center justify-center text-white font-black shadow-sm ring-1 ring-white/20">
-        <span class="text-xs tracking-tighter">{{ .AuthUser.GetInitials }}</span>
+  <div class="relative h-full pl-4 border-l border-neutral-200" x-data="{ open: false }">
+    <!-- Trigger Button -->
+    <button
+      @click="open = !open"
+      class="flex items-center h-full px-4 group focus:outline-none hover:bg-neutral-50 transition-colors border-b-2 border-transparent"
+      :class="{ 'bg-white !border-primary': open }"
+    >
+      <div class="text-right mr-3 hidden md:block select-none">
+        <div class="text-sm font-bold text-neutral-800 leading-tight">{{ .AuthUser.GetNombreCompleto }}</div>
+        <div class="text-[10px] font-black uppercase tracking-widest text-neutral-400 mt-0.5">{{ .AuthUser.Rol.Nombre }}</div>
       </div>
-      <!-- Status Badge -->
-      <div class="absolute -bottom-0.5 -right-0.5 h-3 w-3 bg-success-500 rounded-full border-2 border-white"></div>
-    </div>
 
-    <i class="ph ph-caret-down ml-2 text-neutral-400 text-xs transition-transform" :class="{ 'rotate-180': open }"></i>
-  </button>
-
-  <!-- Dropdown Menu (Matches Trigger Width) -->
-  <div
-    x-show="open"
-    @click.away="open = false"
-    class="absolute right-0 top-full w-full min-w-[280px] bg-white border-x border-b border-neutral-200 shadow-premium z-50 overflow-hidden rounded-b-xl"
-    style="display: none">
-    <!-- User Info Section -->
-    <div class="p-4 bg-neutral-50/50 border-b border-neutral-100">
-      <p class="text-[10px] font-black uppercase tracking-widest text-neutral-400 mb-1">Cuenta</p>
-      <p class="text-sm font-bold text-neutral-900 truncate">{{ .AuthUser.Email }}</p>
-    </div>
-
-    <!-- Actions -->
-    <div class="p-2">
-      <a href="/perfil" class="flex items-center gap-3 px-3 py-2 text-sm font-medium text-neutral-600 rounded-lg hover:bg-neutral-50 hover:text-neutral-900 group">
-        <div class="p-1.5 rounded-md bg-neutral-100 group-hover:bg-neutral-200">
-          <i class="ph ph-user text-base"></i>
+      <div class="relative">
+        <div
+          class="h-9 w-9 rounded-md bg-primary flex items-center justify-center text-white font-black shadow-sm ring-1 ring-white/20"
+        >
+          <span class="text-xs tracking-tighter">{{ .AuthUser.GetInitials }}</span>
         </div>
-        <span>Mi Perfil</span>
-      </a>
+        <!-- Status Badge -->
+        <div class="absolute -bottom-0.5 -right-0.5 h-3 w-3 bg-success-500 rounded-md border-2 border-white"></div>
+      </div>
 
-      {{ if .AuthUser.IsAdminOrResponsable }}
-      <a href="/admin/configuracion" class="flex items-center gap-3 px-3 py-2 text-sm font-medium text-neutral-600 rounded-xl hover:bg-neutral-50 hover:text-neutral-900 group">
-        <div class="p-1.5 rounded-lg bg-neutral-100 group-hover:bg-neutral-200">
-          <i class="ph ph-shield-check text-lg"></i>
-        </div>
-        <span>Ajustes del Sistema</span>
-      </a>
-      {{ end }}
-    </div>
+      <i class="ph ph-caret-down ml-2 text-neutral-400 text-xs transition-transform" :class="{ 'rotate-180': open }"></i>
+    </button>
 
-    <!-- Logout -->
-    <div class="p-2 border-t border-neutral-100 bg-neutral-50/30">
-      <a href="/auth/logout" class="flex items-center gap-3 px-3 py-2 text-sm font-bold text-danger-600 rounded-lg hover:bg-danger-50 group transition-colors">
-        <div class="p-1.5 rounded-md bg-danger-50 group-hover:bg-danger-100">
-          <i class="ph ph-sign-out text-base"></i>
-        </div>
-        <span>Cerrar Sesión</span>
-      </a>
+    <!-- Dropdown Menu (Matches Trigger Width) -->
+    <div
+      x-show="open"
+      @click.away="open = false"
+      class="absolute right-0 top-full w-full min-w-[280px] bg-white border-x border-b border-neutral-200 shadow-premium z-50 overflow-hidden rounded-b-xl"
+      style="display: none"
+    >
+      <!-- User Info Section -->
+      <div class="p-4 bg-neutral-50/50 border-b border-neutral-100">
+        <p class="text-[10px] font-black uppercase tracking-widest text-neutral-400 mb-1">Cuenta</p>
+        <p class="text-sm font-bold text-neutral-900 truncate">{{ .AuthUser.Email }}</p>
+      </div>
+
+      <!-- Actions -->
+      <div class="p-2">
+        <a
+          href="/perfil"
+          class="flex items-center gap-3 px-3 py-2 text-sm font-medium text-neutral-600 rounded-md hover:bg-neutral-50 hover:text-neutral-900 group"
+        >
+          <div class="p-1.5 rounded-md bg-neutral-100 group-hover:bg-neutral-200">
+            <i class="ph ph-user text-base"></i>
+          </div>
+          <span>Mi Perfil</span>
+        </a>
+
+        {{ if .AuthUser.IsAdminOrResponsable }}
+          <a
+            href="/admin/configuracion"
+            class="flex items-center gap-3 px-3 py-2 text-sm font-medium text-neutral-600 rounded-md hover:bg-neutral-50 hover:text-neutral-900 group"
+          >
+            <div class="p-1.5 rounded-md bg-neutral-100 group-hover:bg-neutral-200">
+              <i class="ph ph-shield-check text-lg"></i>
+            </div>
+            <span>Ajustes del Sistema</span>
+          </a>
+        {{ end }}
+      </div>
+
+      <!-- Logout -->
+      <div class="p-2 border-t border-neutral-100 bg-neutral-50/30">
+        <a
+          href="/auth/logout"
+          class="flex items-center gap-3 px-3 py-2 text-sm font-bold text-danger-600 rounded-md hover:bg-danger-50 group transition-colors"
+        >
+          <div class="p-1.5 rounded-md bg-danger-50 group-hover:bg-danger-100">
+            <i class="ph ph-sign-out text-base"></i>
+          </div>
+          <span>Cerrar Sesión</span>
+        </a>
+      </div>
     </div>
   </div>
-</div>
 {{ end }}

@@ -139,7 +139,7 @@
                 <div class="mt-1 space-y-1">
                   <div class="flex items-center gap-2">
                     <span
-                      class="px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-wider bg-neutral-100 text-neutral-600 border border-neutral-200"
+                      class="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-neutral-100 text-neutral-600 border border-neutral-200"
                     >
                       {{ .Solicitud.GetTipoItinerarioNombre }}
                     </span>
@@ -154,7 +154,7 @@
                     <p class="text-[12px] font-medium tracking-tight">
                       {{ .Solicitud.Usuario.GetNombreCompleto }}
                     </p>
-                    <span class="h-1 w-1 rounded-full bg-neutral-500"></span>
+                    <span class="h-1 w-1 rounded-md bg-neutral-500"></span>
                     <p class="text-[12px] font-medium tracking-tight">
                       {{ .CupoItem.GetWeekLabel }}
                     </p>
@@ -221,7 +221,7 @@
                 class="bg-success-50 border border-success-200 rounded-md p-4 mb-4 flex items-center justify-between gap-3 shadow-sm"
               >
                 <div class="flex items-center gap-3">
-                  <div class="h-8 w-8 rounded-full bg-success-100 flex items-center justify-center text-success-600">
+                  <div class="h-8 w-8 rounded-md bg-success-100 flex items-center justify-center text-success-600">
                     <i class="ph ph-check-circle text-xl"></i>
                   </div>
                   <p class="text-sm font-black text-success-800">
@@ -293,7 +293,7 @@
                   </section>
 
                   <!-- VISUALIZACIÓN DE RUTA (ASIMÉTRICA) -->
-                  <section class="bg-white p-6 rounded-2xl border border-neutral-100 shadow-sm relative group mb-4">
+                  <section class="bg-white p-6 rounded-md border border-neutral-100 shadow-sm relative group mb-4">
                     <div class="relative flex items-center justify-between gap-2">
                       <!-- 1. ORIGEN IDA -->
                       <div class="flex-1 relative">
@@ -363,7 +363,7 @@
                           <div class="flex items-center gap-1">
                             <div
                               @click="showSedeSelector = !showSedeSelector"
-                              class="h-8 w-8 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-400 mb-1 border border-neutral-200 hover:border-primary hover:text-primary transition-all cursor-pointer shadow-sm"
+                              class="h-8 w-8 rounded-md bg-neutral-100 flex items-center justify-center text-neutral-400 mb-1 border border-neutral-200 hover:border-primary hover:text-primary transition-all cursor-pointer shadow-sm"
                             >
                               <i class="ph ph-buildings text-sm"></i>
                             </div>
@@ -549,7 +549,7 @@
                                 <label class="inline-flex items-center cursor-pointer">
                                   <input type="checkbox" x-model="idaProgramada" class="sr-only peer" />
                                   <div
-                                    class="relative w-11 h-6 bg-neutral-200 rounded-full peer-checked:bg-primary transition-all after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full shadow-inner"
+                                    class="relative w-11 h-6 bg-neutral-200 rounded-md peer-checked:bg-primary transition-all after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-md after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full shadow-inner"
                                   ></div>
                                 </label>
                               </template>
@@ -642,7 +642,7 @@
                                 <label class="inline-flex items-center cursor-pointer">
                                   <input type="checkbox" x-model="vueltaProgramada" class="sr-only peer" />
                                   <div
-                                    class="relative w-11 h-6 bg-neutral-200 rounded-full peer-checked:bg-secondary transition-all after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full shadow-inner"
+                                    class="relative w-11 h-6 bg-neutral-200 rounded-md peer-checked:bg-secondary transition-all after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-md after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full shadow-inner"
                                   ></div>
                                 </label>
                               </template>
@@ -707,7 +707,7 @@
                   </section>
 
                   <!-- SECCIÓN C: LÍNEA AÉREA -->
-                  <section class="bg-neutral-50/50 p-6 rounded-2xl border border-neutral-200/60 shadow-sm">
+                  <section class="bg-neutral-50/50 p-6 rounded-md border border-neutral-200/60 shadow-sm">
                     <div class="grid grid-cols-1 gap-6">
                       <!-- Campos ocultos necesarios para la actualización -->
                       <input type="hidden" name="origen_ida_cod" :value="origenIdaIATA" />

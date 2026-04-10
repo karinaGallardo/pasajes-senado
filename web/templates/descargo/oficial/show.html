@@ -4,9 +4,13 @@
 
   <div class="w-full space-y-6">
     <!-- Header -->
-    <div class="flex items-center justify-between">
+    <div class="flex items-center justify-between mb-8">
       <div>
-        <h2 class="text-2xl font-black text-neutral-900 tracking-tight">Descargo #{{ .Descargo.Codigo }}</h2>
+        <h2 class="text-2xl font-black text-neutral-900 tracking-tight italic">
+          Informe Oficial
+          <span class="text-primary-600">PV-06</span>
+          #{{ .Descargo.Codigo }}
+        </h2>
         <p class="text-xs text-neutral-400 mt-0.5">
           <span class="font-bold uppercase tracking-tighter mr-1">Presentado:</span>
           {{ .Descargo.FechaPresentacion.Format "02/01/2006" }} por
@@ -14,14 +18,22 @@
         </p>
       </div>
       <div class="flex items-center gap-2">
-        {{ if .Descargo.CanPrint .AuthUser }}
+        <button
+          type="button"
+          hx-get="/descargos/oficial/{{ .Descargo.ID }}/previsualizar"
+          hx-target="#modal-container"
+          class="inline-flex items-center px-4 py-2 border border-neutral-300 shadow-sm text-xs font-black rounded-md text-neutral-700 bg-white hover:bg-neutral-50 transition-all uppercase tracking-tight cursor-pointer"
+        >
+          <i class="ph ph-file-pdf mr-2 text-lg"></i>
+          Ver / Imprimir PV-06
+        </button>
+        {{ if .Descargo.CanEdit .AuthUser }}
           <a
-            href="/descargos/oficial/{{ .Descargo.ID }}/print"
-            target="_blank"
-            class="inline-flex items-center px-4 py-2 border border-neutral-300 shadow-sm text-xs font-black rounded-md text-neutral-700 bg-white hover:bg-neutral-50 transition-all uppercase tracking-tight"
+            href="/descargos/oficial/{{ .Descargo.ID }}/editar"
+            class="inline-flex items-center px-4 py-2 border border-primary-200 shadow-sm text-xs font-black rounded-md text-primary-700 bg-primary-50 hover:bg-primary-100 transition-all uppercase tracking-tight"
           >
-            <i class="ph ph-printer mr-2 text-lg"></i>
-            Imprimir Descargo
+            <i class="ph ph-note-pencil mr-2 text-lg"></i>
+            Editar Informe
           </a>
         {{ end }}
         <a
@@ -29,14 +41,17 @@
           class="inline-flex items-center px-4 py-2 border border-neutral-300 shadow-sm text-xs font-black rounded-md text-neutral-700 bg-white hover:bg-neutral-50 transition-all uppercase tracking-tight"
         >
           <i class="ph ph-arrow-left mr-2 text-lg"></i>
-          Volver a Solicitud
+          Volver
         </a>
       </div>
     </div>
 
     <!-- Status Banner -->
-    <div class="bg-white shadow rounded-lg px-6 py-4 border-l-4 {{ .Descargo.GetEstadoColorClass }}">
-      <div class="flex items-center justify-between">
+    <div
+      class="bg-white shadow-sm rounded-md px-6 py-4 border-l-4 {{ .Descargo.GetEstadoColorClass }} relative overflow-hidden group"
+    >
+      <div class="absolute inset-0 bg-neutral-50/50 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+      <div class="flex items-center justify-between relative z-10">
         <div>
           <p class="text-[10px] font-black text-neutral-400 uppercase tracking-widest leading-none mb-1">Estado del Trámite</p>
           <h3 class="text-xl font-black text-neutral-800 tracking-tight leading-none">{{ .Descargo.GetEstadoLabel }}</h3>
@@ -44,7 +59,7 @@
         </div>
         <div>
           <span
-            class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black {{ .Descargo.GetEstadoBadgeClass }} uppercase tracking-tighter"
+            class="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-black {{ .Descargo.GetEstadoBadgeClass }} uppercase tracking-tighter shadow-sm"
           >
             <i class="{{ .Descargo.GetEstadoIcon }} mr-1 text-sm"></i>
             {{ .Descargo.GetEstadoLabel }}
@@ -52,9 +67,9 @@
         </div>
       </div>
       {{ if .Descargo.Observaciones }}
-        <div class="mt-4 p-4 bg-danger-50 border border-danger-100 rounded-lg shadow-sm">
+        <div class="mt-4 p-4 bg-danger-50 border border-danger-100 rounded-md shadow-sm relative z-10">
           <div class="flex items-start">
-            <i class="ph ph-warning-circle text-danger-500 text-lg mr-3 mt-0.5"></i>
+            <i class="ph ph-warning-circle text-danger-500 text-lg mr-3 mt-0.5 animate-bounce"></i>
             <div>
               <h4 class="text-[10px] font-black text-danger-700 uppercase tracking-widest mb-1">Observaciones de la Revisión</h4>
               <p class="text-xs text-danger-900 font-medium leading-relaxed">{{ .Descargo.Observaciones }}</p>
@@ -69,9 +84,11 @@
       <!-- Left Col: Travel Info -->
       <div class="md:col-span-1 space-y-6">
         <!-- Travel Context -->
-        <div class="bg-primary-50 shadow rounded-lg p-6 border border-primary-100 overflow-hidden relative">
+        <div class="bg-primary-50 shadow-sm rounded-md p-6 border border-primary-100 overflow-hidden relative group/card">
           <div class="absolute top-0 right-0 mt-2 mr-2">
-            <span class="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider bg-primary text-white shadow-sm">
+            <span
+              class="px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-primary text-white shadow-sm transition-all group-hover/card:scale-110"
+            >
               {{ .Descargo.Solicitud.GetConceptoNombre }}
             </span>
           </div>
@@ -89,9 +106,9 @@
               <dd class="text-sm text-neutral-900 font-bold mt-1">
                 <a
                   href="/solicitudes/oficial/{{ .Descargo.Solicitud.ID }}/detalle"
-                  class="text-secondary hover:underline flex items-center group"
+                  class="text-secondary hover:underline flex items-center group/link"
                 >
-                  <i class="ph ph-file-text mr-1.5 text-lg group-hover:scale-110 transition-transform"></i>
+                  <i class="ph ph-file-text mr-1.5 text-lg group-hover/link:scale-110 transition-transform"></i>
                   Solicitud
                   #{{ .Descargo.Solicitud.Codigo }}
                 </a>
@@ -167,7 +184,9 @@
             <div class="p-4 space-y-4">
               <!-- Monto a Devolver -->
               <div class="text-center py-2 bg-white rounded-md border border-amber-100">
-                <p class="text-[9px] font-black text-neutral-400 uppercase tracking-tighter mb-1">Monto a Devolver al Senado</p>
+                <p class="text-[9px] font-black text-neutral-400 uppercase tracking-tighter mb-1">
+                  Total a Reintegrar (Penalidades/Reprogramación)
+                </p>
                 <div class="text-2xl font-black text-neutral-900 tracking-tight">
                   <span class="text-xs mr-1 text-neutral-500 font-bold tracking-normal">Bs.</span>
                   {{ printf "%.2f" .Descargo.MontoDevolucion }}
@@ -192,7 +211,7 @@
                       </p>
                       <p>
                         <strong>Concepto:</strong>
-                        Reintegro Pasajes -
+                        Reintegro Penalidad/Reprog. -
                         {{ .Descargo.Codigo }}
                       </p>
                     </div>
@@ -272,7 +291,7 @@
             </div>
           </div>
         {{ end }}
-        <div class="bg-white shadow rounded-lg p-6 border border-neutral-200">
+        <div class="bg-white shadow-sm rounded-md p-6 border border-neutral-200">
           <h3 class="text-[10px] font-black text-neutral-400 uppercase mb-4 tracking-widest border-b pb-2">
             Acciones del Descargo
           </h3>
@@ -371,7 +390,7 @@
                       Observaciones para Corrección
                     </label>
                     <div
-                      class="relative overflow-hidden rounded-lg border border-neutral-200 bg-white transition-all duration-200 focus-within:ring-2 focus-within:ring-focus focus-within:border-primary-500 shadow-sm"
+                      class="relative overflow-hidden rounded-md border border-neutral-200 bg-white transition-all duration-200 focus-within:ring-2 focus-within:ring-focus focus-within:border-primary-500 shadow-sm"
                     >
                       <textarea
                         name="observaciones"
@@ -386,7 +405,7 @@
                   <button
                     type="submit"
                     :disabled="loading"
-                    class="w-full group/btn inline-flex justify-center items-center px-4 py-2.5 border border-danger-200 text-xs font-black rounded-lg text-danger-700 bg-danger-50 hover:bg-danger-100 transition-all active:scale-95 disabled:opacity-50 uppercase tracking-tight cursor-pointer"
+                    class="w-full group/btn inline-flex justify-center items-center px-4 py-2.5 border border-danger-200 text-xs font-black rounded-md text-danger-700 bg-danger-50 hover:bg-danger-100 transition-all active:scale-95 disabled:opacity-50 uppercase tracking-tight cursor-pointer"
                   >
                     <i class="ph ph-warning-circle mr-2 text-lg" x-show="!loading"></i>
                     <span x-show="!loading">Observar y Devolver</span>
@@ -398,16 +417,6 @@
                 </form>
               </div>
             {{ end }}
-
-
-            <button
-              hx-get="/descargos/oficial/{{ .Descargo.ID }}/previsualizar"
-              hx-target="#modal-container"
-              class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-xs font-black rounded-md text-white bg-primary hover:bg-primary-600 transition-all shadow-sm active:scale-95 uppercase tracking-tight cursor-pointer"
-            >
-              <i class="ph ph-file-pdf mr-2 text-lg"></i>
-              Ver / Imprimir PV-06
-            </button>
 
             {{ if .Descargo.CanRevertFinalization .AuthUser }}
               <form
@@ -450,15 +459,8 @@
               </form>
             {{ end }}
 
-            {{ if .Descargo.CanEdit .AuthUser }}
-              <a
-                href="/descargos/oficial/{{ .Descargo.ID }}/editar"
-                class="w-full inline-flex justify-center items-center px-4 py-2 border border-neutral-200 text-xs font-black rounded-md text-neutral-600 bg-white hover:bg-neutral-50 transition-all shadow-sm active:scale-95 uppercase tracking-tight"
-              >
-                <i class="ph ph-note-pencil mr-2 text-lg"></i>
-                Editar Descargo
-              </a>
-            {{ end }}
+
+            <!-- Botón de Editar removido de aquí y movido a la cabecera -->
           </div>
         </div>
       </div>
@@ -466,10 +468,14 @@
       <!-- Right Col: Report Content -->
       <div class="md:col-span-2 space-y-6">
         <!-- Detailed Itinerary (PV-06) -->
-        <div class="bg-white shadow rounded-lg overflow-hidden border border-neutral-200">
+        <div class="bg-white shadow-sm rounded-md overflow-hidden border border-neutral-200">
           <div class="px-6 py-4 border-b border-neutral-100 bg-neutral-50 flex justify-between items-center">
-            <h3 class="text-lg font-bold text-neutral-900">3. Itinerario Realizado / Tramos</h3>
-            <i class="ph ph-airplane text-neutral-400 text-xl"></i>
+            <div class="flex items-center gap-3">
+              <div class="w-8 h-8 rounded-md bg-primary-50 flex items-center justify-center">
+                <i class="ph ph-airplane text-primary-500 text-lg rotate-45"></i>
+              </div>
+              <h3 class="text-sm font-bold text-neutral-900 uppercase tracking-widest">3. Itinerario Realizado / Tramos</h3>
+            </div>
           </div>
 
           <div class="space-y-6">
@@ -504,7 +510,7 @@
                           bg-warning-50/30
                         {{ end }}"
                       >
-                        <td class="px-6 py-4 whitespace-nowrap align-top">
+                        <td class="px-6 py-4 whitespace-nowrap align-top border-l-4 border-primary-500">
                           <div class="flex flex-col gap-1.5">
                             <span
                               class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black border border-primary-200 bg-primary-50 text-primary-700 uppercase tracking-tighter shadow-sm w-fit"
@@ -570,7 +576,7 @@
 
                     {{ range .TramosIdaReprogramados }}
                       <tr class="group hover:bg-neutral-50/80 transition-all duration-200 bg-warning-50/30">
-                        <td class="px-6 py-4 whitespace-nowrap align-top">
+                        <td class="px-6 py-4 whitespace-nowrap align-top border-l-4 border-warning-500">
                           <div class="flex flex-col gap-1.5">
                             <span
                               class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black border border-warning-200 bg-warning-50 text-warning-700 uppercase tracking-tighter shadow-sm w-fit"
@@ -666,7 +672,7 @@
                   <tbody class="bg-white divide-y divide-neutral-100">
                     {{ range .TramosVueltaOriginales }}
                       <tr class="group hover:bg-neutral-50/80 transition-all duration-200">
-                        <td class="px-6 py-4 whitespace-nowrap align-top">
+                        <td class="px-6 py-4 whitespace-nowrap align-top border-l-4 border-secondary-500">
                           <div class="flex flex-col gap-1.5">
                             <span
                               class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black border border-secondary-200 bg-secondary-50 text-secondary-700 uppercase tracking-tighter shadow-sm w-fit"
@@ -732,7 +738,7 @@
 
                     {{ range .TramosVueltaReprogramados }}
                       <tr class="group hover:bg-neutral-50/80 transition-all duration-200 bg-warning-50/30">
-                        <td class="px-6 py-4 whitespace-nowrap align-top">
+                        <td class="px-6 py-4 whitespace-nowrap align-top border-l-4 border-warning-500">
                           <div class="flex flex-col gap-1.5">
                             <span
                               class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black border border-warning-200 bg-warning-50 text-warning-700 uppercase tracking-tighter shadow-sm w-fit"
@@ -803,7 +809,7 @@
         </div>
 
         <!-- Informe de Actividades -->
-        <div class="bg-white shadow rounded-lg overflow-hidden border border-neutral-200">
+        <div class="bg-white shadow rounded-md overflow-hidden border border-neutral-200">
           <div class="px-6 py-4 border-b border-neutral-100 bg-neutral-50 flex justify-between items-center">
             <h3 class="text-lg font-bold text-neutral-900">Informe de Actividades y Resultados</h3>
             <i class="ph ph-clipboard-text text-neutral-400 text-xl"></i>
@@ -822,7 +828,7 @@
 
             <div class="border-t border-neutral-100 pt-4">
               <h4 class="text-xs font-black text-neutral-400 uppercase tracking-widest mb-2">Actividades Realizadas</h4>
-              <div class="bg-neutral-50 p-4 rounded-lg prose prose-sm max-w-none text-neutral-800 whitespace-pre-wrap">
+              <div class="bg-neutral-50 p-4 rounded-md prose prose-sm max-w-none text-neutral-800 whitespace-pre-wrap">
                 {{ .Descargo.GetActividades }}
               </div>
             </div>
@@ -831,7 +837,7 @@
               {{ if .Descargo.Oficial.ResultadosViaje }}
                 <div class="border-t border-neutral-100 pt-4">
                   <h4 class="text-xs font-black text-neutral-400 uppercase tracking-widest mb-2">Resultados Obtenidos</h4>
-                  <div class="bg-primary-50/30 p-4 rounded-lg text-sm text-neutral-800 whitespace-pre-wrap">
+                  <div class="bg-primary-50/30 p-4 rounded-md text-sm text-neutral-800 whitespace-pre-wrap">
                     {{ .Descargo.GetResultados }}
                   </div>
                 </div>
@@ -842,7 +848,7 @@
                   <h4 class="text-xs font-black text-neutral-400 uppercase tracking-widest mb-2">
                     Conclusiones y Recomendaciones
                   </h4>
-                  <div class="bg-info-50/30 p-4 rounded-lg text-sm text-neutral-800 whitespace-pre-wrap">
+                  <div class="bg-info-50/30 p-4 rounded-md text-sm text-neutral-800 whitespace-pre-wrap">
                     {{ .Descargo.GetConclusiones }}
                   </div>
                 </div>
@@ -854,7 +860,7 @@
                   <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
                     {{ range .Descargo.Oficial.Anexos }}
                       <div
-                        class="relative aspect-square rounded-lg overflow-hidden border border-neutral-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+                        class="relative aspect-square rounded-md overflow-hidden border border-neutral-200 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
                         hx-get="/preview-file?path={{ .Archivo }}"
                         hx-target="#modal-container"
                       >
@@ -873,7 +879,7 @@
                 <div class="space-y-4">
                   <!-- Bloque Terrestre Público -->
                   {{ if .Descargo.Oficial.HasTransportType "TERRESTRE_PUBLICO" }}
-                    <div class="p-4 rounded-xl bg-amber-50/50 border border-amber-100">
+                    <div class="p-4 rounded-md bg-amber-50/50 border border-amber-100">
                       <div class="flex items-center gap-2 mb-3">
                         <i class="ph ph-bus text-amber-600 text-xl"></i>
                         <span class="text-xs font-black uppercase tracking-widest text-neutral-700">
@@ -882,7 +888,7 @@
                       </div>
 
                       {{ if .Descargo.Oficial.TransportesTerrestres }}
-                        <div class="overflow-hidden rounded-lg border border-amber-200 bg-white shadow-sm">
+                        <div class="overflow-hidden rounded-md border border-amber-200 bg-white shadow-sm">
                           <table class="min-w-full divide-y divide-amber-100">
                             <thead class="bg-amber-50/50">
                               <tr>
@@ -934,7 +940,7 @@
                                       <button
                                         type="button"
                                         @click="htmx.ajax('GET', '/preview-file?path=' + encodeURIComponent('{{ .Archivo }}'), { target: '#modal-container' })"
-                                        class="text-primary hover:scale-110 transition-transform inline-flex rounded-lg p-1 hover:bg-primary-50"
+                                        class="text-primary hover:scale-110 transition-transform inline-flex rounded-md p-1 hover:bg-primary-50"
                                         title="Ver Comprobante PDF"
                                       >
                                         <i class="ph ph-file-pdf text-xl"></i>
@@ -957,7 +963,7 @@
 
                   <!-- Bloque Vehículo Oficial -->
                   {{ if .Descargo.Oficial.HasTransportType "VEHICULO_OFICIAL" }}
-                    <div class="p-4 rounded-xl bg-neutral-50 border border-neutral-100">
+                    <div class="p-4 rounded-md bg-neutral-50 border border-neutral-100">
                       <div class="flex items-center gap-2 mb-3">
                         <i class="ph ph-car-profile text-neutral-600 text-xl"></i>
                         <span class="text-xs font-black uppercase tracking-widest text-neutral-700">
@@ -965,7 +971,7 @@
                         </span>
                       </div>
                       <div class="flex items-center gap-3">
-                        <div class="bg-white px-4 py-2 rounded-lg border-2 border-dashed border-neutral-300">
+                        <div class="bg-white px-4 py-2 rounded-md border-2 border-dashed border-neutral-300">
                           <span class="text-[10px] font-black text-neutral-400 uppercase block leading-none mb-1">PLACA</span>
                           <span class="text-sm font-black text-neutral-800 tracking-widest">
                             {{ if .Descargo.Oficial.PlacaVehiculo }}
@@ -982,7 +988,7 @@
 
                   <!-- Bloque Aéreo (Si aplica) -->
                   {{ if .Descargo.Oficial.HasTransportType "AEREO" }}
-                    <div class="p-4 rounded-xl bg-blue-50/50 border border-blue-100">
+                    <div class="p-4 rounded-md bg-blue-50/50 border border-blue-100">
                       <div class="flex items-center gap-2">
                         <i class="ph ph-airplane-tilt text-blue-600 text-xl"></i>
                         <span class="text-xs font-black uppercase tracking-widest text-neutral-700">
@@ -999,7 +1005,7 @@
 
             {{ if gt .Descargo.GetTotalReintegroPasajes 0.0 }}
               <div
-                class="bg-warning-50 border border-warning-200 rounded-xl p-4 flex flex-col md:flex-row md:items-center justify-between gap-4"
+                class="bg-warning-50 border border-warning-200 rounded-md p-4 flex flex-col md:flex-row md:items-center justify-between gap-4"
               >
                 <div class="space-y-1">
                   <h4 class="text-[10px] font-black text-warning-600 uppercase tracking-widest">Reintegro al Senado (Pasajes)</h4>
@@ -1013,7 +1019,7 @@
                     </span>
                   </div>
                 </div>
-                <div class="px-3 py-2 bg-white/60 rounded-lg border border-warning-200">
+                <div class="px-3 py-2 bg-white/60 rounded-md border border-warning-200">
                   <p class="text-[9px] text-warning-800 leading-tight font-medium">
                     Monto depositado en la cuenta
                     <br />
@@ -1044,7 +1050,7 @@
         {{ end }}
 
         {{ if $hasReturns }}
-          <div class="bg-white shadow rounded-lg overflow-hidden border border-danger-200">
+          <div class="bg-white shadow rounded-md overflow-hidden border border-danger-200">
             <div class="px-6 py-4 border-b border-danger-100 bg-danger-50 flex justify-between items-center">
               <h3 class="text-lg font-bold text-danger-900">Pasajes Devueltos</h3>
               <i class="ph ph-ticket text-danger-400 text-xl"></i>

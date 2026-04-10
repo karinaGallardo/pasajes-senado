@@ -9,13 +9,13 @@
         <div class="flex items-center gap-3">
           <h2 class="text-3xl font-black text-neutral-900 tracking-tight">{{ .Solicitud.Codigo }}</h2>
           <span
-            class="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-primary-50 text-primary-700 border border-primary-200 shadow-sm"
+            class="px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-primary-50 text-primary-700 border border-primary-200 shadow-sm"
           >
             {{ .Solicitud.GetTipoNombre }}
           </span>
           {{ if .Solicitud.EstadoSolicitud }}
             <span
-              class="px-2 py-0.5 inline-flex items-center gap-1 text-[10px] font-black rounded-full border {{ .Solicitud.GetStatusBadgeClass }}"
+              class="px-2 py-0.5 inline-flex items-center gap-1 text-[10px] font-black rounded-md border {{ .Solicitud.GetStatusBadgeClass }}"
             >
               <i class="{{ .Solicitud.EstadoSolicitud.Icon }}"></i>
               {{ .Solicitud.EstadoSolicitud.Nombre }}
@@ -148,12 +148,12 @@
 
     <div class="space-y-4">
       <!-- Workflow Stepper Card -->
-      <div class="bg-white shadow rounded-lg pl-7 pr-7 pt-3 pb-8">
+      <div class="bg-white shadow rounded-md pl-7 pr-7 pt-3 pb-8">
         <div class="flex items-center w-full">
           <!-- Step 1: Solicitado -->
           <div class="flex items-center relative z-10">
             <div
-              class="rounded-full transition duration-500 ease-in-out h-10 w-10 py-3 {{ .Steps.Solicitado.WrapperClass }} flex items-center justify-center"
+              class="rounded-md transition duration-500 ease-in-out h-10 w-10 py-3 {{ .Steps.Solicitado.WrapperClass }} flex items-center justify-center"
             >
               <i class="{{ .Steps.Solicitado.Icon }}"></i>
             </div>
@@ -170,7 +170,7 @@
           <!-- Step 2: Aprobado / Parcial / Rechazado -->
           <div class="flex items-center relative z-10">
             <div
-              class="rounded-full transition duration-500 ease-in-out h-10 w-10 py-3 {{ .Steps.Aprobado.WrapperClass }} flex items-center justify-center"
+              class="rounded-md transition duration-500 ease-in-out h-10 w-10 py-3 {{ .Steps.Aprobado.WrapperClass }} flex items-center justify-center"
             >
               <i class="{{ .Steps.Aprobado.Icon }}"></i>
             </div>
@@ -188,7 +188,7 @@
             <!-- Step 3: Emitido -->
             <div class="flex items-center relative z-10">
               <div
-                class="rounded-full transition duration-500 ease-in-out h-10 w-10 py-3 {{ .Steps.Emitido.WrapperClass }} flex items-center justify-center"
+                class="rounded-md transition duration-500 ease-in-out h-10 w-10 py-3 {{ .Steps.Emitido.WrapperClass }} flex items-center justify-center"
               >
                 <i class="{{ .Steps.Emitido.Icon }}"></i>
               </div>
@@ -205,7 +205,7 @@
             <!-- Step 4: Finalizado -->
             <div class="flex items-center relative z-10">
               <div
-                class="rounded-full transition duration-500 ease-in-out h-10 w-10 py-3 {{ .Steps.Finalizado.WrapperClass }} flex items-center justify-center"
+                class="rounded-md transition duration-500 ease-in-out h-10 w-10 py-3 {{ .Steps.Finalizado.WrapperClass }} flex items-center justify-center"
               >
                 <i class="{{ .Steps.Finalizado.Icon }}"></i>
               </div>
@@ -220,7 +220,7 @@
       </div>
 
       <!-- Itinerario y Pasajes -->
-      <div class="bg-white shadow sm:rounded-lg border border-neutral-200">
+      <div class="bg-white shadow sm:rounded-md border border-neutral-200">
         <div class="px-6 py-4 border-b border-neutral-200 bg-neutral-50 flex justify-between items-center">
           <div class="flex items-center gap-4">
             <h3 class="text-sm font-bold text-neutral-800 uppercase tracking-wider">Pasajes Solicitados</h3>
@@ -258,7 +258,7 @@
                   <div class="flex items-center gap-4 w-full">
                     <div class="flex items-center gap-2 min-w-max">
                       <div
-                        class="h-8 w-8 rounded-full flex items-center justify-center border {{ if eq .Tipo `IDA` }}
+                        class="h-8 w-8 rounded-md flex items-center justify-center border {{ if eq .Tipo `IDA` }}
                           bg-primary-50 border-primary-200 text-primary-600
                         {{ else }}
                           bg-secondary-50 border-secondary-200 text-secondary-600
@@ -410,12 +410,12 @@
                           >
                             <!-- Decorative Notches -->
                             <div
-                              class="hidden lg:block absolute -bottom-2 -right-2 w-4 h-4 bg-white border border-neutral-200 rounded-full z-10"
+                              class="hidden lg:block absolute -bottom-2 -right-2 w-4 h-4 bg-white border border-neutral-200 rounded-md z-10"
                             ></div>
 
                             <div class="text-center space-y-2">
                               <div
-                                class="w-10 h-10 rounded-xl bg-white shadow-sm border border-neutral-100 flex items-center justify-center text-primary-600 mx-auto transition-transform group-hover:scale-105"
+                                class="w-10 h-10 rounded-md bg-white shadow-sm border border-neutral-100 flex items-center justify-center text-primary-600 mx-auto transition-transform group-hover:scale-105"
                               >
                                 <i class="ph ph-airplane text-2xl font-bold"></i>
                               </div>
@@ -561,13 +561,13 @@
       </div>
 
       <!-- Request Details Card -->
-      <div class="bg-white shadow-sm rounded-xl border border-neutral-200 overflow-hidden">
+      <div class="bg-white shadow-sm rounded-md border border-neutral-200 overflow-hidden">
         <!-- Beneficiary Header -->
         <div
           class="bg-neutral-50 px-6 py-4 border-b border-neutral-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4"
         >
           <div class="flex items-center space-x-2">
-            <div class="h-10 w-10 rounded-full bg-white border border-neutral-200 flex items-center justify-center shadow-sm">
+            <div class="h-10 w-10 rounded-md bg-white border border-neutral-200 flex items-center justify-center shadow-sm">
               <span class="text-primary font-bold text-sm">{{ printf "%.2s" .Solicitud.Usuario.GetNombreCompleto }}</span>
             </div>
             <div class="flex items-center gap-2">
@@ -599,7 +599,7 @@
               {{ if .Solicitud.CupoDerechoItem }}
                 <!-- Quota Info -->
                 <div
-                  class="flex items-center space-x-3 p-2 rounded-lg bg-warning-50 border border-warning-100 hover:border-warning-200 transition-colors sm:col-span-2"
+                  class="flex items-center space-x-3 p-2 rounded-md bg-warning-50 border border-warning-100 hover:border-warning-200 transition-colors sm:col-span-2"
                 >
                   <div
                     class="text-warning-500 bg-white p-1 rounded-md border border-warning-100 shadow-sm flex items-center justify-center"
@@ -625,7 +625,7 @@
               {{ end }}
               <!-- Departure -->
               <div
-                class="flex items-start space-x-3 p-3 rounded-lg bg-neutral-50 border border-neutral-100 hover:border-neutral-200 transition-colors sm:col-span-1"
+                class="flex items-start space-x-3 p-3 rounded-md bg-neutral-50 border border-neutral-100 hover:border-neutral-200 transition-colors sm:col-span-1"
               >
                 <div class="text-neutral-400 mt-0.5 bg-white p-1.5 rounded-md border border-neutral-100 shadow-sm">
                   <i class="ph ph-calendar text-lg"></i>
@@ -642,7 +642,7 @@
 
               <!-- Return -->
               <div
-                class="flex items-start space-x-3 p-3 rounded-lg border hover:border-neutral-200 transition-colors sm:col-span-1 {{ if .Solicitud.GetFechaVuelta }}
+                class="flex items-start space-x-3 p-3 rounded-md border hover:border-neutral-200 transition-colors sm:col-span-1 {{ if .Solicitud.GetFechaVuelta }}
                   bg-neutral-50 border-neutral-100
                 {{ else }}
                   bg-warning-50 border-warning-200
@@ -669,14 +669,14 @@
 
             <!-- Right Column: Route Visual (Asymmetric 3-Node Layout) -->
             <div
-              class="lg:col-span-7 flex flex-col md:flex-row items-center justify-between bg-neutral-50/50 rounded-xl border border-neutral-200 border-dashed p-6 relative overflow-hidden h-full"
+              class="lg:col-span-7 flex flex-col md:flex-row items-center justify-between bg-neutral-50/50 rounded-md border border-neutral-200 border-dashed p-6 relative overflow-hidden h-full"
             >
               <!-- 1. ORIGEN INICIAL (IDA) -->
               <div class="text-center z-10 w-full md:w-auto flex-1">
                 <p class="text-[9px] font-black text-primary uppercase tracking-widest leading-none mb-2">Punto de Salida</p>
                 <div class="flex flex-col items-center">
                   <div
-                    class="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary mb-2 shadow-sm border border-primary/20"
+                    class="h-12 w-12 rounded-md bg-primary/10 flex items-center justify-center text-primary mb-2 shadow-sm border border-primary/20"
                   >
                     <i class="ph ph-map-pin text-2xl"></i>
                   </div>
@@ -705,7 +705,7 @@
               <div class="text-center z-10 w-full md:w-auto px-4">
                 <div class="inline-flex flex-col items-center">
                   <div
-                    class="h-10 w-10 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-400 mb-2 border border-neutral-200 shadow-inner"
+                    class="h-10 w-10 rounded-md bg-neutral-100 flex items-center justify-center text-neutral-400 mb-2 border border-neutral-200 shadow-inner"
                   >
                     <i class="ph ph-buildings text-lg"></i>
                   </div>
@@ -727,7 +727,7 @@
                 <p class="text-[9px] font-black text-secondary uppercase tracking-widest leading-none mb-2">Punto de Retorno</p>
                 <div class="flex flex-col items-center">
                   <div
-                    class="h-12 w-12 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary mb-2 shadow-sm border border-secondary/20"
+                    class="h-12 w-12 rounded-md bg-secondary/10 flex items-center justify-center text-secondary mb-2 shadow-sm border border-secondary/20"
                   >
                     <i class="ph ph-navigation-arrow text-2xl"></i>
                   </div>
@@ -772,12 +772,12 @@
             confirmButtonText: "Sí, emitir",
             cancelButtonText: "Cancelar",
             customClass: {
-              popup: "rounded-xl font-sans",
+              popup: "rounded-md font-sans",
               title: "text-lg font-bold text-neutral-900",
               htmlContainer: "text-sm text-neutral-600",
-              confirmButton: "rounded-lg px-4 py-2 text-sm font-medium shadow-sm",
+              confirmButton: "rounded-md px-4 py-2 text-sm font-medium shadow-sm",
               cancelButton:
-                "rounded-lg px-4 py-2 text-sm font-medium shadow-sm hover:bg-neutral-100 text-neutral-700 bg-white border border-neutral-300",
+                "rounded-md px-4 py-2 text-sm font-medium shadow-sm hover:bg-neutral-100 text-neutral-700 bg-white border border-neutral-300",
             },
           }).then(function (result) {
             if (result.isConfirmed) {
@@ -830,12 +830,12 @@
           confirmButtonText: confirmButtonText,
           cancelButtonText: "Cancelar",
           customClass: {
-            popup: "rounded-xl font-sans",
+            popup: "rounded-md font-sans",
             title: "text-lg font-bold text-neutral-900",
             htmlContainer: "text-sm text-neutral-600",
-            confirmButton: "rounded-lg px-4 py-2 text-sm font-medium shadow-sm",
+            confirmButton: "rounded-md px-4 py-2 text-sm font-medium shadow-sm",
             cancelButton:
-              "rounded-lg px-4 py-2 text-sm font-medium shadow-sm hover:bg-neutral-100 text-neutral-700 bg-white border border-neutral-300",
+              "rounded-md px-4 py-2 text-sm font-medium shadow-sm hover:bg-neutral-100 text-neutral-700 bg-white border border-neutral-300",
           },
         }).then(function (result) {
           if (result.isConfirmed) {

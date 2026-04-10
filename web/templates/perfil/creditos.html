@@ -1,99 +1,104 @@
 {{ define "perfil/creditos" }}
-{{ template "layouts/main" . }}
+  {{ template "layouts/main" . }}
 {{ end }}
 
 {{ define "content" }}
-<div class="max-w-6xl mx-auto px-4 py-8">
-  <div class="flex items-center justify-between mb-8">
-    <div>
-      <h1 class="text-2xl font-bold text-zinc-900 leading-tight">Mis Créditos de Viaje</h1>
-      <p class="text-zinc-500 text-sm mt-1">
-        Listado de pasajes reintegrados por tramos no utilizados en descargos anteriores.
-      </p>
-    </div>
-    <div class="bg-zinc-100 p-3 rounded-xl border border-zinc-200 flex items-center gap-3">
-        <div class="w-10 h-10 bg-zinc-900 rounded-lg flex items-center justify-center text-white shadow-sm">
-            <i class="ph-bold ph-ticket text-xl"></i>
+  <div class="max-w-6xl mx-auto px-4 py-8">
+    <div class="flex items-center justify-between mb-8">
+      <div>
+        <h1 class="text-2xl font-bold text-zinc-900 leading-tight">Mis Créditos de Viaje</h1>
+        <p class="text-zinc-500 text-sm mt-1">
+          Listado de pasajes reintegrados por tramos no utilizados en descargos anteriores.
+        </p>
+      </div>
+      <div class="bg-zinc-100 p-3 rounded-md border border-zinc-200 flex items-center gap-3">
+        <div class="w-10 h-10 bg-zinc-900 rounded-md flex items-center justify-center text-white shadow-sm">
+          <i class="ph-bold ph-ticket text-xl"></i>
         </div>
         <div>
-            <span class="block text-xs text-zinc-500 uppercase font-semibold tracking-wider">Total Disponibles</span>
-            <span class="block text-xl font-bold text-zinc-900 leading-none">{{ len .Creditos }} Créditos</span>
+          <span class="block text-xs text-zinc-500 uppercase font-semibold tracking-wider">Total Disponibles</span>
+          <span class="block text-xl font-bold text-zinc-900 leading-none">{{ len .Creditos }} Créditos</span>
         </div>
-    </div>
-  </div>
-
-  {{ if not .Creditos }}
-    <div class="bg-white rounded-2xl border border-zinc-200 border-dashed p-12 text-center shadow-sm">
-      <div class="w-16 h-16 bg-zinc-50 rounded-full flex items-center justify-center mx-auto mb-4 border border-zinc-100">
-        <i class="ph-bold ph-ticket text-zinc-300 text-3xl"></i>
       </div>
-      <h3 class="text-lg font-semibold text-zinc-900">No tienes créditos disponibles</h3>
-      <p class="text-zinc-500 max-w-xs mx-auto mt-2">
-        Los créditos se generan automáticamente cuando marcas tramos como devolución en tus descargos de derecho.
-      </p>
     </div>
-  {{ else }}
-    <div class="bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden">
-      <table class="w-full text-left">
-        <thead>
-          <tr class="bg-zinc-50 border-b border-zinc-200 text-zinc-600 uppercase text-[11px] font-bold tracking-widest">
-            <th class="px-6 py-4">F. Generación</th>
-            <th class="px-6 py-4">Referencia / Ruta</th>
-            <th class="px-6 py-4">Monto Resguardado</th>
-            <th class="px-6 py-4">Estado</th>
-            <th class="px-6 py-4 text-right">Acciones</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-zinc-100 italic-rows">
-          {{ range .Creditos }}
-            <tr class="hover:bg-zinc-50/50 transition-colors group">
-              <td class="px-6 py-5 whitespace-nowrap">
-                <span class="text-zinc-900 font-medium block">{{ .CreatedAt.Format "02/01/2026" }}</span>
-                <span class="text-zinc-400 text-[11px] uppercase tracking-tighter">{{ .CreatedAt.Format "15:04" }}</span>
-              </td>
-              <td class="px-6 py-5">
-                <div class="flex items-center gap-3">
-                    <div class="w-8 h-8 rounded-lg bg-zinc-100 flex items-center justify-center text-zinc-500 group-hover:bg-white group-hover:text-zinc-900 transition-all border border-transparent group-hover:border-zinc-200">
-                        <i class="ph ph-airplane-takeoff"></i>
+
+    {{ if not .Creditos }}
+      <div class="bg-white rounded-md border border-zinc-200 border-dashed p-12 text-center shadow-sm">
+        <div class="w-16 h-16 bg-zinc-50 rounded-md flex items-center justify-center mx-auto mb-4 border border-zinc-100">
+          <i class="ph-bold ph-ticket text-zinc-300 text-3xl"></i>
+        </div>
+        <h3 class="text-lg font-semibold text-zinc-900">No tienes créditos disponibles</h3>
+        <p class="text-zinc-500 max-w-xs mx-auto mt-2">
+          Los créditos se generan automáticamente cuando marcas tramos como devolución en tus descargos de derecho.
+        </p>
+      </div>
+    {{ else }}
+      <div class="bg-white rounded-md border border-zinc-200 shadow-sm overflow-hidden">
+        <table class="w-full text-left">
+          <thead>
+            <tr class="bg-zinc-50 border-b border-zinc-200 text-zinc-600 uppercase text-[11px] font-bold tracking-widest">
+              <th class="px-6 py-4">F. Generación</th>
+              <th class="px-6 py-4">Referencia / Ruta</th>
+              <th class="px-6 py-4">Monto Resguardado</th>
+              <th class="px-6 py-4">Estado</th>
+              <th class="px-6 py-4 text-right">Acciones</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-zinc-100 italic-rows">
+            {{ range .Creditos }}
+              <tr class="hover:bg-zinc-50/50 transition-colors group">
+                <td class="px-6 py-5 whitespace-nowrap">
+                  <span class="text-zinc-900 font-medium block">{{ .CreatedAt.Format "02/01/2026" }}</span>
+                  <span class="text-zinc-400 text-[11px] uppercase tracking-tighter">{{ .CreatedAt.Format "15:04" }}</span>
+                </td>
+                <td class="px-6 py-5">
+                  <div class="flex items-center gap-3">
+                    <div
+                      class="w-8 h-8 rounded-md bg-zinc-100 flex items-center justify-center text-zinc-500 group-hover:bg-white group-hover:text-zinc-900 transition-all border border-transparent group-hover:border-zinc-200"
+                    >
+                      <i class="ph ph-airplane-takeoff"></i>
                     </div>
                     <div>
-                        <span class="text-zinc-900 font-semibold block leading-none">{{ .RutaReferencia }}</span>
-                        <span class="text-zinc-400 text-xs tracking-tight">Cód. Descargo: {{ .Descargo.Codigo }}</span>
+                      <span class="text-zinc-900 font-semibold block leading-none">{{ .RutaReferencia }}</span>
+                      <span class="text-zinc-400 text-xs tracking-tight">Cód. Descargo: {{ .Descargo.Codigo }}</span>
                     </div>
-                </div>
-              </td>
-              <td class="px-6 py-5 whitespace-nowrap">
-                <span class="bg-emerald-50 text-emerald-700 font-bold px-2 py-1 rounded text-sm border border-emerald-100">
-                    Bs. {{ printf "%.2f" .Monto }}
-                </span>
-              </td>
-              <td class="px-6 py-5 whitespace-nowrap">
-                <span class="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full bg-zinc-100 text-zinc-600 border border-zinc-200">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                  </div>
+                </td>
+                <td class="px-6 py-5 whitespace-nowrap">
+                  <span class="bg-emerald-50 text-emerald-700 font-bold px-2 py-1 rounded text-sm border border-emerald-100">
+                    Bs.
+                    {{ printf "%.2f" .Monto }}
+                  </span>
+                </td>
+                <td class="px-6 py-5 whitespace-nowrap">
+                  <span
+                    class="flex items-center gap-1.5 text-xs font-semibold uppercase tracking-wide px-2.5 py-1 rounded-md bg-zinc-100 text-zinc-600 border border-zinc-200"
+                  >
+                    <span class="w-1.5 h-1.5 rounded-md bg-emerald-500 animate-pulse"></span>
                     {{ .Estado }}
-                </span>
-              </td>
-              <td class="px-6 py-5 text-right whitespace-nowrap">
-                <button 
-                  disabled
-                  class="bg-zinc-900 text-white text-xs font-bold px-4 py-2 rounded-lg opacity-40 cursor-not-allowed hover:bg-zinc-800 transition-all active:scale-95 flex items-center gap-2 ml-auto"
-                >
-                  <i class="ph ph-plus-circle"></i>
-                  Usar Crédito
-                </button>
-                <p class="text-[10px] text-zinc-400 mt-1 pr-1 italic">Funcionalidad en desarrollo</p>
-              </td>
-            </tr>
-          {{ end }}
-        </tbody>
-      </table>
-    </div>
-  {{ end }}
-</div>
+                  </span>
+                </td>
+                <td class="px-6 py-5 text-right whitespace-nowrap">
+                  <button
+                    disabled
+                    class="bg-zinc-900 text-white text-xs font-bold px-4 py-2 rounded-md opacity-40 cursor-not-allowed hover:bg-zinc-800 transition-all active:scale-95 flex items-center gap-2 ml-auto"
+                  >
+                    <i class="ph ph-plus-circle"></i>
+                    Usar Crédito
+                  </button>
+                  <p class="text-[10px] text-zinc-400 mt-1 pr-1 italic">Funcionalidad en desarrollo</p>
+                </td>
+              </tr>
+            {{ end }}
+          </tbody>
+        </table>
+      </div>
+    {{ end }}
+  </div>
 
-<style>
-  .italic-rows tr:hover .italic {
-    color: #18181b;
-  }
-</style>
+  <style>
+    .italic-rows tr:hover .italic {
+      color: #18181b;
+    }
+  </style>
 {{ end }}

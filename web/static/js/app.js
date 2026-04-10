@@ -158,22 +158,21 @@ document.addEventListener("alpine:init", function () {
       get filteredItems() {
         if (this.endpoint) return this.items || [];
         if (this.search === "") return this.items || [];
-        
+
         // Split search into words and clean them
-        const words = this.search.toLowerCase().split(/\s+/).filter(w => w.length > 0);
+        const words = this.search
+          .toLowerCase()
+          .split(/\s+/)
+          .filter((w) => w.length > 0);
         if (words.length === 0) return this.items || [];
 
         return (this.items || []).filter((i) => {
           const label = (i.label || "").toLowerCase();
           const value = (i.value || "").toLowerCase();
           const extra = (i.extra || "").toLowerCase();
-          
+
           // Every word must be present in at least one of the fields
-          return words.every(word => 
-            label.includes(word) || 
-            value.includes(word) || 
-            extra.includes(word)
-          );
+          return words.every((word) => label.includes(word) || value.includes(word) || extra.includes(word));
         });
       },
 
@@ -603,11 +602,11 @@ document.addEventListener("htmx:confirm", function (e) {
     cancelButtonText: "Cancelar",
     reverseButtons: true,
     customClass: {
-      popup: "rounded-xl font-sans",
+      popup: "rounded-md font-sans",
       title: "text-lg font-bold text-neutral-900",
       htmlContainer: "text-sm text-neutral-600",
-      confirmButton: "rounded-lg px-4 py-2 text-sm font-medium shadow-sm transition-all duration-200",
-      cancelButton: "rounded-lg px-4 py-2 text-sm font-medium shadow-sm transition-all duration-200",
+      confirmButton: "rounded-md px-4 py-2 text-sm font-medium shadow-sm transition-all duration-200",
+      cancelButton: "rounded-md px-4 py-2 text-sm font-medium shadow-sm transition-all duration-200",
     },
   }).then(function (result) {
     if (result.isConfirmed) {
@@ -627,10 +626,10 @@ document.addEventListener("showAlert", function (evt) {
     text: data.text || data.message || "",
     confirmButtonColor: "#03738C",
     customClass: {
-      popup: "rounded-xl font-sans",
+      popup: "rounded-md font-sans",
       title: "text-lg font-bold text-neutral-900",
       htmlContainer: "text-sm text-neutral-600",
-      confirmButton: "rounded-lg px-6 py-2.5 text-sm font-medium shadow-sm transition-all duration-200",
+      confirmButton: "rounded-md px-6 py-2.5 text-sm font-medium shadow-sm transition-all duration-200",
     },
   });
 });

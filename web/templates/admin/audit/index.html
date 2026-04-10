@@ -16,7 +16,7 @@
     }
 }"
   >
-    <div class="flex justify-between items-center bg-white p-4 rounded-lg shadow-sm border border-neutral-200 mb-6">
+    <div class="flex justify-between items-center bg-white p-4 rounded-md shadow-sm border border-neutral-200 mb-6">
       <div>
         <h2 class="text-xl font-bold text-neutral-800 tracking-tight">Registro de Auditoría</h2>
         <p class="text-sm text-neutral-500 mt-1">Historial completo de acciones y cambios en el sistema</p>
@@ -24,14 +24,14 @@
     </div>
 
     <!-- Filtros -->
-    <div class="bg-white rounded-lg shadow-sm border border-neutral-200 p-4 mb-6">
+    <div class="bg-white rounded-md shadow-sm border border-neutral-200 p-4 mb-6">
       <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
           <label class="block text-[10px] font-bold uppercase tracking-widest text-neutral-400 mb-2">Acción</label>
           <select
             x-model="filters.action"
             @change="updateTable()"
-            class="w-full bg-neutral-50 border border-neutral-300 rounded-lg px-3 py-1.5 text-xs focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all"
+            class="w-full bg-neutral-50 border border-neutral-300 rounded-md px-3 py-1.5 text-xs focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all"
           >
             <option value="">Todas las acciones</option>
             {{ range .AvailableActions }}
@@ -44,7 +44,7 @@
           <select
             x-model="filters.entity_type"
             @change="updateTable()"
-            class="w-full bg-neutral-50 border border-neutral-300 rounded-lg px-3 py-1.5 text-xs focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all"
+            class="w-full bg-neutral-50 border border-neutral-300 rounded-md px-3 py-1.5 text-xs focus:ring-1 focus:ring-primary focus:border-primary outline-none transition-all"
           >
             <option value="">Todos los módulos</option>
             {{ range .AvailableEntities }}
@@ -62,7 +62,7 @@
     </div>
 
     <!-- Tabla -->
-    <div class="bg-white rounded-lg shadow overflow-x-auto border border-neutral-200">
+    <div class="bg-white rounded-md shadow overflow-x-auto border border-neutral-200">
       <div id="table-loader" class="htmx-indicator w-full py-4 flex justify-center items-center">
         <i class="ph ph-circle-notch animate-spin text-2xl text-primary"></i>
       </div>

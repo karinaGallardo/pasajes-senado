@@ -6,11 +6,11 @@
     id="modal-regularizacion"
     onclick="if(event.target === this) document.getElementById('modal-container').innerHTML = ''"
   >
-    <div class="bg-white rounded-lg shadow-xl w-full max-w-md overflow-hidden border border-neutral-200 relative z-[70]">
+    <div class="bg-white rounded-md shadow-xl w-full max-w-md overflow-hidden border border-neutral-200 relative z-[70]">
       <!-- Header -->
       <div class="px-6 py-4 border-b border-neutral-100 flex items-center justify-between bg-neutral-50/50">
         <div class="flex items-center gap-3">
-          <div class="w-10 h-10 flex items-center justify-center bg-warning-50 rounded-full border border-warning-100">
+          <div class="w-10 h-10 flex items-center justify-center bg-warning-50 rounded-md border border-warning-100">
             <i class="ph ph-calendar-check text-warning-600 text-xl font-bold"></i>
           </div>
           <div>
@@ -21,7 +21,7 @@
         <button
           type="button"
           onclick="document.getElementById('modal-container').innerHTML = ''"
-          class="text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 rounded-full p-1.5 transition-all cursor-pointer"
+          class="text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 rounded-md p-1.5 transition-all cursor-pointer"
         >
           <i class="ph ph-x text-xl"></i>
         </button>
@@ -35,7 +35,7 @@
         hx-indicator="#submit-btn"
         class="p-6 space-y-6"
       >
-        <div class="bg-blue-50/50 border border-blue-100 rounded-lg p-4 flex gap-3">
+        <div class="bg-blue-50/50 border border-blue-100 rounded-md p-4 flex gap-3">
           <i class="ph ph-info text-blue-600 text-xl flex-shrink-0 mt-0.5"></i>
           <p class="text-[12px] text-blue-800 leading-snug font-medium">
             Esta acción actualizará los metadatos de auditoría

@@ -1,69 +1,90 @@
-{{ define "admin/cargos" }} {{ template "layout_header" . }}
+{{ define "admin/cargos" }}
+  {{ template "layout_header" . }}
 
-<div class="max-w-4xl mx-auto mt-8">
-  <div class="flex justify-between items-center mb-6">
-    <h1 class="text-2xl font-bold text-primary-800 flex items-center">
-      <i class="ph ph-briefcase text-3xl mr-2 text-primary-500"></i>
-      Gestión de Cargos
-    </h1>
-  </div>
 
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
-    <div class="bg-white rounded-lg shadow p-6 h-fit">
-      <h2 class="text-lg font-bold text-primary-800 mb-4 border-b pb-2">Nuevo Cargo</h2>
-      <form action="/admin/cargos" method="POST" class="space-y-4">
-        <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
-        <div>
-          <label class="block text-sm font-medium text-neutral-700">Código</label>
-          <input type="number" name="codigo" class="mt-1 block w-full rounded-md border-neutral-300 shadow-sm focus:border-primary-500 focus:ring-primary-500" required />
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-neutral-700">Descripción</label>
-          <input type="text" name="descripcion" class="mt-1 block w-full rounded-md border-neutral-300 shadow-sm focus:border-primary-500 focus:ring-primary-500" required />
-        </div>
-        <div>
-          <label class="block text-sm font-medium text-neutral-700">Categoría (Nivel)</label>
-          <input type="number" name="categoria" value="0" class="mt-1 block w-full rounded-md border-neutral-300 shadow-sm focus:border-primary-500 focus:ring-primary-500" />
-        </div>
-        <button type="submit" class="w-full bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700 font-medium">Guardar</button>
-      </form>
+  <div class="max-w-4xl mx-auto mt-8">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-2xl font-bold text-primary-800 flex items-center">
+        <i class="ph ph-briefcase text-3xl mr-2 text-primary-500"></i>
+        Gestión de Cargos
+      </h1>
     </div>
 
-    <div class="md:col-span-2 bg-white rounded-lg shadow overflow-hidden">
-      <div class="bg-primary-50 px-6 py-4 border-b border-neutral-200">
-        <h2 class="text-lg font-bold text-primary-800">Listado de Cargos</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+      <div class="bg-white rounded-md shadow p-6 h-fit">
+        <h2 class="text-lg font-bold text-primary-800 mb-4 border-b pb-2">Nuevo Cargo</h2>
+        <form action="/admin/cargos" method="POST" class="space-y-4">
+          <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
+          <div>
+            <label class="block text-sm font-medium text-neutral-700">Código</label>
+            <input
+              type="number"
+              name="codigo"
+              class="mt-1 block w-full rounded-md border-neutral-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+              required
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-neutral-700">Descripción</label>
+            <input
+              type="text"
+              name="descripcion"
+              class="mt-1 block w-full rounded-md border-neutral-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+              required
+            />
+          </div>
+          <div>
+            <label class="block text-sm font-medium text-neutral-700">Categoría (Nivel)</label>
+            <input
+              type="number"
+              name="categoria"
+              value="0"
+              class="mt-1 block w-full rounded-md border-neutral-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
+            />
+          </div>
+          <button type="submit" class="w-full bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700 font-medium">
+            Guardar
+          </button>
+        </form>
       </div>
-      <div class="overflow-y-auto max-h-[600px]">
-        <table class="min-w-full divide-y divide-neutral-200">
-          <thead class="bg-neutral-50 sticky top-0">
-            <tr>
-              <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Código</th>
-              <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Descripción</th>
-              <th class="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">Acciones</th>
-            </tr>
-          </thead>
-          <tbody class="bg-white divide-y divide-neutral-200">
-            {{ range .Cargos }}
-            <tr>
-              <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">{{ .Codigo }}</td>
-              <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">{{ .Descripcion }}</td>
-              <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                <button
-                  hx-post="/admin/cargos/{{ .ID }}/delete"
-                  hx-confirm="¿Está seguro de que desea eliminar el cargo '{{ .Descripcion }}'?"
-                  hx-target="body"
-                  class="text-danger-600 hover:text-danger-900 transition-colors"
-                  title="Eliminar">
-                  <i class="ph ph-trash text-xl"></i>
-                </button>
-              </td>
-            </tr>
-            {{ end }}
-          </tbody>
-        </table>
+
+      <div class="md:col-span-2 bg-white rounded-md shadow overflow-hidden">
+        <div class="bg-primary-50 px-6 py-4 border-b border-neutral-200">
+          <h2 class="text-lg font-bold text-primary-800">Listado de Cargos</h2>
+        </div>
+        <div class="overflow-y-auto max-h-[600px]">
+          <table class="min-w-full divide-y divide-neutral-200">
+            <thead class="bg-neutral-50 sticky top-0">
+              <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Código</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-neutral-500 uppercase tracking-wider">Descripción</th>
+                <th class="px-6 py-3 text-right text-xs font-medium text-neutral-500 uppercase tracking-wider">Acciones</th>
+              </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-neutral-200">
+              {{ range .Cargos }}
+                <tr>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm text-neutral-500">{{ .Codigo }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-neutral-900">{{ .Descripcion }}</td>
+                  <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <button
+                      hx-post="/admin/cargos/{{ .ID }}/delete"
+                      hx-confirm="¿Está seguro de que desea eliminar el cargo '{{ .Descripcion }}'?"
+                      hx-target="body"
+                      class="text-danger-600 hover:text-danger-900 transition-colors"
+                      title="Eliminar"
+                    >
+                      <i class="ph ph-trash text-xl"></i>
+                    </button>
+                  </td>
+                </tr>
+              {{ end }}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
-</div>
 
-{{ template "layout_footer" . }} {{ end }}
+  {{ template "layout_footer" . }}
+{{ end }}

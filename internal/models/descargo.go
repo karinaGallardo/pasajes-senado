@@ -32,7 +32,7 @@ type Descargo struct {
 	BaseModel
 	SolicitudID string     `gorm:"not null;size:36;uniqueIndex"`
 	Solicitud   *Solicitud `gorm:"foreignKey:SolicitudID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;"`
-	UsuarioID   string     `gorm:"size:24;not null"`
+	UsuarioID   string     `gorm:"size:36;not null"`
 
 	Codigo     string `gorm:"size:20;uniqueIndex"`
 	NumeroCite string `gorm:"size:50;index"`
@@ -291,6 +291,13 @@ func (d Descargo) GetEstadoIcon() string {
 
 func (d Descargo) GetEstadoDescripcion() string {
 	return d.Estado.Info().Descripcion
+}
+
+func (d Descargo) GetConceptoSlug() string {
+	if d.Solicitud != nil {
+		return d.Solicitud.GetConceptoSlug()
+	}
+	return "derecho"
 }
 
 func (d Descargo) GetPermissions(u ...*Usuario) DescargoPermissions {

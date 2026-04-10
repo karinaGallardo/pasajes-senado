@@ -4,13 +4,13 @@
 
   <div class="space-y-8">
     <!-- Welcome Section -->
-    <div class="bg-white rounded-xl shadow-sm p-6 border-l-4 border-primary flex justify-between items-center">
+    <div class="bg-white rounded-md shadow-sm p-6 border-l-4 border-primary flex justify-between items-center">
       <div>
         <h2 class="text-2xl font-brand font-bold text-primary-900">Bienvenido, {{ .AuthUser.GetNombreCompleto }}</h2>
         <p class="text-neutral mt-1">Panel de control del Sistema de Pasajes y Viáticos</p>
       </div>
       <div>
-        <span class="px-4 py-2 rounded-full bg-primary-50 text-primary-800 text-sm font-bold shadow-sm">
+        <span class="px-4 py-2 rounded-md bg-primary-50 text-primary-800 text-sm font-bold shadow-sm">
           {{ .AuthUser.Rol.Nombre }}
         </span>
       </div>
@@ -19,14 +19,14 @@
     <!-- Metrics Grid -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
       <!-- Card 1: Solicitudes Pendientes -->
-      <div class="bg-white rounded-xl shadow-md p-6 border-t-4 border-gold hover:shadow-lg transition-shadow duration-300">
+      <div class="bg-white rounded-md shadow-md p-6 border-t-4 border-gold hover:shadow-lg transition-shadow duration-300">
         <div class="flex items-center justify-between pointer-events-none">
           <!-- pointer-events-none prevents icon selection -->
           <div>
             <p class="text-sm font-medium text-neutral-500 uppercase tracking-wider">Pendientes de Aprobación</p>
             <p class="text-4xl font-black text-neutral mt-2">{{ .Pendientes }}</p>
           </div>
-          <div class="p-3 bg-warning-50 rounded-full">
+          <div class="p-3 bg-warning-50 rounded-md">
             <i class="ph ph-clock-countdown text-3xl text-gold"></i>
           </div>
         </div>
@@ -39,13 +39,13 @@
       </div>
 
       <!-- Card 2: Aprobados -->
-      <div class="bg-white rounded-xl shadow-md p-6 border-t-4 border-secondary hover:shadow-lg transition-shadow duration-300">
+      <div class="bg-white rounded-md shadow-md p-6 border-t-4 border-secondary hover:shadow-lg transition-shadow duration-300">
         <div class="flex items-center justify-between">
           <div>
             <p class="text-sm font-medium text-neutral-500 uppercase tracking-wider">Viajes Aprobados</p>
             <p class="text-4xl font-black text-neutral mt-2">{{ .Aprobados }}</p>
           </div>
-          <div class="p-3 bg-primary-50 rounded-full">
+          <div class="p-3 bg-primary-50 rounded-md">
             <i class="ph ph-ticket text-3xl text-secondary"></i>
           </div>
         </div>
@@ -58,13 +58,13 @@
       </div>
 
       <!-- Card 3: Descargos -->
-      <div class="bg-white rounded-xl shadow-md p-6 border-t-4 border-accent hover:shadow-lg transition-shadow duration-300">
+      <div class="bg-white rounded-md shadow-md p-6 border-t-4 border-accent hover:shadow-lg transition-shadow duration-300">
         <div class="flex items-center justify-between">
           <div>
             <p class="text-sm font-medium text-neutral-500 uppercase tracking-wider">Descargos Realizados</p>
             <p class="text-4xl font-black text-neutral mt-2">{{ .Descargos }}</p>
           </div>
-          <div class="p-3 bg-danger-50 rounded-full">
+          <div class="p-3 bg-danger-50 rounded-md">
             <i class="ph ph-file-text text-3xl text-accent"></i>
           </div>
         </div>
@@ -79,16 +79,16 @@
 
     <!-- Senadores Assigned List -->
     {{ if .SenadoresEncargados }}
-      <div class="bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden mb-8">
+      <div class="bg-white rounded-md shadow-sm border border-neutral-200 overflow-hidden mb-8">
         <div class="px-6 py-4 border-b border-l-4 border-l-primary border-neutral-200 bg-neutral-50">
           <h3 class="text-lg font-brand font-bold text-neutral-900">Senadores Asignados</h3>
           <p class="text-sm text-neutral-500">Usted es responsable de la gestión de pasajes para los siguientes senadores.</p>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 p-6">
           {{ range .SenadoresEncargados }}
-            <div class="flex items-center space-x-4 p-4 border rounded-lg hover:bg-neutral-50 transition-colors">
+            <div class="flex items-center space-x-4 p-4 border rounded-md hover:bg-neutral-50 transition-colors">
               <div
-                class="flex-shrink-0 h-12 w-12 rounded-full bg-primary-100 flex items-center justify-center text-primary font-bold text-lg"
+                class="flex-shrink-0 h-12 w-12 rounded-md bg-primary-100 flex items-center justify-center text-primary font-bold text-lg"
               >
                 {{ printf "%.1s" .GetNombreCompleto }}
               </div>
@@ -136,7 +136,7 @@
 
 
     <!-- Recent Activity Table -->
-    <div class="bg-white rounded-xl shadow-sm border border-neutral-200 overflow-hidden">
+    <div class="bg-white rounded-md shadow-sm border border-neutral-200 overflow-hidden">
       <div class="px-6 py-4 border-b border-neutral-200 bg-neutral-50 flex justify-between items-center">
         <h3 class="text-lg font-brand font-bold text-neutral-900">Actividad Reciente</h3>
         <!-- <a href="/solicitudes/nueva" class="text-sm font-medium text-secondary hover:text-primary-900">+ Nueva Solicitud</a> -->
@@ -172,7 +172,7 @@
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                   <span
-                    class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                    class="px-2 inline-flex text-xs leading-5 font-semibold rounded-md
                     {{ if .EstadoSolicitudCodigo }}
                       {{ if eq .GetEstadoCodigo `SOLICITADO` }}bg-warning-100 text-warning-800{{ end }}
                     {{ end }}
@@ -192,14 +192,7 @@
                   </span>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                  <a
-                    href="/solicitudes/{{ if eq .GetConceptoCodigo `OFICIAL` }}
-                      oficial
-                    {{ else }}
-                      derecho
-                    {{ end }}/{{ .ID }}/detalle"
-                    class="text-secondary hover:text-primary-900"
-                  >
+                  <a href="/solicitudes/{{ .GetConceptoSlug }}/{{ .ID }}/detalle" class="text-secondary hover:text-primary-900">
                     Detalles
                   </a>
                 </td>

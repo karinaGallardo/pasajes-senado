@@ -52,7 +52,7 @@
             <td class="px-6 py-4 whitespace-nowrap">
               <div class="flex items-center">
                 <div
-                  class="h-8 w-8 rounded-full bg-primary/10 border border-primary/20 flex items-center justify-center text-primary text-xs font-black mr-3 shadow-sm group-hover:scale-110 transition-transform"
+                  class="h-8 w-8 rounded-md bg-primary/10 border border-primary/20 flex items-center justify-center text-primary text-xs font-black mr-3 shadow-sm group-hover:scale-110 transition-transform"
                 >
                   {{ if .Solicitud }}{{ .Solicitud.Usuario.GetInitials }}{{ else }}?{{ end }}
                 </div>
@@ -85,11 +85,7 @@
                       {{ .Solicitud.GetConceptoCodigo }}
                     </span>
                     <a
-                      href="/solicitudes/{{ if $isOficial }}
-                        oficial
-                      {{ else }}
-                        derecho
-                      {{ end }}/{{ .Solicitud.ID }}/detalle"
+                      href="/solicitudes/{{ .Solicitud.GetConceptoSlug }}/{{ .Solicitud.ID }}/detalle"
                       class="text-[11px] font-bold text-neutral-600 hover:text-primary transition-colors"
                     >
                       SOL-{{ .Solicitud.Codigo }}
@@ -109,7 +105,7 @@
             <td class="px-6 py-4 whitespace-nowrap text-center">
               <div class="flex flex-col items-center gap-1.5">
                 <span
-                  class="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-tighter border shadow-sm {{ .GetEstadoBadgeClass }}"
+                  class="px-3 py-1 rounded-md text-[10px] font-black uppercase tracking-tighter border shadow-sm {{ .GetEstadoBadgeClass }}"
                 >
                   {{ .GetEstadoLabel }}
                 </span>
@@ -132,12 +128,8 @@
             <td class="px-6 py-4 whitespace-nowrap text-right">
               {{ $isOficial := false }}{{ if .Solicitud }}{{ $isOficial = eq .Solicitud.GetConceptoCodigo "OFICIAL" }}{{ end }}
               <a
-                href="/descargos/{{ if $isOficial }}
-                  oficial
-                {{ else }}
-                  derecho
-                {{ end }}/{{ .ID }}"
-                class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-neutral-200 rounded-lg text-[10px] font-black text-neutral-600 uppercase tracking-widest hover:border-primary hover:text-primary shadow-sm active:scale-95 transition-all group/btn"
+                href="/descargos/{{ .GetConceptoSlug }}/{{ .ID }}"
+                class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white border border-neutral-200 rounded-md text-[10px] font-black text-neutral-600 uppercase tracking-widest hover:border-primary hover:text-primary shadow-sm active:scale-95 transition-all group/btn"
               >
                 <i class="ph ph-arrow-right text-sm transition-transform group-hover/btn:translate-x-0.5"></i>
                 Gestionar

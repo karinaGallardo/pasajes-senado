@@ -24,9 +24,7 @@
             class="mt-1 block w-full py-2.5 px-3 border border-neutral-100 bg-neutral-50 rounded-md shadow-sm text-neutral-500 sm:text-sm flex items-center justify-between group"
           >
             <span class="font-medium">{{ if .Usuario.Rol }}{{ .Usuario.Rol.Nombre }}{{ else }}Senador{{ end }}</span>
-            <span
-              class="text-[9px] bg-neutral-200 px-2 py-0.5 rounded-full text-neutral-400 uppercase font-bold tracking-tighter"
-            >
+            <span class="text-[9px] bg-neutral-200 px-2 py-0.5 rounded-md text-neutral-400 uppercase font-bold tracking-tighter">
               Rol Protegido
             </span>
           </div>
@@ -226,7 +224,7 @@
           </p>
 
           <!-- Tags Container -->
-          <div class="flex flex-wrap gap-2 p-2 bg-neutral-50 rounded-lg border border-neutral-200 min-h-[46px] mb-2">
+          <div class="flex flex-wrap gap-2 p-2 bg-neutral-50 rounded-md border border-neutral-200 min-h-[46px] mb-2">
             <template x-for="s in selected" :key="s.iata">
               <div
                 class="inline-flex items-center bg-primary text-white text-[11px] font-bold px-2 py-1 rounded-md shadow-sm group"
@@ -261,7 +259,7 @@
                   @keydown.escape="open = false"
                   readonly
                   autocomplete="new-password"
-                  class="block w-full pl-10 pr-3 py-2 border border-neutral-300 rounded-lg leading-5 bg-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm font-medium transition-all"
+                  class="block w-full pl-10 pr-3 py-2 border border-neutral-300 rounded-md leading-5 bg-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary text-sm font-medium transition-all"
                   placeholder="Buscar ciudad o aeropuerto..."
                 />
               </div>
@@ -270,7 +268,7 @@
             <!-- Dropdown -->
             <div
               x-show="open && filtered.length > 0"
-              class="absolute z-10 mt-1 w-full bg-white shadow-xl max-h-60 rounded-lg py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm"
+              class="absolute z-10 mt-1 w-full bg-white shadow-xl max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm"
               x-cloak
               x-transition
             >

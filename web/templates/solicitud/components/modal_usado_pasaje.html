@@ -30,7 +30,7 @@
       x-transition:leave="ease-in duration-200"
       x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
       x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-      class="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+      class="inline-block align-bottom bg-white rounded-md text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
       <form
         method="POST"
         action="/pasajes/update-status"
@@ -66,7 +66,7 @@
         <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
           <div class="flex items-center justify-between mb-6 border-b pb-3">
             <div class="flex items-center gap-3">
-              <div class="h-10 w-10 rounded-lg bg-success-100 flex items-center justify-center text-success-600">
+              <div class="h-10 w-10 rounded-md bg-success-100 flex items-center justify-center text-success-600">
                 <i class="ph ph-check-circle text-2xl"></i>
               </div>
               <h3 class="text-lg font-bold text-neutral-900">Marcar como Usado</h3>
@@ -102,7 +102,7 @@
                     </div>
 
                     <div class="space-y-1 text-center" x-show="fileName" x-cloak>
-                      <div class="mx-auto h-12 w-12 bg-success-100 rounded-full flex items-center justify-center">
+                      <div class="mx-auto h-12 w-12 bg-success-100 rounded-md flex items-center justify-center">
                         <i class="ph ph-check-circle text-2xl text-success-600"></i>
                       </div>
                       <p class="text-sm font-bold text-neutral-900 truncate px-4" x-text="fileName"></p>

@@ -40,7 +40,7 @@
             </div>
           </td>
           <td class="px-3 py-3 whitespace-nowrap text-center text-xs text-neutral-500 hidden md:table-cell">
-            <span class="px-2 py-0.5 rounded-full bg-neutral-100 text-[10px] font-bold uppercase">{{ .GetConceptoCodigo }}</span>
+            <span class="px-2 py-0.5 rounded-md bg-neutral-100 text-[10px] font-bold uppercase">{{ .GetConceptoCodigo }}</span>
           </td>
           <td class="px-3 py-3">
             <div class="flex flex-col">
@@ -98,7 +98,7 @@
           </td>
           <td class="px-3 py-3 whitespace-nowrap text-xs font-medium text-right">
             <a
-              href="/solicitudes/{{ lower .GetConceptoCodigo }}/{{ .ID }}/detalle"
+              href="/solicitudes/{{ .GetConceptoSlug }}/{{ .ID }}/detalle"
               class="inline-flex items-center gap-1 text-primary hover:text-primary-700 transition-colors"
               title="Ver detalle"
             >

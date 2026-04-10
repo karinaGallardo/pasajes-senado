@@ -190,7 +190,7 @@
       <div class="flex items-center justify-center gap-1.5">
         <div class="relative group">
           <label
-            class="cursor-pointer flex items-center justify-center h-9 w-9 rounded-lg border-2 border-dashed transition-all duration-200 overflow-hidden shadow-sm"
+            class="cursor-pointer flex items-center justify-center h-9 w-9 rounded-md border-2 border-dashed transition-all duration-200 overflow-hidden shadow-sm"
             :class="(fileName || '{{ .Tramo.ArchivoPaseAbordo }}') ? 'border-success-400 bg-success-50 text-success-700' : 'border-neutral-200 bg-neutral-50 text-neutral-400 hover:border-primary-300 hover:bg-white'"
           >
             <input
@@ -221,7 +221,7 @@
           <button
             type="button"
             @click="if(localUrl) { window.open(localUrl, '_blank') } else { htmx.ajax('GET', '/preview-file?path=' + encodeURIComponent('{{ .Tramo.ArchivoPaseAbordo }}'), { target: '#modal-container' }) }"
-            class="h-9 w-9 flex items-center justify-center rounded-lg text-primary-600 hover:bg-primary-50 transition-all"
+            class="h-9 w-9 flex items-center justify-center rounded-md text-primary-600 hover:bg-primary-50 transition-all"
           >
             <i class="ph ph-eye text-xl"></i>
           </button>
