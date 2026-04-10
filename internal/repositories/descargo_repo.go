@@ -84,6 +84,10 @@ func (r *DescargoRepository) FindBySolicitudID(ctx context.Context, solicitudID 
 		Preload("Solicitud.Items.Pasajes.RutaPasaje.Destino").
 		Preload("Solicitud.Items.Pasajes.RutaPasaje.Escalas", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
 		Preload("Solicitud.Items.Pasajes.RutaPasaje.Escalas.Destino").
+		Preload("Solicitud.Usuario").
+		Preload("Solicitud.Usuario.Oficina").
+		Preload("Solicitud.Usuario.Cargo").
+		Preload("Solicitud.Usuario.Origen").
 		Preload("Solicitud.Usuario.Encargado").
 		Preload("Oficial").
 		Preload("Oficial.Anexos", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
@@ -107,6 +111,7 @@ func (r *DescargoRepository) FindByID(ctx context.Context, id string) (*models.D
 		Preload("Solicitud.Usuario").
 		Preload("Solicitud.Usuario.Cargo").
 		Preload("Solicitud.Usuario.Oficina").
+		Preload("Solicitud.Usuario.Origen").
 		Preload("Solicitud.CupoDerechoItem").
 		Preload("Solicitud.Items", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
 		Preload("Solicitud.Items.Pasajes", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
@@ -144,6 +149,10 @@ func (r *DescargoRepository) FindAll(ctx context.Context) ([]models.Descargo, er
 		Preload("Solicitud.Items.Pasajes.RutaPasaje.Destino").
 		Preload("Solicitud.Items.Pasajes.RutaPasaje.Escalas", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
 		Preload("Solicitud.Items.Pasajes.RutaPasaje.Escalas.Destino").
+		Preload("Solicitud.Usuario").
+		Preload("Solicitud.Usuario.Oficina").
+		Preload("Solicitud.Usuario.Cargo").
+		Preload("Solicitud.Usuario.Origen").
 		Preload("Solicitud.Usuario.Encargado").
 		Preload("Tramos", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
 		Preload("Tramos.RutaPasaje").
@@ -178,7 +187,13 @@ func (r *DescargoRepository) FindPaginated(ctx context.Context, page, limit int,
 		Joins("LEFT JOIN usuarios ON solicitudes.usuario_id = usuarios.id").
 		Preload("Solicitud").
 		Preload("Solicitud.TipoSolicitud.ConceptoViaje").
+		Preload("Solicitud.EstadoSolicitud").
+		Preload("Solicitud.Aerolinea").
 		Preload("Solicitud.Usuario").
+		Preload("Solicitud.Usuario.Oficina").
+		Preload("Solicitud.Usuario.Cargo").
+		Preload("Solicitud.Usuario.Origen").
+		Preload("Solicitud.Usuario.Encargado").
 		Preload("Solicitud.CupoDerechoItem").
 		Preload("Solicitud.Items", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
 		Preload("Solicitud.Items.Pasajes", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
@@ -190,7 +205,6 @@ func (r *DescargoRepository) FindPaginated(ctx context.Context, page, limit int,
 		Preload("Solicitud.Items.Pasajes.RutaPasaje.Destino").
 		Preload("Solicitud.Items.Pasajes.RutaPasaje.Escalas", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
 		Preload("Solicitud.Items.Pasajes.RutaPasaje.Escalas.Destino").
-		Preload("Solicitud.Usuario.Encargado").
 		Preload("Tramos", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
 		Preload("Tramos.RutaPasaje").
 		Preload("Tramos.RutaPasaje.Origen").
