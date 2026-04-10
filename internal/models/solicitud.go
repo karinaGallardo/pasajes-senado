@@ -1008,7 +1008,7 @@ func (s Solicitud) IsOficial() bool {
 	return s.GetConceptoCodigo() == "OFICIAL"
 }
 
-func (s Solicitud) GetConceptoSlug() string {
+func (s Solicitud) GetConcepto() string {
 	return strings.ToLower(s.GetConceptoCodigo())
 }
 

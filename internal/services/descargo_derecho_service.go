@@ -201,9 +201,8 @@ func (s *DescargoDerechoService) UpdateDerecho(ctx context.Context, id string, r
 
 	// 1. Basic Metadata
 	descargo.Observaciones = req.Observaciones
-	if descargo.Estado == models.EstadoDescargoRechazado {
-		descargo.Estado = models.EstadoDescargoEnRevision
-	} else {
+	// No cambiar automáticamente a EN_REVISION, dejar que el usuario lo haga manualmente desde 'Show'
+	if descargo.Estado != models.EstadoDescargoRechazado {
 		descargo.Estado = models.EstadoDescargoBorrador
 	}
 	descargo.UpdatedBy = &userID

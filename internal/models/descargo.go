@@ -293,9 +293,9 @@ func (d Descargo) GetEstadoDescripcion() string {
 	return d.Estado.Info().Descripcion
 }
 
-func (d Descargo) GetConceptoSlug() string {
+func (d Descargo) GetConcepto() string {
 	if d.Solicitud != nil {
-		return d.Solicitud.GetConceptoSlug()
+		return d.Solicitud.GetConcepto()
 	}
 	return "derecho"
 }
