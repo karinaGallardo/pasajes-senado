@@ -176,7 +176,12 @@ func (s *DescargoService) RevertToDraft(ctx context.Context, id string, userID s
 	return nil
 }
 
-func (s *DescargoService) Liquidate(ctx context.Context, id string, pasajeIDs []string, pasajeCostos []float64, montosCredito []float64, montosDevolucion []float64, userID string) error {
+func (s *DescargoService) Liquidate(ctx context.Context, id string, pasajeIDs []string, pasajeCostos []float64, montosCredito []float64, montosDevolucion []float64, userID string, optionalPenalties ...[]float64) error {
+	montosPenalidad := make([]float64, 0)
+	if len(optionalPenalties) > 0 {
+		montosPenalidad = optionalPenalties[0]
+	}
+
 	descargo, err := s.repo.FindByID(ctx, id)
 	if err != nil {
 		return err
@@ -212,11 +217,17 @@ func (s *DescargoService) Liquidate(ctx context.Context, id string, pasajeIDs []
 			if i < len(montosDevolucion) {
 				mDevolucion = montosDevolucion[i]
 			}
+			mPenalidad := 0.0
+			if i < len(montosPenalidad) {
+				mPenalidad = montosPenalidad[i]
+			}
 
-			// El costo utilizado es el original menos los ahorros
+			// El costo utilizado es el original menos los ahorros recuperados (Crédito y Reembolso)
+			// La penalidad se considera parte del costo 'utilizado' o perdido del pasaje
 			pasaje.CostoUtilizado = pasaje.Costo - mCredito - mDevolucion
 			pasaje.MontoCredito = mCredito
 			pasaje.MontoReembolso = mDevolucion
+			pasaje.CostoPenalidad = mPenalidad
 
 			if err := txPasajeRepo.Update(ctx, pasaje); err != nil {
 				return fmt.Errorf("error actualizando pasaje %s: %w", pID, err)
@@ -249,8 +260,16 @@ func (s *DescargoService) Liquidate(ctx context.Context, id string, pasajeIDs []
 			}
 		}
 
-		// 2. Gestionar el crédito consolidado de forma idempotente
-		// Buscamos explícitamente por el ID del descargo en la transacción actual
+		// 2. Gestionar el crédito consolidado de forma idempotente (SOLO DERECHO)
+		isOficial := false
+		if descargo.Solicitud != nil {
+			isOficial = descargo.Solicitud.IsOficial()
+		}
+
+		if isOficial {
+			totalCreditoGral = 0 // Forzamos 0 para oficiales por seguridad
+		}
+
 		existingCreditos, err := txCreditoRepo.FindByDescargoID(ctx, id)
 		if err != nil {
 			slog.Error("Error buscando créditos previos", "descargo_id", id, "error", err)

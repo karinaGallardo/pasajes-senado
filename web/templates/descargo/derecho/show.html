@@ -13,13 +13,30 @@
           <span class="font-semibold text-neutral-600 tracking-tight">{{ .Descargo.Solicitud.Usuario.GetNombreCompleto }}</span>
         </p>
       </div>
-      <div>
+      <div class="flex items-center gap-2">
+        <button
+          hx-get="/descargos/derecho/{{ .Descargo.ID }}/previsualizar"
+          hx-target="#modal-container"
+          class="inline-flex items-center px-4 py-2 border border-neutral-300 shadow-sm text-xs font-black rounded-md text-neutral-700 bg-white hover:bg-neutral-50 transition-all active:scale-95 uppercase tracking-tight cursor-pointer"
+        >
+          <i class="ph ph-file-pdf mr-2 text-lg"></i>
+          Ver / Imprimir PV-05
+        </button>
+        {{ if .Descargo.CanEdit .AuthUser }}
+          <a
+            href="/descargos/derecho/{{ .Descargo.ID }}/editar"
+            class="inline-flex items-center px-4 py-2 border border-primary-200 shadow-sm text-xs font-black rounded-md text-primary-700 bg-primary-50 hover:bg-primary-100 transition-all active:scale-95 uppercase tracking-tight"
+          >
+            <i class="ph ph-note-pencil mr-2 text-lg"></i>
+            Editar Descargo
+          </a>
+        {{ end }}
         <a
           href="/solicitudes/derecho/{{ .Descargo.SolicitudID }}/detalle"
           class="inline-flex items-center px-4 py-2 border border-neutral-300 shadow-sm text-xs font-black rounded-md text-neutral-700 bg-white hover:bg-neutral-50 transition-all active:scale-95 uppercase tracking-tight"
         >
           <i class="ph ph-arrow-left mr-2 text-lg"></i>
-          Volver a Solicitud
+          Volver
         </a>
       </div>
     </div>
@@ -399,16 +416,6 @@
               </div>
             {{ end }}
 
-
-            <button
-              hx-get="/descargos/derecho/{{ .Descargo.ID }}/previsualizar"
-              hx-target="#modal-container"
-              class="w-full inline-flex justify-center items-center px-2 py-2 border border-transparent text-xs font-black rounded-md text-white bg-primary hover:bg-primary-600 transition-all shadow-sm active:scale-95 uppercase tracking-tight cursor-pointer"
-            >
-              <i class="ph ph-file-pdf mr-2 text-lg"></i>
-              Ver / Imprimir PV-05
-            </button>
-
             {{ if .Descargo.CanRevertFinalization .AuthUser }}
               <form
                 action="/descargos/derecho/{{ .Descargo.ID }}/revertir-finalizacion"
@@ -449,17 +456,6 @@
                 </button>
               </form>
             {{ end }}
-
-            {{ if .Descargo.CanEdit .AuthUser }}
-              <a
-                href="/descargos/derecho/{{ .Descargo.ID }}/editar"
-                class="w-full inline-flex justify-center items-center px-2 py-2 border border-neutral-200 text-xs font-black rounded-md text-neutral-600 bg-white hover:bg-neutral-50 transition-all shadow-sm active:scale-95 uppercase tracking-tight"
-              >
-                <i class="ph ph-note-pencil mr-2 text-lg"></i>
-                Editar Descargo
-              </a>
-            {{ end }}
-
           </div>
         </div>
       </div>
@@ -651,7 +647,7 @@
             {{ end }}
             <!-- TRAMO DE VUELTA -->
             {{ if .Vuelta }}
-              <div class="bg-white shadow rounded-md overflow-hidden border border-neutral-200">
+              <div class="bg-white shadow rounded-b-md overflow-hidden border border-neutral-200">
                 <div class="px-6 py-4 border-b border-neutral-100 bg-neutral-50 flex justify-between items-center">
                   <div class="flex items-center gap-3">
                     <div class="w-8 h-8 rounded-md bg-secondary-50 flex items-center justify-center">

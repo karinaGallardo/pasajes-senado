@@ -121,3 +121,7 @@ func (r *PasajeRepository) FindConsolidado(ctx context.Context, filter dtos.Repo
 	err := query.Find(&pasajes).Error
 	return pasajes, err
 }
+
+func (r *PasajeRepository) GetDB() *gorm.DB {
+	return r.db
+}

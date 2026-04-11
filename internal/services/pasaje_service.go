@@ -252,10 +252,29 @@ func (s *PasajeService) UpdateStatus(ctx context.Context, id string, status stri
 
 	// Reversion logic: if it was EMITIDO and now REGISTRADO
 	if oldStatus == "EMITIDO" && status == "REGISTRADO" && pasaje.SolicitudItemID != nil {
-		// Revert item back to APROBADO (previous state)
+		// 1. Validar que no existan descargos procesados vinculados a este pasaje
+		var blockedCount int64
+		s.repo.GetDB().WithContext(ctx).Model(&models.DescargoTramo{}).
+			Joins("JOIN descargos ON descargos.id = descargo_tramos.descargo_id").
+			Where("descargo_tramos.pasaje_id = ? AND descargos.estado NOT IN (?, ?)",
+				id, models.EstadoDescargoBorrador, models.EstadoDescargoRechazado).
+			Count(&blockedCount)
+
+		if blockedCount > 0 {
+			return fmt.Errorf("no se puede revertir la emisión: el pasaje ya está vinculado a un descargo que ha sido enviado o aprobado")
+		}
+
+		// 2. Limpieza de los tramos de descargo asociados (HARD DELETE para evitar interferencia en re-emisión)
+		if err := s.repo.GetDB().WithContext(ctx).Unscoped().
+			Where("pasaje_id = ?", id).
+			Delete(&models.DescargoTramo{}).Error; err != nil {
+			return fmt.Errorf("error al limpiar registros de descargo: %w", err)
+		}
+
+		// 3. Revertir estado en el item de la solicitud a APROBADO (para que el Admin pueda corregir)
 		s.solicitudItemRepo.UpdateStatus(ctx, *pasaje.SolicitudItemID, "APROBADO")
 
-		// Recalculate Solicitud global status via GORM Hooks
+		// 4. Recalcular estado global de la Solicitud
 		sol, err := s.solicitudRepo.FindByID(ctx, pasaje.SolicitudID)
 		if err == nil && sol != nil {
 			s.solicitudRepo.Update(ctx, sol)

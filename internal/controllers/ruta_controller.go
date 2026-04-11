@@ -30,13 +30,23 @@ func NewRutaController(
 }
 
 func (ctrl *RutaController) Index(c *gin.Context) {
-	rutas, _ := ctrl.rutaService.GetAll(c.Request.Context())
+	query := c.Query("q")
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+
+	paginated, _ := ctrl.rutaService.GetPaginated(c.Request.Context(), page, limit, query)
 	aerolineas, _ := ctrl.aerolineaService.GetAll(c.Request.Context())
 
 	utils.Render(c, "admin/rutas", gin.H{
-		"Rutas":      rutas,
+		"Rutas":      paginated.Rutas,
+		"Total":      paginated.Total,
+		"Page":       paginated.Page,
+		"Limit":      paginated.Limit,
+		"TotalPages": paginated.TotalPages,
+		"Search":     paginated.SearchTerm,
 		"Aerolineas": aerolineas,
 		"Title":      "Gestión de Rutas y Tarifas",
+		"IsHTMX":     c.GetHeader("HX-Request") != "",
 	})
 }
 

@@ -38,6 +38,14 @@ func (s *DescargoDerechoService) GetShowData(ctx context.Context, id string) (*d
 		return nil, err
 	}
 
+	// Sincronización proactiva: Si se emitieron nuevos pasajes (o se corrigieron)
+	if descargo.Solicitud != nil && descargo.IsEditable() {
+		if err := s.SyncItineraryFromSolicitud(ctx, descargo, descargo.Solicitud); err == nil {
+			// Recargar para tener los tramos actualizados
+			descargo, _ = s.repo.FindByID(ctx, id)
+		}
+	}
+
 	var itinerarioIda, itinerarioVuelta []models.DescargoTramo
 	for _, item := range descargo.Tramos {
 		if strings.HasPrefix(string(item.Tipo), "VUELTA") {
