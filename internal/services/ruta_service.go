@@ -98,6 +98,10 @@ func (s *RutaService) Search(ctx context.Context, query string, onlyAtomic bool)
 	return s.rutaRepo.Search(ctx, query, onlyAtomic)
 }
 
+func (s *RutaService) GetPaginated(ctx context.Context, page, limit int, query string) (*repositories.PaginatedRutas, error) {
+	return s.rutaRepo.FindPaginated(ctx, page, limit, query)
+}
+
 func (s *RutaService) GetFaresMap(rutas []models.Ruta) map[string]map[string]float64 {
 	fares := make(map[string]map[string]float64)
 	for _, r := range rutas {

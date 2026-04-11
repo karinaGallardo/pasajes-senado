@@ -11,11 +11,12 @@ import (
 // TemplateFuncs exporta el mapa de funciones para uso en plantillas HTML.
 func TemplateFuncs() template.FuncMap {
 	return template.FuncMap{
-		"add":              Add,
+		"add":              Sum,
 		"sum":              Sum,
 		"sub":              Sub,
 		"mul":              Mul,
 		"inc":              Inc,
+		"seq":              Seq,
 		"fecha":            FormatDate,
 		"fechaRango":       FormatDateRange,
 		"fechaHora":        FormatDateTimeES,
@@ -111,6 +112,17 @@ func Sum(a, b int) int         { return a + b }
 func Sub(a, b int) int         { return a - b }
 func Mul(a, b int) int         { return a * b }
 func Inc(i int) int            { return i + 1 }
+
+func Seq(start, end int) []int {
+	if start > end {
+		return []int{}
+	}
+	s := make([]int, end-start+1)
+	for i := range s {
+		s[i] = start + i
+	}
+	return s
+}
 
 // FormatDate formatea un *time.Time a "DD/MM/YYYY". Retorna "-" si es nil.
 func FormatDate(t *time.Time) string {

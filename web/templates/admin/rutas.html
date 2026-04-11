@@ -280,220 +280,349 @@
           <div
             class="px-6 py-5 border-b border-neutral-100 bg-white sticky top-0 z-10 hidden md:flex items-center justify-between gap-4"
           >
-            <div>
+            <div id="rutas-stats-container">
               <h3 class="text-sm font-black text-neutral-800 uppercase tracking-widest">Catálogo Maestro</h3>
               <p class="text-[10px] text-neutral-400 font-bold tracking-tight mt-0.5">
-                Visualizando {{ len .Rutas }} registros existentes.
+                Página {{ .Page }} de {{ .TotalPages }} | Total: {{ .Total }} registros
               </p>
             </div>
 
-            <div class="flex items-center gap-2">
-              <!-- Filter / Search could go here -->
-              <span
-                class="bg-muted px-3 py-1 rounded-md text-[10px] font-black text-neutral-500 uppercase tracking-tighter border border-base"
+            <div class="flex items-center gap-3 flex-1 max-w-md">
+              <div
+                class="relative w-full text-neutral-400 focus-within:text-primary-600 transition-colors"
+                x-data="{ query: '{{ .Search }}' }"
               >
-                Total Rutas:
-                {{ len .Rutas }}
+                <i class="ph ph-magnifying-glass absolute left-3 top-1/2 -translate-y-1/2 text-lg"></i>
+                <input
+                  x-model="query"
+                  x-ref="searchInput"
+                  type="text"
+                  name="q"
+                  placeholder="Buscar por tramo, sigla o ciudad..."
+                  class="w-full pl-10 pr-28 py-2 bg-neutral-50 border border-neutral-200 rounded-md text-sm focus:outline-none focus:ring-4 focus:ring-primary-500/10 focus:border-primary-500 transition-all placeholder:text-neutral-400 placeholder:font-medium text-neutral-900 font-bold"
+                  hx-get="/admin/rutas"
+                  hx-trigger="keyup changed delay:500ms, search"
+                  hx-target="#rutas-table-container"
+                  hx-select="#rutas-table-container"
+                  hx-push-url="true"
+                  hx-indicator="#search-indicator"
+                />
+                <button
+                  type="button"
+                  x-show="query.length > 0"
+                  @click="query = ''; $nextTick(() => { $refs.searchInput.dispatchEvent(new Event('search')) })"
+                  class="absolute right-10 top-1/2 -translate-y-1/2 flex items-center gap-1 px-2 py-1 rounded bg-neutral-100 text-neutral-500 hover:text-danger-600 hover:bg-danger-50 transition-all border border-neutral-200 hover:border-danger-200"
+                  x-cloak
+                >
+                  <i class="ph ph-x-circle text-base"></i>
+                  <span class="text-[9px] font-black uppercase tracking-tight">Limpiar</span>
+                </button>
+                <div id="search-indicator" class="htmx-indicator absolute right-3 top-1/2 -translate-y-1/2">
+                  <i class="ph ph-spinner animate-spin text-primary-500"></i>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-2" id="rutas-badge-container">
+              <span
+                class="bg-neutral-100 px-3 py-1.5 rounded-md text-[10px] font-black text-neutral-500 uppercase tracking-tighter border border-neutral-200 shadow-sm"
+              >
+                Total:
+                {{ .Total }}
               </span>
             </div>
           </div>
 
-          <div class="overflow-x-auto flex-1">
-            <table class="min-w-full divide-y divide-neutral-100 border-separate border-spacing-0">
-              <thead>
-                <tr class="bg-neutral-50/50">
-                  <th
-                    scope="col"
-                    class="px-6 py-4 text-left text-[10px] font-black text-neutral-400 uppercase tracking-widest sticky top-0 bg-neutral-50/50 border-b border-neutral-100"
-                  >
-                    Ruta / Identificación
-                  </th>
-                  <th
-                    scope="col"
-                    class="px-6 py-4 text-left text-[10px] font-black text-neutral-400 uppercase tracking-widest sticky top-0 bg-neutral-50/50 border-b border-neutral-100"
-                  >
-                    Alcance
-                  </th>
-                  <th
-                    scope="col"
-                    class="px-6 py-4 text-right text-[10px] font-black text-neutral-400 uppercase tracking-widest sticky top-0 bg-neutral-50/50 border-b border-neutral-100"
-                  >
-                    Tarifas Referenciales
-                  </th>
-                  <th
-                    scope="col"
-                    class="px-6 py-4 text-right text-[10px] font-black text-neutral-400 uppercase tracking-widest sticky top-0 bg-neutral-50/50 border-b border-neutral-100"
-                  >
-                    Control
-                  </th>
-                </tr>
-              </thead>
-              <tbody class="bg-white divide-y divide-neutral-100">
-                {{ range .Rutas }}
-                  <tr class="hover:bg-primary-50/30 transition-all group">
-                    <td class="px-6 py-4">
-                      <div class="flex flex-col gap-0.5">
-                        <span
-                          class="text-sm font-black text-neutral-800 tracking-tight leading-tight group-hover:text-primary-700 transition-colors uppercase"
-                        >
-                          {{ .Tramo }}
-                        </span>
-                        <div class="flex items-center gap-2">
-                          <span
-                            class="text-[9px] font-mono font-bold bg-neutral-100 text-neutral-500 px-1.5 py-0.5 rounded border border-neutral-200 tracking-tighter"
-                          >
-                            {{ .Sigla }}
-                          </span>
-                          {{ if eq .Medio "AEREO" }}
-                            <span class="text-[9px] font-black text-neutral-300 uppercase italic">Ruta Aérea</span>
-                          {{ end }}
-                        </div>
-                      </div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                      <div class="flex flex-col gap-1">
-                        {{ if eq .NacInter "NACIONAL" }}
-                          <span
-                            class="w-fit px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-success-50 text-success-700 border border-success-200"
-                          >
-                            Nacional
-                          </span>
-                        {{ else }}
-                          <span
-                            class="w-fit px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-secondary-50 text-secondary-700 border border-secondary-200 shadow-sm"
-                          >
-                            Internacional
-                          </span>
-                        {{ end }}
-                        {{ if .Ubicacion }}
-                          <span class="text-[10px] text-neutral-400 font-medium ml-1 flex items-center gap-1">
-                            <i class="ph ph-map-pin-line font-bold"></i>
-                            {{ .Ubicacion }}
-                          </span>
-                        {{ end }}
-                      </div>
-                    </td>
-                    <td class="px-6 py-4">
-                      {{ if .Contratos }}
-                        <div class="flex flex-col items-end gap-1.5 min-w-[120px]">
-                          {{ range .Contratos }}
-                            <div
-                              class="flex items-center justify-end gap-3 group/cost p-1 pr-2 hover:bg-white rounded-md transition-all border border-transparent hover:border-neutral-100 shadow-none hover:shadow-sm"
-                            >
-                              <div class="flex flex-col items-end">
-                                <span class="text-[9px] font-black text-neutral-400 uppercase tracking-tighter leading-none">
-                                  {{ if .Aerolinea }}{{ .Aerolinea.Sigla }}{{ else }}Aero{{ end }}
-                                </span>
-                              </div>
-                              <div class="flex items-center gap-1">
-                                <span class="text-[10px] text-neutral-400 font-bold mb-0.5">Bs.</span>
-                                <span class="text-sm font-black text-secondary-600 tracking-tight">
-                                  {{ printf "%.2f" .MontoReferencial }}
-                                </span>
-                              </div>
-                            </div>
-                          {{ end }}
-                        </div>
-                      {{ else }}
-                        <div class="text-right flex flex-col items-end opacity-40">
-                          <span class="text-[10px] text-neutral-400 font-black uppercase tracking-widest">Sin Tarifas</span>
-                          <div class="h-1 w-12 bg-neutral-200 rounded-md mt-1"></div>
-                        </div>
-                      {{ end }}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-right">
-                      <div class="flex items-center justify-end">
-                        <button
-                          type="button"
-                          hx-get="/admin/rutas/modal-contrato?ruta_id={{ .ID }}"
-                          hx-target="#modal-container"
-                          class="inline-flex items-center gap-2 h-9 px-4 rounded-sm border {{ if .Contratos }}
-                            border-neutral-200 text-neutral-600 hover:bg-neutral-50
-                          {{ else }}
-                            border-primary-600 bg-primary-600 text-white hover:bg-primary-700 shadow-md shadow-primary-500/10
-                          {{ end }} transition-all active:scale-95 cursor-pointer"
-                        >
-                          <i class="ph {{ if .Contratos }}ph-pencil-simple{{ else }}ph-plus-circle{{ end }} text-lg"></i>
-                          <span class="text-xs font-black uppercase tracking-widest">
-                            {{ if .Contratos }}Editar{{ else }}Tarifas{{ end }}
-                          </span>
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                {{ else }}
-                  <tr>
-                    <td colspan="4" class="px-6 py-20 text-center">
-                      <div class="flex flex-col items-center">
-                        <div
-                          class="w-16 h-16 bg-neutral-50 rounded-md flex items-center justify-center mb-4 border border-neutral-100"
-                        >
-                          <i class="ph ph-map-trifold text-4xl text-neutral-200"></i>
-                        </div>
-                        <h3 class="text-sm font-black text-neutral-800 uppercase tracking-widest mb-1">El catálogo está vacío</h3>
-                        <p class="text-[11px] text-neutral-400 font-medium">
-                          Comience registrando una nueva ruta aérea en el panel lateral.
-                        </p>
-                      </div>
-                    </td>
-                  </tr>
-                {{ end }}
-              </tbody>
-            </table>
-          </div>
+          <div id="rutas-table-container" class="flex flex-col flex-1">
+            <!-- HTMX OOB Swaps for Stats (Only on AJAX) -->
+            {{ if .IsHTMX }}
+              <div hx-swap-oob="true" id="rutas-stats-container">
+                <h3 class="text-sm font-black text-neutral-800 uppercase tracking-widest">Catálogo Maestro</h3>
+                <p class="text-[10px] text-neutral-400 font-bold tracking-tight mt-0.5">
+                  Página {{ .Page }} de {{ .TotalPages }} | Total: {{ .Total }} registros
+                </p>
+              </div>
+              <div hx-swap-oob="true" id="rutas-badge-container">
+                <span
+                  class="bg-neutral-100 px-3 py-1.5 rounded-md text-[10px] font-black text-neutral-500 uppercase tracking-tighter border border-neutral-200 shadow-sm"
+                >
+                  Total:
+                  {{ .Total }}
+                </span>
+              </div>
+            {{ end }}
 
-          <!-- Pagination Placeholder -->
-          <div class="px-6 py-4 border-t border-neutral-100 bg-neutral-50/30 flex items-center justify-center">
-            <span class="text-[10px] font-black text-neutral-400 uppercase tracking-widest italic">
-              -- Fin del catálogo maestro --
-            </span>
+            <div class="overflow-x-auto flex-1">
+              <table class="min-w-full divide-y divide-neutral-100 border-separate border-spacing-0">
+                <thead>
+                  <tr class="bg-neutral-50/50">
+                    <th
+                      scope="col"
+                      class="px-6 py-4 text-left text-[10px] font-black text-neutral-400 uppercase tracking-widest sticky top-0 bg-neutral-50/50 border-b border-neutral-100"
+                    >
+                      Ruta / Identificación
+                    </th>
+                    <th
+                      scope="col"
+                      class="px-6 py-4 text-left text-[10px] font-black text-neutral-400 uppercase tracking-widest sticky top-0 bg-neutral-50/50 border-b border-neutral-100"
+                    >
+                      Alcance
+                    </th>
+                    <th
+                      scope="col"
+                      class="px-6 py-4 text-right text-[10px] font-black text-neutral-400 uppercase tracking-widest sticky top-0 bg-neutral-50/50 border-b border-neutral-100"
+                    >
+                      Tarifas Referenciales
+                    </th>
+                    <th
+                      scope="col"
+                      class="px-6 py-4 text-right text-[10px] font-black text-neutral-400 uppercase tracking-widest sticky top-0 bg-neutral-50/50 border-b border-neutral-100"
+                    >
+                      Control
+                    </th>
+                  </tr>
+                </thead>
+                <tbody class="bg-white divide-y divide-neutral-100">
+                  {{ range .Rutas }}
+                    <tr class="hover:bg-primary-50/30 transition-all group">
+                      <td class="px-6 py-4">
+                        <div class="flex flex-col gap-0.5">
+                          <span
+                            class="text-sm font-black text-neutral-800 tracking-tight leading-tight group-hover:text-primary-700 transition-colors uppercase"
+                          >
+                            {{ .Tramo }}
+                          </span>
+                          <div class="flex items-center gap-2">
+                            <span
+                              class="text-[9px] font-mono font-bold bg-neutral-100 text-neutral-500 px-1.5 py-0.5 rounded border border-neutral-200 tracking-tighter"
+                            >
+                              {{ .Sigla }}
+                            </span>
+                            {{ if eq .Medio "AEREO" }}
+                              <span class="text-[9px] font-black text-neutral-300 uppercase italic">Ruta Aérea</span>
+                            {{ end }}
+                          </div>
+                        </div>
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex flex-col gap-1">
+                          {{ if eq .NacInter "NACIONAL" }}
+                            <span
+                              class="w-fit px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-success-50 text-success-700 border border-success-200"
+                            >
+                              Nacional
+                            </span>
+                          {{ else }}
+                            <span
+                              class="w-fit px-2 py-0.5 rounded-md text-[9px] font-black uppercase tracking-wider bg-secondary-50 text-secondary-700 border border-secondary-200 shadow-sm"
+                            >
+                              Internacional
+                            </span>
+                          {{ end }}
+                          {{ if .Ubicacion }}
+                            <span class="text-[10px] text-neutral-400 font-medium ml-1 flex items-center gap-1">
+                              <i class="ph ph-map-pin-line font-bold"></i>
+                              {{ .Ubicacion }}
+                            </span>
+                          {{ end }}
+                        </div>
+                      </td>
+                      <td class="px-6 py-4">
+                        {{ if .Contratos }}
+                          <div class="flex flex-col items-end gap-1.5 min-w-[120px]">
+                            {{ range .Contratos }}
+                              <div
+                                class="flex items-center justify-end gap-3 group/cost p-1 pr-2 hover:bg-white rounded-md transition-all border border-transparent hover:border-neutral-100 shadow-none hover:shadow-sm"
+                              >
+                                <div class="flex flex-col items-end">
+                                  <span class="text-[9px] font-black text-neutral-400 uppercase tracking-tighter leading-none">
+                                    {{ if .Aerolinea }}{{ .Aerolinea.Sigla }}{{ else }}Aero{{ end }}
+                                  </span>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                  <span class="text-[10px] text-neutral-400 font-bold mb-0.5">Bs.</span>
+                                  <span class="text-sm font-black text-secondary-600 tracking-tight">
+                                    {{ printf "%.2f" .MontoReferencial }}
+                                  </span>
+                                </div>
+                              </div>
+                            {{ end }}
+                          </div>
+                        {{ else }}
+                          <div class="text-right flex flex-col items-end opacity-40">
+                            <span class="text-[10px] text-neutral-400 font-black uppercase tracking-widest">Sin Tarifas</span>
+                            <div class="h-1 w-12 bg-neutral-200 rounded-md mt-1"></div>
+                          </div>
+                        {{ end }}
+                      </td>
+                      <td class="px-6 py-4 whitespace-nowrap text-right">
+                        <div class="flex items-center justify-end">
+                          <button
+                            type="button"
+                            hx-get="/admin/rutas/modal-contrato?ruta_id={{ .ID }}"
+                            hx-target="#modal-container"
+                            class="inline-flex items-center gap-2 h-9 px-4 rounded-sm border {{ if .Contratos }}
+                              border-neutral-200 text-neutral-600 hover:bg-neutral-50
+                            {{ else }}
+                              border-primary-600 bg-primary-600 text-white hover:bg-primary-700 shadow-md shadow-primary-500/10
+                            {{ end }} transition-all active:scale-95 cursor-pointer"
+                          >
+                            <i class="ph {{ if .Contratos }}ph-pencil-simple{{ else }}ph-plus-circle{{ end }} text-lg"></i>
+                            <span class="text-xs font-black uppercase tracking-widest">
+                              {{ if .Contratos }}Editar{{ else }}Tarifas{{ end }}
+                            </span>
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  {{ else }}
+                    <tr>
+                      <td colspan="4" class="px-6 py-32 text-center">
+                        <div class="flex flex-col items-center">
+                          <div
+                            class="w-20 h-20 bg-neutral-50 rounded-md flex items-center justify-center mb-6 border border-neutral-100 shadow-inner"
+                          >
+                            <i class="ph ph-magnifying-glass text-5xl text-neutral-200"></i>
+                          </div>
+                          <h3 class="text-base font-black text-neutral-800 uppercase tracking-widest mb-2">
+                            {{ if .Search }}
+                              No hay resultados para "{{ .Search }}"
+                            {{ else }}
+                              El catálogo está vacío
+                            {{ end }}
+                          </h3>
+                          <p class="text-[12px] text-neutral-400 font-medium max-w-xs mx-auto leading-relaxed">
+                            {{ if .Search }}
+                              No encontramos ninguna ruta que coincida con su búsqueda. Intente con otros términos o limpie el
+                              filtro.
+                            {{ else }}
+                              Comience registrando una nueva ruta aérea en el panel lateral para que aparezca en esta lista.
+                            {{ end }}
+                          </p>
+                          {{ if .Search }}
+                            <a
+                              href="/admin/rutas"
+                              class="mt-6 px-4 py-2 bg-white border border-neutral-200 rounded-md text-xs font-bold text-neutral-600 hover:bg-neutral-50 transition-colors flex items-center gap-2"
+                            >
+                              <i class="ph ph-x-circle"></i>
+                              Limpiar Búsqueda
+                            </a>
+                          {{ end }}
+                        </div>
+                      </td>
+                    </tr>
+                  {{ end }}
+                </tbody>
+              </table>
+            </div>
+
+            <!-- Pagination Controls -->
+            {{ if gt .TotalPages 1 }}
+              <div class="px-6 py-4 border-t border-neutral-100 bg-neutral-50/30 flex items-center justify-between">
+                <div class="text-[10px] font-black text-neutral-400 uppercase tracking-widest">
+                  Mostrando página {{ .Page }} de
+                  {{ .TotalPages }}
+                </div>
+                <div class="flex items-center gap-2">
+                  {{ if gt .Page 1 }}
+                    <button
+                      hx-get="/admin/rutas?page={{ sub .Page 1 }}&q={{ .Search }}"
+                      hx-target="#rutas-table-container"
+                      hx-select="#rutas-table-container"
+                      hx-push-url="true"
+                      class="p-2 rounded-md border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-600 transition-all active:scale-95"
+                    >
+                      <i class="ph ph-caret-left font-bold"></i>
+                    </button>
+                  {{ end }}
+
+
+                  <div class="flex items-center gap-1">
+                    {{ range $i := seq 1 .TotalPages }}
+                      <button
+                        hx-get="/admin/rutas?page={{ $i }}&q={{ $.Search }}"
+                        hx-target="#rutas-table-container"
+                        hx-select="#rutas-table-container"
+                        hx-push-url="true"
+                        class="min-w-[32px] h-8 flex items-center justify-center rounded-md border text-[10px] font-black transition-all active:scale-95
+                    {{ if eq $i $.Page }}
+                          bg-primary-600 border-primary-600 text-white shadow-md shadow-primary-500/20
+                        {{ else }}
+                          bg-white border-neutral-200 text-neutral-600 hover:bg-neutral-50
+                        {{ end }}"
+                      >
+                        {{ $i }}
+                      </button>
+                    {{ end }}
+                  </div>
+
+                  {{ if lt .Page .TotalPages }}
+                    <button
+                      hx-get="/admin/rutas?page={{ add .Page 1 }}&q={{ .Search }}"
+                      hx-target="#rutas-table-container"
+                      hx-select="#rutas-table-container"
+                      hx-push-url="true"
+                      class="p-2 rounded-md border border-neutral-200 bg-white hover:bg-neutral-50 text-neutral-600 transition-all active:scale-95"
+                    >
+                      <i class="ph ph-caret-right font-bold"></i>
+                    </button>
+                  {{ end }}
+                </div>
+              </div>
+            {{ else }}
+              <div class="px-6 py-4 border-t border-neutral-100 bg-neutral-50/30 flex items-center justify-center">
+                <span class="text-[10px] font-black text-neutral-400 uppercase tracking-widest italic">
+                  -- Fin del catálogo maestro --
+                </span>
+              </div>
+            {{ end }}
           </div>
         </div>
       </div>
     </div>
+
+    <style>
+      [x-cloak] {
+        display: none !important;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(4px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .animate-fadeIn {
+        animation: fadeIn 0.3s ease-out forwards;
+      }
+
+      .animate-fadeInSlow {
+        animation: fadeIn 0.6s ease-out forwards;
+      }
+
+      .scrollbar-thin::-webkit-scrollbar {
+        width: 6px;
+      }
+
+      .scrollbar-thin::-webkit-scrollbar-track {
+        background: #f8fafc;
+      }
+
+      .scrollbar-thin::-webkit-scrollbar-thumb {
+        background: #e2e8f0;
+        border-radius: 10px;
+      }
+
+      .ml-13 {
+        margin-left: 3.25rem;
+      }
+    </style>
+
+    {{ template "layout_footer" . }}
   </div>
-
-  <style>
-    [x-cloak] {
-      display: none !important;
-    }
-
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(4px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    .animate-fadeIn {
-      animation: fadeIn 0.3s ease-out forwards;
-    }
-
-    .animate-fadeInSlow {
-      animation: fadeIn 0.6s ease-out forwards;
-    }
-
-    .scrollbar-thin::-webkit-scrollbar {
-      width: 6px;
-    }
-
-    .scrollbar-thin::-webkit-scrollbar-track {
-      background: #f8fafc;
-    }
-
-    .scrollbar-thin::-webkit-scrollbar-thumb {
-      background: #e2e8f0;
-      border-radius: 10px;
-    }
-
-    .ml-13 {
-      margin-left: 3.25rem;
-    }
-  </style>
-
-  {{ template "layout_footer" . }}
 {{ end }}

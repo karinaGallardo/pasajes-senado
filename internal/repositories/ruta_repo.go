@@ -20,6 +20,15 @@ func (r *RutaRepository) WithContext(ctx context.Context) *RutaRepository {
 	return &RutaRepository{db: r.db.WithContext(ctx)}
 }
 
+type PaginatedRutas struct {
+	Rutas      []models.Ruta
+	Total      int64
+	Page       int
+	Limit      int
+	TotalPages int
+	SearchTerm string
+}
+
 func (r *RutaRepository) FindAll(ctx context.Context) ([]models.Ruta, error) {
 	var rutas []models.Ruta
 	err := r.db.WithContext(ctx).
@@ -32,6 +41,48 @@ func (r *RutaRepository) FindAll(ctx context.Context) ([]models.Ruta, error) {
 		Preload("Contratos.Aerolinea").
 		Find(&rutas).Error
 	return rutas, err
+}
+
+func (r *RutaRepository) FindPaginated(ctx context.Context, page, limit int, query string) (*PaginatedRutas, error) {
+	var rutas []models.Ruta
+	var total int64
+
+	db := r.db.WithContext(ctx).Model(&models.Ruta{}).
+		Preload("Origen").
+		Preload("Destino").
+		Preload("Escalas", func(db *gorm.DB) *gorm.DB {
+			return db.Order("seq ASC")
+		}).
+		Preload("Escalas.Destino").
+		Preload("Contratos.Aerolinea")
+
+	if query != "" {
+		words := strings.Fields(strings.ToLower(query))
+		for _, word := range words {
+			w := "%" + word + "%"
+			db = db.Where("(tramo ILIKE ? OR sigla ILIKE ? OR origen_iata ILIKE ? OR destino_iata ILIKE ?)", w, w, w, w)
+		}
+	}
+
+	db.Count(&total)
+
+	err := db.Scopes(Paginate(page, limit)).
+		Order("tramo ASC").
+		Find(&rutas).Error
+
+	totalPages := 0
+	if limit > 0 {
+		totalPages = int((total + int64(limit) - 1) / int64(limit))
+	}
+
+	return &PaginatedRutas{
+		Rutas:      rutas,
+		Total:       total,
+		Page:        page,
+		Limit:       limit,
+		TotalPages:  totalPages,
+		SearchTerm:  query,
+	}, err
 }
 
 func (r *RutaRepository) Search(ctx context.Context, query string, onlyAtomic bool) ([]models.Ruta, error) {
@@ -55,7 +106,7 @@ func (r *RutaRepository) Search(ctx context.Context, query string, onlyAtomic bo
 		db = db.Where("(tramo ILIKE ? OR sigla ILIKE ? OR origen_iata ILIKE ? OR destino_iata ILIKE ?)", w, w, w, w)
 	}
 
-	err := db.Limit(20).Find(&rutas).Error
+	err := db.Limit(100).Find(&rutas).Error
 	return rutas, err
 }
 
