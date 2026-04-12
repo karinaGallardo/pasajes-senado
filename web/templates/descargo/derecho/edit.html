@@ -2,7 +2,24 @@
   {{ template "layout_header" . }}
 
 
-  <div class="max-w-4xl mx-auto" x-data="{ submitting: false, processingImages: false }">
+  <div
+    class="max-w-4xl mx-auto"
+    x-data="{ 
+      submitting: false, 
+      processingImages: false,
+      hasModIda: {{ $hIda := false }}{{ range .Ida }}
+      {{ if and .IsOriginal .EsModificacion }}{{ $hIda = true }}{{ end }}
+    {{ end }}{{ $hIda }},
+      hasModVuelta: {{ $hVuelta := false }}{{ range .Vuelta }}
+      {{ if and .IsOriginal .EsModificacion }}{{ $hVuelta = true }}{{ end }}
+    {{ end }}{{ $hVuelta }},
+      updateMods() {
+        this.hasModIda = !!Array.from(document.querySelectorAll('#itin-ida-original-container input[name=\'tramo_modificacion[]\']')).some(i => i.checked);
+        this.hasModVuelta = !!Array.from(document.querySelectorAll('#itin-vuelta-original-container input[name=\'tramo_modificacion[]\']')).some(i => i.checked);
+      }
+    }"
+    @update-totals.window="updateMods()"
+  >
     <div class="md:flex md:items-center md:justify-between mb-6">
       <div class="flex-1 min-w-0">
         <h2 class="text-2xl font-black text-neutral-900 tracking-tight">Editar Descargo #{{ .Descargo.Codigo }}</h2>
@@ -164,7 +181,7 @@
                         <th class="w-[45px] py-1 text-center"></th>
                       </tr>
                     </thead>
-                    <tbody class="divide-y divide-neutral-100 border-b last:border-0 w-full">
+                    <tbody id="itin-ida-original-container" class="divide-y divide-neutral-100 border-b last:border-0 w-full">
                       {{ range .Ida }}
                         {{ if .IsOriginal }}
                           {{ template "descargo/components/tramo_fila_derecho" (dict "Tramo" .) }}
@@ -181,6 +198,8 @@
                     </span>
                     <button
                       type="button"
+                      x-show="hasModIda"
+                      x-transition
                       hx-get="/descargos/derecho/nueva-fila?tipo=IDA_REPRO&solicitud_item_id={{ .Solicitud.GetItemIda.ID }}"
                       hx-target="#itin-ida-repro-container"
                       hx-swap="beforeend"
@@ -239,7 +258,7 @@
                         <th class="w-[45px] py-1 text-center"></th>
                       </tr>
                     </thead>
-                    <tbody class="divide-y divide-neutral-100 border-b last:border-0 w-full">
+                    <tbody id="itin-vuelta-original-container" class="divide-y divide-neutral-100 border-b last:border-0 w-full">
                       {{ range .Vuelta }}
                         {{ if .IsOriginal }}
                           {{ template "descargo/components/tramo_fila_derecho" (dict "Tramo" .) }}
@@ -256,6 +275,8 @@
                     </span>
                     <button
                       type="button"
+                      x-show="hasModVuelta"
+                      x-transition
                       hx-get="/descargos/derecho/nueva-fila?tipo=VUELTA_REPRO&solicitud_item_id={{ .Solicitud.GetItemVuelta.ID }}"
                       hx-target="#itin-vuelta-repro-container"
                       hx-swap="beforeend"
