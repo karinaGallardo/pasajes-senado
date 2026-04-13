@@ -223,10 +223,12 @@ func (s *ReportService) GeneratePV01(ctx context.Context, solicitud *models.Soli
 
 	pdf.Ln(2)
 
-	pdf.SetY(220)
-
-	pdf.SetY(220)
-	s.drawSignatureBlock(pdf, tr, 230, "SELLO UNIDAD SOLICITANTE", "FIRMA / SELLO SOLICITANTE", "")
+	sigY := pdf.GetY() + 20
+	if sigY > 230 {
+		pdf.AddPage()
+		sigY = 40
+	}
+	s.drawSignatureBlock(pdf, tr, sigY, "SELLO UNIDAD SOLICITANTE", "FIRMA / SELLO SOLICITANTE", "")
 
 	return pdf
 }
@@ -455,8 +457,12 @@ func (s *ReportService) GeneratePV02(ctx context.Context, solicitud *models.Soli
 	drawRutaSeccion("RUTA DE IDA", itemsIda)
 	drawRutaSeccion("RUTA DE VUELTA", itemsVuelta)
 
-	pdf.SetY(240)
-	s.drawSignatureBlock(pdf, tr, 248, "SELLO UNIDAD SOLICITANTE", "FIRMA / SELLO SOLICITANTE", "")
+	sigY := pdf.GetY() + 20
+	if sigY > 230 {
+		pdf.AddPage()
+		sigY = 40
+	}
+	s.drawSignatureBlock(pdf, tr, sigY, "SELLO UNIDAD SOLICITANTE", "FIRMA / SELLO SOLICITANTE", "")
 
 	pdf.SetFont("Arial", "I", 8)
 	return pdf
@@ -697,7 +703,7 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 	// --- SECCIÓN: LIQUIDACIÓN FINANCIERA DETALLADA ---
 	pdf.SetFont("Arial", "B", 9)
 	pdf.SetFillColor(240, 240, 240)
-	pdf.CellFormat(190, 7, tr(" LIQUIDACIÓN FINANCIERA Y CONCILIACIÓN DE COSTOS"), "1", 1, "C", true, 0, "")
+	pdf.CellFormat(190, 7, tr(" LIQUIDACIÓN FINANCIERA Y CONCILIACIÓN DE COSTOS (Bs)"), "1", 1, "C", true, 0, "")
 
 	// Calcular totales desglosados
 	totalEmitido := 0.0
@@ -715,19 +721,19 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 
 	pdf.SetFont("Arial", "B", 7)
 	pdf.SetFillColor(240, 240, 240)
-	pdf.CellFormat(35, 6, tr("N° BILLETE"), "1", 0, "C", true, 0, "")
-	pdf.CellFormat(55, 6, tr("DETALLE RUTA"), "1", 0, "C", true, 0, "")
-	pdf.CellFormat(25, 6, tr("EMITIDO (Bs.)"), "1", 0, "C", true, 0, "")
-	pdf.CellFormat(25, 6, tr("CONSUMO (Bs.)"), "1", 0, "C", true, 0, "")
-	pdf.CellFormat(25, 6, tr("DEVOLUCIÓN (Bs.)"), "1", 0, "C", true, 0, "")
-	pdf.CellFormat(25, 6, tr("N° BOLETA"), "1", 1, "C", true, 0, "")
+	pdf.CellFormat(25, 6, tr("N° BILLETE"), "1", 0, "C", true, 0, "")
+	pdf.CellFormat(70, 6, tr("DETALLE RUTA"), "1", 0, "C", true, 0, "")
+	pdf.CellFormat(25, 6, tr("EMITIDO"), "1", 0, "C", true, 0, "")
+	pdf.CellFormat(25, 6, tr("CONSUMO"), "1", 0, "C", true, 0, "")
+	pdf.CellFormat(25, 6, tr("DEVOLUCIÓN"), "1", 0, "C", true, 0, "")
+	pdf.CellFormat(20, 6, tr("N° BOLETA"), "1", 1, "C", true, 0, "")
 
 	pdf.SetFont("Arial", "", 7)
 	if descargo.Solicitud != nil {
 		for _, item := range descargo.Solicitud.Items {
 			for _, p := range item.Pasajes {
-				pdf.CellFormat(35, 6, tr(p.NumeroBillete), "1", 0, "C", false, 0, "")
-				pdf.CellFormat(55, 6, tr(p.GetRutaDisplay()), "1", 0, "L", false, 0, "")
+				pdf.CellFormat(25, 6, tr(p.NumeroBillete), "1", 0, "C", false, 0, "")
+				pdf.CellFormat(70, 6, tr(p.GetRutaDisplay()), "1", 0, "L", false, 0, "")
 				pdf.CellFormat(25, 6, fmt.Sprintf("%.2f", p.Costo), "1", 0, "R", false, 0, "")
 				pdf.CellFormat(25, 6, fmt.Sprintf("%.2f", p.CostoUtilizado), "1", 0, "R", false, 0, "")
 
@@ -743,7 +749,7 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 				if nroBoleta == "" {
 					nroBoleta = "-"
 				}
-				pdf.CellFormat(25, 6, tr(nroBoleta), "1", 1, "C", false, 0, "")
+				pdf.CellFormat(20, 6, tr(nroBoleta), "1", 1, "C", false, 0, "")
 			}
 		}
 	}
@@ -751,14 +757,14 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 	// Fila de Totales
 	pdf.SetFillColor(245, 245, 245)
 	pdf.SetFont("Arial", "B", 7)
-	pdf.CellFormat(90, 6, tr("TOTALES GENERALES (Bs.) "), "1", 0, "R", true, 0, "")
+	pdf.CellFormat(95, 6, tr("TOTALES GENERALES "), "1", 0, "R", true, 0, "")
 	pdf.CellFormat(25, 6, fmt.Sprintf("%.2f", totalEmitido), "1", 0, "R", true, 0, "")
 	pdf.CellFormat(25, 6, fmt.Sprintf("%.2f", totalUtilizado), "1", 0, "R", true, 0, "")
 
 	pdf.SetTextColor(150, 0, 0)
 	pdf.CellFormat(25, 6, fmt.Sprintf("%.2f", totalEfectivo), "1", 0, "R", true, 0, "")
 	pdf.SetTextColor(0, 0, 0)
-	pdf.CellFormat(25, 6, "", "1", 1, "C", true, 0, "")
+	pdf.CellFormat(20, 6, "", "1", 1, "C", true, 0, "")
 
 	pdf.Ln(4)
 
