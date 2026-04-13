@@ -766,9 +766,16 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 	pdf.SetTextColor(0, 0, 0)
 	pdf.CellFormat(20, 6, "", "1", 1, "C", true, 0, "")
 
-	pdf.Ln(4)
+	pdf.Ln(10)
+	sigY := pdf.GetY() + 20
+	if sigY > 250 {
+		pdf.AddPage()
+		sigY = 30
+	}
+	s.drawSignatureBlock(pdf, tr, sigY, "SELLO UNIDAD SOLICITANTE", "FIRMA/RESPONSABLE PRESENTACION DEL DESCARGO", "")
 
 	// --- ANEXO AUTOMÁTICO DEL COMPROBANTE DE DEPÓSITO ---
+	// Se coloca al final
 	compPath := ""
 	if descargo.Solicitud != nil {
 		for _, item := range descargo.Solicitud.Items {
@@ -786,7 +793,6 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 
 	if descargo.GetTotalDevolucionPasajes() > 0 && compPath != "" {
 		filePath := compPath
-		// Solo anexamos si el archivo existe
 		if _, err := os.Stat(filePath); err == nil {
 			lowerPath := strings.ToLower(filePath)
 			if strings.HasSuffix(lowerPath, ".jpg") || strings.HasSuffix(lowerPath, ".jpeg") || strings.HasSuffix(lowerPath, ".png") {
@@ -794,19 +800,11 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 				pdf.SetFont("Arial", "B", 10)
 				pdf.CellFormat(190, 8, tr("ANEXO: COMPROBANTE DE DEPÓSITO BANCARIO"), "B", 1, "C", false, 0, "")
 				pdf.Ln(5)
-
-				// Intentamos colocar la imagen centrada y ajustada
 				var opt gofpdf.ImageOptions
 				pdf.ImageOptions(filePath, 10, 30, 190, 0, false, opt, 0, "")
 			}
-			// Nota: Para anexar PDFs se requeriría una librería de merge como pdfcpu,
-			// de momento manejamos imágenes que es lo más común desde móviles.
 		}
 	}
-
-	sigY := 220.0
-	pdf.SetY(sigY)
-	s.drawSignatureBlock(pdf, tr, sigY+10, "SELLO UNIDAD SOLICITANTE", "FIRMA/RESPONSABLE PRESENTACION DEL DESCARGO", "")
 
 	return pdf
 }
