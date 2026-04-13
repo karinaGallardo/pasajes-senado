@@ -593,7 +593,7 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 			if r.EsOpenTicket {
 				pdf.SetTextColor(200, 0, 0)
 				pdf.SetFont("Arial", "B", 7)
-				paseVal = "NO USADO"
+				paseVal = "TRAMO NO UTILIZADO"
 			} else if r.EsModificacion {
 				pdf.SetTextColor(0, 128, 0) // Green
 				pdf.SetFont("Arial", "B", 7)
@@ -670,14 +670,25 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 	pdf.CellFormat(190, 6, tr(" TRAMOS NO UTILIZADOS (OPEN TICKETS REUTILIZABLES)"), "B", 1, "L", false, 0, "")
 	pdf.Ln(2)
 
-	// Buscar tickets open reales vinculados a este descargo
-	creditos, _ := s.openTicketRepo.FindByDescargoID(ctx, descargo.ID)
-
-	if len(creditos) > 0 {
-		for _, cred := range creditos {
-			s.drawReturnTableSummarized(pdf, tr, "OPEN TICKET", cred.NumeroBillete, cred.RutaReferencia)
+	hasReturns := false
+	for _, key := range itinerariosOrder {
+		g := itinerariosMap[key]
+		if g.EsOpenTicket {
+			hasReturns = true
+			// Reconstruir ruta solo de los tramos marcados como open
+			var routeParts []string
+			for _, det := range g.Tramos {
+				if det.EsOpenTicket {
+					routeParts = append(routeParts, det.GetRutaDisplay())
+				}
+			}
+			fullRoute := strings.Join(routeParts, " ; ")
+			s.drawReturnTableSummarized(pdf, tr, "TRAMO NO UTILIZADO", g.Billete, fullRoute)
+			pdf.Ln(1)
 		}
-	} else {
+	}
+
+	if !hasReturns {
 		// Si no hay Open Tickets, mostramos una fila indicando que no hubo tramos sobrantes
 		s.drawReturnTableSummarized(pdf, tr, "N/A", "NINGUNO", "TODOS LOS TRAMOS FUERON UTILIZADOS")
 	}
@@ -1185,9 +1196,9 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 			tipoStr := "TRAMO"
 			if len(g.Tramos) > 0 {
 				if strings.Contains(string(g.Tramos[0].Tipo), "IDA") {
-					tipoStr = "TRAMO DE IDA"
+					tipoStr = "TRAMO DE IDA NO UTILIZADO"
 				} else {
-					tipoStr = "TRAMO DE RETORNO"
+					tipoStr = "TRAMO DE RETORNO NO UTILIZADO"
 				}
 			}
 
@@ -1587,7 +1598,7 @@ func (s *ReportService) drawSubTable(pdf *gofpdf.Fpdf, tr func(string) string, s
 		if r.EsOpenTicket {
 			pdf.SetTextColor(200, 0, 0)
 			pdf.SetFont("Arial", "B", 7)
-			paseVal = "NO USADO"
+			paseVal = "TRAMO NO UTILIZADO"
 		} else if r.EsModificacion {
 			pdf.SetTextColor(0, 128, 0) // Green
 			pdf.SetFont("Arial", "B", 7)
