@@ -21,6 +21,7 @@ type SolicitudOficialService struct {
 	codigoSecuenciaRepo *repositories.CodigoSecuenciaRepository
 	notificationService *NotificationService
 	baseService         *SolicitudService
+	openTicketRepo      *repositories.OpenTicketRepository
 }
 
 func NewSolicitudOficialService(
@@ -30,6 +31,7 @@ func NewSolicitudOficialService(
 	codigoSecuenciaRepo *repositories.CodigoSecuenciaRepository,
 	notificationService *NotificationService,
 	baseService *SolicitudService,
+	openTicketRepo *repositories.OpenTicketRepository,
 ) *SolicitudOficialService {
 	return &SolicitudOficialService{
 		repo:                repo,
@@ -38,6 +40,7 @@ func NewSolicitudOficialService(
 		codigoSecuenciaRepo: codigoSecuenciaRepo,
 		notificationService: notificationService,
 		baseService:         baseService,
+		openTicketRepo:      openTicketRepo,
 	}
 }
 
@@ -117,6 +120,7 @@ func (s *SolicitudOficialService) CreateOficial(ctx context.Context, req dtos.Cr
 		if err := repoTx.Create(ctx, solicitud); err != nil {
 			return err
 		}
+
 		return nil
 	})
 
@@ -147,7 +151,7 @@ func (s *SolicitudOficialService) CreateOficial(ctx context.Context, req dtos.Cr
 	return solicitud, nil
 }
 
-func (s *SolicitudOficialService) UpdateOficial(ctx context.Context, id string, req dtos.CreateSolicitudOficialRequest) error {
+func (s *SolicitudOficialService) UpdateOficial(ctx context.Context, id string, req dtos.CreateSolicitudOficialRequest, currentUser *models.Usuario) error {
 	if len(req.TramosIda) == 0 && len(req.TramosVuelta) == 0 {
 		return errors.New("debe agregar al menos un tramo de viaje válido")
 	}
@@ -223,6 +227,7 @@ func (s *SolicitudOficialService) UpdateOficial(ctx context.Context, id string, 
 
 			if !isUpdate {
 				newItem := models.NewSolicitudItem(id, t.Tipo, orig, dest, fSalida, utils.NilIfEmpty(t.AerolineaID))
+
 				if err := tx.Create(newItem).Error; err != nil {
 					return err
 				}
@@ -231,11 +236,12 @@ func (s *SolicitudOficialService) UpdateOficial(ctx context.Context, id string, 
 
 		editableIDs := solicitud.GetEditableItemIDs()
 		if len(editableIDs) > 0 {
-			deleteQuery := tx.Where("id IN ?", editableIDs)
+			query := tx.Where("id IN ?", editableIDs)
 			if len(itemsToKeepIDs) > 0 {
-				deleteQuery = deleteQuery.Where("id NOT IN ?", itemsToKeepIDs)
+				query = query.Where("id NOT IN ?", itemsToKeepIDs)
 			}
-			if err := deleteQuery.Delete(&models.SolicitudItem{}).Error; err != nil {
+
+			if err := query.Delete(&models.SolicitudItem{}).Error; err != nil {
 				return err
 			}
 		}

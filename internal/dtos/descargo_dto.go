@@ -9,13 +9,13 @@ import (
 )
 
 type CreateDescargoRequest struct {
-	SolicitudID                 string `form:"solicitud_id" binding:"required"`
-	InformeActividades          string `form:"informe_actividades"`
-	ObjetivoViaje               string `form:"objetivo_viaje"`
-	ResultadosViaje             string `form:"resultados_viaje"`
-	ConclusionesRecomendaciones string `form:"conclusiones_recomendaciones"`
-	Observaciones               string `form:"observaciones"`
-	DirigidoA                   string `form:"dirigido_a"`
+	SolicitudID                 string                `form:"solicitud_id" binding:"required"`
+	InformeActividades          string                `form:"informe_actividades"`
+	ObjetivoViaje               string                `form:"objetivo_viaje"`
+	ResultadosViaje             string                `form:"resultados_viaje"`
+	ConclusionesRecomendaciones string                `form:"conclusiones_recomendaciones"`
+	Observaciones               string                `form:"observaciones"`
+	DirigidoA                   string                `form:"dirigido_a"`
 
 	// Informe PV-06
 	NroMemorandum     string `form:"nro_memorandum"`
@@ -49,8 +49,9 @@ type CreateDescargoRequest struct {
 	TramoPaseArchivo     []*multipart.FileHeader `form:"tramo_archivo[]"`
 
 	// Neteo de Liquidación por Billete (Ingresado vía Agencia)
-	LiquidacionPasajeID         []string `form:"liquidacion_pasaje_id[]"`
-	LiquidacionCostoUtilizacion []string `form:"liquidacion_costo_utilizacion[]"`
+	LiquidacionPasajeID        []string `form:"liquidacion_pasaje_id[]"`
+	LiquidacionMontoDevolucion []string `form:"liquidacion_monto_devolucion[]"`
+	LiquidacionNroBoleta       []string `form:"liquidacion_nro_boleta[]"`
 }
 
 // TramoRowDTO representa una fila de itinerario ya procesada y tipada.
@@ -67,7 +68,7 @@ type TramoRowDTO struct {
 	PaseNumero      string
 	PasajeID        string
 	SolicitudItemID string
-	EsDevolucion    bool
+	EsOpenTicket    bool
 	EsModificacion  bool
 	ArchivoPath     string
 	Seq             int
@@ -118,7 +119,7 @@ func (r *CreateDescargoRequest) ToTramoRows(archivoPaths []string) []TramoRowDTO
 			PaseNumero:      get(r.TramoPaseNumero, i),
 			PasajeID:        get(r.TramoPasajeID, i),
 			SolicitudItemID: get(r.TramoSolicitudItemID, i),
-			EsDevolucion:    devoMap[rawID],
+			EsOpenTicket:    devoMap[rawID],
 			EsModificacion:  modMap[rawID],
 			ArchivoPath:     get(archivoPaths, i),
 			Seq:             i + 1,
@@ -171,7 +172,8 @@ func (r *CreateDescargoRequest) Bind(c *gin.Context) error {
 	r.TipoTransporte = strings.Join(tiposValidos, ",")
 
 	r.LiquidacionPasajeID = c.PostFormArray("liquidacion_pasaje_id[]")
-	r.LiquidacionCostoUtilizacion = c.PostFormArray("liquidacion_costo_utilizacion[]")
+	r.LiquidacionMontoDevolucion = c.PostFormArray("liquidacion_monto_devolucion[]")
+	r.LiquidacionNroBoleta = c.PostFormArray("liquidacion_nro_boleta[]")
 
 	return nil
 }
@@ -196,15 +198,4 @@ type DescargoEditData struct {
 	Vuelta    []models.DescargoTramo
 }
 
-// LiquidarDescargoRequest estructura para la liquidación financiera detallada
-type LiquidarDescargoRequest struct {
-	PasajeIDs         []string `form:"pasaje_id[]"`
-	CostosUtilizacion []string `form:"pasaje_utilizado[]"`
-	MontosCredito     []string `form:"pasaje_monto_credito[]"`
-	MontosDevolucion  []string `form:"pasaje_monto_devolucion[]"`
-}
 
-// ReportarPagoRequest estructura para que el beneficiario reporte su depósito
-type ReportarPagoRequest struct {
-	Comprobante *multipart.FileHeader `form:"comprobante" binding:"required"`
-}

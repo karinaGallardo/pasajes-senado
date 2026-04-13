@@ -29,7 +29,7 @@ type DescargoTramo struct {
 	NumeroVuelo       string            `gorm:"size:20"`
 	NumeroPaseAbordo  string            `gorm:"size:100"`
 	ArchivoPaseAbordo string            `gorm:"size:255"`
-	EsDevolucion      bool              `gorm:"default:false"`
+	EsOpenTicket      bool              `gorm:"default:false"`
 	EsModificacion    bool              `gorm:"default:false"`
 
 	OrigenIATA  *string  `gorm:"size:5;index" json:"origen_iata"`
@@ -176,7 +176,7 @@ func (d DescargoTramo) HasChanges(other DescargoTramo) bool {
 		d.NumeroVuelo != other.NumeroVuelo ||
 		d.NumeroPaseAbordo != other.NumeroPaseAbordo ||
 		d.ArchivoPaseAbordo != other.ArchivoPaseAbordo ||
-		d.EsDevolucion != other.EsDevolucion ||
+		d.EsOpenTicket != other.EsOpenTicket ||
 		d.EsModificacion != other.EsModificacion ||
 		d.Seq != other.Seq {
 		return true

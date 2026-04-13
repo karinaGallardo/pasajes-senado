@@ -1,0 +1,50 @@
+package services
+
+import (
+	"context"
+	"fmt"
+	"sistema-pasajes/internal/dtos"
+	"sistema-pasajes/internal/models"
+	"sistema-pasajes/internal/repositories"
+	"sistema-pasajes/internal/utils"
+	"strings"
+	"time"
+)
+
+type DescargoOficialService struct {
+	repo             *repositories.DescargoRepository
+	rutaRepo         *repositories.RutaRepository
+	solicitudService *SolicitudService
+	auditService     *AuditService
+}
+
+func NewDescargoOficialService(
+	repo *repositories.DescargoRepository,
+	rutaRepo *repositories.RutaRepository,
+	solicitudService *SolicitudService,
+	auditService *AuditService,
+) *DescargoOficialService {
+	return &DescargoOficialService{
+		repo:             repo,
+		rutaRepo:         rutaRepo,
+		solicitudService: solicitudService,
+		auditService:     auditService,
+	}
+}
+
+func (s *DescargoOficialService) GetShowData(ctx context.Context, id string) (*models.Descargo, error) {
+	descargo, err := s.repo.FindByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	// Sincronización proactiva: Si se emitieron nuevos pasajes
+	if descargo.Solicitud != nil && descargo.IsEditable() {
+		if err := s.SyncItineraryFromSolicitud(ctx, descargo, descargo.Solicitud); err == nil {
+			// Recargar para tener tramos pre-cargados
+			descargo, _ = s.repo.FindByID(ctx, id)
+		}
+	}
+
+	return descargo, nil
+}

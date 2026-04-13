@@ -36,7 +36,7 @@ func SetupRoutes(r *gin.Engine, container *app.Container, loginLimiter *middlewa
 	catViaticoCtrl := container.CategoriaViaticoController
 	notifCtrl := container.NotificationController
 	landingCtrl := container.LandingController
-	creditoCtrl := container.CreditoPasajeController
+	openTicketCtrl := container.OpenTicketController
 
 	r.GET("/auth/login", authCtrl.ShowLogin)
 	r.POST("/auth/login", middleware.RateLimitMiddleware(loginLimiter), authCtrl.Login)
@@ -53,7 +53,10 @@ func SetupRoutes(r *gin.Engine, container *app.Container, loginLimiter *middlewa
 		protected.GET("/dashboard", dashboardCtrl.Index)
 
 		protected.GET("/perfil", perfilCtrl.Show)
-		protected.GET("/perfil/creditos", creditoCtrl.ListByUser)
+		protected.GET("/perfil/open-tickets", openTicketCtrl.ListByUser)
+		protected.GET("/pasajes/open-tickets", openTicketCtrl.List)
+		protected.GET("/pasajes/open-tickets/:id/modal-programar", openTicketCtrl.GetProgramarModal)
+		protected.POST("/pasajes/open-tickets/:id/programar", openTicketCtrl.ProgramarUso)
 
 		protected.GET("/cupos/derecho/:senador_user_id/:gestion", cupoCtrl.DerechoByYear)
 		protected.GET("/cupos/derecho/:senador_user_id/:gestion/:mes", cupoCtrl.DerechoByMonth)
@@ -89,15 +92,6 @@ func SetupRoutes(r *gin.Engine, container *app.Container, loginLimiter *middlewa
 		protected.POST("/descargos/derecho/:id/revertir-aprobacion", descargoDerechoCtrl.RevertApproval)
 		protected.GET("/descargos/derecho/nueva-fila", descargoDerechoCtrl.NuevaFila)
 
-		// Liquidación Financiera
-		protected.GET("/descargos/derecho/:id/modal-liquidar", descargoDerechoCtrl.GetModalLiquidar)
-		protected.POST("/descargos/derecho/:id/liquidar", descargoDerechoCtrl.Liquidar)
-		protected.GET("/descargos/derecho/:id/modal-pago", descargoDerechoCtrl.GetModalPago)
-		protected.POST("/descargos/derecho/:id/pago", descargoDerechoCtrl.ReportarPago)
-		protected.POST("/descargos/derecho/:id/finalizar", descargoDerechoCtrl.Finalize)
-		protected.POST("/descargos/derecho/:id/revertir-liquidacion", descargoDerechoCtrl.RevertLiquidation)
-		protected.POST("/descargos/derecho/:id/revertir-pago", descargoDerechoCtrl.RevertPayment)
-		protected.POST("/descargos/derecho/:id/revertir-finalizacion", descargoDerechoCtrl.RevertFinalization)
 
 		protected.POST("/solicitudes/derecho/:id/actualizar", solicitudDerechoCtrl.Update)
 		protected.POST("/solicitudes/derecho/:id/aprobar", solicitudDerechoCtrl.Approve)
@@ -128,15 +122,6 @@ func SetupRoutes(r *gin.Engine, container *app.Container, loginLimiter *middlewa
 		protected.POST("/descargos/oficial/:id/revertir-aprobacion", descargoOficialCtrl.RevertApproval)
 		protected.GET("/descargos/oficial/nueva-fila", descargoOficialCtrl.NuevaFila)
 
-		// Liquidación Financiera Oficial
-		protected.GET("/descargos/oficial/:id/modal-liquidar", descargoOficialCtrl.GetModalLiquidar)
-		protected.POST("/descargos/oficial/:id/liquidar", descargoOficialCtrl.Liquidar)
-		protected.GET("/descargos/oficial/:id/modal-pago", descargoOficialCtrl.GetModalPago)
-		protected.POST("/descargos/oficial/:id/pago", descargoOficialCtrl.ReportarPago)
-		protected.POST("/descargos/oficial/:id/finalizar", descargoOficialCtrl.Finalize)
-		protected.POST("/descargos/oficial/:id/revertir-liquidacion", descargoOficialCtrl.RevertLiquidation)
-		protected.POST("/descargos/oficial/:id/revertir-pago", descargoOficialCtrl.RevertPayment)
-		protected.POST("/descargos/oficial/:id/revertir-finalizacion", descargoOficialCtrl.RevertFinalization)
 
 		protected.POST("/solicitudes/oficial/:id/actualizar", solicitudOficialCtrl.Update)
 		protected.POST("/solicitudes/oficial", solicitudOficialCtrl.Store)

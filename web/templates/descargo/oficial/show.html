@@ -168,129 +168,6 @@
             </div>
           </dl>
         </div>
-
-        <!-- Sección de Liquidación y Reintegro (Solo si aplica) -->
-        {{ if .Descargo.ShouldShowFinancialSection }}
-          <div class="bg-amber-50 shadow-md rounded-md overflow-hidden border border-amber-200">
-            <div class="bg-amber-100/50 px-4 py-2 border-b border-amber-200 flex items-center justify-between">
-              <div class="flex items-center gap-2">
-                <i class="ph ph-bank text-amber-700"></i>
-                <span class="text-[10px] font-black text-amber-800 uppercase tracking-widest">Liquidación Financiera</span>
-              </div>
-              {{ if eq .Descargo.Estado "PENDIENTE_PAGO" }}
-                <span class="animate-pulse flex h-2 w-2 rounded-md bg-danger-500"></span>
-              {{ end }}
-            </div>
-            <div class="p-4 space-y-4">
-              <!-- Monto a Devolver -->
-              <div class="text-center py-2 bg-white rounded-md border border-amber-100">
-                <p class="text-[9px] font-black text-neutral-400 uppercase tracking-tighter mb-1">
-                  Total a Reintegrar (Penalidades/Reprogramación)
-                </p>
-                <div class="text-2xl font-black text-neutral-900 tracking-tight">
-                  <span class="text-xs mr-1 text-neutral-500 font-bold tracking-normal">Bs.</span>
-                  {{ printf "%.2f" .Descargo.MontoDevolucion }}
-                </div>
-              </div>
-
-              <!-- Casos de uso según Estado y Permisos -->
-              {{ if eq .Descargo.Estado "PENDIENTE_PAGO" }}
-                <div class="space-y-3">
-                  <div class="p-3 bg-white/80 rounded-md border border-amber-200">
-                    <p class="text-[10px] text-amber-900 font-bold uppercase tracking-widest mb-2 border-b border-amber-100 pb-1">
-                      Datos de la Cuenta Fiscal:
-                    </p>
-                    <div class="space-y-1 text-[11px] text-amber-800">
-                      <p>
-                        <strong>Banco:</strong>
-                        {{ index .Config "BANCO_NOMBRE_DEVOLUCION" }}
-                      </p>
-                      <p>
-                        <strong>Cuenta:</strong>
-                        {{ index .Config "BANCO_CUENTA_DEVOLUCION" }}
-                      </p>
-                      <p>
-                        <strong>Concepto:</strong>
-                        Reintegro Penalidad/Reprog. -
-                        {{ .Descargo.Codigo }}
-                      </p>
-                    </div>
-                  </div>
-                  {{ if .Descargo.CanUploadPayment .AuthUser }}
-                    <button
-                      type="button"
-                      @click="htmx.ajax('GET', '/descargos/oficial/{{ .Descargo.ID }}/modal-pago', { target: '#modal-container' })"
-                      class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-xs font-black rounded-md text-white bg-amber-600 hover:bg-amber-700 transition-all shadow-sm active:scale-95 uppercase tracking-tight"
-                    >
-                      <i class="ph ph-upload-simple mr-2 text-lg"></i>
-                      {{ if .AuthUser.IsAdminOrResponsable }}Registrar Depósito{{ else }}Reportar Depósito{{ end }}
-                    </button>
-                  {{ end }}
-                </div>
-              {{ end }}
-
-              {{ if .Descargo.CanRevertPayment .AuthUser }}
-                <div class="space-y-3 pt-2">
-                  <form
-                    action="/descargos/oficial/{{ .Descargo.ID }}/revertir-pago"
-                    method="POST"
-                    x-data="{ loading: false }"
-                    @submit="loading = true"
-                  >
-                    <input type="hidden" name="_csrf" value="{{ $.csrf_token }}" />
-                    <button
-                      type="submit"
-                      :disabled="loading"
-                      class="w-full inline-flex justify-center items-center px-4 py-2 border border-neutral-200 text-xs font-black rounded-md text-rose-600 bg-white hover:bg-rose-50 transition-all shadow-sm active:scale-95 disabled:opacity-50 uppercase tracking-tight cursor-pointer"
-                    >
-                      <i class="ph ph-warning-circle mr-2 text-lg" x-show="!loading"></i>
-                      <i class="ph ph-circle-notch animate-spin mr-2 text-lg" x-show="loading"></i>
-                      <span x-show="!loading">Rectificar Reporte de Pago</span>
-                      <span x-show="loading">Revirtiendo...</span>
-                    </button>
-                  </form>
-                </div>
-              {{ end }}
-
-              {{ if .Descargo.ShouldShowPaymentProof }}
-                <div class="space-y-3">
-                  <div class="flex items-center justify-between p-2 bg-success-50 rounded border border-success-100">
-                    <div class="flex items-center gap-2">
-                      <i class="ph ph-file-check text-success-600"></i>
-                      <span class="text-[10px] font-bold text-success-800 uppercase">Pago Reportado</span>
-                    </div>
-                    <button
-                      type="button"
-                      @click="htmx.ajax('GET', '/preview-file?path=' + encodeURIComponent('{{ .Descargo.ComprobantePago }}'), { target: '#modal-container' })"
-                      class="text-xs text-primary-600 hover:underline font-bold"
-                    >
-                      Ver Boleta
-                    </button>
-                  </div>
-                  {{ if .Descargo.CanFinalize .AuthUser }}
-                    <form
-                      action="/descargos/oficial/{{ .Descargo.ID }}/finalizar"
-                      method="POST"
-                      x-data="{ loading: false }"
-                      @submit="loading = true"
-                    >
-                      <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
-                      <button
-                        type="submit"
-                        :disabled="loading"
-                        class="w-full inline-flex justify-center items-center px-4 py-2 border border-transparent text-xs font-black rounded-md text-white bg-success-600 hover:bg-success-700 transition-all shadow-sm active:scale-95 disabled:opacity-50 uppercase tracking-tight"
-                      >
-                        <i class="ph ph-check-circle mr-2 text-lg" x-show="!loading"></i>
-                        <span x-show="!loading">Confirmar y Finalizar</span>
-                        <span x-show="loading">Procesando...</span>
-                      </button>
-                    </form>
-                  {{ end }}
-                </div>
-              {{ end }}
-            </div>
-          </div>
-        {{ end }}
         <div class="bg-white shadow-sm rounded-md p-6 border border-neutral-200">
           <h3 class="text-[10px] font-black text-neutral-400 uppercase mb-4 tracking-widest border-b pb-2">
             Acciones del Descargo
@@ -313,40 +190,6 @@
                   <i class="ph ph-paper-plane-tilt mr-2 text-lg" x-show="!loading"></i>
                   <span x-show="!loading">Enviar a Revisión</span>
                   <span x-show="loading">Enviando...</span>
-                </button>
-              </form>
-            {{ end }}
-
-
-            <!-- Admin Actions: EN_REVISION -->
-            {{ if .Descargo.CanLiquidate .AuthUser }}
-              <button
-                type="button"
-                @click="htmx.ajax('GET', '/descargos/oficial/{{ .Descargo.ID }}/modal-liquidar', { target: '#modal-container' })"
-                class="w-full inline-flex justify-center items-center px-4 py-2.5 border border-transparent text-xs font-black rounded-md text-white bg-warning-500 hover:bg-warning-600 transition-all shadow-md active:scale-95 uppercase tracking-tight"
-              >
-                <i class="ph ph-calculator mr-2 text-lg"></i>
-                Aplicar Liquidación de Pasajes
-              </button>
-            {{ end }}
-
-            {{ if .Descargo.CanRevertLiquidation .AuthUser }}
-              <form
-                action="/descargos/oficial/{{ .Descargo.ID }}/revertir-liquidacion"
-                method="POST"
-                x-data="{ loading: false }"
-                @submit="loading = true"
-              >
-                <input type="hidden" name="_csrf" value="{{ $.csrf_token }}" />
-                <button
-                  type="submit"
-                  :disabled="loading"
-                  class="w-full inline-flex justify-center items-center px-4 py-2.5 border border-neutral-200 text-xs font-black rounded-md text-amber-600 bg-white hover:bg-amber-50 transition-all shadow-sm active:scale-95 disabled:opacity-50 uppercase tracking-tight cursor-pointer"
-                >
-                  <i class="ph ph-arrow-counter-clockwise mr-2 text-lg" x-show="!loading"></i>
-                  <i class="ph ph-circle-notch animate-spin mr-2 text-lg" x-show="loading"></i>
-                  <span x-show="!loading">Corregir Liquidación</span>
-                  <span x-show="loading">Revirtiendo...</span>
                 </button>
               </form>
             {{ end }}
@@ -416,27 +259,6 @@
                   </button>
                 </form>
               </div>
-            {{ end }}
-
-            {{ if .Descargo.CanRevertFinalization .AuthUser }}
-              <form
-                action="/descargos/oficial/{{ .Descargo.ID }}/revertir-finalizacion"
-                method="POST"
-                x-data="{ loading: false }"
-                @submit="loading = true"
-              >
-                <input type="hidden" name="_csrf" value="{{ $.csrf_token }}" />
-                <button
-                  type="submit"
-                  :disabled="loading"
-                  class="w-full inline-flex justify-center items-center px-4 py-2.5 border border-rose-200 text-xs font-black rounded-md text-rose-700 bg-rose-50 hover:bg-rose-100 transition-all shadow-sm active:scale-95 disabled:opacity-50 uppercase tracking-tight cursor-pointer"
-                >
-                  <i class="ph ph-lock-open mr-2 text-lg" x-show="!loading"></i>
-                  <i class="ph ph-circle-notch animate-spin mr-2 text-lg" x-show="loading"></i>
-                  <span x-show="!loading">Reabrir para Corrección</span>
-                  <span x-show="loading">Reabriendo...</span>
-                </button>
-              </form>
             {{ end }}
 
             {{ if .Descargo.CanRevert .AuthUser }}
@@ -1003,31 +825,88 @@
               {{ end }}
             </div>
 
-            {{ if gt .Descargo.GetTotalReintegroPasajes 0.0 }}
-              <div
-                class="bg-warning-50 border border-warning-200 rounded-md p-4 flex flex-col md:flex-row md:items-center justify-between gap-4"
-              >
-                <div class="space-y-1">
-                  <h4 class="text-[10px] font-black text-warning-600 uppercase tracking-widest">Reintegro al Senado (Pasajes)</h4>
-                  <div class="flex items-baseline gap-2">
-                    <span class="text-2xl font-black text-warning-700">
-                      Bs.
-                      {{ printf "%.2f" .Descargo.GetTotalReintegroPasajes }}
-                    </span>
-                    <span class="text-[10px] text-warning-500 font-bold uppercase tracking-tighter">
-                      (Boleta N° {{ .Descargo.Oficial.NroBoletaDeposito }})
-                    </span>
+            {{ if gt .Descargo.GetTotalDevolucionPasajes 0.0 }}
+              <div class="mt-8 border-t border-neutral-100 pt-6">
+                <div class="flex items-center gap-2 mb-4">
+                  <div class="w-8 h-8 rounded bg-amber-100 flex items-center justify-center text-amber-600">
+                    <i class="ph ph-hand-coins text-lg"></i>
                   </div>
+                  <h4 class="text-xs font-black text-neutral-800 uppercase tracking-widest">
+                    DEVOLUCIÓN POR DIFERENCIA DE TARIFA (PASAJE)
+                  </h4>
                 </div>
-                <div class="px-3 py-2 bg-white/60 rounded-md border border-warning-200">
-                  <p class="text-[9px] text-warning-800 leading-tight font-medium">
-                    Monto depositado en la cuenta
-                    <br />
-                    <strong>{{ .BancoCuenta }}</strong>
-                    del
-                    <strong>{{ .BancoNombre }}</strong>
-                    .
-                  </p>
+
+                <div class="overflow-hidden border border-neutral-200 rounded-md">
+                  <table class="min-w-full divide-y divide-neutral-200">
+                    <thead class="bg-neutral-50">
+                      <tr>
+                        <th class="px-4 py-2 text-left text-[9px] font-black text-neutral-500 uppercase tracking-widest">
+                          Pasaje / Detalle
+                        </th>
+                        <th class="px-4 py-2 text-right text-[9px] font-black text-neutral-500 uppercase tracking-widest">
+                          Monto (Bs)
+                        </th>
+                        <th class="px-4 py-2 text-center text-[9px] font-black text-neutral-500 uppercase tracking-widest">
+                          N° Boleta
+                        </th>
+                        <th class="px-4 py-2 text-center text-[9px] font-black text-neutral-500 uppercase tracking-widest">
+                          Boleta
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-neutral-100 bg-white">
+                      {{ range .Descargo.Solicitud.Items }}
+                        {{ range .Pasajes }}
+                          {{ if or (gt .MontoReembolso 0.0) .NroBoletaDeposito }}
+                            <tr>
+                              <td class="px-4 py-3">
+                                <div class="flex flex-col">
+                                  <span class="text-[10px] font-bold text-neutral-900">#{{ .NumeroBillete }}</span>
+                                  <span class="text-[9px] text-neutral-500 italic">{{ .GetRutaDisplay }}</span>
+                                </div>
+                              </td>
+                              <td class="px-4 py-3 text-right">
+                                <span class="text-[10px] font-black text-neutral-700">
+                                  {{ printf "%.2f" .MontoReembolso }}
+                                </span>
+                              </td>
+                              <td class="px-4 py-3 text-center">
+                                <span class="text-[10px] font-mono font-bold text-neutral-600">
+                                  {{ if .NroBoletaDeposito }}{{ .NroBoletaDeposito }}{{ else }}-{{ end }}
+                                </span>
+                              </td>
+                              <td class="px-4 py-3 text-center">
+                                {{ if .ArchivoComprobante }}
+                                  <button
+                                    type="button"
+                                    hx-get="/preview-file?path={{ .ArchivoComprobante }}"
+                                    hx-target="#modal-container"
+                                    class="text-primary hover:text-primary-700 transition-colors"
+                                  >
+                                    <i class="ph ph-file-pdf text-lg"></i>
+                                  </button>
+                                {{ else }}
+                                  <span class="text-[9px] text-neutral-400 italic">No adjunta</span>
+                                {{ end }}
+                              </td>
+                            </tr>
+                          {{ end }}
+                        {{ end }}
+                      {{ end }}
+                    </tbody>
+                    <tfoot class="bg-neutral-50/50">
+                      <tr>
+                        <td class="px-4 py-2 text-right text-[9px] font-black text-neutral-500 uppercase">TOTAL DEVOLUCIÓN</td>
+                        <td class="px-4 py-2 text-right">
+                          <span class="text-xs font-black text-amber-600">
+                            Bs.
+                            {{ printf "%.2f" .Descargo.GetTotalDevolucionPasajes }}
+                          </span>
+                        </td>
+                        <td colspan="2"></td>
+                      </tr>
+                    </tfoot>
+                  </table>
                 </div>
               </div>
             {{ end }}
@@ -1041,10 +920,10 @@
           </div>
         </div>
 
-        <!-- Pasajes Devueltos -->
+        <!-- Tramos No Utilizados -->
         {{ $hasReturns := false }}
         {{ range .Descargo.Tramos }}
-          {{ if .EsDevolucion }}
+          {{ if .EsOpenTicket }}
             {{ $hasReturns = true }}
           {{ end }}
         {{ end }}
@@ -1052,7 +931,7 @@
         {{ if $hasReturns }}
           <div class="bg-white shadow rounded-md overflow-hidden border border-danger-200">
             <div class="px-6 py-4 border-b border-danger-100 bg-danger-50 flex justify-between items-center">
-              <h3 class="text-lg font-bold text-danger-900">Pasajes Devueltos</h3>
+              <h3 class="text-lg font-bold text-danger-900">Tramos No Utilizados (Open Ticket)</h3>
               <i class="ph ph-ticket text-danger-400 text-xl"></i>
             </div>
             <div class="overflow-x-auto">
@@ -1071,7 +950,7 @@
                 </thead>
                 <tbody class="bg-white divide-y divide-danger-100">
                   {{ range .Descargo.Tramos }}
-                    {{ if .EsDevolucion }}
+                    {{ if .EsOpenTicket }}
                       <tr class="hover:bg-danger-50/30 transition-colors">
                         <td class="px-4 py-3 whitespace-nowrap">
                           <span
@@ -1088,7 +967,7 @@
                           <span
                             class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold leading-4 bg-danger-100 text-danger-800 border border-danger-200"
                           >
-                            DEVUELTO
+                            OPEN TICKET
                           </span>
                         </td>
                       </tr>

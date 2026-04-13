@@ -12,3 +12,12 @@ func NilIfEmpty(s string) *string {
 	}
 	return &s
 }
+
+// Deref retorna el valor apuntado por el puntero, o el valor cero del tipo si el puntero es nil.
+func Deref[T any](ptr *T) T {
+	if ptr == nil {
+		var zero T
+		return zero
+	}
+	return *ptr
+}

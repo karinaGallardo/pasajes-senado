@@ -7,17 +7,12 @@ import (
 	"log/slog"
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
-	"sistema-pasajes/internal/utils"
-	"strings"
-	"time"
-
-	"gorm.io/gorm"
 )
 
 type DescargoService struct {
 	repo             *repositories.DescargoRepository
 	pasajeRepo       *repositories.PasajeRepository
-	creditoRepo      *repositories.CreditoPasajeRepository
+	openTicketRepo   *repositories.OpenTicketRepository
 	solicitudService *SolicitudService
 	usuarioService   *UsuarioService
 	auditService     *AuditService
@@ -26,7 +21,7 @@ type DescargoService struct {
 func NewDescargoService(
 	repo *repositories.DescargoRepository,
 	pasajeRepo *repositories.PasajeRepository,
-	creditoRepo *repositories.CreditoPasajeRepository,
+	openTicketRepo *repositories.OpenTicketRepository,
 	solicitudService *SolicitudService,
 	usuarioService *UsuarioService,
 	auditService *AuditService,
@@ -34,7 +29,7 @@ func NewDescargoService(
 	return &DescargoService{
 		repo:             repo,
 		pasajeRepo:       pasajeRepo,
-		creditoRepo:      creditoRepo,
+		openTicketRepo:   openTicketRepo,
 		solicitudService: solicitudService,
 		usuarioService:   usuarioService,
 		auditService:     auditService,
@@ -112,15 +107,33 @@ func (s *DescargoService) Approve(ctx context.Context, id string, userID string)
 		return errors.New("solo se pueden aprobar descargos en revisión")
 	}
 
-	descargo.Estado = models.EstadoDescargoAprobado
+	descargo.Estado = models.EstadoDescargoFinalizado
 	descargo.Observaciones = ""
 	descargo.UpdatedBy = &userID
 	if err := s.repo.Update(ctx, descargo); err != nil {
 		return err
 	}
 
-	s.auditService.Log(ctx, "APROBAR_DESCARGO", "descargo", id, string(models.EstadoDescargoEnRevision), string(models.EstadoDescargoAprobado), "", "")
-	slog.Info("Descargo aprobado", "id", id, "codigo", descargo.Codigo, "user_id", userID)
+	s.auditService.Log(ctx, "APROBAR_DESCARGO", "descargo", id, string(models.EstadoDescargoEnRevision), string(models.EstadoDescargoFinalizado), "", "")
+	slog.Info("Descargo aprobado y finalizado", "id", id, "codigo", descargo.Codigo, "user_id", userID)
+
+	// 4. Crear/Activar tramos marcados como Open Ticket
+	if err := s.SyncOpenTickets(ctx, id, userID); err != nil {
+		slog.Error("Error sincronizando Open Tickets al aprobar", "error", err)
+	}
+
+	// Asegurarse de que todos los créditos de este descargo queden como DISPONIBLES
+	creditos, err := s.openTicketRepo.FindByDescargoID(ctx, id)
+	if err == nil {
+		for _, c := range creditos {
+			if c.Estado == models.EstadoOpenTicketPendiente {
+				c.Estado = models.EstadoOpenTicketDisponible
+				c.Observaciones += " | Activado por aprobación del descargo."
+				c.UpdatedBy = &userID
+				_ = s.openTicketRepo.Update(ctx, &c)
+			}
+		}
+	}
 
 	if descargo.SolicitudID != "" {
 		return s.solicitudService.Finalize(ctx, descargo.SolicitudID)
@@ -157,8 +170,24 @@ func (s *DescargoService) RevertToDraft(ctx context.Context, id string, userID s
 		return err
 	}
 
-	if descargo.Estado != models.EstadoDescargoAprobado {
-		return errors.New("solo se puede revertir un descargo aprobado")
+	if descargo.Estado != models.EstadoDescargoFinalizado {
+		return errors.New("solo se puede revertir un descargo finalizado")
+	}
+
+	// 1. Manejo de Créditos vinculados (No permitir si ya se usaron)
+	creditos, err := s.openTicketRepo.FindByDescargoID(ctx, id)
+	if err == nil && len(creditos) > 0 {
+		for _, c := range creditos {
+			if c.Estado == models.EstadoOpenTicketUsado {
+				return fmt.Errorf("no se puede revertir: el crédito de viaje generado ya fue utilizado")
+			}
+		}
+		// Eliminar créditos generados (solo si no se usaron, verificado arriba)
+		for _, c := range creditos {
+			if err := s.openTicketRepo.Delete(ctx, c.ID); err != nil {
+				slog.Error("Error eliminado Open Ticket tras reversión", "error", err, "ticket_id", c.ID)
+			}
+		}
 	}
 
 	descargo.Estado = models.EstadoDescargoBorrador
@@ -176,345 +205,84 @@ func (s *DescargoService) RevertToDraft(ctx context.Context, id string, userID s
 	return nil
 }
 
-func (s *DescargoService) Liquidate(ctx context.Context, id string, pasajeIDs []string, pasajeCostos []float64, montosCredito []float64, montosDevolucion []float64, userID string, optionalPenalties ...[]float64) error {
-	montosPenalidad := make([]float64, 0)
-	if len(optionalPenalties) > 0 {
-		montosPenalidad = optionalPenalties[0]
-	}
-
-	descargo, err := s.repo.FindByID(ctx, id)
+// SyncOpenTickets sincroniza los tramos marcados como 'Open Ticket' con la tabla de open_tickets.
+func (s *DescargoService) SyncOpenTickets(ctx context.Context, descargoID string, userID string) error {
+	descargo, err := s.repo.FindByID(ctx, descargoID)
 	if err != nil {
 		return err
 	}
 
-	if descargo.Estado != models.EstadoDescargoAprobado {
-		return errors.New("solo se pueden liquidar descargos que ya han sido aprobados técnicamente")
+	// 1. Obtener registros existentes para este descargo
+	existing, _ := s.openTicketRepo.FindByDescargoID(ctx, descargoID)
+	existingMap := make(map[string]models.OpenTicket)
+	for _, t := range existing {
+		existingMap[t.NumeroBillete] = t
 	}
 
-	return s.repo.RunTransaction(func(repo *repositories.DescargoRepository, tx *gorm.DB) error {
-		txPasajeRepo := s.pasajeRepo.WithTx(tx)
-		txCreditoRepo := s.creditoRepo.WithTx(tx)
-
-		totalCreditoGral := 0.0
-		totalDevolucionGral := 0.0
-
-		var rutasCredito []string
-		var billetesCredito []string
-
-		// 1. Procesar pasajes uno a uno
-		for i, pID := range pasajeIDs {
-			pasaje, err := txPasajeRepo.FindByID(ctx, pID)
-			if err != nil {
-				continue
-			}
-
-			// Tomar los montos de ahorro del request o 0
-			mCredito := 0.0
-			if i < len(montosCredito) {
-				mCredito = montosCredito[i]
-			}
-			mDevolucion := 0.0
-			if i < len(montosDevolucion) {
-				mDevolucion = montosDevolucion[i]
-			}
-			mPenalidad := 0.0
-			if i < len(montosPenalidad) {
-				mPenalidad = montosPenalidad[i]
-			}
-
-			// El costo utilizado es el original menos los ahorros recuperados (Crédito y Reembolso)
-			// La penalidad se considera parte del costo 'utilizado' o perdido del pasaje
-			pasaje.CostoUtilizado = pasaje.Costo - mCredito - mDevolucion
-			pasaje.MontoCredito = mCredito
-			pasaje.MontoReembolso = mDevolucion
-			pasaje.CostoPenalidad = mPenalidad
-
-			if err := txPasajeRepo.Update(ctx, pasaje); err != nil {
-				return fmt.Errorf("error actualizando pasaje %s: %w", pID, err)
-			}
-
-			// Acumular ahorros para el total del descargo
-			if mCredito > 0 {
-				totalCreditoGral += mCredito
-
-				// Solo armar la ruta con los tramos que son DEVOLUCIÓN
-				var tramosDev []string
-				for _, t := range pasaje.DescargoTramos {
-					if t.EsDevolucion {
-						tramosDev = append(tramosDev, t.GetRutaDisplay())
+	// 2. Identificar tramos marcados como OpenTicket en el itinerario
+	openTicketsInDescargo := make(map[string]models.OpenTicket)
+	for _, tramo := range descargo.Tramos {
+		if tramo.EsOpenTicket && tramo.Billete != "" {
+			ticket, ok := openTicketsInDescargo[tramo.Billete]
+			if !ok {
+				ticket = models.OpenTicket{
+					UsuarioID:      descargo.UsuarioID,
+					DescargoID:     descargo.ID,
+					NumeroBillete:  tramo.Billete,
+					Estado:         models.EstadoOpenTicketPendiente,
+					Observaciones:  "Generado automáticamente desde descargo.",
+					RutaReferencia: "",
+				}
+				// Intentar obtener aerolínea si el tramo tiene pasaje vinculado
+				if tramo.PasajeID != nil {
+					var p models.Pasaje
+					if s.repo.GetDB().Preload("Aerolinea").First(&p, "id = ?", *tramo.PasajeID).Error == nil {
+						if p.Aerolinea != nil {
+							ticket.Aerolinea = p.Aerolinea.Nombre
+						}
+						ticket.FechaOriginalVuelo = &p.FechaVuelo
 					}
 				}
-				if len(tramosDev) > 0 {
-					rutasCredito = append(rutasCredito, strings.Join(tramosDev, " ; "))
-				} else {
-					// Fallback por si no hay tramos marcados pero hay monto
-					rutasCredito = append(rutasCredito, pasaje.GetRutaDisplay())
-				}
-
-				if pasaje.NumeroBillete != "" {
-					billetesCredito = append(billetesCredito, pasaje.NumeroBillete)
-				}
 			}
-			if mDevolucion > 0 {
-				totalDevolucionGral += mDevolucion
+
+			if ticket.RutaReferencia != "" {
+				ticket.RutaReferencia += " / "
 			}
+			ticket.RutaReferencia += tramo.TramoNombre
+
+			openTicketsInDescargo[tramo.Billete] = ticket
 		}
+	}
 
-		// 2. Gestionar el crédito consolidado de forma idempotente (SOLO DERECHO)
-		isOficial := false
-		if descargo.Solicitud != nil {
-			isOficial = descargo.Solicitud.IsOficial()
-		}
-
-		if isOficial {
-			totalCreditoGral = 0 // Forzamos 0 para oficiales por seguridad
-		}
-
-		existingCreditos, err := txCreditoRepo.FindByDescargoID(ctx, id)
-		if err != nil {
-			slog.Error("Error buscando créditos previos", "descargo_id", id, "error", err)
-		}
-
-		if totalCreditoGral > 0 {
-			if len(existingCreditos) > 0 {
-				// Actualizar el primero (referencia directa al slice)
-				c := &existingCreditos[0]
-				c.Monto = totalCreditoGral
-				c.RutaReferencia = utils.UniqueStringsJoin(rutasCredito, ", ")
-				c.BilletesReferencia = utils.UniqueStringsJoin(billetesCredito, ", ")
-				c.Observaciones = fmt.Sprintf("Liquidación actualizada. Rutas: %s", c.RutaReferencia)
-				c.UpdatedBy = &userID
-
-				if err := txCreditoRepo.Update(ctx, c); err != nil {
-					return fmt.Errorf("error actualizando crédito: %w", err)
+	// 3. Persistir cambios
+	for num, ticket := range openTicketsInDescargo {
+		if old, ok := existingMap[num]; ok {
+			// Actualizar si está pendiente o disponible
+			if old.Estado == models.EstadoOpenTicketPendiente || old.Estado == models.EstadoOpenTicketDisponible {
+				old.RutaReferencia = ticket.RutaReferencia
+				if ticket.Aerolinea != "" {
+					old.Aerolinea = ticket.Aerolinea
 				}
-
-				// Si por algún error previo hubieran más, los limpiamos (idempotencia agresiva)
-				if len(existingCreditos) > 1 {
-					for i := 1; i < len(existingCreditos); i++ {
-						_ = txCreditoRepo.Delete(ctx, existingCreditos[i].ID)
-					}
+				if ticket.FechaOriginalVuelo != nil {
+					old.FechaOriginalVuelo = ticket.FechaOriginalVuelo
 				}
-			} else {
-				// Crear uno nuevo
-				nuevoCredito := &models.CreditoPasaje{
-					UsuarioID:          descargo.UsuarioID,
-					DescargoID:         descargo.ID,
-					Monto:              totalCreditoGral,
-					RutaReferencia:     utils.UniqueStringsJoin(rutasCredito, ", "),
-					BilletesReferencia: utils.UniqueStringsJoin(billetesCredito, ", "),
-					Estado:             models.EstadoCreditoPendiente,
-					CreatedBy:          &userID,
-					Observaciones:      fmt.Sprintf("Crédito generado en liquidación de descargo %s (esperando finalización)", descargo.Codigo),
-				}
-				if err := txCreditoRepo.Create(ctx, nuevoCredito); err != nil {
-					return fmt.Errorf("error creando crédito de pasaje: %w", err)
-				}
+				old.UpdatedBy = &userID
+				_ = s.openTicketRepo.Update(ctx, &old)
 			}
+			delete(existingMap, num)
 		} else {
-			// Si el monto es 0, borrar cualquier crédito previo
-			for _, c := range existingCreditos {
-				if c.Estado == models.EstadoCreditoUsado {
-					return fmt.Errorf("no se puede anular el crédito: ya fue utilizado")
-				}
-				_ = txCreditoRepo.Delete(ctx, c.ID)
-			}
-		}
-
-		// 3. Actualizar Descargo
-		// El monto de devolución del descargo es lo que el usuario DEBE DEVOLVER al banco/senado
-		oldMonto := descargo.MontoDevolucion
-		descargo.MontoDevolucion = totalDevolucionGral
-
-		if descargo.MontoDevolucion > 0 {
-			descargo.Estado = models.EstadoDescargoPendientePago
-		} else {
-			descargo.Estado = models.EstadoDescargoFinalizado
-		}
-
-		descargo.UpdatedBy = &userID
-
-		if err := repo.Update(ctx, descargo); err != nil {
-			return err
-		}
-
-		s.auditService.Log(ctx, "LIQUIDAR_DESCARGO", "descargo", id, string(models.EstadoDescargoAprobado), string(descargo.Estado),
-			fmt.Sprintf("Efectivo: %.2f, Crédito: %.2f", totalDevolucionGral, totalCreditoGral),
-			fmt.Sprintf("Anterior Efectivo: %.2f", oldMonto))
-
-		slog.Info("Descargo liquidado con desglose", "id", id, "efectivo", totalDevolucionGral, "credito", totalCreditoGral)
-
-		return nil
-	})
-}
-
-func (s *DescargoService) RevertLiquidation(ctx context.Context, id string, userID string) error {
-	descargo, err := s.repo.FindByID(ctx, id)
-	if err != nil {
-		return err
-	}
-
-	// Permiso según el modelo
-	adminRol := models.RolAdmin
-	if !descargo.CanRevertLiquidation(&models.Usuario{BaseModel: models.BaseModel{ID: userID}, RolCodigo: &adminRol}) {
-		return fmt.Errorf("no tiene permiso para revertir esta liquidación")
-	}
-
-	if descargo.Estado != models.EstadoDescargoPendientePago {
-		return errors.New("solo se pueden revertir liquidaciones que están en estado PENDIENTE_PAGO")
-	}
-
-	// 1. Manejo de Créditos vinculados
-	creditos, err := s.creditoRepo.FindByDescargoID(ctx, id)
-	if err == nil && len(creditos) > 0 {
-		for _, c := range creditos {
-			if c.Estado == models.EstadoCreditoUsado {
-				return fmt.Errorf("no se puede corregir la liquidación: el crédito ya fue utilizado")
-			}
-			// Simplemente nos aseguramos que estén en PENDIENTE mientras se corrige
-			if c.Estado != models.EstadoCreditoPendiente {
-				c.Estado = models.EstadoCreditoPendiente
-				c.Observaciones += " | Regresado a pendiente por corrección de liquidación."
-				_ = s.creditoRepo.Update(ctx, &c)
-			}
+			// Crear nuevo registro
+			ticket.CreatedBy = &userID
+			_ = s.openTicketRepo.Create(ctx, &ticket)
 		}
 	}
 
-	descargo.Estado = models.EstadoDescargoAprobado
-	descargo.UpdatedBy = &userID
-
-	if err := s.repo.Update(ctx, descargo); err != nil {
-		return err
-	}
-
-	s.auditService.Log(ctx, "REVERTIR_LIQUIDACION", "descargo", id, string(models.EstadoDescargoPendientePago), string(models.EstadoDescargoAprobado), "Corrección de montos", "")
-	slog.Info("Liquidación revertida para corrección", "id", id, "codigo", descargo.Codigo, "user_id", userID)
-
-	return nil
-}
-
-func (s *DescargoService) ReportPayment(ctx context.Context, id string, filePath string, userID string) error {
-	descargo, err := s.repo.FindByID(ctx, id)
-	if err != nil {
-		return err
-	}
-
-	if descargo.Estado != models.EstadoDescargoPendientePago {
-		return errors.New("solo se puede reportar pago para descargos en estado PENDIENTE_PAGO")
-	}
-
-	now := time.Now()
-	descargo.ComprobantePago = filePath
-	descargo.FechaPago = &now
-	descargo.Estado = models.EstadoDescargoPagado
-	descargo.UpdatedBy = &userID
-
-	if err := s.repo.Update(ctx, descargo); err != nil {
-		return err
-	}
-
-	s.auditService.Log(ctx, "REPORTAR_PAGO", "descargo", id, string(models.EstadoDescargoPendientePago), string(models.EstadoDescargoPagado), filePath, "")
-	slog.Info("Pago de descargo reportado", "id", id, "codigo", descargo.Codigo, "archivo", filePath, "user_id", userID)
-
-	return nil
-}
-
-func (s *DescargoService) Finalize(ctx context.Context, id string, userID string) error {
-	descargo, err := s.repo.FindByID(ctx, id)
-	if err != nil {
-		return err
-	}
-
-	if descargo.Estado != models.EstadoDescargoPagado {
-		return errors.New("solo se pueden finalizar descargos cuyo pago ha sido reportado")
-	}
-
-	descargo.Estado = models.EstadoDescargoFinalizado
-	descargo.UpdatedBy = &userID
-
-	if err := s.repo.Update(ctx, descargo); err != nil {
-		return err
-	}
-
-	// 2. Activar créditos de viaje ahora que el descargo está oficialmente cerrado
-	creditos, err := s.creditoRepo.FindByDescargoID(ctx, id)
-	if err == nil {
-		for _, c := range creditos {
-			if c.Estado == models.EstadoCreditoPendiente {
-				c.Estado = models.EstadoCreditoDisponible
-				c.Observaciones += " | Activado por finalización de descargo."
-				c.UpdatedBy = &userID
-				_ = s.creditoRepo.Update(ctx, &c)
-			}
+	// 4. Eliminar lo que ya no está marcado (solo si sigue pendiente)
+	for _, old := range existingMap {
+		if old.Estado == models.EstadoOpenTicketPendiente {
+			_ = s.openTicketRepo.Delete(ctx, old.ID)
 		}
 	}
 
-	s.auditService.Log(ctx, "FINALIZAR_DESCARGO", "descargo", id, string(models.EstadoDescargoPagado), string(models.EstadoDescargoFinalizado), "", "")
-	slog.Info("Descargo finalizado oficialmente", "id", id, "codigo", descargo.Codigo, "user_id", userID)
-
-	return nil
-}
-
-func (s *DescargoService) RevertPayment(ctx context.Context, id string, userID string) error {
-	descargo, err := s.repo.FindByID(ctx, id)
-	if err != nil {
-		return err
-	}
-
-	// Permiso según el modelo
-	adminRol := models.RolAdmin
-	if !descargo.CanRevertPayment(&models.Usuario{BaseModel: models.BaseModel{ID: userID}, RolCodigo: &adminRol}) {
-		return fmt.Errorf("no tiene permiso para observar este pago")
-	}
-
-	oldEstado := descargo.Estado
-	descargo.Estado = models.EstadoDescargoPendientePago
-	descargo.UpdatedBy = &userID
-
-	if err := s.repo.Update(ctx, descargo); err != nil {
-		return err
-	}
-
-	s.auditService.Log(ctx, "AVISO_PAGO_INCORRECTO", "descargo", id, string(oldEstado), string(descargo.Estado), "Reversión por comprobante incorrecto", "")
-	return nil
-}
-
-func (s *DescargoService) RevertFinalization(ctx context.Context, id string, userID string) error {
-	descargo, err := s.repo.FindByID(ctx, id)
-	if err != nil {
-		return err
-	}
-
-	if descargo.Estado != models.EstadoDescargoFinalizado {
-		return errors.New("solo se pueden revertir descargos en estado FINALIZADO")
-	}
-
-	// 1. Manejo de Créditos vinculados (Especialmente para Derecho)
-	creditos, err := s.creditoRepo.FindByDescargoID(ctx, id)
-	if err == nil && len(creditos) > 0 {
-		for _, c := range creditos {
-			if c.Estado == models.EstadoCreditoUsado {
-				return fmt.Errorf("no se puede revertir el finalizado: el crédito de viaje generado ya fue utilizado")
-			}
-		}
-		// Ponemos los créditos en PENDIENTE nuevamente para evitar que se usen mientras se corrige
-		for _, c := range creditos {
-			if c.Estado == models.EstadoCreditoDisponible {
-				c.Estado = models.EstadoCreditoPendiente
-				c.Observaciones += " | Suspendido por reversión de finalización."
-				_ = s.creditoRepo.Update(ctx, &c)
-			}
-		}
-	}
-
-	oldEstado := descargo.Estado
-	descargo.Estado = models.EstadoDescargoAprobado
-	descargo.UpdatedBy = &userID
-
-	if err := s.repo.Update(ctx, descargo); err != nil {
-		return err
-	}
-
-	s.auditService.Log(ctx, "REVERTIR_FINALIZACION", "descargo", id, string(oldEstado), string(descargo.Estado), "Reapertura para rectificación de datos", "")
 	return nil
 }

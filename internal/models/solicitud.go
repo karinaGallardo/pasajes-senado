@@ -1072,7 +1072,7 @@ func (s Solicitud) HasCompleteDescargo() bool {
 	// 1. Validar Itinerario (Billete, Pase, Archivo)
 	hasItinerary := false
 	for _, it := range s.Descargo.Tramos {
-		if !it.EsDevolucion {
+		if !it.EsOpenTicket {
 			hasItinerary = true
 			if it.Billete == "" || it.NumeroPaseAbordo == "" || it.ArchivoPaseAbordo == "" {
 				return false
@@ -1115,7 +1115,7 @@ func (s Solicitud) GetDescargoMissingItems() string {
 	missingArchivos := false
 
 	for _, it := range s.Descargo.Tramos {
-		if !it.EsDevolucion {
+		if !it.EsOpenTicket {
 			hasItinerary = true
 			if it.Billete == "" {
 				missingBilletes = true

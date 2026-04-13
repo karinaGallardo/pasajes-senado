@@ -87,7 +87,6 @@ func (s *PasajeService) Create(ctx context.Context, solicitudID string, req dtos
 		NumeroVuelo:        req.NumeroVuelo,
 		RutaID:             utils.NilIfEmpty(req.RutaID),
 		FechaVuelo:         fechaVuelo,
-		CodigoReserva:      req.CodigoReserva,
 		NumeroBillete:      req.NumeroBillete,
 		NumeroFactura:      req.NumeroFactura,
 		Glosa:              req.Glosa,
@@ -152,7 +151,6 @@ func (s *PasajeService) UpdateFromRequest(ctx context.Context, req dtos.UpdatePa
 	pasaje.RutaID = utils.NilIfEmpty(req.RutaID)
 	pasaje.NumeroBillete = req.NumeroBillete
 	pasaje.NumeroFactura = req.NumeroFactura
-	pasaje.CodigoReserva = req.CodigoReserva
 	pasaje.Glosa = req.Glosa
 
 	if req.AerolineaID != "" {

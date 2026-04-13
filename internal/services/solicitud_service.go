@@ -19,6 +19,7 @@ func NewSolicitudService(
 	solicitudItemRepo *repositories.SolicitudItemRepository,
 	emailService *EmailService,
 	auditService *AuditService,
+	openTicketRepo *repositories.OpenTicketRepository,
 ) *SolicitudService {
 	return &SolicitudService{
 		repo:              repo,
@@ -26,6 +27,7 @@ func NewSolicitudService(
 		solicitudItemRepo: solicitudItemRepo,
 		emailService:      emailService,
 		auditService:      auditService,
+		openTicketRepo:    openTicketRepo,
 	}
 }
 
@@ -35,6 +37,7 @@ type SolicitudService struct {
 	solicitudItemRepo *repositories.SolicitudItemRepository
 	emailService      *EmailService
 	auditService      *AuditService
+	openTicketRepo    *repositories.OpenTicketRepository
 }
 
 // CreateDerecho and CreateOficial moved to specialized services.
@@ -351,6 +354,7 @@ func (s *SolicitudService) Reject(ctx context.Context, id string) error {
 				}
 			}
 		}
+
 		return s.auditService.Log(ctx, "RECHAZAR_SOLICITUD", "solicitud", solicitud.ID, "SOLICITADO", "RECHAZADO", "", "")
 	})
 }

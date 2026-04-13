@@ -8,7 +8,6 @@ type CreatePasajeRequest struct {
 	AerolineaID     string `form:"aerolinea_id"`
 	NumeroVuelo     string `form:"numero_vuelo" binding:"required"`
 	RutaID          string `form:"ruta_id"`
-	CodigoReserva   string `form:"codigo_reserva"`
 	NumeroBillete   string `form:"numero_billete" binding:"required"`
 	AgenciaID       string `form:"agencia_id" binding:"required"`
 	NumeroFactura   string `form:"numero_factura"`
@@ -23,7 +22,6 @@ type UpdatePasajeRequest struct {
 	AerolineaID   string `form:"aerolinea_id"`
 	NumeroVuelo   string `form:"numero_vuelo" binding:"required"`
 	RutaID        string `form:"ruta_id"`
-	CodigoReserva string `form:"codigo_reserva"`
 	NumeroBillete string `form:"numero_billete" binding:"required"`
 	AgenciaID     string `form:"agencia_id" binding:"required"`
 	NumeroFactura string `form:"numero_factura"`

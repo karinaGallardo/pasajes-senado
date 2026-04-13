@@ -203,7 +203,7 @@
                     {{ if .Permissions.CanCreate }}
                     <button
                       type="button"
-                      hx-get="/solicitudes/derecho/modal-crear/{{ .ID }}"
+                      hx-get="/solicitudes/derecho/modal-crear/{{ .ID }}{{ if $.OpenTicketID }}?open_ticket_id={{ $.OpenTicketID }}{{ end }}"
                       hx-target="#modal-container"
                       class="text-white bg-primary hover:bg-primary-800 font-bold text-[10px] uppercase border border-primary rounded-sm px-2 py-1 transition-colors cursor-pointer text-center inline-flex items-center justify-center shadow-sm">
                       <i class="ph ph-paper-plane-tilt mr-1.5 text-xs"></i>

@@ -27,6 +27,7 @@ type SolicitudOficialController struct {
 	reportService           *services.ReportService
 	peopleService           *services.PeopleService
 	descargoService         *services.DescargoService
+	openTicketService      *services.OpenTicketService
 }
 
 func NewSolicitudOficialController(
@@ -41,6 +42,7 @@ func NewSolicitudOficialController(
 	reportService *services.ReportService,
 	peopleService *services.PeopleService,
 	descargoService *services.DescargoService,
+	openTicketService *services.OpenTicketService,
 ) *SolicitudOficialController {
 	return &SolicitudOficialController{
 		solicitudService:        solicitudService,
@@ -54,6 +56,7 @@ func NewSolicitudOficialController(
 		reportService:           reportService,
 		peopleService:           peopleService,
 		descargoService:         descargoService,
+		openTicketService:      openTicketService,
 	}
 }
 
@@ -79,6 +82,7 @@ func (ctrl *SolicitudOficialController) GetCreateModal(c *gin.Context) {
 	}
 
 	dateIda := c.Query("fecha")
+
 
 	render := "solicitud/oficial/modal_create"
 
@@ -424,6 +428,7 @@ func (ctrl *SolicitudOficialController) GetEditModal(c *gin.Context) {
 		})
 	}
 
+
 	tramosJSON, _ := json.Marshal(tramosIniciales)
 	editFormData, _ := json.Marshal(map[string]any{
 		"ambito":       solicitud.AmbitoViajeCodigo,
@@ -492,7 +497,7 @@ func (ctrl *SolicitudOficialController) Update(c *gin.Context) {
 		}
 	}
 
-	if err := ctrl.solicitudOficialService.UpdateOficial(c.Request.Context(), id, req); err != nil {
+	if err := ctrl.solicitudOficialService.UpdateOficial(c.Request.Context(), id, req, authUser); err != nil {
 		utils.SetErrorMessage(c, "Error al actualizar: "+err.Error())
 	} else {
 		utils.SetSuccessMessage(c, "Solicitud actualizada correctamente")

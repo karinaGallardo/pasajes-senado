@@ -8,7 +8,7 @@
   <tr
     class="border-b border-neutral-100 last:border-0 hover:bg-neutral-50/50 transition-colors"
     x-data="itineraryRow({
-      esDevo: {{ .Tramo.EsDevolucion }},
+      esOpenTicket: {{ .Tramo.EsOpenTicket }},
       esMod: {{ .Tramo.EsModificacion }},
       tramo_nombre: '{{ .Tramo.TramoNombre }}',
       route_id: '{{ .Tramo.RutaID }}',
@@ -33,7 +33,7 @@
       name="tramo_solicitud_item_id[]"
       value="{{ if .Tramo.SolicitudItemID }}{{ .Tramo.SolicitudItemID }}{{ end }}"
     />
-    <input type="hidden" name="tramo_devolucion[]" value="{{ .Tramo.ID }}" :disabled="!esDevolucion" />
+    <input type="hidden" name="tramo_devolucion[]" value="{{ .Tramo.ID }}" :disabled="!esOpenTicket" />
 
     <td class="px-2 py-1 text-center border-r border-neutral-100 bg-neutral-50/30">
       {{ if .Tramo.IsReprogramacion }}
@@ -44,10 +44,10 @@
           type="checkbox"
           disabled
           class="h-4 w-4 text-neutral-300 border-neutral-300 rounded opacity-40"
-          {{ checked .Tramo.EsDevolucion }}
+          {{ checked .Tramo.EsOpenTicket }}
         />
       {{ else }}
-        <input type="checkbox" x-model="esDevolucion" class="h-4 w-4 text-danger-600 border-neutral-300 rounded shadow-sm" />
+        <input type="checkbox" x-model="esOpenTicket" class="h-4 w-4 text-danger-600 border-neutral-300 rounded shadow-sm" />
       {{ end }}
     </td>
 
@@ -69,7 +69,7 @@
           name="tramo_modificacion[]"
           value="{{ .Tramo.ID }}"
           x-model="esModificacion"
-          @change="if(esModificacion) esDevolucion = false; $dispatch('update-totals')"
+          @change="if(esModificacion) esOpenTicket = false; $dispatch('update-totals')"
           class="h-4 w-4 text-warning-600 border-neutral-300 rounded shadow-sm"
         />
       {{ end }}
@@ -95,10 +95,10 @@
         >
           <div class="relative">
             <div
-              @click="if(!esDevolucion && !esModificacion) { open = true; $nextTick(() => $refs.searchInput.focus()) }"
+              @click="if(!esOpenTicket && !esModificacion) { open = true; $nextTick(() => $refs.searchInput.focus()) }"
               x-show="!open"
               class="w-full bg-white border border-neutral-300 rounded px-2 py-1.5 text-[10px] cursor-pointer focus:ring-1 focus:ring-primary min-h-[38px] flex items-center justify-between transition-all hover:border-primary-300 shadow-sm"
-              :class="{ 'opacity-50 grayscale bg-neutral-100 cursor-not-allowed': esDevolucion || esModificacion, 'border-primary-200 bg-primary-50/10': label && label !== 'Buscar tramo...' }"
+              :class="{ 'opacity-50 grayscale bg-neutral-100 cursor-not-allowed': esOpenTicket || esModificacion, 'border-primary-200 bg-primary-50/10': label && label !== 'Buscar tramo...' }"
             >
               <span
                 x-text="(label || 'Seleccionar Tramo')"
@@ -203,7 +203,7 @@
 
     <td class="px-2 py-1 text-center">
       <div class="flex items-center justify-center h-full min-h-[45px]">
-        <div x-show="!esDevolucion && !esModificacion" class="flex items-center justify-center gap-1 w-[76px] mx-auto" x-cloak>
+        <div x-show="!esOpenTicket && !esModificacion" class="flex items-center justify-center gap-1 w-[76px] mx-auto" x-cloak>
           <!-- Slot: Upload -->
           <div class="w-9 h-9 flex-shrink-0">
             <div class="relative group">
@@ -256,7 +256,7 @@
             </template>
           </div>
         </div>
-        <span x-show="esDevolucion || esModificacion" class="text-neutral-300" x-cloak>-</span>
+        <span x-show="esOpenTicket || esModificacion" class="text-neutral-300" x-cloak>-</span>
       </div>
     </td>
 

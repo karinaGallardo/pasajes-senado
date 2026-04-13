@@ -37,12 +37,10 @@ type Pasaje struct {
 	FechaVuelo   time.Time  `gorm:"type:timestamp"`
 	FechaEmision *time.Time `gorm:"type:date"`
 
-	CodigoReserva    string  `gorm:"size:50"`
-	NumeroBillete    string  `gorm:"size:100;index"`
-	Costo            float64 `gorm:"type:decimal(10,2)"`
-	CostoUtilizado   float64 `gorm:"type:decimal(10,2);default:0" json:"costo_utilizado"`
-	MontoCredito     float64 `gorm:"type:decimal(10,2);default:0" json:"monto_credito"`
-	MontoReembolso   float64 `gorm:"type:decimal(10,2);default:0" json:"monto_reembolso"`
+	NumeroBillete  string  `gorm:"size:100;index"`
+	Costo          float64 `gorm:"type:decimal(10,2)"`
+	CostoUtilizado float64 `gorm:"type:decimal(10,2);default:0" json:"costo_utilizado"`
+	MontoReembolso float64 `gorm:"type:decimal(10,2);default:0" json:"monto_reembolso"`
 
 	EstadoPasajeCodigo *string       `gorm:"size:50;default:'EMITIDO'"`
 	EstadoPasaje       *EstadoPasaje `gorm:"foreignKey:EstadoPasajeCodigo;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;<-:false"`
@@ -54,13 +52,22 @@ type Pasaje struct {
 	NumeroFactura     string  `gorm:"size:50;index"`
 	CostoPenalidad    float64 `gorm:"type:decimal(10,2);default:0"`
 
-	// Servicio de Emisión (Fee)
+	// Servicio de Emisión Agencia de Viaje (Fee)
 	CostoServicioEmision  float64 `gorm:"type:decimal(10,2);default:0"`
 	NroFacturaEmision     string  `gorm:"size:50;index"`
 	ArchivoFacturaEmision string  `gorm:"size:255;default:''"`
 
+	// Devolución por Diferencia de Tarifa (Per Pasaje)
+	NroBoletaDeposito  string     `gorm:"size:100;index"`
+	ArchivoComprobante string     `gorm:"size:255;default:''"`
+	FechaDeposito      *time.Time `gorm:"type:timestamp"`
+
 	// Relación inversa para liquidación
 	DescargoTramos []DescargoTramo `gorm:"foreignKey:PasajeID;<-:false"`
+
+	// Si este pasaje se emitió usando un Open Ticket previo
+	OpenTicketID *string     `gorm:"size:36;index;default:null"`
+	OpenTicket   *OpenTicket `gorm:"foreignKey:OpenTicketID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;<-:false"`
 
 	// Seq is an auto-incrementing field managed by DB to ensure atomic sequential ordering
 	Seq int64 `gorm:"autoIncrement;not null;<-:false"`

@@ -377,7 +377,7 @@ document.addEventListener("alpine:init", function () {
   });
 
   Alpine.data("itineraryRow", (config) => ({
-    esDevolucion: config.esDevo,
+    esOpenTicket: config.esOpenTicket,
     esModificacion: config.esMod,
     monto: config.monto || 0,
     moneda: config.moneda || "BOB",
@@ -394,7 +394,7 @@ document.addEventListener("alpine:init", function () {
     processingImage: false,
 
     init() {
-      this.$watch("esDevolucion", (val) => {
+      this.$watch("esOpenTicket", (val) => {
         if (val) {
           this.esModificacion = false;
           this.isFullTicket = true;
@@ -409,7 +409,7 @@ document.addEventListener("alpine:init", function () {
 
       this.$watch("esModificacion", (val) => {
         if (val) {
-          this.esDevolucion = false;
+          this.esOpenTicket = false;
           this.isFullTicket = false;
           this.vuelo = "";
           this.pase = "";
@@ -422,8 +422,8 @@ document.addEventListener("alpine:init", function () {
     },
 
     checkFullStatus() {
-      // Legacy or called from outside, just sync isFullTicket with esDevolucion
-      this.isFullTicket = this.esDevolucion;
+      // Legacy or called from outside, just sync isFullTicket with esOpenTicket
+      this.isFullTicket = this.esOpenTicket;
     },
 
     get bindFade() {
@@ -431,35 +431,35 @@ document.addEventListener("alpine:init", function () {
         "x-transition:enter": "transition ease-out duration-300",
         "x-transition:enter-start": "opacity-0 transform -translate-y-2",
         "x-transition:enter-end": "opacity-100 transform translate-y-0",
-        ":class": "{ 'bg-warning-50/30': esModificacion, 'bg-danger-50/30': esDevolucion }",
+        ":class": "{ 'bg-warning-50/30': esModificacion, 'bg-danger-50/30': esOpenTicket }",
       };
     },
 
     get bindInput() {
       return {
-        ":readonly": "esDevolucion || esModificacion",
-        ":class": "{ 'bg-neutral-50 text-neutral-400 cursor-not-allowed opacity-60': esDevolucion || esModificacion }",
+        ":readonly": "esOpenTicket || esModificacion",
+        ":class": "{ 'bg-neutral-50 text-neutral-400 cursor-not-allowed opacity-60': esOpenTicket || esModificacion }",
       };
     },
 
     get bindVuelo() {
       return {
         // We use readonly instead of disabled to keep the index in the POST array
-        ":readonly": "esDevolucion || esModificacion",
-        ":class": "{ 'bg-neutral-50 text-neutral-400 cursor-not-allowed opacity-60': esDevolucion || esModificacion }",
+        ":readonly": "esOpenTicket || esModificacion",
+        ":class": "{ 'bg-neutral-50 text-neutral-400 cursor-not-allowed opacity-60': esOpenTicket || esModificacion }",
       };
     },
     get bindPase() {
       return {
-        ":readonly": "esDevolucion || esModificacion",
-        ":class": "{ 'bg-neutral-50 text-neutral-400 cursor-not-allowed opacity-60': esDevolucion || esModificacion }",
+        ":readonly": "esOpenTicket || esModificacion",
+        ":class": "{ 'bg-neutral-50 text-neutral-400 cursor-not-allowed opacity-60': esOpenTicket || esModificacion }",
       };
     },
 
     get bindArchivo() {
       return {
-        ":disabled": "esDevolucion || esModificacion",
-        ":class": "{ 'bg-danger-50/10 cursor-not-allowed': esDevolucion, 'bg-warning-50/10 cursor-not-allowed': esModificacion }",
+        ":disabled": "esOpenTicket || esModificacion",
+        ":class": "{ 'bg-danger-50/10 cursor-not-allowed': esOpenTicket, 'bg-warning-50/10 cursor-not-allowed': esModificacion }",
       };
     },
   }));

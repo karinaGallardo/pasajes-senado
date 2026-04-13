@@ -29,7 +29,7 @@ func TemplateFuncs() template.FuncMap {
 		"rangoSemana":      FormatWeekRange,
 		"nombreDiaCorto":   DayNameShort,
 		"rangoSemanaCorto": FormatWeekRangeShort,
-		"contains":         strings.Contains,
+		"contains":         SafeContains,
 		"hasSuffix":        strings.HasSuffix,
 		"hasPrefix":        strings.HasPrefix,
 		"formatCurrency":   FormatCurrency,
@@ -41,7 +41,25 @@ func TemplateFuncs() template.FuncMap {
 		"dict":             Dict,
 		"ternary":          Ternary,
 		"boolJS":           BoolJS,
+		"formatBillete":    FormatBillete,
 	}
+}
+
+// SafeContains verifica si substr está contenido en s, manejando s como interface{} de forma segura.
+func SafeContains(s interface{}, substr string) bool {
+	str, ok := s.(string)
+	if !ok {
+		return false
+	}
+	return strings.Contains(str, substr)
+}
+
+// FormatBillete formatea un número de billete a "XX...XXX" (2 primeros y 3 últimos).
+func FormatBillete(val string) string {
+	if len(val) <= 5 {
+		return val
+	}
+	return val[:2] + "-" + val[len(val)-3:]
 }
 
 // BoolJS convierte un valor a un booleano literal de JavaScript (true/false) sin comillas.

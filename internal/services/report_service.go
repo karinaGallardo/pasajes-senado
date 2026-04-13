@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-
 	"os"
 	"os/exec"
+
 	"sistema-pasajes/internal/dtos"
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
@@ -19,13 +19,13 @@ import (
 )
 
 type ReportService struct {
-	solicitudRepo *repositories.SolicitudRepository
-	aerolineaRepo *repositories.AerolineaRepository
-	pasajeRepo    *repositories.PasajeRepository
-	agenciaRepo   *repositories.AgenciaRepository
-	cupoRepo      *repositories.CupoDerechoRepository
-	creditoRepo   *repositories.CreditoPasajeRepository
-	configService *ConfiguracionService
+	solicitudRepo  *repositories.SolicitudRepository
+	aerolineaRepo  *repositories.AerolineaRepository
+	pasajeRepo     *repositories.PasajeRepository
+	agenciaRepo    *repositories.AgenciaRepository
+	cupoRepo       *repositories.CupoDerechoRepository
+	openTicketRepo *repositories.OpenTicketRepository
+	configService  *ConfiguracionService
 }
 
 func NewReportService(
@@ -34,17 +34,17 @@ func NewReportService(
 	pasajeRepo *repositories.PasajeRepository,
 	agenciaRepo *repositories.AgenciaRepository,
 	cupoRepo *repositories.CupoDerechoRepository,
-	creditoRepo *repositories.CreditoPasajeRepository,
+	openTicketRepo *repositories.OpenTicketRepository,
 	configService *ConfiguracionService,
 ) *ReportService {
 	return &ReportService{
-		solicitudRepo: solicitudRepo,
-		aerolineaRepo: aerolineaRepo,
-		pasajeRepo:    pasajeRepo,
-		agenciaRepo:   agenciaRepo,
-		cupoRepo:      cupoRepo,
-		creditoRepo:   creditoRepo,
-		configService: configService,
+		solicitudRepo:  solicitudRepo,
+		aerolineaRepo:  aerolineaRepo,
+		pasajeRepo:     pasajeRepo,
+		agenciaRepo:    agenciaRepo,
+		cupoRepo:       cupoRepo,
+		openTicketRepo: openTicketRepo,
+		configService:  configService,
 	}
 }
 
@@ -590,10 +590,10 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 			pdf.CellFormat(50, 6, tr(r.Billete), "1", 0, "C", false, 0, "")
 
 			paseVal := r.NumeroPaseAbordo
-			if r.EsDevolucion {
+			if r.EsOpenTicket {
 				pdf.SetTextColor(200, 0, 0)
 				pdf.SetFont("Arial", "B", 7)
-				paseVal = "DEVUELTO"
+				paseVal = "NO USADO"
 			} else if r.EsModificacion {
 				pdf.SetTextColor(0, 128, 0) // Green
 				pdf.SetFont("Arial", "B", 7)
@@ -609,7 +609,7 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 	type ItinerarioReporte struct {
 		Billete        string
 		Tramos         []models.DescargoTramo
-		EsDevolucion   bool
+		EsOpenTicket   bool
 		EsModificacion bool
 	}
 	itinerariosMap := make(map[string]*ItinerarioReporte)
@@ -624,8 +624,8 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 			itinerariosMap[key] = &ItinerarioReporte{Billete: d.Billete}
 			itinerariosOrder = append(itinerariosOrder, key)
 		}
-		if d.EsDevolucion {
-			itinerariosMap[key].EsDevolucion = true
+		if d.EsOpenTicket {
+			itinerariosMap[key].EsOpenTicket = true
 		}
 		if d.EsModificacion {
 			itinerariosMap[key].EsModificacion = true
@@ -667,19 +667,19 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 	pdf.Ln(4)
 
 	pdf.SetFont("Arial", "B", 9)
-	pdf.CellFormat(190, 6, tr(" PASAJE ABIERTO / CRÉDITO DE VIAJE GENERADO (EMD)"), "B", 1, "L", false, 0, "")
+	pdf.CellFormat(190, 6, tr(" TRAMOS NO UTILIZADOS (OPEN TICKETS REUTILIZABLES)"), "B", 1, "L", false, 0, "")
 	pdf.Ln(2)
 
-	// Buscar créditos EMD reales vinculados a este descargo
-	creditos, _ := s.creditoRepo.FindByDescargoID(ctx, descargo.ID)
+	// Buscar tickets open reales vinculados a este descargo
+	creditos, _ := s.openTicketRepo.FindByDescargoID(ctx, descargo.ID)
 
 	if len(creditos) > 0 {
 		for _, cred := range creditos {
-			s.drawReturnTableSummarized(pdf, tr, "CRÉDITO EMD", cred.BilletesReferencia, cred.RutaReferencia, cred.Monto)
+			s.drawReturnTableSummarized(pdf, tr, "OPEN TICKET", cred.NumeroBillete, cred.RutaReferencia)
 		}
 	} else {
-		// Si no hay créditos EMD, mostramos una fila indicando que todo se liquidó o no hubo ahorro
-		s.drawReturnTableSummarized(pdf, tr, "N/A", "SIN CRÉDITO", "TRAMOS COMPLETADOS O REEMBOLSO LÍQUIDO", 0)
+		// Si no hay Open Tickets, mostramos una fila indicando que no hubo tramos sobrantes
+		s.drawReturnTableSummarized(pdf, tr, "N/A", "NINGUNO", "TODOS LOS TRAMOS FUERON UTILIZADOS")
 	}
 	pdf.Ln(4)
 
@@ -691,14 +691,12 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 	// Calcular totales desglosados
 	totalEmitido := 0.0
 	totalUtilizado := 0.0
-	totalCredito := 0.0
 	totalEfectivo := 0.0
 	if descargo.Solicitud != nil {
 		for _, item := range descargo.Solicitud.Items {
 			for _, p := range item.Pasajes {
 				totalEmitido += p.Costo
 				totalUtilizado += p.CostoUtilizado
-				totalCredito += p.MontoCredito
 				totalEfectivo += p.MontoReembolso
 			}
 		}
@@ -714,17 +712,10 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 	pdf.SetFont("Arial", "", 8)
 	pdf.CellFormat(95, 6, "Bs. "+fmt.Sprintf("%.2f", totalUtilizado), "R", 1, "R", false, 0, "")
 
-	// Desglose de ahorros
-	pdf.SetFillColor(250, 250, 250)
-	pdf.SetFont("Arial", "B", 8)
-	pdf.CellFormat(95, 6, tr(" Crédito a Favor del Senado (EMD - Cupo): "), "L,T", 0, "L", true, 0, "")
-	pdf.SetFont("Arial", "B", 8)
-	pdf.SetTextColor(0, 100, 0) // Verde oscuro para crédito
-	pdf.CellFormat(95, 6, "Bs. "+fmt.Sprintf("%.2f", totalCredito), "R,T", 1, "R", true, 0, "")
 	pdf.SetTextColor(0, 0, 0)
 
 	pdf.SetFont("Arial", "B", 8)
-	pdf.CellFormat(95, 6, tr(" Reintegro en Efectivo (Depósito Bancario): "), "L,B", 0, "L", true, 0, "")
+	pdf.CellFormat(95, 6, tr(" Devolución en Efectivo (Depósito Bancario): "), "L,B", 0, "L", true, 0, "")
 	pdf.SetFont("Arial", "B", 9)
 	pdf.SetTextColor(150, 0, 0) // Rojo para efectivo a devolver
 	pdf.CellFormat(95, 6, "Bs. "+fmt.Sprintf("%.2f", totalEfectivo), "R,B", 1, "R", true, 0, "")
@@ -733,8 +724,23 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 	pdf.Ln(4)
 
 	// --- ANEXO AUTOMÁTICO DEL COMPROBANTE DE DEPÓSITO ---
-	if descargo.MontoDevolucion > 0 && descargo.ComprobantePago != "" {
-		filePath := descargo.ComprobantePago
+	compPath := ""
+	if descargo.Solicitud != nil {
+		for _, item := range descargo.Solicitud.Items {
+			for _, p := range item.Pasajes {
+				if p.ArchivoComprobante != "" {
+					compPath = p.ArchivoComprobante
+					break
+				}
+			}
+			if compPath != "" {
+				break
+			}
+		}
+	}
+
+	if descargo.GetTotalDevolucionPasajes() > 0 && compPath != "" {
+		filePath := compPath
 		// Solo anexamos si el archivo existe
 		if _, err := os.Stat(filePath); err == nil {
 			lowerPath := strings.ToLower(filePath)
@@ -1105,7 +1111,7 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 	pdf.Ln(4)
 
 	// --- SECCIÓN DE LIQUIDACIÓN FINANCIERA (Igual al PV-05) ---
-	if descargo.MontoDevolucion > 0 {
+	if descargo.GetTotalDevolucionPasajes() > 0 {
 		pdf.SetX(3)
 		pdf.SetFont("Arial", "B", 10)
 		pdf.SetFillColor(240, 240, 240)
@@ -1129,7 +1135,7 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 
 		pdf.SetX(3)
 		pdf.SetFont("Arial", "B", 10)
-		pdf.CellFormat(210, 8, tr(" MONTO LÍQUIDO A REINTEGRAR A LA C.U.T.: Bs. ")+fmt.Sprintf("%.2f", descargo.MontoDevolucion), "L,R,B", 1, "L", false, 0, "")
+		pdf.CellFormat(210, 8, tr(" MONTO LÍQUIDO A DEVOLVER A LA C.U.T.: Bs. ")+fmt.Sprintf("%.2f", descargo.GetTotalDevolucionPasajes()), "L,R,B", 1, "L", false, 0, "")
 		pdf.Ln(4)
 	}
 
@@ -1156,7 +1162,7 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 			itinerariosMap[key] = &ItinerarioReporte{Billete: d.Billete}
 			itinerariosOrder = append(itinerariosOrder, key)
 		}
-		if d.EsDevolucion {
+		if d.EsOpenTicket {
 			// Ahorro se maneja por billete en modelo Pasaje
 		}
 		itinerariosMap[key].Tramos = append(itinerariosMap[key].Tramos, d)
@@ -1168,7 +1174,7 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 		// Check for at least one return in group
 		isDevolucion := false
 		for _, det := range g.Tramos {
-			if det.EsDevolucion {
+			if det.EsOpenTicket {
 				isDevolucion = true
 				break
 			}
@@ -1185,14 +1191,12 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 				}
 			}
 
-			// Find cost and full route from Pasaje
-			var cost float64
+			// Find full route from Pasaje
 			fullRoute := ""
 			if descargo.Solicitud != nil {
 				for _, item := range descargo.Solicitud.Items {
 					for _, p := range item.Pasajes {
 						if p.NumeroBillete == g.Billete && g.Billete != "" {
-							cost = p.MontoCredito + p.MontoReembolso
 							fullRoute = p.GetRutaDisplay()
 							break
 						}
@@ -1203,19 +1207,19 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 			// Filter and reconstruct only returned legs for clarity
 			var routeParts []string
 			for _, det := range g.Tramos {
-				if det.EsDevolucion {
+				if det.EsOpenTicket {
 					routeParts = append(routeParts, det.GetRutaDisplay())
 				}
 			}
 			fullRoute = strings.Join(routeParts, " ; ")
 
-			s.drawReturnTableSummarized(pdf, tr, tipoStr, g.Billete, fullRoute, cost)
+			s.drawReturnTableSummarized(pdf, tr, tipoStr, g.Billete, fullRoute)
 			pdf.Ln(1)
 		}
 	}
 
 	if !hasReturns {
-		s.drawReturnTableSummarized(pdf, tr, "", "", "", 0)
+		s.drawReturnTableSummarized(pdf, tr, "", "", "")
 	}
 
 	pdf.Ln(5)
@@ -1326,10 +1330,25 @@ func (s *ReportService) GeneratePV05Complete(ctx context.Context, descargo *mode
 	}
 
 	// 2.3 Comprobante de Depósito (Si es PDF se une, si es imagen ya se incrustó en el base)
-	if descargo.MontoDevolucion > 0 && descargo.ComprobantePago != "" {
-		if strings.HasSuffix(strings.ToLower(descargo.ComprobantePago), ".pdf") {
-			if _, err := os.Stat(descargo.ComprobantePago); err == nil {
-				filesToMerge = append(filesToMerge, descargo.ComprobantePago)
+	compPath := ""
+	if descargo.Solicitud != nil {
+		for _, item := range descargo.Solicitud.Items {
+			for _, p := range item.Pasajes {
+				if p.ArchivoComprobante != "" {
+					compPath = p.ArchivoComprobante
+					break
+				}
+			}
+			if compPath != "" {
+				break
+			}
+		}
+	}
+
+	if descargo.GetTotalDevolucionPasajes() > 0 && compPath != "" {
+		if strings.HasSuffix(strings.ToLower(compPath), ".pdf") {
+			if _, err := os.Stat(compPath); err == nil {
+				filesToMerge = append(filesToMerge, compPath)
 			}
 		}
 	}
@@ -1408,10 +1427,25 @@ func (s *ReportService) GeneratePV06Complete(ctx context.Context, descargo *mode
 	}
 
 	// 2.3 Comprobante de Depósito (Si es PDF se une, si es imagen ya se incrustó en el base)
-	if descargo.MontoDevolucion > 0 && descargo.ComprobantePago != "" {
-		if strings.HasSuffix(strings.ToLower(descargo.ComprobantePago), ".pdf") {
-			if _, err := os.Stat(descargo.ComprobantePago); err == nil {
-				filesToMerge = append(filesToMerge, descargo.ComprobantePago)
+	compPath := ""
+	if descargo.Solicitud != nil {
+		for _, item := range descargo.Solicitud.Items {
+			for _, p := range item.Pasajes {
+				if p.ArchivoComprobante != "" {
+					compPath = p.ArchivoComprobante
+					break
+				}
+			}
+			if compPath != "" {
+				break
+			}
+		}
+	}
+
+	if descargo.GetTotalDevolucionPasajes() > 0 && compPath != "" {
+		if strings.HasSuffix(strings.ToLower(compPath), ".pdf") {
+			if _, err := os.Stat(compPath); err == nil {
+				filesToMerge = append(filesToMerge, compPath)
 			}
 		}
 	}
@@ -1550,10 +1584,10 @@ func (s *ReportService) drawSubTable(pdf *gofpdf.Fpdf, tr func(string) string, s
 		pdf.CellFormat(30, 6, tr(fecha), "1", 0, "C", false, 0, "")
 		pdf.CellFormat(50, 6, tr(r.Billete), "1", 0, "C", false, 0, "")
 		paseVal := r.NumeroPaseAbordo
-		if r.EsDevolucion {
+		if r.EsOpenTicket {
 			pdf.SetTextColor(200, 0, 0)
 			pdf.SetFont("Arial", "B", 7)
-			paseVal = "DEVUELTO"
+			paseVal = "NO USADO"
 		} else if r.EsModificacion {
 			pdf.SetTextColor(0, 128, 0) // Green
 			pdf.SetFont("Arial", "B", 7)
@@ -1571,7 +1605,7 @@ func (s *ReportService) drawSegmentBlock(pdf *gofpdf.Fpdf, tr func(string) strin
 	pdf.Ln(1)
 	var origRows, reproRows []models.DescargoTramo
 	for _, d := range descargo.Tramos {
-		if d.EsDevolucion {
+		if d.EsOpenTicket {
 			continue
 		}
 		switch d.Tipo {
@@ -1588,27 +1622,23 @@ func (s *ReportService) drawSegmentBlock(pdf *gofpdf.Fpdf, tr func(string) strin
 	}
 }
 
-func (s *ReportService) drawReturnTableSummarized(pdf *gofpdf.Fpdf, tr func(string) string, subTitle string, billete, ruta string, costo float64) {
+func (s *ReportService) drawReturnTableSummarized(pdf *gofpdf.Fpdf, tr func(string) string, subTitle string, billete, ruta string) {
 	if subTitle != "" {
 		pdf.SetFont("Arial", "B", 8)
 		pdf.CellFormat(190, 6, tr(subTitle), "", 1, "L", false, 0, "")
 	}
 	pdf.SetFillColor(240, 240, 240)
 	pdf.SetFont("Arial", "B", 8)
-	pdf.CellFormat(90, 6, tr("RUTA COMPLETA"), "1", 0, "C", true, 0, "")
-	pdf.CellFormat(50, 6, tr("N° BILLETE"), "1", 0, "C", true, 0, "")
-	pdf.CellFormat(50, 6, tr("MONTO TOTAL RECUPERADO (Bs.)"), "1", 1, "C", true, 0, "")
+	pdf.CellFormat(120, 6, tr("TRAMO / RUTA"), "1", 0, "C", true, 0, "")
+	pdf.CellFormat(70, 6, tr("N° BILLETE"), "1", 1, "C", true, 0, "")
 
 	pdf.SetFont("Arial", "", 8)
 	if billete != "" || ruta != "" {
-		pdf.CellFormat(90, 8, tr(ruta), "1", 0, "C", false, 0, "")
-		pdf.CellFormat(50, 8, tr(billete), "1", 0, "C", false, 0, "")
-		costoStr := fmt.Sprintf("%.2f", costo)
-		pdf.CellFormat(50, 8, tr(costoStr), "1", 1, "C", false, 0, "")
+		pdf.CellFormat(120, 8, tr(ruta), "1", 0, "C", false, 0, "")
+		pdf.CellFormat(70, 8, tr(billete), "1", 1, "C", false, 0, "")
 	} else {
-		pdf.CellFormat(90, 8, "", "1", 0, "C", false, 0, "")
-		pdf.CellFormat(50, 8, "", "1", 0, "C", false, 0, "")
-		pdf.CellFormat(50, 8, "", "1", 1, "C", false, 0, "")
+		pdf.CellFormat(120, 8, "", "1", 0, "C", false, 0, "")
+		pdf.CellFormat(70, 8, "", "1", 1, "C", false, 0, "")
 	}
 }
 

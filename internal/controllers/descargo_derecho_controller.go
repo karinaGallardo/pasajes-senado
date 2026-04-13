@@ -174,7 +174,10 @@ func (ctrl *DescargoDerechoController) Update(c *gin.Context) {
 	// Delegar recolección de archivos a sus respectivos dueños
 	pasesAbordoPaths := utils.ExtractDescargoFiles(c, req.TramoID)
 
-	if err := ctrl.descargoDerechoService.UpdateDerecho(c.Request.Context(), id, req, authUser.ID, pasesAbordoPaths); err != nil {
+	// 4. Comprobantes de Pago (Per Pasaje)
+	boletasPaths := utils.ExtractPasajeBoletas(c, req.LiquidacionPasajeID)
+ 
+	if err := ctrl.descargoDerechoService.UpdateDerecho(c.Request.Context(), id, req, authUser.ID, pasesAbordoPaths, boletasPaths); err != nil {
 		c.Redirect(http.StatusFound, "/descargos/derecho/"+id+"/editar?error=ErrorActualizacion")
 		return
 	}
@@ -315,59 +318,58 @@ func (ctrl *DescargoDerechoController) Approve(c *gin.Context) {
 	c.Redirect(http.StatusFound, "/descargos/derecho/"+id)
 }
 
-func (ctrl *DescargoDerechoController) Reject(c *gin.Context) {
-	id := c.Param("id")
-	authUser := appcontext.AuthUser(c)
+func (ctrl *DescargoDerechoController) Reject(ctx *gin.Context) {
+	id := ctx.Param("id")
+	authUser := appcontext.AuthUser(ctx)
 	if authUser == nil || !authUser.IsAdminOrResponsable() {
-		c.Redirect(http.StatusFound, "/auth/login")
+		ctx.Redirect(http.StatusFound, "/auth/login")
 		return
 	}
 
-	observaciones := c.PostForm("observaciones")
+	observaciones := ctx.PostForm("observaciones")
 
-	descargo, _ := ctrl.descargoService.GetByID(c.Request.Context(), id)
+	descargo, _ := ctrl.descargoService.GetByID(ctx.Request.Context(), id)
 	if descargo != nil {
 		descargo.HydratePermissions(authUser)
 		if !descargo.Permissions.CanReject {
-			c.Redirect(http.StatusFound, "/descargos/derecho/"+id+"?error=SinPermisoRechazo")
+			ctx.Redirect(http.StatusFound, "/descargos/derecho/"+id+"?error=SinPermisoRechazo")
 			return
 		}
 	}
 
-	if err := ctrl.descargoService.Reject(c.Request.Context(), id, authUser.ID, observaciones); err != nil {
+	if err := ctrl.descargoService.Reject(ctx.Request.Context(), id, authUser.ID, observaciones); err != nil {
 		log.Printf("Error rechazando descargo derecho: %v", err)
-		c.Redirect(http.StatusFound, "/descargos/derecho/"+id+"?error=ErrorRechazo")
+		ctx.Redirect(http.StatusFound, "/descargos/derecho/"+id+"?error=ErrorRechazo")
 		return
 	}
 
-	c.Redirect(http.StatusFound, "/descargos/derecho/"+id)
+	ctx.Redirect(http.StatusFound, "/descargos/derecho/"+id)
 }
 
-func (ctrl *DescargoDerechoController) RevertApproval(c *gin.Context) {
-	id := c.Param("id")
-	authUser := appcontext.AuthUser(c)
+func (ctrl *DescargoDerechoController) RevertApproval(ctx *gin.Context) {
+	id := ctx.Param("id")
+	authUser := appcontext.AuthUser(ctx)
 	if authUser == nil || !authUser.IsAdminOrResponsable() {
-		c.String(http.StatusForbidden, "No tiene permisos para realizar esta acción")
+		ctx.String(http.StatusForbidden, "No tiene permisos para realizar esta acción")
 		return
 	}
 
-	descargo, _ := ctrl.descargoService.GetByID(c.Request.Context(), id)
+	descargo, _ := ctrl.descargoService.GetByID(ctx.Request.Context(), id)
 	if descargo != nil {
 		descargo.HydratePermissions(authUser)
 		if !descargo.Permissions.CanRevert {
-			c.String(http.StatusForbidden, "No tiene permisos para revertir este descargo")
+			ctx.String(http.StatusForbidden, "No tiene permisos para revertir este descargo")
 			return
 		}
 	}
 
-	if err := ctrl.descargoService.RevertToDraft(c.Request.Context(), id, authUser.ID); err != nil {
-		c.String(http.StatusInternalServerError, "Error revirtiendo aprobación: "+err.Error())
+	if err := ctrl.descargoService.RevertToDraft(ctx.Request.Context(), id, authUser.ID); err != nil {
+		ctx.String(http.StatusInternalServerError, "Error revirtiendo aprobación: "+err.Error())
 		return
 	}
 
-	c.Redirect(http.StatusFound, "/descargos/derecho/"+id)
+	ctx.Redirect(http.StatusFound, "/descargos/derecho/"+id)
 }
-
 func (ctrl *DescargoDerechoController) RawFile(c *gin.Context) {
 	path := c.Query("path")
 	if path == "" {
@@ -442,7 +444,7 @@ func (ctrl *DescargoDerechoController) NuevaFila(c *gin.Context) {
 			BaseModel:       models.BaseModel{ID: index},
 			Tipo:            models.TipoDescargoTramo(tipo),
 			SolicitudItemID: &solicitudItemID,
-			EsDevolucion:    false,
+			EsOpenTicket:    false,
 			EsModificacion:  false,
 		},
 	})
@@ -468,170 +470,4 @@ func (ctrl *DescargoDerechoController) UploadSingle(c *gin.Context) {
 		"message": "Archivo subido correctamente",
 		"success": true,
 	})
-}
-
-func (ctrl *DescargoDerechoController) GetModalLiquidar(c *gin.Context) {
-	id := c.Param("id")
-	descargo, err := ctrl.descargoService.GetByID(c.Request.Context(), id)
-	if err != nil {
-		c.String(http.StatusNotFound, "Descargo no encontrado")
-		return
-	}
-
-	utils.Render(c, "descargo/components/modal_liquidar", gin.H{
-		"Descargo":   descargo,
-		"ActionURL":  fmt.Sprintf("/descargos/derecho/%s/liquidar", id),
-		"csrf_token": c.GetString("csrf_token"),
-	})
-}
-
-func (ctrl *DescargoDerechoController) Liquidar(c *gin.Context) {
-	id := c.Param("id")
-	authUser := appcontext.AuthUser(c)
-	if authUser == nil || !authUser.IsAdminOrResponsable() {
-		c.Redirect(http.StatusFound, "/auth/login")
-		return
-	}
-
-	var req dtos.LiquidarDescargoRequest
-	if err := c.ShouldBind(&req); err != nil {
-		log.Printf("Error bind liquidación: %v", err)
-		c.Redirect(http.StatusFound, "/descargos/derecho/"+id+"?error=MontoInvalido")
-		return
-	}
-
-	var montosUtil, montosCred, montosDevo []float64
-	for i := range req.PasajeIDs {
-		mu, _ := strconv.ParseFloat(utils.GetIdx(req.CostosUtilizacion, i), 64)
-		mc, _ := strconv.ParseFloat(utils.GetIdx(req.MontosCredito, i), 64)
-		md, _ := strconv.ParseFloat(utils.GetIdx(req.MontosDevolucion, i), 64)
-		montosUtil = append(montosUtil, mu)
-		montosCred = append(montosCred, mc)
-		montosDevo = append(montosDevo, md)
-	}
-
-	if err := ctrl.descargoService.Liquidate(c.Request.Context(), id, req.PasajeIDs, montosUtil, montosCred, montosDevo, authUser.ID); err != nil {
-		log.Printf("Error liquidando descargo: %v", err)
-		c.Redirect(http.StatusFound, "/descargos/derecho/"+id+"?error=ErrorLiquidacion")
-		return
-	}
-
-	if c.GetHeader("HX-Request") != "" {
-		c.Header("HX-Redirect", "/descargos/derecho/"+id)
-		c.Status(http.StatusOK)
-		return
-	}
-
-	c.Redirect(http.StatusFound, "/descargos/derecho/"+id)
-}
-
-func (ctrl *DescargoDerechoController) GetModalPago(c *gin.Context) {
-	id := c.Param("id")
-	descargo, err := ctrl.descargoService.GetByID(c.Request.Context(), id)
-	if err != nil {
-		c.String(http.StatusNotFound, "Descargo no encontrado")
-		return
-	}
-
-	utils.Render(c, "descargo/components/modal_reportar_pago", gin.H{
-		"Descargo":   descargo,
-		"csrf_token": c.GetString("csrf_token"),
-	})
-}
-
-func (ctrl *DescargoDerechoController) ReportarPago(c *gin.Context) {
-	id := c.Param("id")
-	authUser := appcontext.AuthUser(c)
-	if authUser == nil {
-		c.Redirect(http.StatusFound, "/auth/login")
-		return
-	}
-
-	file, err := c.FormFile("comprobante")
-	if err != nil {
-		c.Redirect(http.StatusFound, "/descargos/derecho/"+id+"?error=ArchivoRequerido")
-		return
-	}
-
-	// Guardar el archivo de comprobante
-	timestamp := time.Now().UnixNano()
-	savedPath, err := utils.SaveUploadedFile(c, file, "uploads/pagos", fmt.Sprintf("pago_%d_", timestamp))
-	if err != nil {
-		c.Redirect(http.StatusFound, "/descargos/derecho/"+id+"?error=ErrorArchivo")
-		return
-	}
-
-	if err := ctrl.descargoService.ReportPayment(c.Request.Context(), id, savedPath, authUser.ID); err != nil {
-		c.Redirect(http.StatusFound, "/descargos/derecho/"+id+"?error=ErrorProceso")
-		return
-	}
-
-	c.Redirect(http.StatusFound, "/descargos/derecho/"+id)
-}
-
-func (ctrl *DescargoDerechoController) Finalize(c *gin.Context) {
-	id := c.Param("id")
-	authUser := appcontext.AuthUser(c)
-	if authUser == nil || !authUser.IsAdminOrResponsable() {
-		c.Redirect(http.StatusFound, "/auth/login")
-		return
-	}
-
-	if err := ctrl.descargoService.Finalize(c.Request.Context(), id, authUser.ID); err != nil {
-		c.Redirect(http.StatusFound, "/descargos/derecho/"+id+"?error=ErrorCierre")
-		return
-	}
-
-	c.Redirect(http.StatusFound, "/descargos/derecho/"+id)
-}
-
-func (ctrl *DescargoDerechoController) RevertLiquidation(c *gin.Context) {
-	id := c.Param("id")
-	authUser := appcontext.AuthUser(c)
-	if authUser == nil || !authUser.IsAdminOrResponsable() {
-		c.Redirect(http.StatusFound, "/auth/login")
-		return
-	}
-
-	if err := ctrl.descargoService.RevertLiquidation(c.Request.Context(), id, authUser.ID); err != nil {
-		log.Printf("Error revirtiendo liquidación: %v", err)
-		c.Redirect(http.StatusFound, "/descargos/derecho/"+id+"?error=ErrorReversion")
-		return
-	}
-
-	c.Redirect(http.StatusFound, "/descargos/derecho/"+id)
-}
-
-func (ctrl *DescargoDerechoController) RevertPayment(c *gin.Context) {
-	id := c.Param("id")
-	authUser := appcontext.AuthUser(c)
-	if authUser == nil || !authUser.IsAdminOrResponsable() {
-		c.Redirect(http.StatusFound, "/auth/login")
-		return
-	}
-
-	if err := ctrl.descargoService.RevertPayment(c.Request.Context(), id, authUser.ID); err != nil {
-		log.Printf("Error revirtiendo pago: %v", err)
-		c.Redirect(http.StatusFound, "/descargos/derecho/"+id+"?error=ErrorReversionPago")
-		return
-	}
-
-	c.Redirect(http.StatusFound, "/descargos/derecho/"+id)
-}
-
-func (ctrl *DescargoDerechoController) RevertFinalization(c *gin.Context) {
-	id := c.Param("id")
-	authUser := appcontext.AuthUser(c)
-	if authUser == nil || !authUser.IsAdminOrResponsable() {
-		c.Redirect(http.StatusFound, "/auth/login")
-		return
-	}
-
-	if err := ctrl.descargoService.RevertFinalization(c.Request.Context(), id, authUser.ID); err != nil {
-		log.Printf("Error revirtiendo finalización: %v", err)
-		c.Redirect(http.StatusFound, "/descargos/derecho/"+id+"?error=ErrorReversion")
-		return
-	}
-
-	c.Redirect(http.StatusFound, "/descargos/derecho/"+id)
 }

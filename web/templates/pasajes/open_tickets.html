@@ -1,0 +1,157 @@
+{{ define "pasajes/open_tickets" }}
+  {{ template "layout_header" . }}
+
+
+  <div class="max-w-6xl mx-auto px-4 py-8">
+    <div class="flex items-center justify-between mb-8">
+      <div>
+        <h1 class="text-2xl font-bold text-zinc-900 leading-tight">{{ .Title }}</h1>
+        <p class="text-zinc-500 text-sm mt-1">
+          Billetes aéreos que quedaron sin usar en descargos anteriores y están disponibles para reutilización.
+        </p>
+      </div>
+      <div class="bg-zinc-100 p-3 rounded-md border border-zinc-200 flex items-center gap-3">
+        <div class="w-10 h-10 bg-zinc-900 rounded-md flex items-center justify-center text-white shadow-sm">
+          <i class="ph-bold ph-ticket text-xl"></i>
+        </div>
+        <div>
+          <span class="block text-xs text-zinc-500 uppercase font-semibold tracking-wider">Total</span>
+          <span class="block text-xl font-bold text-zinc-900 leading-none">{{ len .Tickets }} Tickets</span>
+        </div>
+      </div>
+    </div>
+
+    {{ if not .Tickets }}
+      <div class="bg-white rounded-md border border-zinc-200 border-dashed p-12 text-center shadow-sm">
+        <div class="w-16 h-16 bg-zinc-50 rounded-md flex items-center justify-center mx-auto mb-4 border border-zinc-100">
+          <i class="ph-bold ph-ticket text-zinc-300 text-3xl"></i>
+        </div>
+        <h3 class="text-lg font-semibold text-zinc-900">No hay tickets disponibles</h3>
+        <p class="text-zinc-500 max-w-xs mx-auto mt-2">
+          Los tickets se registran automáticamente cuando se marcan tramos como "Open Ticket / No Utilizado" en los descargos.
+        </p>
+      </div>
+    {{ else }}
+      <div class="bg-white rounded-md border border-zinc-200 shadow-sm overflow-hidden">
+        <table class="w-full text-left">
+          <thead>
+            <tr class="bg-zinc-50 border-b border-zinc-200 text-zinc-600 uppercase text-[11px] font-bold tracking-widest">
+              <th class="px-6 py-4">F. Registro</th>
+              <th class="px-6 py-4">Billete / Aerolínea</th>
+              {{ if .ShowBeneficiary }}
+                <th class="px-6 py-4">Beneficiario</th>
+              {{ end }}
+              <th class="px-6 py-4">Ruta Original</th>
+              <th class="px-6 py-4">Estado</th>
+              <th class="px-6 py-4">Vencimiento</th>
+              <th class="px-6 py-4 text-right">Generar Solicitud</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-zinc-100 italic-rows">
+            {{ range .Tickets }}
+              <tr class="hover:bg-zinc-50/50 transition-colors group">
+                <td class="px-6 py-5 whitespace-nowrap">
+                  <span class="text-zinc-900 font-medium block">{{ .CreatedAt.Format "02/01/2006" }}</span>
+                  <span class="text-zinc-400 text-[11px] uppercase tracking-tighter">{{ .CreatedAt.Format "15:04" }}</span>
+                </td>
+                <td class="px-6 py-5">
+                  <div class="flex items-center gap-3">
+                    <div
+                      class="w-8 h-8 rounded-md bg-zinc-100 flex items-center justify-center text-zinc-500 group-hover:bg-white group-hover:text-zinc-900 transition-all border border-transparent group-hover:border-zinc-200"
+                    >
+                      <i class="ph ph-ticket"></i>
+                    </div>
+                    <div>
+                      <span class="text-zinc-900 font-semibold block leading-none">{{ .NumeroBillete }}</span>
+                      <span class="text-zinc-400 text-xs tracking-tight uppercase">{{ .Aerolinea }}</span>
+                    </div>
+                  </div>
+                </td>
+                {{ if $.ShowBeneficiary }}
+                  <td class="px-6 py-5">
+                    <div class="flex flex-col">
+                      <span class="text-zinc-900 font-bold text-xs uppercase">{{ .Usuario.GetNombreCompleto }}</span>
+                      <span class="text-zinc-400 text-[10px] tracking-tight">{{ .Usuario.CI }}</span>
+                    </div>
+                  </td>
+                {{ end }}
+                <td class="px-6 py-5">
+                  <span class="text-zinc-700 font-medium">{{ .RutaReferencia }}</span>
+                  <span class="block text-[10px] text-zinc-400 uppercase tracking-tighter mt-0.5">
+                    Vía Descargo:
+                    {{ .Descargo.Codigo }}
+                  </span>
+                </td>
+                <td class="px-6 py-5 whitespace-nowrap">
+                  <span
+                    class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-wider bg-{{ .GetEstadoColor }}-100 text-{{ .GetEstadoColor }}-700 border border-{{ .GetEstadoColor }}-200 shadow-sm"
+                  >
+                    {{ .Estado }}
+                  </span>
+                  {{ if .FechaVueloProgramada }}
+                    <div class="mt-2 p-2 bg-blue-50 border border-blue-100 rounded-lg">
+                      <div class="text-[9px] font-black text-blue-600 uppercase tracking-tighter mb-1 leading-none">
+                        Vuelo Programado
+                      </div>
+                      <div class="text-[10px] font-bold text-blue-900 flex items-center gap-1">
+                        <i class="ph ph-calendar"></i>
+                        {{ .FechaVueloProgramada.Format "02/01/2006" }}
+                      </div>
+                      <div class="text-[10px] font-medium text-blue-800 flex items-center gap-1 mt-0.5">
+                        <i class="ph ph-map-pin"></i>
+                        {{ if .RutaProgramada }}{{ .RutaProgramada }}{{ else }}{{ .RutaReferencia }}{{ end }}
+                      </div>
+                    </div>
+                  {{ end }}
+                </td>
+                <td class="px-6 py-5 whitespace-nowrap">
+                  <div class="text-[10px] text-zinc-500 font-bold">
+                    {{ if .FechaVencimiento }}
+                      <i class="ph ph-calendar-x mr-1"></i>
+                      {{ .FechaVencimiento.Format "02/01/2006" }}
+                    {{ else }}
+                      <span class="text-emerald-600">VIGENTE</span>
+                    {{ end }}
+                  </div>
+                </td>
+                <td class="px-6 py-5 text-right whitespace-nowrap">
+                  <div class="flex items-center justify-end gap-2">
+                    {{ if .IsDisponible }}
+                      <button
+                        class="bg-blue-600 text-white px-3 py-1.5 rounded-md text-[10px] font-black uppercase tracking-widest hover:bg-blue-700 transition-all flex items-center gap-2 shadow-sm"
+                        hx-get="/pasajes/open-tickets/{{ .ID }}/modal-programar"
+                        hx-target="#modal-container"
+                      >
+                        <i class="ph ph-calendar-check text-sm"></i>
+                        <span>Programar Uso</span>
+                      </button>
+                    {{ else if .IsReservado }}
+                      <button
+                        class="bg-zinc-100 text-zinc-500 px-3 py-1.5 rounded-md text-[10px] font-black uppercase tracking-widest hover:bg-zinc-200 transition-all flex items-center gap-2 border border-zinc-200"
+                        hx-get="/pasajes/open-tickets/{{ .ID }}/modal-programar"
+                        hx-target="#modal-container"
+                      >
+                        <i class="ph ph-pencil text-sm"></i>
+                        <span>Editar Uso</span>
+                      </button>
+                    {{ else }}
+                      <span class="text-zinc-400 text-[10px] italic">No disponible</span>
+                    {{ end }}
+                  </div>
+                </td>
+              </tr>
+            {{ end }}
+          </tbody>
+        </table>
+      </div>
+    {{ end }}
+  </div>
+
+  <style>
+    .italic-rows tr:hover .italic {
+      color: #18181b;
+    }
+  </style>
+
+  {{ template "layout_footer" . }}
+{{ end }}

@@ -46,6 +46,10 @@ type SolicitudItem struct {
 	// Relation to Pasajes (History of tickets for this leg)
 	Pasajes []Pasaje `gorm:"foreignKey:SolicitudItemID"`
 
+	// OpenTicket usage
+	OpenTicketID *string     `gorm:"size:36;index;default:null"`
+	OpenTicket   *OpenTicket `gorm:"foreignKey:OpenTicketID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;<-:false"`
+
 	// Contexto de runtime (no persistido)
 	authUser    *Usuario                  `gorm:"-"`
 	Permissions *SolicitudItemPermissions `gorm:"-"`

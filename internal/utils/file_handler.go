@@ -91,3 +91,22 @@ func ExtractTerrestreFiles(c *gin.Context, itemIDs []string) []string {
 	}
 	return paths
 }
+
+// ExtractPasajeBoletas procesa los archivos de boletas de depósito por pasaje.
+func ExtractPasajeBoletas(c *gin.Context, pasajeIDs []string) []string {
+	var paths []string
+	for _, pid := range pasajeIDs {
+		// 1. Verificar si hay un archivo existente
+		path := c.PostForm("liquidacion_archivo_existente_" + pid)
+
+		// 2. Intentar capturar el archivo nuevo subido para esta fila
+		if file, err := c.FormFile("liquidacion_archivo_" + pid); err == nil {
+			savedPath, err := SaveUploadedFile(c, file, "uploads/descargos/pagos", "boleta_"+pid+"_")
+			if err == nil {
+				path = savedPath
+			}
+		}
+		paths = append(paths, path)
+	}
+	return paths
+}

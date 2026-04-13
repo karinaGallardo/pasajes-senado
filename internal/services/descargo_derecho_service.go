@@ -7,6 +7,7 @@ import (
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
 	"sistema-pasajes/internal/utils"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -14,21 +15,27 @@ import (
 type DescargoDerechoService struct {
 	repo             *repositories.DescargoRepository
 	rutaRepo         *repositories.RutaRepository
+	descargoService  *DescargoService
 	solicitudService *SolicitudService
 	auditService     *AuditService
+	pasajeRepo       *repositories.PasajeRepository
 }
 
 func NewDescargoDerechoService(
 	repo *repositories.DescargoRepository,
 	rutaRepo *repositories.RutaRepository,
+	descargoService *DescargoService,
 	solicitudService *SolicitudService,
 	auditService *AuditService,
+	pasajeRepo *repositories.PasajeRepository,
 ) *DescargoDerechoService {
 	return &DescargoDerechoService{
 		repo:             repo,
 		rutaRepo:         rutaRepo,
+		descargoService:  descargoService,
 		solicitudService: solicitudService,
 		auditService:     auditService,
+		pasajeRepo:       pasajeRepo,
 	}
 }
 
@@ -198,8 +205,8 @@ func (s *DescargoDerechoService) SyncItineraryFromSolicitud(ctx context.Context,
 	return s.repo.Update(ctx, descargo)
 }
 
-func (s *DescargoDerechoService) UpdateDerecho(ctx context.Context, id string, req dtos.CreateDescargoRequest, userID string, pasesAbordoPaths []string) error {
-	descargo, err := s.repo.FindByID(ctx, id)
+func (s *DescargoDerechoService) UpdateDerecho(ctx context.Context, descargoID string, req dtos.CreateDescargoRequest, userID string, pasesAbordoPaths []string, boletasPaths []string) error {
+	descargo, err := s.repo.FindByID(ctx, descargoID)
 	if err != nil {
 		return err
 	}
@@ -212,6 +219,40 @@ func (s *DescargoDerechoService) UpdateDerecho(ctx context.Context, id string, r
 	// No cambiar automáticamente a EN_REVISION, dejar que el usuario lo haga manualmente desde 'Show'
 	if descargo.Estado != models.EstadoDescargoRechazado {
 		descargo.Estado = models.EstadoDescargoBorrador
+	}
+
+	// 1.0 Comprobantes de Pago (Ya no usamos global, se guardan por pasaje abajo)
+	// 1.1 Liquidación de Pasajes (Per Pasaje)
+	totalDevolucion := 0.0
+	for i, pasajeID := range req.LiquidacionPasajeID {
+		monto := 0.0
+		if i < len(req.LiquidacionMontoDevolucion) {
+			monto, _ = strconv.ParseFloat(req.LiquidacionMontoDevolucion[i], 64)
+		}
+		totalDevolucion += monto
+
+		nroBoleta := ""
+		if i < len(req.LiquidacionNroBoleta) {
+			nroBoleta = req.LiquidacionNroBoleta[i]
+		}
+
+		boletaPath := ""
+		if i < len(boletasPaths) {
+			boletaPath = boletasPaths[i]
+		}
+
+		// Buscar el pasaje original y actualizar campos financieros
+		if p, err := s.pasajeRepo.FindByID(ctx, pasajeID); err == nil {
+			p.MontoReembolso = monto
+			p.CostoUtilizado = p.Costo - monto
+			p.NroBoletaDeposito = nroBoleta
+			if boletaPath != "" {
+				p.ArchivoComprobante = boletaPath
+				now := time.Now()
+				p.FechaDeposito = &now
+			}
+			_ = s.pasajeRepo.Update(ctx, p)
+		}
 	}
 	descargo.UpdatedBy = &userID
 
@@ -256,6 +297,7 @@ func (s *DescargoDerechoService) UpdateDerecho(ctx context.Context, id string, r
 			routeIDs = append(routeIDs, r.RutaID)
 		}
 	}
+
 	if len(routeIDs) > 0 {
 		for _, rid := range routeIDs {
 			if r, err := s.rutaRepo.FindByID(ctx, rid); err == nil {
@@ -314,7 +356,7 @@ func (s *DescargoDerechoService) UpdateDerecho(ctx context.Context, id string, r
 				// Fields from a pre-issued ticket segment are protected
 				det := models.DescargoTramo{
 					BaseModel:         models.BaseModel{ID: idRow},
-					DescargoID:        id,
+					DescargoID:        descargoID,
 					Tipo:              original.Tipo,
 					RutaID:            original.RutaID,
 					PasajeID:          original.PasajeID,
@@ -326,7 +368,7 @@ func (s *DescargoDerechoService) UpdateDerecho(ctx context.Context, id string, r
 					NumeroVuelo:       row.Vuelo,
 					NumeroPaseAbordo:  row.PaseNumero,
 					ArchivoPaseAbordo: row.ArchivoPath,
-					EsDevolucion:      row.EsDevolucion,
+					EsOpenTicket:      row.EsOpenTicket,
 					EsModificacion:    row.EsModificacion,
 					TramoNombre:       original.TramoNombre,
 					Seq:               row.Seq,
@@ -339,7 +381,7 @@ func (s *DescargoDerechoService) UpdateDerecho(ctx context.Context, id string, r
 		// 5. Atomic Entity Assembly
 		det := models.DescargoTramo{
 			BaseModel:         models.BaseModel{ID: idRow},
-			DescargoID:        id,
+			DescargoID:        descargoID,
 			Tipo:              tipoRow,
 			RutaID:            rutaID,
 			PasajeID:          pasajeID,
@@ -351,7 +393,7 @@ func (s *DescargoDerechoService) UpdateDerecho(ctx context.Context, id string, r
 			NumeroVuelo:       row.Vuelo,
 			NumeroPaseAbordo:  row.PaseNumero,
 			ArchivoPaseAbordo: row.ArchivoPath,
-			EsDevolucion:      row.EsDevolucion,
+			EsOpenTicket:      row.EsOpenTicket,
 			EsModificacion:    row.EsModificacion,
 			TramoNombre:       tramoNombre,
 			Seq:               row.Seq,
@@ -360,7 +402,11 @@ func (s *DescargoDerechoService) UpdateDerecho(ctx context.Context, id string, r
 	}
 
 	descargo.Tramos = tramosProcesados
-	return s.repo.Update(ctx, descargo)
+	if err := s.repo.Update(ctx, descargo); err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (s *DescargoDerechoService) GetEditData(ctx context.Context, id string) (*dtos.DescargoEditData, error) {

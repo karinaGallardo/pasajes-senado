@@ -25,6 +25,7 @@ type SolicitudDerechoService struct {
 	emailService        *EmailService
 	baseService         *SolicitudService
 	destinoService      *DestinoService
+	openTicketRepo      *repositories.OpenTicketRepository
 }
 
 func NewSolicitudDerechoService(
@@ -38,6 +39,7 @@ func NewSolicitudDerechoService(
 	emailService *EmailService,
 	baseService *SolicitudService,
 	destinoService *DestinoService,
+	openTicketRepo *repositories.OpenTicketRepository,
 ) *SolicitudDerechoService {
 	return &SolicitudDerechoService{
 		repo:                repo,
@@ -50,6 +52,7 @@ func NewSolicitudDerechoService(
 		emailService:        emailService,
 		baseService:         baseService,
 		destinoService:      destinoService,
+		openTicketRepo:      openTicketRepo,
 	}
 }
 
@@ -170,6 +173,8 @@ func (s *SolicitudDerechoService) CreateDerecho(ctx context.Context, req dtos.Cr
 				}
 			}
 		}
+
+
 		return nil
 	})
 
@@ -292,8 +297,16 @@ func (s *SolicitudDerechoService) UpdateDerecho(ctx context.Context, id string, 
 	}
 
 	// El Hook BeforeUpdate en el modelo se encargará de recalcular TipoItinerarioCodigo y EstadoSolicitudCodigo
-	if err := s.repo.Update(ctx, solicitud); err != nil {
-		return nil, fmt.Errorf("error al actualizar solicitud: %w", err)
+	err = s.repo.RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
+
+		if err := repoTx.Update(ctx, solicitud); err != nil {
+			return err
+		}
+		return nil
+	})
+
+	if err != nil {
+		return nil, err
 	}
 
 	return solicitud, nil

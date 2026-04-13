@@ -1,0 +1,133 @@
+{{ define "pasajes/components/modal_programar_open_ticket" }}
+  <div
+    id="modal-programar-uso"
+    class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-zinc-950/60 backdrop-blur-sm animate-in fade-in duration-300"
+    x-data="{ 
+    loading: false,
+    confirm() {
+      this.loading = true;
+    }
+  }"
+  >
+    <div
+      class="bg-white w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 border border-zinc-200"
+      @click.outside="$el.closest('#modal-container').innerHTML = ''"
+    >
+      <!-- Header -->
+      <div class="px-6 py-4 border-b border-zinc-100 flex items-center justify-between bg-zinc-50/50">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600">
+            <i class="ph ph-calendar-check text-xl"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-black text-zinc-900 leading-tight">Programar Uso de Ticket</h3>
+            <p class="text-[11px] text-zinc-500 font-medium">Ticket #{{ .Ticket.NumeroBillete }} • {{ .Ticket.Aerolinea }}</p>
+          </div>
+        </div>
+        <button
+          type="button"
+          @click="$el.closest('#modal-container').innerHTML = ''"
+          class="text-zinc-400 hover:text-zinc-600 transition-colors p-2 hover:bg-zinc-100 rounded-full"
+        >
+          <i class="ph ph-x text-xl"></i>
+        </button>
+      </div>
+
+      <form hx-post="/pasajes/open-tickets/{{ .Ticket.ID }}/programar" hx-swap="none" @submit="confirm()" class="p-6 space-y-5">
+        <!-- Información del Beneficiario -->
+        <div class="p-3 bg-zinc-50 rounded-md border border-zinc-100 flex items-center gap-3">
+          <div class="w-10 h-10 rounded-full bg-zinc-200 flex items-center justify-center text-zinc-500 font-bold text-sm">
+            {{ .Ticket.Usuario.GetInitials }}
+          </div>
+          <div>
+            <div class="text-[10px] font-black text-zinc-400 uppercase tracking-wider">Beneficiario</div>
+            <div class="text-xs font-bold text-zinc-800">{{ .Ticket.Usuario.GetNombreCompleto }}</div>
+          </div>
+        </div>
+
+        <!-- Campos de Programación -->
+        <div class="grid grid-cols-1 gap-4">
+          <div class="space-y-1.5">
+            <label class="text-[11px] font-black text-zinc-500 uppercase tracking-tight flex items-center gap-1.5">
+              <i class="ph ph-calendar text-sm text-blue-500"></i>
+              Nueva Fecha de Vuelo
+            </label>
+            <input
+              type="date"
+              name="fecha_vuelo"
+              required
+              class="w-full px-4 py-2.5 bg-white border border-zinc-200 rounded-md text-xs font-bold text-zinc-700 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none"
+              value="{{ if .Ticket.FechaVueloProgramada }}{{ .Ticket.FechaVueloProgramada.Format "2006-01-02" }}{{ end }}"
+            />
+          </div>
+
+          <div class="space-y-1.5">
+            <label class="text-[11px] font-black text-zinc-500 uppercase tracking-tight flex items-center gap-1.5">
+              <i class="ph ph-map-pin text-sm text-blue-500"></i>
+              Ruta Planificada
+            </label>
+            <input
+              type="text"
+              name="ruta"
+              placeholder="Ej: LPB - VVI"
+              class="w-full px-4 py-2.5 bg-white border border-zinc-200 rounded-md text-xs font-bold text-zinc-700 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none"
+              value="{{ .RutaSugerida }}"
+            />
+          </div>
+
+          <div class="space-y-1.5">
+            <label class="text-[11px] font-black text-zinc-500 uppercase tracking-tight flex items-center gap-1.5">
+              <i class="ph ph-airplane-landing text-sm text-blue-500"></i>
+              Aerolínea
+            </label>
+            <input
+              type="text"
+              name="aerolinea"
+              class="w-full px-4 py-2.5 bg-white border border-zinc-200 rounded-md text-xs font-bold text-zinc-700 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none"
+              value="{{ .AerolineaSugerida }}"
+            />
+          </div>
+
+          <div class="space-y-1.5">
+            <label class="text-[11px] font-black text-zinc-500 uppercase tracking-tight flex items-center gap-1.5">
+              <i class="ph ph-chat-centered-dots text-sm text-blue-500"></i>
+              Observaciones / PNR de Reserva
+            </label>
+            <textarea
+              name="observaciones"
+              rows="3"
+              class="w-full px-4 py-2.5 bg-white border border-zinc-200 rounded-md text-xs font-bold text-zinc-700 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none resize-none"
+              placeholder="Ingrese el PNR de la reserva o detalles adicionales..."
+            >
+{{ .Ticket.Observaciones }}</textarea
+            >
+          </div>
+        </div>
+
+        <!-- Footer Buttons -->
+        <div class="pt-4 flex items-center justify-end gap-3 border-t border-zinc-100">
+          <button
+            type="button"
+            @click="$el.closest('#modal-container').innerHTML = ''"
+            class="px-5 py-2.5 rounded-md text-xs font-black uppercase tracking-widest text-zinc-500 hover:bg-zinc-100 transition-all"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            :disabled="loading"
+            class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-md text-xs font-black uppercase tracking-widest transition-all shadow-lg shadow-blue-500/20 flex items-center gap-2"
+          >
+            <template x-if="loading">
+              <i class="ph ph-circle-notch animate-spin text-sm"></i>
+            </template>
+            <template x-if="!loading">
+              <i class="ph ph-check text-sm"></i>
+            </template>
+            <span x-text="loading ? 'Guardando...' : 'Programar Uso'"></span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+{{ end }}

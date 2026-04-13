@@ -7,6 +7,7 @@ import (
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
 	"sistema-pasajes/internal/utils"
+	"strconv"
 	"strings"
 	"time"
 )
@@ -14,22 +15,45 @@ import (
 type DescargoOficialService struct {
 	repo             *repositories.DescargoRepository
 	rutaRepo         *repositories.RutaRepository
+	descargoService  *DescargoService
 	solicitudService *SolicitudService
 	auditService     *AuditService
+	pasajeRepo       *repositories.PasajeRepository
 }
 
 func NewDescargoOficialService(
 	repo *repositories.DescargoRepository,
 	rutaRepo *repositories.RutaRepository,
+	descargoService *DescargoService,
 	solicitudService *SolicitudService,
 	auditService *AuditService,
+	pasajeRepo *repositories.PasajeRepository,
 ) *DescargoOficialService {
 	return &DescargoOficialService{
 		repo:             repo,
 		rutaRepo:         rutaRepo,
+		descargoService:  descargoService,
 		solicitudService: solicitudService,
 		auditService:     auditService,
+		pasajeRepo:       pasajeRepo,
 	}
+}
+
+func (s *DescargoOficialService) GetShowData(ctx context.Context, id string) (*models.Descargo, error) {
+	descargo, err := s.repo.FindByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	// Sincronización proactiva: Si se emitieron nuevos pasajes
+	if descargo.Solicitud != nil && descargo.IsEditable() {
+		if err := s.SyncItineraryFromSolicitud(ctx, descargo, descargo.Solicitud); err == nil {
+			// Recargar para tener tramos pre-cargados
+			descargo, _ = s.repo.FindByID(ctx, id)
+		}
+	}
+
+	return descargo, nil
 }
 
 func (s *DescargoOficialService) AutoCreateFromSolicitud(ctx context.Context, solicitud *models.Solicitud, userID string) (*models.Descargo, error) {
@@ -172,7 +196,7 @@ func (s *DescargoOficialService) SyncItineraryFromSolicitud(ctx context.Context,
 	return s.repo.Update(ctx, descargo)
 }
 
-func (s *DescargoOficialService) UpdateOficial(ctx context.Context, id string, req dtos.CreateDescargoRequest, userID string, pasesAbordoPaths []string, terrestrePaths []string, anexoPaths []string) error {
+func (s *DescargoOficialService) UpdateOficial(ctx context.Context, id string, req dtos.CreateDescargoRequest, userID string, pasesAbordoPaths []string, terrestrePaths []string, anexoPaths []string, boletasPaths []string) error {
 	descargo, err := s.repo.FindByID(ctx, id)
 	if err != nil {
 		return err
@@ -189,6 +213,39 @@ func (s *DescargoOficialService) UpdateOficial(ctx context.Context, id string, r
 		descargo.Estado = models.EstadoDescargoBorrador
 	}
 	descargo.UpdatedBy = &userID
+
+	// 1.1 Comprobantes de Pago (Ahora per pasaje)
+	totalDevolucion := 0.0
+	for i, pasajeID := range req.LiquidacionPasajeID {
+		monto := 0.0
+		if i < len(req.LiquidacionMontoDevolucion) {
+			monto, _ = strconv.ParseFloat(req.LiquidacionMontoDevolucion[i], 64)
+		}
+		totalDevolucion += monto
+
+		nroBoleta := ""
+		if i < len(req.LiquidacionNroBoleta) {
+			nroBoleta = req.LiquidacionNroBoleta[i]
+		}
+
+		boletaPath := ""
+		if i < len(boletasPaths) {
+			boletaPath = boletasPaths[i]
+		}
+
+		// Buscar el pasaje original y actualizar campos financieros
+		if p, err := s.pasajeRepo.FindByID(ctx, pasajeID); err == nil {
+			p.MontoReembolso = monto
+			p.CostoUtilizado = p.Costo - monto
+			p.NroBoletaDeposito = nroBoleta
+			if boletaPath != "" {
+				p.ArchivoComprobante = boletaPath
+				now := time.Now()
+				p.FechaDeposito = &now
+			}
+			_ = s.pasajeRepo.Update(ctx, p)
+		}
+	}
 
 	// 2. Official Report (PV-06) Specific Data
 	if descargo.Oficial == nil {
@@ -265,16 +322,19 @@ func (s *DescargoOficialService) UpdateOficial(ctx context.Context, id string, r
 
 	// 4. Liquidación de Pasajes (Actualización Directa en Modelo Pasaje)
 	if len(req.LiquidacionPasajeID) > 0 {
+		totalDevo := 0.0
 		for i, pID := range req.LiquidacionPasajeID {
 			if pID != "" {
-				costoUtil := utils.ParseFloat(utils.GetIdx(req.LiquidacionCostoUtilizacion, i))
-				// Recuperamos el costo original para determinar la diferencia
+				montoDevo := utils.ParseFloat(utils.GetIdx(req.LiquidacionMontoDevolucion, i))
+				totalDevo += montoDevo
+
+				// Auto-calcular costo utilizado recuperando el original
 				var p models.Pasaje
 				if err := s.repo.GetDB().Select("id", "costo").First(&p, "id = ?", pID).Error; err == nil {
-					diff := p.Costo - costoUtil
+					costoUtilizado := p.Costo - montoDevo
 					if err := s.repo.GetDB().Model(&models.Pasaje{}).Where("id = ?", pID).Updates(map[string]interface{}{
-						"costo_utilizacion": costoUtil,
-						"diferencia":        diff,
+						"costo_utilizado": costoUtilizado,
+						"monto_reembolso": montoDevo,
 					}).Error; err != nil {
 						fmt.Printf("[ERROR] Fallo al actualizar liquidación pasaje %s: %v\n", pID, err)
 					}
@@ -358,7 +418,7 @@ func (s *DescargoOficialService) UpdateOficial(ctx context.Context, id string, r
 					NumeroVuelo:       row.Vuelo,
 					NumeroPaseAbordo:  row.PaseNumero,
 					ArchivoPaseAbordo: row.ArchivoPath,
-					EsDevolucion:      row.EsDevolucion,
+					EsOpenTicket:      row.EsOpenTicket,
 					EsModificacion:    row.EsModificacion,
 					TramoNombre:       original.TramoNombre,
 					Seq:               row.Seq,
@@ -383,7 +443,7 @@ func (s *DescargoOficialService) UpdateOficial(ctx context.Context, id string, r
 			NumeroVuelo:       row.Vuelo,
 			NumeroPaseAbordo:  row.PaseNumero,
 			ArchivoPaseAbordo: row.ArchivoPath,
-			EsDevolucion:      row.EsDevolucion,
+			EsOpenTicket:      row.EsOpenTicket,
 			EsModificacion:    row.EsModificacion,
 			TramoNombre:       tramoNombre,
 			Seq:               row.Seq,
@@ -392,5 +452,9 @@ func (s *DescargoOficialService) UpdateOficial(ctx context.Context, id string, r
 	}
 
 	descargo.Tramos = tramosProcesados
-	return s.repo.Update(ctx, descargo)
+	if err := s.repo.Update(ctx, descargo); err != nil {
+		return err
+	}
+
+	return nil
 }

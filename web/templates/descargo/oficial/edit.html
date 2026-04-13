@@ -87,10 +87,41 @@
            console.log('Sync Final Anexos:', input.files.length);
          }
        },
-       totalADevolver: {{ .Descargo.GetTotalReintegroPasajes }},
+       totalADevolver: {{ .Descargo.GetTotalDevolucionPasajes }},
+       devolucionesActivas: [
+         {{ range .Solicitud.Items }}
+      {{ $tipo := .Tipo }}
+      {{ range .Pasajes }}
+        {{ if gt .MontoReembolso 0.0 }}
+          { billete: '{{ .NumeroBillete }}', tipo: '{{ $tipo }}' },
+        {{ end }}
+      {{ end }}
+    {{ end }}
+       ],
        formatCurrency(val) {
           if (isNaN(val)) return '0.00';
           return parseFloat(val).toFixed(2);
+       },
+       updateTotalDevolucion() {
+          let total = 0;
+          let activos = [];
+          document.querySelectorAll(`input[name='liquidacion_monto_devolucion[]']`).forEach(input => {
+             let val = parseFloat(input.value) || 0;
+             total += val;
+             if (val > 0) {
+                activos.push({
+                   billete: input.getAttribute('data-billete'),
+                   tipo: input.getAttribute('data-tipo')
+                });
+             }
+          });
+          this.totalADevolver = total;
+          this.devolucionesActivas = activos;
+       },
+       formatBillete(val) {
+          if (!val) return '';
+          if (val.length <= 5) return val;
+          return val.substring(0, 2) + '-' + val.substring(val.length - 3);
        },
        async submitForm() {
          if (this.submitting || this.processingImages) return;
@@ -601,10 +632,10 @@
           </div>
         </div>
 
-        <!-- 4.5 LIQUIDACIÓN FINANCIERA (NETEO) -->
+        <!-- 4.5 DEVOLUCIÓN POR DIFERENCIA DE TARIFA -->
         <div class="space-y-6">
           <div class="flex items-center justify-between border-b-2 border-primary/20 pb-2">
-            <h3 class="text-sm font-black text-neutral-800 uppercase tracking-widest">4.5 Liquidación de Pasajes y Reintegros</h3>
+            <h3 class="text-sm font-black text-neutral-800 uppercase tracking-widest">4.5 DEVOLUCIÓN POR DIFERENCIA DE TARIFA</h3>
             <span class="text-[9px] font-black bg-primary/10 text-primary-700 px-2 py-0.5 rounded-md uppercase tracking-tighter">
               Ajuste por Reprogramación
             </span>
@@ -620,19 +651,24 @@
                   <th class="px-4 py-3 text-right text-[10px] font-black text-neutral-500 uppercase tracking-widest">
                     Costo Emisión
                   </th>
-                  <th class="px-4 py-3 text-right text-[10px] font-black text-neutral-500 uppercase tracking-widest">
-                    Costo de Utilización
+                  <th
+                    class="px-4 py-3 text-right text-[10px] font-black text-neutral-500 uppercase tracking-widest w-40 leading-tight"
+                  >
+                    DEVOLUCIÓN DIFERENCIA TARIFA PASAJE (Bs)
                   </th>
-                  <th class="px-4 py-3 text-right text-[10px] font-black text-neutral-500 uppercase tracking-widest">
-                    Diferencia (Devolver)
+                  <th class="px-4 py-3 text-center text-[10px] font-black text-neutral-500 uppercase tracking-widest w-44">
+                    N° BOLETA DEPOSITO
+                  </th>
+                  <th class="px-4 py-3 text-center text-[10px] font-black text-neutral-500 uppercase tracking-widest w-20">
+                    BOLETA
                   </th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-neutral-200 bg-white">
                 {{ range $idx, $item := .Solicitud.Items }}
                   {{ range $pIdx, $p := $item.Pasajes }}
-                    {{ if eq $p.GetEstadoCodigo "EMITIDO" }}
-                      <tr>
+                    {{ if $p.IsDischargeable }}
+                      <tr x-data="{ fileName: '{{ $p.ArchivoComprobante }}', localUrl: '' }">
                         <td class="px-4 py-3 align-top">
                           <input type="hidden" name="liquidacion_pasaje_id[]" value="{{ $p.ID }}" />
                           <input
@@ -654,53 +690,91 @@
                             {{ printf "%.2f" $p.Costo }}
                           </span>
                         </td>
-                        <td class="px-4 py-3 text-right align-middle w-40">
-                          <div class="relative group">
-                            <span class="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-neutral-300">
+
+                        <td class="px-4 py-3 text-right">
+                          <div class="relative group max-w-[120px] ml-auto">
+                            <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-[9px] font-black text-primary-400">
                               Bs.
                             </span>
                             <input
                               type="number"
                               step="0.01"
-                              name="liquidacion_costo_utilizacion[]"
-                              value="{{ if gt $p.CostoUtilizacion 0.0 }}
-                                {{ printf `%.2f` $p.CostoUtilizacion }}
-                              {{ else }}
-                                {{ printf `%.2f` $p.Costo }}
-                              {{ end }}"
-                              {{ if not $.User.IsAdminOrResponsable }}readonly{{ end }}
-                              class="w-full pl-8 pr-2 py-1 text-xs font-black border border-neutral-300 rounded focus:ring-2 focus:ring-primary h-8 text-right {{ if not $.User.IsAdminOrResponsable }}
-                                bg-neutral-100/80 text-neutral-500
-                              {{ else }}
-                                bg-white text-primary
-                              {{ end }}"
+                              name="liquidacion_monto_devolucion[]"
+                              value="{{ printf "%.2f" $p.MontoReembolso }}"
+                              data-billete="{{ $p.NumeroBillete }}"
+                              data-tipo="{{ $item.Tipo }}"
+                              @input="updateTotalDevolucion()"
+                              class="w-full pl-7 pr-3 py-1.5 text-xs font-black border-2 border-amber-100 rounded-md focus:ring-2 focus:ring-amber-500 h-8 text-right bg-amber-50/30 text-amber-700 transition-all shadow-sm"
+                              placeholder="0.00"
                             />
-                            <div class="absolute left-2.5 top-1/2 -translate-y-1/2">
-                              <span
-                                class="text-[9px] font-black {{ if not $.User.IsAdminOrResponsable }}
-                                  text-neutral-400
-                                {{ else }}
-                                  text-primary
-                                {{ end }}"
-                              >
-                                Bs.
-                              </span>
-                            </div>
                           </div>
                         </td>
-                        <td class="px-2 py-1 text-right">
-                          <div class="flex flex-col items-end">
-                            <span
-                              class="text-[10px] font-black {{ if gt $p.Diferencia 0.0 }}
-                                text-warning-600
-                              {{ else }}
-                                text-neutral-300
-                              {{ end }}"
-                            >
-                              Bs.
-                              {{ printf "%.2f" $p.Diferencia }}
-                            </span>
-                            <span class="text-[8px] font-bold text-neutral-400 uppercase tracking-tighter">DEVOLUCIÓN</span>
+
+                        <td class="px-4 py-3">
+                          <input
+                            type="text"
+                            name="liquidacion_nro_boleta[]"
+                            value="{{ $p.NroBoletaDeposito }}"
+                            placeholder="Ej: 12345678"
+                            class="w-full px-3 py-1.5 text-xs font-black border border-neutral-200 rounded-md h-8 text-center uppercase shadow-sm focus:border-primary focus:ring-1 focus:ring-primary"
+                          />
+                        </td>
+
+                        <td class="px-4 py-3 text-center">
+                          <div class="flex items-center justify-center gap-1.5">
+                            <!-- Slot: Upload -->
+                            <div class="w-8 h-8 flex-shrink-0">
+                              <div class="relative group">
+                                <label
+                                  class="cursor-pointer flex items-center justify-center h-8 w-8 rounded-md border-2 border-dashed transition-all duration-200 overflow-hidden shadow-sm"
+                                  :class="(fileName || '{{ $p.ArchivoComprobante }}') ? 'border-success-400 bg-success-50 text-success-700' : 'border-neutral-200 bg-neutral-50 text-neutral-400 hover:border-primary-300 hover:bg-white'"
+                                >
+                                  <input
+                                    type="file"
+                                    name="liquidacion_archivo_{{ $p.ID }}"
+                                    accept="application/pdf"
+                                    class="hidden"
+                                    @change="if($el.files[0]) {
+                                      fileName = $el.files[0].name;
+                                      localUrl = URL.createObjectURL($el.files[0]);
+                                    }"
+                                  />
+
+                                  <input
+                                    type="hidden"
+                                    name="liquidacion_archivo_existente_{{ $p.ID }}"
+                                    value="{{ $p.ArchivoComprobante }}"
+                                  />
+
+                                  <i
+                                    x-show="fileName || '{{ $p.ArchivoComprobante }}'"
+                                    class="ph ph-file-pdf text-lg font-bold text-success-600"
+                                  ></i>
+
+                                  <i
+                                    x-show="!fileName && !'{{ $p.ArchivoComprobante }}'"
+                                    class="ph ph-upload-simple text-lg font-bold text-neutral-400"
+                                  ></i>
+                                </label>
+                              </div>
+                            </div>
+
+                            <!-- Slot: Preview -->
+                            <div class="w-8 h-8 flex-shrink-0 flex items-center justify-center">
+                              <template x-if="localUrl || '{{ $p.ArchivoComprobante }}'">
+                                <button
+                                  type="button"
+                                  @click="if(localUrl) {
+                                    window.open(localUrl, '_blank')
+                                  } else {
+                                    htmx.ajax('GET', '/preview-file?path=' + encodeURIComponent('{{ $p.ArchivoComprobante }}'), { target: '#modal-container' })
+                                  }"
+                                  class="h-8 w-8 flex items-center justify-center rounded-md text-primary-600 hover:bg-primary-50 transition-all shadow-sm border border-neutral-100 bg-white"
+                                >
+                                  <i class="ph ph-eye text-lg"></i>
+                                </button>
+                              </template>
+                            </div>
                           </div>
                         </td>
                       </tr>
@@ -727,7 +801,7 @@
               <i class="ph ph-warning-diamond text-amber-600 text-xl"></i>
             </div>
             <div>
-              <h4 class="text-xs font-black text-amber-800 uppercase tracking-widest">MONTO DE REINTEGRO DETECTADO</h4>
+              <h4 class="text-xs font-black text-amber-800 uppercase tracking-widest">MONTO DE DEVOLUCIÓN DETECTADO</h4>
               <p class="text-[10px] text-amber-700 font-medium leading-relaxed mt-1">
                 Según la liquidación de pasajes, existe una diferencia de
                 <strong x-text="'Bs. ' + formatCurrency(totalADevolver)"></strong>
@@ -736,35 +810,90 @@
             </div>
           </div>
 
-          <div class="bg-neutral-50/50 rounded-md p-6 border border-neutral-100 flex flex-col md:flex-row gap-8 items-center">
-            <div class="flex-1 space-y-2">
-              <div class="flex items-center gap-2 mb-2">
-                <i class="ph ph-bank text-primary"></i>
-                <span class="text-[10px] font-black text-neutral-500 uppercase tracking-widest">Depósito Realizado</span>
+          <!-- SECCIÓN DE DEPÓSITO (SKELETON / INFO) -->
+          <div class="mt-4 min-h-[160px]">
+            <!-- SKELETON: Se muestra cuando no hay devoluciones -->
+            <div
+              x-show="totalADevolver == 0"
+              class="bg-neutral-50/50 border border-neutral-100 border-dashed rounded-md p-6 flex flex-col items-center justify-center gap-3 transition-all duration-300"
+            >
+              <div class="w-12 h-12 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-300">
+                <i class="ph ph-bank text-2xl"></i>
               </div>
-              <div class="bg-white px-4 py-3 rounded-md border border-neutral-200">
-                <div class="flex justify-between text-[11px] font-bold text-neutral-700">
-                  <span>Banco:</span>
-                  <span class="uppercase font-black">{{ .BancoNombre }}</span>
+              <div class="text-center space-y-1">
+                <p class="text-[11px] font-black text-neutral-400 uppercase tracking-widest">Procedimiento de Devolución</p>
+                <p class="text-[10px] text-neutral-400 font-medium leading-relaxed max-w-[280px]">
+                  La información de la Cuenta Única del Tesoro y conceptos detallados aparecerán aquí cuando registre una
+                  diferencia de tarifa.
+                </p>
+              </div>
+            </div>
+
+            <!-- INFO BANCARIA REAL: Se muestra con x-show totalADevolver > 0 -->
+            <div
+              class="bg-accent-50 border border-accent-100 rounded-md p-5 flex items-start gap-4 transition-all duration-300"
+              x-show="totalADevolver > 0"
+              x-transition:enter="transition ease-out duration-300"
+              x-transition:enter-start="opacity-0 transform -translate-y-2"
+              x-transition:enter-end="opacity-100 transform translate-y-0"
+            >
+              <div class="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                <!-- Izquierda: Instrucciones -->
+                <div class="space-y-4">
+                  <div class="space-y-1.5">
+                    <h4 class="text-[10px] font-black text-accent-800 uppercase tracking-widest flex items-center gap-2">
+                      <i class="ph ph-bank text-lg"></i>
+                      Procedimiento de Devolución
+                    </h4>
+                    <p class="text-[10px] text-accent-600 font-medium leading-relaxed">
+                      Efectuar el depósito por el monto total de la devolución (Bs.) en la siguiente cuenta institucional:
+                    </p>
+                  </div>
+
+                  <!-- Tarjeta de Datos CUT -->
+                  <div class="bg-white/40 rounded-sm border border-accent-200 overflow-hidden">
+                    <div class="p-3 space-y-2.5">
+                      <div class="flex items-center justify-between">
+                        <span class="text-[9px] font-black text-accent-400 uppercase tracking-tighter">Cuenta</span>
+                        <span class="text-[10px] font-bold text-accent-900 uppercase">Cuenta Única del Tesoro (CUT)</span>
+                      </div>
+                      <div class="flex items-center justify-between">
+                        <span class="text-[9px] font-black text-accent-400 uppercase tracking-tighter">Código</span>
+                        <span class="text-[10px] font-bold text-accent-900 uppercase">3987069001</span>
+                      </div>
+                      <div class="flex items-center justify-between">
+                        <span class="text-[9px] font-black text-accent-400 uppercase tracking-tighter">Libreta</span>
+                        <span class="text-[10px] font-bold text-accent-900 uppercase">00099021001</span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div class="flex justify-between text-[11px] font-bold text-neutral-700 mt-1">
-                  <span>Cuenta C.U.T.:</span>
-                  <span class="font-black text-primary">{{ .BancoCuenta }}</span>
+
+                <!-- Derecha: Conceptos Dinámicos -->
+                <div class="space-y-3">
+                  <h4 class="text-[9px] font-black text-accent-400 uppercase tracking-widest pl-1">
+                    Detalle de Conceptos por Pasaje
+                  </h4>
+                  <div class="grid grid-cols-1 gap-3">
+                    <template x-for="item in devolucionesActivas" :key="item.billete">
+                      <div class="bg-white/60 border border-accent-200 rounded-md p-3 shadow-sm hover:shadow-md transition-all">
+                        <span
+                          class="text-[9px] font-black text-accent-400 uppercase tracking-tighter block mb-1"
+                          x-text="item.tipo === 'IDA' ? 'Pasaje Ida' : 'Pasaje Vuelta'"
+                        ></span>
+                        <p
+                          class="text-[10px] font-black text-accent-900 leading-tight"
+                          x-text="'Devolución Pasaje ' + formatBillete(item.billete)"
+                        ></p>
+                      </div>
+                    </template>
+                  </div>
                 </div>
               </div>
             </div>
-            <div class="flex-1 space-y-2">
-              <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">
-                Nro de Boleta de Depósito
-              </label>
-              <input
-                type="text"
-                name="nro_boleta_deposito"
-                value="{{ .Descargo.Oficial.NroBoletaDeposito }}"
-                class="block w-full px-4 py-3 bg-white border-2 border-neutral-200 rounded-md text-lg font-black focus:ring-4 focus:ring-primary/10 transition-all outline-none"
-                placeholder="00000000"
-              />
-            </div>
+            <p class="text-[9px] text-accent-500 italic mt-1 px-5" x-show="totalADevolver > 0">
+              * Adjunte cada boleta de depósito al pasaje correspondiente en la tabla superior.
+            </p>
           </div>
         </div>
       </div>

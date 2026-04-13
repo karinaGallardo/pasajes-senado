@@ -500,6 +500,7 @@ func (ctrl *CupoController) DerechoByYear(c *gin.Context) {
 		"Months":       displayMonths,
 		"Gestion":      gestion,
 		"AlertaOrigen": alert,
+		"OpenTicketID": c.Query("open_ticket_id"),
 	})
 }
 
@@ -586,5 +587,6 @@ func (ctrl *CupoController) DerechoByMonth(c *gin.Context) {
 		"Gestion":      gestion,
 		"TargetMonth":  mes,
 		"AlertaOrigen": alert,
+		"OpenTicketID": c.Query("open_ticket_id"),
 	})
 }

@@ -372,7 +372,7 @@ func (r *SolicitudRepository) FindPendientesDeDescargo(ctx context.Context) ([]m
 		Preload("Descargo.Tramos").
 		Preload("Descargo.Oficial").
 		Joins("LEFT JOIN descargos ON solicitudes.id = descargos.solicitud_id").
-		Where("(descargos.id IS NULL OR descargos.estado != ?)", models.EstadoDescargoAprobado).
+		Where("(descargos.id IS NULL OR descargos.estado != ?)", models.EstadoDescargoFinalizado).
 		Where("solicitudes.estado_solicitud_codigo IN (?)", []string{"PARCIALMENTE_APROBADO", "APROBADO", "EMITIDO"}).
 		Where("EXISTS (SELECT 1 FROM pasajes p JOIN solicitud_items si ON p.solicitud_item_id = si.id WHERE si.solicitud_id = solicitudes.id AND p.estado_pasaje_codigo = 'EMITIDO')").
 		Find(&solicitudes).Error
@@ -407,7 +407,7 @@ func (r *SolicitudRepository) FindPendientesDeDescargoUI(ctx context.Context, us
 		Preload("Descargo.Tramos").
 		Preload("Descargo.Oficial").
 		Joins("LEFT JOIN descargos ON solicitudes.id = descargos.solicitud_id").
-		Where("(descargos.id IS NULL OR descargos.estado != ?)", models.EstadoDescargoAprobado).
+		Where("(descargos.id IS NULL OR descargos.estado != ?)", models.EstadoDescargoFinalizado).
 		Where("solicitudes.estado_solicitud_codigo IN (?)", []string{"PARCIALMENTE_APROBADO", "APROBADO", "EMITIDO"}).
 		Where("EXISTS (SELECT 1 FROM pasajes p JOIN solicitud_items si ON p.solicitud_item_id = si.id WHERE si.solicitud_id = solicitudes.id AND p.estado_pasaje_codigo = 'EMITIDO')").
 		Order("created_at desc")
@@ -457,7 +457,7 @@ func (r *SolicitudRepository) FindPendientesDeDescargoPaginated(ctx context.Cont
 		Preload("Descargo.Oficial").
 		Joins("LEFT JOIN descargos ON solicitudes.id = descargos.solicitud_id").
 		Joins("LEFT JOIN usuarios ON solicitudes.usuario_id = usuarios.id").
-		Where("(descargos.id IS NULL OR descargos.estado != ?)", models.EstadoDescargoAprobado).
+		Where("(descargos.id IS NULL OR descargos.estado != ?)", models.EstadoDescargoFinalizado).
 		Where("solicitudes.estado_solicitud_codigo IN (?)", []string{"PARCIALMENTE_APROBADO", "APROBADO", "EMITIDO"}).
 		Where("EXISTS (SELECT 1 FROM pasajes p JOIN solicitud_items si ON p.solicitud_item_id = si.id WHERE si.solicitud_id = solicitudes.id AND p.estado_pasaje_codigo = 'EMITIDO')").
 		Scopes(SearchSolicitud(searchTerm))
