@@ -767,8 +767,8 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 	pdf.CellFormat(20, 6, "", "1", 1, "C", true, 0, "")
 
 	pdf.Ln(10)
-	sigY := pdf.GetY() + 20
-	if sigY > 250 {
+	sigY := pdf.GetY() + 15
+	if sigY > 258 {
 		pdf.AddPage()
 		sigY = 30
 	}
