@@ -713,24 +713,52 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 		}
 	}
 
-	pdf.SetFont("Arial", "B", 8)
-	pdf.CellFormat(95, 6, tr(" Total Valor Boletos Emitidos: "), "L,T", 0, "L", false, 0, "")
-	pdf.SetFont("Arial", "", 8)
-	pdf.CellFormat(95, 6, "Bs. "+fmt.Sprintf("%.2f", totalEmitido), "R,T", 1, "R", false, 0, "")
+	pdf.SetFont("Arial", "B", 7)
+	pdf.SetFillColor(240, 240, 240)
+	pdf.CellFormat(35, 6, tr("N° BILLETE"), "1", 0, "C", true, 0, "")
+	pdf.CellFormat(55, 6, tr("DETALLE RUTA"), "1", 0, "C", true, 0, "")
+	pdf.CellFormat(25, 6, tr("EMITIDO (Bs.)"), "1", 0, "C", true, 0, "")
+	pdf.CellFormat(25, 6, tr("CONSUMO (Bs.)"), "1", 0, "C", true, 0, "")
+	pdf.CellFormat(25, 6, tr("DEVOLUCIÓN (Bs.)"), "1", 0, "C", true, 0, "")
+	pdf.CellFormat(25, 6, tr("N° BOLETA"), "1", 1, "C", true, 0, "")
 
-	pdf.SetFont("Arial", "B", 8)
-	pdf.CellFormat(95, 6, tr(" Total Valor Utilizado (Consumo Real): "), "L", 0, "L", false, 0, "")
-	pdf.SetFont("Arial", "", 8)
-	pdf.CellFormat(95, 6, "Bs. "+fmt.Sprintf("%.2f", totalUtilizado), "R", 1, "R", false, 0, "")
+	pdf.SetFont("Arial", "", 7)
+	if descargo.Solicitud != nil {
+		for _, item := range descargo.Solicitud.Items {
+			for _, p := range item.Pasajes {
+				pdf.CellFormat(35, 6, tr(p.NumeroBillete), "1", 0, "C", false, 0, "")
+				pdf.CellFormat(55, 6, tr(p.GetRutaDisplay()), "1", 0, "L", false, 0, "")
+				pdf.CellFormat(25, 6, fmt.Sprintf("%.2f", p.Costo), "1", 0, "R", false, 0, "")
+				pdf.CellFormat(25, 6, fmt.Sprintf("%.2f", p.CostoUtilizado), "1", 0, "R", false, 0, "")
 
+				if p.MontoReembolso > 0 {
+					pdf.SetTextColor(150, 0, 0)
+					pdf.SetFont("Arial", "B", 7)
+				}
+				pdf.CellFormat(25, 6, fmt.Sprintf("%.2f", p.MontoReembolso), "1", 0, "R", false, 0, "")
+				pdf.SetTextColor(0, 0, 0)
+				pdf.SetFont("Arial", "", 7)
+
+				nroBoleta := p.NroBoletaDeposito
+				if nroBoleta == "" {
+					nroBoleta = "-"
+				}
+				pdf.CellFormat(25, 6, tr(nroBoleta), "1", 1, "C", false, 0, "")
+			}
+		}
+	}
+
+	// Fila de Totales
+	pdf.SetFillColor(245, 245, 245)
+	pdf.SetFont("Arial", "B", 7)
+	pdf.CellFormat(90, 6, tr("TOTALES GENERALES (Bs.) "), "1", 0, "R", true, 0, "")
+	pdf.CellFormat(25, 6, fmt.Sprintf("%.2f", totalEmitido), "1", 0, "R", true, 0, "")
+	pdf.CellFormat(25, 6, fmt.Sprintf("%.2f", totalUtilizado), "1", 0, "R", true, 0, "")
+
+	pdf.SetTextColor(150, 0, 0)
+	pdf.CellFormat(25, 6, fmt.Sprintf("%.2f", totalEfectivo), "1", 0, "R", true, 0, "")
 	pdf.SetTextColor(0, 0, 0)
-
-	pdf.SetFont("Arial", "B", 8)
-	pdf.CellFormat(95, 6, tr(" Devolución en Efectivo (Depósito Bancario): "), "L,B", 0, "L", true, 0, "")
-	pdf.SetFont("Arial", "B", 9)
-	pdf.SetTextColor(150, 0, 0) // Rojo para efectivo a devolver
-	pdf.CellFormat(95, 6, "Bs. "+fmt.Sprintf("%.2f", totalEfectivo), "R,B", 1, "R", true, 0, "")
-	pdf.SetTextColor(0, 0, 0)
+	pdf.CellFormat(25, 6, "", "1", 1, "C", true, 0, "")
 
 	pdf.Ln(4)
 
@@ -1121,8 +1149,8 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 
 	pdf.Ln(4)
 
-	// --- SECCIÓN DE LIQUIDACIÓN FINANCIERA (Igual al PV-05) ---
-	if descargo.GetTotalDevolucionPasajes() > 0 {
+	// --- SECCIÓN DE LIQUIDACIÓN FINANCIERA DETALLADA ---
+	if descargo.GetTotalDevolucionPasajes() >= 0 { // Mostrar siempre para conciliación
 		pdf.SetX(3)
 		pdf.SetFont("Arial", "B", 10)
 		pdf.SetFillColor(240, 240, 240)
@@ -1130,23 +1158,67 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 
 		totalEmitido := 0.0
 		totalUtilizado := 0.0
+		totalEfectivo := 0.0
 		if descargo.Solicitud != nil {
 			for _, item := range descargo.Solicitud.Items {
 				for _, p := range item.Pasajes {
 					totalEmitido += p.Costo
 					totalUtilizado += p.CostoUtilizado
+					totalEfectivo += p.MontoReembolso
 				}
 			}
 		}
 
+		// Header de la tabla
 		pdf.SetX(3)
-		pdf.SetFont("Arial", "", 9)
-		pdf.CellFormat(105, 8, tr(" Total Valor Boletos Emitidos: Bs. ")+fmt.Sprintf("%.2f", totalEmitido), "L,R,B", 0, "L", false, 0, "")
-		pdf.CellFormat(105, 8, tr(" Total Consumo Real (Utilización): Bs. ")+fmt.Sprintf("%.2f", totalUtilizado), "R,B", 1, "L", false, 0, "")
+		pdf.SetFont("Arial", "B", 8)
+		pdf.SetFillColor(230, 230, 230)
+		pdf.CellFormat(30, 7, tr("N° BILLETE"), "1", 0, "C", true, 0, "")
+		pdf.CellFormat(75, 7, tr("DETALLE RUTA"), "1", 0, "C", true, 0, "")
+		pdf.CellFormat(25, 7, tr("EMITIDO (Bs.)"), "1", 0, "C", true, 0, "")
+		pdf.CellFormat(25, 7, tr("CONSUMO (Bs.)"), "1", 0, "C", true, 0, "")
+		pdf.CellFormat(25, 7, tr("DEVOLUCIÓN (Bs.)"), "1", 0, "C", true, 0, "")
+		pdf.CellFormat(30, 7, tr("N° BOLETA"), "1", 1, "C", true, 0, "")
 
+		pdf.SetFont("Arial", "", 8)
+		if descargo.Solicitud != nil {
+			for _, item := range descargo.Solicitud.Items {
+				for _, p := range item.Pasajes {
+					pdf.SetX(3)
+					pdf.CellFormat(30, 7, tr(p.NumeroBillete), "1", 0, "C", false, 0, "")
+					pdf.CellFormat(75, 7, tr(p.GetRutaDisplay()), "1", 0, "L", false, 0, "")
+					pdf.CellFormat(25, 7, fmt.Sprintf("%.2f", p.Costo), "1", 0, "R", false, 0, "")
+					pdf.CellFormat(25, 7, fmt.Sprintf("%.2f", p.CostoUtilizado), "1", 0, "R", false, 0, "")
+
+					if p.MontoReembolso > 0 {
+						pdf.SetTextColor(150, 0, 0)
+						pdf.SetFont("Arial", "B", 8)
+					}
+					pdf.CellFormat(25, 7, fmt.Sprintf("%.2f", p.MontoReembolso), "1", 0, "R", false, 0, "")
+					pdf.SetTextColor(0, 0, 0)
+					pdf.SetFont("Arial", "", 8)
+
+					nroBoleta := p.NroBoletaDeposito
+					if nroBoleta == "" {
+						nroBoleta = "-"
+					}
+					pdf.CellFormat(30, 7, tr(nroBoleta), "1", 1, "C", false, 0, "")
+				}
+			}
+		}
+
+		// Totales
 		pdf.SetX(3)
-		pdf.SetFont("Arial", "B", 10)
-		pdf.CellFormat(210, 8, tr(" MONTO LÍQUIDO A DEVOLVER A LA C.U.T.: Bs. ")+fmt.Sprintf("%.2f", descargo.GetTotalDevolucionPasajes()), "L,R,B", 1, "L", false, 0, "")
+		pdf.SetFillColor(245, 245, 245)
+		pdf.SetFont("Arial", "B", 8)
+		pdf.CellFormat(105, 8, tr("TOTALES GENERALES (Bs.) "), "1", 0, "R", true, 0, "")
+		pdf.CellFormat(25, 8, fmt.Sprintf("%.2f", totalEmitido), "1", 0, "R", true, 0, "")
+		pdf.CellFormat(25, 8, fmt.Sprintf("%.2f", totalUtilizado), "1", 0, "R", true, 0, "")
+
+		pdf.SetTextColor(150, 0, 0)
+		pdf.CellFormat(25, 8, fmt.Sprintf("%.2f", totalEfectivo), "1", 0, "R", true, 0, "")
+		pdf.SetTextColor(0, 0, 0)
+		pdf.CellFormat(30, 8, "", "1", 1, "C", true, 0, "")
 		pdf.Ln(4)
 	}
 
