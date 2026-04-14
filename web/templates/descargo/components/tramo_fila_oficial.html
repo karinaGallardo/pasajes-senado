@@ -11,7 +11,6 @@
   <tr
     class="border-b border-neutral-100 last:border-0 hover:bg-neutral-50/50 transition-colors"
     x-data="itineraryRow({
-      esOpenTicket: false,
       esMod: {{ .Tramo.EsModificacion }},
       tramo_nombre: '{{ .Tramo.TramoNombre }}',
       route_id: '{{ .Tramo.RutaID }}',
@@ -57,6 +56,7 @@
           name="tramo_modificacion[]"
           value="{{ .Tramo.ID }}"
           x-model="esModificacion"
+          @change="$dispatch('update-totals')"
           class="h-4 w-4 text-warning-600 border-neutral-300 rounded shadow-sm"
         />
       {{ end }}
@@ -85,7 +85,7 @@
               @click="if(!esModificacion) { open = true; $nextTick(() => $refs.searchInput.focus()) }"
               x-show="!open"
               class="w-full bg-white border border-neutral-300 rounded px-2 py-1.5 text-[10px] cursor-pointer focus:ring-1 focus:ring-primary min-h-[38px] flex items-center justify-between transition-all hover:border-primary-300 shadow-sm"
-              :class="{ 'opacity-50 grayscale bg-neutral-100 cursor-not-allowed': esModificacion, 'border-primary-200 bg-primary-50/10': label && label !== 'Buscar ruta...' }"
+              :class="{ 'opacity-50 grayscale bg-neutral-100 cursor-not-allowed': esModificacion, 'border-primary-200 bg-primary-50/10': label && label !== 'Buscar tramo...' }"
             >
               <span
                 x-text="(label || 'Seleccionar Tramo')"
@@ -106,10 +106,10 @@
               class="w-full rounded border border-primary-500 bg-white py-1.5 px-2 shadow-sm focus:outline-none focus:ring-1 focus:ring-primary-500 text-[10px] font-bold uppercase"
             />
 
+            <!-- Dropdown List -->
             <ul
               x-show="open"
               class="absolute z-[100] bottom-full mb-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-xs shadow-xl ring-1 ring-black ring-opacity-5 focus:outline-none"
-              x-cloak
             >
               <template x-for="item in filteredItems" :key="item.value">
                 <li

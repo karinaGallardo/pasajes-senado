@@ -52,7 +52,7 @@ func (ctrl *RutaController) Index(c *gin.Context) {
 
 func (ctrl *RutaController) Search(c *gin.Context) {
 	query := c.Query("q")
-	if len(query) < 3 {
+	if len(query) < 2 {
 		c.JSON(http.StatusOK, []interface{}{})
 		return
 	}

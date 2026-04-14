@@ -944,64 +944,7 @@
           </div>
         </div>
 
-        <!-- Tramos No Utilizados -->
-        {{ $hasReturns := false }}
-        {{ range .Descargo.Tramos }}
-          {{ if .EsOpenTicket }}
-            {{ $hasReturns = true }}
-          {{ end }}
-        {{ end }}
 
-        {{ if $hasReturns }}
-          <div class="bg-white shadow rounded-md overflow-hidden border border-danger-200">
-            <div class="px-6 py-4 border-b border-danger-100 bg-danger-50 flex justify-between items-center">
-              <h3 class="text-lg font-bold text-danger-900">Tramos No Utilizados (Open Ticket)</h3>
-              <i class="ph ph-ticket text-danger-400 text-xl"></i>
-            </div>
-            <div class="overflow-x-auto">
-              <table class="min-w-full divide-y divide-danger-100">
-                <thead class="bg-danger-50/50">
-                  <tr>
-                    <th class="px-4 py-3 text-left text-[10px] font-bold text-danger-800 uppercase tracking-widest">Tipo</th>
-                    <th class="px-4 py-3 text-left text-[10px] font-bold text-danger-800 uppercase tracking-widest">
-                      Ruta Original
-                    </th>
-                    <th class="px-4 py-3 text-left text-[10px] font-bold text-danger-800 uppercase tracking-widest">
-                      Fecha Original
-                    </th>
-                    <th class="px-4 py-3 text-left text-[10px] font-bold text-danger-800 uppercase tracking-widest">Estado</th>
-                  </tr>
-                </thead>
-                <tbody class="bg-white divide-y divide-danger-100">
-                  {{ range .Descargo.Tramos }}
-                    {{ if .EsOpenTicket }}
-                      <tr class="hover:bg-danger-50/30 transition-colors">
-                        <td class="px-4 py-3 whitespace-nowrap">
-                          <span
-                            class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold leading-4 bg-neutral-100 text-neutral-600 border border-neutral-200"
-                          >
-                            {{ .Tipo }}
-                          </span>
-                        </td>
-                        <td class="px-4 py-3 whitespace-nowrap text-xs font-medium text-neutral-700">{{ .Ruta }}</td>
-                        <td class="px-4 py-3 whitespace-nowrap text-xs text-neutral-500">
-                          {{ if .Fecha }}{{ .Fecha.Format "02/01/2006" }}{{ else }}-{{ end }}
-                        </td>
-                        <td class="px-4 py-3 whitespace-nowrap">
-                          <span
-                            class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold leading-4 bg-danger-100 text-danger-800 border border-danger-200"
-                          >
-                            OPEN TICKET
-                          </span>
-                        </td>
-                      </tr>
-                    {{ end }}
-                  {{ end }}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        {{ end }}
       </div>
     </div>
   </div>

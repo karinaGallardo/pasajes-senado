@@ -228,7 +228,7 @@ func (s *ReportService) GeneratePV01(ctx context.Context, solicitud *models.Soli
 		pdf.AddPage()
 		sigY = 40
 	}
-	s.drawSignatureBlock(pdf, tr, sigY, "SELLO UNIDAD SOLICITANTE", "FIRMA / SELLO SOLICITANTE", "")
+	s.drawSignatureBlock(pdf, tr, sigY, "SELLO UNIDAD SOLICITANTE", "", "FIRMA / SELLO SOLICITANTE", "")
 
 	return pdf
 }
@@ -462,7 +462,7 @@ func (s *ReportService) GeneratePV02(ctx context.Context, solicitud *models.Soli
 		pdf.AddPage()
 		sigY = 40
 	}
-	s.drawSignatureBlock(pdf, tr, sigY, "SELLO UNIDAD SOLICITANTE", "FIRMA / SELLO SOLICITANTE", "")
+	s.drawSignatureBlock(pdf, tr, sigY, "SELLO UNIDAD SOLICITANTE", "", "FIRMA / SELLO SOLICITANTE", "")
 
 	pdf.SetFont("Arial", "I", 8)
 	return pdf
@@ -772,7 +772,7 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 		pdf.AddPage()
 		sigY = 30
 	}
-	s.drawSignatureBlock(pdf, tr, sigY, "SELLO UNIDAD SOLICITANTE", "FIRMA/RESPONSABLE PRESENTACION DEL DESCARGO", "")
+	s.drawSignatureBlock(pdf, tr, sigY, "SELLO UNIDAD SOLICITANTE", "", "FIRMA/RESPONSABLE PRESENTACION DEL DESCARGO", "")
 
 	// --- ANEXO AUTOMÁTICO DEL COMPROBANTE DE DEPÓSITO ---
 	// Se coloca al final
@@ -1226,150 +1226,28 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 		pdf.Ln(4)
 	}
 
-	pdf.SetX(3)
-	pdf.SetFont("Arial", "B", 9)
-	pdf.CellFormat(210, 6, tr(" DEVOLUCIÓN DE PASAJES (si aplica)"), "B", 1, "L", false, 0, "")
-	pdf.SetFont("Arial", "", 8)
-	pdf.CellFormat(190, 5, tr(" (En caso de no haber utilizado el billete emitido o un tramo informar en el siguiente cuadro)"), "", 1, "L", false, 0, "")
-
-	// Group by Ticket consolidate devo/mod status
-	type ItinerarioReporte struct {
-		Billete string
-		Tramos  []models.DescargoTramo
-	}
-	itinerariosMap := make(map[string]*ItinerarioReporte)
-	var itinerariosOrder []string
-
-	for _, d := range descargo.Tramos {
-		key := d.Billete
-		if key == "" {
-			key = "SN-" + d.GetRutaDisplay()
-		}
-		if _, ok := itinerariosMap[key]; !ok {
-			itinerariosMap[key] = &ItinerarioReporte{Billete: d.Billete}
-			itinerariosOrder = append(itinerariosOrder, key)
-		}
-		if d.EsOpenTicket {
-			// Ahorro se maneja por billete en modelo Pasaje
-		}
-		itinerariosMap[key].Tramos = append(itinerariosMap[key].Tramos, d)
-	}
-
-	hasReturns := false
-	for _, key := range itinerariosOrder {
-		g := itinerariosMap[key]
-		// Check for at least one return in group
-		isDevolucion := false
-		for _, det := range g.Tramos {
-			if det.EsOpenTicket {
-				isDevolucion = true
-				break
-			}
-		}
-
-		if isDevolucion {
-			hasReturns = true
-			tipoStr := "TRAMO"
-			if len(g.Tramos) > 0 {
-				if strings.Contains(string(g.Tramos[0].Tipo), "IDA") {
-					tipoStr = "TRAMO DE IDA NO UTILIZADO"
-				} else {
-					tipoStr = "TRAMO DE RETORNO NO UTILIZADO"
-				}
-			}
-
-			// Find full route from Pasaje
-			fullRoute := ""
-			if descargo.Solicitud != nil {
-				for _, item := range descargo.Solicitud.Items {
-					for _, p := range item.Pasajes {
-						if p.NumeroBillete == g.Billete && g.Billete != "" {
-							fullRoute = p.GetRutaDisplay()
-							break
-						}
-					}
-				}
-			}
-
-			// Filter and reconstruct only returned legs for clarity
-			var routeParts []string
-			for _, det := range g.Tramos {
-				if det.EsOpenTicket {
-					routeParts = append(routeParts, det.GetRutaDisplay())
-				}
-			}
-			fullRoute = strings.Join(routeParts, " ; ")
-
-			s.drawReturnTableSummarized(pdf, tr, tipoStr, g.Billete, fullRoute)
-			pdf.Ln(1)
-		}
-	}
-
-	if !hasReturns {
-		s.drawReturnTableSummarized(pdf, tr, "", "", "")
-	}
-
-	pdf.Ln(5)
-	// --- Sección de Devolución Estilizada (según imagen) ---
-	pdf.SetFont("Arial", "B", 10)
-	pdf.CellFormat(190, 6, tr("En caso de Devolución de Pasajes y/o Viáticos:"), "", 1, "L", false, 0, "")
-
-	bancoCuenta := s.configService.GetValue(ctx, "BANCO_CUENTA_DEVOLUCION")
-	if bancoCuenta == "" {
-		bancoCuenta = "10000005588211"
-	}
-	bancoNombre := s.configService.GetValue(ctx, "BANCO_NOMBRE_DEVOLUCION")
-	if bancoNombre == "" {
-		bancoNombre = "BANCO UNIÓN S.A."
-	}
-
-	startY := pdf.GetY()
-	// Celda Izquierda: Información de la cuenta
-	pdf.SetFont("Arial", "B", 9)
-	infoCuenta := "Monto depositado en Bs. en la CUT – Cuenta Única del Tesoro, Código N° 3987069001, Libreta N° 00099021001."
-
-	// Dibujar rectángulos (Fondo blanco/transparente)
-	pdf.Rect(10, startY, 100, 25, "D")
-	pdf.SetXY(12, startY+4)
-	pdf.MultiCell(96, 5, tr(infoCuenta), "", "L", false)
-
-	// Celda Derecha: Boleta
-	pdf.SetXY(110, startY)
-	pdf.Rect(110, startY, 90, 25, "D")
-
-	// Título Boleta
-	pdf.SetXY(112, startY+4)
-	pdf.SetFont("Arial", "B", 10)
-	pdf.CellFormat(86, 6, tr("N° de Boleta de Depósito:"), "B", 1, "L", false, 0, "")
-
-	// Valor Boleta (si existe)
-	if descargo.Oficial != nil && descargo.Oficial.NroBoletaDeposito != "" {
-		pdf.SetXY(112, startY+12)
-		pdf.SetFont("Courier", "B", 12)
-		pdf.CellFormat(86, 8, tr(descargo.Oficial.NroBoletaDeposito), "", 1, "C", false, 0, "")
-	}
-
-	pdf.SetXY(10, startY+30)
+	pdf.Ln(4)
+	pdf.SetX(10)
 	pdf.SetFont("Arial", "", 10)
 	pdf.CellFormat(190, 10, tr("Es cuanto se informa para fines consiguientes."), "", 1, "L", false, 0, "")
 
-	pdf.Ln(4)
+	pdf.Ln(2)
 
 	// --- Signatures (Dynamic Position) ---
 	sigY := pdf.GetY() + 15
 
 	// Ensure we don't start signatures too low on the page
-	if sigY > 230 {
+	if sigY > 259 {
 		pdf.AddPage()
-		sigY = 40
+		sigY = 30
 	}
 
 	pdf.SetY(sigY)
 
 	if solicitud.Usuario.IsSenador() {
-		s.drawSignatureBlock(pdf, tr, sigY+10, "SELLO UNIDAD SOLICITANTE", "FIRMA Y SELLO SENADOR(A)", "")
+		s.drawSignatureBlock(pdf, tr, sigY+10, "SELLO UNIDAD SOLICITANTE", "", "FIRMA Y SELLO SENADOR(A)", solicitud.Usuario.GetNombreCompleto())
 	} else {
-		s.drawSignatureBlock(pdf, tr, sigY+10, "FIRMA Y SELLO SERVIDOR PÚBLICO", "Vo.Bo. Inmediato Superior", "")
+		s.drawSignatureBlock(pdf, tr, sigY+10, "FIRMA Y SELLO SERVIDOR PÚBLICO", solicitud.Usuario.GetNombreCompleto(), "Vo.Bo. Inmediato Superior", "")
 	}
 
 	return pdf
@@ -1774,13 +1652,18 @@ func (s *ReportService) drawViaticosTable(pdf *gofpdf.Fpdf, tr func(string) stri
 	pdf.Ln(2)
 }
 
-func (s *ReportService) drawSignatureBlock(pdf *gofpdf.Fpdf, tr func(string) string, y float64, leftLabel, rightLabel, rightName string) {
+func (s *ReportService) drawSignatureBlock(pdf *gofpdf.Fpdf, tr func(string) string, y float64, leftLabel, leftName, rightLabel, rightName string) {
 	pdf.SetLineWidth(0.2)
 	// Left side
 	pdf.Line(35, y, 95, y)
 	pdf.SetXY(35, y+2)
 	pdf.SetFont("Arial", "B", 7)
 	pdf.CellFormat(60, 4, tr(leftLabel), "", 1, "C", false, 0, "")
+	if leftName != "" {
+		pdf.SetX(35)
+		pdf.SetFont("Arial", "", 7)
+		pdf.CellFormat(60, 4, tr(leftName), "", 1, "C", false, 0, "")
+	}
 
 	// Right side
 	pdf.Line(110, y, 185, y)
@@ -1916,7 +1799,7 @@ func (s *ReportService) GenerateViaticoV1(ctx context.Context, viatico *models.V
 	if sigY < 230 {
 		sigY = 240
 	}
-	s.drawSignatureBlock(pdf, tr, sigY, "RECIBÍ CONFORME", "AUTORIZADO", viatico.Usuario.GetNombreCompleto())
+	s.drawSignatureBlock(pdf, tr, sigY, "RECIBÍ CONFORME", "", "AUTORIZADO", viatico.Usuario.GetNombreCompleto())
 
 	return pdf
 }
