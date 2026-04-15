@@ -1062,7 +1062,7 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 				pdf.AddPage()
 				pdf.SetY(15.0)
 				pdf.SetFont("Arial", "I", 8)
-				pdf.CellFormat(0, 6, tr("5. Anexos (Reseña fotográfica) (Continuación)"), "", 1, "R", false, 0, "")
+				pdf.CellFormat(0, 6, tr(fmt.Sprintf("%d. Anexos (Reseña fotográfica) (Continuación)", sectionIdx-1)), "", 1, "R", false, 0, "")
 				pdf.Ln(4)
 			}
 
@@ -1088,7 +1088,8 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 
 	// Transporte y Devoluciones
 	pdf.SetFont("Arial", "B", 9)
-	pdf.CellFormat(50, 6, tr("TRANSPORTE UTILIZADO:"), "", 1, "L", false, 0, "")
+	pdf.CellFormat(50, 6, tr(fmt.Sprintf("%d. TRANSPORTE UTILIZADO:", sectionIdx)), "", 1, "L", false, 0, "")
+	sectionIdx++
 
 	if descargo.Oficial != nil {
 		pdf.SetFont("Arial", "", 9)
@@ -1164,7 +1165,8 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 		pdf.SetX(3)
 		pdf.SetFont("Arial", "B", 10)
 		pdf.SetFillColor(240, 240, 240)
-		pdf.CellFormat(210, 8, tr(" LIQUIDACIÓN FINANCIERA (CONCILIACIÓN DE COSTOS DE PASAJES)"), "1", 1, "L", true, 0, "")
+		pdf.CellFormat(210, 8, tr(fmt.Sprintf(" %d. LIQUIDACIÓN FINANCIERA (CONCILIACIÓN DE COSTOS DE PASAJES)", sectionIdx)), "1", 1, "L", true, 0, "")
+		sectionIdx++
 
 		totalEmitido := 0.0
 		totalUtilizado := 0.0
