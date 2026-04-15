@@ -27,7 +27,7 @@ type SolicitudOficialController struct {
 	reportService           *services.ReportService
 	peopleService           *services.PeopleService
 	descargoService         *services.DescargoService
-	openTicketService      *services.OpenTicketService
+	openTicketService       *services.OpenTicketService
 }
 
 func NewSolicitudOficialController(
@@ -56,7 +56,7 @@ func NewSolicitudOficialController(
 		reportService:           reportService,
 		peopleService:           peopleService,
 		descargoService:         descargoService,
-		openTicketService:      openTicketService,
+		openTicketService:       openTicketService,
 	}
 }
 
@@ -82,7 +82,6 @@ func (ctrl *SolicitudOficialController) GetCreateModal(c *gin.Context) {
 	}
 
 	dateIda := c.Query("fecha")
-
 
 	render := "solicitud/oficial/modal_create"
 
@@ -427,7 +426,6 @@ func (ctrl *SolicitudOficialController) GetEditModal(c *gin.Context) {
 			CanEdit:      item.Permissions.CanEdit,
 		})
 	}
-
 
 	tramosJSON, _ := json.Marshal(tramosIniciales)
 	editFormData, _ := json.Marshal(map[string]any{

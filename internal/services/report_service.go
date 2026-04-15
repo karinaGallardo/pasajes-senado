@@ -228,7 +228,7 @@ func (s *ReportService) GeneratePV01(ctx context.Context, solicitud *models.Soli
 		pdf.AddPage()
 		sigY = 40
 	}
-	s.drawSignatureBlock(pdf, tr, sigY, "SELLO UNIDAD SOLICITANTE", "", "FIRMA / SELLO SOLICITANTE", "")
+	s.drawSignatureBlock(pdf, tr, sigY, "SELLO UNIDAD SOLICITANTE", "", "", "FIRMA / SELLO SOLICITANTE", "", "")
 
 	return pdf
 }
@@ -462,7 +462,7 @@ func (s *ReportService) GeneratePV02(ctx context.Context, solicitud *models.Soli
 		pdf.AddPage()
 		sigY = 40
 	}
-	s.drawSignatureBlock(pdf, tr, sigY, "SELLO UNIDAD SOLICITANTE", "", "FIRMA / SELLO SOLICITANTE", "")
+	s.drawSignatureBlock(pdf, tr, sigY, "SELLO UNIDAD SOLICITANTE", "", "", "FIRMA / SELLO SOLICITANTE", "", "")
 
 	pdf.SetFont("Arial", "I", 8)
 	return pdf
@@ -772,7 +772,7 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 		pdf.AddPage()
 		sigY = 30
 	}
-	s.drawSignatureBlock(pdf, tr, sigY, "SELLO UNIDAD SOLICITANTE", "", "FIRMA/RESPONSABLE PRESENTACION DEL DESCARGO", "")
+	s.drawSignatureBlock(pdf, tr, sigY, "SELLO UNIDAD SOLICITANTE", "", "", "FIRMA/RESPONSABLE PRESENTACION DEL DESCARGO", "", "")
 
 	// --- ANEXO AUTOMÁTICO DEL COMPROBANTE DE DEPÓSITO ---
 	// Se coloca al final
@@ -958,7 +958,7 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 	// Conclusiones
 	if descargo.Oficial != nil && descargo.Oficial.ConclusionesRecomendaciones != "" {
 		pdf.SetFont("Arial", "B", 9)
-		pdf.CellFormat(190, 6, tr("3. CONCLUSIONES Y RECOMENDACIONES:"), "", 1, "L", false, 0, "")
+		pdf.CellFormat(190, 6, tr("3. CONCLUSIONES:"), "", 1, "L", false, 0, "")
 		pdf.SetFont("Arial", "", 9)
 		pdf.SetX(15)
 		pdf.MultiCell(175, 5, tr(descargo.Oficial.ConclusionesRecomendaciones), "", "J", false)
@@ -1244,10 +1244,15 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 
 	pdf.SetY(sigY)
 
+	cargo := ""
+	if solicitud.Usuario.Cargo != nil {
+		cargo = solicitud.Usuario.Cargo.Descripcion
+	}
+
 	if solicitud.Usuario.IsSenador() {
-		s.drawSignatureBlock(pdf, tr, sigY+10, "SELLO UNIDAD SOLICITANTE", "", "FIRMA Y SELLO SENADOR(A)", solicitud.Usuario.GetNombreCompleto())
+		s.drawSignatureBlock(pdf, tr, sigY+10, "SELLO UNIDAD SOLICITANTE", "", "", "FIRMA Y SELLO SENADOR(A)", solicitud.Usuario.GetNombreCompleto(), cargo)
 	} else {
-		s.drawSignatureBlock(pdf, tr, sigY+10, "FIRMA Y SELLO SERVIDOR PÚBLICO", solicitud.Usuario.GetNombreCompleto(), "Vo.Bo. Inmediato Superior", "")
+		s.drawSignatureBlock(pdf, tr, sigY+10, "FIRMA Y SELLO SERVIDOR PÚBLICO", solicitud.Usuario.GetNombreCompleto(), cargo, "Vo.Bo. Inmediato Superior", "", "")
 	}
 
 	return pdf
@@ -1652,7 +1657,7 @@ func (s *ReportService) drawViaticosTable(pdf *gofpdf.Fpdf, tr func(string) stri
 	pdf.Ln(2)
 }
 
-func (s *ReportService) drawSignatureBlock(pdf *gofpdf.Fpdf, tr func(string) string, y float64, leftLabel, leftName, rightLabel, rightName string) {
+func (s *ReportService) drawSignatureBlock(pdf *gofpdf.Fpdf, tr func(string) string, y float64, leftLabel, leftName, leftTitle, rightLabel, rightName, rightTitle string) {
 	pdf.SetLineWidth(0.2)
 	// Left side
 	pdf.Line(35, y, 95, y)
@@ -1664,6 +1669,11 @@ func (s *ReportService) drawSignatureBlock(pdf *gofpdf.Fpdf, tr func(string) str
 		pdf.SetFont("Arial", "", 7)
 		pdf.CellFormat(60, 4, tr(leftName), "", 1, "C", false, 0, "")
 	}
+	if leftTitle != "" {
+		pdf.SetX(35)
+		pdf.SetFont("Arial", "I", 6)
+		pdf.CellFormat(60, 3, tr(leftTitle), "", 1, "C", false, 0, "")
+	}
 
 	// Right side
 	pdf.Line(110, y, 185, y)
@@ -1674,6 +1684,11 @@ func (s *ReportService) drawSignatureBlock(pdf *gofpdf.Fpdf, tr func(string) str
 		pdf.SetX(110)
 		pdf.SetFont("Arial", "", 7)
 		pdf.CellFormat(75, 4, tr(rightName), "", 1, "C", false, 0, "")
+	}
+	if rightTitle != "" {
+		pdf.SetX(110)
+		pdf.SetFont("Arial", "I", 6)
+		pdf.CellFormat(75, 3, tr(rightTitle), "", 1, "C", false, 0, "")
 	}
 }
 
@@ -1799,7 +1814,7 @@ func (s *ReportService) GenerateViaticoV1(ctx context.Context, viatico *models.V
 	if sigY < 230 {
 		sigY = 240
 	}
-	s.drawSignatureBlock(pdf, tr, sigY, "RECIBÍ CONFORME", "", "AUTORIZADO", viatico.Usuario.GetNombreCompleto())
+	s.drawSignatureBlock(pdf, tr, sigY, "RECIBÍ CONFORME", "", "", "AUTORIZADO", viatico.Usuario.GetNombreCompleto(), "")
 
 	return pdf
 }

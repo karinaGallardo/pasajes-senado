@@ -32,7 +32,7 @@ type SolicitudDerechoController struct {
 	rutaService             *services.RutaService
 	descargoService         *services.DescargoService
 	configuracionService    *services.ConfiguracionService
-	openTicketService      *services.OpenTicketService
+	openTicketService       *services.OpenTicketService
 }
 
 func NewSolicitudDerechoController(
@@ -71,7 +71,7 @@ func NewSolicitudDerechoController(
 		rutaService:             rutaService,
 		descargoService:         descargoService,
 		configuracionService:    configuracionService,
-		openTicketService:      openTicketService,
+		openTicketService:       openTicketService,
 	}
 }
 
@@ -110,7 +110,6 @@ func (ctrl *SolicitudDerechoController) GetCreateModal(c *gin.Context) {
 	if referer == "" {
 		referer = "/cupos/derecho/" + targetUser.ID
 	}
-
 
 	utils.Render(c, "solicitud/derecho/modal_create", gin.H{
 		"TargetUser":          targetUser,
@@ -241,7 +240,6 @@ func (ctrl *SolicitudDerechoController) GetEditModal(c *gin.Context) {
 			origenesAutorizados = append(origenesAutorizados, *alt.Destino)
 		}
 	}
-
 
 	// Calcular banderas especializadas para solicitudes de Derecho (Ida/Vuelta únicas)
 	canEditIda := (ida != nil && ida.CanEdit())

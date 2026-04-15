@@ -75,7 +75,9 @@ func (s *DescargoOficialService) AutoCreateFromSolicitud(ctx context.Context, so
 	descargo.CreatedBy = &userID
 
 	descargo.Oficial = &models.DescargoOficial{
-		DirigidoA: "SECRETARÍA GENERAL",
+		DirigidoA:     "",
+		NroMemorandum: solicitud.Autorizacion,
+		ObjetivoViaje: solicitud.Motivo,
 	}
 
 	if err := s.repo.Create(ctx, descargo); err != nil {

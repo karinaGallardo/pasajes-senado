@@ -144,13 +144,10 @@ func (ctrl *DescargoOficialController) Edit(c *gin.Context) {
 	if descargo.Solicitud != nil {
 		descargo.Solicitud.HydratePermissions(authUser)
 	}
-
-	// 1. Verificación Maestra de Permisos (Estado + Rol/Autoría)
 	if !descargo.Permissions.CanEdit {
 		c.Redirect(http.StatusFound, "/descargos/oficial/"+id+"?error=SinPermisoEdicion")
 		return
 	}
-
 	// 2. Sincronización Proactiva (Si hay nuevos pasajes tras la creación)
 	if descargo.Solicitud != nil {
 		// Pasamos el puntero; el servicio se encarga de persistir y el Slice se actualiza
@@ -158,6 +155,19 @@ func (ctrl *DescargoOficialController) Edit(c *gin.Context) {
 			// Recargamos solo si es vital para asegurar que los nuevos DescargoTramo tengan sus Preloads (Ruta, etc.)
 			descargo, _ = ctrl.descargoService.GetByID(c.Request.Context(), id)
 			descargo.HydratePermissions(authUser)
+		}
+	}
+
+	// 3. Fallbacks de Metadatos (Objetivo, Memorandum, etc.)
+	if descargo.Solicitud != nil {
+		if descargo.Oficial == nil {
+			descargo.Oficial = &models.DescargoOficial{DescargoID: descargo.ID}
+		}
+		if descargo.Oficial.ObjetivoViaje == "" {
+			descargo.Oficial.ObjetivoViaje = descargo.Solicitud.Motivo
+		}
+		if descargo.Oficial.NroMemorandum == "" {
+			descargo.Oficial.NroMemorandum = descargo.Solicitud.Autorizacion
 		}
 	}
 
@@ -239,7 +249,7 @@ func (ctrl *DescargoOficialController) Update(c *gin.Context) {
 
 	// 4. Comprobantes de Pago (Per Pasaje)
 	boletasPaths := utils.ExtractPasajeBoletas(c, req.LiquidacionPasajeID)
- 
+
 	if err := ctrl.descargoOficialService.UpdateOficial(c.Request.Context(), id, req, authUser.ID, pasesAbordoPaths, terrestrePaths, anexoPaths, boletasPaths); err != nil {
 		c.Redirect(http.StatusFound, "/descargos/oficial/"+id+"/editar?error=ErrorActualizacion")
 		return
