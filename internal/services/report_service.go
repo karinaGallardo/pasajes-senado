@@ -927,8 +927,10 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 		}
 	}
 
+	sectionIdx := 1
 	pdf.SetFont("Arial", "B", 9)
-	pdf.CellFormat(40, 6, tr("OBJETIVO DEL VIAJE:"), "", 0, "L", false, 0, "")
+	pdf.CellFormat(40, 6, tr(fmt.Sprintf("%d. OBJETIVO DEL VIAJE:", sectionIdx)), "", 0, "L", false, 0, "")
+	sectionIdx++
 	pdf.SetFont("Arial", "", 9)
 	pdf.MultiCell(150, 6, tr(objViaje), "", "L", false)
 	pdf.Ln(4)
@@ -939,7 +941,8 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 		infActividades = descargo.Oficial.InformeActividades
 	}
 	pdf.SetFont("Arial", "B", 9)
-	pdf.CellFormat(190, 6, tr("1. ACTIVIDADES REALIZADAS:"), "", 1, "L", false, 0, "")
+	pdf.CellFormat(190, 6, tr(fmt.Sprintf("%d. ACTIVIDADES REALIZADAS:", sectionIdx)), "", 1, "L", false, 0, "")
+	sectionIdx++
 	pdf.SetFont("Arial", "", 9)
 	pdf.SetX(15) // Sangría
 	pdf.MultiCell(175, 5, tr(infActividades), "", "J", false)
@@ -948,7 +951,8 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 	// Resultados
 	if descargo.Oficial != nil && descargo.Oficial.ResultadosViaje != "" {
 		pdf.SetFont("Arial", "B", 9)
-		pdf.CellFormat(190, 6, tr("2. RESULTADOS OBTENIDOS:"), "", 1, "L", false, 0, "")
+		pdf.CellFormat(190, 6, tr(fmt.Sprintf("%d. RESULTADOS OBTENIDOS:", sectionIdx)), "", 1, "L", false, 0, "")
+		sectionIdx++
 		pdf.SetFont("Arial", "", 9)
 		pdf.SetX(15)
 		pdf.MultiCell(175, 5, tr(descargo.Oficial.ResultadosViaje), "", "J", false)
@@ -958,7 +962,8 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 	// Conclusiones
 	if descargo.Oficial != nil && descargo.Oficial.ConclusionesRecomendaciones != "" {
 		pdf.SetFont("Arial", "B", 9)
-		pdf.CellFormat(190, 6, tr("3. CONCLUSIONES:"), "", 1, "L", false, 0, "")
+		pdf.CellFormat(190, 6, tr(fmt.Sprintf("%d. CONCLUSIONES:", sectionIdx)), "", 1, "L", false, 0, "")
+		sectionIdx++
 		pdf.SetFont("Arial", "", 9)
 		pdf.SetX(15)
 		pdf.MultiCell(175, 5, tr(descargo.Oficial.ConclusionesRecomendaciones), "", "J", false)
@@ -985,7 +990,8 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 		pdf.Ln(4)
 		pdf.SetX(marginSide)
 		pdf.SetFont("Arial", "B", 10)
-		pdf.CellFormat(190, 8, tr("5. Anexos (Reseña fotográfica)"), "B", 1, "C", false, 0, "")
+		pdf.CellFormat(190, 8, tr(fmt.Sprintf("%d. Anexos (Reseña fotográfica)", sectionIdx)), "B", 1, "C", false, 0, "")
+		sectionIdx++
 		pdf.Ln(6)
 
 		anexos := descargo.Oficial.Anexos
@@ -1082,7 +1088,7 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 
 	// Transporte y Devoluciones
 	pdf.SetFont("Arial", "B", 9)
-	pdf.CellFormat(50, 6, tr("4. TRANSPORTE UTILIZADO:"), "", 1, "L", false, 0, "")
+	pdf.CellFormat(50, 6, tr("TRANSPORTE UTILIZADO:"), "", 1, "L", false, 0, "")
 
 	if descargo.Oficial != nil {
 		pdf.SetFont("Arial", "", 9)
