@@ -209,9 +209,8 @@ func (s *DescargoOficialService) UpdateOficial(ctx context.Context, id string, r
 
 	// 1. Basic Metadata
 	descargo.Observaciones = req.Observaciones
-	if descargo.Estado == models.EstadoDescargoRechazado {
-		descargo.Estado = models.EstadoDescargoEnRevision
-	} else {
+	// No cambiamos el estado automáticamente. El usuario debe "Enviar a Revisión" explícitamente.
+	if descargo.Estado == "" {
 		descargo.Estado = models.EstadoDescargoBorrador
 	}
 	descargo.UpdatedBy = &userID

@@ -75,6 +75,7 @@ type Container struct {
 	AuditController            *controllers.AuditController
 	OpenTicketController       *controllers.OpenTicketController
 	ReportController           *controllers.ReportController
+	DestinoController          *controllers.DestinoController
 }
 
 // NewContainer initializes the graph of dependencies
@@ -289,6 +290,7 @@ func NewContainer(db *gorm.DB, mongoRRHH *mongo.Database, mongoChat *mongo.Datab
 	auditCtrl := controllers.NewAuditController(auditService)
 	openTicketCtrl := controllers.NewOpenTicketController(openTicketService, userRepo, solicitudRepo)
 	reportCtrl := controllers.NewReportController(reportService, aerolineaService, agenciaService)
+	destinoCtrl := controllers.NewDestinoController(destinoService, ambitoRepo, deptoRepo)
 
 	return &Container{
 		// Services
@@ -355,5 +357,6 @@ func NewContainer(db *gorm.DB, mongoRRHH *mongo.Database, mongoChat *mongo.Datab
 		AuditController:            auditCtrl,
 		OpenTicketController:       openTicketCtrl,
 		ReportController:           reportCtrl,
+		DestinoController:          destinoCtrl,
 	}
 }

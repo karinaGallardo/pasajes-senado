@@ -1,0 +1,193 @@
+{{ define "admin/destinos/form_modal" }}
+  <div
+    class="fixed inset-0 z-50 overflow-y-auto"
+    id="modal-destino"
+    x-data="{ isInternational: {{ if .Destino }}
+      {{ if eq .Destino.AmbitoCodigo "NACIONAL" }}false{{ else }}true{{ end }}
+    {{ else }}
+      false
+    {{ end }} }"
+  >
+    <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+      <div
+        class="fixed inset-0 transition-opacity"
+        aria-hidden="true"
+        @click="document.getElementById('modal-container').innerHTML = ''"
+      >
+        <div class="absolute inset-0 bg-neutral-900/60 backdrop-blur-sm"></div>
+      </div>
+
+      <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+      <div
+        class="inline-block align-bottom bg-white rounded-xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-neutral-100"
+      >
+        <div class="bg-white px-8 pt-8 pb-6">
+          <div class="flex items-center justify-between mb-6">
+            <div>
+              <h3 class="text-xl font-black text-neutral-800 tracking-tight uppercase">{{ .Title }}</h3>
+              <p class="text-[10px] text-neutral-400 font-bold uppercase tracking-widest mt-1">
+                Información técnica del aeropuerto
+              </p>
+            </div>
+            <button
+              type="button"
+              @click="document.getElementById('modal-container').innerHTML = ''"
+              class="text-neutral-400 hover:text-neutral-600 transition-colors"
+            >
+              <i class="ph-bold ph-x text-2xl"></i>
+            </button>
+          </div>
+
+          <form
+            action="{{ if .Destino }}
+              /admin/destinos/actualizar/{{ .Destino.IATA }}
+            {{ else }}
+              /admin/destinos/guardar
+            {{ end }}"
+            method="POST"
+            id="form-destino"
+          >
+            <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
+
+            <div class="space-y-5">
+              <div class="grid grid-cols-3 gap-4">
+                <div class="col-span-1">
+                  <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest mb-1.5 ml-1">
+                    Código IATA
+                  </label>
+                  <input
+                    type="text"
+                    name="iata"
+                    value="{{ if .Destino }}{{ .Destino.IATA }}{{ end }}"
+                    {{ if .Destino }}readonly bg-neutral-50{{ end }}
+                    maxlength="5"
+                    required
+                    class="block w-full border border-neutral-200 rounded-md shadow-sm py-2 px-3 text-sm font-black font-mono focus:ring-1 focus:ring-primary focus:border-primary transition-all uppercase placeholder-neutral-300"
+                    placeholder="LPB"
+                  />
+                </div>
+                <div class="col-span-2">
+                  <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest mb-1.5 ml-1">
+                    Ciudad
+                  </label>
+                  <input
+                    type="text"
+                    name="ciudad"
+                    value="{{ if .Destino }}{{ .Destino.Ciudad }}{{ end }}"
+                    required
+                    class="block w-full border border-neutral-200 rounded-md shadow-sm py-2 px-3 text-sm focus:ring-1 focus:ring-primary focus:border-primary transition-all placeholder-neutral-300"
+                    placeholder="La Paz"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest mb-1.5 ml-1">
+                  Nombre del Aeropuerto
+                </label>
+                <input
+                  type="text"
+                  name="aeropuerto"
+                  value="{{ if .Destino }}{{ .Destino.Aeropuerto }}{{ end }}"
+                  class="block w-full border border-neutral-200 rounded-md shadow-sm py-2 px-3 text-sm focus:ring-1 focus:ring-primary focus:border-primary transition-all placeholder-neutral-300"
+                  placeholder="Aeropuerto Internacional El Alto"
+                />
+              </div>
+
+              <div>
+                <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest mb-1.5 ml-1">
+                  Ámbito de Viaje
+                </label>
+                <select
+                  name="ambito_codigo"
+                  required
+                  class="block w-full border border-neutral-200 rounded-md shadow-sm py-2 px-3 text-sm focus:ring-1 focus:ring-primary focus:border-primary transition-all"
+                  @change="isInternational = $event.target.value !== 'NACIONAL'"
+                >
+                  <option value="">Seleccione ámbito...</option>
+                  {{ range .Ambitos }}
+                    <option
+                      value="{{ .Codigo }}"
+                      {{ if $.Destino }}{{ if eq $.Destino.AmbitoCodigo .Codigo }}selected{{ end }}{{ end }}
+                    >
+                      {{ .Nombre }}
+                    </option>
+                  {{ end }}
+                </select>
+              </div>
+
+              <div x-show="!isInternational" x-transition>
+                <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest mb-1.5 ml-1">
+                  Departamento (Bolivia)
+                </label>
+                <select
+                  name="departamento_codigo"
+                  class="block w-full border border-neutral-200 rounded-md shadow-sm py-2 px-3 text-sm focus:ring-1 focus:ring-primary focus:border-primary transition-all"
+                >
+                  <option value="">N/A</option>
+                  {{ range .Deptos }}
+                    <option
+                      value="{{ .Codigo }}"
+                      {{ if $.Destino }}
+                        {{ if $.Destino.DepartamentoCodigo }}
+                          {{ if eq $.Destino.DepartamentoCodigo .Codigo }}selected{{ end }}
+                        {{ end }}
+                      {{ end }}
+                    >
+                      {{ .Nombre }}
+                    </option>
+                  {{ end }}
+                </select>
+              </div>
+
+              <div x-show="isInternational" x-transition>
+                <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest mb-1.5 ml-1">País</label>
+                <input
+                  type="text"
+                  name="pais"
+                  value="{{ if .Destino }}{{ if .Destino.Pais }}{{ $.Destino.Pais }}{{ end }}{{ end }}"
+                  class="block w-full border border-neutral-200 rounded-md shadow-sm py-2 px-3 text-sm focus:ring-1 focus:ring-primary focus:border-primary transition-all placeholder-neutral-300"
+                  placeholder="Argentina"
+                />
+              </div>
+
+              <div class="flex items-center pt-2">
+                <input
+                  type="checkbox"
+                  name="estado"
+                  id="estado"
+                  class="h-4 w-4 text-primary focus:ring-primary border-neutral-300 rounded"
+                  {{ if .Destino }}
+                    {{ if .Destino.Estado }}checked{{ end }}
+                  {{ else }}
+                    checked
+                  {{ end }}
+                />
+                <label for="estado" class="ml-2 block text-xs font-bold text-neutral-700 uppercase tracking-wider">
+                  Habilitado para itinerarios
+                </label>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="bg-neutral-50 px-8 py-4 flex flex-row-reverse gap-3 border-t border-neutral-100">
+          <button
+            type="submit"
+            form="form-destino"
+            class="inline-flex justify-center py-2 px-6 border border-transparent shadow-sm text-xs font-black rounded-md text-white bg-primary hover:bg-primary-700 transition-all uppercase tracking-widest active:scale-95"
+          >
+            {{ if .Destino }}Guardar Cambios{{ else }}Crear Destino{{ end }}
+          </button>
+          <button
+            type="button"
+            @click="document.getElementById('modal-container').innerHTML = ''"
+            class="inline-flex justify-center py-2 px-6 border border-neutral-300 shadow-sm text-xs font-black rounded-md text-neutral-700 bg-white hover:bg-neutral-100 transition-all uppercase tracking-widest active:scale-95"
+          >
+            Cancelar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+{{ end }}

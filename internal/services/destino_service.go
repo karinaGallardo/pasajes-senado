@@ -28,6 +28,27 @@ func (s *DestinoService) GetByIATA(ctx context.Context, iata string) (*models.De
 	return s.repo.FindByIATA(ctx, iata)
 }
 
-func (s *DestinoService) Search(ctx context.Context, query string, ambito string) ([]models.Destino, error) {
-	return s.repo.Search(ctx, query, ambito)
+func (s *DestinoService) Search(ctx context.Context, query string, ambito string, page, pageSize int) ([]models.Destino, int64, error) {
+	return s.repo.Search(ctx, query, ambito, page, pageSize)
+}
+
+func (s *DestinoService) Create(ctx context.Context, d *models.Destino) error {
+	return s.repo.Create(ctx, d)
+}
+
+func (s *DestinoService) Update(ctx context.Context, d *models.Destino) error {
+	return s.repo.Update(ctx, d)
+}
+
+func (s *DestinoService) Toggle(ctx context.Context, iata string) error {
+	d, err := s.repo.FindByIATA(ctx, iata)
+	if err != nil {
+		return err
+	}
+	d.Estado = !d.Estado
+	return s.repo.Update(ctx, d)
+}
+
+func (s *DestinoService) Delete(ctx context.Context, iata string) error {
+	return s.repo.Delete(ctx, iata)
 }

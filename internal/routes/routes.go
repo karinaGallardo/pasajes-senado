@@ -37,6 +37,7 @@ func SetupRoutes(r *gin.Engine, container *app.Container, loginLimiter *middlewa
 	notifCtrl := container.NotificationController
 	landingCtrl := container.LandingController
 	openTicketCtrl := container.OpenTicketController
+	destinoCtrl := container.DestinoController
 
 	r.GET("/auth/login", authCtrl.ShowLogin)
 	r.POST("/auth/login", middleware.RateLimitMiddleware(loginLimiter), authCtrl.Login)
@@ -254,6 +255,15 @@ func SetupRoutes(r *gin.Engine, container *app.Container, loginLimiter *middlewa
 			sysAdmin.GET("/admin/viaticos/categorias", catViaticoCtrl.Index)
 			sysAdmin.POST("/admin/viaticos/categorias", catViaticoCtrl.Store)
 			protected.POST("/admin/viaticos/zonas", catViaticoCtrl.StoreZona)
+
+			sysAdmin.GET("/admin/destinos", destinoCtrl.Index)
+			sysAdmin.GET("/admin/destinos/table", destinoCtrl.Table)
+			sysAdmin.GET("/admin/destinos/nuevo", destinoCtrl.New)
+			sysAdmin.POST("/admin/destinos/guardar", destinoCtrl.Store)
+			sysAdmin.GET("/admin/destinos/editar/:id", destinoCtrl.Edit)
+			sysAdmin.POST("/admin/destinos/actualizar/:id", destinoCtrl.Update)
+			sysAdmin.POST("/admin/destinos/toggle/:id", destinoCtrl.Toggle)
+			sysAdmin.POST("/admin/destinos/eliminar/:id", destinoCtrl.Delete)
 		}
 
 		protected.POST("/api/notifications/subscribe", notifCtrl.SubscribePush)

@@ -52,7 +52,7 @@ func (ctrl *CatalogoController) SearchDestinos(c *gin.Context) {
 		c.JSON(http.StatusOK, []any{})
 		return
 	}
-	destinos, err := ctrl.destinoService.Search(c.Request.Context(), q, ambito)
+	destinos, _, err := ctrl.destinoService.Search(c.Request.Context(), q, ambito, 1, 100)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		return

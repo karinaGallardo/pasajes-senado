@@ -46,12 +46,12 @@ func (r *DestinoRepository) Update(ctx context.Context, d *models.Destino) error
 	return r.db.WithContext(ctx).Save(d).Error
 }
 
-func (r *DestinoRepository) Search(ctx context.Context, query string, ambito string) ([]models.Destino, error) {
+func (r *DestinoRepository) Search(ctx context.Context, query string, ambito string, page, pageSize int) ([]models.Destino, int64, error) {
 	var list []models.Destino
+	var total int64
 	words := strings.Fields(query)
-	db := r.db.WithContext(ctx).
-		Preload("Ambito").
-		Preload("Departamento")
+
+	db := r.db.WithContext(ctx).Model(&models.Destino{})
 
 	if ambito != "" {
 		db = db.Where("ambito_codigo = ?", ambito)
@@ -62,8 +62,23 @@ func (r *DestinoRepository) Search(ctx context.Context, query string, ambito str
 		db = db.Where("(iata ILIKE ? OR ciudad ILIKE ? OR aeropuerto ILIKE ?)", q, q, q)
 	}
 
-	err := db.Order("ciudad asc").
-		Limit(20).
+	// Count total records before pagination
+	if err := db.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	// Apply pagination and preloads
+	offset := (page - 1) * pageSize
+	err := db.Preload("Ambito").
+		Preload("Departamento").
+		Order("ciudad asc").
+		Limit(pageSize).
+		Offset(offset).
 		Find(&list).Error
-	return list, err
+
+	return list, total, err
+}
+
+func (r *DestinoRepository) Delete(ctx context.Context, iata string) error {
+	return r.db.WithContext(ctx).Where("iata = ?", iata).Delete(&models.Destino{}).Error
 }

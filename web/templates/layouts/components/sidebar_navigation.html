@@ -247,6 +247,26 @@
         </a>
 
         <a
+          href="/admin/destinos"
+          :title="sidebarCollapsed ? 'Destinos' : ''"
+          class="group flex items-center px-4 py-2.5 text-sm font-medium rounded-md transition-colors whitespace-nowrap
+     {{ if eq .Title `Gestión de Aeropuertos/Destinos` }}
+            bg-primary/10 text-primary
+          {{ else }}
+            text-main hover:bg-primary/5 hover:text-neutral-900
+          {{ end }}"
+        >
+          <i
+            class="ph ph-map-pin text-xl mr-3 min-w-[20px] {{ if eq .Title `Gestión de Aeropuertos/Destinos` }}
+              text-primary
+            {{ else }}
+              text-muted group-hover:text-neutral-500
+            {{ end }}"
+          ></i>
+          <span x-show="!sidebarCollapsed" class="transition-opacity duration-300">Destinos / Aptos.</span>
+        </a>
+
+        <a
           href="/admin/agencias"
           :title="sidebarCollapsed ? 'Agencias de Viaje' : ''"
           class="group flex items-center px-4 py-2.5 text-sm font-medium rounded-md transition-colors whitespace-nowrap
