@@ -34,8 +34,11 @@ func (r *DestinoRepository) FindByAmbito(ctx context.Context, ambitoCodigo strin
 
 func (r *DestinoRepository) FindByIATA(ctx context.Context, iata string) (*models.Destino, error) {
 	var d models.Destino
-	err := r.db.WithContext(ctx).Preload("Ambito").Preload("Departamento").Where("iata ILIKE ?", iata).First(&d).Error
-	return &d, err
+	err := r.db.WithContext(ctx).Preload("Ambito").Preload("Departamento").Where("iata = ?", iata).First(&d).Error
+	if err != nil {
+		return nil, err
+	}
+	return &d, nil
 }
 
 func (r *DestinoRepository) Create(ctx context.Context, d *models.Destino) error {
