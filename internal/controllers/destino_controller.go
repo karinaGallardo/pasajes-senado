@@ -8,6 +8,7 @@ import (
 	"sistema-pasajes/internal/services"
 	"sistema-pasajes/internal/utils"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -28,6 +29,20 @@ func NewDestinoController(
 		ambitoRepo: ambitoRepo,
 		deptoRepo:  deptoRepo,
 	}
+}
+
+func capitalize(s string) string {
+	s = strings.ToLower(strings.TrimSpace(s))
+	if s == "" {
+		return ""
+	}
+	words := strings.Fields(s)
+	for i, w := range words {
+		if len(w) > 0 {
+			words[i] = strings.ToUpper(w[:1]) + w[1:]
+		}
+	}
+	return strings.Join(words, " ")
 }
 
 func (ctrl *DestinoController) Index(c *gin.Context) {
@@ -111,14 +126,15 @@ func (ctrl *DestinoController) Store(c *gin.Context) {
 
 	var pais *string
 	if req.Pais != "" {
-		pais = &req.Pais
+		p := strings.ToUpper(strings.TrimSpace(req.Pais))
+		pais = &p
 	}
 
 	model := models.Destino{
-		IATA:               req.IATA,
-		Ciudad:             req.Ciudad,
-		Aeropuerto:         req.Aeropuerto,
-		AmbitoCodigo:       req.AmbitoCodigo,
+		IATA:               strings.ToUpper(strings.TrimSpace(req.IATA)),
+		Ciudad:             capitalize(req.Ciudad),
+		Aeropuerto:         capitalize(req.Aeropuerto),
+		AmbitoCodigo:       strings.ToUpper(req.AmbitoCodigo),
 		DepartamentoCodigo: deptoCode,
 		Pais:               pais,
 		Estado:             req.Estado == "on",
@@ -176,12 +192,13 @@ func (ctrl *DestinoController) Update(c *gin.Context) {
 
 	var pais *string
 	if req.Pais != "" {
-		pais = &req.Pais
+		p := strings.ToUpper(strings.TrimSpace(req.Pais))
+		pais = &p
 	}
 
-	existing.Ciudad = req.Ciudad
-	existing.Aeropuerto = req.Aeropuerto
-	existing.AmbitoCodigo = req.AmbitoCodigo
+	existing.Ciudad = capitalize(req.Ciudad)
+	existing.Aeropuerto = capitalize(req.Aeropuerto)
+	existing.AmbitoCodigo = strings.ToUpper(req.AmbitoCodigo)
 	existing.DepartamentoCodigo = deptoCode
 	existing.Pais = pais
 	existing.Estado = req.Estado == "on"

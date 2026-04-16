@@ -2,6 +2,7 @@ package services
 
 import (
 	"context"
+	"fmt"
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
 )
@@ -33,6 +34,10 @@ func (s *DestinoService) Search(ctx context.Context, query string, ambito string
 }
 
 func (s *DestinoService) Create(ctx context.Context, d *models.Destino) error {
+	existing, _ := s.repo.FindByIATA(ctx, d.IATA)
+	if existing != nil {
+		return fmt.Errorf("el código IATA '%s' ya está registrado", d.IATA)
+	}
 	return s.repo.Create(ctx, d)
 }
 
