@@ -177,10 +177,17 @@ document.addEventListener("alpine:init", function () {
       },
 
       select(item) {
-        this.selectedLabel = item.label;
-        this.search = item.label; // Mostrar nombre legible en el input
-        this.value = item ? item.value : "";
-        this.label = item ? item.label : this.placeholder;
+        if (!item) {
+          this.selectedLabel = "";
+          this.search = "";
+          this.value = "";
+          this.label = this.placeholder;
+        } else {
+          this.selectedLabel = item.label;
+          this.search = item.label;
+          this.value = item.value;
+          this.label = item.label;
+        }
         this.open = false;
 
         // Ejecutar el callback de selección si existe
