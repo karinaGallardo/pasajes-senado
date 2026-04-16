@@ -9,13 +9,14 @@ import (
 )
 
 type CreateDescargoRequest struct {
-	SolicitudID                 string                `form:"solicitud_id" binding:"required"`
-	InformeActividades          string                `form:"informe_actividades"`
-	ObjetivoViaje               string                `form:"objetivo_viaje"`
-	ResultadosViaje             string                `form:"resultados_viaje"`
-	ConclusionesRecomendaciones string                `form:"conclusiones_recomendaciones"`
-	Observaciones               string                `form:"observaciones"`
-	DirigidoA                   string                `form:"dirigido_a"`
+	SolicitudID                 string `form:"solicitud_id" binding:"required"`
+	FechaPresentacion           string `form:"fecha_presentacion"`
+	InformeActividades          string `form:"informe_actividades"`
+	ObjetivoViaje               string `form:"objetivo_viaje"`
+	ResultadosViaje             string `form:"resultados_viaje"`
+	ConclusionesRecomendaciones string `form:"conclusiones_recomendaciones"`
+	Observaciones               string `form:"observaciones"`
+	DirigidoA                   string `form:"dirigido_a"`
 
 	// Informe PV-06
 	NroMemorandum     string `form:"nro_memorandum"`
@@ -197,5 +198,3 @@ type DescargoEditData struct {
 	Ida       []models.DescargoTramo
 	Vuelta    []models.DescargoTramo
 }
-
-

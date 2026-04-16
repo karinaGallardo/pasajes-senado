@@ -857,7 +857,7 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 	s.drawMemoRow(pdf, tr, "A :", aQuien)
 	s.drawMemoRow(pdf, tr, "De :", solicitud.Usuario.GetNombreCompleto())
 	s.drawMemoRow(pdf, tr, "Cargo :", cargoStr)
-	s.drawMemoRow(pdf, tr, "Fecha :", solicitud.CreatedAt.Format("02/01/2006"))
+	s.drawMemoRow(pdf, tr, "Fecha :", descargo.FechaPresentacion.Format("02/01/2006"))
 
 	pdf.Ln(4)
 
@@ -904,8 +904,7 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 	pdf.SetFont("Arial", "", 10)
 	pdf.CellFormat(wValueMemo, 7, tr(nroMemo), "1", 1, "L", false, 0, "")
 
-	pdf.Ln(2)
-	pdf.Ln(2)
+	pdf.Ln(4)
 
 	// INFORME DETALLADO PV-06
 	pdf.SetX(3)

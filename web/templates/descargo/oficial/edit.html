@@ -203,7 +203,7 @@
             <i class="ph ph-info text-primary-600"></i>
             1. Datos de la Comisión
           </h3>
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div class="space-y-4">
             <div class="space-y-2">
               <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">A / DIRIGIDO A:</label>
               <input
@@ -212,20 +212,36 @@
                 value="{{ .Descargo.Oficial.DirigidoA }}"
                 required
                 placeholder="Abrev. titulo profesional - Nombre Completo - Cargo"
-                class="block w-full border border-neutral-200 rounded-md shadow-sm text-sm p-3 focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all"
+                class="block w-full border border-neutral-200 rounded-md shadow-sm text-sm p-3 focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all font-bold"
               />
             </div>
-            <div class="space-y-2">
-              <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">
-                Nº Memorándum / Resolución
-              </label>
-              <input
-                type="text"
-                name="nro_memorandum"
-                value="{{ .Descargo.Oficial.NroMemorandum }}"
-                required
-                class="block w-full border border-neutral-200 rounded-md shadow-sm text-sm p-3 focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all"
-              />
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div class="space-y-2">
+                <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">
+                  Nº Memorándum / Resolución
+                </label>
+                <input
+                  type="text"
+                  name="nro_memorandum"
+                  value="{{ .Descargo.Oficial.NroMemorandum }}"
+                  required
+                  class="block w-full border border-neutral-200 rounded-md shadow-sm text-sm p-3 focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all"
+                />
+              </div>
+              <div class="space-y-2">
+                <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">
+                  Fecha de Presentación
+                </label>
+                <input
+                  type="text"
+                  name="fecha_presentacion"
+                  value="{{ .Descargo.FechaPresentacion.Format `02/01/2006` }}"
+                  required
+                  x-datepicker="{ position: 'bottom center', timepicker: false, dateFormat: 'dd/MM/yyyy' }"
+                  autocomplete="off"
+                  class="block w-full border border-neutral-200 rounded-md shadow-sm text-sm p-3 focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all font-bold"
+                />
+              </div>
             </div>
           </div>
         </div>
