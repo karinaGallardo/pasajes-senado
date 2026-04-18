@@ -17,12 +17,14 @@ type CreateDescargoRequest struct {
 	ConclusionesRecomendaciones string `form:"conclusiones_recomendaciones"`
 	Observaciones               string `form:"observaciones"`
 	DirigidoA                   string `form:"dirigido_a"`
+	LugarViaje                  string `form:"lugar_viaje"`
 
 	// Informe PV-06
-	NroMemorandum     string `form:"nro_memorandum"`
-	TipoTransporte    string `form:"tipo_transporte"` // AEREO, TERRESTRE, VEHICULO_OFICIAL
-	PlacaVehiculo     string `form:"placa_vehiculo"`
-	NroBoletaDeposito string `form:"nro_boleta_deposito"`
+	NroMemorandum     string                `form:"nro_memorandum"`
+	TipoTransporte    string                `form:"tipo_transporte"` // AEREO, TERRESTRE, VEHICULO_OFICIAL
+	PlacaVehiculo     string                `form:"placa_vehiculo"`
+	NroBoletaDeposito string                `form:"nro_boleta_deposito"`
+	ArchivoMemorandum *multipart.FileHeader `form:"archivo_memorandum"`
 
 	// Transporte Terrestre Público
 	TransporteTerrestreFecha   []string `form:"terrestre_fecha[]"`

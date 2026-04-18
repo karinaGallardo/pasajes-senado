@@ -825,7 +825,7 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 	})
 
 	pdf.AddPage()
-	s.drawReportHeader(pdf, tr, "FORM-PV-06", "FORMULARIO DE DESCARGO", "PASAJES OFICIALES", "SERVIDORES PÚBLICOS - GESTION: "+solicitud.CreatedAt.Format("2006"), solicitud.Codigo)
+	s.drawReportHeader(pdf, tr, "FORM-PV-06", "INFORME DE DESCARGO DE VIAJE", "PASAJES OFICIALES", "SERVIDORES PÚBLICOS - GESTION: "+solicitud.CreatedAt.Format("2006"), solicitud.Codigo)
 
 	pdf.SetFont("Arial", "", 10)
 
@@ -870,17 +870,8 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 	pdf.CellFormat(35, 8, tr("Lugar del Viaje:"), "1", 0, "L", true, 0, "")
 	pdf.SetFont("Arial", "", 10)
 	lugarViaje := "-"
-	// Search for the LAST item of type IDA to get the final destination
-	for i := len(solicitud.Items) - 1; i >= 0; i-- {
-		if solicitud.Items[i].Tipo == models.TipoSolicitudItemIda {
-			if solicitud.Items[i].Destino != nil {
-				lugarViaje = solicitud.Items[i].Destino.Ciudad
-			}
-			break
-		}
-	}
-	if lugarViaje == "-" {
-		lugarViaje = solicitud.GetDestinoCiudad()
+	if descargo.Oficial != nil && descargo.Oficial.LugarViaje != "" {
+		lugarViaje = descargo.Oficial.LugarViaje
 	}
 
 	pdf.CellFormat(155, 8, "  "+tr(lugarViaje), "1", 1, "L", false, 0, "")
@@ -1380,6 +1371,13 @@ func (s *ReportService) GeneratePV06Complete(ctx context.Context, descargo *mode
 	// 2. Recolectar rutas de archivos que existan (Billetes Electrónicos + Pases a Bordo)
 	var filesToMerge []string
 	filesToMerge = append(filesToMerge, tmpBase.Name())
+
+	// 2.0 Memorandum PDF (If uploaded)
+	if descargo.Oficial != nil && descargo.Oficial.ArchivoMemorandum != "" {
+		if _, err := os.Stat(descargo.Oficial.ArchivoMemorandum); err == nil {
+			filesToMerge = append(filesToMerge, descargo.Oficial.ArchivoMemorandum)
+		}
+	}
 
 	// 2.1 Billetes Electrónicos (Pasajes emitidos)
 	if descargo.Solicitud != nil {

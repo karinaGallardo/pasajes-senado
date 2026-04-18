@@ -246,11 +246,10 @@ func (ctrl *DescargoOficialController) Update(c *gin.Context) {
 	pasesAbordoPaths := utils.ExtractDescargoFiles(c, req.TramoID)
 	terrestrePaths := utils.ExtractTerrestreFiles(c, req.TransporteTerrestreID)
 	anexoPaths := utils.ExtractDescargoAnexos(c, id)
-
-	// 4. Comprobantes de Pago (Per Pasaje)
 	boletasPaths := utils.ExtractPasajeBoletas(c, req.LiquidacionPasajeID)
+	memoPath := utils.ExtractMemorandumFile(c, id)
 
-	if err := ctrl.descargoOficialService.UpdateOficial(c.Request.Context(), id, req, authUser.ID, pasesAbordoPaths, terrestrePaths, anexoPaths, boletasPaths); err != nil {
+	if err := ctrl.descargoOficialService.UpdateOficial(c.Request.Context(), id, req, authUser.ID, pasesAbordoPaths, terrestrePaths, anexoPaths, boletasPaths, memoPath); err != nil {
 		c.Redirect(http.StatusFound, "/descargos/oficial/"+id+"/editar?error=ErrorActualizacion")
 		return
 	}

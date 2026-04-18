@@ -198,7 +198,7 @@ func (s *DescargoOficialService) SyncItineraryFromSolicitud(ctx context.Context,
 	return s.repo.Update(ctx, descargo)
 }
 
-func (s *DescargoOficialService) UpdateOficial(ctx context.Context, id string, req dtos.CreateDescargoRequest, userID string, pasesAbordoPaths []string, terrestrePaths []string, anexoPaths []string, boletasPaths []string) error {
+func (s *DescargoOficialService) UpdateOficial(ctx context.Context, id string, req dtos.CreateDescargoRequest, userID string, pasesAbordoPaths []string, terrestrePaths []string, anexoPaths []string, boletasPaths []string, memoPath string) error {
 	descargo, err := s.repo.FindByID(ctx, id)
 	if err != nil {
 		return err
@@ -264,8 +264,10 @@ func (s *DescargoOficialService) UpdateOficial(ctx context.Context, id string, r
 	descargo.Oficial.ConclusionesRecomendaciones = req.ConclusionesRecomendaciones
 	descargo.Oficial.NroBoletaDeposito = req.NroBoletaDeposito
 	descargo.Oficial.DirigidoA = req.DirigidoA
+	descargo.Oficial.LugarViaje = req.LugarViaje
 	descargo.Oficial.TipoTransporte = req.TipoTransporte
 	descargo.Oficial.PlacaVehiculo = req.PlacaVehiculo
+	descargo.Oficial.ArchivoMemorandum = memoPath
 
 	if err := s.repo.UpdateOficial(ctx, descargo.Oficial); err != nil {
 		return err

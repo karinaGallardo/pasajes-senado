@@ -218,14 +218,15 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div class="space-y-2">
                 <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">
-                  Nº Memorándum / Resolución
+                  Lugar del Viaje:
                 </label>
                 <input
                   type="text"
-                  name="nro_memorandum"
-                  value="{{ .Descargo.Oficial.NroMemorandum }}"
+                  name="lugar_viaje"
+                  value="{{ .Descargo.Oficial.LugarViaje }}"
                   required
-                  class="block w-full border border-neutral-200 rounded-md shadow-sm text-sm p-3 focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all"
+                  placeholder="Ciudad / Destino final del viaje"
+                  class="block w-full border border-neutral-200 rounded-md shadow-sm text-sm p-3 focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all font-bold"
                 />
               </div>
               <div class="space-y-2">
@@ -241,6 +242,56 @@
                   autocomplete="off"
                   class="block w-full border border-neutral-200 rounded-md shadow-sm text-sm p-3 focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all font-bold"
                 />
+              </div>
+            </div>
+            <div class="space-y-6">
+              <div class="space-y-2">
+                <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">
+                  Nº Memorándum / Resolución
+                </label>
+                <div class="flex gap-2">
+                  <div class="relative flex-1">
+                    <input
+                      type="text"
+                      name="nro_memorandum"
+                      value="{{ .Descargo.Oficial.NroMemorandum }}"
+                      required
+                      class="block w-full border border-neutral-200 rounded-md shadow-sm text-sm p-3 focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all font-bold"
+                    />
+                  </div>
+                  <div
+                    class="relative"
+                    x-data="{ hasFile: {{ if .Descargo.Oficial.ArchivoMemorandum }}
+                      true
+                    {{ else }}
+                      false
+                    {{ end }} }"
+                  >
+                    <input type="hidden" name="archivo_memorandum_existente" value="{{ .Descargo.Oficial.ArchivoMemorandum }}" />
+                    <input
+                      type="file"
+                      name="archivo_memorandum"
+                      id="archivo_memorandum"
+                      accept="application/pdf"
+                      class="hidden"
+                      @change="hasFile = $el.files.length > 0"
+                    />
+                    <label
+                      for="archivo_memorandum"
+                      :class="hasFile ? 'bg-primary-50 text-primary-700 border-primary-200' : 'bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50'"
+                      class="inline-flex items-center px-4 py-3 border shadow-sm text-xs font-black rounded-md cursor-pointer transition-all h-full uppercase tracking-tighter"
+                    >
+                      <i :class="hasFile ? 'ph-check-circle' : 'ph-file-pdf'" class="ph mr-2 text-lg"></i>
+                      <span x-text="hasFile ? 'Memo PDF OK' : 'Adjuntar PDF'"></span>
+                    </label>
+                  </div>
+                </div>
+                {{ if .Descargo.Oficial.ArchivoMemorandum }}
+                  <p class="text-[9px] text-primary-600 font-black italic ml-1 uppercase tracking-tighter">
+                    <i class="ph ph-info mr-1"></i>
+                    Memorandum PDF ya cargado. Puede subir uno nuevo para reemplazarlo.
+                  </p>
+                {{ end }}
               </div>
             </div>
           </div>

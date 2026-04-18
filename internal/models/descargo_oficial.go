@@ -10,15 +10,17 @@ type DescargoOficial struct {
 
 	NroMemorandum  string `gorm:"size:100"`
 	ObjetivoViaje  string `gorm:"type:text"`
-	TipoTransporte string `gorm:"size:100"` // AEREO, TERRESTRE, VEHICULO_OFICIAL
-	PlacaVehiculo  string `gorm:"size:50"`
+	TipoTransporte    string `gorm:"size:100"` // AEREO, TERRESTRE, VEHICULO_OFICIAL
+	PlacaVehiculo     string `gorm:"size:50"`
+	ArchivoMemorandum string `gorm:"size:255"`
 
 	InformeActividades          string `gorm:"type:text"`
 	ResultadosViaje             string `gorm:"column:resultados_viaje;type:text"`
 	ConclusionesRecomendaciones string `gorm:"column:conclusiones_recomendaciones;type:text"`
 
-	NroBoletaDeposito string  `gorm:"size:100"`
-	DirigidoA         string  `gorm:"size:255"`
+	NroBoletaDeposito string `gorm:"size:100"`
+	DirigidoA         string `gorm:"size:255"`
+	LugarViaje        string `gorm:"size:100;default:''"`
 
 	Anexos                []AnexoDescargo               `gorm:"foreignKey:DescargoOficialID"`
 	TransportesTerrestres []TransporteTerrestreDescargo `gorm:"foreignKey:DescargoOficialID"`
@@ -28,8 +30,10 @@ func (d DescargoOficial) HasChanges(other DescargoOficial) bool {
 	return d.DescargoID != other.DescargoID ||
 		d.NroMemorandum != other.NroMemorandum ||
 		d.ObjetivoViaje != other.ObjetivoViaje ||
+		d.LugarViaje != other.LugarViaje ||
 		d.TipoTransporte != other.TipoTransporte ||
 		d.PlacaVehiculo != other.PlacaVehiculo ||
+		d.ArchivoMemorandum != other.ArchivoMemorandum ||
 		d.InformeActividades != other.InformeActividades ||
 		d.ResultadosViaje != other.ResultadosViaje ||
 		d.ConclusionesRecomendaciones != other.ConclusionesRecomendaciones ||
