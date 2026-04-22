@@ -14,6 +14,14 @@ import (
 	"strings"
 	"time"
 
+	"image"
+	_ "image/gif"
+	_ "image/jpeg"
+	"image/png"
+
+	_ "golang.org/x/image/bmp"
+	_ "golang.org/x/image/webp"
+
 	"github.com/jung-kurt/gofpdf"
 	"github.com/xuri/excelize/v2"
 )
@@ -468,7 +476,7 @@ func (s *ReportService) GeneratePV02(ctx context.Context, solicitud *models.Soli
 	return pdf
 }
 
-func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Descargo, personaView *models.MongoPersonaView) *gofpdf.Fpdf {
+func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Descargo, personaView *models.MongoPersonaView) (*gofpdf.Fpdf, error) {
 	solicitud := descargo.Solicitud
 
 	pdf := gofpdf.New("P", "mm", "Letter", "")
@@ -792,24 +800,32 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 	}
 
 	if descargo.GetTotalDevolucionPasajes() > 0 && compPath != "" {
-		filePath := compPath
-		if _, err := os.Stat(filePath); err == nil {
-			lowerPath := strings.ToLower(filePath)
-			if strings.HasSuffix(lowerPath, ".jpg") || strings.HasSuffix(lowerPath, ".jpeg") || strings.HasSuffix(lowerPath, ".png") {
-				pdf.AddPage()
-				pdf.SetFont("Arial", "B", 10)
-				pdf.CellFormat(190, 8, tr("ANEXO: COMPROBANTE DE DEPÓSITO BANCARIO"), "B", 1, "C", false, 0, "")
-				pdf.Ln(5)
-				var opt gofpdf.ImageOptions
-				pdf.ImageOptions(filePath, 10, 30, 190, 0, false, opt, 0, "")
+		validPath, isTemp, err := s.getValidImage(compPath)
+		if err == nil {
+			if isTemp {
+				defer os.Remove(validPath)
 			}
+			pdf.AddPage()
+			pdf.SetFont("Arial", "B", 10)
+			pdf.CellFormat(190, 8, tr("ANEXO: COMPROBANTE DE DEPÓSITO BANCARIO"), "B", 1, "C", false, 0, "")
+			pdf.Ln(5)
+
+			lowerPath := strings.ToLower(validPath)
+			var opt gofpdf.ImageOptions
+			if strings.HasSuffix(lowerPath, ".jfif") {
+				opt.ImageType = "JPG"
+			}
+			pdf.ImageOptions(validPath, 10, 30, 190, 0, false, opt, 0, "")
 		}
 	}
 
-	return pdf
+	if pdf.Err() {
+		return nil, fmt.Errorf("error en generación de PDF base PV-05: %v", pdf.Error())
+	}
+	return pdf, nil
 }
 
-func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Descargo, personaView *models.MongoPersonaView) *gofpdf.Fpdf {
+func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Descargo, personaView *models.MongoPersonaView) (*gofpdf.Fpdf, error) {
 	solicitud := descargo.Solicitud
 
 	pdf := gofpdf.New("P", "mm", "Letter", "")
@@ -998,7 +1014,26 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 				if _, err := os.Stat(anexo.Archivo); err != nil {
 					continue
 				}
-				pdf.RegisterImage(anexo.Archivo, "")
+				// Validar y obtener una ruta de imagen que gofpdf entienda
+				validPath, isTemp, err := s.getValidImage(anexo.Archivo)
+				if err != nil {
+					continue
+				}
+				if isTemp {
+					defer os.Remove(validPath)
+				}
+
+				lowerPath := strings.ToLower(validPath)
+				imgType := ""
+				if strings.HasSuffix(lowerPath, ".jfif") {
+					imgType = "JPG"
+				}
+
+				pdf.RegisterImage(validPath, imgType)
+				if pdf.Err() {
+					pdf.ClearError()
+					continue
+				}
 				info := pdf.GetImageInfo(anexo.Archivo)
 				if info == nil || info.Height() == 0 {
 					continue
@@ -1061,10 +1096,15 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 			currX := startX
 			currY := pdf.GetY()
 			for _, idx := range rowIndices {
-				info := pdf.GetImageInfo(anexos[idx].Archivo)
+				validPath, isTemp, _ := s.getValidImage(anexos[idx].Archivo)
+				if isTemp {
+					defer os.Remove(validPath)
+				}
+
+				info := pdf.GetImageInfo(validPath)
 				asp := info.Width() / info.Height()
 				w := h * asp
-				pdf.Image(anexos[idx].Archivo, currX, currY, w, 0, false, "", 0, "")
+				pdf.Image(validPath, currX, currY, w, 0, false, "", 0, "")
 				currX += w + imgSpacing
 			}
 
@@ -1253,12 +1293,18 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 		s.drawSignatureBlock(pdf, tr, sigY+10, "FIRMA Y SELLO SERVIDOR PÚBLICO", solicitud.Usuario.GetNombreCompleto(), cargo, "Vo.Bo. Inmediato Superior", "", "")
 	}
 
-	return pdf
+	if pdf.Err() {
+		return nil, fmt.Errorf("error en generación de PDF base PV-06: %v", pdf.Error())
+	}
+	return pdf, nil
 }
 
 func (s *ReportService) GeneratePV05Complete(ctx context.Context, descargo *models.Descargo, personaView *models.MongoPersonaView) ([]byte, error) {
 	// 1. Generar el PDF Base PV-05
-	pdf := s.GeneratePV05(ctx, descargo, personaView)
+	pdf, err := s.GeneratePV05(ctx, descargo, personaView)
+	if err != nil {
+		return nil, err
+	}
 
 	// Crear archivos temporales para la unión
 	tmpBase, err := os.CreateTemp("", "pv05_base_*.pdf")
@@ -1271,17 +1317,22 @@ func (s *ReportService) GeneratePV05Complete(ctx context.Context, descargo *mode
 		return nil, fmt.Errorf("error generating base PDF: %w", err)
 	}
 
-	// 2. Recolectar rutas de archivos que existan (Billetes Electrónicos + Pases a Bordo)
+	// 2. Recolectar rutas de archivos que existan
 	var filesToMerge []string
 	filesToMerge = append(filesToMerge, tmpBase.Name())
+
+	// Mapa para evitar duplicados
+	seenFiles := make(map[string]bool)
+	seenFiles[tmpBase.Name()] = true
 
 	// 2.1 Billetes Electrónicos (Pasajes emitidos)
 	if descargo.Solicitud != nil {
 		for _, item := range descargo.Solicitud.Items {
 			for _, pasaje := range item.Pasajes {
-				if pasaje.Archivo != "" {
-					if _, err := os.Stat(pasaje.Archivo); err == nil {
+				if pasaje.Archivo != "" && !seenFiles[pasaje.Archivo] {
+					if s.isValidPDF(pasaje.Archivo) {
 						filesToMerge = append(filesToMerge, pasaje.Archivo)
+						seenFiles[pasaje.Archivo] = true
 					}
 				}
 			}
@@ -1290,14 +1341,15 @@ func (s *ReportService) GeneratePV05Complete(ctx context.Context, descargo *mode
 
 	// 2.2 Pases a Bordo (Cargados en el descargo)
 	for _, det := range descargo.Tramos {
-		if det.ArchivoPaseAbordo != "" {
-			if _, err := os.Stat(det.ArchivoPaseAbordo); err == nil {
+		if det.ArchivoPaseAbordo != "" && !seenFiles[det.ArchivoPaseAbordo] {
+			if s.isValidPDF(det.ArchivoPaseAbordo) {
 				filesToMerge = append(filesToMerge, det.ArchivoPaseAbordo)
+				seenFiles[det.ArchivoPaseAbordo] = true
 			}
 		}
 	}
 
-	// 2.3 Comprobante de Depósito (Si es PDF se une, si es imagen ya se incrustó en el base)
+	// 2.3 Comprobante de Depósito (Si es PDF se une)
 	compPath := ""
 	if descargo.Solicitud != nil {
 		for _, item := range descargo.Solicitud.Items {
@@ -1314,9 +1366,10 @@ func (s *ReportService) GeneratePV05Complete(ctx context.Context, descargo *mode
 	}
 
 	if descargo.GetTotalDevolucionPasajes() > 0 && compPath != "" {
-		if strings.HasSuffix(strings.ToLower(compPath), ".pdf") {
-			if _, err := os.Stat(compPath); err == nil {
+		if strings.HasSuffix(strings.ToLower(compPath), ".pdf") && !seenFiles[compPath] {
+			if s.isValidPDF(compPath) {
 				filesToMerge = append(filesToMerge, compPath)
+				seenFiles[compPath] = true
 			}
 		}
 	}
@@ -1355,7 +1408,10 @@ func (s *ReportService) GeneratePV05Complete(ctx context.Context, descargo *mode
 
 func (s *ReportService) GeneratePV06Complete(ctx context.Context, descargo *models.Descargo, personaView *models.MongoPersonaView) ([]byte, error) {
 	// 1. Generar el PDF Base PV-06
-	pdf := s.GeneratePV06(ctx, descargo, personaView)
+	pdf, err := s.GeneratePV06(ctx, descargo, personaView)
+	if err != nil {
+		return nil, err
+	}
 
 	// Crear archivos temporales para la unión
 	tmpBase, err := os.CreateTemp("", "pv06_base_*.pdf")
@@ -1365,7 +1421,7 @@ func (s *ReportService) GeneratePV06Complete(ctx context.Context, descargo *mode
 	defer os.Remove(tmpBase.Name())
 
 	if err := pdf.OutputFileAndClose(tmpBase.Name()); err != nil {
-		return nil, fmt.Errorf("error generating base PDF: %w", err)
+		return nil, fmt.Errorf("error saving base PDF: %w", err)
 	}
 
 	// 2. Recolectar rutas de archivos que existan (Billetes Electrónicos + Pases a Bordo)
@@ -1380,7 +1436,7 @@ func (s *ReportService) GeneratePV06Complete(ctx context.Context, descargo *mode
 	if descargo.Oficial != nil && descargo.Oficial.ArchivoMemorandum != "" {
 		path := descargo.Oficial.ArchivoMemorandum
 		if !seenFiles[path] {
-			if _, err := os.Stat(path); err == nil {
+			if s.isValidPDF(path) {
 				filesToMerge = append(filesToMerge, path)
 				seenFiles[path] = true
 			}
@@ -1392,7 +1448,7 @@ func (s *ReportService) GeneratePV06Complete(ctx context.Context, descargo *mode
 		for _, item := range descargo.Solicitud.Items {
 			for _, pasaje := range item.Pasajes {
 				if pasaje.Archivo != "" && !seenFiles[pasaje.Archivo] {
-					if _, err := os.Stat(pasaje.Archivo); err == nil {
+					if s.isValidPDF(pasaje.Archivo) {
 						filesToMerge = append(filesToMerge, pasaje.Archivo)
 						seenFiles[pasaje.Archivo] = true
 					}
@@ -1404,7 +1460,7 @@ func (s *ReportService) GeneratePV06Complete(ctx context.Context, descargo *mode
 	// 2.2 Pases a Bordo (Cargados en el descargo)
 	for _, det := range descargo.Tramos {
 		if det.ArchivoPaseAbordo != "" && !seenFiles[det.ArchivoPaseAbordo] {
-			if _, err := os.Stat(det.ArchivoPaseAbordo); err == nil {
+			if s.isValidPDF(det.ArchivoPaseAbordo) {
 				filesToMerge = append(filesToMerge, det.ArchivoPaseAbordo)
 				seenFiles[det.ArchivoPaseAbordo] = true
 			}
@@ -1429,7 +1485,7 @@ func (s *ReportService) GeneratePV06Complete(ctx context.Context, descargo *mode
 
 	if descargo.GetTotalDevolucionPasajes() > 0 && compPath != "" {
 		if strings.HasSuffix(strings.ToLower(compPath), ".pdf") && !seenFiles[compPath] {
-			if _, err := os.Stat(compPath); err == nil {
+			if s.isValidPDF(compPath) {
 				filesToMerge = append(filesToMerge, compPath)
 				seenFiles[compPath] = true
 			}
@@ -1925,6 +1981,64 @@ func (s *ReportService) drawPageBorder(pdf *gofpdf.Fpdf) {
 	pdf.Rect(3, 3, 210, 265.5, "D")
 	pdf.Rect(3, 268.5, 210, 9.3, "D")
 }
+
+// isValidPDF verifica si un archivo existe y tiene la cabecera mágica de un PDF (%PDF-)
+func (s *ReportService) isValidPDF(filePath string) bool {
+	if filePath == "" {
+		return false
+	}
+	f, err := os.Open(filePath)
+	if err != nil {
+		return false
+	}
+	defer f.Close()
+
+	header := make([]byte, 5)
+	n, err := f.Read(header)
+	if err != nil || n < 5 {
+		return false
+	}
+
+	return string(header) == "%PDF-"
+}
+
+// getValidImage verifica si un archivo es una imagen y lo convierte a PNG si el formato no es soportado por gofpdf (ej: webp, bmp)
+func (s *ReportService) getValidImage(filePath string) (string, bool, error) {
+	if filePath == "" {
+		return "", false, fmt.Errorf("empty path")
+	}
+
+	f, err := os.Open(filePath)
+	if err != nil {
+		return "", false, err
+	}
+	defer f.Close()
+
+	// Detectar formato
+	img, format, err := image.Decode(f)
+	if err != nil {
+		return "", false, fmt.Errorf("decoding error: %w", err)
+	}
+
+	// Formatos soportados nativamente por gofpdf
+	if format == "jpeg" || format == "png" || format == "gif" {
+		return filePath, false, nil
+	}
+
+	// Si es otro formato (webp, bmp, etc.), convertir a PNG temporal
+	tmpFile, err := os.CreateTemp("", "img_conv_*.png")
+	if err != nil {
+		return "", false, err
+	}
+	defer tmpFile.Close()
+
+	if err := png.Encode(tmpFile, img); err != nil {
+		return "", false, err
+	}
+
+	return tmpFile.Name(), true, nil
+}
+
 func (s *ReportService) GenerateConsolidadoPasajesExcel(ctx context.Context, filter dtos.ReportFilterRequest) (*excelize.File, error) {
 	pasajes, err := s.pasajeRepo.FindConsolidado(ctx, filter)
 	if err != nil {

@@ -268,7 +268,8 @@ func (ctrl *DescargoOficialController) Print(c *gin.Context) {
 	personaView, _ := ctrl.peopleService.GetSenatorDataByCI(c.Request.Context(), descargo.Solicitud.Usuario.CI)
 	pdf, err := ctrl.reportService.GeneratePV06Complete(c.Request.Context(), descargo, personaView)
 	if err != nil {
-		c.String(http.StatusInternalServerError, "Error generando PDF")
+		log.Printf("[ERROR] PV06 PDF Generation Failed for Descargo %s: %v", id, err)
+		c.String(http.StatusInternalServerError, "Error generando PDF: %v", err)
 		return
 	}
 
