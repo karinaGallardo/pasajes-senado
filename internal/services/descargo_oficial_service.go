@@ -7,7 +7,6 @@ import (
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
 	"sistema-pasajes/internal/utils"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -220,14 +219,16 @@ func (s *DescargoOficialService) UpdateOficial(ctx context.Context, id string, r
 	}
 	descargo.UpdatedBy = &userID
 
-	// 1.1 Comprobantes de Pago (Ahora per pasaje)
-	totalDevolucion := 0.0
+	// 1.1 Liquidación de Pasajes (Comprobantes y Montos)
 	for i, pasajeID := range req.LiquidacionPasajeID {
+		if pasajeID == "" {
+			continue
+		}
+
 		monto := 0.0
 		if i < len(req.LiquidacionMontoDevolucion) {
-			monto, _ = strconv.ParseFloat(req.LiquidacionMontoDevolucion[i], 64)
+			monto = utils.ParseFloat(req.LiquidacionMontoDevolucion[i])
 		}
-		totalDevolucion += monto
 
 		nroBoleta := ""
 		if i < len(req.LiquidacionNroBoleta) {
@@ -239,16 +240,23 @@ func (s *DescargoOficialService) UpdateOficial(ctx context.Context, id string, r
 			boletaPath = boletasPaths[i]
 		}
 
-		// Buscar el pasaje original y actualizar campos financieros
+		// Buscar el pasaje original y actualizar campos financieros y de archivo
 		if p, err := s.pasajeRepo.FindByID(ctx, pasajeID); err == nil {
 			p.MontoReembolso = monto
 			p.CostoUtilizado = p.Costo - monto
 			p.NroBoletaDeposito = nroBoleta
+			p.ArchivoComprobante = boletaPath
+
 			if boletaPath != "" {
-				p.ArchivoComprobante = boletaPath
-				now := time.Now()
-				p.FechaDeposito = &now
+				if p.FechaDeposito == nil {
+					now := time.Now()
+					p.FechaDeposito = &now
+				}
+			} else {
+				p.FechaDeposito = nil
 			}
+
+			// Actualización robusta del pasaje
 			_ = s.pasajeRepo.Update(ctx, p)
 		}
 	}
@@ -326,29 +334,6 @@ func (s *DescargoOficialService) UpdateOficial(ctx context.Context, id string, r
 			}
 		}
 		descargo.Oficial.TransportesTerrestres = terrestres
-	}
-
-	// 4. Liquidación de Pasajes (Actualización Directa en Modelo Pasaje)
-	if len(req.LiquidacionPasajeID) > 0 {
-		totalDevo := 0.0
-		for i, pID := range req.LiquidacionPasajeID {
-			if pID != "" {
-				montoDevo := utils.ParseFloat(utils.GetIdx(req.LiquidacionMontoDevolucion, i))
-				totalDevo += montoDevo
-
-				// Auto-calcular costo utilizado recuperando el original
-				var p models.Pasaje
-				if err := s.repo.GetDB().Select("id", "costo").First(&p, "id = ?", pID).Error; err == nil {
-					costoUtilizado := p.Costo - montoDevo
-					if err := s.repo.GetDB().Model(&models.Pasaje{}).Where("id = ?", pID).Updates(map[string]interface{}{
-						"costo_utilizado": costoUtilizado,
-						"monto_reembolso": montoDevo,
-					}).Error; err != nil {
-						fmt.Printf("[ERROR] Fallo al actualizar liquidación pasaje %s: %v\n", pID, err)
-					}
-				}
-			}
-		}
 	}
 
 	// 5. Data Cleansing & Mapping

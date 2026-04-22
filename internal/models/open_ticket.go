@@ -13,7 +13,6 @@ const (
 	EstadoOpenTicketDisponible EstadoOpenTicket = "DISPONIBLE" // Listo para ser usado
 	EstadoOpenTicketReservado  EstadoOpenTicket = "RESERVADO"  // Seleccionado en una nueva solicitud FV-01
 	EstadoOpenTicketUsado      EstadoOpenTicket = "USADO"      // Ya volado o canjeado definitivamente
-	EstadoOpenTicketVencido    EstadoOpenTicket = "VENCIDO"    // Caducó (generalmente 1 año)
 	EstadoOpenTicketCancelado  EstadoOpenTicket = "CANCELADO"  // Anulado o corregido
 )
 
@@ -28,12 +27,12 @@ type OpenTicket struct {
 	DescargoID string    `gorm:"type:uuid;not null;index" json:"descargo_id"`
 	Descargo   *Descargo `gorm:"foreignKey:DescargoID" json:"descargo,omitempty"`
 
-	NumeroBillete      string           `gorm:"type:varchar(100);not null;index" json:"numero_billete"`
-	RutaReferencia     string           `gorm:"type:text" json:"ruta_referencia"` // Ej: Pando-Beni, Beni-VVI, VVI-LPB
-	Aerolinea          string           `gorm:"type:varchar(100)" json:"aerolinea"`
-	FechaOriginalVuelo *time.Time       `json:"fecha_original_vuelo"`
-	FechaVencimiento   *time.Time       `json:"fecha_vencimiento"`
-	Estado             EstadoOpenTicket `gorm:"type:varchar(20);default:'PENDIENTE';index" json:"estado"`
+	PasajeID *string `gorm:"size:36;index" json:"pasaje_id"`
+	Pasaje   *Pasaje `gorm:"foreignKey:PasajeID" json:"pasaje,omitempty"`
+
+	NumeroBillete  string           `gorm:"type:varchar(100);not null;index" json:"numero_billete"`
+	TramosNoUsados string           `gorm:"type:text" json:"tramos_no_usados"` // Ej: Pando-Beni, Beni-VVI, VVI-LPB
+	Estado         EstadoOpenTicket `gorm:"type:varchar(20);default:'PENDIENTE';index" json:"estado"`
 
 	// Programación de uso
 	FechaVueloProgramada *time.Time `json:"fecha_vuelo_programada"`
@@ -71,8 +70,6 @@ func (c OpenTicket) GetEstadoColor() string {
 		return "warning"
 	case EstadoOpenTicketUsado:
 		return "neutral"
-	case EstadoOpenTicketVencido:
-		return "danger"
 	case EstadoOpenTicketPendiente:
 		return "primary"
 	default:
@@ -88,13 +85,9 @@ func (c OpenTicket) IsUsado() bool {
 	return c.Estado == EstadoOpenTicketUsado
 }
 
-func (c OpenTicket) IsVencido() bool {
-	return c.Estado == EstadoOpenTicketVencido
-}
-
 func (c OpenTicket) GetFechaOriginalFormat() string {
-	if c.FechaOriginalVuelo == nil {
+	if c.Pasaje == nil {
 		return "-"
 	}
-	return c.FechaOriginalVuelo.Format("02/01/2006")
+	return c.Pasaje.FechaVuelo.Format("02/01/2006")
 }

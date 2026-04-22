@@ -1,3 +1,24 @@
+/**
+ * Valida si el archivo es un PDF. Global Helper.
+ */
+window.checkIsPDF = function (file) {
+  if (!file) return true;
+  if (file.type !== "application/pdf") {
+    if (typeof Swal !== "undefined") {
+      Swal.fire({
+        icon: "warning",
+        title: "Archivo no válido",
+        text: "Por favor, suba únicamente archivos en formato PDF.",
+        confirmButtonColor: "#03738C",
+      });
+    } else {
+      alert("Por favor, suba únicamente archivos en formato PDF.");
+    }
+    return false;
+  }
+  return true;
+};
+
 document.addEventListener("alpine:init", function () {
   /**
    * Global data for Pasaje Modals (Create/Edit)
@@ -63,6 +84,13 @@ document.addEventListener("alpine:init", function () {
           } finally {
             this.processingImage = false;
           }
+        } else if (file.type === "application/pdf") {
+          if (!window.checkIsPDF(file)) {
+            el.value = "";
+            this.fileName = "";
+            return;
+          }
+          this.fileName = file.name;
         } else {
           this.fileName = file.name;
         }
@@ -800,9 +828,6 @@ window.checkFileSize = function (file, maxSizeMB = 8) {
   return true;
 };
 
-/**
- * Valida y procesa un archivo (redimensiona si es imagen).
- */
 window.validateAndProcessFile = async function (file, maxSizeMB = 8) {
   if (!window.checkFileSize(file, maxSizeMB)) return null;
 

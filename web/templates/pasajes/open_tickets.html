@@ -41,9 +41,8 @@
               {{ if .ShowBeneficiary }}
                 <th class="px-6 py-4">Beneficiario</th>
               {{ end }}
-              <th class="px-6 py-4">Ruta Original</th>
+              <th class="px-6 py-4">Tramos No Usados</th>
               <th class="px-6 py-4">Estado</th>
-              <th class="px-6 py-4">Vencimiento</th>
               <th class="px-6 py-4 text-right">Generar Solicitud</th>
             </tr>
           </thead>
@@ -63,7 +62,9 @@
                     </div>
                     <div>
                       <span class="text-zinc-900 font-semibold block leading-none">{{ .NumeroBillete }}</span>
-                      <span class="text-zinc-400 text-xs tracking-tight uppercase">{{ .Aerolinea }}</span>
+                      <span class="text-zinc-400 text-xs tracking-tight uppercase">
+                        {{ if .Pasaje }}{{ .Pasaje.Aerolinea.Nombre }}{{ else }}N/A{{ end }}
+                      </span>
                     </div>
                   </div>
                 </td>
@@ -76,7 +77,7 @@
                   </td>
                 {{ end }}
                 <td class="px-6 py-5">
-                  <span class="text-zinc-700 font-medium">{{ .RutaReferencia }}</span>
+                  <span class="text-zinc-700 font-medium">{{ .TramosNoUsados }}</span>
                   <span class="block text-[10px] text-zinc-400 uppercase tracking-tighter mt-0.5">
                     Vía Descargo:
                     {{ .Descargo.Codigo }}
@@ -103,16 +104,6 @@
                       </div>
                     </div>
                   {{ end }}
-                </td>
-                <td class="px-6 py-5 whitespace-nowrap">
-                  <div class="text-[10px] text-zinc-500 font-bold">
-                    {{ if .FechaVencimiento }}
-                      <i class="ph ph-calendar-x mr-1"></i>
-                      {{ .FechaVencimiento.Format "02/01/2006" }}
-                    {{ else }}
-                      <span class="text-emerald-600">VIGENTE</span>
-                    {{ end }}
-                  </div>
                 </td>
                 <td class="px-6 py-5 text-right whitespace-nowrap">
                   <div class="flex items-center justify-end gap-2">

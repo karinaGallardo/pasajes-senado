@@ -231,24 +231,17 @@ func (s *DescargoService) SyncOpenTickets(ctx context.Context, descargoID string
 					NumeroBillete:  tramo.Billete,
 					Estado:         models.EstadoOpenTicketPendiente,
 					Observaciones:  "Generado automáticamente desde descargo.",
-					RutaReferencia: "",
+					TramosNoUsados:  "",
 				}
-				// Intentar obtener aerolínea si el tramo tiene pasaje vinculado
 				if tramo.PasajeID != nil {
-					var p models.Pasaje
-					if s.repo.GetDB().Preload("Aerolinea").First(&p, "id = ?", *tramo.PasajeID).Error == nil {
-						if p.Aerolinea != nil {
-							ticket.Aerolinea = p.Aerolinea.Nombre
-						}
-						ticket.FechaOriginalVuelo = &p.FechaVuelo
-					}
+					ticket.PasajeID = tramo.PasajeID
 				}
 			}
 
-			if ticket.RutaReferencia != "" {
-				ticket.RutaReferencia += " / "
+			if ticket.TramosNoUsados != "" {
+				ticket.TramosNoUsados += " / "
 			}
-			ticket.RutaReferencia += tramo.TramoNombre
+			ticket.TramosNoUsados += tramo.TramoNombre
 
 			openTicketsInDescargo[tramo.Billete] = ticket
 		}
@@ -259,13 +252,8 @@ func (s *DescargoService) SyncOpenTickets(ctx context.Context, descargoID string
 		if old, ok := existingMap[num]; ok {
 			// Actualizar si está pendiente o disponible
 			if old.Estado == models.EstadoOpenTicketPendiente || old.Estado == models.EstadoOpenTicketDisponible {
-				old.RutaReferencia = ticket.RutaReferencia
-				if ticket.Aerolinea != "" {
-					old.Aerolinea = ticket.Aerolinea
-				}
-				if ticket.FechaOriginalVuelo != nil {
-					old.FechaOriginalVuelo = ticket.FechaOriginalVuelo
-				}
+				old.TramosNoUsados = ticket.TramosNoUsados
+				old.PasajeID = ticket.PasajeID
 				old.UpdatedBy = &userID
 				_ = s.openTicketRepo.Update(ctx, &old)
 			}

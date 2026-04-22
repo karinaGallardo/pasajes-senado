@@ -1372,10 +1372,18 @@ func (s *ReportService) GeneratePV06Complete(ctx context.Context, descargo *mode
 	var filesToMerge []string
 	filesToMerge = append(filesToMerge, tmpBase.Name())
 
+	// Mapa para evitar duplicados (ej: mismo billete para ida y vuelta)
+	seenFiles := make(map[string]bool)
+	seenFiles[tmpBase.Name()] = true
+
 	// 2.0 Memorandum PDF (If uploaded)
 	if descargo.Oficial != nil && descargo.Oficial.ArchivoMemorandum != "" {
-		if _, err := os.Stat(descargo.Oficial.ArchivoMemorandum); err == nil {
-			filesToMerge = append(filesToMerge, descargo.Oficial.ArchivoMemorandum)
+		path := descargo.Oficial.ArchivoMemorandum
+		if !seenFiles[path] {
+			if _, err := os.Stat(path); err == nil {
+				filesToMerge = append(filesToMerge, path)
+				seenFiles[path] = true
+			}
 		}
 	}
 
@@ -1383,9 +1391,10 @@ func (s *ReportService) GeneratePV06Complete(ctx context.Context, descargo *mode
 	if descargo.Solicitud != nil {
 		for _, item := range descargo.Solicitud.Items {
 			for _, pasaje := range item.Pasajes {
-				if pasaje.Archivo != "" {
+				if pasaje.Archivo != "" && !seenFiles[pasaje.Archivo] {
 					if _, err := os.Stat(pasaje.Archivo); err == nil {
 						filesToMerge = append(filesToMerge, pasaje.Archivo)
+						seenFiles[pasaje.Archivo] = true
 					}
 				}
 			}
@@ -1394,14 +1403,15 @@ func (s *ReportService) GeneratePV06Complete(ctx context.Context, descargo *mode
 
 	// 2.2 Pases a Bordo (Cargados en el descargo)
 	for _, det := range descargo.Tramos {
-		if det.ArchivoPaseAbordo != "" {
+		if det.ArchivoPaseAbordo != "" && !seenFiles[det.ArchivoPaseAbordo] {
 			if _, err := os.Stat(det.ArchivoPaseAbordo); err == nil {
 				filesToMerge = append(filesToMerge, det.ArchivoPaseAbordo)
+				seenFiles[det.ArchivoPaseAbordo] = true
 			}
 		}
 	}
 
-	// 2.3 Comprobante de Depósito (Si es PDF se une, si es imagen ya se incrustó en el base)
+	// 2.3 Comprobante de Depósito (Si es PDF se une)
 	compPath := ""
 	if descargo.Solicitud != nil {
 		for _, item := range descargo.Solicitud.Items {
@@ -1418,9 +1428,10 @@ func (s *ReportService) GeneratePV06Complete(ctx context.Context, descargo *mode
 	}
 
 	if descargo.GetTotalDevolucionPasajes() > 0 && compPath != "" {
-		if strings.HasSuffix(strings.ToLower(compPath), ".pdf") {
+		if strings.HasSuffix(strings.ToLower(compPath), ".pdf") && !seenFiles[compPath] {
 			if _, err := os.Stat(compPath); err == nil {
 				filesToMerge = append(filesToMerge, compPath)
+				seenFiles[compPath] = true
 			}
 		}
 	}

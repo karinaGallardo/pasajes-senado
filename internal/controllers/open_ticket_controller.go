@@ -98,12 +98,14 @@ func (ctrl *OpenTicketController) GetProgramarModal(c *gin.Context) {
 	// Lógica de visualización para el formulario
 	rutaSugerida := ticket.RutaProgramada
 	if rutaSugerida == "" {
-		rutaSugerida = ticket.RutaReferencia
+		rutaSugerida = ticket.TramosNoUsados
 	}
 
 	aerolineaSugerida := ticket.AerolineaProgramada
 	if aerolineaSugerida == "" {
-		aerolineaSugerida = ticket.Aerolinea
+		if ticket.Pasaje != nil && ticket.Pasaje.Aerolinea != nil {
+			aerolineaSugerida = ticket.Pasaje.Aerolinea.Nombre
+		}
 	}
 
 	utils.Render(c, "pasajes/components/modal_programar_open_ticket", gin.H{

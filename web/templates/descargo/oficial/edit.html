@@ -316,7 +316,7 @@
                 required
                 class="block w-full border border-neutral-200 rounded-md shadow-sm text-sm p-3 focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all"
               >
-{{ .Descargo.Oficial.ObjetivoViaje }}</textarea
+{{- .Descargo.Oficial.ObjetivoViaje -}}</textarea
               >
             </div>
             <div class="space-y-2">
@@ -329,7 +329,7 @@
                 required
                 class="block w-full border border-neutral-200 rounded-md shadow-sm text-sm p-3 focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all"
               >
-{{ .Descargo.Oficial.InformeActividades }}</textarea
+{{- .Descargo.Oficial.InformeActividades -}}</textarea
               >
             </div>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -340,7 +340,7 @@
                   rows="3"
                   class="block w-full border border-neutral-200 rounded-md shadow-sm text-sm p-3 focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all"
                 >
-{{ .Descargo.Oficial.ResultadosViaje }}</textarea
+{{- .Descargo.Oficial.ResultadosViaje -}}</textarea
                 >
               </div>
               <div class="space-y-2">
@@ -357,9 +357,15 @@
 
             <!-- Anexo Fotográfico -->
             <div class="pt-4 border-t border-neutral-100">
-              <label class="block text-[10px] font-black text-neutral-400 uppercase tracking-widest mb-4">
-                Fotos de la Comisión (-Anexo Fotográfico-)
-              </label>
+              <div class="mb-4">
+                <label class="block text-[10px] font-black text-neutral-400 uppercase tracking-widest">
+                  Fotos de la Comisión (-Anexo Fotográfico-)
+                </label>
+                <p class="text-[9px] text-neutral-400 italic mt-0.5 uppercase font-bold tracking-tighter">
+                  <i class="ph ph-info mr-1"></i>
+                  Formatos permitidos: JPG, PNG (Máx. 5MB por foto)
+                </p>
+              </div>
 
               <div class="flex flex-wrap gap-4">
                 <!-- Existentes -->
@@ -820,7 +826,9 @@
                 {{ range $idx, $item := .Solicitud.Items }}
                   {{ range $pIdx, $p := $item.Pasajes }}
                     {{ if $p.IsDischargeable }}
-                      <tr x-data="{ fileName: '{{ $p.ArchivoComprobante }}', localUrl: '' }">
+                      <tr
+                        x-data="{ fileName: '{{ $p.ArchivoComprobante }}', localUrl: '', serverFile: '{{ $p.ArchivoComprobante }}' }"
+                      >
                         <td class="px-4 py-3 align-top">
                           <input type="hidden" name="liquidacion_pasaje_id[]" value="{{ $p.ID }}" />
                           <input
@@ -879,14 +887,16 @@
                               <div class="relative group">
                                 <label
                                   class="cursor-pointer flex items-center justify-center h-8 w-8 rounded-md border-2 border-dashed transition-all duration-200 overflow-hidden shadow-sm"
-                                  :class="(fileName || '{{ $p.ArchivoComprobante }}') ? 'border-success-400 bg-success-50 text-success-700' : 'border-neutral-200 bg-neutral-50 text-neutral-400 hover:border-primary-300 hover:bg-white'"
+                                  :class="(localUrl || serverFile) ? 'border-success-400 bg-success-50 text-success-700' : 'border-neutral-200 bg-neutral-50 text-neutral-400 hover:border-primary-300 hover:bg-white'"
                                 >
                                   <input
                                     type="file"
+                                    x-ref="fileInput_{{ $p.ID }}"
                                     name="liquidacion_archivo_{{ $p.ID }}"
                                     accept="application/pdf"
                                     class="hidden"
                                     @change="if($el.files[0]) {
+                                      if(!window.checkIsPDF($el.files[0])) { $el.value = ''; return; }
                                       fileName = $el.files[0].name;
                                       localUrl = URL.createObjectURL($el.files[0]);
                                     }"
@@ -899,31 +909,77 @@
                                   />
 
                                   <i
-                                    x-show="fileName || '{{ $p.ArchivoComprobante }}'"
+                                    x-show="localUrl || serverFile"
                                     class="ph ph-file-pdf text-lg font-bold text-success-600"
                                   ></i>
 
-                                  <i
-                                    x-show="!fileName && !'{{ $p.ArchivoComprobante }}'"
-                                    class="ph ph-upload-simple text-lg font-bold text-neutral-400"
-                                  ></i>
+                                  <div
+                                    x-show="!localUrl && !serverFile"
+                                    class="flex flex-col items-center justify-center gap-0.5 opacity-60 group-hover:opacity-100 transition-opacity"
+                                    title="Cargar comprobante PDF"
+                                  >
+                                    <i class="ph ph-file-arrow-up text-sm"></i>
+                                    <span class="text-[7px] font-black leading-none uppercase">PDF</span>
+                                  </div>
                                 </label>
                               </div>
                             </div>
 
                             <!-- Slot: Preview -->
                             <div class="w-8 h-8 flex-shrink-0 flex items-center justify-center">
-                              <template x-if="localUrl || '{{ $p.ArchivoComprobante }}'">
+                              <template x-if="localUrl || serverFile">
                                 <button
                                   type="button"
                                   @click="if(localUrl) {
                                     window.open(localUrl, '_blank')
                                   } else {
-                                    htmx.ajax('GET', '/preview-file?path=' + encodeURIComponent('{{ $p.ArchivoComprobante }}'), { target: '#modal-container' })
+                                    htmx.ajax('GET', '/preview-file?path=' + encodeURIComponent(serverFile), { target: '#modal-container' })
                                   }"
                                   class="h-8 w-8 flex items-center justify-center rounded-md text-primary-600 hover:bg-primary-50 transition-all shadow-sm border border-neutral-100 bg-white"
+                                  title="Ver archivo"
                                 >
                                   <i class="ph ph-eye text-lg"></i>
+                                </button>
+                              </template>
+                            </div>
+
+                            <!-- Slot: Delete -->
+                            <div class="w-8 h-8 flex-shrink-0 flex items-center justify-center">
+                              <template x-if="localUrl || serverFile">
+                                <button
+                                  type="button"
+                                  @click="
+                                    Swal.fire({
+                                      title: '¿Eliminar archivo?',
+                                      text: 'Se removerá el comprobante adjunto. ¿Desea continuar?',
+                                      icon: 'warning',
+                                      showCancelButton: true,
+                                      confirmButtonColor: '#ef4444',
+                                      cancelButtonColor: '#737373',
+                                      confirmButtonText: 'Sí, eliminar',
+                                      cancelButtonText: 'Cancelar',
+                                      customClass: {
+                                        popup: 'rounded-md font-sans',
+                                        title: 'text-lg font-bold text-neutral-900',
+                                        htmlContainer: 'text-sm text-neutral-600',
+                                        confirmButton: 'rounded-md px-4 py-2 text-sm font-medium shadow-sm',
+                                        cancelButton: 'rounded-md px-4 py-2 text-sm font-medium shadow-sm'
+                                      }
+                                    }).then((result) => {
+                                      if (result.isConfirmed) {
+                                        fileName = '';
+                                        localUrl = '';
+                                        serverFile = '';
+                                        $refs['fileInput_{{ $p.ID }}'].value = '';
+                                        const hidden = $el.closest('tr').querySelector('input[name=liquidacion_archivo_existente_{{ $p.ID }}]');
+                                        if(hidden) hidden.value = '';
+                                      }
+                                    })
+                                  "
+                                  class="h-8 w-8 flex items-center justify-center rounded-md text-danger-600 hover:bg-danger-50 transition-all shadow-sm border border-neutral-100 bg-white"
+                                  title="Eliminar archivo"
+                                >
+                                  <i class="ph ph-trash text-lg"></i>
                                 </button>
                               </template>
                             </div>

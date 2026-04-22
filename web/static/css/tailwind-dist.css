@@ -7751,6 +7751,10 @@ video {
   font-size: 0.625rem;
 }
 
+.text-\[7px\] {
+  font-size: 7px;
+}
+
 .font-black {
   font-weight: 900;
 }
@@ -7900,6 +7904,11 @@ video {
 .text-amber-800 {
   --tw-text-opacity: 1;
   color: rgb(146 64 14 / var(--tw-text-opacity, 1));
+}
+
+.text-blue-400 {
+  --tw-text-opacity: 1;
+  color: rgb(96 165 250 / var(--tw-text-opacity, 1));
 }
 
 .text-blue-500 {
