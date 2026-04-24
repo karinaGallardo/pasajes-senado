@@ -231,7 +231,7 @@
               </div>
               <div class="space-y-2">
                 <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">
-                  Fecha de Presentación
+                  Fecha de Presentación del Informe:
                 </label>
                 <input
                   type="text"
@@ -242,6 +242,71 @@
                   autocomplete="off"
                   class="block w-full border border-neutral-200 rounded-md shadow-sm text-sm p-3 focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all font-bold"
                 />
+              </div>
+            </div>
+
+            <!-- Datos de Salida y Retorno -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
+              <div class="bg-neutral-50/50 p-4 rounded-lg border border-neutral-100 space-y-4">
+                <h4 class="text-[10px] font-black text-primary-600 uppercase tracking-widest flex items-center gap-2">
+                  <i class="ph ph-airplane-takeoff text-sm"></i>
+                  Datos de Salida
+                </h4>
+                <div class="grid grid-cols-2 gap-4">
+                  <div class="space-y-1.5">
+                    <label class="block text-[9px] font-bold text-neutral-400 uppercase tracking-tighter">Fecha Salida</label>
+                    <input
+                      type="text"
+                      name="fecha_salida"
+                      value="{{ if not .Descargo.Oficial.FechaSalida.IsZero }}{{ .Descargo.Oficial.FechaSalida.Format `02/01/2006` }}{{ end }}"
+                      x-datepicker="{ position: 'bottom center', timepicker: false, dateFormat: 'dd/MM/yyyy' }"
+                      autocomplete="off"
+                      placeholder="dd/mm/aaaa"
+                      class="block w-full border border-neutral-200 rounded-md shadow-sm text-xs p-2.5 focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all font-bold bg-white"
+                    />
+                  </div>
+                  <div class="space-y-1.5">
+                    <label class="block text-[9px] font-bold text-neutral-400 uppercase tracking-tighter">Hora Salida</label>
+                    <input
+                      type="text"
+                      name="hora_salida"
+                      value="{{ if not .Descargo.Oficial.FechaSalida.IsZero }}{{ .Descargo.Oficial.FechaSalida.Format `15:04` }}{{ end }}"
+                      placeholder="HH:MM"
+                      class="block w-full border border-neutral-200 rounded-md shadow-sm text-xs p-2.5 focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all font-bold bg-white"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div class="bg-neutral-50/50 p-4 rounded-lg border border-neutral-100 space-y-4">
+                <h4 class="text-[10px] font-black text-primary-600 uppercase tracking-widest flex items-center gap-2">
+                  <i class="ph ph-airplane-landing text-sm"></i>
+                  Datos de Retorno
+                </h4>
+                <div class="grid grid-cols-2 gap-4">
+                  <div class="space-y-1.5">
+                    <label class="block text-[9px] font-bold text-neutral-400 uppercase tracking-tighter">Fecha Retorno</label>
+                    <input
+                      type="text"
+                      name="fecha_retorno"
+                      value="{{ if not .Descargo.Oficial.FechaRetorno.IsZero }}{{ .Descargo.Oficial.FechaRetorno.Format `02/01/2006` }}{{ end }}"
+                      x-datepicker="{ position: 'bottom center', timepicker: false, dateFormat: 'dd/MM/yyyy' }"
+                      autocomplete="off"
+                      placeholder="dd/mm/aaaa"
+                      class="block w-full border border-neutral-200 rounded-md shadow-sm text-xs p-2.5 focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all font-bold bg-white"
+                    />
+                  </div>
+                  <div class="space-y-1.5">
+                    <label class="block text-[9px] font-bold text-neutral-400 uppercase tracking-tighter">Hora Retorno</label>
+                    <input
+                      type="text"
+                      name="hora_retorno"
+                      value="{{ if not .Descargo.Oficial.FechaRetorno.IsZero }}{{ .Descargo.Oficial.FechaRetorno.Format `15:04` }}{{ end }}"
+                      placeholder="HH:MM"
+                      class="block w-full border border-neutral-200 rounded-md shadow-sm text-xs p-2.5 focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all font-bold bg-white"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
             <div class="space-y-6">

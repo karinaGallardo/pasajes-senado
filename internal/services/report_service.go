@@ -911,6 +911,56 @@ func (s *ReportService) GeneratePV06(ctx context.Context, descargo *models.Desca
 	pdf.SetFont("Arial", "", 10)
 	pdf.CellFormat(wValueMemo, 7, tr(nroMemo), "1", 1, "L", false, 0, "")
 
+	// Datos de Salida y Retorno (PV-06)
+	if descargo.Oficial != nil {
+		pdf.SetX(10) // Reset X to standard margin
+		pdf.Ln(4)
+		pdf.SetFillColor(245, 245, 245)
+		pdf.SetFont("Arial", "B", 9)
+
+		// Encabezados
+		pdf.CellFormat(95, 6, tr("DATOS DE SALIDA"), "1", 0, "C", true, 0, "")
+		pdf.CellFormat(95, 6, tr("DATOS DE RETORNO"), "1", 1, "C", true, 0, "")
+
+		pdf.SetFont("Arial", "", 9)
+
+		fSalida := "-"
+		hSalida := "-"
+		if !descargo.Oficial.FechaSalida.IsZero() {
+			fSalida = descargo.Oficial.FechaSalida.Format("02/01/2006")
+			hSalida = descargo.Oficial.FechaSalida.Format("15:04")
+		}
+
+		fRetorno := "-"
+		hRetorno := "-"
+		if !descargo.Oficial.FechaRetorno.IsZero() {
+			fRetorno = descargo.Oficial.FechaRetorno.Format("02/01/2006")
+			hRetorno = descargo.Oficial.FechaRetorno.Format("15:04")
+		}
+
+		// Fila de Fechas
+		pdf.SetFont("Arial", "B", 9)
+		pdf.CellFormat(15, 6, tr("  Fecha:"), "L", 0, "L", false, 0, "")
+		pdf.SetFont("Arial", "", 9)
+		pdf.CellFormat(80, 6, tr(fSalida), "R", 0, "L", false, 0, "")
+
+		pdf.SetFont("Arial", "B", 9)
+		pdf.CellFormat(15, 6, tr("  Fecha:"), "L", 0, "L", false, 0, "")
+		pdf.SetFont("Arial", "", 9)
+		pdf.CellFormat(80, 6, tr(fRetorno), "R", 1, "L", false, 0, "")
+
+		// Fila de Horas
+		pdf.SetFont("Arial", "B", 9)
+		pdf.CellFormat(15, 6, tr("  Hora:"), "LB", 0, "L", false, 0, "")
+		pdf.SetFont("Arial", "", 9)
+		pdf.CellFormat(80, 6, tr(hSalida), "RB", 0, "L", false, 0, "")
+
+		pdf.SetFont("Arial", "B", 9)
+		pdf.CellFormat(15, 6, tr("  Hora:"), "LB", 0, "L", false, 0, "")
+		pdf.SetFont("Arial", "", 9)
+		pdf.CellFormat(80, 6, tr(hRetorno), "RB", 1, "L", false, 0, "")
+	}
+
 	pdf.Ln(4)
 
 	// INFORME DETALLADO PV-06

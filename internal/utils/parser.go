@@ -68,7 +68,32 @@ func ParseDateTime(val string) (*time.Time, error) {
 	if t, err := time.ParseInLocation("2006-01-02", val, time.Local); err == nil {
 		return &t, nil
 	}
+	// Formato latino con guiones
+	if t, err := time.ParseInLocation("02-01-2006", val, time.Local); err == nil {
+		return &t, nil
+	}
+	if t, err := time.ParseInLocation("02-01-2006 15:04", val, time.Local); err == nil {
+		return &t, nil
+	}
 	return nil, fmt.Errorf("formato de fecha y hora inválido: %s", val)
+}
+
+// ParseDateAndTime combina un string de fecha y otro de hora en un solo time.Time
+func ParseDateAndTime(dateStr, timeStr string) (*time.Time, error) {
+	if dateStr == "" {
+		return nil, nil
+	}
+	if timeStr == "" {
+		timeStr = "00:00"
+	}
+	// Normalizar hora (ej: "8:00" -> "08:00")
+	parts := strings.Split(timeStr, ":")
+	if len(parts) == 2 && len(parts[0]) == 1 {
+		timeStr = "0" + timeStr
+	}
+
+	combined := dateStr + " " + timeStr
+	return ParseDateTime(combined)
 }
 
 func StrToInt(s string, def int) int {

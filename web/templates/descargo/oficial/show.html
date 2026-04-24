@@ -672,6 +672,59 @@
               </div>
             </div>
 
+            <!-- Nuevos campos: Salida y Retorno -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+              <div class="bg-neutral-50/50 p-4 rounded-md border border-neutral-100 flex items-center gap-4">
+                <div class="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-600">
+                  <i class="ph ph-airplane-takeoff text-xl"></i>
+                </div>
+                <div>
+                  <h4 class="text-[10px] font-black text-neutral-400 uppercase tracking-widest">Datos de Salida</h4>
+                  <div class="flex items-baseline gap-2">
+                    <span class="text-sm font-black text-neutral-900">
+                      {{ if not .Descargo.Oficial.FechaSalida.IsZero }}
+                        {{ .Descargo.Oficial.FechaSalida.Format "02/01/2006" }}
+                      {{ else }}
+                        -
+                      {{ end }}
+                    </span>
+                    <span class="text-xs font-bold text-primary-600">
+                      {{ if not .Descargo.Oficial.FechaSalida.IsZero }}
+                        {{ .Descargo.Oficial.FechaSalida.Format "15:04" }}
+                      {{ else }}
+                        -
+                      {{ end }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="bg-neutral-50/50 p-4 rounded-md border border-neutral-100 flex items-center gap-4">
+                <div class="w-10 h-10 rounded-full bg-primary-100 flex items-center justify-center text-primary-600">
+                  <i class="ph ph-airplane-landing text-xl"></i>
+                </div>
+                <div>
+                  <h4 class="text-[10px] font-black text-neutral-400 uppercase tracking-widest">Datos de Retorno</h4>
+                  <div class="flex items-baseline gap-2">
+                    <span class="text-sm font-black text-neutral-900">
+                      {{ if not .Descargo.Oficial.FechaRetorno.IsZero }}
+                        {{ .Descargo.Oficial.FechaRetorno.Format "02/01/2006" }}
+                      {{ else }}
+                        -
+                      {{ end }}
+                    </span>
+                    <span class="text-xs font-bold text-primary-600">
+                      {{ if not .Descargo.Oficial.FechaRetorno.IsZero }}
+                        {{ .Descargo.Oficial.FechaRetorno.Format "15:04" }}
+                      {{ else }}
+                        -
+                      {{ end }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <div class="border-t border-neutral-100 pt-4">
               <h4 class="text-xs font-black text-neutral-400 uppercase tracking-widest mb-2">Actividades Realizadas</h4>
               <div class="bg-neutral-50 p-4 rounded-md prose prose-sm max-w-none text-neutral-800 whitespace-pre-wrap">
@@ -943,8 +996,6 @@
             {{ end }}
           </div>
         </div>
-
-
       </div>
     </div>
   </div>

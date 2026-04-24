@@ -2,14 +2,15 @@ package models
 
 import (
 	"strings"
+	"time"
 )
 
 type DescargoOficial struct {
 	BaseModel
 	DescargoID string `gorm:"size:36;not null;uniqueIndex"`
 
-	NroMemorandum  string `gorm:"size:100"`
-	ObjetivoViaje  string `gorm:"type:text"`
+	NroMemorandum     string `gorm:"size:100"`
+	ObjetivoViaje     string `gorm:"type:text"`
 	TipoTransporte    string `gorm:"size:100"` // AEREO, TERRESTRE, VEHICULO_OFICIAL
 	PlacaVehiculo     string `gorm:"size:50"`
 	ArchivoMemorandum string `gorm:"size:255"`
@@ -21,6 +22,9 @@ type DescargoOficial struct {
 	NroBoletaDeposito string `gorm:"size:100"`
 	DirigidoA         string `gorm:"size:255"`
 	LugarViaje        string `gorm:"size:100;default:''"`
+
+	FechaSalida  time.Time `gorm:"type:timestamp"`
+	FechaRetorno time.Time `gorm:"type:timestamp"`
 
 	Anexos                []AnexoDescargo               `gorm:"foreignKey:DescargoOficialID"`
 	TransportesTerrestres []TransporteTerrestreDescargo `gorm:"foreignKey:DescargoOficialID"`
@@ -38,7 +42,9 @@ func (d DescargoOficial) HasChanges(other DescargoOficial) bool {
 		d.ResultadosViaje != other.ResultadosViaje ||
 		d.ConclusionesRecomendaciones != other.ConclusionesRecomendaciones ||
 		d.NroBoletaDeposito != other.NroBoletaDeposito ||
-		d.DirigidoA != other.DirigidoA
+		d.DirigidoA != other.DirigidoA ||
+		!d.FechaSalida.Equal(other.FechaSalida) ||
+		!d.FechaRetorno.Equal(other.FechaRetorno)
 }
 
 func (DescargoOficial) TableName() string {

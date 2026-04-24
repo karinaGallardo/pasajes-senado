@@ -297,7 +297,31 @@ document.addEventListener("alpine:init", function () {
     el._dp_cleanup = Alpine.effect(() => {
       const val = el.getAttribute("value") || el.value;
       if (val && dp.selectedDates.length === 0) {
-        dp.selectDate(val, { silent: true });
+        let dateToSelect = val;
+
+        // Si es un string con formato DD/MM/YYYY (común en este proyecto), parsearlo manualmente
+        // para evitar que el navegador lo interprete como MM/DD/YYYY (formato americano)
+        if (typeof val === "string" && val.includes("/")) {
+          const parts = val.split(" ");
+          const datePart = parts[0];
+          const timePart = parts[1] || "";
+
+          const dParts = datePart.split("/");
+          if (dParts.length === 3) {
+            const day = parseInt(dParts[0], 10);
+            const month = parseInt(dParts[1], 10) - 1;
+            const year = parseInt(dParts[2], 10);
+
+            if (timePart && timePart.includes(":")) {
+              const tParts = timePart.split(":");
+              dateToSelect = new Date(year, month, day, parseInt(tParts[0], 10), parseInt(tParts[1], 10));
+            } else {
+              dateToSelect = new Date(year, month, day);
+            }
+          }
+        }
+
+        dp.selectDate(dateToSelect, { silent: true });
       }
     });
 

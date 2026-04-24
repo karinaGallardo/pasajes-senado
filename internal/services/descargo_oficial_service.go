@@ -277,6 +277,14 @@ func (s *DescargoOficialService) UpdateOficial(ctx context.Context, id string, r
 	descargo.Oficial.PlacaVehiculo = req.PlacaVehiculo
 	descargo.Oficial.ArchivoMemorandum = memoPath
 
+	if fs, err := utils.ParseDateAndTime(req.FechaSalida, req.HoraSalida); err == nil && fs != nil {
+		descargo.Oficial.FechaSalida = *fs
+	}
+
+	if fr, err := utils.ParseDateAndTime(req.FechaRetorno, req.HoraRetorno); err == nil && fr != nil {
+		descargo.Oficial.FechaRetorno = *fr
+	}
+
 	if err := s.repo.UpdateOficial(ctx, descargo.Oficial); err != nil {
 		return err
 	}

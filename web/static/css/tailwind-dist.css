@@ -7714,6 +7714,10 @@ video {
   font-size: 18px;
 }
 
+.text-\[7px\] {
+  font-size: 7px;
+}
+
 .text-\[8px\] {
   font-size: 8px;
 }
@@ -7749,10 +7753,6 @@ video {
 
 .text-xxs {
   font-size: 0.625rem;
-}
-
-.text-\[7px\] {
-  font-size: 7px;
 }
 
 .font-black {

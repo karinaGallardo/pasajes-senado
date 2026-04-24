@@ -19,6 +19,11 @@ type CreateDescargoRequest struct {
 	DirigidoA                   string `form:"dirigido_a"`
 	LugarViaje                  string `form:"lugar_viaje"`
 
+	FechaSalida  string `form:"fecha_salida"`
+	HoraSalida   string `form:"hora_salida"`
+	FechaRetorno string `form:"fecha_retorno"`
+	HoraRetorno  string `form:"hora_retorno"`
+
 	// Informe PV-06
 	NroMemorandum     string                `form:"nro_memorandum"`
 	TipoTransporte    string                `form:"tipo_transporte"` // AEREO, TERRESTRE, VEHICULO_OFICIAL
