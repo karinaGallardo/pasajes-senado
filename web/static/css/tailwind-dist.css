@@ -1943,6 +1943,10 @@ video {
   height: 2.5rem;
 }
 
+.h-11 {
+  height: 2.75rem;
+}
+
 .h-12 {
   height: 3rem;
 }
@@ -2299,6 +2303,10 @@ video {
 
 .w-px {
   width: 1px;
+}
+
+.w-\[110px\] {
+  width: 110px;
 }
 
 .min-w-0 {

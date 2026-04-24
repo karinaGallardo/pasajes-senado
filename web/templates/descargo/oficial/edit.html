@@ -245,6 +245,102 @@
               </div>
             </div>
 
+            <div class="space-y-6">
+              <div class="flex gap-4 items-end">
+                <div class="flex-1 space-y-2">
+                  <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">
+                    Nº Memorándum / Resolución
+                  </label>
+                  <input
+                    type="text"
+                    name="nro_memorandum"
+                    value="{{ .Descargo.Oficial.NroMemorandum }}"
+                    required
+                    class="block w-full border border-neutral-200 rounded-md shadow-smz text-sm p-3 focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all font-bold"
+                  />
+                </div>
+                <div class="space-y-2">
+                  <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">
+                    Memorándum / Resolución
+                  </label>
+                  <div
+                    class="flex items-center gap-2"
+                    x-data="{
+                      localUrl: '',
+                      serverFile: '{{ .Descargo.Oficial.ArchivoMemorandum }}',
+                      get hasFile() { return !!(this.localUrl || this.serverFile); }
+                    }"
+                  >
+                    <input type="hidden" name="archivo_memorandum_existente" x-model="serverFile" />
+                    <div class="relative">
+                      <input
+                        type="file"
+                        name="archivo_memorandum"
+                        id="archivo_memorandum"
+                        accept="application/pdf"
+                        class="hidden"
+                        @change="if($el.files[0]) { localUrl = URL.createObjectURL($el.files[0]); }"
+                      />
+                      <label
+                        for="archivo_memorandum"
+                        :class="hasFile ? 'bg-success-50 text-success-700 border-success-200' : 'bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50'"
+                        class="inline-flex items-center px-4 py-3 border shadow-sm text-xs font-black rounded-md cursor-pointer transition-all h-11 uppercase tracking-tighter"
+                        :title="hasFile ? 'Reemplazar PDF' : 'Adjuntar PDF'"
+                      >
+                        <i :class="hasFile ? 'ph ph-check-circle' : 'ph ph-file-arrow-up'" class="ph mr-2 text-lg"></i>
+                        <span x-text="hasFile ? 'MEMO OK' : 'ADJUNTAR PDF'"></span>
+                      </label>
+                    </div>
+
+                    <template x-if="hasFile">
+                      <div class="flex items-center gap-1.5">
+                        <button
+                          type="button"
+                          @click="if(localUrl) { window.open(localUrl, '_blank') } else { htmx.ajax('GET', '/preview-file?path=' + encodeURIComponent(serverFile), { target: '#modal-container' }) }"
+                          class="h-11 w-11 flex items-center justify-center rounded-md text-primary-600 hover:bg-primary-50 transition-all border border-neutral-100 bg-white shadow-sm"
+                          title="Previsualizar Memorandum"
+                        >
+                          <i class="ph ph-eye text-xl"></i>
+                        </button>
+                        <button
+                          type="button"
+                          @click="
+                            Swal.fire({
+                              title: '¿Eliminar archivo?',
+                              text: 'Se removerá el memorándum adjunto. ¿Desea continuar?',
+                              icon: 'warning',
+                              showCancelButton: true,
+                              confirmButtonColor: '#ef4444',
+                              cancelButtonColor: '#737373',
+                              confirmButtonText: 'Sí, eliminar',
+                              cancelButtonText: 'Cancelar',
+                              customClass: {
+                                popup: 'rounded-md font-sans',
+                                title: 'text-lg font-bold text-neutral-900',
+                                htmlContainer: 'text-sm text-neutral-600',
+                                confirmButton: 'rounded-md px-4 py-2 text-sm font-medium shadow-sm',
+                                cancelButton: 'rounded-md px-4 py-2 text-sm font-medium shadow-sm'
+                              }
+                            }).then((result) => {
+                              if (result.isConfirmed) {
+                                localUrl = '';
+                                serverFile = '';
+                                document.getElementById('archivo_memorandum').value = '';
+                              }
+                            })
+                          "
+                          class="h-11 w-11 flex items-center justify-center rounded-md text-danger-600 hover:bg-danger-50 transition-all border border-danger-100 bg-white shadow-sm"
+                          title="Eliminar Memorandum"
+                        >
+                          <i class="ph ph-file-x text-xl"></i>
+                        </button>
+                      </div>
+                    </template>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <!-- Datos de Salida y Retorno -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
               <div class="bg-neutral-50/50 p-4 rounded-lg border border-neutral-100 space-y-4">
@@ -258,7 +354,9 @@
                     <input
                       type="text"
                       name="fecha_salida"
-                      value="{{ if not .Descargo.Oficial.FechaSalida.IsZero }}{{ .Descargo.Oficial.FechaSalida.Format `02/01/2006` }}{{ end }}"
+                      value="{{ if not .Descargo.Oficial.FechaSalida.IsZero }}
+                        {{ .Descargo.Oficial.FechaSalida.Format `02/01/2006` }}
+                      {{ end }}"
                       x-datepicker="{ position: 'bottom center', timepicker: false, dateFormat: 'dd/MM/yyyy' }"
                       autocomplete="off"
                       placeholder="dd/mm/aaaa"
@@ -270,7 +368,9 @@
                     <input
                       type="text"
                       name="hora_salida"
-                      value="{{ if not .Descargo.Oficial.FechaSalida.IsZero }}{{ .Descargo.Oficial.FechaSalida.Format `15:04` }}{{ end }}"
+                      value="{{ if not .Descargo.Oficial.FechaSalida.IsZero }}
+                        {{ .Descargo.Oficial.FechaSalida.Format `15:04` }}
+                      {{ end }}"
                       placeholder="HH:MM"
                       class="block w-full border border-neutral-200 rounded-md shadow-sm text-xs p-2.5 focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all font-bold bg-white"
                     />
@@ -289,7 +389,9 @@
                     <input
                       type="text"
                       name="fecha_retorno"
-                      value="{{ if not .Descargo.Oficial.FechaRetorno.IsZero }}{{ .Descargo.Oficial.FechaRetorno.Format `02/01/2006` }}{{ end }}"
+                      value="{{ if not .Descargo.Oficial.FechaRetorno.IsZero }}
+                        {{ .Descargo.Oficial.FechaRetorno.Format `02/01/2006` }}
+                      {{ end }}"
                       x-datepicker="{ position: 'bottom center', timepicker: false, dateFormat: 'dd/MM/yyyy' }"
                       autocomplete="off"
                       placeholder="dd/mm/aaaa"
@@ -301,62 +403,14 @@
                     <input
                       type="text"
                       name="hora_retorno"
-                      value="{{ if not .Descargo.Oficial.FechaRetorno.IsZero }}{{ .Descargo.Oficial.FechaRetorno.Format `15:04` }}{{ end }}"
+                      value="{{ if not .Descargo.Oficial.FechaRetorno.IsZero }}
+                        {{ .Descargo.Oficial.FechaRetorno.Format `15:04` }}
+                      {{ end }}"
                       placeholder="HH:MM"
                       class="block w-full border border-neutral-200 rounded-md shadow-sm text-xs p-2.5 focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all font-bold bg-white"
                     />
                   </div>
                 </div>
-              </div>
-            </div>
-            <div class="space-y-6">
-              <div class="space-y-2">
-                <label class="block text-[10px] font-black text-neutral-500 uppercase tracking-widest ml-1">
-                  Nº Memorándum / Resolución
-                </label>
-                <div class="flex gap-2">
-                  <div class="relative flex-1">
-                    <input
-                      type="text"
-                      name="nro_memorandum"
-                      value="{{ .Descargo.Oficial.NroMemorandum }}"
-                      required
-                      class="block w-full border border-neutral-200 rounded-md shadow-sm text-sm p-3 focus:ring-4 focus:ring-primary/5 focus:border-primary transition-all font-bold"
-                    />
-                  </div>
-                  <div
-                    class="relative"
-                    x-data="{ hasFile: {{ if .Descargo.Oficial.ArchivoMemorandum }}
-                      true
-                    {{ else }}
-                      false
-                    {{ end }} }"
-                  >
-                    <input type="hidden" name="archivo_memorandum_existente" value="{{ .Descargo.Oficial.ArchivoMemorandum }}" />
-                    <input
-                      type="file"
-                      name="archivo_memorandum"
-                      id="archivo_memorandum"
-                      accept="application/pdf"
-                      class="hidden"
-                      @change="hasFile = $el.files.length > 0"
-                    />
-                    <label
-                      for="archivo_memorandum"
-                      :class="hasFile ? 'bg-primary-50 text-primary-700 border-primary-200' : 'bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-50'"
-                      class="inline-flex items-center px-4 py-3 border shadow-sm text-xs font-black rounded-md cursor-pointer transition-all h-full uppercase tracking-tighter"
-                    >
-                      <i :class="hasFile ? 'ph-check-circle' : 'ph-file-pdf'" class="ph mr-2 text-lg"></i>
-                      <span x-text="hasFile ? 'Memo PDF OK' : 'Adjuntar PDF'"></span>
-                    </label>
-                  </div>
-                </div>
-                {{ if .Descargo.Oficial.ArchivoMemorandum }}
-                  <p class="text-[9px] text-primary-600 font-black italic ml-1 uppercase tracking-tighter">
-                    <i class="ph ph-info mr-1"></i>
-                    Memorandum PDF ya cargado. Puede subir uno nuevo para reemplazarlo.
-                  </p>
-                {{ end }}
               </div>
             </div>
           </div>
@@ -514,7 +568,7 @@
                       <th class="w-[160px] px-2 py-2 text-left font-black uppercase">Nro Billete</th>
                       <th class="w-[85px] px-2 py-2 text-left font-black uppercase">Vuelo</th>
                       <th class="w-[75px] px-2 py-2 text-center font-black uppercase">Pase</th>
-                      <th class="w-[60px] px-2 py-2 text-center font-black uppercase">Doc.</th>
+                      <th class="w-[110px] px-2 py-2 text-center font-black uppercase">Doc.</th>
                       <th class="w-[45px] py-2 text-center"></th>
                     </tr>
                   </thead>
@@ -556,7 +610,7 @@
                       <col class="w-[160px]" />
                       <col class="w-[85px]" />
                       <col class="w-[75px]" />
-                      <col class="w-[60px]" />
+                      <col class="w-[110px]" />
                       <col class="w-[45px]" />
                     </colgroup>
                     <tbody
@@ -593,7 +647,7 @@
                       <th class="w-[160px] px-2 py-2 text-left font-black uppercase">Nro Billete</th>
                       <th class="w-[85px] px-2 py-2 text-left font-black uppercase">Vuelo</th>
                       <th class="w-[75px] px-2 py-2 text-center font-black uppercase">Pase</th>
-                      <th class="w-[60px] px-2 py-2 text-center font-black uppercase">Doc.</th>
+                      <th class="w-[110px] px-2 py-2 text-center font-black uppercase">Doc.</th>
                       <th class="w-[45px] py-2 text-center"></th>
                     </tr>
                   </thead>
@@ -635,7 +689,7 @@
                       <col class="w-[160px]" />
                       <col class="w-[85px]" />
                       <col class="w-[75px]" />
-                      <col class="w-[60px]" />
+                      <col class="w-[110px]" />
                       <col class="w-[45px]" />
                     </colgroup>
                     <tbody
@@ -882,7 +936,7 @@
                   <th class="px-4 py-3 text-center text-[10px] font-black text-neutral-500 uppercase tracking-widest w-44">
                     N° BOLETA DEPOSITO
                   </th>
-                  <th class="px-4 py-3 text-center text-[10px] font-black text-neutral-500 uppercase tracking-widest w-20">
+                  <th class="px-4 py-3 text-center text-[10px] font-black text-neutral-500 uppercase tracking-widest w-32">
                     BOLETA
                   </th>
                 </tr>
@@ -1044,7 +1098,7 @@
                                   class="h-8 w-8 flex items-center justify-center rounded-md text-danger-600 hover:bg-danger-50 transition-all shadow-sm border border-neutral-100 bg-white"
                                   title="Eliminar archivo"
                                 >
-                                  <i class="ph ph-trash text-lg"></i>
+                                  <i class="ph ph-file-x text-lg"></i>
                                 </button>
                               </template>
                             </div>

@@ -449,6 +449,7 @@ document.addEventListener("alpine:init", function () {
     pase: config.pase || "",
     isFullTicket: false,
     fileName: "",
+    serverFile: config.serverFile || "",
     localUrl: "",
     processingImage: false,
 
@@ -520,6 +521,38 @@ document.addEventListener("alpine:init", function () {
         ":disabled": "esOpenTicket || esModificacion",
         ":class": "{ 'bg-danger-50/10 cursor-not-allowed': esOpenTicket, 'bg-warning-50/10 cursor-not-allowed': esModificacion }",
       };
+    },
+
+    async removeFile(id) {
+      const result = await Swal.fire({
+        title: "¿Eliminar archivo?",
+        text: "Se removerá el pase de abordar adjunto. ¿Desea continuar?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#ef4444",
+        cancelButtonColor: "#737373",
+        confirmButtonText: "Sí, eliminar",
+        cancelButtonText: "Cancelar",
+        customClass: {
+          popup: "rounded-md font-sans",
+          title: "text-lg font-bold text-neutral-900",
+          htmlContainer: "text-sm text-neutral-600",
+          confirmButton: "rounded-md px-4 py-2 text-sm font-medium shadow-sm",
+          cancelButton: "rounded-md px-4 py-2 text-sm font-medium shadow-sm",
+        },
+      });
+
+      if (result.isConfirmed) {
+        this.fileName = "";
+        this.serverFile = "";
+        this.localUrl = "";
+        // Reset inputs
+        const fileInput = document.querySelector(`input[name="tramo_archivo_${id}"]`);
+        if (fileInput) fileInput.value = "";
+
+        const hiddenInput = document.querySelector(`input[name="tramo_archivo_existente_${id}"]`);
+        if (hiddenInput) hiddenInput.value = "";
+      }
     },
   }));
 
@@ -917,6 +950,9 @@ window.handleSingleUpload = async function (event, alpineData = null) {
           const hiddenInput = document.querySelector(`input[name="tramo_archivo_existente_${index}"]`);
           if (hiddenInput) {
             hiddenInput.value = data.path;
+            if (alpineData) {
+              alpineData.serverFile = data.path;
+            }
             console.log(`Archivo subido y vinculado: ${data.path}`);
           }
         }

@@ -18,7 +18,8 @@
       destino_iata: '{{ .Tramo.GetDestinoIATA }}',
       billete: '{{ .Tramo.Billete }}',
       vuelo: '{{ .Tramo.NumeroVuelo }}',
-      pase: '{{ .Tramo.NumeroPaseAbordo }}'
+      pase: '{{ .Tramo.NumeroPaseAbordo }}',
+      serverFile: '{{ .Tramo.ArchivoPaseAbordo }}'
     })"
     x-init="
       {{ if .Tramo.IsReprogramacion }}
@@ -191,7 +192,7 @@
         <div class="relative group">
           <label
             class="cursor-pointer flex items-center justify-center h-9 w-9 rounded-md border-2 border-dashed transition-all duration-200 overflow-hidden shadow-sm"
-            :class="(fileName || '{{ .Tramo.ArchivoPaseAbordo }}') ? 'border-success-400 bg-success-50 text-success-700' : 'border-neutral-200 bg-neutral-50 text-neutral-400 hover:border-primary-300 hover:bg-white'"
+            :class="(fileName || serverFile) ? 'border-success-400 bg-success-50 text-success-700' : 'border-neutral-200 bg-neutral-50 text-neutral-400 hover:border-primary-300 hover:bg-white'"
           >
             <input
               type="file"
@@ -203,28 +204,33 @@
               @change="await window.handleSingleUpload($event, $data); if($el.files[0]) { localUrl = URL.createObjectURL($el.files[0]) }"
             />
 
-            <input type="hidden" name="tramo_archivo_existente_{{ .Tramo.ID }}" value="{{ .Tramo.ArchivoPaseAbordo }}" />
+            <input type="hidden" name="tramo_archivo_existente_{{ .Tramo.ID }}" x-model="serverFile" />
 
-            <i
-              x-show="fileName || '{{ .Tramo.ArchivoPaseAbordo }}'"
-              class="ph ph-file-pdf text-xl font-bold text-success-600"
-            ></i>
+            <i x-show="fileName || serverFile" class="ph ph-file-pdf text-xl font-bold text-success-600"></i>
 
-            <i
-              x-show="!fileName && !'{{ .Tramo.ArchivoPaseAbordo }}'"
-              class="ph ph-upload-simple text-xl font-bold text-neutral-400"
-            ></i>
+            <i x-show="!fileName && !serverFile" class="ph ph-upload-simple text-xl font-bold text-neutral-400"></i>
           </label>
         </div>
 
-        <template x-if="localUrl || '{{ .Tramo.ArchivoPaseAbordo }}'">
-          <button
-            type="button"
-            @click="if(localUrl) { window.open(localUrl, '_blank') } else { htmx.ajax('GET', '/preview-file?path=' + encodeURIComponent('{{ .Tramo.ArchivoPaseAbordo }}'), { target: '#modal-container' }) }"
-            class="h-9 w-9 flex items-center justify-center rounded-md text-primary-600 hover:bg-primary-50 transition-all"
-          >
-            <i class="ph ph-eye text-xl"></i>
-          </button>
+        <template x-if="localUrl || serverFile">
+          <div class="flex items-center gap-1">
+            <button
+              type="button"
+              @click="if(localUrl) { window.open(localUrl, '_blank') } else { htmx.ajax('GET', '/preview-file?path=' + encodeURIComponent(serverFile), { target: '#modal-container' }) }"
+              class="h-9 w-9 flex items-center justify-center rounded-md text-primary-600 hover:bg-primary-50 transition-all border border-neutral-100 bg-white shadow-xs"
+              title="Previsualizar"
+            >
+              <i class="ph ph-eye text-xl"></i>
+            </button>
+            <button
+              type="button"
+              @click="removeFile('{{ .Tramo.ID }}')"
+              class="h-9 w-9 flex items-center justify-center rounded-md text-danger-600 hover:bg-danger-50 transition-all border border-danger-100 bg-white shadow-xs"
+              title="Eliminar archivo adjunto"
+            >
+              <i class="ph ph-file-x text-xl"></i>
+            </button>
+          </div>
         </template>
       </div>
     </td>
@@ -235,6 +241,7 @@
           type="button"
           @click="$el.closest('tr').remove()"
           class="text-neutral-400 hover:text-danger-600 transition-colors p-2"
+          title="Eliminar este tramo"
         >
           <i class="ph ph-trash text-xl"></i>
         </button>
