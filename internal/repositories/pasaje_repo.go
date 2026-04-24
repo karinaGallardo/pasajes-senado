@@ -92,6 +92,7 @@ func (r *PasajeRepository) FindConsolidado(ctx context.Context, filter dtos.Repo
 		Joins("INNER JOIN usuarios ON usuarios.id = solicitudes.usuario_id").
 		Preload("SolicitudItem.Solicitud.Usuario").
 		Preload("SolicitudItem.Solicitud.TipoSolicitud.ConceptoViaje").
+		Preload("SolicitudItem.Solicitud.Descargo").
 		Order("pasajes.fecha_emision DESC")
 
 	if filter.FechaDesde != "" {

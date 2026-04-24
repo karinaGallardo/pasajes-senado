@@ -2122,7 +2122,7 @@ func (s *ReportService) GenerateConsolidadoPasajesExcel(ctx context.Context, fil
 	})
 
 	// Encabezados
-	headers := []string{"N°", "FECHA EMISIÓN", "CÓDIGO SOL.", "CONCEPTO", "BENEFICIARIO", "RUTA / TRAMOS", "AEROLÍNEA", "AGENCIA", "NRO. BILLETE", "COSTO (BS)", "ESTADO"}
+	headers := []string{"N°", "FECHA EMISIÓN", "CÓDIGO SOL.", "CONCEPTO", "TIPO DE SOLICITUD", "BENEFICIARIO", "RUTA / TRAMOS", "AEROLÍNEA", "AGENCIA", "NRO. BILLETE", "COSTO (BS)", "ESTADO", "DESCARGO"}
 	for i, h := range headers {
 		cell, _ := excelize.CoordinatesToCellName(i+1, 1)
 		f.SetCellValue(sheet, cell, h)
@@ -2133,10 +2133,24 @@ func (s *ReportService) GenerateConsolidadoPasajesExcel(ctx context.Context, fil
 	for i, p := range pasajes {
 		row := i + 2
 		concepto := "DERECHO"
+		tipoSolicitud := "-"
 		codigoSolicitud := p.SolicitudID
+		descargoStatus := "NO"
+
 		if p.SolicitudItem != nil && p.SolicitudItem.Solicitud != nil {
-			concepto = p.SolicitudItem.Solicitud.GetConceptoCodigo()
-			codigoSolicitud = p.SolicitudItem.Solicitud.Codigo
+			sol := p.SolicitudItem.Solicitud
+			concepto = sol.GetConceptoCodigo()
+			codigoSolicitud = sol.Codigo
+
+			if concepto == "DERECHO" {
+				tipoSolicitud = "POR DERECHO"
+			} else {
+				tipoSolicitud = strings.ToUpper(sol.GetTipoNombre())
+			}
+
+			if sol.Descargo != nil {
+				descargoStatus = strings.ToUpper(sol.Descargo.GetEstadoLabel())
+			}
 		}
 
 		beneficiario := "-"
@@ -2150,17 +2164,19 @@ func (s *ReportService) GenerateConsolidadoPasajesExcel(ctx context.Context, fil
 		}
 		f.SetCellValue(sheet, fmt.Sprintf("C%d", row), codigoSolicitud)
 		f.SetCellValue(sheet, fmt.Sprintf("D%d", row), concepto)
-		f.SetCellValue(sheet, fmt.Sprintf("E%d", row), beneficiario)
-		f.SetCellValue(sheet, fmt.Sprintf("F%d", row), p.GetRutaDisplay())
+		f.SetCellValue(sheet, fmt.Sprintf("E%d", row), tipoSolicitud)
+		f.SetCellValue(sheet, fmt.Sprintf("F%d", row), beneficiario)
+		f.SetCellValue(sheet, fmt.Sprintf("G%d", row), p.GetRutaDisplay())
 		if p.Aerolinea != nil {
-			f.SetCellValue(sheet, fmt.Sprintf("G%d", row), p.Aerolinea.Nombre)
+			f.SetCellValue(sheet, fmt.Sprintf("H%d", row), p.Aerolinea.Sigla)
 		}
 		if p.Agencia != nil {
-			f.SetCellValue(sheet, fmt.Sprintf("H%d", row), p.Agencia.Nombre)
+			f.SetCellValue(sheet, fmt.Sprintf("I%d", row), p.Agencia.Nombre)
 		}
-		f.SetCellValue(sheet, fmt.Sprintf("I%d", row), p.NumeroBillete)
-		f.SetCellValue(sheet, fmt.Sprintf("J%d", row), p.Costo)
-		f.SetCellValue(sheet, fmt.Sprintf("K%d", row), p.GetEstado())
+		f.SetCellValue(sheet, fmt.Sprintf("J%d", row), p.NumeroBillete)
+		f.SetCellValue(sheet, fmt.Sprintf("K%d", row), p.Costo)
+		f.SetCellValue(sheet, fmt.Sprintf("L%d", row), p.GetEstado())
+		f.SetCellValue(sheet, fmt.Sprintf("M%d", row), descargoStatus)
 
 		totalCosto += p.Costo
 
@@ -2171,27 +2187,29 @@ func (s *ReportService) GenerateConsolidadoPasajesExcel(ctx context.Context, fil
 
 	// Fila de Totales
 	totalRow := len(pasajes) + 2
-	f.SetCellValue(sheet, fmt.Sprintf("I%d", totalRow), "TOTAL GENERAL:")
-	f.SetCellValue(sheet, fmt.Sprintf("J%d", totalRow), totalCosto)
+	f.SetCellValue(sheet, fmt.Sprintf("K%d", totalRow), "TOTAL GENERAL:")
+	f.SetCellValue(sheet, fmt.Sprintf("L%d", totalRow), totalCosto)
 
 	totalStyle, _ := f.NewStyle(&excelize.Style{
 		Font: &excelize.Font{Bold: true},
 		Fill: excelize.Fill{Type: "pattern", Color: []string{"F3F4F6"}, Pattern: 1},
 	})
-	f.SetCellStyle(sheet, fmt.Sprintf("I%d", totalRow), fmt.Sprintf("J%d", totalRow), totalStyle)
+	f.SetCellStyle(sheet, fmt.Sprintf("K%d", totalRow), fmt.Sprintf("L%d", totalRow), totalStyle)
 
 	// Autoajustar anchos (aproximado)
 	f.SetColWidth(sheet, "A", "A", 5)
 	f.SetColWidth(sheet, "B", "B", 15)
 	f.SetColWidth(sheet, "C", "C", 15)
 	f.SetColWidth(sheet, "D", "D", 12)
-	f.SetColWidth(sheet, "E", "E", 35)
-	f.SetColWidth(sheet, "F", "F", 40)
-	f.SetColWidth(sheet, "G", "G", 15)
+	f.SetColWidth(sheet, "E", "E", 20)
+	f.SetColWidth(sheet, "F", "F", 35)
+	f.SetColWidth(sheet, "G", "G", 40)
 	f.SetColWidth(sheet, "H", "H", 15)
-	f.SetColWidth(sheet, "I", "I", 20)
+	f.SetColWidth(sheet, "I", "I", 25)
 	f.SetColWidth(sheet, "J", "J", 15)
-	f.SetColWidth(sheet, "K", "K", 12)
+	f.SetColWidth(sheet, "K", "K", 15)
+	f.SetColWidth(sheet, "L", "L", 15)
+	f.SetColWidth(sheet, "M", "M", 15)
 
 	return f, nil
 }
