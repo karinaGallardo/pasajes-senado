@@ -212,6 +212,11 @@ func (s *DescargoService) SyncOpenTickets(ctx context.Context, descargoID string
 		return err
 	}
 
+	// 0. Seguridad: No se generan Open Tickets para pasajes oficiales (Comisiones/Misiones)
+	if descargo.Solicitud != nil && descargo.Solicitud.GetConceptoCodigo() == "OFICIAL" {
+		return nil
+	}
+
 	// 1. Obtener registros existentes para este descargo
 	existing, _ := s.openTicketRepo.FindByDescargoID(ctx, descargoID)
 	existingMap := make(map[string]models.OpenTicket)

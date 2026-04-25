@@ -2216,6 +2216,10 @@ video {
   width: 2.25rem;
 }
 
+.w-\[110px\] {
+  width: 110px;
+}
+
 .w-\[128px\] {
   width: 128px;
 }
@@ -2254,10 +2258,6 @@ video {
 
 .w-\[6\%\] {
   width: 6%;
-}
-
-.w-\[60px\] {
-  width: 60px;
 }
 
 .w-\[64px\] {
@@ -2303,10 +2303,6 @@ video {
 
 .w-px {
   width: 1px;
-}
-
-.w-\[110px\] {
-  width: 110px;
 }
 
 .min-w-0 {

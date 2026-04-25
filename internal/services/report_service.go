@@ -1941,11 +1941,10 @@ func (s *ReportService) GenerateViaticoV1(ctx context.Context, viatico *models.V
 	return pdf
 }
 
-func (s *ReportService) drawSolicitudSegment(ctx context.Context, pdf *gofpdf.Fpdf, tr func(string) string, title string, item *models.SolicitudItem, aerolineaSugerida string) {
+func (s *ReportService) drawSolicitudSegment(_ context.Context, pdf *gofpdf.Fpdf, tr func(string) string, title string, item *models.SolicitudItem, aerolineaSugerida string) {
 	if item == nil {
 		return
 	}
-	// Margen pequeño de 5mm para dar sensación de "borde a borde"
 	const totalWidth = 200.0
 	const startX = 3.0
 

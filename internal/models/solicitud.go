@@ -267,6 +267,14 @@ func (s Solicitud) GetConceptoCodigo() string {
 	return s.TipoSolicitudCodigo
 }
 
+func (s Solicitud) IsOficial() bool {
+	return s.GetConceptoCodigo() == "OFICIAL"
+}
+
+func (s Solicitud) IsDerecho() bool {
+	return s.GetConceptoCodigo() == "DERECHO"
+}
+
 func (s Solicitud) GetAmbitoViajeNombre() string {
 	if s.AmbitoViaje != nil {
 		return s.AmbitoViaje.Nombre
@@ -996,16 +1004,6 @@ func (s Solicitud) IsEmitido() bool {
 
 func (s Solicitud) IsFinalizado() bool {
 	return s.GetEstado() == "FINALIZADO"
-}
-
-// --- Display Helpers ---
-
-func (s Solicitud) IsDerecho() bool {
-	return s.GetConceptoCodigo() == "DERECHO"
-}
-
-func (s Solicitud) IsOficial() bool {
-	return s.GetConceptoCodigo() == "OFICIAL"
 }
 
 func (s Solicitud) GetConcepto() string {

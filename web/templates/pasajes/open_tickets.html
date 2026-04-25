@@ -63,7 +63,13 @@
                     <div>
                       <span class="text-zinc-900 font-semibold block leading-none">{{ .NumeroBillete }}</span>
                       <span class="text-zinc-400 text-xs tracking-tight uppercase">
-                        {{ if .Pasaje }}{{ .Pasaje.Aerolinea.Nombre }}{{ else }}N/A{{ end }}
+                        {{ if .Pasaje }}
+                          {{ .Pasaje.Aerolinea.Nombre }}
+                          <span class="ml-1 text-[10px] text-zinc-300">•</span>
+                          <span class="ml-1 text-zinc-500 font-bold">Bs. {{ printf "%.2f" .Pasaje.Costo }}</span>
+                        {{ else }}
+                          N/A
+                        {{ end }}
                       </span>
                     </div>
                   </div>
@@ -77,11 +83,33 @@
                   </td>
                 {{ end }}
                 <td class="px-6 py-5">
-                  <span class="text-zinc-700 font-medium">{{ .TramosNoUsados }}</span>
-                  <span class="block text-[10px] text-zinc-400 uppercase tracking-tighter mt-0.5">
-                    Vía Descargo:
-                    {{ .Descargo.Codigo }}
-                  </span>
+                  <div class="flex flex-col">
+                    <span class="text-zinc-700 font-bold text-xs uppercase tracking-tight">{{ .TramosNoUsados }}</span>
+                    <div class="mt-1 flex items-center gap-2 text-[10px] text-zinc-400 font-medium">
+                      <span class="flex items-center gap-1">
+                        <i class="ph ph-map-pin text-xs"></i>
+                        Orig: {{ if .Pasaje }}{{ .Pasaje.GetRutaDisplay }}{{ else }}N/A{{ end }}
+                      </span>
+                      <span class="text-zinc-300">•</span>
+                      <span class="flex items-center gap-1">
+                        <i class="ph ph-calendar text-xs"></i>
+                        {{ .GetFechaOriginalFormat }}
+                      </span>
+                    </div>
+                    <span class="block text-[9px] text-zinc-400 uppercase tracking-tighter mt-1">
+                      Vía Descargo:
+                      <a
+                        href="/descargos/{{ if and .Descargo.Solicitud .Descargo.Solicitud.IsOficial }}
+                          oficial
+                        {{ else }}
+                          derecho
+                        {{ end }}/{{ .DescargoID }}/detalle"
+                        class="text-blue-500 hover:underline"
+                      >
+                        {{ .Descargo.Codigo }}
+                      </a>
+                    </span>
+                  </div>
                 </td>
                 <td class="px-6 py-5 whitespace-nowrap">
                   <span

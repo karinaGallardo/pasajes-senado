@@ -22,7 +22,7 @@ func (r *OpenTicketRepository) WithTx(tx *gorm.DB) *OpenTicketRepository {
 func (r *OpenTicketRepository) FindByDescargoID(ctx context.Context, descargoID string) ([]models.OpenTicket, error) {
 	var tickets []models.OpenTicket
 	err := r.db.WithContext(ctx).
-		Preload("Descargo").
+		Preload("Descargo.Solicitud").
 		Where("descargo_id = ?", descargoID).
 		Find(&tickets).Error
 	return tickets, err
@@ -35,7 +35,7 @@ func (r *OpenTicketRepository) Create(ctx context.Context, ticket *models.OpenTi
 func (r *OpenTicketRepository) FindDisponiblesByUsuarioID(ctx context.Context, usuarioID string) ([]models.OpenTicket, error) {
 	var tickets []models.OpenTicket
 	err := r.db.WithContext(ctx).
-		Preload("Descargo").
+		Preload("Descargo.Solicitud").
 		Where("usuario_id = ? AND estado = ?", usuarioID, models.EstadoOpenTicketDisponible).
 		Order("created_at DESC").
 		Find(&tickets).Error
@@ -45,8 +45,9 @@ func (r *OpenTicketRepository) FindDisponiblesByUsuarioID(ctx context.Context, u
 func (r *OpenTicketRepository) FindAllByUsuarioID(ctx context.Context, usuarioID string) ([]models.OpenTicket, error) {
 	var tickets []models.OpenTicket
 	err := r.db.WithContext(ctx).
-		Preload("Descargo").
+		Preload("Descargo.Solicitud").
 		Preload("Pasaje.Aerolinea").
+		Preload("Pasaje.RutaPasaje").
 		Where("usuario_id = ?", usuarioID).
 		Order("created_at DESC").
 		Find(&tickets).Error
@@ -57,8 +58,9 @@ func (r *OpenTicketRepository) FindByID(ctx context.Context, id string) (*models
 	var ticket models.OpenTicket
 	err := r.db.WithContext(ctx).
 		Preload("Usuario").
-		Preload("Descargo").
+		Preload("Descargo.Solicitud").
 		Preload("Pasaje.Aerolinea").
+		Preload("Pasaje.RutaPasaje").
 		First(&ticket, "id = ?", id).Error
 	return &ticket, err
 }
@@ -75,8 +77,9 @@ func (r *OpenTicketRepository) FindAll(ctx context.Context, filters map[string]a
 	var tickets []models.OpenTicket
 	query := r.db.WithContext(ctx).
 		Preload("Usuario").
-		Preload("Descargo").
+		Preload("Descargo.Solicitud").
 		Preload("Pasaje.Aerolinea").
+		Preload("Pasaje.RutaPasaje").
 		Order("created_at DESC")
 
 	for k, v := range filters {

@@ -419,7 +419,7 @@ func (s *DescargoOficialService) UpdateOficial(ctx context.Context, id string, r
 					NumeroVuelo:       row.Vuelo,
 					NumeroPaseAbordo:  row.PaseNumero,
 					ArchivoPaseAbordo: row.ArchivoPath,
-					EsOpenTicket:      row.EsOpenTicket,
+					EsOpenTicket:      false, // Siempre false para oficiales
 					EsModificacion:    row.EsModificacion,
 					TramoNombre:       original.TramoNombre,
 					Seq:               row.Seq,
@@ -444,7 +444,7 @@ func (s *DescargoOficialService) UpdateOficial(ctx context.Context, id string, r
 			NumeroVuelo:       row.Vuelo,
 			NumeroPaseAbordo:  row.PaseNumero,
 			ArchivoPaseAbordo: row.ArchivoPath,
-			EsOpenTicket:      row.EsOpenTicket,
+			EsOpenTicket:      false, // Siempre false para oficiales
 			EsModificacion:    row.EsModificacion,
 			TramoNombre:       tramoNombre,
 			Seq:               row.Seq,
