@@ -12,7 +12,7 @@ const (
 	EstadoOpenTicketPendiente  EstadoOpenTicket = "PENDIENTE"  // Generado en descargo, esperando aprobación
 	EstadoOpenTicketDisponible EstadoOpenTicket = "DISPONIBLE" // Listo para ser usado
 	EstadoOpenTicketReservado  EstadoOpenTicket = "RESERVADO"  // Seleccionado en una nueva solicitud FV-01
-	EstadoOpenTicketUsado      EstadoOpenTicket = "USADO"      // Ya volado o canjeado definitivamente
+	EstadoOpenTicketFinalizado EstadoOpenTicket = "FINALIZADO" // Ya volado o canjeado definitivamente
 	EstadoOpenTicketCancelado  EstadoOpenTicket = "CANCELADO"  // Anulado o corregido
 )
 
@@ -68,7 +68,7 @@ func (c OpenTicket) GetEstadoColor() string {
 		return "success"
 	case EstadoOpenTicketReservado:
 		return "warning"
-	case EstadoOpenTicketUsado:
+	case EstadoOpenTicketFinalizado:
 		return "neutral"
 	case EstadoOpenTicketPendiente:
 		return "primary"
@@ -81,8 +81,8 @@ func (c OpenTicket) IsPendiente() bool {
 	return c.Estado == EstadoOpenTicketPendiente
 }
 
-func (c OpenTicket) IsUsado() bool {
-	return c.Estado == EstadoOpenTicketUsado
+func (c OpenTicket) IsFinalizado() bool {
+	return c.Estado == EstadoOpenTicketFinalizado
 }
 
 func (c OpenTicket) GetFechaOriginalFormat() string {

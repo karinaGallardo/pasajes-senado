@@ -259,22 +259,43 @@ func (ctrl *PasajeController) Preview(c *gin.Context) {
 	}
 
 	tipo := c.Query("tipo")
-	filePath := pasaje.Archivo
-	title := "Vista Previa de Billete"
-	if tipo == "pase" {
-		filePath = pasaje.ArchivoPaseAbordo
-		title = "Vista Previa de Pase a Bordo"
+	var files []gin.H
+
+	switch tipo {
+	case "billete":
+		if pasaje.Archivo != "" {
+			files = append(files, gin.H{
+				"Title": "Billete de Pasaje",
+				"Path":  "/" + pasaje.Archivo,
+				"IsPDF": strings.HasSuffix(strings.ToLower(pasaje.Archivo), ".pdf"),
+			})
+		}
+		if pasaje.ServicioArchivo != "" {
+			files = append(files, gin.H{
+				"Title": "Factura de Servicio de Emisión",
+				"Path":  "/" + pasaje.ServicioArchivo,
+				"IsPDF": strings.HasSuffix(strings.ToLower(pasaje.ServicioArchivo), ".pdf"),
+			})
+		}
+	case "pase":
+		if pasaje.ArchivoPaseAbordo != "" {
+			files = append(files, gin.H{
+				"Title": "Pase a Bordo",
+				"Path":  "/" + pasaje.ArchivoPaseAbordo,
+				"IsPDF": strings.HasSuffix(strings.ToLower(pasaje.ArchivoPaseAbordo), ".pdf"),
+			})
+		}
 	}
 
-	if filePath == "" {
+	if len(files) == 0 {
 		c.String(http.StatusNotFound, "Archivo no disponible")
 		return
 	}
 
 	utils.Render(c, "solicitud/components/modal_preview_archivo", gin.H{
-		"Title":    title,
-		"FilePath": "/" + filePath,
-		"IsPDF":    strings.HasSuffix(strings.ToLower(filePath), ".pdf"),
+		"Title":  "Vista Previa de Documentos",
+		"Files":  files,
+		"Pasaje": pasaje,
 	})
 }
 
@@ -362,4 +383,60 @@ func (ctrl *PasajeController) GetUsadoModal(c *gin.Context) {
 	utils.Render(c, "solicitud/components/modal_usado_pasaje", gin.H{
 		"Pasaje": pasaje,
 	})
+}
+
+func (ctrl *PasajeController) Delete(c *gin.Context) {
+	id := c.Param("id")
+	authUser := appcontext.AuthUser(c)
+
+	if err := ctrl.pasajeService.Delete(c.Request.Context(), id, authUser.ID); err != nil {
+		if c.GetHeader("X-Requested-With") == "XMLHttpRequest" {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		} else {
+			utils.SetErrorMessage(c, "Error: "+err.Error())
+			c.Redirect(http.StatusFound, c.Request.Header.Get("Referer"))
+		}
+		return
+	}
+
+	if c.GetHeader("X-Requested-With") == "XMLHttpRequest" {
+		c.Status(http.StatusOK)
+	} else {
+		utils.SetSuccessMessage(c, "Pasaje eliminado correctamente")
+		c.Redirect(http.StatusFound, c.Request.Header.Get("Referer"))
+	}
+}
+
+func (ctrl *PasajeController) GetServicioModal(c *gin.Context) {
+	id := c.Param("id")
+	pasaje, err := ctrl.pasajeService.GetByID(c.Request.Context(), id)
+	if err != nil {
+		c.String(http.StatusNotFound, "Pasaje no encontrado")
+		return
+	}
+
+	utils.Render(c, "solicitud/components/modal_servicio_pasaje", gin.H{
+		"Pasaje": pasaje,
+	})
+}
+
+func (ctrl *PasajeController) UpdateServicio(c *gin.Context) {
+	var req dtos.UpdateServicioEmisionRequest
+	if err := c.ShouldBind(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Datos inválidos"})
+		return
+	}
+
+	var filePath string
+	if file, err := c.FormFile("servicio_archivo"); err == nil {
+		filePath, _ = utils.SaveUploadedFile(c, file, "uploads/servicios", "servicio_"+req.ID+"_")
+	}
+
+	if err := ctrl.pasajeService.UpdateServicioEmision(c.Request.Context(), req, filePath); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.Header("HX-Refresh", "true")
+	c.Status(204)
 }

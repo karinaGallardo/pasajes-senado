@@ -178,7 +178,7 @@ func (s *DescargoService) RevertToDraft(ctx context.Context, id string, userID s
 	creditos, err := s.openTicketRepo.FindByDescargoID(ctx, id)
 	if err == nil && len(creditos) > 0 {
 		for _, c := range creditos {
-			if c.Estado == models.EstadoOpenTicketUsado {
+			if c.Estado == models.EstadoOpenTicketFinalizado {
 				return fmt.Errorf("no se puede revertir: el crédito de viaje generado ya fue utilizado")
 			}
 		}

@@ -81,7 +81,7 @@ func (s *PasajeService) Create(ctx context.Context, solicitudID string, req dtos
 	pasaje := &models.Pasaje{
 		SolicitudID:        solicitudID,
 		SolicitudItemID:    &req.SolicitudItemID,
-		EstadoPasajeCodigo: &status,
+		EstadoPasajeCodigo: status,
 		AerolineaID:        aerolineaID,
 		AgenciaID:          &req.AgenciaID,
 		NumeroVuelo:        req.NumeroVuelo,
@@ -126,8 +126,17 @@ func (s *PasajeService) GetBySolicitudID(ctx context.Context, solicitudID string
 	return s.repo.FindBySolicitudID(ctx, solicitudID)
 }
 
-func (s *PasajeService) Delete(ctx context.Context, id uint) error {
-	return s.repo.Delete(ctx, id)
+func (s *PasajeService) Delete(ctx context.Context, id string, deletedBy string) error {
+	pasaje, err := s.repo.FindByID(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	if pasaje.GetEstado() != models.EstadoPasajeRegistrado {
+		return fmt.Errorf("solo se pueden eliminar pasajes en estado REGISTRADO")
+	}
+
+	return s.repo.Delete(ctx, id, deletedBy)
 }
 func (s *PasajeService) GetByID(ctx context.Context, id string) (*models.Pasaje, error) {
 	return s.repo.FindByID(ctx, id)
@@ -200,7 +209,7 @@ func (s *PasajeService) DevolverPasaje(ctx context.Context, req dtos.DevolverPas
 	}
 
 	costoPenalidad := utils.ParseFloat(req.CostoPenalidad)
-	pasaje.EstadoPasajeCodigo = utils.Ptr("ANULADO")
+	pasaje.EstadoPasajeCodigo = models.EstadoPasajeFinalizado
 
 	if pasaje.Glosa != "" {
 		pasaje.Glosa += " | Devolución: " + req.Glosa
@@ -218,12 +227,8 @@ func (s *PasajeService) UpdateStatus(ctx context.Context, id string, status stri
 		return err
 	}
 
-	oldStatus := ""
-	if pasaje.EstadoPasajeCodigo != nil {
-		oldStatus = *pasaje.EstadoPasajeCodigo
-	}
-
-	pasaje.EstadoPasajeCodigo = &status
+	oldStatus := pasaje.EstadoPasajeCodigo
+	pasaje.EstadoPasajeCodigo = status
 	if ticketPath != "" {
 		pasaje.Archivo = ticketPath
 	}
@@ -238,8 +243,8 @@ func (s *PasajeService) UpdateStatus(ctx context.Context, id string, status stri
 	s.auditService.Log(ctx, "CAMBIAR_ESTADO_PASAJE", "pasaje", id, "", status, "", "")
 
 	// If Pasaje is EMITIDO, also update Request Item state to EMITIDO
-	if status == "EMITIDO" && pasaje.SolicitudItemID != nil {
-		s.solicitudItemRepo.UpdateStatus(ctx, *pasaje.SolicitudItemID, "EMITIDO")
+	if status == models.EstadoPasajeEmitido && pasaje.SolicitudItemID != nil {
+		s.solicitudItemRepo.UpdateStatus(ctx, *pasaje.SolicitudItemID, models.EstadoPasajeEmitido)
 
 		// Recalculate Solicitud global status via GORM Hooks
 		sol, err := s.solicitudRepo.FindByID(ctx, pasaje.SolicitudID)
@@ -249,7 +254,7 @@ func (s *PasajeService) UpdateStatus(ctx context.Context, id string, status stri
 	}
 
 	// Reversion logic: if it was EMITIDO and now REGISTRADO
-	if oldStatus == "EMITIDO" && status == "REGISTRADO" && pasaje.SolicitudItemID != nil {
+	if oldStatus == models.EstadoPasajeEmitido && status == models.EstadoPasajeRegistrado && pasaje.SolicitudItemID != nil {
 		// 1. Validar que no existan descargos procesados vinculados a este pasaje
 		var blockedCount int64
 		s.repo.GetDB().WithContext(ctx).Model(&models.DescargoTramo{}).
@@ -488,4 +493,30 @@ func (s *PasajeService) sendReversionEmail(sol *models.Solicitud, pasaje *models
 	`, sol.Codigo, usuario.GetNombreCompleto(), tipoTramoStr, pasaje.GetRutaDisplay(), utils.FormatDateTimeLongES(pasaje.FechaVuelo))
 
 	_ = s.emailService.SendEmail(to, cc, nil, subject, body)
+}
+
+func (s *PasajeService) UpdateServicioEmision(ctx context.Context, req dtos.UpdateServicioEmisionRequest, filePath string) error {
+	pasaje, err := s.repo.FindByID(ctx, req.ID)
+	if err != nil {
+		return err
+	}
+
+	pasaje.ServicioRazonSocial = req.RazonSocial
+	pasaje.ServicioFacturaNumero = req.FacturaNumero
+	pasaje.ServicioMonto = utils.ParseFloat(req.Monto)
+
+	if req.Fecha != "" {
+		fe, err := time.Parse("2006-01-02", req.Fecha)
+		if err == nil {
+			pasaje.ServicioFacturaFecha = &fe
+		}
+	} else {
+		pasaje.ServicioFacturaFecha = nil
+	}
+
+	if filePath != "" {
+		pasaje.ServicioArchivo = filePath
+	}
+
+	return s.repo.Update(ctx, pasaje)
 }

@@ -26,8 +26,11 @@ func (r *PasajeRepository) FindBySolicitudID(ctx context.Context, solicitudID st
 	return pasajes, err
 }
 
-func (r *PasajeRepository) Delete(ctx context.Context, id uint) error {
-	return r.db.WithContext(ctx).Delete(&models.Pasaje{}, id).Error
+func (r *PasajeRepository) Delete(ctx context.Context, id string, deletedBy string) error {
+	if err := r.db.WithContext(ctx).Model(&models.Pasaje{}).Where("id = ?", id).Update("deleted_by", deletedBy).Error; err != nil {
+		return err
+	}
+	return r.db.WithContext(ctx).Delete(&models.Pasaje{}, "id = ?", id).Error
 }
 
 func (r *PasajeRepository) FindByID(ctx context.Context, id string) (*models.Pasaje, error) {

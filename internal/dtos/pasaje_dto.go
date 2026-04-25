@@ -38,3 +38,11 @@ type DevolverPasajeRequest struct {
 	Glosa          string `form:"glosa"`
 	CostoPenalidad string `form:"costo_penalidad"`
 }
+
+type UpdateServicioEmisionRequest struct {
+	ID            string `form:"id" binding:"required"`
+	RazonSocial   string `form:"servicio_razon_social"`
+	FacturaNumero string `form:"servicio_factura_numero"`
+	Fecha         string `form:"servicio_factura_fecha"`
+	Monto         string `form:"servicio_monto"`
+}

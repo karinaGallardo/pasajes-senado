@@ -159,7 +159,7 @@ func (t SolicitudItem) GetStatusBadgeClass() string {
 
 func (t SolicitudItem) HasActivePasaje() bool {
 	for _, p := range t.Pasajes {
-		if p.EstadoPasajeCodigo != nil && *p.EstadoPasajeCodigo != "ANULADO" {
+		if p.EstadoPasajeCodigo != "" {
 			return true
 		}
 	}
@@ -173,7 +173,7 @@ func (t SolicitudItem) GetPasajeActivo() *Pasaje {
 	// Devuelve el primer pasaje que no esté anulado (ahora solo debería haber uno activo por diseño)
 	for i := range t.Pasajes {
 		p := &t.Pasajes[i]
-		if p.EstadoPasajeCodigo == nil || *p.EstadoPasajeCodigo != "ANULADO" {
+		if p.EstadoPasajeCodigo != "" {
 			return p
 		}
 	}
@@ -254,7 +254,7 @@ func (t SolicitudItem) GetCostoTotal() float64 {
 	for _, p := range t.Pasajes {
 		estado := p.GetEstadoCodigo()
 		// No sumamos pasajes anulados o que no tengan costo registrado
-		if estado != "ANULADO" {
+		if estado != "" {
 			total += p.Costo
 		}
 	}
@@ -278,9 +278,8 @@ func (t *SolicitudItem) Finalize() {
 	t.EstadoCodigo = &st
 	for i := range t.Pasajes {
 		p := &t.Pasajes[i]
-		if p.GetEstadoCodigo() == "EMITIDO" {
-			stP := "USADO"
-			p.EstadoPasajeCodigo = &stP
+		if p.GetEstadoCodigo() == EstadoPasajeEmitido {
+			p.EstadoPasajeCodigo = EstadoPasajeFinalizado
 		}
 	}
 }
@@ -295,9 +294,8 @@ func (t *SolicitudItem) RevertFinalize() {
 	t.EstadoCodigo = &st
 	for i := range t.Pasajes {
 		p := &t.Pasajes[i]
-		if p.GetEstadoCodigo() == "USADO" {
-			stP := "EMITIDO"
-			p.EstadoPasajeCodigo = &stP
+		if p.GetEstadoCodigo() == EstadoPasajeFinalizado {
+			p.EstadoPasajeCodigo = EstadoPasajeEmitido
 		}
 	}
 }

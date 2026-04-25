@@ -2072,6 +2072,10 @@ video {
   max-height: 100%;
 }
 
+.max-h-\[75vh\] {
+  max-height: 75vh;
+}
+
 .min-h-\[160px\] {
   min-height: 160px;
 }
@@ -3056,6 +3060,16 @@ video {
   border-top-right-radius: 1rem;
 }
 
+.rounded-b {
+  border-bottom-right-radius: 0.25rem;
+  border-bottom-left-radius: 0.25rem;
+}
+
+.rounded-t {
+  border-top-left-radius: 0.25rem;
+  border-top-right-radius: 0.25rem;
+}
+
 .rounded-tl-xl {
   border-top-left-radius: 16px;
 }
@@ -3120,6 +3134,10 @@ video {
 
 .border-t-4 {
   border-top-width: 4px;
+}
+
+.border-b-0 {
+  border-bottom-width: 0px;
 }
 
 .border-dashed {
@@ -5116,6 +5134,10 @@ video {
   border-color: rgb(228 228 231 / var(--tw-border-opacity, 1));
 }
 
+.border-white\/30 {
+  border-color: rgb(255 255 255 / 0.3);
+}
+
 .border-l-primary {
   --tw-border-opacity: 1;
   border-left-color: rgb(137 48 38 / var(--tw-border-opacity, 1));
@@ -5123,6 +5145,11 @@ video {
 
 .border-t-transparent {
   border-top-color: transparent;
+}
+
+.border-t-white {
+  --tw-border-opacity: 1;
+  border-top-color: rgb(255 255 255 / var(--tw-border-opacity, 1));
 }
 
 .bg-accent-50 {
@@ -10052,6 +10079,11 @@ video {
   --tw-shadow: var(--tw-shadow-colored);
 }
 
+.shadow-secondary-600\/20 {
+  --tw-shadow-color: rgb(232 98 11 / 0.2);
+  --tw-shadow: var(--tw-shadow-colored);
+}
+
 .outline-none {
   outline: 2px solid transparent;
   outline-offset: 2px;
@@ -10336,6 +10368,50 @@ h1, h2, h3 {
 .flatpickr-day.selected {
   background: #893026 !important;
   border-color: #893026 !important;
+}
+
+.file\:mr-4::file-selector-button {
+  margin-right: 1rem;
+}
+
+.file\:rounded::file-selector-button {
+  border-radius: 0.25rem;
+}
+
+.file\:border-0::file-selector-button {
+  border-width: 0px;
+}
+
+.file\:bg-secondary-50::file-selector-button {
+  --tw-bg-opacity: 1;
+  background-color: rgb(255 247 237 / var(--tw-bg-opacity, 1));
+}
+
+.file\:px-4::file-selector-button {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.file\:py-2::file-selector-button {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+}
+
+.file\:text-\[10px\]::file-selector-button {
+  font-size: 10px;
+}
+
+.file\:font-black::file-selector-button {
+  font-weight: 900;
+}
+
+.file\:uppercase::file-selector-button {
+  text-transform: uppercase;
+}
+
+.file\:text-secondary-700::file-selector-button {
+  --tw-text-opacity: 1;
+  color: rgb(192 73 11 / var(--tw-text-opacity, 1));
 }
 
 .placeholder\:font-medium::-moz-placeholder {
@@ -10832,6 +10908,11 @@ h1, h2, h3 {
   --tw-ring-color: rgb(137 48 38 / var(--tw-ring-opacity, 1));
 }
 
+.hover\:file\:bg-secondary-100::file-selector-button:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(255 238 212 / var(--tw-bg-opacity, 1));
+}
+
 .focus\:border-amber-400:focus {
   --tw-border-opacity: 1;
   border-color: rgb(251 191 36 / var(--tw-border-opacity, 1));
@@ -10860,6 +10941,11 @@ h1, h2, h3 {
 .focus\:border-secondary:focus {
   --tw-border-opacity: 1;
   border-color: rgb(232 98 11 / var(--tw-border-opacity, 1));
+}
+
+.focus\:border-secondary-500:focus {
+  --tw-border-opacity: 1;
+  border-color: rgb(249 115 22 / var(--tw-border-opacity, 1));
 }
 
 .focus\:bg-white:focus {
@@ -10982,6 +11068,10 @@ h1, h2, h3 {
 .focus\:ring-success-600:focus {
   --tw-ring-opacity: 1;
   --tw-ring-color: rgb(5 150 105 / var(--tw-ring-opacity, 1));
+}
+
+.focus\:ring-secondary-500\/20:focus {
+  --tw-ring-color: rgb(249 115 22 / 0.2);
 }
 
 .focus\:ring-offset-2:focus {

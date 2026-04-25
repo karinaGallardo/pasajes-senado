@@ -816,7 +816,7 @@ func (s Solicitud) GetMontoTotalAsignado() float64 {
 		for _, p := range item.Pasajes {
 			st := p.GetEstadoCodigo()
 			// Sumamos los emitidos o usados (lo que representa el gasto administrativo inicial)
-			if st == "EMITIDO" || st == "USADO" {
+			if st == "EMITIDO" || st == "FINALIZADO" {
 				total += p.Costo
 			}
 		}
@@ -928,7 +928,7 @@ func (s Solicitud) CanAssignViatico(u ...*Usuario) bool {
 func (s Solicitud) HasEmittedPasaje() bool {
 	for _, item := range s.Items {
 		for _, p := range item.Pasajes {
-			if p.GetEstadoCodigo() == "EMITIDO" || p.GetEstadoCodigo() == "USADO" {
+			if p.GetEstadoCodigo() == "EMITIDO" || p.GetEstadoCodigo() == "FINALIZADO" {
 				return true
 			}
 		}

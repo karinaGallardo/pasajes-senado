@@ -389,12 +389,12 @@
         }
 
         switch (action) {
-          case "anular":
-            title = "¿Anular Pasaje?";
-            text = "Esta acción no se puede deshacer.";
-            confirmButtonText = "Sí, anular";
-            confirmButtonColor = "#dc2626"; // danger.DEFAULT
-            newStatus = "ANULADO";
+          case "eliminar":
+            title = "¿Eliminar Pasaje?";
+            text = "Esta acción eliminará el pasaje de forma permanente.";
+            confirmButtonText = "Sí, eliminar";
+            confirmButtonColor = "#ef4444"; // Danger
+            newStatus = "ELIMINAR";
             break;
           case "revertir_emision":
             title = "¿Revertir Envío?";
@@ -432,6 +432,27 @@
       });
 
       function updatePasajeStatus(id, status) {
+        if (status === "ELIMINAR") {
+          fetch(`/pasajes/${id}`, {
+            method: "DELETE",
+            headers: {
+              "X-Requested-With": "XMLHttpRequest",
+            },
+          }).then(function (response) {
+            if (response.ok) {
+              window.location.reload();
+            } else {
+              Swal.fire({
+                title: "Error",
+                text: "No se pudo eliminar el pasaje.",
+                icon: "error",
+                confirmButtonColor: "#ef4444",
+              });
+            }
+          });
+          return;
+        }
+
         const formData = new FormData();
         formData.append("id", id);
         formData.append("status", status);
@@ -706,6 +727,15 @@
                       {{ if .Permissions.CanEdit }}
                         <button
                           type="button"
+                          hx-get="/pasajes/{{ .ID }}/modal-servicio"
+                          hx-target="#modal-container"
+                          class="w-8 h-8 flex items-center justify-center rounded-sm bg-secondary-50 border border-secondary-100 text-secondary-600 hover:bg-secondary-600 hover:text-white transition-all shadow-sm cursor-pointer"
+                          title="Servicio de Emisión (Fee)"
+                        >
+                          <i class="ph ph-receipt text-lg font-bold"></i>
+                        </button>
+                        <button
+                          type="button"
                           hx-get="/pasajes/{{ .ID }}/editar"
                           hx-target="#modal-container"
                           class="w-8 h-8 flex items-center justify-center rounded-sm bg-neutral-50 border border-neutral-200 text-neutral-600 hover:bg-neutral-800 hover:text-white transition-all shadow-sm cursor-pointer"
@@ -722,6 +752,16 @@
                           title="Revertir Envío"
                         >
                           <i class="ph ph-arrow-counter-clockwise text-lg font-bold"></i>
+                        </button>
+                      {{ end }}
+                      {{ if .Permissions.CanDelete }}
+                        <button
+                          type="button"
+                          @click="$dispatch('pasaje-action', { action: 'eliminar', id: '{{ .ID }}' })"
+                          class="w-8 h-8 flex items-center justify-center rounded-sm bg-danger-50 border border-danger-100 text-danger-600 hover:bg-danger-600 hover:text-white transition-all shadow-sm cursor-pointer"
+                          title="Eliminar Pasaje"
+                        >
+                          <i class="ph ph-trash text-lg font-bold"></i>
                         </button>
                       {{ end }}
                     </div>

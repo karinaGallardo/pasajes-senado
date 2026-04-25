@@ -1,0 +1,152 @@
+{{ define "solicitud/components/modal_servicio_pasaje" }}
+  <div
+    class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-900/60 backdrop-blur-sm"
+    x-data="{
+      loading: false,
+      razonSocial: '{{ .Pasaje.ServicioRazonSocial }}',
+      monto: '{{ if gt .Pasaje.ServicioMonto 0.0 }}{{ .Pasaje.ServicioMonto }}{{ end }}',
+      factura: '{{ .Pasaje.ServicioFacturaNumero }}',
+      fecha: '{{ if .Pasaje.ServicioFacturaFecha }}{{ .Pasaje.ServicioFacturaFecha.Format `2006-01-02` }}{{ end }}'
+    }"
+  >
+    <div
+      class="bg-white rounded-md shadow-2xl w-full max-w-lg overflow-hidden border border-neutral-200 animate-in fade-in zoom-in duration-200"
+      @click.away="$el.remove()"
+    >
+      <!-- Header -->
+      <div class="px-6 py-4 border-b border-neutral-100 flex items-center justify-between bg-neutral-50">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-md bg-secondary-50 flex items-center justify-center text-secondary-600">
+            <i class="ph ph-receipt text-2xl"></i>
+          </div>
+          <div>
+            <h3 class="text-base font-black text-neutral-900 tracking-tight">Servicio de Emisión</h3>
+            <p class="text-[10px] text-neutral-500 uppercase font-bold tracking-widest">Factura de Agencia / Fee</p>
+          </div>
+        </div>
+        <button @click="$el.closest('.fixed').remove()" class="text-neutral-400 hover:text-neutral-600 transition-colors">
+          <i class="ph ph-x text-xl font-bold"></i>
+        </button>
+      </div>
+
+      <!-- Form -->
+      <form
+        hx-post="/pasajes/{{ .Pasaje.ID }}/servicio"
+        hx-encoding="multipart/form-data"
+        hx-on::before-request="loading = true"
+        hx-on::after-request="loading = false"
+        class="p-6 space-y-4"
+      >
+        <input type="hidden" name="id" value="{{ .Pasaje.ID }}" />
+
+        <!-- Razón Social -->
+        <div class="space-y-1.5">
+          <label class="text-[10px] font-black text-neutral-500 uppercase tracking-widest flex items-center gap-2">
+            <i class="ph ph-buildings"></i>
+            Razón Social / Agencia
+          </label>
+          <input
+            type="text"
+            name="servicio_razon_social"
+            x-model="razonSocial"
+            placeholder="Nombre de la empresa o agencia"
+            class="w-full px-3 py-2 bg-neutral-50 border border-neutral-200 rounded text-sm focus:ring-2 focus:ring-secondary-500/20 focus:border-secondary-500 transition-all outline-none"
+          />
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <!-- Número Factura -->
+          <div class="space-y-1.5">
+            <label class="text-[10px] font-black text-neutral-500 uppercase tracking-widest flex items-center gap-2">
+              <i class="ph ph-hash"></i>
+              N° Factura
+            </label>
+            <input
+              type="text"
+              name="servicio_factura_numero"
+              x-model="factura"
+              placeholder="000000"
+              class="w-full px-3 py-2 bg-neutral-50 border border-neutral-200 rounded text-sm focus:ring-2 focus:ring-secondary-500/20 focus:border-secondary-500 transition-all outline-none font-mono"
+            />
+          </div>
+
+          <!-- Monto -->
+          <div class="space-y-1.5">
+            <label class="text-[10px] font-black text-neutral-500 uppercase tracking-widest flex items-center gap-2">
+              <i class="ph ph-currency-dollar"></i>
+              Importe (Bs)
+            </label>
+            <input
+              type="number"
+              step="0.01"
+              name="servicio_monto"
+              x-model="monto"
+              placeholder="0.00"
+              class="w-full px-3 py-2 bg-neutral-50 border border-neutral-200 rounded text-sm focus:ring-2 focus:ring-secondary-500/20 focus:border-secondary-500 transition-all outline-none font-bold text-secondary-600"
+            />
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <!-- Fecha -->
+          <div class="space-y-1.5">
+            <label class="text-[10px] font-black text-neutral-500 uppercase tracking-widest flex items-center gap-2">
+              <i class="ph ph-calendar"></i>
+              Fecha Factura
+            </label>
+            <input
+              type="date"
+              name="servicio_factura_fecha"
+              x-model="fecha"
+              class="w-full px-3 py-2 bg-neutral-50 border border-neutral-200 rounded text-sm focus:ring-2 focus:ring-secondary-500/20 focus:border-secondary-500 transition-all outline-none"
+            />
+          </div>
+
+          <!-- Archivo -->
+          <div class="space-y-1.5">
+            <label class="text-[10px] font-black text-neutral-500 uppercase tracking-widest flex items-center gap-2">
+              <i class="ph ph-file-arrow-up"></i>
+              Archivo Factura
+            </label>
+            <input
+              type="file"
+              name="servicio_archivo"
+              accept="application/pdf,image/*"
+              class="w-full text-xs text-neutral-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-[10px] file:font-black file:uppercase file:bg-secondary-50 file:text-secondary-700 hover:file:bg-secondary-100 transition-all cursor-pointer"
+            />
+            {{ if .Pasaje.ServicioArchivo }}
+              <p class="text-[9px] text-success-600 font-bold flex items-center gap-1">
+                <i class="ph ph-check-circle"></i>
+                Ya existe un archivo cargado
+              </p>
+            {{ end }}
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="pt-6 flex items-center justify-end gap-3">
+          <button
+            type="button"
+            @click="$el.closest('.fixed').remove()"
+            class="px-4 py-2 text-xs font-black uppercase tracking-widest text-neutral-500 hover:bg-neutral-100 rounded transition-all"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            :disabled="loading"
+            class="px-6 py-2 bg-secondary-600 text-white text-xs font-black uppercase tracking-widest rounded shadow-lg shadow-secondary-600/20 hover:bg-secondary-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center gap-2"
+          >
+            <template x-if="!loading">
+              <i class="ph ph-floppy-disk text-sm"></i>
+            </template>
+            <template x-if="loading">
+              <div class="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+            </template>
+            <span x-text="loading ? 'Guardando...' : 'Guardar Datos'"></span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+{{ end }}

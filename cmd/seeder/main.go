@@ -482,10 +482,9 @@ func seedEstadosCupoDerecho() {
 func seedEstadosPasaje() {
 	fmt.Println("Sincronizando Estados de Pasaje...")
 	estados := []models.EstadoPasaje{
-		{Codigo: "REGISTRADO", Nombre: "Registrado", Color: "#6366f1", Icon: "ph ph-note", Descripcion: "Pasaje registrado en el sistema pero no emitido"},
-		{Codigo: "EMITIDO", Nombre: "Emitido", Color: "#0EA5E9", Icon: "ph ph-ticket", Descripcion: "Pasaje emitido correctamente"},
-		{Codigo: "USADO", Nombre: "Usado", Color: "#3b82f6", Icon: "ph ph-airplane-landing", Descripcion: "Pasaje utilizado por el viajero"},
-		{Codigo: "ANULADO", Nombre: "Anulado", Color: "#ef4444", Icon: "ph ph-prohibit", Descripcion: "Pasaje anulado por error u otros motivos"},
+		{Codigo: "REGISTRADO", Nombre: "Registrado", Color: "#64748B", Icon: "ph ph-paper-plane", Descripcion: "Pasaje registrado en el sistema pero no emitido"},
+		{Codigo: "EMITIDO", Nombre: "Emitido", Color: "#0284C7", Icon: "ph ph-airplane-takeoff", Descripcion: "Pasaje emitido correctamente"},
+		{Codigo: "FINALIZADO", Nombre: "Finalizado", Color: "#1E1B4B", Icon: "ph ph-airplane-landing", Descripcion: "Pasaje procesado (viaje realizado o crédito generado)"},
 	}
 
 	for _, e := range estados {

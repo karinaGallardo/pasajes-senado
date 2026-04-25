@@ -2,7 +2,14 @@ package models
 
 import (
 	"fmt"
+	"strings"
 	"time"
+)
+
+const (
+	EstadoPasajeRegistrado = "REGISTRADO"
+	EstadoPasajeEmitido    = "EMITIDO"
+	EstadoPasajeFinalizado = "FINALIZADO"
 )
 
 // PasajePermissions define las acciones permitidas sobre un pasaje según el rol y estado.
@@ -12,6 +19,7 @@ type PasajePermissions struct {
 	CanRevertirEmision bool
 	CanEmitir          bool
 	CanValidateUso     bool
+	CanDelete          bool
 	ShowActionsMenu    bool
 }
 
@@ -24,15 +32,15 @@ type Pasaje struct {
 	SolicitudItem   *SolicitudItem `gorm:"foreignKey:SolicitudItemID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT"`
 
 	AerolineaID *string    `gorm:"size:36"`
-	Aerolinea   *Aerolinea `gorm:"foreignKey:AerolineaID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;<-:false"`
+	Aerolinea   *Aerolinea `gorm:"foreignKey:AerolineaID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;<-:false"`
 
 	AgenciaID *string  `gorm:"size:36"`
-	Agencia   *Agencia `gorm:"foreignKey:AgenciaID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;<-:false"`
+	Agencia   *Agencia `gorm:"foreignKey:AgenciaID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;<-:false"`
 
 	NumeroVuelo string `gorm:"size:50"`
 
 	RutaID     *string `gorm:"size:36;index"`
-	RutaPasaje *Ruta   `gorm:"foreignKey:RutaID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;<-:false"`
+	RutaPasaje *Ruta   `gorm:"foreignKey:RutaID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;<-:false"`
 
 	FechaVuelo   time.Time  `gorm:"type:timestamp"`
 	FechaEmision *time.Time `gorm:"type:date"`
@@ -42,8 +50,8 @@ type Pasaje struct {
 	CostoUtilizado float64 `gorm:"type:decimal(10,2);default:0" json:"costo_utilizado"`
 	MontoReembolso float64 `gorm:"type:decimal(10,2);default:0" json:"monto_reembolso"`
 
-	EstadoPasajeCodigo *string       `gorm:"size:50;default:'EMITIDO'"`
-	EstadoPasaje       *EstadoPasaje `gorm:"foreignKey:EstadoPasajeCodigo;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;<-:false"`
+	EstadoPasajeCodigo string        `gorm:"size:50;not null;default:'REGISTRADO'"`
+	EstadoPasaje       *EstadoPasaje `gorm:"foreignKey:EstadoPasajeCodigo;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;<-:false"`
 
 	Archivo string `gorm:"size:255;default:''"`
 
@@ -52,10 +60,12 @@ type Pasaje struct {
 	NumeroFactura     string  `gorm:"size:50;index"`
 	CostoPenalidad    float64 `gorm:"type:decimal(10,2);default:0"`
 
-	// Servicio de Emisión Agencia de Viaje (Fee)
-	CostoServicioEmision  float64 `gorm:"type:decimal(10,2);default:0"`
-	NroFacturaEmision     string  `gorm:"size:50;index"`
-	ArchivoFacturaEmision string  `gorm:"size:255;default:''"`
+	// Datos de Servicio de Emisión Agencia (Opcional)
+	ServicioRazonSocial   string     `gorm:"type:varchar(255)"`
+	ServicioFacturaNumero string     `gorm:"type:varchar(100);index"`
+	ServicioFacturaFecha  *time.Time `gorm:"type:timestamp"`
+	ServicioMonto         float64    `gorm:"type:decimal(10,2);default:0"`
+	ServicioArchivo       string     `gorm:"type:varchar(255);default:''"`
 
 	// Devolución por Diferencia de Tarifa (Per Pasaje)
 	NroBoletaDeposito  string     `gorm:"size:100;index"`
@@ -77,6 +87,10 @@ type Pasaje struct {
 	Permissions *PasajePermissions `gorm:"-"`
 }
 
+func (Pasaje) TableName() string {
+	return "pasajes"
+}
+
 func (p Pasaje) GetRutaDisplay() string {
 	if p.RutaPasaje != nil {
 		return p.RutaPasaje.GetRutaDisplay()
@@ -91,25 +105,18 @@ func (p Pasaje) GetTramosLegs() []TramoLeg {
 	return []TramoLeg{}
 }
 
-func (Pasaje) TableName() string {
-	return "pasajes"
-}
-
 func (p Pasaje) GetEstado() string {
 	if p.EstadoPasaje != nil {
 		return p.EstadoPasaje.Codigo
 	}
-	if p.EstadoPasajeCodigo == nil {
-		return "EMITIDO"
+	if p.EstadoPasajeCodigo == "" {
+		return EstadoPasajeRegistrado
 	}
-	return *p.EstadoPasajeCodigo
+	return p.EstadoPasajeCodigo
 }
 
 func (p Pasaje) GetEstadoCodigo() string {
-	if p.EstadoPasajeCodigo == nil {
-		return ""
-	}
-	return *p.EstadoPasajeCodigo
+	return p.EstadoPasajeCodigo
 }
 
 func (p Pasaje) getAuthUser(u ...*Usuario) *Usuario {
@@ -124,7 +131,7 @@ func (p Pasaje) CanBeEdited(u ...*Usuario) bool {
 	if user == nil {
 		return false
 	}
-	return user.IsAdminOrResponsable() && p.GetEstado() == "REGISTRADO"
+	return user.IsAdminOrResponsable() && p.GetEstado() == EstadoPasajeRegistrado
 }
 
 func (p Pasaje) CanBeEmitted(u ...*Usuario) bool {
@@ -132,7 +139,16 @@ func (p Pasaje) CanBeEmitted(u ...*Usuario) bool {
 	if user == nil {
 		return false
 	}
-	return user.IsAdminOrResponsable() && p.GetEstado() == "REGISTRADO"
+	return user.IsAdminOrResponsable() && p.GetEstado() == EstadoPasajeRegistrado
+}
+
+func (p Pasaje) CanBeDeleted(u ...*Usuario) bool {
+	user := p.getAuthUser(u...)
+	if user == nil {
+		return false
+	}
+	// Solo se puede eliminar si está registrado (borrador)
+	return user.IsAdminOrResponsable() && p.GetEstado() == EstadoPasajeRegistrado
 }
 
 func (p Pasaje) CanBeReverted(u ...*Usuario) bool {
@@ -140,53 +156,34 @@ func (p Pasaje) CanBeReverted(u ...*Usuario) bool {
 	if user == nil {
 		return false
 	}
-	return user.IsAdminOrResponsable() && p.GetEstado() == "EMITIDO"
+	return user.IsAdminOrResponsable() && p.GetEstado() == EstadoPasajeEmitido
 }
 
-func (p Pasaje) CanMarkUsado(u ...*Usuario) bool {
+func (p Pasaje) CanMarkFinalizado(u ...*Usuario) bool {
 	user := p.getAuthUser(u...)
-	// Necesitamos la solicitud para el contexto de dueño/creador
-	sol := p.Solicitud
-	if user == nil || sol == nil {
+	if user == nil {
 		return false
 	}
+	// Solo Responsable puede marcar como FINALIZADO tras el descargo
+	return user.IsResponsable() && p.GetEstado() == EstadoPasajeEmitido
+}
 
-	// Solo pasajes emitidos pueden marcarse como usados
-	if p.GetEstado() != "EMITIDO" {
-		return false
-	}
-	// Admin/Responsable puede siempre
-	if user.IsAdminOrResponsable() {
-		return true
-	}
-	// El dueño de la solicitud
-	if user.ID == sol.UsuarioID {
-		return true
-	}
-	// El creador
-	if sol.CreatedBy != nil && *sol.CreatedBy == user.ID {
-		return true
-	}
-	// El asistente/encargado del usuario
-	if sol.Usuario.EncargadoID != nil && *sol.Usuario.EncargadoID == user.ID {
-		return true
-	}
-	return false
+func (p Pasaje) IsFinalizado() bool {
+	st := p.GetEstado()
+	return st == EstadoPasajeFinalizado
 }
 
 func (p Pasaje) IsDischargeable() bool {
 	st := p.GetEstadoCodigo()
-	return st == "EMITIDO" || st == "USADO"
+	return st == EstadoPasajeEmitido || st == EstadoPasajeFinalizado
 }
 
 func (p Pasaje) GetStatusBannerClass() string {
 	switch p.GetEstado() {
-	case "EMITIDO":
+	case EstadoPasajeEmitido:
 		return "bg-success-600"
-	case "ANULADO":
-		return "bg-neutral-600"
-	case "USADO":
-		return "bg-primary-600"
+	case EstadoPasajeFinalizado:
+		return "bg-neutral-800"
 	default:
 		return "bg-secondary-600"
 	}
@@ -196,12 +193,13 @@ func (p Pasaje) GetStatusBannerClass() string {
 func (p Pasaje) GetPermissions(u ...*Usuario) PasajePermissions {
 	perms := PasajePermissions{
 		CanEdit:            p.CanBeEdited(u...),
-		CanMarkUsado:       p.CanMarkUsado(u...),
+		CanMarkUsado:       p.CanMarkFinalizado(u...),
 		CanRevertirEmision: p.CanBeReverted(u...),
 		CanEmitir:          p.CanBeEmitted(u...),
-		CanValidateUso:     false, // Campo deprecado o para uso futuro
+		CanValidateUso:     false,
+		CanDelete:          p.CanBeDeleted(u...),
 	}
-	perms.ShowActionsMenu = perms.CanEdit || perms.CanMarkUsado || perms.CanRevertirEmision || perms.CanEmitir
+	perms.ShowActionsMenu = perms.CanEdit || perms.CanMarkUsado || perms.CanRevertirEmision || perms.CanEmitir || perms.CanDelete
 	return perms
 }
 
@@ -216,17 +214,19 @@ func (p *Pasaje) HydratePermissions(u ...*Usuario) {
 // GetStatusBadgeClass retorna las clases de CSS para los badges según el estado del pasaje.
 func (p Pasaje) GetStatusBadgeClass() string {
 	if p.EstadoPasaje != nil {
-		return fmt.Sprintf("bg-%s-100 text-%s-800", p.EstadoPasaje.Color, p.EstadoPasaje.Color)
+		color := p.EstadoPasaje.Color
+		if strings.HasPrefix(color, "#") {
+			return fmt.Sprintf("bg-[%s] text-white font-bold px-2 py-0.5 rounded shadow-sm", color)
+		}
+		return fmt.Sprintf("bg-%s-100 text-%s-800", color, color)
 	}
 	switch p.GetEstado() {
-	case "REGISTRADO":
+	case EstadoPasajeRegistrado:
 		return "bg-secondary-100 text-secondary-800"
-	case "EMITIDO":
+	case EstadoPasajeEmitido:
 		return "bg-success-100 text-success-800"
-	case "USADO":
-		return "bg-primary-100 text-primary-800"
-	case "ANULADO":
-		return "bg-neutral-100 text-neutral-800"
+	case EstadoPasajeFinalizado:
+		return "bg-neutral-800 text-white font-bold"
 	default:
 		return "bg-neutral-100 text-neutral-800"
 	}

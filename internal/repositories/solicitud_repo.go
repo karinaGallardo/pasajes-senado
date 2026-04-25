@@ -374,7 +374,7 @@ func (r *SolicitudRepository) FindPendientesDeDescargo(ctx context.Context) ([]m
 		Joins("LEFT JOIN descargos ON solicitudes.id = descargos.solicitud_id").
 		Where("(descargos.id IS NULL OR descargos.estado != ?)", models.EstadoDescargoFinalizado).
 		Where("solicitudes.estado_solicitud_codigo IN (?)", []string{"PARCIALMENTE_APROBADO", "APROBADO", "EMITIDO"}).
-		Where("EXISTS (SELECT 1 FROM pasajes p JOIN solicitud_items si ON p.solicitud_item_id = si.id WHERE si.solicitud_id = solicitudes.id AND p.estado_pasaje_codigo = 'EMITIDO')").
+		Where(fmt.Sprintf("EXISTS (SELECT 1 FROM pasajes p JOIN solicitud_items si ON p.solicitud_item_id = si.id WHERE si.solicitud_id = solicitudes.id AND p.estado_pasaje_codigo = '%s')", models.EstadoPasajeEmitido)).
 		Find(&solicitudes).Error
 	return solicitudes, err
 }
@@ -409,7 +409,7 @@ func (r *SolicitudRepository) FindPendientesDeDescargoUI(ctx context.Context, us
 		Joins("LEFT JOIN descargos ON solicitudes.id = descargos.solicitud_id").
 		Where("(descargos.id IS NULL OR descargos.estado != ?)", models.EstadoDescargoFinalizado).
 		Where("solicitudes.estado_solicitud_codigo IN (?)", []string{"PARCIALMENTE_APROBADO", "APROBADO", "EMITIDO"}).
-		Where("EXISTS (SELECT 1 FROM pasajes p JOIN solicitud_items si ON p.solicitud_item_id = si.id WHERE si.solicitud_id = solicitudes.id AND p.estado_pasaje_codigo = 'EMITIDO')").
+		Where(fmt.Sprintf("EXISTS (SELECT 1 FROM pasajes p JOIN solicitud_items si ON p.solicitud_item_id = si.id WHERE si.solicitud_id = solicitudes.id AND p.estado_pasaje_codigo = '%s')", models.EstadoPasajeEmitido)).
 		Order("created_at desc")
 
 	if !isAdmin {

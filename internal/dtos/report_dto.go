@@ -6,5 +6,5 @@ type ReportFilterRequest struct {
 	AerolineaID string `form:"aerolinea_id" json:"aerolinea_id"`
 	AgenciaID   string `form:"agencia_id" json:"agencia_id"`
 	Concepto    string `form:"concepto" json:"concepto"` // DERECHO, OFICIAL, ALL
-	Estado      string `form:"estado" json:"estado"`     // EMITIDO, USADO, ANULADO, ALL
+	Estado      string `form:"estado" json:"estado"`     // EMITIDO, FINALIZADO, ALL
 }
