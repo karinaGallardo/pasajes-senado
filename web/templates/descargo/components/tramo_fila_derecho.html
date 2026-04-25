@@ -16,7 +16,8 @@
       destino_iata: '{{ .Tramo.GetDestinoIATA }}',
       billete: '{{ .Tramo.Billete }}',
       vuelo: '{{ .Tramo.NumeroVuelo }}',
-      pase: '{{ .Tramo.NumeroPaseAbordo }}'
+      pase: '{{ .Tramo.NumeroPaseAbordo }}',
+      serverFile: '{{ .Tramo.ArchivoPaseAbordo }}'
     })"
     @update-totals.window="checkFullStatus()"
     x-bind="bindFade"
@@ -203,13 +204,16 @@
 
     <td class="px-2 py-1 text-center">
       <div class="flex items-center justify-center h-full min-h-[45px]">
-        <div x-show="!esOpenTicket && !esModificacion" class="flex items-center justify-center gap-1 w-[76px] mx-auto" x-cloak>
+        <div
+          x-show="!esOpenTicket && !esModificacion"
+          class="flex items-center justify-center gap-1.5 min-w-[120px] mx-auto"
+          x-cloak
+        >
           <!-- Slot: Upload -->
-          <div class="w-9 h-9 flex-shrink-0">
+          <div class="w-9 h-9 flex-shrink-0" x-show="!fileName && !serverFile" x-transition>
             <div class="relative group">
               <label
-                class="cursor-pointer flex items-center justify-center h-9 w-9 rounded-md border-2 border-dashed transition-all duration-200 overflow-hidden shadow-sm"
-                :class="(fileName || '{{ .Tramo.ArchivoPaseAbordo }}') ? 'border-success-400 bg-success-50 text-success-700' : 'border-neutral-200 bg-neutral-50 text-neutral-400 hover:border-primary-300 hover:bg-white'"
+                class="cursor-pointer flex items-center justify-center h-9 w-9 rounded-md border-2 border-dashed transition-all duration-200 overflow-hidden shadow-sm border-neutral-200 bg-neutral-50 text-neutral-400 hover:border-primary-300 hover:bg-white"
               >
                 <input
                   type="file"
@@ -226,33 +230,36 @@
 
                 <input type="hidden" name="tramo_archivo_existente_{{ .Tramo.ID }}" value="{{ .Tramo.ArchivoPaseAbordo }}" />
 
-                <i
-                  x-show="fileName || '{{ .Tramo.ArchivoPaseAbordo }}'"
-                  class="ph ph-file-pdf text-xl font-bold text-success-600"
-                ></i>
-
-                <i
-                  x-show="!fileName && !'{{ .Tramo.ArchivoPaseAbordo }}'"
-                  class="ph ph-upload-simple text-xl font-bold text-neutral-400"
-                ></i>
+                <i class="ph ph-upload-simple text-xl font-bold text-neutral-400"></i>
               </label>
             </div>
           </div>
 
           <!-- Slot: Eye -->
           <div class="w-9 h-9 flex-shrink-0 flex items-center justify-center">
-            <template x-if="localUrl || '{{ .Tramo.ArchivoPaseAbordo }}'">
-              <button
-                type="button"
-                @click="if(localUrl) {
-                  window.open(localUrl, '_blank')
-                } else {
-                  htmx.ajax('GET', '/preview-file?path=' + encodeURIComponent('{{ .Tramo.ArchivoPaseAbordo }}'), { target: '#modal-container' })
-                }"
-                class="h-9 w-9 flex items-center justify-center rounded-md text-primary-600 hover:bg-primary-50 transition-all shadow-sm border border-neutral-100 bg-white"
-              >
-                <i class="ph ph-eye text-xl"></i>
-              </button>
+            <template x-if="localUrl || serverFile">
+              <div class="flex items-center gap-1">
+                <button
+                  type="button"
+                  @click="if(localUrl) {
+                    window.open(localUrl, '_blank')
+                  } else {
+                    htmx.ajax('GET', '/preview-file?path=' + encodeURIComponent(serverFile), { target: '#modal-container' })
+                  }"
+                  class="h-9 w-9 flex items-center justify-center rounded-md text-primary-600 hover:bg-primary-50 transition-all border border-neutral-100 bg-white shadow-xs"
+                  title="Previsualizar"
+                >
+                  <i class="ph ph-eye text-xl"></i>
+                </button>
+                <button
+                  type="button"
+                  @click="removeFile('{{ .Tramo.ID }}')"
+                  class="h-9 w-9 flex items-center justify-center rounded-md text-danger-600 hover:bg-danger-50 transition-all border border-danger-100 bg-white shadow-xs"
+                  title="Eliminar archivo adjunto"
+                >
+                  <i class="ph ph-file-x text-xl"></i>
+                </button>
+              </div>
             </template>
           </div>
         </div>

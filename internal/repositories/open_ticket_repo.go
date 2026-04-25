@@ -23,6 +23,7 @@ func (r *OpenTicketRepository) FindByDescargoID(ctx context.Context, descargoID 
 	var tickets []models.OpenTicket
 	err := r.db.WithContext(ctx).
 		Preload("Descargo.Solicitud").
+		Preload("Pasaje").
 		Where("descargo_id = ?", descargoID).
 		Find(&tickets).Error
 	return tickets, err
@@ -36,6 +37,7 @@ func (r *OpenTicketRepository) FindDisponiblesByUsuarioID(ctx context.Context, u
 	var tickets []models.OpenTicket
 	err := r.db.WithContext(ctx).
 		Preload("Descargo.Solicitud").
+		Preload("Pasaje").
 		Where("usuario_id = ? AND estado = ?", usuarioID, models.EstadoOpenTicketDisponible).
 		Order("created_at DESC").
 		Find(&tickets).Error
@@ -46,6 +48,7 @@ func (r *OpenTicketRepository) FindAllByUsuarioID(ctx context.Context, usuarioID
 	var tickets []models.OpenTicket
 	err := r.db.WithContext(ctx).
 		Preload("Descargo.Solicitud").
+		Preload("Pasaje").
 		Preload("Pasaje.Aerolinea").
 		Preload("Pasaje.RutaPasaje").
 		Where("usuario_id = ?", usuarioID).
@@ -59,6 +62,7 @@ func (r *OpenTicketRepository) FindByID(ctx context.Context, id string) (*models
 	err := r.db.WithContext(ctx).
 		Preload("Usuario").
 		Preload("Descargo.Solicitud").
+		Preload("Pasaje").
 		Preload("Pasaje.Aerolinea").
 		Preload("Pasaje.RutaPasaje").
 		First(&ticket, "id = ?", id).Error
@@ -78,6 +82,7 @@ func (r *OpenTicketRepository) FindAll(ctx context.Context, filters map[string]a
 	query := r.db.WithContext(ctx).
 		Preload("Usuario").
 		Preload("Descargo.Solicitud").
+		Preload("Pasaje").
 		Preload("Pasaje.Aerolinea").
 		Preload("Pasaje.RutaPasaje").
 		Order("created_at DESC")

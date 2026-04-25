@@ -23,6 +23,7 @@ func TemplateFuncs() template.FuncMap {
 		"deref":            DerefString,
 		"safe":             UnsafeHTML,
 		"json":             ToJSON,
+		"json_debug":       ToJSONIndent,
 		"currentYear":      CurrentYear,
 		"nombreMes":        GetMonthName,
 		"monthName":        GetMonthName,
@@ -201,6 +202,12 @@ func FormatDateRange(ini, fin *time.Time) string {
 // ToJSON serializa un valor a string JSON seguro para JavaScript.
 func ToJSON(v any) template.JS {
 	b, _ := json.Marshal(v)
+	return template.JS(b)
+}
+
+// ToJSONIndent serializa un valor a string JSON formateado con 2 espacios.
+func ToJSONIndent(v any) template.JS {
+	b, _ := json.MarshalIndent(v, "", "  ")
 	return template.JS(b)
 }
 

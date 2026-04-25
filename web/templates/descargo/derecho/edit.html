@@ -218,7 +218,7 @@
                         <th class="w-[160px] px-2 py-1 font-black uppercase">Billete</th>
                         <th class="w-[80px] px-2 py-1 font-black uppercase">Vuelo</th>
                         <th class="w-[70px] px-2 py-1 font-black uppercase text-center">Pase</th>
-                        <th class="w-[64px] px-2 py-1 text-center font-black uppercase">PDF</th>
+                        <th class="w-[110px] px-2 py-1 text-center font-black uppercase">PDF</th>
                         <th class="w-[45px] py-1 text-center"></th>
                       </tr>
                     </thead>
@@ -259,7 +259,7 @@
                       <col class="w-[160px]" />
                       <col class="w-[80px]" />
                       <col class="w-[70px]" />
-                      <col class="w-[64px]" />
+                      <col class="w-[110px]" />
                       <col class="w-[45px] text-center" />
                     </colgroup>
                     <tbody id="itin-ida-repro-container" class="divide-y divide-neutral-100 border-b last:border-0 w-full">
@@ -300,7 +300,7 @@
                         <th class="w-[160px] px-2 py-1 font-black uppercase">Billete</th>
                         <th class="w-[80px] px-2 py-1 font-black uppercase">Vuelo</th>
                         <th class="w-[70px] px-2 py-1 font-black uppercase text-center">Pase</th>
-                        <th class="w-[64px] px-2 py-1 text-center font-black uppercase">PDF</th>
+                        <th class="w-[90px] px-2 py-1 text-center font-black uppercase">PDF</th>
                         <th class="w-[45px] py-1 text-center"></th>
                       </tr>
                     </thead>
@@ -341,7 +341,7 @@
                       <col class="w-[160px]" />
                       <col class="w-[80px]" />
                       <col class="w-[70px]" />
-                      <col class="w-[64px]" />
+                      <col class="w-[110px]" />
                       <col class="w-[45px] text-center" />
                     </colgroup>
                     <tbody id="itin-vuelta-repro-container">
@@ -405,7 +405,7 @@
                       {{ if $p.IsDischargeable }}
                         <tr
                           class="hover:bg-neutral-50/50 transition-colors"
-                          x-data="{ fileName: '{{ $p.ArchivoComprobante }}', localUrl: '' }"
+                          x-data="{ fileName: '', localUrl: '', serverFile: '{{ $p.ArchivoComprobante }}' }"
                         >
                           <td class="px-4 py-4">
                             <input type="hidden" name="liquidacion_pasaje_id[]" value="{{ $p.ID }}" />
@@ -457,55 +457,85 @@
                           <td class="px-4 py-4 text-center">
                             <div class="flex items-center justify-center gap-1.5">
                               <!-- Slot: Upload -->
-                              <div class="w-8 h-8 flex-shrink-0">
+                              <!-- Slot: Upload -->
+                              <div class="w-8 h-8 flex-shrink-0" x-show="!localUrl && !serverFile" x-transition>
                                 <div class="relative group">
                                   <label
-                                    class="cursor-pointer flex items-center justify-center h-8 w-8 rounded-md border-2 border-dashed transition-all duration-200 overflow-hidden shadow-sm"
-                                    :class="(fileName || '{{ $p.ArchivoComprobante }}') ? 'border-success-400 bg-success-50 text-success-700' : 'border-neutral-200 bg-neutral-50 text-neutral-400 hover:border-amber-400 hover:bg-white'"
+                                    class="cursor-pointer flex items-center justify-center h-8 w-8 rounded-md border-2 border-dashed transition-all duration-200 overflow-hidden shadow-sm border-neutral-200 bg-neutral-50 text-neutral-400 hover:border-amber-400 hover:bg-white"
                                   >
                                     <input
                                       type="file"
+                                      x-ref="fileInput_{{ $p.ID }}"
                                       name="liquidacion_archivo_{{ $p.ID }}"
                                       accept="application/pdf"
                                       class="hidden"
                                       @change="if($el.files[0]) {
-                                        fileName = $el.files[0].name;
-                                        localUrl = URL.createObjectURL($el.files[0]);
-                                      }"
+                                         if(!window.checkIsPDF($el.files[0])) { $el.value = ''; return; }
+                                         fileName = $el.files[0].name;
+                                         localUrl = URL.createObjectURL($el.files[0]);
+                                       }"
                                     />
 
-                                    <input
-                                      type="hidden"
-                                      name="liquidacion_archivo_existente_{{ $p.ID }}"
-                                      value="{{ $p.ArchivoComprobante }}"
-                                    />
+                                    <input type="hidden" name="liquidacion_archivo_existente_{{ $p.ID }}" :value="serverFile" />
 
-                                    <i
-                                      x-show="fileName || '{{ $p.ArchivoComprobante }}'"
-                                      class="ph ph-file-pdf text-lg font-bold text-success-600"
-                                    ></i>
-
-                                    <i
-                                      x-show="!fileName && !'{{ $p.ArchivoComprobante }}'"
-                                      class="ph ph-upload-simple text-lg font-bold text-neutral-400"
-                                    ></i>
+                                    <i class="ph ph-upload-simple text-lg font-bold text-neutral-400"></i>
                                   </label>
                                 </div>
                               </div>
 
                               <!-- Slot: Preview -->
                               <div class="w-8 h-8 flex-shrink-0 flex items-center justify-center">
-                                <template x-if="localUrl || '{{ $p.ArchivoComprobante }}'">
+                                <template x-if="localUrl || serverFile">
                                   <button
                                     type="button"
                                     @click="if(localUrl) {
-                                      window.open(localUrl, '_blank')
-                                    } else {
-                                      htmx.ajax('GET', '/preview-file?path=' + encodeURIComponent('{{ $p.ArchivoComprobante }}'), { target: '#modal-container' })
-                                    }"
+                                       window.open(localUrl, '_blank')
+                                     } else {
+                                       htmx.ajax('GET', '/preview-file?path=' + encodeURIComponent(serverFile), { target: '#modal-container' })
+                                     }"
                                     class="h-8 w-8 flex items-center justify-center rounded-md text-primary-600 hover:bg-primary-50 transition-all shadow-sm border border-neutral-100 bg-white"
+                                    title="Ver archivo"
                                   >
                                     <i class="ph ph-eye text-lg"></i>
+                                  </button>
+                                </template>
+                              </div>
+
+                              <!-- Slot: Delete -->
+                              <div class="w-8 h-8 flex-shrink-0 flex items-center justify-center">
+                                <template x-if="localUrl || serverFile">
+                                  <button
+                                    type="button"
+                                    @click="
+                                       Swal.fire({
+                                         title: '¿Eliminar archivo?',
+                                         text: 'Se removerá el comprobante adjunto. ¿Desea continuar?',
+                                         icon: 'warning',
+                                         showCancelButton: true,
+                                         confirmButtonColor: '#ef4444',
+                                         cancelButtonColor: '#737373',
+                                         confirmButtonText: 'Sí, eliminar',
+                                         cancelButtonText: 'Cancelar',
+                                         customClass: {
+                                           popup: 'rounded-md font-sans',
+                                           title: 'text-lg font-bold text-neutral-900',
+                                           htmlContainer: 'text-sm text-neutral-600',
+                                           confirmButton: 'rounded-md px-4 py-2 text-sm font-medium shadow-sm',
+                                           cancelButton: 'rounded-md px-4 py-2 text-sm font-medium shadow-sm'
+                                         }
+                                       }).then((result) => {
+                                         if (result.isConfirmed) {
+                                           fileName = '';
+                                           localUrl = '';
+                                           serverFile = '';
+                                           $refs['fileInput_{{ $p.ID }}'].value = '';
+                                         }
+                                       })
+                                     "
+                                    class="h-8 w-8 flex items-center justify-center rounded-md text-danger-600 hover:bg-danger-50 transition-all shadow-sm border border-neutral-100 bg-white"
+                                    title="Eliminar archivo"
+                                  >
+                                    <i class="ph ph-file-x text-lg"></i>
                                   </button>
                                 </template>
                               </div>

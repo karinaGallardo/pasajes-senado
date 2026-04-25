@@ -2305,6 +2305,10 @@ video {
   width: 1px;
 }
 
+.w-\[90px\] {
+  width: 90px;
+}
+
 .min-w-0 {
   min-width: 0px;
 }

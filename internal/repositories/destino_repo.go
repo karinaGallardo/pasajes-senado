@@ -56,7 +56,7 @@ func (r *DestinoRepository) Search(ctx context.Context, query string, ambito str
 
 	db := r.db.WithContext(ctx).Model(&models.Destino{})
 
-	if ambito != "" {
+	if ambito != "" && ambito != "INTERNACIONAL" {
 		db = db.Where("ambito_codigo = ?", ambito)
 	}
 

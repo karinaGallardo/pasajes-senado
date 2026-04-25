@@ -236,10 +236,15 @@ func (s *DescargoService) SyncOpenTickets(ctx context.Context, descargoID string
 					NumeroBillete:  tramo.Billete,
 					Estado:         models.EstadoOpenTicketPendiente,
 					Observaciones:  "Generado automáticamente desde descargo.",
-					TramosNoUsados:  "",
+					TramosNoUsados: "",
 				}
-				if tramo.PasajeID != nil {
+				if tramo.PasajeID != nil && *tramo.PasajeID != "" {
 					ticket.PasajeID = tramo.PasajeID
+				} else if tramo.Billete != "" {
+					// Fallback: Buscar el pasaje por número de billete si no viene en el tramo o es vacío
+					if p, err := s.pasajeRepo.FindByNumeroBillete(ctx, tramo.Billete); err == nil {
+						ticket.PasajeID = &p.ID
+					}
 				}
 			}
 

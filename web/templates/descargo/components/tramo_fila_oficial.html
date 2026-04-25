@@ -189,10 +189,9 @@
 
     <td class="px-2 py-1 text-center">
       <div class="flex items-center justify-center gap-1.5">
-        <div class="relative group">
+        <div class="relative group" x-show="!fileName && !serverFile" x-transition>
           <label
-            class="cursor-pointer flex items-center justify-center h-9 w-9 rounded-md border-2 border-dashed transition-all duration-200 overflow-hidden shadow-sm"
-            :class="(fileName || serverFile) ? 'border-success-400 bg-success-50 text-success-700' : 'border-neutral-200 bg-neutral-50 text-neutral-400 hover:border-primary-300 hover:bg-white'"
+            class="cursor-pointer flex items-center justify-center h-9 w-9 rounded-md border-2 border-dashed transition-all duration-200 overflow-hidden shadow-sm border-neutral-200 bg-neutral-50 text-neutral-400 hover:border-primary-300 hover:bg-white"
           >
             <input
               type="file"
@@ -206,9 +205,7 @@
 
             <input type="hidden" name="tramo_archivo_existente_{{ .Tramo.ID }}" x-model="serverFile" />
 
-            <i x-show="fileName || serverFile" class="ph ph-file-pdf text-xl font-bold text-success-600"></i>
-
-            <i x-show="!fileName && !serverFile" class="ph ph-upload-simple text-xl font-bold text-neutral-400"></i>
+            <i class="ph ph-upload-simple text-xl font-bold text-neutral-400"></i>
           </label>
         </div>
 
