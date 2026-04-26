@@ -734,7 +734,7 @@
                           <i class="ph ph-paper-plane-right text-lg font-bold"></i>
                         </button>
                       {{ end }}
-                      {{ if .Permissions.CanEdit }}
+                      {{ if or .Permissions.CanEdit .Permissions.CanRevertirEmision }}
                         <button
                           type="button"
                           hx-get="/pasajes/{{ .ID }}/modal-servicio"
@@ -744,6 +744,8 @@
                         >
                           <i class="ph ph-receipt text-lg font-bold"></i>
                         </button>
+                      {{ end }}
+                      {{ if .Permissions.CanEdit }}
                         <button
                           type="button"
                           hx-get="/pasajes/{{ .ID }}/editar"
