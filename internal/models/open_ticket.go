@@ -1,6 +1,7 @@
 package models
 
 import (
+	"fmt"
 	"time"
 
 	"gorm.io/gorm"
@@ -32,12 +33,12 @@ type OpenTicket struct {
 
 	NumeroBillete  string           `gorm:"type:varchar(100);not null;index" json:"numero_billete"`
 	TramosNoUsados string           `gorm:"type:text" json:"tramos_no_usados"` // Ej: Pando-Beni, Beni-VVI, VVI-LPB
+	MontoCredito   float64          `gorm:"type:decimal(10,2);default:0" json:"monto_credito"`
 	Estado         EstadoOpenTicket `gorm:"type:varchar(20);default:'PENDIENTE';index" json:"estado"`
 
-	// Programación de uso
-	FechaVueloProgramada *time.Time `json:"fecha_vuelo_programada"`
-	RutaProgramada       string     `gorm:"type:text" json:"ruta_programada"`
-	AerolineaProgramada  string     `gorm:"type:varchar(100)" json:"aerolinea_programada"`
+	// Uso y Consumo
+	SolicitudConsumoID *string    `gorm:"size:36;index" json:"solicitud_consumo_id"`
+	SolicitudConsumo   *Solicitud `gorm:"foreignKey:SolicitudConsumoID" json:"solicitud_consumo,omitempty"`
 
 	Observaciones string `gorm:"type:text" json:"observaciones"`
 
@@ -90,4 +91,26 @@ func (c OpenTicket) GetFechaOriginalFormat() string {
 		return "-"
 	}
 	return c.Pasaje.FechaVuelo.Format("02/01/2006")
+}
+
+func (c OpenTicket) GetDescargoURL() string {
+	if c.Descargo == nil {
+		return "#"
+	}
+	tipo := "derecho"
+	if c.Descargo.Solicitud != nil && c.Descargo.Solicitud.IsOficial() {
+		tipo = "oficial"
+	}
+	return fmt.Sprintf("/descargos/%s/%s", tipo, c.DescargoID)
+}
+
+func (c OpenTicket) GetSolicitudConsumoURL() string {
+	if c.SolicitudConsumoID == nil {
+		return "#"
+	}
+	tipo := "derecho"
+	if c.SolicitudConsumo != nil && c.SolicitudConsumo.IsOficial() {
+		tipo = "oficial"
+	}
+	return fmt.Sprintf("/solicitudes/%s/%s", tipo, *c.SolicitudConsumoID)
 }

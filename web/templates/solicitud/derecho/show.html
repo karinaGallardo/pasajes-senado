@@ -112,15 +112,25 @@
         {{ end }}
 
         {{ if .Solicitud.Permissions.CanPrint }}
-          <button
-            type="button"
-            hx-get="/solicitudes/derecho/{{ .Solicitud.ID }}/print"
-            hx-target="#modal-container"
-            class="btn-md btn-white border-neutral-300 rounded-sm"
-          >
-            <i class="ph ph-printer text-md"></i>
-            <span>Imprimir PV-01</span>
-          </button>
+          <div x-data="{ loadingPrint: false }">
+            <button
+              type="button"
+              :disabled="loadingPrint"
+              hx-get="/solicitudes/derecho/{{ .Solicitud.ID }}/print"
+              hx-target="#modal-container"
+              @htmx:before-request="loadingPrint = true"
+              @htmx:after-request="loadingPrint = false"
+              class="btn-md btn-white border-neutral-300 rounded-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <template x-if="!loadingPrint">
+                <i class="ph ph-printer text-md"></i>
+              </template>
+              <template x-if="loadingPrint">
+                <i class="ph ph-circle-notch animate-spin text-md"></i>
+              </template>
+              <span x-text="loadingPrint ? 'Generando...' : 'Imprimir PV-01'"></span>
+            </button>
+          </div>
         {{ end }}
         {{ if .DescargoID }}
           <a href="/descargos/derecho/{{ .DescargoID }}" class="btn-md btn-primary rounded-sm inline-flex items-center gap-2">

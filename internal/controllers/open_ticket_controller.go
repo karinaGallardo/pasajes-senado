@@ -95,23 +95,12 @@ func (ctrl *OpenTicketController) GetProgramarModal(c *gin.Context) {
 		return
 	}
 
-	// Lógica de visualización para el formulario
-	rutaSugerida := ticket.RutaProgramada
-	if rutaSugerida == "" {
-		rutaSugerida = ticket.TramosNoUsados
-	}
-
-	aerolineaSugerida := ticket.AerolineaProgramada
-	if aerolineaSugerida == "" {
-		if ticket.Pasaje != nil && ticket.Pasaje.Aerolinea != nil {
-			aerolineaSugerida = ticket.Pasaje.Aerolinea.Nombre
-		}
-	}
+	// Obtener solicitudes pendientes/borradores del beneficiario para vincular
+	solicitudes, _ := ctrl.solicitudRepo.FindPendientesByUsuarioID(ctx, ticket.UsuarioID)
 
 	utils.Render(c, "pasajes/components/modal_programar_open_ticket", gin.H{
-		"Ticket":            ticket,
-		"RutaSugerida":      rutaSugerida,
-		"AerolineaSugerida": aerolineaSugerida,
+		"Ticket":      ticket,
+		"Solicitudes": solicitudes,
 	})
 }
 
@@ -120,10 +109,9 @@ func (ctrl *OpenTicketController) ProgramarUso(c *gin.Context) {
 	ctx := c.Request.Context()
 
 	var req struct {
-		FechaVuelo string `form:"fecha_vuelo"`
-		Ruta       string `form:"ruta"`
-		Aerolinea  string `form:"aerolinea"`
-		Obs        string `form:"observaciones"`
+		SolicitudID  string `form:"solicitud_id"`
+		MontoCredito string `form:"monto_credito"`
+		Obs          string `form:"observaciones"`
 	}
 
 	if err := c.ShouldBind(&req); err != nil {
@@ -139,14 +127,18 @@ func (ctrl *OpenTicketController) ProgramarUso(c *gin.Context) {
 		return
 	}
 
-	if req.FechaVuelo != "" {
-		f, _ := utils.ParseDateTime(req.FechaVuelo)
-		ticket.FechaVueloProgramada = f
+	if req.SolicitudID != "" {
+		ticket.SolicitudConsumoID = &req.SolicitudID
+		ticket.Estado = models.EstadoOpenTicketReservado
+	} else {
+		ticket.SolicitudConsumoID = nil
+		// Si se quita la solicitud, vuelve a disponible (o se mantiene reservado si hay obs, 
+		// pero usualmente reservado implica intención de uso formal)
+		ticket.Estado = models.EstadoOpenTicketDisponible
 	}
-	ticket.RutaProgramada = req.Ruta
-	ticket.AerolineaProgramada = req.Aerolinea
+
+	ticket.MontoCredito = utils.ParseFloat(req.MontoCredito)
 	ticket.Observaciones = req.Obs
-	ticket.Estado = models.EstadoOpenTicketReservado
 
 	if err := ctrl.service.Update(ctx, ticket); err != nil {
 		utils.SetErrorMessage(c, "Error al programar uso: "+err.Error())

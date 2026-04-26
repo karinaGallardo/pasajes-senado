@@ -13,14 +13,23 @@
           <span class="font-semibold text-neutral-600 tracking-tight">{{ .Descargo.Solicitud.Usuario.GetNombreCompleto }}</span>
         </p>
       </div>
-      <div class="flex items-center gap-2">
+      <div class="flex items-center gap-2" x-data="{ loadingPreview: false }">
         <button
+          type="button"
+          :disabled="loadingPreview"
           hx-get="/descargos/derecho/{{ .Descargo.ID }}/previsualizar"
           hx-target="#modal-container"
-          class="inline-flex items-center px-4 py-2 border border-neutral-300 shadow-sm text-xs font-black rounded-md text-neutral-700 bg-white hover:bg-neutral-50 transition-all active:scale-95 uppercase tracking-tight cursor-pointer"
+          @htmx:before-request="loadingPreview = true"
+          @htmx:after-request="loadingPreview = false"
+          class="inline-flex items-center px-4 py-2 border border-neutral-300 shadow-sm text-xs font-black rounded-md text-neutral-700 bg-white hover:bg-neutral-50 transition-all uppercase tracking-tight cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <i class="ph ph-file-pdf mr-2 text-lg"></i>
-          Ver / Imprimir PV-05
+          <template x-if="!loadingPreview">
+            <i class="ph ph-file-pdf mr-2 text-lg"></i>
+          </template>
+          <template x-if="loadingPreview">
+            <i class="ph ph-circle-notch animate-spin mr-2 text-lg"></i>
+          </template>
+          <span x-text="loadingPreview ? 'Generando...' : 'Ver / Imprimir PV-05'"></span>
         </button>
         {{ if .Descargo.CanEdit .AuthUser }}
           <a

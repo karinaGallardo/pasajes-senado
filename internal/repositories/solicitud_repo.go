@@ -509,6 +509,23 @@ func (r *SolicitudRepository) CountPending(ctx context.Context, userID string, i
 	return count, err
 }
 
+func (r *SolicitudRepository) FindPendientesByUsuarioID(ctx context.Context, usuarioID string) ([]models.Solicitud, error) {
+	var solicitudes []models.Solicitud
+	// Estados que consideramos "pendientes" o aptos para vincular un Open Ticket
+	// Generalmente: BORRADOR, SOLICITADO, APROBADO, EN_PROCESO
+	estadosExcluidos := []string{"FINALIZADA", "ANULADA", "RECHAZADA"}
+
+	err := r.db.WithContext(ctx).
+		Preload("Items").
+		Preload("Items.Origen").
+		Preload("Items.Destino").
+		Where("usuario_id = ? AND estado_codigo NOT IN ?", usuarioID, estadosExcluidos).
+		Order("created_at DESC").
+		Find(&solicitudes).Error
+
+	return solicitudes, err
+}
+
 func (r *SolicitudRepository) UpdateTimestamps(ctx context.Context, id string, createdAt, updatedAt any) error {
 	return r.db.WithContext(ctx).Model(&models.Solicitud{}).Where("id = ?", id).Updates(map[string]interface{}{
 		"created_at": createdAt,

@@ -48,76 +48,60 @@
           </div>
         </div>
 
-        <!-- Información del Ticket Original (Informativo) -->
+        <!-- Información del Ticket Original y Crédito -->
         <div class="grid grid-cols-2 gap-4 p-4 bg-blue-50/50 rounded-xl border border-blue-100">
           <div class="space-y-1">
             <span class="block text-[9px] font-black text-blue-400 uppercase tracking-widest leading-none">Tramos No Usados</span>
             <span class="block text-xs font-bold text-blue-900">{{ .Ticket.TramosNoUsados }}</span>
           </div>
           <div class="space-y-1 text-right">
-            <span class="block text-[9px] font-black text-blue-400 uppercase tracking-widest leading-none">Precio Original</span>
-            <span class="block text-sm font-black text-blue-700">
-              Bs. {{ if .Ticket.Pasaje }}{{ printf "%.2f" .Ticket.Pasaje.Costo }}{{ else }}0.00{{ end }}
-            </span>
+            <span class="block text-[9px] font-black text-blue-400 uppercase tracking-widest leading-none">Monto de Crédito</span>
+            <div class="flex items-center justify-end gap-1.5">
+              <span class="text-[10px] font-bold text-blue-400">Bs.</span>
+              <input 
+                type="number" 
+                step="0.01" 
+                name="monto_credito" 
+                value="{{ printf "%.2f" .Ticket.MontoCredito }}"
+                class="w-24 px-2 py-1 bg-white border border-blue-200 rounded text-right text-xs font-black text-blue-700 outline-none focus:ring-2 focus:ring-blue-500/20"
+              />
+            </div>
+            <p class="text-[9px] text-blue-400 font-medium">Costo Orig: {{ if .Ticket.Pasaje }}{{ printf "%.2f" .Ticket.Pasaje.Costo }}{{ else }}0.00{{ end }}</p>
           </div>
         </div>
 
-        <!-- Campos de Programación -->
+        <!-- Selección de Solicitud -->
         <div class="grid grid-cols-1 gap-4">
           <div class="space-y-1.5">
             <label class="text-[11px] font-black text-zinc-500 uppercase tracking-tight flex items-center gap-1.5">
-              <i class="ph ph-calendar text-sm text-blue-500"></i>
-              Nueva Fecha de Vuelo
+              <i class="ph ph-briefcase text-sm text-blue-500"></i>
+              Vincular a Solicitud (FV-01)
             </label>
-            <input
-              type="date"
-              name="fecha_vuelo"
-              required
+            <select
+              name="solicitud_id"
               class="w-full px-4 py-2.5 bg-white border border-zinc-200 rounded-md text-xs font-bold text-zinc-700 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none"
-              value="{{ if .Ticket.FechaVueloProgramada }}{{ .Ticket.FechaVueloProgramada.Format "2006-01-02" }}{{ end }}"
-            />
-          </div>
-
-          <div class="space-y-1.5">
-            <label class="text-[11px] font-black text-zinc-500 uppercase tracking-tight flex items-center gap-1.5">
-              <i class="ph ph-map-pin text-sm text-blue-500"></i>
-              Ruta Planificada
-            </label>
-            <input
-              type="text"
-              name="ruta"
-              placeholder="Ej: LPB - VVI"
-              class="w-full px-4 py-2.5 bg-white border border-zinc-200 rounded-md text-xs font-bold text-zinc-700 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none"
-              value="{{ .RutaSugerida }}"
-            />
-          </div>
-
-          <div class="space-y-1.5">
-            <label class="text-[11px] font-black text-zinc-500 uppercase tracking-tight flex items-center gap-1.5">
-              <i class="ph ph-airplane-landing text-sm text-blue-500"></i>
-              Aerolínea
-            </label>
-            <input
-              type="text"
-              name="aerolinea"
-              class="w-full px-4 py-2.5 bg-white border border-zinc-200 rounded-md text-xs font-bold text-zinc-700 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none"
-              value="{{ .AerolineaSugerida }}"
-            />
+            >
+              <option value="">-- Seleccionar Solicitud (Opcional) --</option>
+              {{ range .Solicitudes }}
+                <option value="{{ .ID }}" {{ if eq $.Ticket.SolicitudConsumoID .ID }}selected{{ end }}>
+                  [{{ .GetTipoSolicitud }}] {{ .Codigo }} - {{ .GetRutaResumen }}
+                </option>
+              {{ end }}
+            </select>
+            <p class="text-[9px] text-zinc-400 italic">Solo se muestran solicitudes pendientes o en borrador.</p>
           </div>
 
           <div class="space-y-1.5">
             <label class="text-[11px] font-black text-zinc-500 uppercase tracking-tight flex items-center gap-1.5">
               <i class="ph ph-chat-centered-dots text-sm text-blue-500"></i>
-              Observaciones / PNR de Reserva
+              Observaciones del Trámite
             </label>
             <textarea
               name="observaciones"
               rows="3"
               class="w-full px-4 py-2.5 bg-white border border-zinc-200 rounded-md text-xs font-bold text-zinc-700 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all outline-none resize-none"
-              placeholder="Ingrese el PNR de la reserva o detalles adicionales..."
-            >
-{{ .Ticket.Observaciones }}</textarea
-            >
+              placeholder="Ej: Se usará para pagar diferencia de tarifa o reserva PNR..."
+            >{{ .Ticket.Observaciones }}</textarea>
           </div>
         </div>
 

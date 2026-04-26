@@ -1,137 +1,178 @@
 {{ define "solicitud/components/modal_preview_archivo" }}
-<div x-data="{ open: true }" x-show="open" class="fixed inset-0 z-[60] overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-  <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-    <div
-      x-show="open"
-      x-transition:enter="ease-out duration-300"
-      x-transition:enter-start="opacity-0"
-      x-transition:enter-end="opacity-100"
-      x-transition:leave="ease-in duration-200"
-      x-transition:leave-start="opacity-100"
-      x-transition:leave-end="opacity-0"
-      class="fixed inset-0 bg-neutral-500 bg-opacity-75 transition-opacity"
-      @click="open = false; setTimeout(function() { $el.closest('#modal-container').innerHTML = '' }, 300)"></div>
+  <div
+    x-data="{ open: true }"
+    x-show="open"
+    class="fixed inset-0 z-[60] overflow-y-auto"
+    aria-labelledby="modal-title"
+    role="dialog"
+    aria-modal="true"
+  >
+    <div class="flex items-center justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+      <div
+        x-show="open"
+        x-transition:enter="ease-out duration-300"
+        x-transition:enter-start="opacity-0"
+        x-transition:enter-end="opacity-100"
+        x-transition:leave="ease-in duration-200"
+        x-transition:leave-start="opacity-100"
+        x-transition:leave-end="opacity-0"
+        class="fixed inset-0 bg-neutral-500 bg-opacity-75 transition-opacity"
+        @click="open = false; setTimeout(function() { $el.closest('#modal-container').innerHTML = '' }, 300)"
+      ></div>
 
-    <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+      <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
-    <div
-      x-show="open"
-      x-transition:enter="ease-out duration-300"
-      x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-      x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
-      x-transition:leave="ease-in duration-200"
-      x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
-      x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
-      class="inline-block align-bottom bg-white rounded-md text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full">
-      <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-        <div class="flex justify-between items-center mb-4 border-b border-neutral-100 pb-4">
-          <div class="flex items-center">
-            <i class="ph ph-files text-primary-600 text-2xl mr-2"></i>
-            <h3 class="text-lg leading-6 font-bold text-neutral-900" id="modal-title">{{ .Title }}</h3>
+      <div
+        x-show="open"
+        x-transition:enter="ease-out duration-300"
+        x-transition:enter-start="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+        x-transition:enter-end="opacity-100 translate-y-0 sm:scale-100"
+        x-transition:leave="ease-in duration-200"
+        x-transition:leave-start="opacity-100 translate-y-0 sm:scale-100"
+        x-transition:leave-end="opacity-0 translate-y-4 sm:translate-y-0 sm:scale-95"
+        class="inline-block align-bottom bg-white rounded-md text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-4xl sm:w-full"
+      >
+        <div class="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+          <div class="flex justify-between items-center mb-4 border-b border-neutral-100 pb-4">
+            <div class="flex items-center">
+              <i class="ph ph-files text-primary-600 text-2xl mr-2"></i>
+              <h3 class="text-lg leading-6 font-bold text-neutral-900" id="modal-title">{{ .Title }}</h3>
+            </div>
+            <div class="flex items-center space-x-2">
+              <button
+                @click="open = false; setTimeout(function() { $el.closest('#modal-container').innerHTML = '' }, 300)"
+                type="button"
+                class="inline-flex items-center px-4 py-2 border border-neutral-300 text-xs font-black rounded-md text-neutral-700 bg-white hover:bg-neutral-50 transition-all uppercase tracking-tight shadow-sm"
+              >
+                <i class="ph ph-x mr-2 text-md"></i>
+                Cerrar
+              </button>
+            </div>
           </div>
-          <div class="flex items-center space-x-2">
-            <button
-              @click="open = false; setTimeout(function() { $el.closest('#modal-container').innerHTML = '' }, 300)"
-              type="button"
-              class="inline-flex items-center px-4 py-2 border border-neutral-300 text-xs font-black rounded-md text-neutral-700 bg-white hover:bg-neutral-50 transition-all uppercase tracking-tight shadow-sm">
-              <i class="ph ph-x mr-2 text-md"></i>
-              Cerrar
-            </button>
-          </div>
-        </div>
 
-        {{ if or .InfoRuta .InfoTramoRegistrado }}
-        <div class="mb-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-          <!-- Información Registrada por el Usuario -->
-          {{ if .InfoTramoRegistrado }}
-          <div class="bg-neutral-50 p-3 rounded border border-neutral-200">
-            <span class="block text-[10px] font-bold text-neutral-500 uppercase">Registrado en Descargo</span>
-            <div class="mt-1 text-neutral-900 font-medium space-y-1">
-              <div class="flex items-center">
-                <i class="ph ph-airplane text-neutral-400 mr-2"></i>
-                <span>{{ .InfoTramoRegistrado }}</span>
-              </div>
-              {{ if .InfoFechaRegistrada }}
-              <div class="flex items-center">
-                <i class="ph ph-calendar text-neutral-400 mr-2"></i>
-                <span>{{ .InfoFechaRegistrada }}</span>
-              </div>
-              {{ end }} {{ if .InfoBilleteRegistrado }}
-              <div class="flex items-center">
-                <i class="ph ph-ticket text-neutral-400 mr-2"></i>
-                <span class="text-xs">B: {{ .InfoBilleteRegistrado }}</span>
-              </div>
-              {{ end }} {{ if .InfoPaseRegistrado }}
-              <div class="flex items-center">
-                <i class="ph ph-qr-code text-neutral-400 mr-2"></i>
-                <span class="text-xs">P: {{ .InfoPaseRegistrado }}</span>
-              </div>
+          {{ if or .InfoRuta .InfoTramoRegistrado }}
+            <div class="mb-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <!-- Información Registrada por el Usuario -->
+              {{ if .InfoTramoRegistrado }}
+                <div class="bg-neutral-50 p-3 rounded border border-neutral-200">
+                  <span class="block text-[10px] font-bold text-neutral-500 uppercase">Registrado en Descargo</span>
+                  <div class="mt-1 text-neutral-900 font-medium space-y-1">
+                    <div class="flex items-center">
+                      <i class="ph ph-airplane text-neutral-400 mr-2"></i>
+                      <span>{{ .InfoTramoRegistrado }}</span>
+                    </div>
+                    {{ if .InfoFechaRegistrada }}
+                      <div class="flex items-center">
+                        <i class="ph ph-calendar text-neutral-400 mr-2"></i>
+                        <span>{{ .InfoFechaRegistrada }}</span>
+                      </div>
+                    {{ end }}
+                    {{ if .InfoBilleteRegistrado }}
+                      <div class="flex items-center">
+                        <i class="ph ph-ticket text-neutral-400 mr-2"></i>
+                        <span class="text-xs">B: {{ .InfoBilleteRegistrado }}</span>
+                      </div>
+                    {{ end }}
+                    {{ if .InfoPaseRegistrado }}
+                      <div class="flex items-center">
+                        <i class="ph ph-qr-code text-neutral-400 mr-2"></i>
+                        <span class="text-xs">P: {{ .InfoPaseRegistrado }}</span>
+                      </div>
+                    {{ end }}
+                  </div>
+                </div>
+              {{ end }}
+
+
+              <!-- Información del Pasaje Emitido (Referencia) -->
+              {{ if .InfoRuta }}
+                <div class="bg-primary-50 p-3 rounded border border-primary-100">
+                  <span class="block text-[10px] font-bold text-primary-700 uppercase">Referencia (Pasaje Emitido)</span>
+                  <div class="mt-1 text-primary-900 font-medium space-y-1">
+                    <div class="flex items-center space-x-4">
+                      {{ if .InfoVuelo }}
+                        <div class="flex items-center">
+                          <i class="ph ph-airplane-in-flight text-primary-400 mr-2"></i>
+                          <span>{{ .InfoVuelo }}</span>
+                        </div>
+                      {{ end }}
+                      <div class="flex items-center">
+                        <i class="ph ph-airplane-tilt text-primary-400 mr-2"></i>
+                        <span>{{ .InfoRuta }}</span>
+                      </div>
+                    </div>
+
+                    <div class="flex items-center space-x-4">
+                      {{ if .InfoFecha }}
+                        <div class="flex items-center">
+                          <i class="ph ph-calendar-blank text-primary-400 mr-2"></i>
+                          <span>{{ .InfoFecha }}</span>
+                        </div>
+                      {{ end }}
+                      {{ if .InfoBillete }}
+                        <div class="flex items-center">
+                          <i class="ph ph-ticket text-primary-400 mr-2"></i>
+                          <span>{{ .InfoBillete }}</span>
+                        </div>
+                      {{ end }}
+                    </div>
+                  </div>
+                </div>
               {{ end }}
             </div>
+          {{ end }}
+
+
+          <div class="space-y-8 overflow-y-auto max-h-[75vh] pr-2 custom-scrollbar">
+            <!-- Caso: Múltiples Archivos -->
+            {{ range .Files }}
+              <div class="space-y-2">
+                <div
+                  class="flex items-center justify-between bg-neutral-50 px-4 py-2 rounded-t border border-neutral-200 border-b-0"
+                >
+                  <span class="text-xs font-black uppercase tracking-widest text-neutral-600">{{ .Title }}</span>
+                  <a href="{{ .Path }}" download class="text-primary-600 hover:text-primary-800 transition-colors">
+                    <i class="ph ph-download-simple text-lg font-bold"></i>
+                  </a>
+                </div>
+                <div class="w-full h-[70vh] bg-neutral-100 rounded-b border border-neutral-200 overflow-hidden">
+                  {{ if .IsPDF }}
+                    <iframe src="{{ .Path }}" class="w-full h-full" frameborder="0"></iframe>
+                  {{ else }}
+                    <div class="w-full h-full flex items-center justify-center p-4">
+                      <img src="{{ .Path }}" class="max-w-full max-h-full object-contain" alt="Vista previa" />
+                    </div>
+                  {{ end }}
+                </div>
+              </div>
+            {{ end }}
+
+
+            <!-- Caso: Un solo archivo (Compatibilidad) -->
+            {{ if .FilePath }}
+              <div class="space-y-2">
+                <div
+                  class="flex items-center justify-between bg-neutral-50 px-4 py-2 rounded-t border border-neutral-200 border-b-0"
+                >
+                  <span class="text-xs font-black uppercase tracking-widest text-neutral-600">{{ .Title }}</span>
+                  <a href="{{ .FilePath }}" download class="text-primary-600 hover:text-primary-800 transition-colors">
+                    <i class="ph ph-download-simple text-lg font-bold"></i>
+                  </a>
+                </div>
+                <div class="w-full h-[75vh] bg-neutral-100 rounded-b border border-neutral-200 overflow-hidden">
+                  {{ if .IsPDF }}
+                    <iframe src="{{ .FilePath }}" class="w-full h-full" frameborder="0"></iframe>
+                  {{ else }}
+                    <div class="w-full h-full flex items-center justify-center p-4">
+                      <img src="{{ .FilePath }}" class="max-w-full max-h-full object-contain" alt="Vista previa" />
+                    </div>
+                  {{ end }}
+                </div>
+              </div>
+            {{ end }}
           </div>
-          {{ end }}
-
-          <!-- Información del Pasaje Emitido (Referencia) -->
-          {{ if .InfoRuta }}
-          <div class="bg-primary-50 p-3 rounded border border-primary-100">
-            <span class="block text-[10px] font-bold text-primary-700 uppercase">Referencia (Pasaje Emitido)</span>
-            <div class="mt-1 text-primary-900 font-medium space-y-1">
-              <div class="flex items-center space-x-4">
-                {{ if .InfoVuelo }}
-                <div class="flex items-center">
-                  <i class="ph ph-airplane-in-flight text-primary-400 mr-2"></i>
-                  <span>{{ .InfoVuelo }}</span>
-                </div>
-                {{ end }}
-                <div class="flex items-center">
-                  <i class="ph ph-airplane-tilt text-primary-400 mr-2"></i>
-                  <span>{{ .InfoRuta }}</span>
-                </div>
-              </div>
-
-              <div class="flex items-center space-x-4">
-                {{ if .InfoFecha }}
-                <div class="flex items-center">
-                  <i class="ph ph-calendar-blank text-primary-400 mr-2"></i>
-                  <span>{{ .InfoFecha }}</span>
-                </div>
-                {{ end }} {{ if .InfoBillete }}
-                <div class="flex items-center">
-                  <i class="ph ph-ticket text-primary-400 mr-2"></i>
-                  <span>{{ .InfoBillete }}</span>
-                </div>
-                {{ end }}
-              </div>
-            </div>
-          </div>
-          {{ end }}
         </div>
-        {{ end }}
-
-        <div class="space-y-8 overflow-y-auto max-h-[75vh] pr-2 custom-scrollbar">
-          {{ range .Files }}
-            <div class="space-y-2">
-              <div class="flex items-center justify-between bg-neutral-50 px-4 py-2 rounded-t border border-neutral-200 border-b-0">
-                <span class="text-xs font-black uppercase tracking-widest text-neutral-600">{{ .Title }}</span>
-                <a href="{{ .Path }}" download class="text-primary-600 hover:text-primary-800 transition-colors">
-                   <i class="ph ph-download-simple text-lg font-bold"></i>
-                </a>
-              </div>
-              <div class="w-full h-[70vh] bg-neutral-100 rounded-b border border-neutral-200 overflow-hidden">
-                {{ if .IsPDF }}
-                  <iframe src="{{ .Path }}" class="w-full h-full" frameborder="0"></iframe>
-                {{ else }}
-                  <div class="w-full h-full flex items-center justify-center p-4">
-                    <img src="{{ .Path }}" class="max-w-full max-h-full object-contain" alt="Vista previa" />
-                  </div>
-                {{ end }}
-              </div>
-            </div>
-          {{ end }}
-        </div>
-      </div>
       </div>
     </div>
   </div>
-</div>
 {{ end }}

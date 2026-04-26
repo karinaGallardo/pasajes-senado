@@ -112,15 +112,25 @@
           </button>
         {{ end }}
         {{ if .Solicitud.Permissions.CanPrint }}
-          <button
-            type="button"
-            hx-get="/solicitudes/oficial/{{ .Solicitud.ID }}/print"
-            hx-target="#modal-container"
-            class="btn-md btn-white border-neutral-300 rounded-sm"
-          >
-            <i class="ph ph-printer text-sm"></i>
-            <span>Imprimir PV-02</span>
-          </button>
+          <div x-data="{ loadingPrint: false }">
+            <button
+              type="button"
+              :disabled="loadingPrint"
+              hx-get="/solicitudes/oficial/{{ .Solicitud.ID }}/print"
+              hx-target="#modal-container"
+              @htmx:before-request="loadingPrint = true"
+              @htmx:after-request="loadingPrint = false"
+              class="btn-md btn-white border-neutral-300 rounded-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <template x-if="!loadingPrint">
+                <i class="ph ph-printer text-sm"></i>
+              </template>
+              <template x-if="loadingPrint">
+                <i class="ph ph-circle-notch animate-spin text-sm"></i>
+              </template>
+              <span x-text="loadingPrint ? 'Generando...' : 'Imprimir PV-02'"></span>
+            </button>
+          </div>
         {{ end }}
         {{ if .DescargoID }}
           <a href="/descargos/oficial/{{ .DescargoID }}" class="btn-md btn-primary rounded-sm inline-flex items-center gap-2">

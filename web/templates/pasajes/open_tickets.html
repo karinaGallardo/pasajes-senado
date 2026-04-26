@@ -98,14 +98,7 @@
                     </div>
                     <span class="block text-[9px] text-zinc-400 uppercase tracking-tighter mt-1">
                       Vía Descargo:
-                      <a
-                        href="/descargos/{{ if and .Descargo.Solicitud .Descargo.Solicitud.IsOficial }}
-                          oficial
-                        {{ else }}
-                          derecho
-                        {{ end }}/{{ .DescargoID }}/detalle"
-                        class="text-blue-500 hover:underline"
-                      >
+                      <a href="{{ .GetDescargoURL }}" class="text-blue-500 hover:underline">
                         {{ .Descargo.Codigo }}
                       </a>
                     </span>
@@ -117,21 +110,27 @@
                   >
                     {{ .Estado }}
                   </span>
-                  {{ if .FechaVueloProgramada }}
+
+                  {{ if .SolicitudConsumoID }}
                     <div class="mt-2 p-2 bg-blue-50 border border-blue-100 rounded-lg">
                       <div class="text-[9px] font-black text-blue-600 uppercase tracking-tighter mb-1 leading-none">
-                        Vuelo Programado
+                        Vinculado a Solicitud
                       </div>
-                      <div class="text-[10px] font-bold text-blue-900 flex items-center gap-1">
-                        <i class="ph ph-calendar"></i>
-                        {{ .FechaVueloProgramada.Format "02/01/2006" }}
-                      </div>
-                      <div class="text-[10px] font-medium text-blue-800 flex items-center gap-1 mt-0.5">
-                        <i class="ph ph-map-pin"></i>
-                        {{ if .RutaProgramada }}{{ .RutaProgramada }}{{ else }}{{ .RutaReferencia }}{{ end }}
-                      </div>
+                      <a
+                        href="{{ .GetSolicitudConsumoURL }}"
+                        class="text-[10px] font-bold text-blue-900 hover:underline flex items-center gap-1"
+                      >
+                        <i class="ph ph-briefcase"></i>
+                        {{ if .SolicitudConsumo }}{{ .SolicitudConsumo.Codigo }}{{ else }}Ver Detalle{{ end }}
+                      </a>
                     </div>
                   {{ end }}
+
+
+                  <div class="mt-2 flex items-center gap-1.5">
+                    <span class="text-[9px] font-black text-zinc-400 uppercase tracking-widest">Crédito:</span>
+                    <span class="text-xs font-black text-blue-600">Bs. {{ printf "%.2f" .MontoCredito }}</span>
+                  </div>
                 </td>
                 <td class="px-6 py-5 text-right whitespace-nowrap">
                   <div class="flex items-center justify-end gap-2">

@@ -174,7 +174,6 @@ func (s *SolicitudDerechoService) CreateDerecho(ctx context.Context, req dtos.Cr
 			}
 		}
 
-
 		return nil
 	})
 
