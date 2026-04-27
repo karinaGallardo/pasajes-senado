@@ -37,8 +37,8 @@ func ParseDateTime(val string) (*time.Time, error) {
 	if val == "" {
 		return nil, nil
 	}
-	// Normalizar a mayúsculas para facilitar el parseo de AM/PM
-	val = strings.ToUpper(val)
+	// Normalizar a mayúsculas para facilitar el parseo de AM/PM y quitar espacios extra
+	val = strings.ToUpper(strings.TrimSpace(val))
 	// Formater T (usado en inputs datetime-local o modales específicos)
 	if t, err := time.ParseInLocation("2006-01-02T15:04", val, time.Local); err == nil {
 		return &t, nil
@@ -78,8 +78,10 @@ func ParseDateTime(val string) (*time.Time, error) {
 	return nil, fmt.Errorf("formato de fecha y hora inválido: %s", val)
 }
 
-// ParseDateAndTime combina un string de fecha y otro de hora en un solo time.Time
 func ParseDateAndTime(dateStr, timeStr string) (*time.Time, error) {
+	dateStr = strings.TrimSpace(dateStr)
+	timeStr = strings.TrimSpace(timeStr)
+
 	if dateStr == "" {
 		return nil, nil
 	}

@@ -82,17 +82,18 @@ func (s *DescargoService) Submit(ctx context.Context, id, userID string) error {
 		return err
 	}
 
-	if descargo.Estado != models.EstadoDescargoBorrador && descargo.Estado != models.EstadoDescargoRechazado {
+	if descargo.Estado != models.EstadoDescargoBorrador && descargo.Estado != models.EstadoDescargoRechazado && descargo.Estado != models.EstadoDescargoOpenTicket {
 		return fmt.Errorf("el descargo no se puede enviar en su estado actual (%s)", descargo.Estado)
 	}
 
+	oldState := descargo.Estado
 	descargo.Estado = models.EstadoDescargoEnRevision
 	descargo.UpdatedBy = &userID
 	if err := s.repo.Update(ctx, descargo); err != nil {
 		return err
 	}
 
-	s.auditService.Log(ctx, "ENVIAR_DESCARGO", "descargo", id, string(models.EstadoDescargoBorrador), string(models.EstadoDescargoEnRevision), "", "")
+	s.auditService.Log(ctx, "ENVIAR_DESCARGO", "descargo", id, string(oldState), string(models.EstadoDescargoEnRevision), "", "")
 	slog.Info("Descargo enviado a revisión", "id", id, "codigo", descargo.Codigo, "user_id", userID)
 	return nil
 }
@@ -107,35 +108,36 @@ func (s *DescargoService) Approve(ctx context.Context, id string, userID string)
 		return errors.New("solo se pueden aprobar descargos en revisión")
 	}
 
-	descargo.Estado = models.EstadoDescargoFinalizado
+	hasOpenTickets := false
+	for _, tramo := range descargo.Tramos {
+		if tramo.EsOpenTicket {
+			hasOpenTickets = true
+			break
+		}
+	}
+
+	newState := models.EstadoDescargoFinalizado
+	if hasOpenTickets {
+		newState = models.EstadoDescargoOpenTicket
+	}
+
+	descargo.Estado = newState
 	descargo.Observaciones = ""
 	descargo.UpdatedBy = &userID
 	if err := s.repo.Update(ctx, descargo); err != nil {
 		return err
 	}
 
-	s.auditService.Log(ctx, "APROBAR_DESCARGO", "descargo", id, string(models.EstadoDescargoEnRevision), string(models.EstadoDescargoFinalizado), "", "")
-	slog.Info("Descargo aprobado y finalizado", "id", id, "codigo", descargo.Codigo, "user_id", userID)
+	s.auditService.Log(ctx, "APROBAR_DESCARGO", "descargo", id, string(models.EstadoDescargoEnRevision), string(newState), "", "")
 
-	// 4. Crear/Activar tramos marcados como Open Ticket
-	if err := s.SyncOpenTickets(ctx, id, userID); err != nil {
-		slog.Error("Error sincronizando Open Tickets al aprobar", "error", err)
+	if hasOpenTickets {
+		slog.Info("Descargo aprobado parcialmente (Open Tickets pendientes)", "id", id, "codigo", descargo.Codigo, "user_id", userID)
+	} else {
+		slog.Info("Descargo aprobado y finalizado", "id", id, "codigo", descargo.Codigo, "user_id", userID)
 	}
 
-	// Asegurarse de que todos los créditos de este descargo queden como DISPONIBLES
-	creditos, err := s.openTicketRepo.FindByDescargoID(ctx, id)
-	if err == nil {
-		for _, c := range creditos {
-			if c.Estado == models.EstadoOpenTicketPendiente {
-				c.Estado = models.EstadoOpenTicketDisponible
-				c.Observaciones += " | Activado por aprobación del descargo."
-				c.UpdatedBy = &userID
-				_ = s.openTicketRepo.Update(ctx, &c)
-			}
-		}
-	}
-
-	if descargo.SolicitudID != "" {
+	// Only finalize the parent Solicitud if the Descargo is fully finalized (no Open Tickets left)
+	if !hasOpenTickets && descargo.SolicitudID != "" {
 		return s.solicitudService.Finalize(ctx, descargo.SolicitudID)
 	}
 
@@ -170,8 +172,8 @@ func (s *DescargoService) RevertToDraft(ctx context.Context, id string, userID s
 		return err
 	}
 
-	if descargo.Estado != models.EstadoDescargoFinalizado {
-		return errors.New("solo se puede revertir un descargo finalizado")
+	if descargo.Estado != models.EstadoDescargoFinalizado && descargo.Estado != models.EstadoDescargoOpenTicket {
+		return errors.New("solo se puede revertir un descargo finalizado o en espera")
 	}
 
 	// 1. Manejo de Créditos vinculados (No permitir si ya se usaron)

@@ -8,6 +8,7 @@ const (
 	EstadoDescargoBorrador   EstadoDescargo = "BORRADOR"
 	EstadoDescargoEnRevision EstadoDescargo = "EN_REVISION"
 	EstadoDescargoRechazado  EstadoDescargo = "RECHAZADO"
+	EstadoDescargoOpenTicket EstadoDescargo = "OPEN_TICKET"
 	EstadoDescargoFinalizado EstadoDescargo = "FINALIZADO"
 )
 
@@ -211,6 +212,14 @@ func (e EstadoDescargo) Info() EstadoDescargoInfo {
 			BadgeClass:  "bg-danger-50 text-danger-700 border-danger-100",
 			Icon:        "ph ph-warning-circle",
 		}
+	case EstadoDescargoOpenTicket:
+		return EstadoDescargoInfo{
+			Nombre:      "En Espera (Reprogramación)",
+			Descripcion: "El descargo tiene tramos pendientes de reprogramar (Open Ticket). Debe re-editarse para agregar los nuevos vuelos.",
+			ColorClass:  "border-secondary-400",
+			BadgeClass:  "bg-secondary-50 text-secondary-700 border-secondary-100",
+			Icon:        "ph ph-calendar-plus",
+		}
 	case EstadoDescargoFinalizado:
 		return EstadoDescargoInfo{
 			Nombre:      "Finalizado",
@@ -297,7 +306,7 @@ func (d Descargo) getAuthUser(u ...*Usuario) *Usuario {
 }
 
 func (d Descargo) IsEditable() bool {
-	return d.Estado == EstadoDescargoBorrador || d.Estado == EstadoDescargoRechazado
+	return d.Estado == EstadoDescargoBorrador || d.Estado == EstadoDescargoRechazado || d.Estado == EstadoDescargoOpenTicket
 }
 
 func (d Descargo) CanEdit(user *Usuario) bool {
@@ -323,7 +332,7 @@ func (d Descargo) CanReject(user *Usuario) bool {
 }
 
 func (d Descargo) CanRevert(user *Usuario) bool {
-	return d.Estado == EstadoDescargoFinalizado && user.IsAdminOrResponsable()
+	return (d.Estado == EstadoDescargoFinalizado || d.Estado == EstadoDescargoOpenTicket) && user.IsAdminOrResponsable()
 }
 
 func (d Descargo) CanPrint(user *Usuario) bool {
@@ -348,7 +357,7 @@ func (d Descargo) CanRevertFinalization(u *Usuario) bool {
 	if u == nil {
 		return false
 	}
-	return u.IsAdminOrResponsable() && d.Estado == EstadoDescargoFinalizado
+	return u.IsAdminOrResponsable() && (d.Estado == EstadoDescargoFinalizado || d.Estado == EstadoDescargoOpenTicket)
 }
 func (d Descargo) isOwnerOrAdmin(user *Usuario) bool {
 	if user == nil {
