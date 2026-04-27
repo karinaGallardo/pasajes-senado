@@ -2252,6 +2252,10 @@ video {
   width: 28%;
 }
 
+.w-\[280px\] {
+  width: 280px;
+}
+
 .w-\[35px\] {
   width: 35px;
 }
@@ -10356,6 +10360,74 @@ h1, h2, h3 {
   font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
+}
+
+/* Stepper Status Classes (Vibrant Palette) */
+
+.stepper-bg-solicitado {
+  background-color: #f97316;
+  color: white;
+}
+
+/* Orange 500 */
+
+.stepper-text-solicitado {
+  color: #f97316;
+}
+
+.stepper-bg-parcial {
+  background-color: #ec4899;
+  color: white;
+}
+
+/* Pink 500 */
+
+.stepper-text-parcial {
+  color: #ec4899;
+}
+
+.stepper-bg-aprobado {
+  background-color: #eab308;
+  color: white;
+}
+
+/* Yellow 500 */
+
+.stepper-text-aprobado {
+  color: #eab308;
+}
+
+.stepper-bg-rechazado {
+  background-color: #ef4444;
+  color: white;
+}
+
+/* Red 500 */
+
+.stepper-text-rechazado {
+  color: #ef4444;
+}
+
+.stepper-bg-emitido {
+  background-color: #8b5cf6;
+  color: white;
+}
+
+/* Violet 500 */
+
+.stepper-text-emitido {
+  color: #8b5cf6;
+}
+
+.stepper-bg-finalizado {
+  background-color: #10b981;
+  color: white;
+}
+
+/* Emerald 500 */
+
+.stepper-text-finalizado {
+  color: #10b981;
 }
 
 /* Estándar de Botones Pasajes GO */

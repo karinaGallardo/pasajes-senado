@@ -1375,7 +1375,7 @@ func (s *ReportService) GeneratePV05Complete(ctx context.Context, descargo *mode
 	seenFiles := make(map[string]bool)
 	seenFiles[tmpBase.Name()] = true
 
-	// 2.1 Billetes Electrónicos (Pasajes emitidos)
+	// 2.1 Billetes Electrónicos (Pasajes emitidos) y Facturas de Servicio
 	if descargo.Solicitud != nil {
 		for _, item := range descargo.Solicitud.Items {
 			for _, pasaje := range item.Pasajes {
@@ -1383,6 +1383,12 @@ func (s *ReportService) GeneratePV05Complete(ctx context.Context, descargo *mode
 					if s.isValidPDF(pasaje.Archivo) {
 						filesToMerge = append(filesToMerge, pasaje.Archivo)
 						seenFiles[pasaje.Archivo] = true
+					}
+				}
+				if pasaje.ServicioArchivo != "" && !seenFiles[pasaje.ServicioArchivo] {
+					if s.isValidPDF(pasaje.ServicioArchivo) {
+						filesToMerge = append(filesToMerge, pasaje.ServicioArchivo)
+						seenFiles[pasaje.ServicioArchivo] = true
 					}
 				}
 			}
@@ -1493,7 +1499,7 @@ func (s *ReportService) GeneratePV06Complete(ctx context.Context, descargo *mode
 		}
 	}
 
-	// 2.1 Billetes Electrónicos (Pasajes emitidos)
+	// 2.1 Billetes Electrónicos (Pasajes emitidos) y Facturas de Servicio
 	if descargo.Solicitud != nil {
 		for _, item := range descargo.Solicitud.Items {
 			for _, pasaje := range item.Pasajes {
@@ -1501,6 +1507,12 @@ func (s *ReportService) GeneratePV06Complete(ctx context.Context, descargo *mode
 					if s.isValidPDF(pasaje.Archivo) {
 						filesToMerge = append(filesToMerge, pasaje.Archivo)
 						seenFiles[pasaje.Archivo] = true
+					}
+				}
+				if pasaje.ServicioArchivo != "" && !seenFiles[pasaje.ServicioArchivo] {
+					if s.isValidPDF(pasaje.ServicioArchivo) {
+						filesToMerge = append(filesToMerge, pasaje.ServicioArchivo)
+						seenFiles[pasaje.ServicioArchivo] = true
 					}
 				}
 			}

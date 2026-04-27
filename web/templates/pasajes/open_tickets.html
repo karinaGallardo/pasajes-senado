@@ -41,7 +41,7 @@
               {{ if .ShowBeneficiary }}
                 <th class="px-6 py-4">Beneficiario</th>
               {{ end }}
-              <th class="px-6 py-4">Tramos No Usados</th>
+              <th class="px-6 py-4 w-[280px]">Tramos No Usados</th>
               <th class="px-6 py-4">Estado</th>
               <th class="px-6 py-4 text-right">Generar Solicitud</th>
             </tr>
@@ -50,9 +50,17 @@
             {{ range .Tickets }}
               <tr class="hover:bg-zinc-50/50 transition-colors group">
                 <td class="px-6 py-5 whitespace-nowrap">
-                  <span class="text-zinc-900 font-medium block">{{ .CreatedAt.Format "02/01/2006" }}</span>
+                  <span class="text-zinc-900 text-[12px] block">{{ .CreatedAt.Format "02/01/2006" }}</span>
                   <span class="text-zinc-400 text-[11px] uppercase tracking-tighter">{{ .CreatedAt.Format "15:04" }}</span>
                 </td>
+                {{ if $.ShowBeneficiary }}
+                  <td class="px-6 py-5">
+                    <div class="flex flex-col">
+                      <span class="text-zinc-900 text-[11px] font-bold uppercase">{{ .Usuario.GetNombreCompleto }}</span>
+                      <span class="text-zinc-400 text-[10px] tracking-tight">{{ .Usuario.CI }}</span>
+                    </div>
+                  </td>
+                {{ end }}
                 <td class="px-6 py-5">
                   <div class="flex items-center gap-3">
                     <div
@@ -61,12 +69,24 @@
                       <i class="ph ph-ticket"></i>
                     </div>
                     <div>
-                      <span class="text-zinc-900 font-semibold block leading-none">{{ .NumeroBillete }}</span>
-                      <span class="text-zinc-400 text-xs tracking-tight uppercase">
-                        {{ if .Pasaje }}
-                          {{ .Pasaje.Aerolinea.Nombre }}
-                          <span class="ml-1 text-[10px] text-zinc-300">•</span>
-                          <span class="ml-1 text-zinc-500 font-bold">Bs. {{ printf "%.2f" .Pasaje.Costo }}</span>
+                      <span class="text-zinc-900 text-[12px] font-semibold block leading-none mb-1">{{ .NumeroBillete }}</span>
+                      {{ if .Pasaje }}
+                        <span class="text-zinc-400 text-[13px] tracking-tight uppercase block">
+                          {{ .Pasaje.Aerolinea.Sigla }}
+                        </span>
+                        <span class="text-zinc-500 font-bold text-[11px] block mt-0.5 mb-1">
+                          Bs.
+                          {{ printf "%.2f" .Pasaje.Costo }}
+                        </span>
+                      {{ else }}
+                        <span class="text-zinc-400 text-xs tracking-tight uppercase block mb-1">N/A</span>
+                      {{ end }}
+                      <span class="block text-[9px] text-zinc-400 uppercase tracking-tighter">
+                        Vía Solicitud:
+                        {{ if and .Descargo .Descargo.Solicitud }}
+                          <a href="{{ .GetSolicitudOriginalURL }}" class="text-blue-500 hover:underline">
+                            {{ .Descargo.Solicitud.Codigo }}
+                          </a>
                         {{ else }}
                           N/A
                         {{ end }}
@@ -74,23 +94,14 @@
                     </div>
                   </div>
                 </td>
-                {{ if $.ShowBeneficiary }}
-                  <td class="px-6 py-5">
-                    <div class="flex flex-col">
-                      <span class="text-zinc-900 font-bold text-xs uppercase">{{ .Usuario.GetNombreCompleto }}</span>
-                      <span class="text-zinc-400 text-[10px] tracking-tight">{{ .Usuario.CI }}</span>
-                    </div>
-                  </td>
-                {{ end }}
                 <td class="px-6 py-5">
                   <div class="flex flex-col">
-                    <span class="text-zinc-700 font-bold text-xs uppercase tracking-tight">{{ .TramosNoUsados }}</span>
-                    <div class="mt-1 flex items-center gap-2 text-[10px] text-zinc-400 font-medium">
+                    <span class="text-zinc-700 font-bold text-[12px] uppercase tracking-tight">{{ .TramosNoUsados }}</span>
+                    <div class="mt-1 flex flex-col gap-0.5 text-[10px] text-zinc-400 font-medium">
                       <span class="flex items-center gap-1">
                         <i class="ph ph-map-pin text-xs"></i>
                         Orig: {{ if .Pasaje }}{{ .Pasaje.GetRutaDisplay }}{{ else }}N/A{{ end }}
                       </span>
-                      <span class="text-zinc-300">•</span>
                       <span class="flex items-center gap-1">
                         <i class="ph ph-calendar text-xs"></i>
                         {{ .GetFechaOriginalFormat }}

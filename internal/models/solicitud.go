@@ -153,15 +153,14 @@ func (s Solicitud) GetStatusCardData() StatusCardView {
 
 func (s Solicitud) GetStepperData() (map[string]StepView, bool) {
 	st := s.GetEstado()
-
-	makeStep := func(active, completed bool, colorBase, icon, label string) StepView {
+	makeStep := func(active, completed bool, baseClass, icon, label string) StepView {
 		sv := StepView{
 			Icon:  icon,
 			Label: label,
 		}
 		if active || completed {
-			sv.WrapperClass = fmt.Sprintf("bg-%s-500 text-white border-none", colorBase)
-			sv.LabelClass = fmt.Sprintf("text-%s-500", colorBase)
+			sv.WrapperClass = fmt.Sprintf("stepper-bg-%s border-none shadow-sm", baseClass)
+			sv.LabelClass = fmt.Sprintf("stepper-text-%s", baseClass)
 		} else {
 			sv.WrapperClass = "bg-white border-2 border-neutral-200 text-neutral-400"
 			sv.LabelClass = "text-neutral-400"
@@ -170,35 +169,35 @@ func (s Solicitud) GetStepperData() (map[string]StepView, bool) {
 	}
 
 	steps := make(map[string]StepView)
-	steps["Solicitado"] = makeStep(true, true, "secondary", "ph ph-file-text text-lg", "Solicitado")
+	steps["Solicitado"] = makeStep(true, true, "solicitado", "ph ph-paper-plane-tilt text-lg", "Solicitado")
 
 	rejected := st == "RECHAZADO"
 	parcial := st == "PARCIALMENTE_APROBADO"
 
 	if rejected {
 		steps["Aprobado"] = StepView{
-			Icon:         "ph ph-x text-xl font-bold",
+			Icon:         "ph ph-x-circle text-xl font-bold",
 			Label:        "Rechazado",
-			WrapperClass: "bg-danger-500 text-white border-none",
-			LabelClass:   "text-danger-500",
+			WrapperClass: "stepper-bg-rechazado border-none shadow-sm",
+			LabelClass:   "stepper-text-rechazado",
 		}
 	} else if parcial {
 		steps["Aprobado"] = StepView{
 			Icon:         "ph ph-check-square-offset text-xl",
 			Label:        "Parcial",
-			WrapperClass: "bg-violet-500 text-white border-none",
-			LabelClass:   "text-violet-500",
+			WrapperClass: "stepper-bg-parcial border-none shadow-sm",
+			LabelClass:   "stepper-text-parcial",
 		}
 	} else {
 		isAp := st == "APROBADO" || st == "EMITIDO" || st == "FINALIZADO"
-		steps["Aprobado"] = makeStep(isAp, isAp, "success", "ph ph-check text-xl font-bold", "Aprobado")
+		steps["Aprobado"] = makeStep(isAp, isAp, "aprobado", "ph ph-check-circle text-xl font-bold", "Aprobado")
 	}
 
 	isEm := st == "EMITIDO" || st == "FINALIZADO"
-	steps["Emitido"] = makeStep(isEm, isEm, "secondary", "ph ph-ticket text-xl", "Emitido")
+	steps["Emitido"] = makeStep(isEm, isEm, "emitido", "ph ph-ticket text-xl", "Emitido")
 
 	isFin := st == "FINALIZADO"
-	steps["Finalizado"] = makeStep(isFin, isFin, "neutral", "ph ph-flag-checkered text-xl", "Finalizado")
+	steps["Finalizado"] = makeStep(isFin, isFin, "finalizado", "ph ph-archive text-xl", "Finalizado")
 
 	return steps, !rejected
 }
@@ -347,52 +346,47 @@ func (s *Solicitud) UpdateStatusBasedOnItems() {
 		}
 	}
 
-	// Estados Individuales para cálculo de Estado Global
-	allApproved := true
+	hasEmitido := false
+	hasFinalizado := false
+	hasAprobado := false
+	hasSolicitado := false
+
 	allRejected := true
-	allFinalized := true
-	allEmitidos := true
-	hasApproved := false
 
 	for _, item := range s.Items {
 		st := item.GetEstado()
-
-		// Consideramos estados de aprobación (Aprobado, Emitido, Finalizado)
-		isApp := (st == "APROBADO" || st == "EMITIDO" || st == "FINALIZADO")
-
-		if !isApp {
-			allApproved = false
-		} else {
-			hasApproved = true
-		}
-
-		if st != "FINALIZADO" {
-			allFinalized = false
-		}
-
-		if st != "EMITIDO" && st != "FINALIZADO" {
-			allEmitidos = false
-		}
-
-		if st != "RECHAZADO" {
+		if st != "RECHAZADO" && st != "CANCELADO" {
 			allRejected = false
+		}
+
+		switch st {
+		case "FINALIZADO":
+			hasFinalizado = true
+		case "EMITIDO":
+			hasEmitido = true
+		case "APROBADO":
+			hasAprobado = true
+		case "SOLICITADO":
+			hasSolicitado = true
 		}
 	}
 
-	// Unificamos criterio: Si TODOS los tramos están en un estado final,
-	// la solicitud hereda ese estado global, sin importar si es solo IDA o solo VUELTA.
 	newState := "SOLICITADO"
 
-	if allFinalized {
-		newState = "FINALIZADO"
-	} else if allEmitidos {
-		newState = "EMITIDO"
-	} else if allApproved {
-		newState = "APROBADO"
-	} else if hasApproved {
-		newState = "PARCIALMENTE_APROBADO"
-	} else if allRejected {
+	if allRejected {
 		newState = "RECHAZADO"
+	} else if hasEmitido {
+		// Si hay al menos un pasaje emitido, globalmente la solicitud está en fase de emisión/vuelo/descargo
+		newState = "EMITIDO"
+	} else if hasFinalizado && !hasAprobado && !hasSolicitado {
+		// Si hay tramos finalizados y no queda nada pendiente por aprobar o emitir, está finalizado
+		newState = "FINALIZADO"
+	} else if hasAprobado && !hasSolicitado {
+		// Si todo lo activo está aprobado
+		newState = "APROBADO"
+	} else if hasAprobado || hasFinalizado {
+		// Si hay mezcla de aprobado/finalizado con algo solicitado
+		newState = "PARCIALMENTE_APROBADO"
 	} else {
 		newState = "SOLICITADO"
 	}
@@ -471,12 +465,18 @@ func (s *Solicitud) Reject() error {
 }
 
 func (s *Solicitud) Finalize() error {
-	if s.GetEstado() != "EMITIDO" {
-		return errors.New("la solicitud debe estar en estado EMITIDO para ser finalizada")
-	}
+	hasEmitted := false
 	for i := range s.Items {
-		s.Items[i].Finalize()
+		if s.Items[i].GetEstado() == "EMITIDO" {
+			hasEmitted = true
+			s.Items[i].Finalize()
+		}
 	}
+
+	if !hasEmitted && s.GetEstado() != "FINALIZADO" {
+		return errors.New("la solicitud no tiene ningún tramo en estado EMITIDO para finalizar")
+	}
+
 	s.UpdateStatusBasedOnItems()
 	return nil
 }
@@ -498,13 +498,18 @@ func (s *Solicitud) RevertApproval() error {
 }
 
 func (s *Solicitud) RevertFinalize() error {
-	if s.GetEstado() != "FINALIZADO" {
-		return errors.New("la solicitud no está en estado FINALIZADO")
-	}
+	hasFinalized := false
 	for i := range s.Items {
-		item := &s.Items[i]
-		item.RevertFinalize()
+		if s.Items[i].GetEstado() == "FINALIZADO" {
+			hasFinalized = true
+			s.Items[i].RevertFinalize()
+		}
 	}
+
+	if !hasFinalized && s.GetEstado() != "EMITIDO" {
+		return errors.New("la solicitud no tiene ningún tramo FINALIZADO para revertir")
+	}
+
 	s.UpdateStatusBasedOnItems()
 	return nil
 }

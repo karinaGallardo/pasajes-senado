@@ -85,32 +85,7 @@
             <span>Eliminar</span>
           </button>
         {{ end }}
-        {{ if .Solicitud.Permissions.CanFinalize }}
-          <button
-            type="button"
-            hx-post="/solicitudes/{{ .Solicitud.ID }}/finalizar"
-            hx-confirm="¿Está seguro de FINALIZAR esta solicitud? Esta acción marcará todos los pasajes como usados."
-            hx-target="body"
-            class="btn-md bg-neutral-900 text-white hover:bg-neutral-800 transition-all shadow-sm rounded-sm"
-            title="Finalizar Solicitud"
-          >
-            <i class="ph ph-flag-checkered text-sm"></i>
-            <span>Finalizar</span>
-          </button>
-        {{ end }}
-        {{ if .Solicitud.Permissions.CanRevertFinalize }}
-          <button
-            type="button"
-            hx-post="/solicitudes/{{ .Solicitud.ID }}/revertir-finalizacion"
-            hx-confirm="¿Desea revertir la finalización de esta solicitud?"
-            hx-target="body"
-            class="btn-md bg-warning-50 text-warning-700 border border-warning-200 hover:bg-warning-100 transition-all shadow-sm rounded-sm"
-            title="Revertir Finalización"
-          >
-            <i class="ph ph-arrow-u-up-left text-sm"></i>
-            <span>Revertir Cierre</span>
-          </button>
-        {{ end }}
+
         {{ if .Solicitud.Permissions.CanPrint }}
           <div x-data="{ loadingPrint: false }">
             <button

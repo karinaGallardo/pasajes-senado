@@ -114,3 +114,14 @@ func (c OpenTicket) GetSolicitudConsumoURL() string {
 	}
 	return fmt.Sprintf("/solicitudes/%s/%s", tipo, *c.SolicitudConsumoID)
 }
+
+func (c OpenTicket) GetSolicitudOriginalURL() string {
+	if c.Descargo == nil || c.Descargo.Solicitud == nil {
+		return "#"
+	}
+	tipo := "derecho"
+	if c.Descargo.Solicitud.IsOficial() {
+		tipo = "oficial"
+	}
+	return fmt.Sprintf("/solicitudes/%s/%s/detalle", tipo, c.Descargo.SolicitudID)
+}
