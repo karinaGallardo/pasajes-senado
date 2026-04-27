@@ -248,8 +248,13 @@ func (s *DescargoDerechoService) UpdateDerecho(ctx context.Context, descargoID s
 			p.NroBoletaDeposito = nroBoleta
 			if boletaPath != "" {
 				p.ArchivoComprobante = boletaPath
-				now := time.Now()
-				p.FechaDeposito = &now
+				if p.FechaDeposito == nil {
+					now := time.Now()
+					p.FechaDeposito = &now
+				}
+			} else {
+				p.ArchivoComprobante = ""
+				p.FechaDeposito = nil
 			}
 			_ = s.pasajeRepo.Update(ctx, p)
 		}
