@@ -401,12 +401,11 @@ func (s *Solicitud) CanApprove(u ...*Usuario) bool {
 	if user == nil || !user.IsAdminOrResponsable() {
 		return false
 	}
-	estado := s.GetEstado()
-	return estado == "SOLICITADO" || estado == "PARCIALMENTE_APROBADO"
+	return s.IsSolicitado() || s.IsParcialmenteAprobado() || s.IsEmitido()
 }
 
 func (s *Solicitud) CanReject(u ...*Usuario) bool {
-	return s.CanApprove(u...) // Misma lógica: se rechaza si se puede aprobar
+	return s.CanApprove(u...)
 }
 
 func (s *Solicitud) CanRevertApproval(u ...*Usuario) bool {
