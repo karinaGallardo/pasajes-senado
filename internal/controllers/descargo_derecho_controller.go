@@ -134,12 +134,47 @@ func (ctrl *DescargoDerechoController) Edit(c *gin.Context) {
 		return
 	}
 
+	csrfToken := c.Value("csrf_token")
+
 	utils.Render(c, "descargo/derecho/edit", gin.H{
-		"Title":     "Editar Descargo (Derecho)",
-		"Descargo":  data.Descargo,
-		"Solicitud": data.Solicitud,
-		"Ida":       data.Ida,
-		"Vuelta":    data.Vuelta,
+		"Title":      "Editar Descargo",
+		"Descargo":   data.Descargo,
+		"Solicitud":  data.Solicitud,
+		"Ida":        data.Ida,
+		"Vuelta":     data.Vuelta,
+		"csrf_token": csrfToken,
+		"LinkBase":   "/descargos/derecho",
+	})
+}
+
+func (ctrl *DescargoDerechoController) Completar(c *gin.Context) {
+	id := c.Param("id")
+	authUser := appcontext.AuthUser(c)
+	if authUser == nil {
+		c.Redirect(http.StatusFound, "/auth/login")
+		return
+	}
+
+	data, err := ctrl.descargoDerechoService.GetEditData(c.Request.Context(), id)
+	if err != nil {
+		// Even if OPEN_TICKET is technically considered "No Editable" by default rules,
+		// GetEditData already allows OPEN_TICKET if IsEditable is updated.
+		// Wait, let's verify if GetEditData allows OPEN_TICKET.
+		c.Redirect(http.StatusFound, "/descargos/derecho/"+id+"?error=NoEditable")
+		return
+	}
+
+	data.Descargo.HydratePermissions(authUser)
+	csrfToken := c.Value("csrf_token")
+
+	utils.Render(c, "descargo/derecho/completar", gin.H{
+		"Title":      "Completar Pasajes (Open Ticket)",
+		"Descargo":   data.Descargo,
+		"Solicitud":  data.Solicitud,
+		"Ida":        data.Ida,
+		"Vuelta":     data.Vuelta,
+		"csrf_token": csrfToken,
+		"LinkBase":   "/descargos/derecho",
 	})
 }
 
@@ -176,13 +211,58 @@ func (ctrl *DescargoDerechoController) Update(c *gin.Context) {
 
 	// 4. Comprobantes de Pago (Per Pasaje)
 	boletasPaths := utils.ExtractPasajeBoletas(c, req.LiquidacionPasajeID)
- 
+
 	if err := ctrl.descargoDerechoService.UpdateDerecho(c.Request.Context(), id, req, authUser.ID, pasesAbordoPaths, boletasPaths); err != nil {
 		c.Redirect(http.StatusFound, "/descargos/derecho/"+id+"/editar?error=ErrorActualizacion")
 		return
 	}
 
 	c.Redirect(http.StatusFound, "/descargos/derecho/"+id+"/editar")
+}
+
+func (ctrl *DescargoDerechoController) UpdateReutilizacion(c *gin.Context) {
+	authUser := appcontext.AuthUser(c)
+	if authUser == nil {
+		c.Redirect(http.StatusFound, "/auth/login")
+		return
+	}
+
+	id := c.Param("id")
+
+	descargo, err := ctrl.descargoService.GetByID(c.Request.Context(), id)
+	if err != nil {
+		c.Redirect(http.StatusFound, "/descargos")
+		return
+	}
+
+	// Permisos: Si está en OPEN_TICKET, se permite completar
+	descargo.HydratePermissions(authUser)
+	if !descargo.Permissions.CanCompleteOpenTicket {
+		c.Redirect(http.StatusFound, "/descargos/derecho/"+id+"?error=EstadoNoPermitido")
+		return
+	}
+
+	var req dtos.CreateDescargoRequest
+	if err := req.Bind(c); err != nil {
+		log.Printf("[ERROR] Bind error en Reutilización (ID: %s): %v", id, err)
+		c.Redirect(http.StatusFound, "/descargos/derecho/"+id+"/completar?error=DatosInvalidos")
+		return
+	}
+
+	// Extraer pases a bordo de los tramos (incluyendo los nuevos REUT)
+	pasesAbordoPaths := utils.ExtractDescargoFiles(c, req.TramoID)
+	boletasPaths := []string{} // El servicio espera un slice de strings []string
+
+	// Asegurar que el estado se mantiene en OPEN_TICKET durante este flujo
+	descargo.Estado = models.EstadoDescargoOpenTicket
+	if err := ctrl.descargoDerechoService.UpdateDerecho(c.Request.Context(), id, req, authUser.ID, pasesAbordoPaths, boletasPaths); err != nil {
+		log.Printf("[ERROR] Error en UpdateDerecho (Reutilización): %v", err)
+		c.Redirect(http.StatusFound, "/descargos/derecho/"+id+"/completar?error=ErrorActualizacion")
+		return
+	}
+
+	// Redirigir al MISMO FORMULARIO (Completar) para permitir seguir cargando tramos
+	c.Redirect(http.StatusFound, "/descargos/derecho/"+id+"/completar?success=TramosActualizados")
 }
 
 func (ctrl *DescargoDerechoController) Print(c *gin.Context) {
@@ -436,17 +516,38 @@ func (ctrl *DescargoDerechoController) PreviewFile(c *gin.Context) {
 func (ctrl *DescargoDerechoController) NuevaFila(c *gin.Context) {
 	tipo := c.Query("tipo")
 	solicitudItemID := c.Query("solicitud_item_id")
+	isReutilizacion := c.Query("is_reutilizacion") == "true"
+	pasajeID := c.Query("pasaje_id")
+	billete := c.Query("billete")
+
 	index := fmt.Sprintf("new_%d", time.Now().UnixNano())
 
-	c.HTML(http.StatusOK, "descargo/components/tramo_fila_derecho", gin.H{
-		"Tipo": tipo,
-		"Tramo": models.DescargoTramo{
-			BaseModel:       models.BaseModel{ID: index},
-			Tipo:            models.TipoDescargoTramo(tipo),
-			SolicitudItemID: &solicitudItemID,
-			EsOpenTicket:    false,
-			EsModificacion:  false,
-		},
+	if isReutilizacion {
+		billete = ""
+	}
+
+	tramo := models.DescargoTramo{
+		BaseModel:       models.BaseModel{ID: index},
+		Tipo:            models.TipoDescargoTramo(tipo),
+		SolicitudItemID: &solicitudItemID,
+		Billete:         billete,
+		EsOpenTicket:    false,
+		EsModificacion:  false,
+	}
+
+	if pasajeID != "" {
+		tramo.PasajeID = &pasajeID
+	}
+
+	templateName := "descargo/components/tramo_fila_derecho"
+	if isReutilizacion {
+		templateName = "descargo/components/tramo_fila_reutilizado"
+	}
+
+	c.HTML(http.StatusOK, templateName, gin.H{
+		"Tipo":            tipo,
+		"Tramo":           tramo,
+		"IsReutilizacion": isReutilizacion,
 	})
 }
 

@@ -217,7 +217,7 @@ func (s *DescargoDerechoService) UpdateDerecho(ctx context.Context, descargoID s
 	// 1. Basic Metadata
 	descargo.Observaciones = req.Observaciones
 	// No cambiar automáticamente a EN_REVISION, dejar que el usuario lo haga manualmente desde 'Show'
-	if descargo.Estado != models.EstadoDescargoRechazado {
+	if descargo.Estado != models.EstadoDescargoRechazado && descargo.Estado != models.EstadoDescargoOpenTicket {
 		descargo.Estado = models.EstadoDescargoBorrador
 	}
 
@@ -375,6 +375,7 @@ func (s *DescargoDerechoService) UpdateDerecho(ctx context.Context, descargoID s
 					ArchivoPaseAbordo: row.ArchivoPath,
 					EsOpenTicket:      row.EsOpenTicket,
 					EsModificacion:    row.EsModificacion,
+					EsReutilizado:     row.EsReutilizado,
 					TramoNombre:       original.TramoNombre,
 					Seq:               row.Seq,
 				}
@@ -400,6 +401,7 @@ func (s *DescargoDerechoService) UpdateDerecho(ctx context.Context, descargoID s
 			ArchivoPaseAbordo: row.ArchivoPath,
 			EsOpenTicket:      row.EsOpenTicket,
 			EsModificacion:    row.EsModificacion,
+			EsReutilizado:     row.EsReutilizado,
 			TramoNombre:       tramoNombre,
 			Seq:               row.Seq,
 		}

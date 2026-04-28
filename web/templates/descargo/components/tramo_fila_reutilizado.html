@@ -1,0 +1,220 @@
+{{ define "descargo/components/tramo_fila_reutilizado" }}
+  {{ $isLocked := .IsLocked }}
+  {{ $tramo := .Tramo }}
+
+
+  <tr
+    class="border-b border-neutral-100 last:border-0 hover:bg-neutral-50/50 transition-colors"
+    x-data="itineraryRow({
+      esOpenTicket: false,
+      esMod: false,
+      esReutilizacion: true,
+      tramo_nombre: '{{ if $tramo.ID }}{{ $tramo.TramoNombre }}{{ end }}',
+      route_id: '{{ if $tramo.ID }}{{ deref $tramo.RutaID }}{{ end }}',
+      origen_iata: '{{ if $tramo.ID }}{{ $tramo.GetOrigenIATA }}{{ end }}',
+      destino_iata: '{{ if $tramo.ID }}{{ $tramo.GetDestinoIATA }}{{ end }}',
+      billete: '{{ if $tramo.ID }}{{ $tramo.Billete }}{{ end }}',
+      vuelo: '{{ if $tramo.ID }}{{ $tramo.NumeroVuelo }}{{ end }}',
+      pase: '{{ if $tramo.ID }}{{ $tramo.NumeroPaseAbordo }}{{ end }}',
+      serverFile: '{{ if $tramo.ID }}{{ $tramo.ArchivoPaseAbordo }}{{ end }}'
+    })"
+    x-bind="bindFade"
+  >
+    <!-- CAMPOS OCULTOS DE PERSISTENCIA -->
+    <input type="hidden" name="tramo_tipo[]" value="{{ $tramo.Tipo }}" />
+    <input type="hidden" name="tramo_id[]" value="{{ $tramo.ID }}" />
+    <input type="hidden" name="tramo_ruta_id[]" :value="route_id" />
+    <input type="hidden" name="tramo_nombre[]" :value="tramo_nombre" />
+    <input type="hidden" name="tramo_origen_iata[]" :value="origen_iata" />
+    <input type="hidden" name="tramo_destino_iata[]" :value="destino_iata" />
+    <input type="hidden" name="tramo_pasaje_id[]" value="{{ if $tramo.PasajeID }}{{ $tramo.PasajeID }}{{ end }}" />
+    <input
+      type="hidden"
+      name="tramo_solicitud_item_id[]"
+      value="{{ if $tramo.SolicitudItemID }}{{ $tramo.SolicitudItemID }}{{ end }}"
+    />
+
+    <!-- Estos campos siempre son fijos para reutilización -->
+    <input type="hidden" name="tramo_devolucion[]" value="false" />
+    <input type="hidden" name="tramo_modificacion[]" value="false" />
+    <input type="hidden" name="tramo_reutilizado[]" value="{{ $tramo.ID }}" />
+
+    <!-- COLUMNA RUTA -->
+    <td class="px-2 py-0">
+      <div
+        class="relative min-w-[220px]"
+        @searchable-select-change="tramo_nombre = $event.detail.label; origen_iata = $event.detail.origen_iata; destino_iata = $event.detail.destino_iata"
+        x-data="searchableSelect({
+          endpoint: '/api/rutas/search?atomic=true',
+          initialValue: '{{ deref $tramo.RutaID }}',
+          initialLabel: '{{ $tramo.TramoNombre }}',
+          placeholder: 'Seleccionar Ruta...'
+        })"
+        x-modelable="value"
+        x-model="route_id"
+      >
+        <div class="relative">
+          <div
+            @click="open = true; $nextTick(() => $refs.searchInput.focus())"
+            x-show="!open"
+            class="w-full bg-white border border-neutral-300 rounded px-2 py-1.5 text-[10px] cursor-pointer focus:ring-1 focus:ring-primary min-h-[38px] flex items-center justify-between transition-all hover:border-primary-300 shadow-sm"
+          >
+            <span
+              x-text="(label || 'Seleccionar Tramo')"
+              class="whitespace-pre-line font-bold text-neutral-800 uppercase leading-none"
+            ></span>
+            <i class="ph ph-caret-down text-neutral-400"></i>
+          </div>
+
+          <input
+            x-ref="searchInput"
+            type="text"
+            x-model.debounce.300ms="search"
+            x-show="open"
+            @click.away="open = false"
+            @keydown.escape="open = false"
+            @keydown.enter.prevent="if (filteredItems.length > 0) select(filteredItems[0])"
+            placeholder="Buscar tramo..."
+            class="w-full rounded border border-primary-500 bg-white py-1.5 px-2 shadow-sm focus:outline-none focus:ring-1 focus:ring-primary-500 text-[10px] font-bold uppercase"
+          />
+
+          <ul
+            x-show="open"
+            class="absolute z-[100] bottom-full mb-1 max-h-60 w-full overflow-auto rounded-md bg-white py-1 text-xs shadow-xl ring-1 ring-black ring-opacity-5 focus:outline-none"
+            x-cloak
+          >
+            <template x-for="item in filteredItems" :key="item.value">
+              <li
+                @click="select(item)"
+                class="relative cursor-default select-none py-2 px-3 text-neutral-900 hover:bg-primary hover:text-white transition-colors border-b border-neutral-100 last:border-0"
+              >
+                <span class="block font-bold uppercase whitespace-pre-line text-[10px] leading-tight" x-text="item.label"></span>
+              </li>
+            </template>
+            <li x-show="filteredItems.length === 0" class="py-2 px-3 text-neutral-500 italic text-[10px]">Sin resultados</li>
+          </ul>
+        </div>
+      </div>
+    </td>
+
+    <!-- COLUMNA FECHA -->
+    <td class="px-2 py-1">
+      <input
+        type="text"
+        name="tramo_fecha[]"
+        value="{{ $tramo.GetFechaStr }}"
+        {{ if $isLocked }}
+          readonly
+        {{ else }}
+          x-datepicker="{ position: 'top center', enableTime: true }"
+        {{ end }}
+        autocomplete="off"
+        class="w-full text-center text-[10px] border border-neutral-300 rounded py-0.5 px-0.5 h-9 {{ if $isLocked }}
+          bg-neutral-50 text-neutral-500 cursor-not-allowed
+        {{ end }}"
+      />
+    </td>
+
+    <!-- COLUMNA BILLETE (Editable para reutilización, ya que se emite uno nuevo) -->
+    <td class="px-2 py-1">
+      <input
+        type="text"
+        name="tramo_billete[]"
+        x-model="billete"
+        autocomplete="off"
+        class="w-full text-center text-[10px] border border-neutral-300 rounded py-0.5 px-1 h-9 font-bold text-neutral-800 focus:ring-1 focus:ring-primary shadow-sm"
+        placeholder="N° Billete"
+      />
+    </td>
+
+    <!-- COLUMNA VUELO -->
+    <td class="px-2 py-1">
+      <input
+        type="text"
+        name="tramo_vuelo[]"
+        x-model="vuelo"
+        autocomplete="off"
+        {{ if $isLocked }}readonly{{ end }}
+        class="w-full text-center text-[11px] border border-neutral-300 rounded py-0.5 px-1 h-9 transition-all {{ if $isLocked }}
+          bg-neutral-50 text-neutral-500 cursor-not-allowed
+        {{ end }}"
+        placeholder="Vuelo"
+      />
+    </td>
+
+    <!-- COLUMNA PASE -->
+    <td class="px-2 py-1">
+      <input
+        type="text"
+        name="tramo_pase_numero[]"
+        x-model="pase"
+        autocomplete="off"
+        {{ if $isLocked }}readonly{{ end }}
+        class="w-full text-center text-[11px] border border-neutral-300 rounded py-0.5 px-1 h-9 font-bold text-primary uppercase font-mono transition-all {{ if $isLocked }}
+          bg-neutral-50 text-neutral-500 cursor-not-allowed
+        {{ end }}"
+        placeholder="N° Pase"
+      />
+    </td>
+
+    <!-- COLUMNA ARCHIVO -->
+    <td class="px-2 py-1 text-center">
+      <div class="flex items-center justify-center h-full min-h-[45px]">
+        <div class="flex items-center justify-center gap-1.5 min-w-[120px] mx-auto">
+          <div class="w-9 h-9 flex-shrink-0" x-show="!fileName && !serverFile" x-transition>
+            {{ if not $isLocked }}
+              <div class="relative group">
+                <label
+                  class="cursor-pointer flex items-center justify-center h-9 w-9 rounded-md border-2 border-dashed transition-all duration-200 overflow-hidden shadow-sm border-neutral-200 bg-neutral-50 text-neutral-400 hover:border-primary-300 hover:bg-white"
+                >
+                  <input
+                    type="file"
+                    name="tramo_archivo_{{ $tramo.ID }}"
+                    accept="application/pdf"
+                    class="hidden"
+                    @change="await window.handleSingleUpload($event, $data); if($el.files[0]) { localUrl = URL.createObjectURL($el.files[0]) }"
+                  />
+                  <input type="hidden" name="tramo_archivo_existente_{{ $tramo.ID }}" value="{{ $tramo.ArchivoPaseAbordo }}" />
+                  <i class="ph ph-upload-simple text-xl font-bold text-neutral-400"></i>
+                </label>
+              </div>
+            {{ end }}
+          </div>
+          <div class="w-9 h-9 flex-shrink-0 flex items-center justify-center">
+            <template x-if="localUrl || serverFile">
+              <div class="flex items-center gap-1">
+                <button
+                  type="button"
+                  @click="if(localUrl) { window.open(localUrl, '_blank') } else { htmx.ajax('GET', '/preview-file?path=' + encodeURIComponent(serverFile), { target: '#modal-container' }) }"
+                  class="h-9 w-9 flex items-center justify-center rounded-md text-primary-600 hover:bg-primary-50 transition-all border border-neutral-100 bg-white shadow-xs"
+                >
+                  <i class="ph ph-eye text-xl"></i>
+                </button>
+                <button
+                  type="button"
+                  @click="removeFile('{{ $tramo.ID }}')"
+                  class="h-9 w-9 flex items-center justify-center rounded-md text-danger-600 hover:bg-danger-50 transition-all border border-danger-100 bg-white shadow-xs"
+                >
+                  <i class="ph ph-file-x text-xl"></i>
+                </button>
+              </div>
+            </template>
+          </div>
+        </div>
+      </div>
+    </td>
+
+    <!-- COLUMNA ELIMINAR -->
+    <td class="px-0 py-1 text-left">
+      {{ if not $isLocked }}
+        <button
+          type="button"
+          @click="$el.closest('tr').remove()"
+          class="text-neutral-400 hover:text-danger-600 transition-colors p-2"
+        >
+          <i class="ph ph-trash text-xl"></i>
+        </button>
+      {{ end }}
+    </td>
+  </tr>
+{{ end }}

@@ -10,8 +10,10 @@ type TipoDescargoTramo string
 const (
 	TipoTramoIdaOriginal        TipoDescargoTramo = "IDA_ORIGINAL"
 	TipoTramoIdaReprogramada    TipoDescargoTramo = "IDA_REPRO"
+	TipoTramoIdaReutilizada     TipoDescargoTramo = "IDA_REUT"
 	TipoTramoVueltaOriginal     TipoDescargoTramo = "VUELTA_ORIGINAL"
 	TipoTramoVueltaReprogramada TipoDescargoTramo = "VUELTA_REPRO"
+	TipoTramoVueltaReutilizada  TipoDescargoTramo = "VUELTA_REUT"
 )
 
 type DescargoTramo struct {
@@ -31,6 +33,7 @@ type DescargoTramo struct {
 	ArchivoPaseAbordo string            `gorm:"size:255"`
 	EsOpenTicket      bool              `gorm:"default:false"`
 	EsModificacion    bool              `gorm:"default:false"`
+	EsReutilizado     bool              `gorm:"default:false"`
 
 	OrigenIATA  *string  `gorm:"size:5;index" json:"origen_iata"`
 	Origen      *Destino `gorm:"foreignKey:OrigenIATA;references:IATA;<-:false" json:"origen"`
@@ -87,6 +90,11 @@ func (d DescargoTramo) IsOriginal() bool {
 func (d DescargoTramo) IsReprogramacion() bool {
 	upper := strings.ToUpper(string(d.Tipo))
 	return strings.HasSuffix(upper, "_REPRO") || strings.HasSuffix(upper, "_REPROG")
+}
+
+// IsReutilizacion returns true if this tramo is a reused segment (REUT).
+func (d DescargoTramo) IsReutilizacion() bool {
+	return strings.HasSuffix(strings.ToUpper(string(d.Tipo)), "_REUT")
 }
 
 // GetRutaOrigen extracts the origin from the routing label.
@@ -178,6 +186,7 @@ func (d DescargoTramo) HasChanges(other DescargoTramo) bool {
 		d.ArchivoPaseAbordo != other.ArchivoPaseAbordo ||
 		d.EsOpenTicket != other.EsOpenTicket ||
 		d.EsModificacion != other.EsModificacion ||
+		d.EsReutilizado != other.EsReutilizado ||
 		d.Seq != other.Seq {
 		return true
 	}

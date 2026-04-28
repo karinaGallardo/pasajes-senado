@@ -52,6 +52,7 @@ type CreateDescargoRequest struct {
 	TramoPaseNumero      []string                `form:"tramo_pase_numero[]"`
 	TramoDevolucion      []string                `form:"tramo_devolucion[]"`
 	TramoModificacion    []string                `form:"tramo_modificacion[]"`
+	TramoReutilizado     []string                `form:"tramo_reutilizado[]"`
 	TramoPasajeID        []string                `form:"tramo_pasaje_id[]"`
 	TramoSolicitudItemID []string                `form:"tramo_solicitud_item_id[]"`
 	TramoPaseArchivo     []*multipart.FileHeader `form:"tramo_archivo[]"`
@@ -78,6 +79,7 @@ type TramoRowDTO struct {
 	SolicitudItemID string
 	EsOpenTicket    bool
 	EsModificacion  bool
+	EsReutilizado   bool
 	ArchivoPath     string
 	Seq             int
 }
@@ -95,6 +97,10 @@ func (r *CreateDescargoRequest) ToTramoRows(archivoPaths []string) []TramoRowDTO
 	modMap := make(map[string]bool)
 	for _, id := range r.TramoModificacion {
 		modMap[id] = true
+	}
+	reutilizadoMap := make(map[string]bool)
+	for _, id := range r.TramoReutilizado {
+		reutilizadoMap[id] = true
 	}
 
 	for i := range count {
@@ -129,6 +135,7 @@ func (r *CreateDescargoRequest) ToTramoRows(archivoPaths []string) []TramoRowDTO
 			SolicitudItemID: get(r.TramoSolicitudItemID, i),
 			EsOpenTicket:    devoMap[rawID],
 			EsModificacion:  modMap[rawID],
+			EsReutilizado:   reutilizadoMap[rawID],
 			ArchivoPath:     get(archivoPaths, i),
 			Seq:             i + 1,
 		})
@@ -154,6 +161,7 @@ func (r *CreateDescargoRequest) Bind(c *gin.Context) error {
 	r.TramoPaseNumero = c.PostFormArray("tramo_pase_numero[]")
 	r.TramoDevolucion = c.PostFormArray("tramo_devolucion[]")
 	r.TramoModificacion = c.PostFormArray("tramo_modificacion[]")
+	r.TramoReutilizado = c.PostFormArray("tramo_reutilizado[]")
 	r.TramoPasajeID = c.PostFormArray("tramo_pasaje_id[]")
 	r.TramoSolicitudItemID = c.PostFormArray("tramo_solicitud_item_id[]")
 	r.TramoOrigenIATA = c.PostFormArray("tramo_origen_iata[]")

@@ -84,6 +84,8 @@ func SetupRoutes(r *gin.Engine, container *app.Container, loginLimiter *middlewa
 		protected.GET("/descargos/derecho/nuevo/:id", descargoDerechoCtrl.Store)
 		protected.GET("/descargos/derecho/:id", descargoDerechoCtrl.Show)
 		protected.GET("/descargos/derecho/:id/editar", descargoDerechoCtrl.Edit)
+		protected.GET("/descargos/derecho/:id/completar", descargoDerechoCtrl.Completar)
+		protected.POST("/descargos/derecho/:id/completar-reutilizacion", descargoDerechoCtrl.UpdateReutilizacion)
 		protected.POST("/descargos/derecho/:id/actualizar", descargoDerechoCtrl.Update)
 		protected.GET("/descargos/derecho/:id/imprimir", descargoDerechoCtrl.Print)
 		protected.GET("/descargos/derecho/:id/previsualizar", descargoDerechoCtrl.Preview)

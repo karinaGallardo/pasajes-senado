@@ -13,12 +13,13 @@ const (
 )
 
 type DescargoPermissions struct {
-	CanEdit    bool
-	CanSubmit  bool
-	CanApprove bool
-	CanReject  bool
-	CanRevert  bool
-	CanPrint   bool
+	CanEdit               bool
+	CanSubmit             bool
+	CanApprove            bool
+	CanReject             bool
+	CanRevert             bool
+	CanPrint              bool
+	CanCompleteOpenTicket bool
 }
 
 type Descargo struct {
@@ -281,12 +282,13 @@ func (d Descargo) GetPermissions(u ...*Usuario) DescargoPermissions {
 	canMod := d.IsEditable() && d.isOwnerOrAdmin(user)
 
 	return DescargoPermissions{
-		CanEdit:    canMod,
-		CanSubmit:  canMod,
-		CanApprove: d.CanApprove(user),
-		CanReject:  d.CanReject(user),
-		CanRevert:  d.CanRevert(user),
-		CanPrint:   d.Estado != EstadoDescargoBorrador,
+		CanEdit:               canMod,
+		CanSubmit:             canMod,
+		CanApprove:            d.CanApprove(user),
+		CanReject:             d.CanReject(user),
+		CanRevert:             d.CanRevert(user),
+		CanPrint:              d.Estado != EstadoDescargoBorrador,
+		CanCompleteOpenTicket: d.Estado == EstadoDescargoOpenTicket && d.isOwnerOrAdmin(user),
 	}
 }
 

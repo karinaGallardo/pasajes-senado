@@ -31,14 +31,24 @@
           </template>
           <span x-text="loadingPreview ? 'Generando...' : 'Ver / Imprimir PV-05'"></span>
         </button>
-        {{ if .Descargo.CanEdit .AuthUser }}
-          <a
-            href="/descargos/derecho/{{ .Descargo.ID }}/editar"
-            class="inline-flex items-center px-4 py-2 border border-primary-200 shadow-sm text-xs font-black rounded-md text-primary-700 bg-primary-50 hover:bg-primary-100 transition-all active:scale-95 uppercase tracking-tight"
-          >
-            <i class="ph ph-note-pencil mr-2 text-lg"></i>
-            Editar Descargo
-          </a>
+        {{ if .Descargo.IsEditable }}
+          {{ if eq .Descargo.Estado "OPEN_TICKET" }}
+            <a
+              href="/descargos/derecho/{{ .Descargo.ID }}/completar"
+              class="inline-flex items-center px-4 py-2 border border-secondary-200 shadow-sm text-xs font-black rounded-md text-secondary-700 bg-secondary-50 hover:bg-secondary-100 transition-all active:scale-95 uppercase tracking-tight"
+            >
+              <i class="ph ph-arrows-clockwise mr-2 text-lg"></i>
+              Completar Reutilización
+            </a>
+          {{ else }}
+            <a
+              href="/descargos/derecho/{{ .Descargo.ID }}/editar"
+              class="inline-flex items-center px-4 py-2 border border-primary-200 shadow-sm text-xs font-black rounded-md text-primary-700 bg-primary-50 hover:bg-primary-100 transition-all active:scale-95 uppercase tracking-tight"
+            >
+              <i class="ph ph-note-pencil mr-2 text-lg"></i>
+              Editar Descargo
+            </a>
+          {{ end }}
         {{ end }}
         <a
           href="/solicitudes/derecho/{{ .Descargo.SolicitudID }}/detalle"
@@ -172,7 +182,7 @@
             Acciones del Descargo
           </h3>
           <div class="space-y-3">
-            <!-- User Actions: BORRADOR / RECHAZADO -->
+            <!-- User Actions: BORRADOR / RECHAZADO / OPEN_TICKET -->
             {{ if .Descargo.CanSubmit .AuthUser }}
               <form
                 action="/descargos/derecho/{{ .Descargo.ID }}/enviar"
@@ -191,6 +201,26 @@
                   <span x-show="loading">Enviando...</span>
                 </button>
               </form>
+            {{ end }}
+
+            {{ if .Descargo.IsEditable }}
+              {{ if eq .Descargo.Estado "OPEN_TICKET" }}
+                <a
+                  href="/descargos/derecho/{{ .Descargo.ID }}/completar"
+                  class="w-full inline-flex justify-center items-center px-2 py-2 border border-secondary-300 text-xs font-black rounded-md text-secondary-700 bg-secondary-50 hover:bg-secondary-100 transition-all shadow-sm active:scale-95 uppercase tracking-tight"
+                >
+                  <i class="ph ph-arrows-clockwise mr-2 text-lg"></i>
+                  Completar Reutilización
+                </a>
+              {{ else }}
+                <a
+                  href="/descargos/derecho/{{ .Descargo.ID }}/editar"
+                  class="w-full inline-flex justify-center items-center px-2 py-2 border border-neutral-300 text-xs font-black rounded-md text-neutral-700 bg-white hover:bg-neutral-50 transition-all shadow-sm active:scale-95 uppercase tracking-tight"
+                >
+                  <i class="ph ph-pencil-line mr-2 text-lg"></i>
+                  Editar Descargo
+                </a>
+              {{ end }}
             {{ end }}
 
             {{ if .Descargo.CanApprove .AuthUser }}

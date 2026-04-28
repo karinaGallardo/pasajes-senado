@@ -1,0 +1,683 @@
+{{ define "descargo/derecho/completar" }}
+  {{ template "layout_header" . }}
+
+
+  <div
+    class="max-w-4xl mx-auto"
+    x-data="{
+      submitting: false,
+      processingImages: false,
+      hasModIda: {{ $hIda := false }}{{ range .Ida }}
+      {{ if and .IsOriginal .EsModificacion }}{{ $hIda = true }}{{ end }}
+    {{ end }}{{ $hIda }},
+      hasModVuelta: {{ $hVuelta := false }}{{ range .Vuelta }}
+      {{ if and .IsOriginal .EsModificacion }}{{ $hVuelta = true }}{{ end }}
+    {{ end }}{{ $hVuelta }},
+      updateMods() {
+        this.hasModIda = !!Array.from(document.querySelectorAll(`#itin-ida-original-container input[name='tramo_modificacion[]']`)).some(i => i.checked);
+        this.hasModVuelta = !!Array.from(document.querySelectorAll(`#itin-vuelta-original-container input[name='tramo_modificacion[]']`)).some(i => i.checked);
+      },
+      totalADevolver: {{ .Descargo.GetTotalDevolucionPasajes }},
+      devolucionesActivas: [
+        {{ range .Descargo.Solicitud.Items }}
+      {{ $tipo := .Tipo }}
+      {{ range .Pasajes }}
+        {{ if gt .MontoReembolso 0.0 }}
+          { billete: '{{ .NumeroBillete }}', tipo: '{{ $tipo }}' },
+        {{ end }}
+      {{ end }}
+    {{ end }}
+      ],
+      formatCurrency(val) {
+        if (isNaN(val)) return '0.00';
+        return parseFloat(val).toFixed(2);
+      },
+      updateTotalDevolucion() {
+        let total = 0;
+        let activos = [];
+        document.querySelectorAll(`input[name='liquidacion_monto_devolucion[]']`).forEach(input => {
+          let val = parseFloat(input.value) || 0;
+          total += val;
+          if (val > 0) {
+            activos.push({
+              billete: input.getAttribute('data-billete'),
+              tipo: input.getAttribute('data-tipo')
+            });
+          }
+        });
+        this.totalADevolver = total;
+        this.devolucionesActivas = activos;
+      },
+      formatBillete(val) {
+        if (!val) return '';
+        if (val.length <= 5) return val;
+        return val.substring(0, 2) + '-' + val.substring(val.length - 3);
+      }
+    }"
+    @update-totals.window="updateMods()"
+  >
+    <div class="md:flex md:items-center md:justify-between mb-6">
+      <div class="flex-1 min-w-0">
+        <h2 class="text-2xl font-black text-neutral-900 tracking-tight">Completar Reutilización #{{ .Descargo.Codigo }}</h2>
+      </div>
+      <div class="mt-4 flex flex-wrap items-center gap-3">
+        <button
+          type="submit"
+          form="descargo-form"
+          :disabled="submitting || processingImages"
+          class="inline-flex items-center px-6 py-2.5 shadow-md text-sm font-bold rounded-sm text-white bg-success-600 hover:bg-success-700 disabled:opacity-75 disabled:cursor-not-allowed transition-all active:scale-95"
+        >
+          <span x-show="!submitting && !processingImages" class="flex items-center gap-2">
+            <i class="ph ph-floppy-disk text-sm"></i>
+            Actualizar Descargo
+          </span>
+          <span x-show="submitting || processingImages" x-cloak class="flex items-center">
+            <i class="ph ph-circle-notch animate-spin mr-2"></i>
+            Procesando...
+          </span>
+        </button>
+        <a
+          href="/descargos/derecho/{{ .Descargo.ID }}"
+          class="inline-flex items-center px-6 py-2.5 border border-neutral-300 shadow-sm text-sm font-bold rounded-sm text-neutral-700 bg-white hover:bg-neutral-50 transition-colors"
+        >
+          <i class="ph ph-arrow-left text-sm text-neutral-400 mr-2"></i>
+          Volver
+        </a>
+      </div>
+    </div>
+
+    <div class="bg-white rounded-md border border-neutral-200 overflow-hidden shadow-sm mb-0">
+      <!-- Header de la tarjeta con color institucional -->
+      <div class="bg-neutral-50 px-4 py-1 border-b border-neutral-200 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i class="ph ph-info text-primary-600 text-lg"></i>
+          <span class="text-[11px] font-bold text-neutral-700 uppercase tracking-wider">
+            Detalles de la Solicitud
+            #{{ .Solicitud.Codigo }}
+          </span>
+        </div>
+        <span
+          class="px-2.5 py-1 rounded-sm text-[10px] font-bold uppercase tracking-wide bg-primary-100 text-primary-800 border border-primary-200"
+        >
+          {{ .Solicitud.GetConceptoNombre }}
+        </span>
+      </div>
+
+      <div class="p-5 grid grid-cols-1 md:grid-cols-4 gap-8">
+        <!-- Datos Personales -->
+        <div class="col-span-1 space-y-4">
+          <div>
+            <span class="text-[10px] font-bold text-neutral-400 uppercase block mb-1 tracking-tight">Beneficiario</span>
+            <p class="text-xs font-bold text-neutral-800 uppercase">{{ .Solicitud.Usuario.GetNombreCompleto }}</p>
+          </div>
+          <div>
+            <span class="text-[10px] font-bold text-neutral-400 uppercase block mb-1 tracking-tight">Tipo trámite</span>
+            <p class="text-xs font-medium text-neutral-600 uppercase">{{ .Solicitud.GetTipoNombre }}</p>
+          </div>
+        </div>
+
+        <!-- Ruta -->
+        <div class="col-span-1 border-l border-neutral-100 pl-8 space-y-4">
+          <div>
+            <span class="text-[10px] font-bold text-neutral-400 uppercase block mb-2 tracking-tight">Tramo Autorizado</span>
+            <div class="space-y-1.5">
+              <div class="flex items-center gap-2">
+                <i class="ph ph-airplane-takeoff text-neutral-400"></i>
+                <span class="text-xs font-bold text-neutral-700 uppercase">{{ .Solicitud.GetOrigenLabel }}</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <i class="ph ph-airplane-landing text-primary-600"></i>
+                <span class="text-sm font-black text-neutral-900 uppercase">{{ .Solicitud.GetDestinoLabel }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Cronograma -->
+        <div class="col-span-2 border-l border-neutral-100 pl-2 bg-neutral-50/50 flex flex-col justify-center py-0 px-2">
+          <span class="text-[10px] font-bold text-neutral-400 uppercase block mb-3 tracking-tight">
+            Cronograma de Viaje Planificado
+          </span>
+          <div class="flex items-center gap-4">
+            <div class="flex-1 bg-white p-3 rounded border border-neutral-200">
+              <span class="text-[9px] font-bold text-neutral-400 uppercase block mb-1">Fecha Ida</span>
+              <div class="flex items-center gap-2 text-primary-700">
+                <i class="ph ph-calendar text-lg"></i>
+                <span class="text-sm font-black tracking-tight">
+                  {{ if .Solicitud.GetFechaIda }}{{ .Solicitud.GetFechaIda.Format "02/01/2006" }}{{ else }}-{{ end }}
+                </span>
+              </div>
+            </div>
+            <i class="ph ph-arrow-right text-neutral-300"></i>
+            <div class="flex-1 bg-white p-3 rounded border border-neutral-200">
+              <span class="text-[9px] font-bold text-neutral-400 uppercase block mb-1">Fecha Retorno</span>
+              <div class="flex items-center gap-2 text-primary-700">
+                <i class="ph ph-calendar text-lg"></i>
+                <span class="text-sm font-black tracking-tight">
+                  {{ if .Solicitud.GetFechaVuelta }}{{ .Solicitud.GetFechaVuelta.Format "02/01/2006" }}{{ else }}-{{ end }}
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {{ if .Descargo.Observaciones }}
+        <div class="bg-danger-50 border-t border-danger-200 p-4">
+          <div class="flex items-start gap-3">
+            <div class="mt-0.5 w-5 h-5 rounded bg-danger-600 flex items-center justify-center flex-shrink-0">
+              <i class="ph ph-warning-bold text-white text-xs"></i>
+            </div>
+            <div>
+              <h4 class="text-[10px] font-bold text-danger-800 uppercase tracking-widest leading-none mb-1">
+                Observaciones de la Revisión
+              </h4>
+              <p class="text-xs text-danger-900 font-bold leading-relaxed">{{ .Descargo.Observaciones }}</p>
+            </div>
+          </div>
+        </div>
+      {{ end }}
+    </div>
+
+    <form
+      id="descargo-form"
+      action="/descargos/derecho/{{ .Descargo.ID }}/completar-reutilizacion"
+      method="POST"
+      enctype="multipart/form-data"
+      class="bg-white shadow-xl rounded-md overflow-hidden border border-neutral-200 mt-2"
+      @submit="submitting = true"
+    >
+      <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
+      <input type="hidden" name="id" value="{{ .Descargo.ID }}" />
+      <input type="hidden" name="solicitud_id" value="{{ .Descargo.SolicitudID }}" />
+
+      <div class="">
+        <!-- Itinerario -->
+        <div class="">
+          <!-- TRAMOS ORIGINALES OCULTOS (Necesarios para que el POST no los borre) -->
+          <div style="display: none;">
+            {{ if .Solicitud.GetItemIda }}
+              <div class="pb-6 bg-white border border-neutral-200 rounded-b-md overflow-hidden">
+                <div class="py-0 space-y-3">
+                  <div class="space-y-3">
+                    <table class="w-full table-fixed divide-y divide-neutral-200">
+                      <tbody id="itin-ida-original-container" class="divide-y divide-neutral-100 border-b last:border-0 w-full">
+                        {{ range .Ida }}
+                          {{ if .IsOriginal }}
+                            {{ template "descargo/components/tramo_fila_derecho" (dict "Tramo" . "IsLocked" true) }}
+                          {{ end }}
+                        {{ end }}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div class="space-y-3">
+                    <table class="w-full table-fixed divide-y divide-neutral-200">
+                      <tbody id="itin-ida-repro-container" class="divide-y divide-neutral-100 border-b last:border-0 w-full">
+                        {{ range .Ida }}
+                          {{ if .IsReprogramacion }}
+                            {{ template "descargo/components/tramo_fila_derecho" (dict "Tramo" . "IsLocked" true) }}
+                          {{ end }}
+                        {{ end }}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            {{ end }}
+
+            {{ if .Solicitud.GetItemVuelta }}
+              <div class="pb-6 mt-2 bg-white border border-neutral-200 rounded-b-md overflow-hidden">
+                <div class="py-0 space-y-3">
+                  <div class="space-y-3">
+                    <table class="w-full table-fixed divide-y divide-neutral-200">
+                      <tbody
+                        id="itin-vuelta-original-container"
+                        class="divide-y divide-neutral-100 border-b last:border-0 w-full"
+                      >
+                        {{ range .Vuelta }}
+                          {{ if .IsOriginal }}
+                            {{ template "descargo/components/tramo_fila_derecho" (dict "Tramo" . "IsLocked" true) }}
+                          {{ end }}
+                        {{ end }}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div class="space-y-3">
+                    <table class="w-full table-fixed">
+                      <tbody id="itin-vuelta-repro-container">
+                        {{ range .Vuelta }}
+                          {{ if .IsReprogramacion }}
+                            {{ template "descargo/components/tramo_fila_derecho" (dict "Tramo" . "IsLocked" true) }}
+                          {{ end }}
+                        {{ end }}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            {{ end }}
+          </div>
+
+          <!-- REUTILIZACIÓN DE PASAJES (OPEN TICKET EXCLUSIVO) -->
+          <div class="px-6 py-6 border-b border-neutral-100 bg-secondary-50/20 mb-6">
+            <div class="flex items-start gap-4 mb-4">
+              <div
+                class="w-10 h-10 rounded-full bg-secondary-100 flex items-center justify-center flex-shrink-0 border border-secondary-200 shadow-sm"
+              >
+                <i class="ph ph-arrows-clockwise text-secondary-600 text-xl font-bold"></i>
+              </div>
+              <div>
+                <h3 class="text-sm font-black text-neutral-900 uppercase tracking-widest flex items-center gap-2">
+                  REUTILIZACIÓN DE PASAJES (OPEN TICKET)
+                </h3>
+                <p class="text-[11px] text-neutral-500 font-medium leading-relaxed mt-1">
+                  A continuación se listan los tramos marcados como
+                  <strong>Open Ticket</strong>
+                  . Programe los nuevos vuelos tomados utilizando estos billetes.
+                </p>
+              </div>
+            </div>
+
+            <div class="space-y-6 mt-4">
+              {{ range $idx, $item := .Solicitud.Items }}
+                {{ range $pIdx, $p := $item.Pasajes }}
+                  <!-- Verificar si este pasaje tiene tramos en Open Ticket -->
+                  {{ $pasajeID := $p.ID }}
+                  {{ $hasOpen := false }}
+                  {{ range $.Descargo.Tramos }}
+                    {{ if and .EsOpenTicket (eq (deref .PasajeID) $pasajeID) }}
+                      {{ $hasOpen = true }}
+                    {{ end }}
+                  {{ end }}
+
+                  {{ if $hasOpen }}
+                    <div class="bg-white rounded-lg border border-secondary-200 overflow-hidden shadow-sm">
+                      <div class="bg-secondary-100/50 px-4 py-3 border-b border-secondary-200 flex items-center justify-between">
+                        <div class="flex flex-col">
+                          <div class="flex items-center gap-2">
+                            <i class="ph ph-ticket text-secondary-600 text-lg"></i>
+                            <span class="text-sm font-black uppercase text-secondary-900">
+                              Billete N°
+                              {{ $p.NumeroBillete }}
+                            </span>
+                            <span
+                              class="px-2 py-0.5 rounded bg-secondary-200 text-secondary-800 text-[9px] font-black uppercase tracking-tighter"
+                            >
+                              Open Ticket
+                            </span>
+                          </div>
+                          <span class="text-[10px] text-secondary-600 font-bold uppercase tracking-tight mt-0.5">
+                            Ruta Original:
+                            {{ $p.GetRutaDisplay }}
+                          </span>
+                        </div>
+                        {{ $newTipoFila := ternary (eq $item.Tipo "IDA") "IDA_REUT" "VUELTA_REUT" }}
+                        <button
+                          type="button"
+                          hx-get="/descargos/derecho/nueva-fila?tipo={{ $newTipoFila }}&solicitud_item_id={{ $item.ID }}&pasaje_id={{ $p.ID }}&billete={{ $p.NumeroBillete }}&is_reutilizacion=true"
+                          hx-target="#itin-reutilizacion-{{ $p.ID }}"
+                          hx-swap="beforeend"
+                          class="text-[10px] bg-secondary-600 text-white font-black px-4 py-2 rounded-md hover:bg-secondary-700 transition-all flex items-center gap-2 shadow-sm active:scale-95"
+                        >
+                          <i class="ph ph-plus-circle text-lg"></i>
+                          Programar Nuevo Tramo
+                        </button>
+                      </div>
+
+                      <!-- Tramos Originales Marcados como Open (Solo Lectura para Referencia) -->
+                      <div class="bg-neutral-50/50 border-b border-neutral-100">
+                        {{ range $.Descargo.Tramos }}
+                          {{ if and .EsOpenTicket (eq (deref .PasajeID) $pasajeID) }}
+                            <div class="flex items-center justify-between px-4 py-2 border-l-4 border-danger-400 bg-danger-50/10">
+                              <div class="flex items-center gap-4">
+                                <span class="text-[10px] font-black text-danger-700 uppercase italic">Tramo No Utilizado:</span>
+                                <span class="text-xs font-bold text-neutral-600 uppercase">{{ .GetRutaDisplay }}</span>
+                                <span class="text-[10px] text-neutral-400 font-medium">({{ .GetFechaStr }})</span>
+                              </div>
+                              <span
+                                class="text-[9px] font-black text-danger-500 uppercase tracking-widest bg-white px-2 py-0.5 rounded border border-danger-100"
+                              >
+                                Anulado
+                              </span>
+                            </div>
+                          {{ end }}
+                        {{ end }}
+                      </div>
+
+                      <div class="p-3">
+                        <table class="w-full table-fixed divide-y divide-neutral-200">
+                          <colgroup>
+                            <col class="w-auto" />
+                            <col class="w-[128px]" />
+                            <col class="w-[160px]" />
+                            <col class="w-[80px]" />
+                            <col class="w-[70px]" />
+                            <col class="w-[110px]" />
+                            <col class="w-[45px] text-center" />
+                          </colgroup>
+                          <thead class="bg-neutral-50/50 text-[9px] font-bold text-neutral-400 uppercase">
+                            <tr>
+                              <th class="px-2 py-1 text-left">Nueva Ruta / Tramo</th>
+                              <th class="px-2 py-1 text-left">Fecha</th>
+                              <th class="px-2 py-1 text-left">Billete</th>
+                              <th class="px-2 py-1 text-left">Vuelo</th>
+                              <th class="px-2 py-1 text-center">Pase</th>
+                              <th class="px-2 py-1 text-center">PDF</th>
+                              <th></th>
+                            </tr>
+                          </thead>
+                          <tbody id="itin-reutilizacion-{{ $p.ID }}" class="divide-y divide-neutral-100">
+                            <!-- Listar tramos reprogramados YA existentes (post OpenTicket) para este billete -->
+                            {{ range $.Descargo.Tramos }}
+                              {{ if and (not .EsOpenTicket) (or .IsReprogramacion .IsReutilizacion) (eq (deref .PasajeID) $p.ID) }}
+                                {{ template "descargo/components/tramo_fila_reutilizado" (dict "Tramo" . "IsLocked" false) }}
+                              {{ end }}
+                            {{ end }}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  {{ end }}
+                {{ end }}
+              {{ end }}
+            </div>
+          </div>
+
+          <!-- SECCIÓN DE DEVOLUCIÓN POR DIFERENCIA DE TARIFA -->
+          <div class="px-6 py-6 border-t border-neutral-100 bg-amber-50/20">
+            <div class="flex items-start gap-4 mb-6">
+              <div
+                class="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0 border border-amber-200 shadow-sm"
+              >
+                <i class="ph ph-bank text-amber-600 text-xl font-bold"></i>
+              </div>
+              <div>
+                <h3 class="text-sm font-black text-neutral-900 uppercase tracking-widest flex items-center gap-2">
+                  DEVOLUCIÓN POR DIFERENCIA DE TARIFA
+                </h3>
+                <p class="text-[11px] text-neutral-500 font-medium leading-relaxed mt-1">
+                  Registre el monto de devolución por tarifa no utilizada por cada billete emitido si corresponde.
+                </p>
+              </div>
+            </div>
+
+            <div class="bg-white rounded-lg border border-neutral-200 overflow-hidden shadow-sm">
+              <table class="min-w-full divide-y divide-neutral-200">
+                <thead class="bg-neutral-50">
+                  <tr>
+                    <th class="px-4 py-3 text-left text-[10px] font-black text-neutral-500 uppercase tracking-widest">
+                      Detalle del Billete
+                    </th>
+                    <th class="px-4 py-3 text-right text-[10px] font-black text-neutral-500 uppercase tracking-widest">
+                      Costo Emisión
+                    </th>
+                    <th
+                      class="px-4 py-3 text-right text-[10px] font-black text-neutral-500 uppercase tracking-widest w-40 leading-tight"
+                    >
+                      DEVOLUCIÓN DIFERENCIA TARIFA PASAJE (Bs)
+                    </th>
+                    <th class="px-4 py-3 text-center text-[10px] font-black text-neutral-500 uppercase tracking-widest w-44">
+                      N° BOLETA DEPOSITO
+                    </th>
+                    <th class="px-4 py-3 text-center text-[10px] font-black text-neutral-500 uppercase tracking-widest w-20">
+                      BOLETA
+                    </th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-neutral-200">
+                  {{ range $idx, $item := .Solicitud.Items }}
+                    {{ range $pIdx, $p := $item.Pasajes }}
+                      {{ if $p.IsDischargeable }}
+                        <tr
+                          class="hover:bg-neutral-50/50 transition-colors"
+                          x-data="{ fileName: '', localUrl: '', serverFile: '{{ $p.ArchivoComprobante }}' }"
+                        >
+                          <td class="px-4 py-4">
+                            <input type="hidden" name="liquidacion_pasaje_id[]" value="{{ $p.ID }}" />
+                            <div class="flex flex-col gap-1">
+                              <span class="text-xs font-black text-neutral-900 flex items-center gap-1.5">
+                                <i class="ph ph-ticket text-neutral-400"></i>
+                                #{{ $p.NumeroBillete }}
+                              </span>
+                              <span class="text-[10px] text-neutral-500 font-bold uppercase tracking-tight italic">
+                                {{ $p.GetRutaDisplay }}
+                              </span>
+                            </div>
+                          </td>
+                          <td class="px-4 py-4 text-right">
+                            <span class="text-xs font-black text-neutral-500 tabular-nums">
+                              {{ printf "%.2f" $p.Costo }}
+                            </span>
+                          </td>
+
+                          <td class="px-4 py-4 text-right">
+                            <div class="relative group max-w-[120px] ml-auto">
+                              <span class="absolute left-2.5 top-1/2 -translate-y-1/2 text-[9px] font-black text-amber-400">
+                                Bs.
+                              </span>
+                              <input
+                                type="number"
+                                step="0.01"
+                                name="liquidacion_monto_devolucion[]"
+                                value="{{ printf "%.2f" $p.MontoReembolso }}"
+                                data-billete="{{ $p.NumeroBillete }}"
+                                data-tipo="{{ $item.Tipo }}"
+                                @input="updateTotalDevolucion()"
+                                class="w-full pl-7 pr-3 py-1.5 text-xs font-black border-2 border-amber-100 rounded-md focus:ring-2 focus:ring-amber-500 h-8 text-right bg-amber-50/30 text-amber-700 transition-all shadow-sm"
+                                placeholder="0.00"
+                              />
+                            </div>
+                          </td>
+
+                          <td class="px-4 py-4">
+                            <input
+                              type="text"
+                              name="liquidacion_nro_boleta[]"
+                              value="{{ $p.NroBoletaDeposito }}"
+                              placeholder="Ej: 12345678"
+                              class="w-full px-3 py-1.5 text-xs font-black border border-neutral-200 rounded-md h-8 text-center uppercase shadow-sm focus:border-amber-400 focus:ring-1 focus:ring-amber-400"
+                            />
+                          </td>
+
+                          <td class="px-4 py-4 text-center">
+                            <div class="flex items-center justify-center gap-1.5">
+                              <!-- Slot: Upload -->
+                              <div class="w-8 h-8 flex-shrink-0" x-show="!localUrl && !serverFile" x-transition>
+                                <div class="relative group">
+                                  <label
+                                    class="cursor-pointer flex items-center justify-center h-8 w-8 rounded-md border-2 border-dashed transition-all duration-200 overflow-hidden shadow-sm border-neutral-200 bg-neutral-50 text-neutral-400 hover:border-amber-400 hover:bg-white"
+                                  >
+                                    <input
+                                      type="file"
+                                      x-ref="fileInput_{{ $p.ID }}"
+                                      name="liquidacion_archivo_{{ $p.ID }}"
+                                      accept="application/pdf"
+                                      class="hidden"
+                                      @change="if($el.files[0]) {
+                                         if(!window.checkIsPDF($el.files[0])) { $el.value = ''; return; }
+                                         fileName = $el.files[0].name;
+                                         localUrl = URL.createObjectURL($el.files[0]);
+                                       }"
+                                    />
+
+                                    <input type="hidden" name="liquidacion_archivo_existente_{{ $p.ID }}" :value="serverFile" />
+
+                                    <i class="ph ph-upload-simple text-lg font-bold text-neutral-400"></i>
+                                  </label>
+                                </div>
+                              </div>
+
+                              <!-- Slot: Preview -->
+                              <div class="w-8 h-8 flex-shrink-0 flex items-center justify-center">
+                                <template x-if="localUrl || serverFile">
+                                  <button
+                                    type="button"
+                                    @click="if(localUrl) {
+                                       window.open(localUrl, '_blank')
+                                     } else {
+                                       htmx.ajax('GET', '/preview-file?path=' + encodeURIComponent(serverFile), { target: '#modal-container' })
+                                     }"
+                                    class="h-8 w-8 flex items-center justify-center rounded-md text-primary-600 hover:bg-primary-50 transition-all shadow-sm border border-neutral-100 bg-white"
+                                    title="Ver archivo"
+                                  >
+                                    <i class="ph ph-eye text-lg"></i>
+                                  </button>
+                                </template>
+                              </div>
+
+                              <!-- Slot: Delete -->
+                              <div class="w-8 h-8 flex-shrink-0 flex items-center justify-center">
+                                <template x-if="localUrl || serverFile">
+                                  <button
+                                    type="button"
+                                    @click="
+                                       Swal.fire({
+                                         title: '¿Eliminar archivo?',
+                                         text: 'Se removerá el comprobante adjunto. ¿Desea continuar?',
+                                         icon: 'warning',
+                                         showCancelButton: true,
+                                         confirmButtonColor: '#ef4444',
+                                         cancelButtonColor: '#737373',
+                                         confirmButtonText: 'Sí, eliminar',
+                                         cancelButtonText: 'Cancelar',
+                                         customClass: {
+                                           popup: 'rounded-md font-sans',
+                                           title: 'text-lg font-bold text-neutral-900',
+                                           htmlContainer: 'text-sm text-neutral-600',
+                                           confirmButton: 'rounded-md px-4 py-2 text-sm font-medium shadow-sm',
+                                           cancelButton: 'rounded-md px-4 py-2 text-sm font-medium shadow-sm'
+                                         }
+                                       }).then((result) => {
+                                         if (result.isConfirmed) {
+                                           fileName = '';
+                                           localUrl = '';
+                                           serverFile = '';
+                                           $refs['fileInput_{{ $p.ID }}'].value = '';
+                                         }
+                                       })
+                                     "
+                                    class="h-8 w-8 flex items-center justify-center rounded-md text-danger-600 hover:bg-danger-50 transition-all shadow-sm border border-neutral-100 bg-white"
+                                    title="Eliminar archivo"
+                                  >
+                                    <i class="ph ph-file-x text-lg"></i>
+                                  </button>
+                                </template>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      {{ end }}
+                    {{ end }}
+                  {{ end }}
+                </tbody>
+                <tfoot class="bg-neutral-50/50">
+                  <tr>
+                    <td
+                      colspan="2"
+                      class="px-4 py-3 text-right text-[10px] font-black text-neutral-500 uppercase tracking-widest"
+                    >
+                      Total a Devolver
+                    </td>
+                    <td class="px-4 py-3 text-right font-black text-amber-600 text-sm">
+                      Bs.
+                      <span x-text="formatCurrency(totalADevolver)"></span>
+                    </td>
+                    <td colspan="2"></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+
+            <!-- SECCIÓN DE DEPÓSITO (SKELETON / INFO) -->
+            <div class="mt-4 min-h-[160px]">
+              <!-- SKELETON: Se muestra cuando no hay devoluciones -->
+              <div
+                x-show="totalADevolver == 0"
+                class="bg-neutral-50/50 border border-neutral-100 border-dashed rounded-md p-12 flex flex-col items-center justify-center gap-3 transition-all duration-300"
+              >
+                <div class="w-12 h-12 rounded-full bg-neutral-100 flex items-center justify-center text-neutral-300">
+                  <i class="ph ph-bank text-2xl"></i>
+                </div>
+                <div class="text-center space-y-1">
+                  <p class="text-[11px] font-black text-neutral-400 uppercase tracking-widest">Procedimiento de Devolución</p>
+                  <p class="text-[10px] text-neutral-400 font-medium leading-relaxed max-w-[280px]">
+                    La información de la Cuenta Única del Tesoro y conceptos detallados aparecerán aquí cuando registre una
+                    diferencia de tarifa.
+                  </p>
+                </div>
+              </div>
+
+              <!-- INFO BANCARIA REAL: Se muestra con x-show totalADevolver > 0 -->
+              <div
+                class="bg-accent-50 border border-accent-100 rounded-md p-5 flex items-start gap-4 transition-all duration-300"
+                x-show="totalADevolver > 0"
+                x-transition:enter="transition ease-out duration-300"
+                x-transition:enter-start="opacity-0 transform -translate-y-2"
+                x-transition:enter-end="opacity-100 transform translate-y-0"
+              >
+                <div class="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+                  <!-- Izquierda: Instrucciones -->
+                  <div class="space-y-4">
+                    <div class="space-y-1.5">
+                      <h4 class="text-[10px] font-black text-accent-800 uppercase tracking-widest flex items-center gap-2">
+                        <i class="ph ph-bank text-lg"></i>
+                        Procedimiento de Devolución
+                      </h4>
+                      <p class="text-[10px] text-accent-600 font-medium leading-relaxed">
+                        Efectuar el depósito por el monto total de la devolución (Bs.) en la siguiente cuenta institucional:
+                      </p>
+                    </div>
+
+                    <!-- Tarjeta de Datos CUT -->
+                    <div class="bg-white/40 rounded-sm border border-accent-200 overflow-hidden">
+                      <div class="p-3 space-y-2.5">
+                        <div class="flex items-center justify-between">
+                          <span class="text-[9px] font-black text-accent-400 uppercase tracking-tighter">Cuenta</span>
+                          <span class="text-[10px] font-bold text-accent-900 uppercase">Cuenta Única del Tesoro (CUT)</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                          <span class="text-[9px] font-black text-accent-400 uppercase tracking-tighter">Código</span>
+                          <span class="text-[10px] font-bold text-accent-900 uppercase">3987069001</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                          <span class="text-[9px] font-black text-accent-400 uppercase tracking-tighter">Libreta</span>
+                          <span class="text-[10px] font-bold text-accent-900 uppercase">00099021001</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <!-- Derecha: Conceptos Dinámicos -->
+                  <div class="space-y-3">
+                    <h4 class="text-[9px] font-black text-accent-400 uppercase tracking-widest pl-1">
+                      Detalle de Conceptos por Pasaje
+                    </h4>
+                    <div class="grid grid-cols-1 gap-3">
+                      <template x-for="item in devolucionesActivas" :key="item.billete">
+                        <div class="bg-white/60 border border-accent-200 rounded-md p-3 shadow-sm hover:shadow-md transition-all">
+                          <span
+                            class="text-[9px] font-black text-accent-400 uppercase tracking-tighter block mb-1"
+                            x-text="item.tipo === 'IDA' ? 'Pasaje Ida' : 'Pasaje Vuelta'"
+                          ></span>
+                          <p
+                            class="text-[10px] font-black text-accent-900 leading-tight"
+                            x-text="'Devolución Pasaje ' + formatBillete(item.billete)"
+                          ></p>
+                        </div>
+                      </template>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <p class="text-[9px] text-accent-500 italic mt-1 px-5" x-show="totalADevolver > 0">
+                * Adjunte cada boleta de depósito al pasaje correspondiente en la tabla superior.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  {{ template "layout_footer" . }}
+{{ end }}
