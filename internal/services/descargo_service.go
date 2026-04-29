@@ -87,14 +87,19 @@ func (s *DescargoService) Submit(ctx context.Context, id, userID string) error {
 	}
 
 	oldState := descargo.Estado
-	descargo.Estado = models.EstadoDescargoEnRevision
+	newState := models.EstadoDescargoEnRevision
+	if oldState == models.EstadoDescargoOpenTicket {
+		newState = models.EstadoDescargoEnRevisionOT
+	}
+
+	descargo.Estado = newState
 	descargo.UpdatedBy = &userID
 	if err := s.repo.Update(ctx, descargo); err != nil {
 		return err
 	}
 
-	s.auditService.Log(ctx, "ENVIAR_DESCARGO", "descargo", id, string(oldState), string(models.EstadoDescargoEnRevision), "", "")
-	slog.Info("Descargo enviado a revisión", "id", id, "codigo", descargo.Codigo, "user_id", userID)
+	s.auditService.Log(ctx, "ENVIAR_DESCARGO", "descargo", id, string(oldState), string(newState), "", "")
+	slog.Info("Descargo enviado a revisión", "id", id, "codigo", descargo.Codigo, "user_id", userID, "state", newState)
 	return nil
 }
 
@@ -104,7 +109,7 @@ func (s *DescargoService) Approve(ctx context.Context, id string, userID string)
 		return err
 	}
 
-	if descargo.Estado != models.EstadoDescargoEnRevision {
+	if descargo.Estado != models.EstadoDescargoEnRevision && descargo.Estado != models.EstadoDescargoEnRevisionOT {
 		return errors.New("solo se pueden aprobar descargos en revisión")
 	}
 
@@ -150,7 +155,7 @@ func (s *DescargoService) Reject(ctx context.Context, id string, userID string, 
 		return err
 	}
 
-	if descargo.Estado != models.EstadoDescargoEnRevision {
+	if descargo.Estado != models.EstadoDescargoEnRevision && descargo.Estado != models.EstadoDescargoEnRevisionOT {
 		return errors.New("solo se pueden observar descargos en revisión")
 	}
 

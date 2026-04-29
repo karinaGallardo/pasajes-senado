@@ -1198,3 +1198,6 @@ func (s *Solicitud) GetChanges(old Solicitud) map[string]any {
 
 	return changes
 }
+func (s Solicitud) IsOpenTicket() bool {
+	return s.Descargo != nil && s.Descargo.Estado == EstadoDescargoOpenTicket
+}

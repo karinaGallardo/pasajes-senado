@@ -53,7 +53,7 @@ func (r *CupoDerechoRepository) FindByPeriodo(ctx context.Context, gestion, mes 
 		Preload("SenTitular").
 		Joins("JOIN usuarios ON usuarios.id = cupos_derecho.sen_titular_id").
 		Where("gestion = ? AND mes = ?", gestion, mes).
-		Order("usuarios.ap_paterno ASC, usuarios.ap_materno ASC, usuarios.nombres ASC").
+		Order("usuarios.lastname ASC, usuarios.surname ASC, usuarios.firstname ASC").
 		Find(&cupos).Error
 	return cupos, err
 }

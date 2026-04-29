@@ -5,11 +5,12 @@ import "time"
 type EstadoDescargo string
 
 const (
-	EstadoDescargoBorrador   EstadoDescargo = "BORRADOR"
-	EstadoDescargoEnRevision EstadoDescargo = "EN_REVISION"
-	EstadoDescargoRechazado  EstadoDescargo = "RECHAZADO"
-	EstadoDescargoOpenTicket EstadoDescargo = "OPEN_TICKET"
-	EstadoDescargoFinalizado EstadoDescargo = "FINALIZADO"
+	EstadoDescargoBorrador     EstadoDescargo = "BORRADOR"
+	EstadoDescargoEnRevision   EstadoDescargo = "EN_REVISION"
+	EstadoDescargoRechazado    EstadoDescargo = "RECHAZADO"
+	EstadoDescargoOpenTicket   EstadoDescargo = "OPEN_TICKET"
+	EstadoDescargoEnRevisionOT EstadoDescargo = "EN_REVISION_OT"
+	EstadoDescargoFinalizado   EstadoDescargo = "FINALIZADO"
 )
 
 type DescargoPermissions struct {
@@ -220,6 +221,14 @@ func (e EstadoDescargo) Info() EstadoDescargoInfo {
 			ColorClass:  "border-secondary-400",
 			BadgeClass:  "bg-secondary-50 text-secondary-700 border-secondary-100",
 			Icon:        "ph ph-calendar-plus",
+		}
+	case EstadoDescargoEnRevisionOT:
+		return EstadoDescargoInfo{
+			Nombre:      "En Revisión (Reutilización)",
+			Descripcion: "Los nuevos tramos han sido registrados y están esperando validación administrativa.",
+			ColorClass:  "border-indigo-400",
+			BadgeClass:  "bg-indigo-50 text-indigo-700 border-indigo-100",
+			Icon:        "ph ph-magnifying-glass-plus",
 		}
 	case EstadoDescargoFinalizado:
 		return EstadoDescargoInfo{

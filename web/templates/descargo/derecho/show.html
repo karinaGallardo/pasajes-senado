@@ -194,10 +194,20 @@
                 <button
                   type="submit"
                   :disabled="loading"
-                  class="w-full inline-flex justify-center items-center px-2 py-2 border border-transparent text-xs font-black rounded-md text-white bg-primary hover:bg-primary-600 transition-all shadow-md active:scale-95 disabled:opacity-50 uppercase tracking-tight cursor-pointer"
+                  class="w-full inline-flex justify-center items-center px-2 py-2 border border-transparent text-xs font-black rounded-md text-white {{ if eq .Descargo.Estado `OPEN_TICKET` }}
+                    bg-indigo-600 hover:bg-indigo-700
+                  {{ else }}
+                    bg-primary hover:bg-primary-600
+                  {{ end }} transition-all shadow-md active:scale-95 disabled:opacity-50 uppercase tracking-tight cursor-pointer"
                 >
                   <i class="ph ph-paper-plane-tilt mr-2 text-lg" x-show="!loading"></i>
-                  <span x-show="!loading">Enviar a Revisión</span>
+                  <span x-show="!loading">
+                    {{ if eq .Descargo.Estado "OPEN_TICKET" }}
+                      Enviar Revisión Reutilización
+                    {{ else }}
+                      Enviar a Revisión
+                    {{ end }}
+                  </span>
                   <span x-show="loading">Enviando...</span>
                 </button>
               </form>

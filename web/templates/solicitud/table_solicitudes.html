@@ -136,14 +136,23 @@
             </td>
             <td class="text-right">
               <div class="flex items-center justify-end gap-2">
-                {{ if .IsOficial }}
-                  <a href="/solicitudes/oficial/{{ .ID }}/detalle" class="btn-md btn-white rounded-sm uppercase tracking-wider">
-                    Ver
+                {{ if and .IsOpenTicket (not .IsOficial) }}
+                  <a
+                    href="/descargos/derecho/{{ .Descargo.ID }}/completar"
+                    class="btn-sm btn-primary rounded-sm uppercase tracking-wider"
+                  >
+                    Completar
                   </a>
                 {{ else }}
-                  <a href="/solicitudes/derecho/{{ .ID }}/detalle" class="btn-md btn-white rounded-sm uppercase tracking-wider">
-                    Ver
-                  </a>
+                  {{ if .IsOficial }}
+                    <a href="/solicitudes/oficial/{{ .ID }}/detalle" class="btn-md btn-white rounded-sm uppercase tracking-wider">
+                      Ver
+                    </a>
+                  {{ else }}
+                    <a href="/solicitudes/derecho/{{ .ID }}/detalle" class="btn-md btn-white rounded-sm uppercase tracking-wider">
+                      Ver
+                    </a>
+                  {{ end }}
                 {{ end }}
               </div>
             </td>
