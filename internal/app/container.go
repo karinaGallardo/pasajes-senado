@@ -243,7 +243,7 @@ func NewContainer(db *gorm.DB, mongoRRHH *mongo.Database, mongoChat *mongo.Datab
 		openTicketService,
 	)
 
-	solicitudCtrl := controllers.NewSolicitudController(solicitudService, userService)
+	solicitudCtrl := controllers.NewSolicitudController(solicitudService, userService, openTicketService)
 	usuarioCtrl := controllers.NewUsuarioController(userService, auditService)
 	senadorCtrl := controllers.NewSenadorController(userService, auditService)
 	funcionarioCtrl := controllers.NewFuncionarioController(userService, auditService)

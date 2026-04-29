@@ -26,6 +26,20 @@
         <span class="hidden xl:inline text-[10px] font-bold uppercase tracking-wider">Descargos</span>
       </a>
     {{ end }}
+
+
+    <!-- Open Tickets con Descargo -->
+    {{ if gt .OpenTicketDescargoCount 0 }}
+      <a
+        href="/solicitudes/con-open-ticket"
+        class="flex items-center gap-1.5 px-3 py-1.5 bg-primary-50 text-primary-700 rounded-md border border-primary-100 hover:bg-primary-100 transition-colors group w-32 justify-center"
+        title="Solicitudes con crédito Open Ticket"
+      >
+        <i class="ph ph-ticket text-lg"></i>
+        <span class="text-xs font-bold w-5 text-center">{{ .OpenTicketDescargoCount }}</span>
+        <span class="hidden xl:inline text-[10px] font-bold uppercase tracking-wider">Open T.</span>
+      </a>
+    {{ end }}
     {{ if eq .TotalPending 0 }}
       <div
         class="flex items-center gap-1.5 px-3 py-1.5 bg-success-50 text-success-700 rounded-md border border-success-100 opacity-60 w-32 justify-center"

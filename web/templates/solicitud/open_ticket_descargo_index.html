@@ -1,0 +1,34 @@
+{{ define "solicitud/open_ticket_descargo_index" }}
+  {{ template "layout_header" . }}
+
+
+  <div class="space-y-6">
+    <!-- Header Actions -->
+    <div class="flex justify-between items-center bg-white p-4 rounded-md shadow-sm border border-neutral-200">
+      <div>
+        <h2 class="text-xl font-bold text-neutral-800">{{ .Title }}</h2>
+        <p class="text-sm text-neutral-500">Solicitudes que han generado un crédito de viaje (Open Ticket)</p>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="bg-white rounded-md shadow overflow-x-auto border border-neutral-200">
+      <!-- Loader indicator -->
+      <div id="table-loader" class="htmx-indicator w-full py-4 flex justify-center items-center">
+        <i class="ph ph-circle-notch animate-spin text-2xl text-primary"></i>
+      </div>
+
+      <div
+        id="main-table"
+        hx-get="{{ .LinkBase }}/table"
+        hx-trigger="load, reloadTable from:body"
+        hx-include="#global-search-input, [name='limit']"
+        hx-indicator="#table-loader"
+      >
+        {{ template "solicitud/table_solicitudes" . }}
+      </div>
+    </div>
+  </div>
+
+  {{ template "layout_footer" . }}
+{{ end }}

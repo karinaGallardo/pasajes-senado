@@ -37,3 +37,8 @@ func (s *OpenTicketService) GetForUser(ctx context.Context, usuarioID string) ([
 func (s *OpenTicketService) Update(ctx context.Context, ticket *models.OpenTicket) error {
 	return s.repo.Update(ctx, ticket)
 }
+
+func (s *OpenTicketService) GetPendingCount(ctx context.Context, userIDs []string) int64 {
+	count, _ := s.repo.CountByEstado(ctx, models.EstadoOpenTicketPendiente, userIDs)
+	return count
+}

@@ -222,6 +222,15 @@ func (s *SolicitudService) GetPendientesDescargoPaginated(ctx context.Context, u
 	return s.repo.FindPendientesDeDescargoPaginated(ctx, userID, isAdmin, page, limit, searchTerm)
 }
 
+func (s *SolicitudService) GetConDescargoOpenTicketPaginated(ctx context.Context, userID string, isAdmin bool, page, limit int, searchTerm string) (*repositories.PaginatedSolicitudes, error) {
+	return s.repo.FindWithOpenTicketDescargoPaginated(ctx, userID, isAdmin, page, limit, searchTerm)
+}
+
+func (s *SolicitudService) GetConDescargoOpenTicketCount(ctx context.Context, userID string, isAdmin bool) int64 {
+	count, _ := s.repo.CountWithOpenTicketDescargo(ctx, userID, isAdmin)
+	return count
+}
+
 func (s *SolicitudService) GetByCupoDerechoItemID(ctx context.Context, itemID string) ([]models.Solicitud, error) {
 	return s.repo.FindByCupoDerechoItemID(ctx, itemID)
 }

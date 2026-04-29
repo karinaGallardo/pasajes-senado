@@ -70,6 +70,8 @@ func SetupRoutes(r *gin.Engine, container *app.Container, loginLimiter *middlewa
 		protected.DELETE("/solicitudes/:id", solicitudCtrl.Delete)
 		protected.GET("/solicitudes/pendientes-descargo", solicitudCtrl.IndexPendientesDescargo)
 		protected.GET("/solicitudes/pendientes-descargo/table", solicitudCtrl.TablePendientesDescargo)
+		protected.GET("/solicitudes/con-open-ticket", solicitudCtrl.IndexOpenTicketDescargo)
+		protected.GET("/solicitudes/con-open-ticket/table", solicitudCtrl.TableOpenTicketDescargo)
 		protected.GET("/api/solicitudes/pending-stats", solicitudCtrl.GetPendingStats)
 		protected.POST("/solicitudes/:id/finalizar", solicitudCtrl.Finalize)
 		protected.POST("/solicitudes/:id/revertir-finalizacion", solicitudCtrl.RevertFinalize)
@@ -94,7 +96,6 @@ func SetupRoutes(r *gin.Engine, container *app.Container, loginLimiter *middlewa
 		protected.POST("/descargos/derecho/:id/enviar", descargoDerechoCtrl.Submit)
 		protected.POST("/descargos/derecho/:id/revertir-aprobacion", descargoDerechoCtrl.RevertApproval)
 		protected.GET("/descargos/derecho/nueva-fila", descargoDerechoCtrl.NuevaFila)
-
 
 		protected.POST("/solicitudes/derecho/:id/actualizar", solicitudDerechoCtrl.Update)
 		protected.POST("/solicitudes/derecho/:id/aprobar", solicitudDerechoCtrl.Approve)
@@ -124,7 +125,6 @@ func SetupRoutes(r *gin.Engine, container *app.Container, loginLimiter *middlewa
 		protected.POST("/descargos/oficial/:id/enviar", descargoOficialCtrl.Submit)
 		protected.POST("/descargos/oficial/:id/revertir-aprobacion", descargoOficialCtrl.RevertApproval)
 		protected.GET("/descargos/oficial/nueva-fila", descargoOficialCtrl.NuevaFila)
-
 
 		protected.POST("/solicitudes/oficial/:id/actualizar", solicitudOficialCtrl.Update)
 		protected.POST("/solicitudes/oficial", solicitudOficialCtrl.Store)

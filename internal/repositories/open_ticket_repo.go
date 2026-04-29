@@ -96,3 +96,13 @@ func (r *OpenTicketRepository) FindAll(ctx context.Context, filters map[string]a
 	err := query.Find(&tickets).Error
 	return tickets, err
 }
+
+func (r *OpenTicketRepository) CountByEstado(ctx context.Context, estado models.EstadoOpenTicket, userIDs []string) (int64, error) {
+	var count int64
+	query := r.db.WithContext(ctx).Model(&models.OpenTicket{}).Where("estado = ?", estado)
+	if len(userIDs) > 0 {
+		query = query.Where("usuario_id IN ?", userIDs)
+	}
+	err := query.Count(&count).Error
+	return count, err
+}

@@ -63,7 +63,17 @@ func (s *AlertaService) ProcesarAlertasDescargo(ctx context.Context) error {
 	alertasEnviadas := 0
 
 	for _, sol := range solicitudes {
-		// Validar si ya tiene un descargo y si está completo
+		// Validar si ya tiene un descargo y su estado
+		if sol.Descargo != nil {
+			// Si ya está en revisión, es open ticket o ya terminó, NO mandar alerta
+			if sol.Descargo.Estado == models.EstadoDescargoEnRevision ||
+				sol.Descargo.Estado == models.EstadoDescargoOpenTicket ||
+				sol.Descargo.Estado == models.EstadoDescargoFinalizado {
+				continue
+			}
+		}
+
+		// Validar si los datos internos del descargo están completos (independiente del estado)
 		if sol.HasCompleteDescargo() {
 			continue // Ya está completo, no necesita alerta
 		}

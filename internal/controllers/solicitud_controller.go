@@ -1,6 +1,7 @@
 package controllers
 
 import (
+	"context"
 	"sistema-pasajes/internal/appcontext"
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/services"
@@ -12,14 +13,16 @@ import (
 )
 
 type SolicitudController struct {
-	service     *services.SolicitudService
-	userService *services.UsuarioService
+	service           *services.SolicitudService
+	userService       *services.UsuarioService
+	openTicketService *services.OpenTicketService
 }
 
-func NewSolicitudController(service *services.SolicitudService, userService *services.UsuarioService) *SolicitudController {
+func NewSolicitudController(service *services.SolicitudService, userService *services.UsuarioService, openTicketService *services.OpenTicketService) *SolicitudController {
 	return &SolicitudController{
-		service:     service,
-		userService: userService,
+		service:           service,
+		userService:       userService,
+		openTicketService: openTicketService,
 	}
 }
 
@@ -67,12 +70,32 @@ func (ctrl *SolicitudController) IndexPendientesDescargo(c *gin.Context) {
 		}
 	}
 
+	// Stats for sidebar/topbar
+	pendingRequests, _ := ctrl.service.GetPendingCount(c.Request.Context(), authUser.ID, authUser.IsAdminOrResponsable())
+	pendingDescargosCount, _ := ctrl.service.GetPendientesDescargo(c.Request.Context(), authUser.ID, authUser.IsAdminOrResponsable())
+	var userIDs []string
+	if !authUser.IsAdminOrResponsable() {
+		userIDs = []string{authUser.ID}
+		if senators, err := ctrl.userService.GetSenatorsByEncargado(c.Request.Context(), authUser.ID); err == nil {
+			for _, s := range senators {
+				userIDs = append(userIDs, s.ID)
+			}
+		}
+	}
+	openTicketCount := ctrl.openTicketService.GetPendingCount(c.Request.Context(), userIDs)
+	openTicketDescargoCount := ctrl.service.GetConDescargoOpenTicketCount(c.Request.Context(), authUser.ID, authUser.IsAdminOrResponsable())
+
 	utils.Render(c, "solicitud/pendientes_descargo", gin.H{
-		"Title":              "Solicitudes Pendientes de Descargo",
-		"Result":             result,
-		"Usuarios":           usuariosMap,
-		"PendientesDescargo": true,
-		"LinkBase":           "/solicitudes/pendientes-descargo",
+		"Title":                   "Solicitudes Pendientes de Descargo",
+		"Result":                  result,
+		"Usuarios":                usuariosMap,
+		"PendientesDescargo":      true,
+		"LinkBase":                "/solicitudes/pendientes-descargo",
+		"PendingRequests":         pendingRequests,
+		"PendingDescargos":        len(pendingDescargosCount),
+		"OpenTicketCount":         openTicketCount,
+		"OpenTicketDescargoCount": openTicketDescargoCount,
+		"TotalPending":            pendingRequests + int64(len(pendingDescargosCount)) + openTicketCount + openTicketDescargoCount,
 	})
 }
 
@@ -205,6 +228,7 @@ func (ctrl *SolicitudController) renderIndex(c *gin.Context, concepto string, ti
 		"AvailableStatuses": models.GetAvailableStatuses(),
 	})
 }
+
 func (ctrl *SolicitudController) GetPendingStats(c *gin.Context) {
 	authUser := appcontext.AuthUser(c)
 	if authUser == nil {
@@ -215,10 +239,25 @@ func (ctrl *SolicitudController) GetPendingStats(c *gin.Context) {
 	pendingRequests, _ := ctrl.service.GetPendingCount(c.Request.Context(), authUser.ID, authUser.IsAdminOrResponsable())
 	pendingDescargos, _ := ctrl.service.GetPendientesDescargo(c.Request.Context(), authUser.ID, authUser.IsAdminOrResponsable())
 
+	// Open Tickets count (PENDIENTE states for badge)
+	var userIDs []string
+	if !authUser.IsAdminOrResponsable() {
+		userIDs = []string{authUser.ID}
+		if senators, err := ctrl.userService.GetSenatorsByEncargado(c.Request.Context(), authUser.ID); err == nil {
+			for _, s := range senators {
+				userIDs = append(userIDs, s.ID)
+			}
+		}
+	}
+	openTicketCount := ctrl.openTicketService.GetPendingCount(c.Request.Context(), userIDs)
+	openTicketDescargoCount := ctrl.service.GetConDescargoOpenTicketCount(c.Request.Context(), authUser.ID, authUser.IsAdminOrResponsable())
+
 	utils.Render(c, "layouts/components/pending_stats", gin.H{
-		"PendingRequests":  pendingRequests,
-		"PendingDescargos": len(pendingDescargos),
-		"TotalPending":     pendingRequests + int64(len(pendingDescargos)),
+		"PendingRequests":         pendingRequests,
+		"PendingDescargos":        len(pendingDescargos),
+		"OpenTicketCount":         openTicketCount,
+		"OpenTicketDescargoCount": openTicketDescargoCount,
+		"TotalPending":            pendingRequests + int64(len(pendingDescargos)) + openTicketCount + openTicketDescargoCount,
 	})
 }
 
@@ -366,4 +405,93 @@ func (ctrl *SolicitudController) RevertFinalize(c *gin.Context) {
 
 	c.Header("HX-Refresh", "true")
 	c.Status(200)
+}
+
+func (ctrl *SolicitudController) IndexOpenTicketDescargo(c *gin.Context) {
+	authUser := appcontext.AuthUser(c)
+	if authUser == nil {
+		c.Redirect(302, "/auth/login")
+		return
+	}
+
+	searchTerm := c.Query("q")
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+
+	result, _ := ctrl.service.GetConDescargoOpenTicketPaginated(c.Request.Context(), authUser.ID, authUser.IsAdminOrResponsable(), page, limit, searchTerm)
+
+	// Stats for sidebar/topbar
+	pendingRequests, _ := ctrl.service.GetPendingCount(c.Request.Context(), authUser.ID, authUser.IsAdminOrResponsable())
+	pendingDescargos, _ := ctrl.service.GetPendientesDescargo(c.Request.Context(), authUser.ID, authUser.IsAdminOrResponsable())
+	var userIDs []string
+	if !authUser.IsAdminOrResponsable() {
+		userIDs = []string{authUser.ID}
+		if senators, err := ctrl.userService.GetSenatorsByEncargado(c.Request.Context(), authUser.ID); err == nil {
+			for _, s := range senators {
+				userIDs = append(userIDs, s.ID)
+			}
+		}
+	}
+	openTicketCount := ctrl.openTicketService.GetPendingCount(c.Request.Context(), userIDs)
+	openTicketDescargoCount := ctrl.service.GetConDescargoOpenTicketCount(c.Request.Context(), authUser.ID, authUser.IsAdminOrResponsable())
+
+	usuariosMap := ctrl.getUsuariosMapFromSolicitudes(c.Request.Context(), result.Solicitudes)
+
+	utils.Render(c, "solicitud/open_ticket_descargo_index", gin.H{
+		"Title":                   "Solicitudes con Descargo Open Ticket",
+		"Result":                  result,
+		"Usuarios":                usuariosMap,
+		"LinkBase":                "/solicitudes/con-open-ticket",
+		"PendingRequests":         pendingRequests,
+		"PendingDescargos":        len(pendingDescargos),
+		"OpenTicketCount":         openTicketCount,
+		"OpenTicketDescargoCount": openTicketDescargoCount,
+		"TotalPending":            pendingRequests + int64(len(pendingDescargos)) + openTicketCount + openTicketDescargoCount,
+	})
+}
+
+func (ctrl *SolicitudController) TableOpenTicketDescargo(c *gin.Context) {
+	authUser := appcontext.AuthUser(c)
+	if authUser == nil {
+		c.Status(401)
+		return
+	}
+
+	searchTerm := c.Query("q")
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+
+	result, _ := ctrl.service.GetConDescargoOpenTicketPaginated(c.Request.Context(), authUser.ID, authUser.IsAdminOrResponsable(), page, limit, searchTerm)
+
+	usuariosMap := ctrl.getUsuariosMapFromSolicitudes(c.Request.Context(), result.Solicitudes)
+
+	utils.Render(c, "solicitud/table_solicitudes", gin.H{
+		"Result":   result,
+		"Usuarios": usuariosMap,
+		"LinkBase": "/solicitudes/con-open-ticket",
+	})
+}
+
+func (ctrl *SolicitudController) getUsuariosMapFromSolicitudes(ctx context.Context, solicitudes []models.Solicitud) map[string]*models.Usuario {
+	userIDsMap := make(map[string]bool)
+	for _, s := range solicitudes {
+		if s.CreatedBy != nil {
+			userIDsMap[*s.CreatedBy] = true
+		}
+		if s.UpdatedBy != nil {
+			userIDsMap[*s.UpdatedBy] = true
+		}
+	}
+	var ids []string
+	for id := range userIDsMap {
+		ids = append(ids, id)
+	}
+	usuariosMap := make(map[string]*models.Usuario)
+	if len(ids) > 0 {
+		usuarios, _ := ctrl.userService.GetByIDs(ctx, ids)
+		for i := range usuarios {
+			usuariosMap[usuarios[i].ID] = &usuarios[i]
+		}
+	}
+	return usuariosMap
 }

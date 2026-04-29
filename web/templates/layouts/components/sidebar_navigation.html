@@ -102,28 +102,18 @@
           >
             Pendientes de Descargo
           </a>
+          <a
+            href="/solicitudes/con-open-ticket"
+            class="block py-2 text-xs font-medium rounded-md transition-colors {{ if contains .Title `con Descargo Open Ticket` }}
+              text-primary font-bold
+            {{ else }}
+              text-neutral-500 hover:text-neutral-900
+            {{ end }}"
+          >
+            Open Tickets
+          </a>
         </div>
       </div>
-
-      <a
-        href="/pasajes/open-tickets"
-        :title="sidebarCollapsed ? 'Open Tickets' : ''"
-        class="group flex items-center px-4 py-2.5 text-sm font-medium rounded-md transition-colors whitespace-nowrap
-        {{ if contains .Title `Open Tickets` }}
-          bg-primary/10 text-primary
-        {{ else }}
-          text-main hover:bg-primary/5 hover:text-neutral-900
-        {{ end }}"
-      >
-        <i
-          class="ph ph-ticket text-xl mr-3 min-w-[20px] {{ if contains .Title `Open Tickets` }}
-            text-primary
-          {{ else }}
-            text-muted group-hover:text-neutral-500
-          {{ end }}"
-        ></i>
-        <span x-show="!sidebarCollapsed" class="transition-opacity duration-300">Open Tickets</span>
-      </a>
 
       <!--     <a
       href="/viaticos"
