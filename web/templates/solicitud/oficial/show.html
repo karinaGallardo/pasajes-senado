@@ -45,6 +45,10 @@
             <p class="text-xs text-neutral-400">
               <span class="font-bold uppercase tracking-tighter mr-1">Última Modificación:</span>
               {{ fechaHora .Solicitud.UpdatedAt }}
+              {{ if .Solicitud.UpdatedByUser }}
+                por
+                <span class="font-semibold">{{ .Solicitud.UpdatedByUser.GetNombreCompleto }}</span>
+              {{ end }}
             </p>
           {{ end }}
         </div>

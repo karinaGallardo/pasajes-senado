@@ -44,6 +44,10 @@ type Solicitud struct {
 	// New Decoupled Items
 	Items []SolicitudItem `gorm:"foreignKey:SolicitudID"`
 
+	// Datos de auditoría (hidratados en runtime si es necesario)
+	UpdatedByUser *Usuario `gorm:"-"`
+	CreatedByUser *Usuario `gorm:"-"`
+
 	// Contexto de runtime (no persistido)
 	authUser    *Usuario              `gorm:"-"`
 	Permissions *SolicitudPermissions `gorm:"-"`
@@ -113,6 +117,11 @@ func (s *Solicitud) HydratePermissions(u ...*Usuario) {
 			item.Pasajes[j].HydratePermissions(s.getAuthUser())
 		}
 	}
+}
+
+func (s *Solicitud) HydrateAuditUsers(updatedBy, createdBy *Usuario) {
+	s.UpdatedByUser = updatedBy
+	s.CreatedByUser = createdBy
 }
 
 // GetStatusCardClasses retorna las clases de borde y texto para las tarjetas de estado del sistema.

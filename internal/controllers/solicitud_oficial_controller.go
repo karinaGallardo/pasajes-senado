@@ -162,6 +162,16 @@ func (ctrl *SolicitudOficialController) Show(c *gin.Context) {
 		descargoEstado = string(descargo.Estado)
 	}
 
+	// Cargar usuarios de auditoría si existen
+	var updatedByUser, createdByUser *models.Usuario
+	if solicitud.UpdatedBy != nil {
+		updatedByUser, _ = ctrl.userService.GetByID(c.Request.Context(), *solicitud.UpdatedBy)
+	}
+	if solicitud.CreatedBy != nil {
+		createdByUser, _ = ctrl.userService.GetByID(c.Request.Context(), *solicitud.CreatedBy)
+	}
+	solicitud.HydrateAuditUsers(updatedByUser, createdByUser)
+
 	utils.Render(c, "solicitud/oficial/show", gin.H{
 		"Title":          "Solicitud de Comisión Oficial " + solicitud.Codigo,
 		"Solicitud":      solicitud,
