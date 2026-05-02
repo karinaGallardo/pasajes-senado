@@ -178,6 +178,16 @@ func (p Pasaje) IsDischargeable() bool {
 	return st == EstadoPasajeEmitido || st == EstadoPasajeFinalizado
 }
 
+// HasOpenTicket retorna true si este pasaje tiene al menos un tramo en el descargo marcado como Open Ticket
+func (p Pasaje) HasOpenTicket() bool {
+	for _, t := range p.DescargoTramos {
+		if t.EsOpenTicket {
+			return true
+		}
+	}
+	return false
+}
+
 func (p Pasaje) GetStatusBannerClass() string {
 	switch p.GetEstado() {
 	case EstadoPasajeEmitido:

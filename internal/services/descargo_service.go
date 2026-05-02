@@ -122,7 +122,10 @@ func (s *DescargoService) Approve(ctx context.Context, id string, userID string)
 	}
 
 	newState := models.EstadoDescargoFinalizado
-	if hasOpenTickets {
+	// Solo pasamos a OPEN_TICKET si es la aprobación del descargo original (EN_REVISION)
+	// y existen tramos marcados como Open Ticket.
+	// Si ya estamos aprobando una reutilización (EN_REVISION_OT), el destino debe ser FINALIZADO.
+	if descargo.Estado == models.EstadoDescargoEnRevision && hasOpenTickets {
 		newState = models.EstadoDescargoOpenTicket
 	}
 
@@ -159,7 +162,13 @@ func (s *DescargoService) Reject(ctx context.Context, id string, userID string, 
 		return errors.New("solo se pueden observar descargos en revisión")
 	}
 
-	descargo.Estado = models.EstadoDescargoRechazado
+	// Lógica de Rechazo Escalonado
+	targetState := models.EstadoDescargoRechazado
+	if descargo.Estado == models.EstadoDescargoEnRevisionOT {
+		targetState = models.EstadoDescargoRechazadoOT
+	}
+
+	descargo.Estado = targetState
 	descargo.Observaciones = observaciones
 	descargo.UpdatedBy = &userID
 	if err := s.repo.Update(ctx, descargo); err != nil {
@@ -197,15 +206,22 @@ func (s *DescargoService) RevertToDraft(ctx context.Context, id string, userID s
 		}
 	}
 
-	descargo.Estado = models.EstadoDescargoBorrador
+	// Lógica de Reversión Escalonada
+	targetState := models.EstadoDescargoBorrador
+	if descargo.Estado == models.EstadoDescargoFinalizado && descargo.HasOpenTicket() {
+		targetState = models.EstadoDescargoOpenTicket
+	}
+
+	descargo.Estado = targetState
 	descargo.UpdatedBy = &userID
 	if err := s.repo.Update(ctx, descargo); err != nil {
 		return err
 	}
 
-	slog.Info("Descargo revertido a borrador", "id", id, "codigo", descargo.Codigo, "user_id", userID)
+	slog.Info("Descargo revertido", "id", id, "nuevo_estado", targetState, "user_id", userID)
 
-	if descargo.SolicitudID != "" {
+	// Solo revertir la solicitud si volvemos a BORRADOR
+	if targetState == models.EstadoDescargoBorrador && descargo.SolicitudID != "" {
 		return s.solicitudService.RevertFinalize(ctx, descargo.SolicitudID)
 	}
 

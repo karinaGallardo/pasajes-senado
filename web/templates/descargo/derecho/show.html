@@ -208,7 +208,7 @@
                   type="submit"
                   :disabled="loading"
                   class="w-full inline-flex justify-center items-center px-2 py-2 border border-transparent text-xs font-black rounded-md text-white {{ if eq .Descargo.Estado `OPEN_TICKET` }}
-                    bg-indigo-600 hover:bg-indigo-700
+                    bg-secondary hover:bg-secondary-600
                   {{ else }}
                     bg-primary hover:bg-primary-600
                   {{ end }} transition-all shadow-md active:scale-95 disabled:opacity-50 uppercase tracking-tight cursor-pointer"
@@ -227,15 +227,7 @@
             {{ end }}
 
             {{ if .Descargo.IsEditable }}
-              {{ if eq .Descargo.Estado "OPEN_TICKET" }}
-                <a
-                  href="/descargos/derecho/{{ .Descargo.ID }}/completar"
-                  class="w-full inline-flex justify-center items-center px-2 py-2 border border-secondary-300 text-xs font-black rounded-md text-secondary-700 bg-secondary-50 hover:bg-secondary-100 transition-all shadow-sm active:scale-95 uppercase tracking-tight"
-                >
-                  <i class="ph ph-arrows-clockwise mr-2 text-lg"></i>
-                  Completar Reutilización
-                </a>
-              {{ else }}
+              {{ if not (eq .Descargo.Estado "OPEN_TICKET") }}
                 <a
                   href="/descargos/derecho/{{ .Descargo.ID }}/editar"
                   class="w-full inline-flex justify-center items-center px-2 py-2 border border-neutral-300 text-xs font-black rounded-md text-neutral-700 bg-white hover:bg-neutral-50 transition-all shadow-sm active:scale-95 uppercase tracking-tight"
@@ -260,7 +252,7 @@
                   class="w-full inline-flex justify-center items-center px-2 py-2 border border-transparent text-xs font-black rounded-md text-white bg-success-600 hover:bg-success-700 transition-all shadow-md active:scale-95 disabled:opacity-50 uppercase tracking-tight cursor-pointer"
                 >
                   <i class="ph ph-check-square mr-2 text-lg" x-show="!loading"></i>
-                  <span x-show="!loading">Aprobar Descargo</span>
+                  <span x-show="!loading">{{ .Descargo.Permissions.ApproveLabel }}</span>
                   <span x-show="loading">Procesando...</span>
                 </button>
               </form>
@@ -303,7 +295,13 @@
                     class="w-full group/btn inline-flex justify-center items-center px-2 py-2 border border-danger-200 text-xs font-black rounded-md text-danger-700 bg-danger-50 hover:bg-danger-100 transition-all active:scale-95 disabled:opacity-50 uppercase tracking-tight cursor-pointer"
                   >
                     <i class="ph ph-warning-circle mr-2 text-lg" x-show="!loading"></i>
-                    <span x-show="!loading">Observar y Devolver</span>
+                    <span x-show="!loading">
+                      {{ if eq .Descargo.Estado "EN_REVISION_OT" }}
+                        Rechazar y Volver a Open Ticket
+                      {{ else }}
+                        Observar y Devolver
+                      {{ end }}
+                    </span>
                     <span x-show="loading" class="flex items-center">
                       <i class="ph ph-circle-notch animate-spin mr-2"></i>
                       Procesando...
@@ -327,7 +325,7 @@
                   class="w-full inline-flex justify-center items-center px-2 py-2 border border-neutral-200 text-xs font-black rounded-md text-danger-600 bg-white hover:bg-danger-50 transition-all shadow-sm active:scale-95 disabled:opacity-50 uppercase tracking-tight cursor-pointer"
                 >
                   <i class="ph ph-arrow-counter-clockwise mr-2 text-lg" x-show="!loading"></i>
-                  <span x-show="!loading">Revertir Aprobación</span>
+                  <span x-show="!loading">{{ .Descargo.Permissions.RevertLabel }}</span>
                   <span x-show="loading">Procesando...</span>
                 </button>
               </form>

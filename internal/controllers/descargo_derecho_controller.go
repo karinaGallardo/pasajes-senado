@@ -300,8 +300,9 @@ func (ctrl *DescargoDerechoController) PrintOpenTicket(c *gin.Context) {
 		return
 	}
 
-	pdf := ctrl.reportService.GeneratePV05OpenTicket(c.Request.Context(), descargo)
-	if pdf.Err() {
+	pdfData, err := ctrl.reportService.GeneratePV05OpenTicketComplete(c.Request.Context(), descargo)
+	if err != nil {
+		log.Printf("[ERROR] Error generando PDF OT completo: %v", err)
 		c.String(http.StatusInternalServerError, "Error generando PDF de Open Ticket")
 		return
 	}
@@ -314,7 +315,7 @@ func (ctrl *DescargoDerechoController) PrintOpenTicket(c *gin.Context) {
 	c.Header("Content-Type", "application/pdf")
 	c.Header("Content-Disposition", fmt.Sprintf("%s; filename=\"OPEN-TICKET-%s.pdf\"", disposition, descargo.ID))
 
-	if err := pdf.Output(c.Writer); err != nil {
+	if _, err := c.Writer.Write(pdfData); err != nil {
 		log.Printf("Error enviando PDF OT: %v", err)
 	}
 }

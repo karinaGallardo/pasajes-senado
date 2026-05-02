@@ -1395,9 +1395,10 @@ func (s *ReportService) GeneratePV05Complete(ctx context.Context, descargo *mode
 		}
 	}
 
-	// 2.2 Pases a Bordo (Cargados en el descargo)
+	// 2.2 Pases a Bordo (Solo de tramos que NO son de reutilizaci�n y NO son Open Ticket)
 	for _, det := range descargo.Tramos {
-		if det.ArchivoPaseAbordo != "" && !seenFiles[det.ArchivoPaseAbordo] {
+		// En el descargo normal, solo queremos los pases de lo que se vol� originalmente
+		if !det.IsReutilizacion() && !det.EsOpenTicket && det.ArchivoPaseAbordo != "" && !seenFiles[det.ArchivoPaseAbordo] {
 			if s.isValidPDF(det.ArchivoPaseAbordo) {
 				filesToMerge = append(filesToMerge, det.ArchivoPaseAbordo)
 				seenFiles[det.ArchivoPaseAbordo] = true
@@ -1628,6 +1629,111 @@ func (s *ReportService) GeneratePV05OpenTicket(ctx context.Context, descargo *mo
 	s.drawSignatureBlock(pdf, tr, sigY, "BENEFICIARIO", user.GetNombreCompleto(), "", "ENCARGADO DE PASAJES", "", "")
 
 	return pdf
+}
+
+func (s *ReportService) GeneratePV05OpenTicketComplete(ctx context.Context, descargo *models.Descargo) ([]byte, error) {
+	// 1. Generar el PDF Base PV-05 OT
+	pdf := s.GeneratePV05OpenTicket(ctx, descargo)
+	if pdf.Err() {
+		return nil, pdf.Error()
+	}
+
+	// Crear archivos temporales para la unión
+	tmpBase, err := os.CreateTemp("", "pv05_ot_base_*.pdf")
+	if err != nil {
+		return nil, err
+	}
+	defer os.Remove(tmpBase.Name())
+
+	if err := pdf.OutputFileAndClose(tmpBase.Name()); err != nil {
+		return nil, fmt.Errorf("error generating base OT PDF: %w", err)
+	}
+
+	// 2. Recolectar rutas de archivos que existan
+	var filesToMerge []string
+	filesToMerge = append(filesToMerge, tmpBase.Name())
+
+	// Mapa para evitar duplicados
+	seenFiles := make(map[string]bool)
+	seenFiles[tmpBase.Name()] = true
+
+	// 2.1 Billetes Electrónicos de los tramos marcados como Open Ticket
+	for _, tramo := range descargo.Tramos {
+		if tramo.EsOpenTicket {
+			// Buscar el pasaje correspondiente en la solicitud para obtener el archivo del billete
+			if descargo.Solicitud != nil {
+				for _, item := range descargo.Solicitud.Items {
+					for _, pasaje := range item.Pasajes {
+						// Si el número de billete coincide, intentamos adjuntarlo
+						if pasaje.NumeroBillete == tramo.Billete && pasaje.Archivo != "" && !seenFiles[pasaje.Archivo] {
+							if s.isValidPDF(pasaje.Archivo) {
+								filesToMerge = append(filesToMerge, pasaje.Archivo)
+								seenFiles[pasaje.Archivo] = true
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
+	// 2.2 Pases a Bordo de los tramos de REUTILIZACIÓN
+	for _, tramo := range descargo.Tramos {
+		// En el reporte OT, solo nos interesan los pases de los nuevos vuelos (REUT)
+		if tramo.IsReutilizacion() && tramo.ArchivoPaseAbordo != "" && !seenFiles[tramo.ArchivoPaseAbordo] {
+			if s.isValidPDF(tramo.ArchivoPaseAbordo) {
+				filesToMerge = append(filesToMerge, tramo.ArchivoPaseAbordo)
+				seenFiles[tramo.ArchivoPaseAbordo] = true
+			}
+		}
+	}
+
+	// 2.2 Comprobantes de Depósito (Devoluciones)
+	compPath := ""
+	if descargo.Solicitud != nil {
+		for _, item := range descargo.Solicitud.Items {
+			for _, p := range item.Pasajes {
+				if p.ArchivoComprobante != "" {
+					compPath = p.ArchivoComprobante
+					if !seenFiles[compPath] && s.isValidPDF(compPath) {
+						filesToMerge = append(filesToMerge, compPath)
+						seenFiles[compPath] = true
+					}
+				}
+			}
+		}
+	}
+
+	// 3. Si solo hay un archivo (el base), retornarlo directamente
+	if len(filesToMerge) == 1 {
+		data, err := os.ReadFile(tmpBase.Name())
+		if err != nil {
+			return nil, fmt.Errorf("error reading base OT PDF: %w", err)
+		}
+		return data, nil
+	}
+
+	// 4. Unir usando pdftk
+	tmpFinal, err := os.CreateTemp("", "pv05_ot_final_*.pdf")
+	if err != nil {
+		return nil, err
+	}
+	defer os.Remove(tmpFinal.Name())
+
+	args := append(filesToMerge, "cat", "output", tmpFinal.Name())
+	cmd := exec.CommandContext(ctx, "pdftk", args...)
+	var stderr bytes.Buffer
+	cmd.Stderr = &stderr
+
+	if err := cmd.Run(); err != nil {
+		return nil, fmt.Errorf("error merging OT PDFs with pdftk: %w - %s", err, stderr.String())
+	}
+
+	data, err := os.ReadFile(tmpFinal.Name())
+	if err != nil {
+		return nil, fmt.Errorf("error reading final merged OT PDF: %w", err)
+	}
+	return data, nil
 }
 
 func (s *ReportService) GeneratePV06Complete(ctx context.Context, descargo *models.Descargo, personaView *models.MongoPersonaView) ([]byte, error) {

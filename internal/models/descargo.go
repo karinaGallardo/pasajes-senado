@@ -10,6 +10,7 @@ const (
 	EstadoDescargoRechazado    EstadoDescargo = "RECHAZADO"
 	EstadoDescargoOpenTicket   EstadoDescargo = "OPEN_TICKET"
 	EstadoDescargoEnRevisionOT EstadoDescargo = "EN_REVISION_OT"
+	EstadoDescargoRechazadoOT  EstadoDescargo = "RECHAZADO_OT"
 	EstadoDescargoFinalizado   EstadoDescargo = "FINALIZADO"
 )
 
@@ -21,6 +22,8 @@ type DescargoPermissions struct {
 	CanRevert             bool
 	CanPrint              bool
 	CanCompleteOpenTicket bool
+	RevertLabel           string // Dinámico: "Revertir a Borrador" o "Revertir a Open Ticket"
+	ApproveLabel          string // Dinámico: "Aprobar y Finalizar", "Aprobar y Generar OT", etc.
 }
 
 type Descargo struct {
@@ -290,6 +293,23 @@ func (d Descargo) GetPermissions(u ...*Usuario) DescargoPermissions {
 
 	canMod := d.IsEditable() && d.isOwnerOrAdmin(user)
 
+	revertLabel := "Revertir a Borrador"
+	if d.Estado == EstadoDescargoFinalizado && d.HasOpenTicket() {
+		revertLabel = "Revertir a Open Ticket"
+	}
+
+	approveLabel := "Aprobar Descargo"
+	switch d.Estado {
+	case EstadoDescargoEnRevisionOT:
+		approveLabel = "Aprobar Reutilización de OT"
+	case EstadoDescargoEnRevision:
+		if d.HasOpenTicket() {
+			approveLabel = "Aprobar y Generar Crédito OT"
+		} else {
+			approveLabel = "Aprobar y Finalizar Trámite"
+		}
+	}
+
 	return DescargoPermissions{
 		CanEdit:               canMod,
 		CanSubmit:             canMod,
@@ -298,6 +318,8 @@ func (d Descargo) GetPermissions(u ...*Usuario) DescargoPermissions {
 		CanRevert:             d.CanRevert(user),
 		CanPrint:              d.Estado != EstadoDescargoBorrador,
 		CanCompleteOpenTicket: d.Estado == EstadoDescargoOpenTicket && d.isOwnerOrAdmin(user),
+		RevertLabel:           revertLabel,
+		ApproveLabel:          approveLabel,
 	}
 }
 
@@ -317,7 +339,11 @@ func (d Descargo) getAuthUser(u ...*Usuario) *Usuario {
 }
 
 func (d Descargo) IsEditable() bool {
-	return d.Estado == EstadoDescargoBorrador || d.Estado == EstadoDescargoRechazado || d.Estado == EstadoDescargoOpenTicket
+	return d.Estado == EstadoDescargoBorrador || d.Estado == EstadoDescargoRechazado || d.Estado == EstadoDescargoRechazadoOT || d.Estado == EstadoDescargoOpenTicket
+}
+
+func (d Descargo) IsInRevision() bool {
+	return d.Estado == EstadoDescargoEnRevision || d.Estado == EstadoDescargoEnRevisionOT
 }
 
 func (d Descargo) CanEdit(user *Usuario) bool {
@@ -335,15 +361,15 @@ func (d Descargo) CanSubmit(user *Usuario) bool {
 }
 
 func (d Descargo) CanApprove(user *Usuario) bool {
-	return d.Estado == EstadoDescargoEnRevision && user.IsAdminOrResponsable()
+	return (d.Estado == EstadoDescargoEnRevision || d.Estado == EstadoDescargoEnRevisionOT) && user.IsAdminOrResponsable()
 }
 
 func (d Descargo) CanReject(user *Usuario) bool {
-	return d.Estado == EstadoDescargoEnRevision && user.IsAdminOrResponsable()
+	return (d.Estado == EstadoDescargoEnRevision || d.Estado == EstadoDescargoEnRevisionOT) && user.IsAdminOrResponsable()
 }
 
 func (d Descargo) CanRevert(user *Usuario) bool {
-	return (d.Estado == EstadoDescargoFinalizado || d.Estado == EstadoDescargoOpenTicket) && user.IsAdminOrResponsable()
+	return (d.Estado == EstadoDescargoFinalizado || d.Estado == EstadoDescargoOpenTicket || d.Estado == EstadoDescargoRechazadoOT) && user.IsAdminOrResponsable()
 }
 
 func (d Descargo) CanPrint(user *Usuario) bool {
