@@ -1462,6 +1462,174 @@ func (s *ReportService) GeneratePV05Complete(ctx context.Context, descargo *mode
 	return data, nil
 }
 
+func (s *ReportService) GeneratePV05OpenTicket(ctx context.Context, descargo *models.Descargo) *gofpdf.Fpdf {
+	pdf := gofpdf.New("P", "mm", "Letter", "")
+	tr := pdf.UnicodeTranslatorFromDescriptor("")
+
+	pdf.SetFooterFunc(func() {
+		pdf.SetY(-15)
+		s.drawPageBorder(pdf)
+		pdf.SetFont("Arial", "I", 7)
+		pdf.CellFormat(0, 10, tr(fmt.Sprintf("Página %d", pdf.PageNo())), "", 0, "C", false, 0, "")
+	})
+
+	pdf.AddPage()
+
+	gestion := descargo.CreatedAt.Format("2006")
+	s.drawReportHeader(pdf, tr, "FORM-PV-05", "REPORTE DE BILLETES PARA REUTILIZACIÓN", "CÁMARA DE SENADORES", "GESTIÓN: "+gestion, descargo.Codigo)
+
+	pdf.SetY(40)
+	user := descargo.Solicitud.Usuario
+	s.drawLabelBox(pdf, tr, "BENEFICIARIO :", user.GetNombreCompleto(), 40, 150, false)
+	s.drawLabelBox(pdf, tr, "C.I. :", user.CI, 40, 60, true)
+
+	cargo := "-"
+	if user.Cargo != nil {
+		cargo = user.Cargo.Descripcion
+	}
+	s.drawLabelBox(pdf, tr, "CARGO :", cargo, 30, 60, false)
+
+	// 1. Tramos marcados para reutilizar (Open Ticket original)
+	var tramosParaReutilizar []models.DescargoTramo
+	for _, t := range descargo.Tramos {
+		if t.EsOpenTicket {
+			tramosParaReutilizar = append(tramosParaReutilizar, t)
+		}
+	}
+
+	// 2. Tramos donde se reutilizó un ticket (Nuevos registros REUT)
+	var tramosReutilizados []models.DescargoTramo
+	for _, t := range descargo.Tramos {
+		if t.IsReutilizacion() {
+			tramosReutilizados = append(tramosReutilizados, t)
+		}
+	}
+
+	// SECCIÓN 1: Pasajes que quedaron para reutilizar
+	pdf.Ln(5)
+	pdf.SetFont("Arial", "B", 10)
+	pdf.CellFormat(0, 8, tr("1. PASAJES PARA REUTILIZAR (CRÉDITO ORIGINAL)"), "B", 1, "L", false, 0, "")
+	pdf.Ln(2)
+
+	pdf.SetFillColor(240, 240, 240)
+	pdf.SetFont("Arial", "B", 8)
+	pdf.CellFormat(70, 7, tr("RUTA ORIGINAL"), "1", 0, "C", true, 0, "")
+	pdf.CellFormat(50, 7, tr("N° BILLETE"), "1", 0, "C", true, 0, "")
+	pdf.CellFormat(30, 7, tr("FECHA"), "1", 0, "C", true, 0, "")
+	pdf.CellFormat(40, 7, tr("ESTADO"), "1", 1, "C", true, 0, "")
+
+	pdf.SetFont("Arial", "", 8)
+	if len(tramosParaReutilizar) == 0 {
+		pdf.CellFormat(190, 8, tr("No hay tramos originales marcados para reutilización."), "1", 1, "C", false, 0, "")
+	} else {
+		for _, t := range tramosParaReutilizar {
+			fecha := "-"
+			if t.Fecha != nil {
+				fecha = t.Fecha.Format("02/01/2006")
+			}
+			pdf.CellFormat(70, 8, tr(t.GetRutaDisplay()), "1", 0, "C", false, 0, "")
+			pdf.CellFormat(50, 8, tr(t.Billete), "1", 0, "C", false, 0, "")
+			pdf.CellFormat(30, 8, tr(fecha), "1", 0, "C", false, 0, "")
+			pdf.SetTextColor(200, 0, 0)
+			pdf.SetFont("Arial", "B", 8)
+			pdf.CellFormat(40, 8, tr("NO UTILIZADO"), "1", 1, "C", false, 0, "")
+			pdf.SetTextColor(0, 0, 0)
+			pdf.SetFont("Arial", "", 8)
+		}
+	}
+
+	// SECCIÓN 2: Registro de cómo se usaron esos tickets
+	pdf.Ln(5)
+	pdf.SetFont("Arial", "B", 10)
+	pdf.CellFormat(0, 8, tr("2. REUTILIZACIÓN REGISTRADA (NUEVOS VUELOS)"), "B", 1, "L", false, 0, "")
+	pdf.Ln(2)
+
+	pdf.SetFillColor(240, 240, 240)
+	pdf.SetFont("Arial", "B", 8)
+	pdf.CellFormat(70, 7, tr("NUEVA RUTA"), "1", 0, "C", true, 0, "")
+	pdf.CellFormat(50, 7, tr("N° BILLETE REUTILIZADO"), "1", 0, "C", true, 0, "")
+	pdf.CellFormat(30, 7, tr("FECHA"), "1", 0, "C", true, 0, "")
+	pdf.CellFormat(40, 7, tr("TIPO"), "1", 1, "C", true, 0, "")
+
+	pdf.SetFont("Arial", "", 8)
+	if len(tramosReutilizados) == 0 {
+		pdf.CellFormat(190, 8, tr("No se han registrado nuevas rutas de reutilización en este descargo."), "1", 1, "C", false, 0, "")
+	} else {
+		for _, t := range tramosReutilizados {
+			fecha := "-"
+			if t.Fecha != nil {
+				fecha = t.Fecha.Format("02/01/2006")
+			}
+			pdf.CellFormat(70, 8, tr(t.GetRutaDisplay()), "1", 0, "C", false, 0, "")
+			pdf.CellFormat(50, 8, tr(t.Billete), "1", 0, "C", false, 0, "")
+			pdf.CellFormat(30, 8, tr(fecha), "1", 0, "C", false, 0, "")
+			pdf.SetTextColor(0, 100, 0)
+			pdf.SetFont("Arial", "B", 8)
+			pdf.CellFormat(40, 8, tr("REUTILIZADO"), "1", 1, "C", false, 0, "")
+			pdf.SetTextColor(0, 0, 0)
+			pdf.SetFont("Arial", "", 8)
+		}
+	}
+
+	// SECCIÓN 3: Liquidación Financiera (Conciliación de Costos)
+	pdf.Ln(5)
+	pdf.SetFont("Arial", "B", 10)
+	pdf.CellFormat(0, 8, tr("3. LIQUIDACIÓN FINANCIERA (DEVOLUCIONES EN EFECTIVO)"), "B", 1, "L", false, 0, "")
+	pdf.Ln(2)
+
+	pdf.SetFillColor(240, 240, 240)
+	pdf.SetFont("Arial", "B", 8)
+	pdf.CellFormat(40, 7, tr("N° BILLETE"), "1", 0, "C", true, 0, "")
+	pdf.CellFormat(70, 7, tr("RUTA"), "1", 0, "C", true, 0, "")
+	pdf.CellFormat(25, 7, tr("CONSUMO"), "1", 0, "C", true, 0, "")
+	pdf.CellFormat(25, 7, tr("DEVOLUCIÓN"), "1", 0, "C", true, 0, "")
+	pdf.CellFormat(30, 7, tr("N° BOLETA"), "1", 1, "C", true, 0, "")
+
+	pdf.SetFont("Arial", "", 8)
+	hasFinances := false
+	if descargo.Solicitud != nil {
+		for _, item := range descargo.Solicitud.Items {
+			for _, p := range item.Pasajes {
+				if p.MontoReembolso > 0 || p.NroBoletaDeposito != "" {
+					hasFinances = true
+					pdf.CellFormat(40, 7, tr(p.NumeroBillete), "1", 0, "C", false, 0, "")
+					pdf.CellFormat(70, 7, tr(p.GetRutaDisplay()), "1", 0, "L", false, 0, "")
+					pdf.CellFormat(25, 7, fmt.Sprintf("%.2f", p.CostoUtilizado), "1", 0, "R", false, 0, "")
+
+					pdf.SetTextColor(150, 0, 0)
+					pdf.SetFont("Arial", "B", 8)
+					pdf.CellFormat(25, 7, fmt.Sprintf("%.2f", p.MontoReembolso), "1", 0, "R", false, 0, "")
+					pdf.SetTextColor(0, 0, 0)
+					pdf.SetFont("Arial", "", 8)
+
+					nro := p.NroBoletaDeposito
+					if nro == "" {
+						nro = "-"
+					}
+					pdf.CellFormat(30, 7, tr(nro), "1", 1, "C", false, 0, "")
+				}
+			}
+		}
+	}
+
+	if !hasFinances {
+		pdf.CellFormat(190, 8, tr("No se registraron devoluciones económicas en este descargo."), "1", 1, "C", false, 0, "")
+	}
+
+	pdf.Ln(10)
+	pdf.SetFont("Arial", "B", 9)
+	pdf.MultiCell(190, 5, tr("NOTA: El presente documento certifica que los tramos arriba detallados no han sido utilizados y quedan a la espera de ser reutilizados por el beneficiario para su posterior reprogramación según normativa vigente."), "", "L", false)
+
+	// Firmas
+	sigY := pdf.GetY() + 30
+	if sigY < 200 {
+		sigY = 220
+	}
+	s.drawSignatureBlock(pdf, tr, sigY, "BENEFICIARIO", user.GetNombreCompleto(), "", "ENCARGADO DE PASAJES", "", "")
+
+	return pdf
+}
+
 func (s *ReportService) GeneratePV06Complete(ctx context.Context, descargo *models.Descargo, personaView *models.MongoPersonaView) ([]byte, error) {
 	// 1. Generar el PDF Base PV-06
 	pdf, err := s.GeneratePV06(ctx, descargo, personaView)

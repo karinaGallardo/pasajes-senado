@@ -384,18 +384,22 @@ func (s *Solicitud) UpdateStatusBasedOnItems() {
 
 	if allRejected {
 		newState = "RECHAZADO"
-	} else if hasEmitido {
-		// Si hay al menos un pasaje emitido, globalmente la solicitud está en fase de emisión/vuelo/descargo
-		newState = "EMITIDO"
-	} else if hasFinalizado && !hasAprobado && !hasSolicitado {
-		// Si hay tramos finalizados y no queda nada pendiente por aprobar o emitir, está finalizado
-		newState = "FINALIZADO"
-	} else if hasAprobado && !hasSolicitado {
-		// Si todo lo activo está aprobado
+	} else if hasSolicitado {
+		// Si hay algo solicitado, o es SOLICITADO o PARCIALMENTE_APROBADO
+		if hasAprobado || hasEmitido || hasFinalizado {
+			newState = "PARCIALMENTE_APROBADO"
+		} else {
+			newState = "SOLICITADO"
+		}
+	} else if hasAprobado {
+		// Si no hay nada solicitado, pero queda algo solo aprobado (sin emitir), sigue en APROBADO global
 		newState = "APROBADO"
-	} else if hasAprobado || hasFinalizado {
-		// Si hay mezcla de aprobado/finalizado con algo solicitado
-		newState = "PARCIALMENTE_APROBADO"
+	} else if hasEmitido {
+		// No hay solicitados ni aprobados pendientes, y hay al menos un emitido
+		newState = "EMITIDO"
+	} else if hasFinalizado {
+		// Solo quedan finalizados
+		newState = "FINALIZADO"
 	} else {
 		newState = "SOLICITADO"
 	}
@@ -424,7 +428,17 @@ func (s *Solicitud) CanRevertApproval(u ...*Usuario) bool {
 	}
 	st := s.GetEstado()
 	canRevertState := st == "APROBADO" || st == "PARCIALMENTE_APROBADO" || st == "EMITIDO"
-	return canRevertState && !s.HasEmittedPasaje()
+	if !canRevertState {
+		return false
+	}
+
+	// Si se llama sin un ítem específico, permitimos si al menos uno es revertible
+	for _, item := range s.Items {
+		if item.CanBeReverted(user) {
+			return true
+		}
+	}
+	return false
 }
 
 func (s *Solicitud) Approve() error {

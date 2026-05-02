@@ -23,16 +23,29 @@
           @htmx:after-request="loadingPreview = false"
           class="inline-flex items-center px-4 py-2 border border-neutral-300 shadow-sm text-xs font-black rounded-md text-neutral-700 bg-white hover:bg-neutral-50 transition-all uppercase tracking-tight cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          <template x-if="!loadingPreview">
-            <i class="ph ph-file-pdf mr-2 text-lg"></i>
-          </template>
-          <template x-if="loadingPreview">
-            <i class="ph ph-circle-notch animate-spin mr-2 text-lg"></i>
-          </template>
+          <i x-show="!loadingPreview" class="ph ph-file-pdf mr-2 text-lg"></i>
+          <i x-show="loadingPreview" class="ph ph-circle-notch animate-spin mr-2 text-lg"></i>
           <span x-text="loadingPreview ? 'Generando...' : 'Ver / Imprimir PV-05'"></span>
         </button>
+
+        {{ if .Descargo.HasOpenTicket }}
+          <button
+            type="button"
+            :disabled="loadingPreview"
+            hx-get="/descargos/derecho/{{ .Descargo.ID }}/previsualizar-ot"
+            hx-target="#modal-container"
+            @htmx:before-request="loadingPreview = true"
+            @htmx:after-request="loadingPreview = false"
+            class="inline-flex items-center px-4 py-2 border border-orange-300 shadow-sm text-xs font-black rounded-md text-orange-700 bg-orange-50 hover:bg-orange-100 transition-all uppercase tracking-tight cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <i x-show="!loadingPreview" class="ph ph-ticket mr-2 text-lg"></i>
+            <i x-show="loadingPreview" class="ph ph-circle-notch animate-spin mr-2 text-lg"></i>
+            <span x-text="loadingPreview ? 'Generando...' : 'Imprimir OT'"></span>
+          </button>
+        {{ end }}
+
         {{ if .Descargo.IsEditable }}
-          {{ if eq .Descargo.Estado "OPEN_TICKET" }}
+          {{ if .Descargo.IsOpenTicket }}
             <a
               href="/descargos/derecho/{{ .Descargo.ID }}/completar"
               class="inline-flex items-center px-4 py-2 border border-secondary-200 shadow-sm text-xs font-black rounded-md text-secondary-700 bg-secondary-50 hover:bg-secondary-100 transition-all active:scale-95 uppercase tracking-tight"

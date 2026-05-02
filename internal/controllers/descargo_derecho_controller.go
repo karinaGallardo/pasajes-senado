@@ -251,7 +251,9 @@ func (ctrl *DescargoDerechoController) UpdateReutilizacion(c *gin.Context) {
 
 	// Extraer pases a bordo de los tramos (incluyendo los nuevos REUT)
 	pasesAbordoPaths := utils.ExtractDescargoFiles(c, req.TramoID)
-	boletasPaths := []string{} // El servicio espera un slice de strings []string
+
+	// Comprobantes de Pago (Per Pasaje)
+	boletasPaths := utils.ExtractPasajeBoletas(c, req.LiquidacionPasajeID)
 
 	// Asegurar que el estado se mantiene en OPEN_TICKET durante este flujo
 	descargo.Estado = models.EstadoDescargoOpenTicket
@@ -290,11 +292,47 @@ func (ctrl *DescargoDerechoController) Print(c *gin.Context) {
 	c.Writer.Write(pdfReader)
 }
 
+func (ctrl *DescargoDerechoController) PrintOpenTicket(c *gin.Context) {
+	id := c.Param("id")
+	descargo, err := ctrl.descargoService.GetByID(c.Request.Context(), id)
+	if err != nil {
+		c.String(http.StatusNotFound, "Descargo no encontrado")
+		return
+	}
+
+	pdf := ctrl.reportService.GeneratePV05OpenTicket(c.Request.Context(), descargo)
+	if pdf.Err() {
+		c.String(http.StatusInternalServerError, "Error generando PDF de Open Ticket")
+		return
+	}
+
+	disposition := "inline"
+	if utils.IsMobileBrowser(c) {
+		disposition = "attachment"
+	}
+
+	c.Header("Content-Type", "application/pdf")
+	c.Header("Content-Disposition", fmt.Sprintf("%s; filename=\"OPEN-TICKET-%s.pdf\"", disposition, descargo.ID))
+
+	if err := pdf.Output(c.Writer); err != nil {
+		log.Printf("Error enviando PDF OT: %v", err)
+	}
+}
+
 func (ctrl *DescargoDerechoController) Preview(c *gin.Context) {
 	id := c.Param("id")
 	c.HTML(http.StatusOK, "solicitud/components/modal_preview_archivo", gin.H{
 		"Title":    "Previsualización Formulario PV-05",
 		"FilePath": fmt.Sprintf("/descargos/derecho/%s/imprimir", id),
+		"IsPDF":    true,
+	})
+}
+
+func (ctrl *DescargoDerechoController) PreviewOT(c *gin.Context) {
+	id := c.Param("id")
+	c.HTML(http.StatusOK, "solicitud/components/modal_preview_archivo", gin.H{
+		"Title":    "Previsualización Reporte de Reutilización (OT)",
+		"FilePath": fmt.Sprintf("/descargos/derecho/%s/imprimir-ot", id),
 		"IsPDF":    true,
 	})
 }

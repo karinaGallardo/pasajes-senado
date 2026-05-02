@@ -543,9 +543,15 @@ func (ctrl *SolicitudDerechoController) RevertApprovalItem(c *gin.Context) {
 		return
 	}
 
-	solicitud.HydratePermissions(authUser)
-	if !solicitud.Permissions.CanRevertApproval {
-		c.String(http.StatusForbidden, "No tiene permisos para realizar esta acción")
+	item := solicitud.GetItemByID(itemID)
+	if item == nil {
+		c.String(http.StatusNotFound, "Tramo no encontrado")
+		return
+	}
+
+	item.HydratePermissions(authUser)
+	if !item.Permissions.CanRevert {
+		c.String(http.StatusForbidden, "No tiene permisos para revertir la aprobación de este tramo")
 		return
 	}
 

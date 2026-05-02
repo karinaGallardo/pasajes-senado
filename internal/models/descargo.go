@@ -462,3 +462,16 @@ func (d Descargo) GetTotalDevolucionPasajes() float64 {
 	}
 	return totalValue
 }
+
+func (d Descargo) HasOpenTicket() bool {
+	for _, t := range d.Tramos {
+		if t.EsOpenTicket {
+			return true
+		}
+	}
+	return false
+}
+
+func (d Descargo) IsOpenTicket() bool {
+	return d.Estado == EstadoDescargoOpenTicket
+}
