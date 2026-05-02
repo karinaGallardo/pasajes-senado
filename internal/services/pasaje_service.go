@@ -520,3 +520,16 @@ func (s *PasajeService) UpdateServicioEmision(ctx context.Context, req dtos.Upda
 
 	return s.repo.Update(ctx, pasaje)
 }
+func (s *PasajeService) CreateCargo(ctx context.Context, req dtos.CreatePasajeCargoRequest, filePath string) error {
+	monto := utils.ParseFloat(req.Monto)
+	cargo := &models.PasajeCargo{
+		PasajeID: req.PasajeID,
+		Tipo:     req.Tipo,
+		Factura:  req.Factura,
+		Monto:    monto,
+		Archivo:  filePath,
+		Glosa:    req.Glosa,
+	}
+
+	return s.repo.GetDB().WithContext(ctx).Create(cargo).Error
+}

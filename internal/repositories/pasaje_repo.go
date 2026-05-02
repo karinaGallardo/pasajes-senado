@@ -38,6 +38,7 @@ func (r *PasajeRepository) FindByID(ctx context.Context, id string) (*models.Pas
 	err := r.db.WithContext(ctx).Preload("EstadoPasaje").
 		Preload("Agencia").
 		Preload("Aerolinea").
+		Preload("Cargos", func(db *gorm.DB) *gorm.DB { return db.Order("created_at DESC") }).
 		Preload("RutaPasaje.Origen").
 		Preload("RutaPasaje.Destino").
 		Preload("RutaPasaje.Escalas", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).

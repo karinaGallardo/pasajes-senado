@@ -72,6 +72,9 @@ type Pasaje struct {
 	ArchivoComprobante string     `gorm:"size:255;default:''"`
 	FechaDeposito      *time.Time `gorm:"type:timestamp"`
 
+	// Cargos Asociados al Pasaje (Facturas de Emisión, Cambios, etc.)
+	Cargos []PasajeCargo `gorm:"foreignKey:PasajeID"`
+
 	// Relación inversa para liquidación
 	DescargoTramos []DescargoTramo `gorm:"foreignKey:PasajeID;<-:false"`
 
@@ -186,6 +189,14 @@ func (p Pasaje) HasOpenTicket() bool {
 		}
 	}
 	return false
+}
+
+func (p Pasaje) GetMontoCargos() float64 {
+	total := 0.0
+	for _, c := range p.Cargos {
+		total += c.Monto
+	}
+	return total
 }
 
 func (p Pasaje) GetStatusBannerClass() string {

@@ -440,3 +440,39 @@ func (ctrl *PasajeController) UpdateServicio(c *gin.Context) {
 	c.Header("HX-Refresh", "true")
 	c.Status(204)
 }
+
+func (ctrl *PasajeController) GetCargosModal(c *gin.Context) {
+	id := c.Param("id")
+	pasaje, err := ctrl.pasajeService.GetByID(c.Request.Context(), id)
+	if err != nil {
+		c.String(http.StatusNotFound, "Pasaje no encontrado")
+		return
+	}
+
+	utils.Render(c, "solicitud/components/modal_cargos_pasaje", gin.H{
+		"Pasaje": pasaje,
+	})
+}
+
+func (ctrl *PasajeController) StoreCargo(c *gin.Context) {
+	id := c.Param("id")
+	var req dtos.CreatePasajeCargoRequest
+	if err := c.ShouldBind(&req); err != nil {
+		c.String(http.StatusBadRequest, "Datos inválidos")
+		return
+	}
+	req.PasajeID = id
+
+	var filePath string
+	if file, err := c.FormFile("archivo"); err == nil {
+		filePath, _ = utils.SaveUploadedFile(c, file, "uploads/pasajes/cargos", "cargo_"+id+"_")
+	}
+
+	if err := ctrl.pasajeService.CreateCargo(c.Request.Context(), req, filePath); err != nil {
+		c.String(http.StatusInternalServerError, "Error al guardar cargo: "+err.Error())
+		return
+	}
+
+	// Re-render modal to show new list
+	ctrl.GetCargosModal(c)
+}

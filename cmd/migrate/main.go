@@ -56,6 +56,7 @@ func main() {
 		&models.Solicitud{},
 		&models.SolicitudItem{},
 		&models.Pasaje{},
+		&models.PasajeCargo{},
 		&models.OpenTicket{},
 		&models.Viatico{},
 		&models.DetalleViatico{},

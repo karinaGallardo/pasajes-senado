@@ -12,6 +12,11 @@ type CreatePasajeRequest struct {
 	AgenciaID       string `form:"agencia_id" binding:"required"`
 	NumeroFactura   string `form:"numero_factura"`
 	Glosa           string `form:"glosa"`
+
+	// Cargos Asociados (Arrays enviados por el form dinámico)
+	CargoTipos    []string `form:"cargo_tipo[]"`
+	CargoFacturas []string `form:"cargo_factura[]"`
+	CargoMontos   []string `form:"cargo_monto[]"`
 }
 
 type UpdatePasajeRequest struct {
@@ -45,4 +50,12 @@ type UpdateServicioEmisionRequest struct {
 	FacturaNumero string `form:"servicio_factura_numero"`
 	Fecha         string `form:"servicio_factura_fecha"`
 	Monto         string `form:"servicio_monto"`
+}
+
+type CreatePasajeCargoRequest struct {
+	PasajeID string `form:"pasaje_id"`
+	Tipo     string `form:"tipo" binding:"required"`
+	Factura  string `form:"factura" binding:"required"`
+	Monto    string `form:"monto" binding:"required"`
+	Glosa    string `form:"glosa"`
 }

@@ -149,6 +149,8 @@ func SetupRoutes(r *gin.Engine, container *app.Container, loginLimiter *middlewa
 		protected.GET("/pasajes/:id/modal-servicio", pasajeCtrl.GetServicioModal)
 		protected.POST("/pasajes/:id/servicio", pasajeCtrl.UpdateServicio)
 		protected.DELETE("/pasajes/:id", pasajeCtrl.Delete)
+		protected.GET("/pasajes/:id/cargos", pasajeCtrl.GetCargosModal)
+		protected.POST("/pasajes/:id/cargos", pasajeCtrl.StoreCargo)
 
 		protected.GET("/viaticos", viaticoCtrl.Index)
 		protected.GET("/solicitudes/:id/viaticos/nuevo", viaticoCtrl.Create)

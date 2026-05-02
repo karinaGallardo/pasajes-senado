@@ -1619,7 +1619,7 @@ func (s *ReportService) GeneratePV05OpenTicket(ctx context.Context, descargo *mo
 
 	pdf.Ln(10)
 	pdf.SetFont("Arial", "B", 9)
-	pdf.MultiCell(190, 5, tr("NOTA: El presente documento certifica que los tramos arriba detallados no han sido utilizados y quedan a la espera de ser reutilizados por el beneficiario para su posterior reprogramación según normativa vigente."), "", "L", false)
+	pdf.MultiCell(190, 5, tr("Se certifica que los tramos detallados corresponden a pasajes previamente devueltos y no utilizados, que fueron pagados en su emisión original y posteriormente reutilizados y utilizados por el beneficiario, conforme a normativa vigente."), "", "L", false)
 
 	// Firmas
 	sigY := pdf.GetY() + 30

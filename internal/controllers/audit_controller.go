@@ -64,10 +64,11 @@ func (ctrl *AuditController) Table(c *gin.Context) {
 	}
 
 	utils.Render(c, "admin/audit/table", gin.H{
-		"Logs":       logs,
-		"Page":       page,
-		"Limit":      limit,
-		"Total":      total,
-		"TotalPages": (int(total) + limit - 1) / limit,
+		"Logs":           logs,
+		"Page":           page,
+		"Limit":          limit,
+		"Total":          total,
+		"TotalPages":     (int(total) + limit - 1) / limit,
+		"CurrentFilters": filters,
 	})
 }
