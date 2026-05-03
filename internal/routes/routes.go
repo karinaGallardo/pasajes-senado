@@ -72,6 +72,8 @@ func SetupRoutes(r *gin.Engine, container *app.Container, loginLimiter *middlewa
 		protected.GET("/solicitudes/pendientes-descargo/table", solicitudCtrl.TablePendientesDescargo)
 		protected.GET("/solicitudes/con-open-ticket", solicitudCtrl.IndexOpenTicketDescargo)
 		protected.GET("/solicitudes/con-open-ticket/table", solicitudCtrl.TableOpenTicketDescargo)
+		protected.GET("/solicitudes/en-revision-descargo", solicitudCtrl.EnRevisionDescargo)
+		protected.GET("/solicitudes/en-revision-descargo/table", solicitudCtrl.TableEnRevisionDescargo)
 		protected.GET("/api/solicitudes/pending-stats", solicitudCtrl.GetPendingStats)
 		protected.POST("/solicitudes/:id/finalizar", solicitudCtrl.Finalize)
 		protected.POST("/solicitudes/:id/revertir-finalizacion", solicitudCtrl.RevertFinalize)

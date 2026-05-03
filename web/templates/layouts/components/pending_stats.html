@@ -28,7 +28,6 @@
     {{ end }}
 
 
-    <!-- Open Tickets con Descargo -->
     {{ if gt .OpenTicketDescargoCount 0 }}
       <a
         href="/solicitudes/con-open-ticket"
@@ -38,6 +37,19 @@
         <i class="ph ph-ticket text-lg"></i>
         <span class="text-xs font-bold w-5 text-center">{{ .OpenTicketDescargoCount }}</span>
         <span class="hidden xl:inline text-[10px] font-bold uppercase tracking-wider">Open T.</span>
+      </a>
+    {{ end }}
+
+    <!-- En Revisión -->
+    {{ if gt .EnRevisionCount 0 }}
+      <a
+        href="/solicitudes/en-revision-descargo"
+        class="flex items-center gap-1.5 px-3 py-1.5 bg-secondary-50 text-secondary-700 rounded-md border border-secondary-100 hover:bg-secondary-100 transition-colors group w-32 justify-center"
+        title="Descargos en revisión"
+      >
+        <i class="ph ph-magnifying-glass text-lg"></i>
+        <span class="text-xs font-bold w-5 text-center">{{ .EnRevisionCount }}</span>
+        <span class="hidden xl:inline text-[10px] font-bold uppercase tracking-wider">Revisión</span>
       </a>
     {{ end }}
     {{ if eq .TotalPending 0 }}

@@ -84,6 +84,7 @@ func (ctrl *SolicitudController) IndexPendientesDescargo(c *gin.Context) {
 	}
 	openTicketCount := ctrl.openTicketService.GetPendingCount(c.Request.Context(), userIDs)
 	openTicketDescargoCount := ctrl.service.GetConDescargoOpenTicketCount(c.Request.Context(), authUser.ID, authUser.IsAdminOrResponsable())
+	enRevisionCount := ctrl.service.GetEnRevisionDescargoCount(c.Request.Context(), authUser.ID, authUser.IsAdminOrResponsable())
 
 	utils.Render(c, "solicitud/pendientes_descargo", gin.H{
 		"Title":                   "Solicitudes Pendientes de Descargo",
@@ -95,7 +96,8 @@ func (ctrl *SolicitudController) IndexPendientesDescargo(c *gin.Context) {
 		"PendingDescargos":        len(pendingDescargosCount),
 		"OpenTicketCount":         openTicketCount,
 		"OpenTicketDescargoCount": openTicketDescargoCount,
-		"TotalPending":            pendingRequests + int64(len(pendingDescargosCount)) + openTicketCount + openTicketDescargoCount,
+		"EnRevisionCount":         enRevisionCount,
+		"TotalPending":            pendingRequests + int64(len(pendingDescargosCount)) + openTicketCount + openTicketDescargoCount + enRevisionCount,
 	})
 }
 
@@ -144,6 +146,127 @@ func (ctrl *SolicitudController) TablePendientesDescargo(c *gin.Context) {
 		"Usuarios":           usuariosMap,
 		"PendientesDescargo": true,
 		"LinkBase":           "/solicitudes/pendientes-descargo",
+	})
+}
+
+func (ctrl *SolicitudController) EnRevisionDescargo(c *gin.Context) {
+	authUser := appcontext.AuthUser(c)
+	if authUser == nil {
+		c.Redirect(302, "/auth/login")
+		return
+	}
+
+	searchTerm := c.Query("q")
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+
+	result, err := ctrl.service.GetEnRevisionDescargoPaginated(c.Request.Context(), authUser.ID, authUser.IsAdminOrResponsable(), page, limit, searchTerm)
+	if err != nil {
+		utils.Render(c, "error.html", gin.H{"error": err.Error()})
+		return
+	}
+
+	solicitudes := result.Solicitudes
+	userIDsMap := make(map[string]bool)
+	for _, s := range solicitudes {
+		if s.CreatedBy != nil {
+			userIDsMap[*s.CreatedBy] = true
+		}
+		if s.UpdatedBy != nil {
+			userIDsMap[*s.UpdatedBy] = true
+		}
+	}
+	var ids []string
+	for id := range userIDsMap {
+		ids = append(ids, id)
+	}
+	usuariosMap := make(map[string]*models.Usuario)
+	if len(ids) > 0 {
+		usuarios, _ := ctrl.userService.GetByIDs(c.Request.Context(), ids)
+		for i := range usuarios {
+			usuariosMap[usuarios[i].ID] = &usuarios[i]
+		}
+	}
+
+	// Sidebar counts
+	pendingRequests, _ := ctrl.service.GetPendingCount(c.Request.Context(), authUser.ID, authUser.IsAdminOrResponsable())
+	pendingDescargos, _ := ctrl.service.GetPendientesDescargo(c.Request.Context(), authUser.ID, authUser.IsAdminOrResponsable())
+	var userIDs []string
+	if !authUser.IsAdminOrResponsable() {
+		userIDs = []string{authUser.ID}
+		if senators, err := ctrl.userService.GetSenatorsByEncargado(c.Request.Context(), authUser.ID); err == nil {
+			for _, s := range senators {
+				userIDs = append(userIDs, s.ID)
+			}
+		}
+	}
+	openTicketCount := ctrl.openTicketService.GetPendingCount(c.Request.Context(), userIDs)
+	openTicketDescargoCount := ctrl.service.GetConDescargoOpenTicketCount(c.Request.Context(), authUser.ID, authUser.IsAdminOrResponsable())
+	enRevisionCount := ctrl.service.GetEnRevisionDescargoCount(c.Request.Context(), authUser.ID, authUser.IsAdminOrResponsable())
+
+	utils.Render(c, "solicitud/en_revision_descargo", gin.H{
+		"Title":                   "Descargos en Revisión",
+		"Result":                  result,
+		"Usuarios":                usuariosMap,
+		"EnRevisionDescargo":      true,
+		"LinkBase":                "/solicitudes/en-revision-descargo",
+		"PendingRequests":         pendingRequests,
+		"PendingDescargos":        len(pendingDescargos),
+		"OpenTicketCount":         openTicketCount,
+		"OpenTicketDescargoCount": openTicketDescargoCount,
+		"EnRevisionCount":         enRevisionCount,
+		"TotalPending":            pendingRequests + int64(len(pendingDescargos)) + openTicketCount + openTicketDescargoCount + enRevisionCount,
+	})
+}
+
+func (ctrl *SolicitudController) TableEnRevisionDescargo(c *gin.Context) {
+	authUser := appcontext.AuthUser(c)
+	if authUser == nil {
+		c.Redirect(302, "/auth/login")
+		return
+	}
+
+	searchTerm := c.Query("q")
+	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
+	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
+
+	result, err := ctrl.service.GetEnRevisionDescargoPaginated(c.Request.Context(), authUser.ID, authUser.IsAdminOrResponsable(), page, limit, searchTerm)
+	if err != nil {
+		if c.GetHeader("HX-Request") == "true" {
+			c.String(500, "Error al cargar la tabla: "+err.Error())
+		} else {
+			utils.Render(c, "error.html", gin.H{"error": err.Error()})
+		}
+		return
+	}
+
+	solicitudes := result.Solicitudes
+	userIDsMap := make(map[string]bool)
+	for _, s := range solicitudes {
+		if s.CreatedBy != nil {
+			userIDsMap[*s.CreatedBy] = true
+		}
+		if s.UpdatedBy != nil {
+			userIDsMap[*s.UpdatedBy] = true
+		}
+	}
+	var ids []string
+	for id := range userIDsMap {
+		ids = append(ids, id)
+	}
+	usuariosMap := make(map[string]*models.Usuario)
+	if len(ids) > 0 {
+		usuarios, _ := ctrl.userService.GetByIDs(c.Request.Context(), ids)
+		for i := range usuarios {
+			usuariosMap[usuarios[i].ID] = &usuarios[i]
+		}
+	}
+
+	utils.Render(c, "solicitud/table_en_revision_descargo", gin.H{
+		"Result":             result,
+		"Usuarios":           usuariosMap,
+		"EnRevisionDescargo": true,
+		"LinkBase":           "/solicitudes/en-revision-descargo",
 	})
 }
 
@@ -251,13 +374,15 @@ func (ctrl *SolicitudController) GetPendingStats(c *gin.Context) {
 	}
 	openTicketCount := ctrl.openTicketService.GetPendingCount(c.Request.Context(), userIDs)
 	openTicketDescargoCount := ctrl.service.GetConDescargoOpenTicketCount(c.Request.Context(), authUser.ID, authUser.IsAdminOrResponsable())
+	enRevisionCount := ctrl.service.GetEnRevisionDescargoCount(c.Request.Context(), authUser.ID, authUser.IsAdminOrResponsable())
 
 	utils.Render(c, "layouts/components/pending_stats", gin.H{
 		"PendingRequests":         pendingRequests,
 		"PendingDescargos":        len(pendingDescargos),
 		"OpenTicketCount":         openTicketCount,
 		"OpenTicketDescargoCount": openTicketDescargoCount,
-		"TotalPending":            pendingRequests + int64(len(pendingDescargos)) + openTicketCount + openTicketDescargoCount,
+		"EnRevisionCount":         enRevisionCount,
+		"TotalPending":            pendingRequests + int64(len(pendingDescargos)) + openTicketCount + openTicketDescargoCount + enRevisionCount,
 	})
 }
 

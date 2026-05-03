@@ -231,6 +231,15 @@ func (s *SolicitudService) GetConDescargoOpenTicketCount(ctx context.Context, us
 	return count
 }
 
+func (s *SolicitudService) GetEnRevisionDescargoPaginated(ctx context.Context, userID string, isAdmin bool, page, limit int, searchTerm string) (*repositories.PaginatedSolicitudes, error) {
+	return s.repo.FindEnRevisionDescargoPaginated(ctx, userID, isAdmin, page, limit, searchTerm)
+}
+
+func (s *SolicitudService) GetEnRevisionDescargoCount(ctx context.Context, userID string, isAdmin bool) int64 {
+	count, _ := s.repo.CountEnRevisionDescargo(ctx, userID, isAdmin)
+	return count
+}
+
 func (s *SolicitudService) GetByCupoDerechoItemID(ctx context.Context, itemID string) ([]models.Solicitud, error) {
 	return s.repo.FindByCupoDerechoItemID(ctx, itemID)
 }

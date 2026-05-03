@@ -592,6 +592,72 @@ func (r *SolicitudRepository) CountWithOpenTicketDescargo(ctx context.Context, u
 	return count, err
 }
 
+func (r *SolicitudRepository) FindEnRevisionDescargoPaginated(ctx context.Context, userID string, isAdmin bool, page, limit int, searchTerm string) (*PaginatedSolicitudes, error) {
+	var solicitudes []models.Solicitud
+	var total int64
+
+	baseQuery := r.db.WithContext(ctx).Model(&models.Solicitud{}).
+		Preload("Usuario").
+		Preload("Usuario.Oficina").
+		Preload("Usuario.Cargo").
+		Preload("Items", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
+		Preload("Items.Pasajes", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
+		Preload("TipoSolicitud.ConceptoViaje").
+		Preload("EstadoSolicitud").
+		Preload("Descargo.Tramos").
+		Joins("JOIN descargos ON solicitudes.id = descargos.solicitud_id").
+		Joins("LEFT JOIN usuarios ON solicitudes.usuario_id = usuarios.id").
+		Where("descargos.estado IN ?", []models.EstadoDescargo{models.EstadoDescargoEnRevision, models.EstadoDescargoEnRevisionOT}).
+		Scopes(SearchSolicitud(searchTerm))
+
+	if !isAdmin {
+		baseQuery = baseQuery.Where(
+			"solicitudes.usuario_id = ? OR solicitudes.created_by = ? OR solicitudes.usuario_id IN (?)",
+			userID, userID,
+			r.db.WithContext(ctx).Table("usuarios").Select("id").Where("encargado_id = ?", userID),
+		)
+	}
+
+	baseQuery.Count(&total)
+
+	err := baseQuery.
+		Scopes(Paginate(page, limit)).
+		Order("solicitudes.created_at DESC").
+		Find(&solicitudes).Error
+
+	totalPages := 0
+	if limit > 0 {
+		totalPages = int((total + int64(limit) - 1) / int64(limit))
+	}
+
+	return &PaginatedSolicitudes{
+		Solicitudes: solicitudes,
+		Total:       total,
+		Page:        page,
+		Limit:       limit,
+		TotalPages:  totalPages,
+		SearchTerm:  searchTerm,
+	}, err
+}
+
+func (r *SolicitudRepository) CountEnRevisionDescargo(ctx context.Context, userID string, isAdmin bool) (int64, error) {
+	var count int64
+	baseQuery := r.db.WithContext(ctx).Model(&models.Solicitud{}).
+		Joins("JOIN descargos ON solicitudes.id = descargos.solicitud_id").
+		Where("descargos.estado IN ?", []models.EstadoDescargo{models.EstadoDescargoEnRevision, models.EstadoDescargoEnRevisionOT})
+
+	if !isAdmin {
+		baseQuery = baseQuery.Where(
+			"solicitudes.usuario_id = ? OR solicitudes.created_by = ? OR solicitudes.usuario_id IN (?)",
+			userID, userID,
+			r.db.WithContext(ctx).Table("usuarios").Select("id").Where("encargado_id = ?", userID),
+		)
+	}
+
+	err := baseQuery.Count(&count).Error
+	return count, err
+}
+
 func (r *SolicitudRepository) UpdateTimestamps(ctx context.Context, id string, createdAt, updatedAt any) error {
 	return r.db.WithContext(ctx).Model(&models.Solicitud{}).Where("id = ?", id).Updates(map[string]interface{}{
 		"created_at": createdAt,

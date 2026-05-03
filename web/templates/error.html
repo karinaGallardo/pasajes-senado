@@ -1,0 +1,26 @@
+{{ define "error.html" }}
+  {{ template "layout_header" . }}
+  <div class="px-4 py-12 flex flex-col items-center justify-center min-h-[60vh]">
+    <div class="bg-danger-50 text-danger-700 p-8 rounded-xl border border-danger-100 shadow-sm max-w-2xl w-full text-center">
+      <i class="ph ph-warning-circle text-6xl mb-4"></i>
+      <h1 class="text-2xl font-black mb-2 uppercase">Ha ocurrido un error</h1>
+      <p class="text-sm opacity-80 mb-6">
+        Lo sentimos, no pudimos procesar tu solicitud en este momento. Por favor, intenta de nuevo más tarde o contacta con
+        soporte técnico.
+      </p>
+      {{ if .error }}
+        <div class="bg-white/50 p-4 rounded border border-danger-200 text-left mb-6">
+          <p class="text-xs font-mono text-danger-900 break-all">{{ .error }}</p>
+        </div>
+      {{ end }}
+      <a
+        href="/"
+        class="inline-flex items-center gap-2 px-6 py-2 bg-danger-700 text-white rounded-lg font-bold hover:bg-danger-800 transition-colors"
+      >
+        <i class="ph ph-house"></i>
+        Volver al Inicio
+      </a>
+    </div>
+  </div>
+  {{ template "layout_footer" . }}
+{{ end }}
