@@ -35,7 +35,8 @@ func (r *PasajeRepository) Delete(ctx context.Context, id string, deletedBy stri
 
 func (r *PasajeRepository) FindByID(ctx context.Context, id string) (*models.Pasaje, error) {
 	var pasaje models.Pasaje
-	err := r.db.WithContext(ctx).Preload("EstadoPasaje").
+	err := r.db.WithContext(ctx).
+		Preload("EstadoPasaje").
 		Preload("Agencia").
 		Preload("Aerolinea").
 		Preload("Cargos", func(db *gorm.DB) *gorm.DB { return db.Order("created_at DESC") }).

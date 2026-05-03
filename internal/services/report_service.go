@@ -1490,86 +1490,123 @@ func (s *ReportService) GeneratePV05OpenTicket(ctx context.Context, descargo *mo
 	}
 	s.drawLabelBox(pdf, tr, "CARGO :", cargo, 30, 60, false)
 
-	// 1. Tramos marcados para reutilizar (Open Ticket original)
-	var tramosParaReutilizar []models.DescargoTramo
+	// 1. Agrupamiento por Pasaje (Contenedor del crédito)
+	type PasajeGroup struct {
+		Pasaje     *models.Pasaje
+		Originales []models.DescargoTramo
+		Nuevos     []models.DescargoTramo
+	}
+
+	pasajesMap := make(map[string]*PasajeGroup)
+	var ordenPasajes []string // Para mantener un orden determinista
+
 	for _, t := range descargo.Tramos {
+		if t.PasajeID == nil {
+			continue
+		}
+		pid := *t.PasajeID
+
+		if _, ok := pasajesMap[pid]; !ok {
+			pasajesMap[pid] = &PasajeGroup{Pasaje: t.Pasaje}
+			ordenPasajes = append(ordenPasajes, pid)
+		}
+
 		if t.EsOpenTicket {
-			tramosParaReutilizar = append(tramosParaReutilizar, t)
+			pasajesMap[pid].Originales = append(pasajesMap[pid].Originales, t)
+		} else if t.IsReutilizacion() {
+			pasajesMap[pid].Nuevos = append(pasajesMap[pid].Nuevos, t)
 		}
 	}
 
-	// 2. Tramos donde se reutilizó un ticket (Nuevos registros REUT)
-	var tramosReutilizados []models.DescargoTramo
-	for _, t := range descargo.Tramos {
-		if t.IsReutilizacion() {
-			tramosReutilizados = append(tramosReutilizados, t)
-		}
-	}
-
-	// SECCIÓN 1: Pasajes que quedaron para reutilizar
+	// SECCIÓN 1: Detalle de Reutilización de Billetes
 	pdf.Ln(5)
 	pdf.SetFont("Arial", "B", 10)
-	pdf.CellFormat(0, 8, tr("1. PASAJES PARA REUTILIZAR (CRÉDITO ORIGINAL)"), "B", 1, "L", false, 0, "")
+	pdf.CellFormat(0, 8, tr("1. DETALLE DE REUTILIZACIÓN DE BILLETES (MOVIMIENTOS)"), "B", 1, "L", false, 0, "")
 	pdf.Ln(2)
 
-	pdf.SetFillColor(240, 240, 240)
-	pdf.SetFont("Arial", "B", 8)
-	pdf.CellFormat(70, 7, tr("RUTA ORIGINAL"), "1", 0, "C", true, 0, "")
-	pdf.CellFormat(50, 7, tr("N° BILLETE"), "1", 0, "C", true, 0, "")
-	pdf.CellFormat(30, 7, tr("FECHA"), "1", 0, "C", true, 0, "")
-	pdf.CellFormat(40, 7, tr("ESTADO"), "1", 1, "C", true, 0, "")
+	hasAnyOT := false
+	for _, pid := range ordenPasajes {
+		group := pasajesMap[pid]
+		if len(group.Originales) == 0 {
+			continue
+		}
+		hasAnyOT = true
 
-	pdf.SetFont("Arial", "", 8)
-	if len(tramosParaReutilizar) == 0 {
-		pdf.CellFormat(190, 8, tr("No hay tramos originales marcados para reutilización."), "1", 1, "C", false, 0, "")
-	} else {
-		for _, t := range tramosParaReutilizar {
+		// CABECERA DEL PASAJE (Con indicación de Ida/Vuelta)
+		tipoPasaje := ""
+		if len(group.Originales) > 0 {
+			if strings.HasPrefix(string(group.Originales[0].Tipo), "VUELTA") {
+				tipoPasaje = " [VUELTA]"
+			} else {
+				tipoPasaje = " [IDA]"
+			}
+		}
+
+		pdf.SetFillColor(230, 235, 245)
+		pdf.SetFont("Arial", "B", 9)
+		pdf.CellFormat(190, 8, tr("BILLETE ORIGINAL N° "+group.Pasaje.NumeroBillete+tipoPasaje), "1", 1, "L", true, 0, "")
+
+		// Sub-encabezado de Tramos
+		pdf.SetFillColor(245, 245, 245)
+		pdf.SetFont("Arial", "B", 7)
+		pdf.CellFormat(80, 6, tr("RUTA / TRAMO"), "1", 0, "C", true, 0, "")
+		pdf.CellFormat(40, 6, tr("N° BILLETE"), "1", 0, "C", true, 0, "")
+		pdf.CellFormat(30, 6, tr("FECHA"), "1", 0, "C", true, 0, "")
+		pdf.CellFormat(40, 6, tr("ESTADO / TIPO"), "1", 1, "C", true, 0, "")
+
+		// A. LISTAR TRAMOS ORIGINALES (NO UTILIZADOS)
+		pdf.SetFont("Arial", "", 8)
+		for _, t := range group.Originales {
 			fecha := "-"
 			if t.Fecha != nil {
 				fecha = t.Fecha.Format("02/01/2006")
 			}
-			pdf.CellFormat(70, 8, tr(t.GetRutaDisplay()), "1", 0, "C", false, 0, "")
-			pdf.CellFormat(50, 8, tr(t.Billete), "1", 0, "C", false, 0, "")
-			pdf.CellFormat(30, 8, tr(fecha), "1", 0, "C", false, 0, "")
+
+			pdf.CellFormat(80, 7, tr(t.GetRutaDisplay()), "1", 0, "L", false, 0, "")
+			pdf.CellFormat(40, 7, tr(t.Billete), "1", 0, "C", false, 0, "")
+			pdf.CellFormat(30, 7, tr(fecha), "1", 0, "C", false, 0, "")
+
 			pdf.SetTextColor(200, 0, 0)
-			pdf.SetFont("Arial", "B", 8)
-			pdf.CellFormat(40, 8, tr("NO UTILIZADO"), "1", 1, "C", false, 0, "")
+			pdf.SetFont("Arial", "B", 7)
+			pdf.CellFormat(40, 7, tr("NO UTILIZADO"), "1", 1, "C", false, 0, "")
 			pdf.SetTextColor(0, 0, 0)
 			pdf.SetFont("Arial", "", 8)
 		}
+
+		// B. LISTAR REUTILIZACIONES (NUEVOS VUELOS)
+		if len(group.Nuevos) > 0 {
+			for _, n := range group.Nuevos {
+				fechaN := "-"
+				if n.Fecha != nil {
+					fechaN = n.Fecha.Format("02/01/2006")
+				}
+
+				pdf.SetFillColor(250, 255, 250)
+				pdf.CellFormat(80, 7, tr(n.GetRutaDisplay()), "1", 0, "L", true, 0, "")
+
+				billeteDisplay := n.Billete
+				if n.Billete != group.Pasaje.NumeroBillete {
+					pdf.SetFont("Arial", "", 7)
+					billeteDisplay = fmt.Sprintf("%s", n.Billete)
+				}
+				pdf.CellFormat(40, 7, tr(billeteDisplay), "1", 0, "C", true, 0, "")
+				pdf.SetFont("Arial", "", 8)
+
+				pdf.CellFormat(30, 7, tr(fechaN), "1", 0, "C", true, 0, "")
+
+				pdf.SetTextColor(0, 100, 0)
+				pdf.SetFont("Arial", "B", 7)
+				pdf.CellFormat(40, 7, tr("REUTILIZADO"), "1", 1, "C", true, 0, "")
+				pdf.SetTextColor(0, 0, 0)
+				pdf.SetFont("Arial", "", 8)
+			}
+		}
+		pdf.Ln(3)
 	}
 
-	// SECCIÓN 2: Registro de cómo se usaron esos tickets
-	pdf.Ln(5)
-	pdf.SetFont("Arial", "B", 10)
-	pdf.CellFormat(0, 8, tr("2. REUTILIZACIÓN REGISTRADA (NUEVOS VUELOS)"), "B", 1, "L", false, 0, "")
-	pdf.Ln(2)
-
-	pdf.SetFillColor(240, 240, 240)
-	pdf.SetFont("Arial", "B", 8)
-	pdf.CellFormat(70, 7, tr("NUEVA RUTA"), "1", 0, "C", true, 0, "")
-	pdf.CellFormat(50, 7, tr("N° BILLETE REUTILIZADO"), "1", 0, "C", true, 0, "")
-	pdf.CellFormat(30, 7, tr("FECHA"), "1", 0, "C", true, 0, "")
-	pdf.CellFormat(40, 7, tr("TIPO"), "1", 1, "C", true, 0, "")
-
-	pdf.SetFont("Arial", "", 8)
-	if len(tramosReutilizados) == 0 {
-		pdf.CellFormat(190, 8, tr("No se han registrado nuevas rutas de reutilización en este descargo."), "1", 1, "C", false, 0, "")
-	} else {
-		for _, t := range tramosReutilizados {
-			fecha := "-"
-			if t.Fecha != nil {
-				fecha = t.Fecha.Format("02/01/2006")
-			}
-			pdf.CellFormat(70, 8, tr(t.GetRutaDisplay()), "1", 0, "C", false, 0, "")
-			pdf.CellFormat(50, 8, tr(t.Billete), "1", 0, "C", false, 0, "")
-			pdf.CellFormat(30, 8, tr(fecha), "1", 0, "C", false, 0, "")
-			pdf.SetTextColor(0, 100, 0)
-			pdf.SetFont("Arial", "B", 8)
-			pdf.CellFormat(40, 8, tr("REUTILIZADO"), "1", 1, "C", false, 0, "")
-			pdf.SetTextColor(0, 0, 0)
-			pdf.SetFont("Arial", "", 8)
-		}
+	if !hasAnyOT {
+		pdf.SetFont("Arial", "", 8)
+		pdf.CellFormat(190, 8, tr("No se han registrado movimientos de reutilización en este descargo."), "1", 1, "C", false, 0, "")
 	}
 
 	// SECCIÓN 3: Liquidación Financiera (Conciliación de Costos)
@@ -1621,12 +1658,13 @@ func (s *ReportService) GeneratePV05OpenTicket(ctx context.Context, descargo *mo
 	pdf.SetFont("Arial", "B", 9)
 	pdf.MultiCell(190, 5, tr("Se certifica que los tramos detallados corresponden a pasajes previamente devueltos y no utilizados, que fueron pagados en su emisión original y posteriormente reutilizados y utilizados por el beneficiario, conforme a normativa vigente."), "", "L", false)
 
-	// Firmas
+	// Firmas (Igual que PV-05 estándar)
 	sigY := pdf.GetY() + 30
-	if sigY < 200 {
-		sigY = 220
+	if sigY > 240 {
+		pdf.AddPage()
+		sigY = 40
 	}
-	s.drawSignatureBlock(pdf, tr, sigY, "BENEFICIARIO", user.GetNombreCompleto(), "", "ENCARGADO DE PASAJES", "", "")
+	s.drawSignatureBlock(pdf, tr, sigY, "SELLO UNIDAD SOLICITANTE", "", "", "FIRMA/RESPONSABLE PRESENTACION DEL DESCARGO", "", "")
 
 	return pdf
 }
