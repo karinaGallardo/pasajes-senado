@@ -3132,10 +3132,6 @@ video {
   border-bottom-width: 2px;
 }
 
-.border-b-4 {
-  border-bottom-width: 4px;
-}
-
 .border-l {
   border-left-width: 1px;
 }
@@ -4194,11 +4190,6 @@ video {
 
 .border-primary-700\/95 {
   border-color: rgb(137 48 38 / 0.95);
-}
-
-.border-primary-800 {
-  --tw-border-opacity: 1;
-  border-color: rgb(114 42 33 / var(--tw-border-opacity, 1));
 }
 
 .border-primary\/10 {

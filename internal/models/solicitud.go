@@ -359,6 +359,7 @@ func (s *Solicitud) UpdateStatusBasedOnItems() {
 	hasFinalizado := false
 	hasAprobado := false
 	hasSolicitado := false
+	hasPendiente := false
 
 	allRejected := true
 
@@ -377,6 +378,8 @@ func (s *Solicitud) UpdateStatusBasedOnItems() {
 			hasAprobado = true
 		case "SOLICITADO":
 			hasSolicitado = true
+		case "PENDIENTE":
+			hasPendiente = true
 		}
 	}
 
@@ -384,15 +387,18 @@ func (s *Solicitud) UpdateStatusBasedOnItems() {
 
 	if allRejected {
 		newState = "RECHAZADO"
-	} else if hasSolicitado {
-		// Si hay algo solicitado, o es SOLICITADO o PARCIALMENTE_APROBADO
+	} else if hasSolicitado || hasPendiente {
+		// Si hay algo solicitado o pendiente, y algo ya avanzó, es PARCIALMENTE_APROBADO
 		if hasAprobado || hasEmitido || hasFinalizado {
 			newState = "PARCIALMENTE_APROBADO"
+		} else if hasSolicitado {
+			newState = "SOLICITADO"
 		} else {
+			// Si no hay nada solicitado pero sí pendiente, el estado global inicial es SOLICITADO
 			newState = "SOLICITADO"
 		}
 	} else if hasAprobado {
-		// Si no hay nada solicitado, pero queda algo solo aprobado (sin emitir), sigue en APROBADO global
+		// Si no hay nada solicitado/pendiente, pero queda algo solo aprobado (sin emitir), sigue en APROBADO global
 		newState = "APROBADO"
 	} else if hasEmitido {
 		// No hay solicitados ni aprobados pendientes, y hay al menos un emitido
@@ -797,7 +803,6 @@ func (s Solicitud) GetItinerarioResumen() string {
 
 	return strings.Join(points, "-")
 }
-
 
 func (s Solicitud) GetUltimoVueloFecha() string {
 	maxDate := s.GetMaxFechaVueloEmitida()
