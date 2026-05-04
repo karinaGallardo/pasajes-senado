@@ -1764,6 +1764,10 @@ video {
   margin-bottom: 1rem;
 }
 
+.mb-5 {
+  margin-bottom: 1.25rem;
+}
+
 .mb-6 {
   margin-bottom: 1.5rem;
 }
@@ -2011,6 +2015,10 @@ video {
   height: 32px;
 }
 
+.h-\[46px\] {
+  height: 46px;
+}
+
 .h-\[70vh\] {
   height: 70vh;
 }
@@ -2106,6 +2114,14 @@ video {
 
 .min-h-\[600px\] {
   min-height: 600px;
+}
+
+.min-h-\[60px\] {
+  min-height: 60px;
+}
+
+.min-h-\[60vh\] {
+  min-height: 60vh;
 }
 
 .min-h-\[80px\] {
@@ -2998,6 +3014,10 @@ video {
   text-wrap: balance;
 }
 
+.break-all {
+  word-break: break-all;
+}
+
 .rounded {
   border-radius: 0.25rem;
 }
@@ -3110,6 +3130,10 @@ video {
 
 .border-b-2 {
   border-bottom-width: 2px;
+}
+
+.border-b-4 {
+  border-bottom-width: 4px;
 }
 
 .border-l {
@@ -3876,6 +3900,11 @@ video {
   border-color: rgb(64 64 64 / 0.95);
 }
 
+.border-orange-300 {
+  --tw-border-opacity: 1;
+  border-color: rgb(253 186 116 / var(--tw-border-opacity, 1));
+}
+
 .border-primary {
   --tw-border-opacity: 1;
   border-color: rgb(137 48 38 / var(--tw-border-opacity, 1));
@@ -4165,6 +4194,11 @@ video {
 
 .border-primary-700\/95 {
   border-color: rgb(137 48 38 / 0.95);
+}
+
+.border-primary-800 {
+  --tw-border-opacity: 1;
+  border-color: rgb(114 42 33 / var(--tw-border-opacity, 1));
 }
 
 .border-primary\/10 {
@@ -5954,6 +5988,11 @@ video {
   background-color: rgb(23 23 23 / 0.6);
 }
 
+.bg-orange-50 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(255 247 237 / var(--tw-bg-opacity, 1));
+}
+
 .bg-primary {
   --tw-bg-opacity: 1;
   background-color: rgb(137 48 38 / var(--tw-bg-opacity, 1));
@@ -6303,9 +6342,22 @@ video {
   background-color: rgb(255 238 212 / 0.3);
 }
 
+.bg-secondary-100\/50 {
+  background-color: rgb(255 238 212 / 0.5);
+}
+
+.bg-secondary-200 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(255 218 169 / var(--tw-bg-opacity, 1));
+}
+
 .bg-secondary-50 {
   --tw-bg-opacity: 1;
   background-color: rgb(255 247 237 / var(--tw-bg-opacity, 1));
+}
+
+.bg-secondary-50\/20 {
+  background-color: rgb(255 247 237 / 0.2);
 }
 
 .bg-secondary-500 {
@@ -7726,6 +7778,11 @@ video {
   line-height: 1;
 }
 
+.text-6xl {
+  font-size: 3.75rem;
+  line-height: 1;
+}
+
 .text-\[10px\] {
   font-size: 10px;
 }
@@ -8655,6 +8712,11 @@ video {
   color: rgb(23 23 23 / var(--tw-text-opacity, 1));
 }
 
+.text-orange-700 {
+  --tw-text-opacity: 1;
+  color: rgb(194 65 12 / var(--tw-text-opacity, 1));
+}
+
 .text-primary {
   --tw-text-opacity: 1;
   color: rgb(137 48 38 / var(--tw-text-opacity, 1));
@@ -9260,6 +9322,11 @@ video {
 .text-secondary-800 {
   --tw-text-opacity: 1;
   color: rgb(153 58 16 / var(--tw-text-opacity, 1));
+}
+
+.text-secondary-900 {
+  --tw-text-opacity: 1;
+  color: rgb(123 49 17 / var(--tw-text-opacity, 1));
 }
 
 .text-success-500 {
@@ -9976,6 +10043,10 @@ video {
   opacity: 1;
 }
 
+.opacity-20 {
+  opacity: 0.2;
+}
+
 .opacity-40 {
   opacity: 0.4;
 }
@@ -9994,6 +10065,10 @@ video {
 
 .opacity-75 {
   opacity: 0.75;
+}
+
+.opacity-80 {
+  opacity: 0.8;
 }
 
 .shadow {
@@ -10739,6 +10814,11 @@ h1, h2, h3 {
   background-color: rgb(38 38 38 / var(--tw-bg-opacity, 1));
 }
 
+.hover\:bg-orange-100:hover {
+  --tw-bg-opacity: 1;
+  background-color: rgb(255 237 213 / var(--tw-bg-opacity, 1));
+}
+
 .hover\:bg-primary:hover {
   --tw-bg-opacity: 1;
   background-color: rgb(137 48 38 / var(--tw-bg-opacity, 1));
@@ -11244,6 +11324,11 @@ h1, h2, h3 {
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 
+.group:hover .group-hover\:border-primary {
+  --tw-border-opacity: 1;
+  border-color: rgb(137 48 38 / var(--tw-border-opacity, 1));
+}
+
 .group:hover .group-hover\:border-primary-100 {
   --tw-border-opacity: 1;
   border-color: rgb(252 232 230 / var(--tw-border-opacity, 1));
@@ -11738,6 +11823,10 @@ h1, h2, h3 {
 
   .md\:grid-cols-6 {
     grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  .md\:grid-cols-7 {
+    grid-template-columns: repeat(7, minmax(0, 1fr));
   }
 
   .md\:flex-row {

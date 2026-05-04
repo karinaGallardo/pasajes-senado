@@ -717,10 +717,10 @@
                       {{ if or .Permissions.CanEdit .Permissions.CanRevertirEmision }}
                         <button
                           type="button"
-                          hx-get="/pasajes/{{ .ID }}/modal-servicio"
+                          hx-get="/pasajes/{{ .ID }}/cargos"
                           hx-target="#modal-container"
-                          class="w-8 h-8 flex items-center justify-center rounded-sm bg-secondary-50 border border-secondary-100 text-secondary-600 hover:bg-secondary-600 hover:text-white transition-all shadow-sm cursor-pointer"
-                          title="Servicio de Emisión (Fee)"
+                          class="w-8 h-8 flex items-center justify-center rounded-sm bg-primary-50 border border-primary-100 text-primary-600 hover:bg-primary-600 hover:text-white transition-all shadow-sm cursor-pointer"
+                          title="Gestionar Cargos Asociados"
                         >
                           <i class="ph ph-receipt text-lg font-bold"></i>
                         </button>

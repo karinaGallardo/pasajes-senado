@@ -3,6 +3,7 @@ package repositories
 import (
 	"context"
 	"fmt"
+	"sistema-pasajes/internal/dtos"
 	"sistema-pasajes/internal/models"
 	"strings"
 	"time"
@@ -663,4 +664,27 @@ func (r *SolicitudRepository) UpdateTimestamps(ctx context.Context, id string, c
 		"created_at": createdAt,
 		"updated_at": updatedAt,
 	}).Error
+}
+
+func (r *SolicitudRepository) FindOficialesForReport(ctx context.Context, filter dtos.ReportFilterRequest) ([]models.Solicitud, error) {
+	var solicitudes []models.Solicitud
+	query := r.db.WithContext(ctx).
+		Preload("Usuario").
+		Preload("Usuario.Oficina").
+		Preload("Usuario.Cargo").
+		Preload("Items", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
+		Preload("Items.Pasajes").
+		Preload("Descargo").
+		Joins("INNER JOIN tipo_solicitudes ts ON ts.codigo = solicitudes.tipo_solicitud_codigo").
+		Where("ts.concepto_viaje_codigo = ?", "OFICIAL")
+
+	if filter.FechaDesde != "" {
+		query = query.Where("solicitudes.created_at >= ?", filter.FechaDesde)
+	}
+	if filter.FechaHasta != "" {
+		query = query.Where("solicitudes.created_at <= ?", filter.FechaHasta+" 23:59:59")
+	}
+
+	err := query.Order("solicitudes.created_at DESC").Find(&solicitudes).Error
+	return solicitudes, err
 }

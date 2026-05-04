@@ -6,6 +6,7 @@ import (
 	"sistema-pasajes/internal/dtos"
 	"sistema-pasajes/internal/services"
 	"sistema-pasajes/internal/utils"
+	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -28,10 +29,15 @@ func (ctrl *ReportController) Index(c *gin.Context) {
 	aerolineas, _ := ctrl.aerolineaService.GetAllActive(c.Request.Context())
 	agencias, _ := ctrl.agenciaService.GetAllActive(c.Request.Context())
 
+	ahora := time.Now()
+	hace30Dias := ahora.AddDate(0, 0, -30)
+
 	utils.Render(c, "admin/reports/index", gin.H{
 		"Title":      "Reportes del Sistema",
 		"Aerolineas": aerolineas,
 		"Agencias":   agencias,
+		"FechaDesde": hace30Dias.Format("2006-01-02"),
+		"FechaHasta": ahora.Format("2006-01-02"),
 	})
 }
 
@@ -105,4 +111,28 @@ func (ctrl *ReportController) DownloadEstadisticasAerolineaExcel(c *gin.Context)
 	c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
 	c.Header("Content-Disposition", "attachment; filename="+fileName)
 	_ = f.Write(c.Writer)
+}
+
+func (ctrl *ReportController) DownloadOficialesExcel(c *gin.Context) {
+	var filter dtos.ReportFilterRequest
+	if err := c.ShouldBindQuery(&filter); err != nil {
+		utils.SetErrorMessage(c, "Filtros inválidos")
+		c.Redirect(http.StatusFound, "/admin/reports")
+		return
+	}
+
+	f, err := ctrl.reportService.GenerateOficialesExcel(c.Request.Context(), filter)
+	if err != nil {
+		utils.SetErrorMessage(c, "Error generando reporte: "+err.Error())
+		c.Redirect(http.StatusFound, "/admin/reports")
+		return
+	}
+
+	fileName := fmt.Sprintf("Reporte_Pasajes_Oficiales_%s.xlsx", utils.FormatDateFilename())
+	c.Header("Content-Type", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+	c.Header("Content-Disposition", "attachment; filename="+fileName)
+
+	if err := f.Write(c.Writer); err != nil {
+		// Error writing to response
+	}
 }

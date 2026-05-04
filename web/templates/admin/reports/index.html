@@ -44,6 +44,7 @@
                   <input
                     type="date"
                     name="fecha_desde"
+                    value="{{ .FechaDesde }}"
                     class="w-full pl-10 pr-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-md text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                     required
                   />
@@ -57,6 +58,7 @@
                   <input
                     type="date"
                     name="fecha_hasta"
+                    value="{{ .FechaHasta }}"
                     class="w-full pl-10 pr-4 py-2.5 bg-neutral-50 border border-neutral-200 rounded-md text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
                     required
                   />
@@ -225,11 +227,79 @@
           </div>
         </a>
       </div>
+
+      <!-- Reporte Oficiales Especializado -->
+      <div
+        class="bg-white rounded-md border border-neutral-200 shadow-sm overflow-hidden hover:shadow-md transition-shadow mt-8"
+        x-data="{ loadingOficial: false }"
+      >
+        <div class="p-4 border-b border-neutral-100 flex items-center justify-between bg-neutral-50/50">
+          <div class="flex items-center">
+            <div class="w-10 h-10 bg-primary-100 rounded-md flex items-center justify-center text-primary-600 mr-4">
+              <i class="ph ph-briefcase text-2xl"></i>
+            </div>
+            <div>
+              <h3 class="font-bold text-neutral-900 uppercase tracking-tight text-sm">Reporte Especializado Oficiales</h3>
+              <p class="text-[10px] text-neutral-500 font-bold uppercase tracking-widest">Auditoría y Control de Descargos</p>
+            </div>
+          </div>
+          <span
+            class="px-2 py-0.5 bg-primary-50 text-primary-600 rounded text-[9px] font-black uppercase tracking-widest border border-primary-100"
+          >
+            Especial
+          </span>
+        </div>
+
+        <div class="p-6">
+          <form action="/admin/reports/oficiales-excel" method="GET" class="grid grid-cols-1 md:grid-cols-7 gap-4 items-end">
+            <div class="md:col-span-2">
+              <label class="block text-[10px] font-black text-neutral-500 uppercase mb-2 ml-1">F. Emisión Desde</label>
+              <div class="relative">
+                <i class="ph ph-calendar-blank absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"></i>
+                <input
+                  type="date"
+                  name="fecha_desde"
+                  value="{{ .FechaDesde }}"
+                  class="w-full pl-10 pr-4 py-2 bg-neutral-50 border border-neutral-200 rounded-md text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                  required
+                />
+              </div>
+            </div>
+
+            <div class="md:col-span-2">
+              <label class="block text-[10px] font-black text-neutral-500 uppercase mb-2 ml-1">F. Emisión Hasta</label>
+              <div class="relative">
+                <i class="ph ph-calendar-blank absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400"></i>
+                <input
+                  type="date"
+                  name="fecha_hasta"
+                  value="{{ .FechaHasta }}"
+                  class="w-full pl-10 pr-4 py-2 bg-neutral-50 border border-neutral-200 rounded-md text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all"
+                  required
+                />
+              </div>
+            </div>
+
+            <div class="md:col-span-3">
+              <button
+                type="submit"
+                class="w-full h-[46px] bg-primary text-white hover:bg-primary-600 font-black text-xs uppercase tracking-widest rounded-md transition-all active:scale-[0.98] flex items-center justify-center gap-3 shadow-md"
+                @click="loadingOficial = true; setTimeout(() => loadingOficial = false, 5000)"
+              >
+                <i class="ph ph-file-xls text-xl" x-show="!loadingOficial"></i>
+                <i class="ph ph-circle-notch animate-spin text-xl" x-show="loadingOficial"></i>
+                <span x-text="loadingOficial ? 'PROCESANDO...' : 'GENERAR EXCEL OFICIALES'"></span>
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
     </div>
   </div>
 
   {{ template "layout_footer" . }}
 {{ end }}
+
 {{ define "footer_scripts" }}
   <script>
     // Set default dates to current month

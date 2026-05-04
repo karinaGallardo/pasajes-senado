@@ -783,6 +783,21 @@ func (s Solicitud) GetMaxFechaVueloEmitida() *time.Time {
 	}
 	return maxDate
 }
+func (s Solicitud) GetItinerarioResumen() string {
+	if len(s.Items) == 0 {
+		return "-"
+	}
+
+	var points []string
+	points = append(points, s.GetOrigenIATA())
+
+	for _, item := range s.Items {
+		points = append(points, item.GetDestinoIATA())
+	}
+
+	return strings.Join(points, "-")
+}
+
 
 func (s Solicitud) GetUltimoVueloFecha() string {
 	maxDate := s.GetMaxFechaVueloEmitida()

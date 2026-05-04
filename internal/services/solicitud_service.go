@@ -342,6 +342,17 @@ func (s *SolicitudService) Finalize(ctx context.Context, id string) error {
 			}
 		}
 
+		// Finalizar OpenTickets si existen en los tramos
+		for _, sit := range solicitud.Items {
+			if sit.OpenTicketID != nil {
+				var ot models.OpenTicket
+				if err := tx.First(&ot, "id = ?", *sit.OpenTicketID).Error; err == nil {
+					ot.Estado = models.EstadoOpenTicketFinalizado
+					tx.Save(&ot)
+				}
+			}
+		}
+
 		return nil
 	})
 }
@@ -574,6 +585,17 @@ func (s *SolicitudService) RevertFinalize(ctx context.Context, id string) error 
 				item.EstadoCupoDerechoCodigo = "RESERVADO"
 				if err := itemRepoTx.Update(ctx, item); err != nil {
 					return err
+				}
+			}
+		}
+
+		// Revertir OpenTickets si existen en los tramos
+		for _, sit := range solicitud.Items {
+			if sit.OpenTicketID != nil {
+				var ot models.OpenTicket
+				if err := tx.First(&ot, "id = ?", *sit.OpenTicketID).Error; err == nil {
+					ot.Estado = models.EstadoOpenTicketReservado
+					tx.Save(&ot)
 				}
 			}
 		}

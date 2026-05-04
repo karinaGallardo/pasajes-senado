@@ -321,3 +321,11 @@ func NewSolicitudItem(solicitudID string, tipoStr string, origen, destino string
 		AerolineaID:  aerolineaID,
 	}
 }
+
+func (t SolicitudItem) GetDestinoIATA() string {
+	return t.DestinoIATA
+}
+
+func (t SolicitudItem) GetOrigenIATA() string {
+	return t.OrigenIATA
+}
