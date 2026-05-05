@@ -135,6 +135,10 @@ func (d DescargoTramo) GetTipoDisplay() string {
 		return "IDA Repro"
 	case TipoTramoVueltaReprogramada:
 		return "Vuelta Repro"
+	case TipoTramoIdaReutilizada:
+		return "IDA Utilizada"
+	case TipoTramoVueltaReutilizada:
+		return "Vuelta Utilizada"
 	default:
 		return string(d.Tipo)
 	}

@@ -220,7 +220,7 @@ func (ctrl *DescargoDerechoController) Update(c *gin.Context) {
 	c.Redirect(http.StatusFound, "/descargos/derecho/"+id+"/editar")
 }
 
-func (ctrl *DescargoDerechoController) UpdateReutilizacion(c *gin.Context) {
+func (ctrl *DescargoDerechoController) UpdateUtilizacion(c *gin.Context) {
 	authUser := appcontext.AuthUser(c)
 	if authUser == nil {
 		c.Redirect(http.StatusFound, "/auth/login")
@@ -244,7 +244,7 @@ func (ctrl *DescargoDerechoController) UpdateReutilizacion(c *gin.Context) {
 
 	var req dtos.CreateDescargoRequest
 	if err := req.Bind(c); err != nil {
-		log.Printf("[ERROR] Bind error en Reutilización (ID: %s): %v", id, err)
+		log.Printf("[ERROR] Bind error en Utilización (ID: %s): %v", id, err)
 		c.Redirect(http.StatusFound, "/descargos/derecho/"+id+"/completar?error=DatosInvalidos")
 		return
 	}
@@ -258,7 +258,7 @@ func (ctrl *DescargoDerechoController) UpdateReutilizacion(c *gin.Context) {
 	// Asegurar que el estado se mantiene en OPEN_TICKET durante este flujo
 	descargo.Estado = models.EstadoDescargoOpenTicket
 	if err := ctrl.descargoDerechoService.UpdateDerecho(c.Request.Context(), id, req, authUser.ID, pasesAbordoPaths, boletasPaths); err != nil {
-		log.Printf("[ERROR] Error en UpdateDerecho (Reutilización): %v", err)
+		log.Printf("[ERROR] Error en UpdateDerecho (Utilización): %v", id)
 		c.Redirect(http.StatusFound, "/descargos/derecho/"+id+"/completar?error=ErrorActualizacion")
 		return
 	}
