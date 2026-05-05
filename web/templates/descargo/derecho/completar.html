@@ -369,8 +369,8 @@
                           <tbody id="itin-utilizacion-{{ $p.ID }}" class="divide-y divide-neutral-100">
                             <!-- Listar tramos reprogramados YA existentes (post OpenTicket) para este billete -->
                             {{ range $.Descargo.Tramos }}
-                              {{ if and (not .EsOpenTicket) (or .IsReprogramacion .IsReutilizacion) (eq (deref .PasajeID) $p.ID) }}
-                                {{ template "descargo/components/tramo_fila_reutilizado" (dict "Tramo" . "IsLocked" false) }}
+                              {{ if and (not .EsOpenTicket) (or .IsReprogramacion .IsUtilizacion) (eq (deref .PasajeID) $p.ID) }}
+                                {{ template "descargo/components/tramo_fila_utilizado" (dict "Tramo" . "IsLocked" false) }}
                               {{ end }}
                             {{ end }}
                           </tbody>

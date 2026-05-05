@@ -555,13 +555,13 @@ func (ctrl *DescargoDerechoController) PreviewFile(c *gin.Context) {
 func (ctrl *DescargoDerechoController) NuevaFila(c *gin.Context) {
 	tipo := c.Query("tipo")
 	solicitudItemID := c.Query("solicitud_item_id")
-	isReutilizacion := c.Query("is_reutilizacion") == "true"
+	isUtilizacion := c.Query("is_utilizacion") == "true" || c.Query("is_reutilizacion") == "true"
 	pasajeID := c.Query("pasaje_id")
 	billete := c.Query("billete")
 
 	index := fmt.Sprintf("new_%d", time.Now().UnixNano())
 
-	if isReutilizacion {
+	if isUtilizacion {
 		billete = ""
 	}
 
@@ -579,14 +579,14 @@ func (ctrl *DescargoDerechoController) NuevaFila(c *gin.Context) {
 	}
 
 	templateName := "descargo/components/tramo_fila_derecho"
-	if isReutilizacion {
-		templateName = "descargo/components/tramo_fila_reutilizado"
+	if isUtilizacion {
+		templateName = "descargo/components/tramo_fila_utilizado"
 	}
 
 	c.HTML(http.StatusOK, templateName, gin.H{
-		"Tipo":            tipo,
-		"Tramo":           tramo,
-		"IsReutilizacion": isReutilizacion,
+		"Tipo":          tipo,
+		"Tramo":         tramo,
+		"IsUtilizacion": isUtilizacion,
 	})
 }
 

@@ -1,4 +1,4 @@
-{{ define "descargo/components/tramo_fila_reutilizado" }}
+{{ define "descargo/components/tramo_fila_utilizado" }}
   {{ $isLocked := .IsLocked }}
   {{ $tramo := .Tramo }}
 
@@ -8,7 +8,7 @@
     x-data="itineraryRow({
       esOpenTicket: false,
       esMod: false,
-      esReutilizacion: true,
+      esUtilizacion: true,
       tramo_nombre: '{{ if $tramo.ID }}{{ $tramo.TramoNombre }}{{ end }}',
       route_id: '{{ if $tramo.ID }}{{ deref $tramo.RutaID }}{{ end }}',
       origen_iata: '{{ if $tramo.ID }}{{ $tramo.GetOrigenIATA }}{{ end }}',

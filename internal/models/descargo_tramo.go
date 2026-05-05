@@ -97,6 +97,10 @@ func (d DescargoTramo) IsReutilizacion() bool {
 	return strings.HasSuffix(strings.ToUpper(string(d.Tipo)), "_REUT")
 }
 
+func (d DescargoTramo) IsUtilizacion() bool {
+	return d.IsReutilizacion()
+}
+
 // GetRutaOrigen extracts the origin from the routing label.
 func (d DescargoTramo) GetRutaOrigen() string {
 	display := d.GetRutaDisplay()
