@@ -681,7 +681,7 @@ func (s *ReportService) GeneratePV05(ctx context.Context, descargo *models.Desca
 	pdf.Ln(4)
 
 	pdf.SetFont("Arial", "B", 9)
-	pdf.CellFormat(190, 6, tr(" TRAMOS NO UTILIZADOS (OPEN TICKETS REUTILIZABLES)"), "B", 1, "L", false, 0, "")
+	pdf.CellFormat(190, 6, tr(" TRAMOS NO UTILIZADOS (OPEN TICKETS UTILIZABLES)"), "B", 1, "L", false, 0, "")
 	pdf.Ln(2)
 
 	hasReturns := false
@@ -1477,7 +1477,7 @@ func (s *ReportService) GeneratePV05OpenTicket(ctx context.Context, descargo *mo
 	pdf.AddPage()
 
 	gestion := descargo.CreatedAt.Format("2006")
-	s.drawReportHeader(pdf, tr, "FORM-PV-05", "REPORTE DE BILLETES PARA REUTILIZACIÓN", "CÁMARA DE SENADORES", "GESTIÓN: "+gestion, descargo.Codigo)
+	s.drawReportHeader(pdf, tr, "FORM-PV-05", "REPORTE DE BILLETES PARA UTILIZACIÓN", "CÁMARA DE SENADORES", "GESTIÓN: "+gestion, descargo.Codigo)
 
 	pdf.SetY(40)
 	user := descargo.Solicitud.Usuario
@@ -1521,7 +1521,7 @@ func (s *ReportService) GeneratePV05OpenTicket(ctx context.Context, descargo *mo
 	// SECCIÓN 1: Detalle de Reutilización de Billetes
 	pdf.Ln(5)
 	pdf.SetFont("Arial", "B", 10)
-	pdf.CellFormat(0, 8, tr("1. DETALLE DE REUTILIZACIÓN DE BILLETES (MOVIMIENTOS)"), "B", 1, "L", false, 0, "")
+	pdf.CellFormat(0, 8, tr("1. DETALLE DE UTILIZACIÓN DE BILLETES (MOVIMIENTOS)"), "B", 1, "L", false, 0, "")
 	pdf.Ln(2)
 
 	hasAnyOT := false
@@ -1596,7 +1596,7 @@ func (s *ReportService) GeneratePV05OpenTicket(ctx context.Context, descargo *mo
 
 				pdf.SetTextColor(0, 100, 0)
 				pdf.SetFont("Arial", "B", 7)
-				pdf.CellFormat(40, 7, tr("REUTILIZADO"), "1", 1, "C", true, 0, "")
+				pdf.CellFormat(40, 7, tr("UTILIZADO"), "1", 1, "C", true, 0, "")
 				pdf.SetTextColor(0, 0, 0)
 				pdf.SetFont("Arial", "", 8)
 			}
@@ -1606,7 +1606,7 @@ func (s *ReportService) GeneratePV05OpenTicket(ctx context.Context, descargo *mo
 
 	if !hasAnyOT {
 		pdf.SetFont("Arial", "", 8)
-		pdf.CellFormat(190, 8, tr("No se han registrado movimientos de reutilización en este descargo."), "1", 1, "C", false, 0, "")
+		pdf.CellFormat(190, 8, tr("No se han registrado movimientos de utilización en este descargo."), "1", 1, "C", false, 0, "")
 	}
 
 	// SECCIÓN 3: Liquidación Financiera y Conciliación de Costos
@@ -1682,7 +1682,7 @@ func (s *ReportService) GeneratePV05OpenTicket(ctx context.Context, descargo *mo
 
 	pdf.Ln(10)
 	pdf.SetFont("Arial", "B", 9)
-	pdf.MultiCell(190, 5, tr("Se certifica que los tramos detallados corresponden a pasajes previamente devueltos y no utilizados, que fueron pagados en su emisión original y posteriormente reutilizados y utilizados por el beneficiario, conforme a normativa vigente."), "", "L", false)
+	pdf.MultiCell(190, 5, tr("Se certifica que los tramos detallados corresponden a pasajes previamente devueltos y no utilizados, que fueron pagados en su emisión original y posteriormente utilizados por el beneficiario, conforme a normativa vigente."), "", "L", false)
 
 	// Firmas (Igual que PV-05 estándar)
 	sigY := pdf.GetY() + 30

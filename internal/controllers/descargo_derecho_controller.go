@@ -332,7 +332,7 @@ func (ctrl *DescargoDerechoController) Preview(c *gin.Context) {
 func (ctrl *DescargoDerechoController) PreviewOT(c *gin.Context) {
 	id := c.Param("id")
 	c.HTML(http.StatusOK, "solicitud/components/modal_preview_archivo", gin.H{
-		"Title":    "Previsualización Reporte de Reutilización (OT)",
+		"Title":    "Previsualización Reporte de Utilización (OT)",
 		"FilePath": fmt.Sprintf("/descargos/derecho/%s/imprimir-ot", id),
 		"IsPDF":    true,
 	})

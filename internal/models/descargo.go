@@ -227,7 +227,7 @@ func (e EstadoDescargo) Info() EstadoDescargoInfo {
 		}
 	case EstadoDescargoEnRevisionOT:
 		return EstadoDescargoInfo{
-			Nombre:      "En Revisión (Reutilización)",
+			Nombre:      "En Revisión (Utilización)",
 			Descripcion: "Los nuevos tramos han sido registrados y están esperando validación administrativa.",
 			ColorClass:  "border-indigo-400",
 			BadgeClass:  "bg-indigo-50 text-indigo-700 border-indigo-100",
@@ -301,7 +301,7 @@ func (d Descargo) GetPermissions(u ...*Usuario) DescargoPermissions {
 	approveLabel := "Aprobar Descargo"
 	switch d.Estado {
 	case EstadoDescargoEnRevisionOT:
-		approveLabel = "Aprobar Reutilización de OT"
+		approveLabel = "Aprobar Utilización de OT"
 	case EstadoDescargoEnRevision:
 		if d.HasOpenTicket() {
 			approveLabel = "Aprobar y Generar Crédito OT"
