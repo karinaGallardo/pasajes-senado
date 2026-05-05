@@ -357,7 +357,7 @@ func (s *DescargoDerechoService) UpdateDerecho(ctx context.Context, descargoID s
 
 		// 4. Domain Rule: Data Protection for issued segments
 		if idRow != "" {
-			if original, ok := existingMap[idRow]; ok && original.PasajeID != nil {
+			if original, ok := existingMap[idRow]; ok && original.PasajeID != nil && original.IsOriginal() {
 				// Fields from a pre-issued ticket segment are protected
 				det := models.DescargoTramo{
 					BaseModel:         models.BaseModel{ID: idRow},
