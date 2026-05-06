@@ -32,7 +32,7 @@
             method="GET"
             class="space-y-6"
             id="report-form"
-            @submit="loading = true; setTimeout(() => loading = false, 3000)"
+            @submit="setTimeout(() => loading = true, 0); setTimeout(() => loading = false, 5000)"
             x-data="{ loading: false }"
           >
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -136,19 +136,14 @@
             </div>
 
             <div class="pt-6 border-t border-neutral-100 flex justify-end">
-              <button type="submit" class="btn-md btn-primary w-full md:w-auto px-8" :disabled="loading">
-                <template x-if="!loading">
-                  <div class="flex items-center">
-                    <i class="ph ph-download-simple mr-2 text-lg"></i>
-                    GENERAR REPORTE EXCEL
-                  </div>
-                </template>
-                <template x-if="loading">
-                  <div class="flex items-center">
-                    <i class="ph ph-circle-notch animate-spin -ml-1 mr-3 text-lg text-white"></i>
-                    PROCESANDO...
-                  </div>
-                </template>
+              <button
+                type="submit"
+                class="btn-md btn-primary w-full md:w-auto px-8 transition-all flex items-center justify-center gap-3"
+                :class="{ 'opacity-70 pointer-events-none': loading }"
+              >
+                <i class="ph ph-download-simple text-lg" x-show="!loading"></i>
+                <i class="ph ph-circle-notch animate-spin text-lg" x-show="loading" x-cloak></i>
+                <span x-text="loading ? 'PROCESANDO...' : 'GENERAR REPORTE EXCEL'"></span>
               </button>
             </div>
           </form>
@@ -284,10 +279,11 @@
               <button
                 type="submit"
                 class="w-full h-[46px] bg-primary text-white hover:bg-primary-600 font-black text-xs uppercase tracking-widest rounded-md transition-all active:scale-[0.98] flex items-center justify-center gap-3 shadow-md"
-                @click="loadingOficial = true; setTimeout(() => loadingOficial = false, 5000)"
+                :class="{ 'opacity-70 pointer-events-none': loadingOficial }"
+                @click="if($el.form.checkValidity()){ setTimeout(() => loadingOficial = true, 0); setTimeout(() => loadingOficial = false, 5000) }"
               >
                 <i class="ph ph-file-xls text-xl" x-show="!loadingOficial"></i>
-                <i class="ph ph-circle-notch animate-spin text-xl" x-show="loadingOficial"></i>
+                <i class="ph ph-circle-notch animate-spin text-xl" x-show="loadingOficial" x-cloak></i>
                 <span x-text="loadingOficial ? 'PROCESANDO...' : 'GENERAR EXCEL OFICIALES'"></span>
               </button>
             </div>

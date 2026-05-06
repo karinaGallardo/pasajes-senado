@@ -2472,7 +2472,7 @@ func (s *ReportService) GenerateConsolidadoPasajesExcel(ctx context.Context, fil
 
 	// Encabezados
 	headers := []string{
-		"N°", "FECHA EMISIÓN", "CÓDIGO SOL.", "CONCEPTO", "TIPO DE SOLICITUD", "BENEFICIARIO", "RUTA / TRAMOS", "AEROLÍNEA", "AGENCIA", "NRO. BILLETE",
+		"N°", "FECHA EMISIÓN", "CÓDIGO SOL.", "CONCEPTO", "TIPO DE SOLICITUD", "BENEFICIARIO", "UNIDAD ORGANIZACIONAL", "CARGO", "RUTA / TRAMOS", "AEROLÍNEA", "AGENCIA", "NRO. BILLETE",
 		"COSTO ORIGEN (BS)", "DEV DIF TARIFA", "COSTO CONSUMO", "CARGOS ASOCIADOS", "COSTO TOTAL",
 		"ESTADO PASAJE", "ESTADO SOLICITUD", "ESTADO DESCARGO",
 	}
@@ -2515,8 +2515,17 @@ func (s *ReportService) GenerateConsolidadoPasajesExcel(ctx context.Context, fil
 		}
 
 		beneficiario := "-"
+		unidadOrg := "-"
+		cargo := "-"
 		if p.SolicitudItem != nil && p.SolicitudItem.Solicitud != nil {
-			beneficiario = p.SolicitudItem.Solicitud.Usuario.GetNombreCompleto()
+			u := p.SolicitudItem.Solicitud.Usuario
+			beneficiario = u.GetNombreCompleto()
+			if u.Oficina != nil {
+				unidadOrg = u.Oficina.Detalle
+			}
+			if u.Cargo != nil {
+				cargo = u.Cargo.Descripcion
+			}
 		}
 
 		montoCargos := p.GetMontoCargos()
@@ -2530,24 +2539,26 @@ func (s *ReportService) GenerateConsolidadoPasajesExcel(ctx context.Context, fil
 		f.SetCellValue(sheet, fmt.Sprintf("D%d", row), concepto)
 		f.SetCellValue(sheet, fmt.Sprintf("E%d", row), tipoSolicitud)
 		f.SetCellValue(sheet, fmt.Sprintf("F%d", row), beneficiario)
-		f.SetCellValue(sheet, fmt.Sprintf("G%d", row), p.GetRutaDisplay())
+		f.SetCellValue(sheet, fmt.Sprintf("G%d", row), unidadOrg)
+		f.SetCellValue(sheet, fmt.Sprintf("H%d", row), cargo)
+		f.SetCellValue(sheet, fmt.Sprintf("I%d", row), p.GetRutaDisplay())
 
 		if p.Aerolinea != nil {
-			f.SetCellValue(sheet, fmt.Sprintf("H%d", row), p.Aerolinea.Sigla)
+			f.SetCellValue(sheet, fmt.Sprintf("J%d", row), p.Aerolinea.Sigla)
 		}
 		if p.Agencia != nil {
-			f.SetCellValue(sheet, fmt.Sprintf("I%d", row), p.Agencia.Nombre)
+			f.SetCellValue(sheet, fmt.Sprintf("K%d", row), p.Agencia.Nombre)
 		}
 
-		f.SetCellValue(sheet, fmt.Sprintf("J%d", row), p.NumeroBillete)
-		f.SetCellValue(sheet, fmt.Sprintf("K%d", row), p.Costo)
-		f.SetCellValue(sheet, fmt.Sprintf("L%d", row), p.MontoReembolso)
-		f.SetCellValue(sheet, fmt.Sprintf("M%d", row), p.CostoUtilizado)
-		f.SetCellValue(sheet, fmt.Sprintf("N%d", row), montoCargos)
-		f.SetCellValue(sheet, fmt.Sprintf("O%d", row), costoTotalPasaje)
-		f.SetCellValue(sheet, fmt.Sprintf("P%d", row), p.GetEstado())
-		f.SetCellValue(sheet, fmt.Sprintf("Q%d", row), solicitudEstado)
-		f.SetCellValue(sheet, fmt.Sprintf("R%d", row), descargoEstado)
+		f.SetCellValue(sheet, fmt.Sprintf("L%d", row), p.NumeroBillete)
+		f.SetCellValue(sheet, fmt.Sprintf("M%d", row), p.Costo)
+		f.SetCellValue(sheet, fmt.Sprintf("N%d", row), p.MontoReembolso)
+		f.SetCellValue(sheet, fmt.Sprintf("O%d", row), p.CostoUtilizado)
+		f.SetCellValue(sheet, fmt.Sprintf("P%d", row), montoCargos)
+		f.SetCellValue(sheet, fmt.Sprintf("Q%d", row), costoTotalPasaje)
+		f.SetCellValue(sheet, fmt.Sprintf("R%d", row), p.GetEstado())
+		f.SetCellValue(sheet, fmt.Sprintf("S%d", row), solicitudEstado)
+		f.SetCellValue(sheet, fmt.Sprintf("T%d", row), descargoEstado)
 
 		totalCostoOrigen += p.Costo
 		totalCargos += montoCargos
@@ -2560,20 +2571,20 @@ func (s *ReportService) GenerateConsolidadoPasajesExcel(ctx context.Context, fil
 
 	// Fila de Totales
 	totalRow := len(pasajes) + 2
-	f.SetCellValue(sheet, fmt.Sprintf("J%d", totalRow), "TOTALES:")
-	f.SetCellValue(sheet, fmt.Sprintf("K%d", totalRow), totalCostoOrigen)
-	f.SetCellValue(sheet, fmt.Sprintf("N%d", totalRow), totalCargos)
-	f.SetCellValue(sheet, fmt.Sprintf("O%d", totalRow), totalGeneral)
+	f.SetCellValue(sheet, fmt.Sprintf("L%d", totalRow), "TOTALES:")
+	f.SetCellValue(sheet, fmt.Sprintf("M%d", totalRow), totalCostoOrigen)
+	f.SetCellValue(sheet, fmt.Sprintf("P%d", totalRow), totalCargos)
+	f.SetCellValue(sheet, fmt.Sprintf("Q%d", totalRow), totalGeneral)
 
 	totalStyle, _ := f.NewStyle(&excelize.Style{
 		Font:      &excelize.Font{Bold: true},
 		Fill:      excelize.Fill{Type: "pattern", Color: []string{"F3F4F6"}, Pattern: 1},
 		Alignment: &excelize.Alignment{Horizontal: "right"},
 	})
-	f.SetCellStyle(sheet, fmt.Sprintf("J%d", totalRow), fmt.Sprintf("O%d", totalRow), totalStyle)
+	f.SetCellStyle(sheet, fmt.Sprintf("L%d", totalRow), fmt.Sprintf("Q%d", totalRow), totalStyle)
 
 	// Autoajustar anchos (aproximado)
-	widths := []float64{5, 15, 15, 12, 20, 35, 45, 12, 25, 15, 18, 15, 15, 18, 18, 15, 18, 18}
+	widths := []float64{5, 15, 15, 12, 20, 35, 30, 30, 45, 12, 25, 15, 18, 15, 15, 18, 18, 15, 18, 18}
 	for i, w := range widths {
 		col, _ := excelize.ColumnNumberToName(i + 1)
 		f.SetColWidth(sheet, col, col, w)

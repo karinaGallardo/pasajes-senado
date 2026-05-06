@@ -96,7 +96,8 @@ func (r *PasajeRepository) FindConsolidado(ctx context.Context, filter dtos.Repo
 		Preload("SolicitudItem").
 		Joins("INNER JOIN solicitudes ON solicitudes.id = pasajes.solicitud_id").
 		Joins("INNER JOIN usuarios ON usuarios.id = solicitudes.usuario_id").
-		Preload("SolicitudItem.Solicitud.Usuario").
+		Preload("SolicitudItem.Solicitud.Usuario.Oficina").
+		Preload("SolicitudItem.Solicitud.Usuario.Cargo").
 		Preload("SolicitudItem.Solicitud.TipoSolicitud.ConceptoViaje").
 		Preload("SolicitudItem.Solicitud.EstadoSolicitud").
 		Preload("SolicitudItem.Solicitud.Descargo").
