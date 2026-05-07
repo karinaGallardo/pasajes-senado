@@ -286,6 +286,11 @@ func (t *SolicitudItem) RevertReject() {
 	t.EstadoCodigo = &st
 }
 
+func (t *SolicitudItem) Cancel() {
+	st := "CANCELADO"
+	t.EstadoCodigo = &st
+}
+
 func (t *SolicitudItem) RevertFinalize() {
 	st := "EMITIDO"
 	t.EstadoCodigo = &st

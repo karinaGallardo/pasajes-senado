@@ -112,7 +112,12 @@ func (r *SolicitudRepository) FindAll(ctx context.Context, status string, concep
 		Order("created_at desc")
 
 	if status != "" {
-		query = query.Where("estado_solicitud_codigo = ?", status)
+		if status == "CON_OPEN_TICKET" {
+			query = query.Joins("JOIN descargos ON solicitudes.id = descargos.solicitud_id").
+				Where("descargos.estado = ?", models.EstadoDescargoOpenTicket)
+		} else {
+			query = query.Where("estado_solicitud_codigo = ?", status)
+		}
 	}
 
 	if concepto != "" {
@@ -149,7 +154,12 @@ func (r *SolicitudRepository) FindByUserID(ctx context.Context, userID string, s
 		Order("created_at desc").Where("usuario_id = ?", userID)
 
 	if status != "" {
-		query = query.Where("estado_solicitud_codigo = ?", status)
+		if status == "CON_OPEN_TICKET" {
+			query = query.Joins("JOIN descargos ON solicitudes.id = descargos.solicitud_id").
+				Where("descargos.estado = ?", models.EstadoDescargoOpenTicket)
+		} else {
+			query = query.Where("estado_solicitud_codigo = ?", status)
+		}
 	}
 
 	if concepto != "" {
@@ -214,7 +224,12 @@ func (r *SolicitudRepository) FindByUserIdOrAccesibleByEncargadoID(ctx context.C
 		)
 
 	if status != "" {
-		query = query.Where("estado_solicitud_codigo = ?", status)
+		if status == "CON_OPEN_TICKET" {
+			query = query.Joins("JOIN descargos ON solicitudes.id = descargos.solicitud_id").
+				Where("descargos.estado = ?", models.EstadoDescargoOpenTicket)
+		} else {
+			query = query.Where("estado_solicitud_codigo = ?", status)
+		}
 	}
 
 	if concepto != "" {
@@ -264,7 +279,12 @@ func (r *SolicitudRepository) FindPaginated(ctx context.Context, userID string, 
 	}
 
 	if status != "" {
-		baseQuery = baseQuery.Where("solicitudes.estado_solicitud_codigo = ?", status)
+		if status == "CON_OPEN_TICKET" {
+			baseQuery = baseQuery.Joins("JOIN descargos ON solicitudes.id = descargos.solicitud_id").
+				Where("descargos.estado = ?", models.EstadoDescargoOpenTicket)
+		} else {
+			baseQuery = baseQuery.Where("solicitudes.estado_solicitud_codigo = ?", status)
+		}
 	}
 
 	if concepto != "" {

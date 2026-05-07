@@ -489,16 +489,22 @@ func (s *Solicitud) Reject() error {
 }
 
 func (s *Solicitud) Finalize() error {
-	hasEmitted := false
+	hasTerminal := false
 	for i := range s.Items {
-		if s.Items[i].GetEstado() == "EMITIDO" {
-			hasEmitted = true
+		st := s.Items[i].GetEstado()
+		switch st {
+		case "EMITIDO":
+			hasTerminal = true
 			s.Items[i].Finalize()
+		case "PENDIENTE", "SOLICITADO", "APROBADO":
+			s.Items[i].Cancel()
+		case "FINALIZADO", "RECHAZADO", "CANCELADO":
+			hasTerminal = true
 		}
 	}
 
-	if !hasEmitted && s.GetEstado() != "FINALIZADO" {
-		return errors.New("la solicitud no tiene ningún tramo en estado EMITIDO para finalizar")
+	if !hasTerminal && s.GetEstado() != "FINALIZADO" {
+		return errors.New("la solicitud no tiene ningún tramo procesado para finalizar")
 	}
 
 	s.UpdateStatusBasedOnItems()
@@ -1077,9 +1083,11 @@ func (s Solicitud) GetStatusBadgeClass() string {
 func GetAvailableStatuses() []StatusFilter {
 	return []StatusFilter{
 		{Codigo: "SOLICITADO", Nombre: "Solicitados", Class: "bg-primary"},
+		{Codigo: "PARCIALMENTE_APROBADO", Nombre: "Parciales", Class: "bg-violet-600"},
 		{Codigo: "APROBADO", Nombre: "Aprobados", Class: "bg-success-600"},
 		{Codigo: "EMITIDO", Nombre: "Emitidos", Class: "bg-secondary"},
 		{Codigo: "RECHAZADO", Nombre: "Rechazados", Class: "bg-danger-600"},
+		{Codigo: "CON_OPEN_TICKET", Nombre: "Open Tickets", Class: "bg-orange-600"},
 		{Codigo: "FINALIZADO", Nombre: "Finalizados", Class: "bg-neutral-600"},
 	}
 }
