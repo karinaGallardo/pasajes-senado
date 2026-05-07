@@ -20,7 +20,6 @@ var MongoChat *mongo.Database
 var MongoRRHH *mongo.Database
 
 func ConnectDB() {
-	// Forzar zona horaria America/La_Paz como default para todo el proceso Go
 	loc, err := time.LoadLocation("America/La_Paz")
 	if err == nil {
 		time.Local = loc
@@ -70,7 +69,6 @@ func ConnectDB() {
 
 	DB = database
 	RegisterAuditCallbacks(DB)
-	// log.Println("Conexión a PostgreSQL Exitosa")
 	log.Printf("Conexión a PostgreSQL Exitosa (%s:%s)\n", viper.GetString("DB_HOST"), viper.GetString("DB_PORT"))
 
 	mongoPort := viper.GetString("MONGO_PORT")

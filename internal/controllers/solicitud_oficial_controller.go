@@ -262,6 +262,32 @@ func (ctrl *SolicitudOficialController) Reject(c *gin.Context) {
 	c.Redirect(http.StatusFound, "/solicitudes/oficial/"+id+"/detalle")
 }
 
+func (ctrl *SolicitudOficialController) RevertReject(c *gin.Context) {
+	id := c.Param("id")
+	authUser := appcontext.AuthUser(c)
+	solicitud, err := ctrl.solicitudService.GetByID(c.Request.Context(), id)
+	if err != nil {
+		utils.SetErrorMessage(c, "Solicitud no encontrada")
+		c.Redirect(http.StatusFound, "/solicitudes/oficial/"+id+"/detalle")
+		return
+	}
+
+	solicitud.HydratePermissions(authUser)
+	if !solicitud.Permissions.CanRevertReject {
+		utils.SetErrorMessage(c, "No tiene permisos para realizar esta acción")
+		c.Redirect(http.StatusFound, "/solicitudes/oficial/"+id+"/detalle")
+		return
+	}
+
+	if err := ctrl.solicitudService.RevertReject(c.Request.Context(), id); err != nil {
+		utils.SetErrorMessage(c, "Error al revertir rechazo: "+err.Error())
+		c.Redirect(http.StatusFound, "/solicitudes/oficial/"+id+"/detalle")
+		return
+	}
+	utils.SetSuccessMessage(c, "Estado revertido a SOLICITADO")
+	c.Redirect(http.StatusFound, "/solicitudes/oficial/"+id+"/detalle")
+}
+
 func (ctrl *SolicitudOficialController) ApproveItem(c *gin.Context) {
 	id := c.Param("id")
 	itemID := c.Param("item_id")
@@ -392,7 +418,6 @@ func (ctrl *SolicitudOficialController) GetEditModal(c *gin.Context) {
 	destinos, _ := ctrl.destinoService.GetAll(c.Request.Context())
 	tipos, _ := ctrl.tipoSolicitudService.GetByConcepto(c.Request.Context(), "OFICIAL")
 
-	// Items are now pre-sorted by the repository (tipo, fecha, created_at)
 	type tramoInicial struct {
 		ID           string `json:"id"`
 		Tipo         string `json:"tipo"`
@@ -511,7 +536,6 @@ func (ctrl *SolicitudOficialController) Update(c *gin.Context) {
 		utils.SetSuccessMessage(c, "Solicitud actualizada correctamente")
 	}
 
-	// If HTMX request, re-render the edit modal with updated data
 	if c.GetHeader("HX-Request") == "true" {
 		ctrl.GetEditModal(c)
 		return

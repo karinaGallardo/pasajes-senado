@@ -79,7 +79,6 @@ func (ctrl *DescargoDerechoController) Store(c *gin.Context) {
 		return
 	}
 
-	// Redirigir siempre a edición
 	c.Redirect(http.StatusFound, "/descargos/derecho/"+descargo.ID+"/editar")
 }
 
@@ -128,7 +127,6 @@ func (ctrl *DescargoDerechoController) Edit(c *gin.Context) {
 		data.Descargo.Solicitud.HydratePermissions(authUser)
 	}
 
-	// Verificación Maestra de Permisos
 	if !data.Descargo.Permissions.CanEdit {
 		c.Redirect(http.StatusFound, "/descargos/derecho/"+id+"?error=SinPermisoEdicion")
 		return
@@ -157,9 +155,6 @@ func (ctrl *DescargoDerechoController) Completar(c *gin.Context) {
 
 	data, err := ctrl.descargoDerechoService.GetEditData(c.Request.Context(), id)
 	if err != nil {
-		// Even if OPEN_TICKET is technically considered "No Editable" by default rules,
-		// GetEditData already allows OPEN_TICKET if IsEditable is updated.
-		// Wait, let's verify if GetEditData allows OPEN_TICKET.
 		c.Redirect(http.StatusFound, "/descargos/derecho/"+id+"?error=NoEditable")
 		return
 	}
@@ -206,10 +201,8 @@ func (ctrl *DescargoDerechoController) Update(c *gin.Context) {
 		return
 	}
 
-	// Delegar recolección de archivos a sus respectivos dueños
 	pasesAbordoPaths := utils.ExtractDescargoFiles(c, req.TramoID)
 
-	// 4. Comprobantes de Pago (Per Pasaje)
 	boletasPaths := utils.ExtractPasajeBoletas(c, req.LiquidacionPasajeID)
 
 	if err := ctrl.descargoDerechoService.UpdateDerecho(c.Request.Context(), id, req, authUser.ID, pasesAbordoPaths, boletasPaths); err != nil {
@@ -263,7 +256,6 @@ func (ctrl *DescargoDerechoController) UpdateUtilizacion(c *gin.Context) {
 		return
 	}
 
-	// Redirigir al MISMO FORMULARIO (Completar) para permitir seguir cargando tramos
 	c.Redirect(http.StatusFound, "/descargos/derecho/"+id+"/completar?success=TramosActualizados")
 }
 
@@ -496,7 +488,6 @@ func (ctrl *DescargoDerechoController) RawFile(c *gin.Context) {
 		return
 	}
 
-	// Seguridad básica: Impedir que salgan de la carpeta uploads
 	if !strings.HasPrefix(path, "uploads/") && !strings.HasPrefix(path, "/uploads/") {
 		c.String(http.StatusForbidden, "Acceso denegado a esta ruta")
 		return
@@ -508,7 +499,6 @@ func (ctrl *DescargoDerechoController) RawFile(c *gin.Context) {
 		return
 	}
 
-	// Servir archivo plano (mantiene mime-type automático)
 	c.File(cleanPath)
 }
 
@@ -519,7 +509,6 @@ func (ctrl *DescargoDerechoController) PreviewFile(c *gin.Context) {
 		return
 	}
 
-	// Preparamos la URL del recurso puro para el src de la imagen/iframe
 	rawFileUrl := "/raw-file?path=" + url.QueryEscape(path)
 
 	lowerPath := strings.ToLower(path)
@@ -537,7 +526,7 @@ func (ctrl *DescargoDerechoController) PreviewFile(c *gin.Context) {
 
 	utils.Render(c, "solicitud/components/modal_preview_archivo", gin.H{
 		"Title":                 title,
-		"FilePath":              rawFileUrl, // Ahora apunta al endpoint puro
+		"FilePath":              rawFileUrl,
 		"IsPDF":                 isPDF,
 		"IsImage":               isImage,
 		"InfoRuta":              c.Query("ruta"),
@@ -597,7 +586,6 @@ func (ctrl *DescargoDerechoController) UploadSingle(c *gin.Context) {
 		return
 	}
 
-	// Guardar el archivo en la carpeta de pases de abordar
 	timestamp := time.Now().UnixNano()
 	savedPath, err := utils.SaveUploadedFile(c, file, "uploads/pases_abordo", fmt.Sprintf("fast_upload_%d_", timestamp))
 	if err != nil {

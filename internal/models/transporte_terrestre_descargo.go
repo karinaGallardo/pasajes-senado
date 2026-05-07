@@ -12,7 +12,6 @@ type TransporteTerrestreDescargo struct {
 	Tipo       string    `gorm:"size:20;default:'IDA'"` // IDA, VUELTA
 	Archivo    string    `gorm:"size:255"`              // PDF comprobante
 
-	// Seq is an auto-incrementing field managed by DB to ensure atomic sequential ordering
 	Seq int64 `gorm:"autoIncrement;not null;<-:false"`
 }
 

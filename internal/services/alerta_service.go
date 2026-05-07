@@ -63,9 +63,7 @@ func (s *AlertaService) ProcesarAlertasDescargo(ctx context.Context) error {
 	alertasEnviadas := 0
 
 	for _, sol := range solicitudes {
-		// Validar si ya tiene un descargo y su estado
 		if sol.Descargo != nil {
-			// Si ya está en revisión, es open ticket o ya terminó, NO mandar alerta
 			if sol.Descargo.Estado == models.EstadoDescargoEnRevision ||
 				sol.Descargo.Estado == models.EstadoDescargoOpenTicket ||
 				sol.Descargo.Estado == models.EstadoDescargoFinalizado {
@@ -73,28 +71,21 @@ func (s *AlertaService) ProcesarAlertasDescargo(ctx context.Context) error {
 			}
 		}
 
-		// Validar si los datos internos del descargo están completos (independiente del estado)
 		if sol.HasCompleteDescargo() {
-			continue // Ya está completo, no necesita alerta
+			continue
 		}
 
 		maxVuelo := sol.GetMaxFechaVueloEmitida()
 		if maxVuelo == nil {
 			continue
 		}
-		fechaFin := *maxVuelo // Ensure fechaLimite calculation is based on the actual flight date
+		fechaFin := *maxVuelo
 
-		// La fecha límite son 8 días hábiles después del fin del viaje
 		fechaLimite := utils.CalcularFechaLimiteDescargo(fechaFin)
 
-		// El usuario pidió enviarle a TODOS los que cumplan el filtro (estén pendientes de descargo)
-		// y el vuelo ya haya sido emitido y tengan items.
-
-		// Opcional: Solo enviamos a los que ya pasaron su fecha de vuelo
 		y, m, d := fechaFin.Date()
 		fechaFinLocal := time.Date(y, m, d, 0, 0, 0, 0, loc)
 
-		// Si el vuelo ni siquiera ha terminado, no enviar alerta de descargo todavía
 		if hoy.Before(fechaFinLocal.AddDate(0, 0, 1)) {
 			continue
 		}
@@ -132,7 +123,6 @@ func (s *AlertaService) enviarAlertaDescargoEmail(sol models.Solicitud, fechaLim
 	destinatarios := []string{beneficiario.Email}
 	var copias []string
 
-	// Si tiene encargado, enviar con copia
 	if beneficiario.Encargado != nil && beneficiario.Encargado.Email != "" {
 		copias = append(copias, beneficiario.Encargado.Email)
 	}
@@ -141,7 +131,6 @@ func (s *AlertaService) enviarAlertaDescargoEmail(sol models.Solicitud, fechaLim
 
 	subject := fmt.Sprintf("[ALERTA] Pendiente de Descargo de Pasajes - %s", sol.Codigo)
 
-	// Construir cuerpo del mensaje
 	fechaLimiteStr := fechaLimite.Format("02/01/2006")
 	days := sol.GetDiasRestantesDescargo()
 	statusText := ""

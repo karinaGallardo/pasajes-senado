@@ -81,18 +81,14 @@ func (DescargoTramo) TableName() string {
 	return "descargo_tramos"
 }
 
-// IsOriginal returns true if this tramo is an original segment (not a reprogrammed or returned one).
 func (d DescargoTramo) IsOriginal() bool {
 	return strings.HasSuffix(string(d.Tipo), "_ORIGINAL")
 }
-
-// IsReprogramacion returns true if this tramo is a reprogrammed segment.
 func (d DescargoTramo) IsReprogramacion() bool {
 	upper := strings.ToUpper(string(d.Tipo))
 	return strings.HasSuffix(upper, "_REPRO") || strings.HasSuffix(upper, "_REPROG")
 }
 
-// IsReutilizacion returns true if this tramo is a reused segment (REUT).
 func (d DescargoTramo) IsReutilizacion() bool {
 	return strings.HasSuffix(strings.ToUpper(string(d.Tipo)), "_REUT")
 }
@@ -101,7 +97,6 @@ func (d DescargoTramo) IsUtilizacion() bool {
 	return d.IsReutilizacion()
 }
 
-// GetRutaOrigen extracts the origin from the routing label.
 func (d DescargoTramo) GetRutaOrigen() string {
 	display := d.GetRutaDisplay()
 	parts := strings.Split(display, " - ")
@@ -111,7 +106,6 @@ func (d DescargoTramo) GetRutaOrigen() string {
 	return display
 }
 
-// GetRutaDestino extracts the destination from the routing label.
 func (d DescargoTramo) GetRutaDestino() string {
 	display := d.GetRutaDisplay()
 	parts := strings.Split(display, " - ")
@@ -121,7 +115,6 @@ func (d DescargoTramo) GetRutaDestino() string {
 	return ""
 }
 
-// GetFechaStr returns the date formatted as string.
 func (d DescargoTramo) GetFechaStr() string {
 	if d.Fecha != nil {
 		return d.Fecha.Format("2006-01-02 15:04")
@@ -162,7 +155,6 @@ func (d DescargoTramo) GetPasajeCorrespondiente(s *Solicitud) *Pasaje {
 	if s == nil {
 		return nil
 	}
-	// 1. Prioridad por ID
 	if d.PasajeID != nil {
 		for _, item := range s.Items {
 			for i := range item.Pasajes {
@@ -172,7 +164,7 @@ func (d DescargoTramo) GetPasajeCorrespondiente(s *Solicitud) *Pasaje {
 			}
 		}
 	}
-	// 2. Fallback por Billete
+
 	for _, item := range s.Items {
 		for i := range item.Pasajes {
 			p := &item.Pasajes[i]
@@ -185,7 +177,6 @@ func (d DescargoTramo) GetPasajeCorrespondiente(s *Solicitud) *Pasaje {
 }
 
 func (d DescargoTramo) HasChanges(other DescargoTramo) bool {
-	// Compare Main Fields
 	if d.Tipo != other.Tipo ||
 		d.Billete != other.Billete ||
 		d.TramoNombre != other.TramoNombre ||
@@ -199,7 +190,6 @@ func (d DescargoTramo) HasChanges(other DescargoTramo) bool {
 		return true
 	}
 
-	// Compare Pointers (Dates)
 	if (d.Fecha == nil) != (other.Fecha == nil) {
 		return true
 	}
@@ -208,13 +198,12 @@ func (d DescargoTramo) HasChanges(other DescargoTramo) bool {
 		return true
 	}
 
-	// Compare Pointers (IDs)
 	cmpPtr := func(p1, p2 *string) bool {
 		if (p1 == nil) != (p2 == nil) {
-			return true // One is nil, the other isn't
+			return true
 		}
 		if p1 != nil && p2 != nil && *p1 != *p2 {
-			return true // Both are present but different
+			return true
 		}
 		return false
 	}

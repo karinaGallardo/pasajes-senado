@@ -226,7 +226,6 @@ func (ctrl *UsuarioController) UpdateOrigin(c *gin.Context) {
 		return
 	}
 
-	// AUDITORÍA: Registrar el cambio de origen
 	go ctrl.auditService.Log(c.Request.Context(), "UPDATE_USER_ORIGIN", "Usuario", targetID, "", "Actualización manual de origen", "", "")
 
 	c.JSON(http.StatusOK, gin.H{"message": "Origen actualizado correctamente"})

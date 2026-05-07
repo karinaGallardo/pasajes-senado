@@ -32,7 +32,6 @@ type CupoDerechoItem struct {
 	FechaDesde *time.Time `gorm:"type:timestamp;comment:Fecha desde la cual el cupo es válido"`
 	FechaHasta *time.Time `gorm:"type:timestamp;comment:Fecha hasta la cual el cupo es válido"`
 
-	// Seq is an auto-incrementing field managed by DB to ensure atomic sequential ordering
 	Seq int64 `gorm:"autoIncrement;not null;<-:false"`
 }
 
@@ -150,7 +149,6 @@ func (v CupoDerechoItem) GetPermissions(authUser *Usuario, targetUser *Usuario, 
 	isTransferido := v.EsTransferido
 	isOwner := v.SenAsignadoID == targetUser.ID
 
-	// 1. Admin Actions
 	if isViewerAdminOrResponsable {
 		if isTransferido && v.CanBeReverted() {
 			perms.CanRevert = true
@@ -160,43 +158,33 @@ func (v CupoDerechoItem) GetPermissions(authUser *Usuario, targetUser *Usuario, 
 		}
 	}
 
-	// 2. Tomar / Asignar Cupo (Para el Target Suplente)
 	hasTitular := targetUser.TitularID != nil
 	if isDisponible && (isViewerAdminOrResponsable || !isVencido) && hasTitular && v.SenAsignadoID == *targetUser.TitularID {
-		// Opción 1: El mismo suplente toma su cupo (Solo si no tiene cupo)
 		if isTargetSuplente && !targetHasQuota && isViewerSuplente && authUser.ID == targetUser.ID {
 			perms.CanTomarCupo = true
 		}
 
-		// Opción 2: Encargado asigna (Solo si no tiene cupo)
 		if isEncargado && !targetHasQuota && isTargetSuplente {
 			perms.CanAsignarCupo = true
 		}
-
-		// Opción 3: Admin/Responsable asigna (Solo si no tiene cupo)
 		if isViewerAdminOrResponsable && !targetHasQuota && isTargetSuplente && !isTransferido {
 			perms.CanAsignarCupo = true
 		}
 	}
 
-	// 3. Transferencia (Admin/Responsable)
 	if isViewerAdminOrResponsable && !isTransferido && !perms.CanAsignarCupo {
 		perms.CanTransfer = true
 	}
-
-	// 4. Solicitudes (Owner, Admin or Encargado)
 	if isOwner || isViewerAdminOrResponsable || isEncargado {
 		sol := v.GetSolicitud()
 		hasOrigin := targetUser.OrigenIATA != nil && *targetUser.OrigenIATA != ""
 
-		// Creation
 		if sol == nil {
 			if hasOrigin && (isViewerAdminOrResponsable || (!isVencido && (isOwner || isEncargado))) {
 				perms.CanCreate = true
 				perms.CanCreateIdaVuelta = true
 			}
 		} else {
-			// Edit/View permissions
 			if sol.CanEdit(authUser) {
 				perms.CanEdit = true
 			}

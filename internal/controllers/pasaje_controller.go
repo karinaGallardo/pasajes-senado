@@ -133,10 +133,8 @@ func (ctrl *PasajeController) UpdateStatus(c *gin.Context) {
 
 	if err := ctrl.pasajeService.UpdateStatus(c.Request.Context(), req.ID, req.Status, ticketPath, pasePath); err != nil {
 		if c.GetHeader("HX-Request") == "true" {
-			// Find which modal to re-render based on status
 			if req.Status == "EMITIDO" {
-				// Re-rendering emitir logic might need a separate helper or manual render
-				// For now, simple JSON error is fine if it's handled by alert, but re-render is better.
+
 			}
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Error al actualizar estado: " + err.Error()})
 			return
@@ -473,6 +471,17 @@ func (ctrl *PasajeController) StoreCargo(c *gin.Context) {
 		return
 	}
 
-	// Re-render modal to show new list
+	ctrl.GetCargosModal(c)
+}
+
+func (ctrl *PasajeController) DeleteCargo(c *gin.Context) {
+	cargoID := c.Param("cargo_id")
+	authUser := appcontext.AuthUser(c)
+
+	if err := ctrl.pasajeService.DeleteCargo(c.Request.Context(), cargoID, authUser.ID); err != nil {
+		c.String(http.StatusInternalServerError, "Error al eliminar cargo: "+err.Error())
+		return
+	}
+
 	ctrl.GetCargosModal(c)
 }

@@ -19,7 +19,6 @@ type DetalleViatico struct {
 
 	CategoriaID *string `gorm:"size:36"`
 
-	// Seq is an auto-incrementing field managed by DB to ensure atomic sequential ordering
 	Seq int64 `gorm:"autoIncrement;not null;<-:false"`
 }
 

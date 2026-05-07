@@ -63,6 +63,7 @@ type SolicitudPermissions struct {
 	CanDelete         bool
 	CanFinalize       bool
 	CanRevertFinalize bool
+	CanRevertReject   bool
 	CanRegularize     bool
 }
 
@@ -96,6 +97,7 @@ func (s Solicitud) GetPermissions(u ...*Usuario) SolicitudPermissions {
 		CanDelete:         s.CanDelete(u...),
 		CanFinalize:       s.CanFinalize(u...),
 		CanRevertFinalize: s.CanRevertFinalize(u...),
+		CanRevertReject:   s.CanRevertReject(u...),
 		CanRegularize:     s.getAuthUser(u...) != nil && s.getAuthUser(u...).IsAdminOrResponsable(),
 	}
 }
@@ -304,13 +306,11 @@ func (s *Solicitud) UpdateStatusBasedOnItems() {
 		return
 	}
 
-	// Detección de Itinerario Inteligente: Analizamos qué tramos están HABILITADOS (no pendientes)
 	hasItemIda := false
 	hasItemVuelta := false
 	hasAnyNonPending := false
 
 	for _, item := range s.Items {
-		// Solo contamos tramos que NO están pendientes (tienen fecha o han sido habilitados)
 		if item.GetEstado() != "PENDIENTE" {
 			hasAnyNonPending = true
 			switch item.Tipo {
@@ -322,7 +322,6 @@ func (s *Solicitud) UpdateStatusBasedOnItems() {
 		}
 	}
 
-	// Si hay tramos habilitados, calculamos basado en ellos.
 	if hasAnyNonPending {
 		if hasItemIda && hasItemVuelta {
 			s.TipoItinerarioCodigo = "IDA_VUELTA"
@@ -332,7 +331,6 @@ func (s *Solicitud) UpdateStatusBasedOnItems() {
 			s.TipoItinerarioCodigo = "SOLO_VUELTA"
 		}
 	} else {
-		// Fallback: Si TODO está pendiente, detectamos por existencia física de los registros
 		hasPhysicalIda := false
 		hasPhysicalVuelta := false
 		for _, item := range s.Items {
@@ -351,7 +349,7 @@ func (s *Solicitud) UpdateStatusBasedOnItems() {
 		} else if hasPhysicalVuelta {
 			s.TipoItinerarioCodigo = "SOLO_VUELTA"
 		} else {
-			s.TipoItinerarioCodigo = "IDA_VUELTA" // Default estratégico por contexto Senado
+			s.TipoItinerarioCodigo = "IDA_VUELTA"
 		}
 	}
 
@@ -388,23 +386,18 @@ func (s *Solicitud) UpdateStatusBasedOnItems() {
 	if allRejected {
 		newState = "RECHAZADO"
 	} else if hasSolicitado || hasPendiente {
-		// Si hay algo solicitado o pendiente, y algo ya avanzó, es PARCIALMENTE_APROBADO
 		if hasAprobado || hasEmitido || hasFinalizado {
 			newState = "PARCIALMENTE_APROBADO"
 		} else if hasSolicitado {
 			newState = "SOLICITADO"
 		} else {
-			// Si no hay nada solicitado pero sí pendiente, el estado global inicial es SOLICITADO
 			newState = "SOLICITADO"
 		}
 	} else if hasAprobado {
-		// Si no hay nada solicitado/pendiente, pero queda algo solo aprobado (sin emitir), sigue en APROBADO global
 		newState = "APROBADO"
 	} else if hasEmitido {
-		// No hay solicitados ni aprobados pendientes, y hay al menos un emitido
 		newState = "EMITIDO"
 	} else if hasFinalizado {
-		// Solo quedan finalizados
 		newState = "FINALIZADO"
 	} else {
 		newState = "SOLICITADO"
@@ -427,6 +420,14 @@ func (s *Solicitud) CanReject(u ...*Usuario) bool {
 	return s.CanApprove(u...)
 }
 
+func (s *Solicitud) CanRevertReject(u ...*Usuario) bool {
+	user := s.getAuthUser(u...)
+	if user == nil || !user.IsAdminOrResponsable() {
+		return false
+	}
+	return s.IsRechazado()
+}
+
 func (s *Solicitud) CanRevertApproval(u ...*Usuario) bool {
 	user := s.getAuthUser(u...)
 	if user == nil || !user.IsAdminOrResponsable() {
@@ -438,7 +439,6 @@ func (s *Solicitud) CanRevertApproval(u ...*Usuario) bool {
 		return false
 	}
 
-	// Si se llama sin un ítem específico, permitimos si al menos uno es revertible
 	for _, item := range s.Items {
 		if item.CanBeReverted(user) {
 			return true
@@ -448,7 +448,6 @@ func (s *Solicitud) CanRevertApproval(u ...*Usuario) bool {
 }
 
 func (s *Solicitud) Approve() error {
-	// Usamos el nuevo método de permiso (aunque en procesos internos pasemos nil al usuario si no aplica check de rol)
 	st := s.GetEstado()
 	if st != "SOLICITADO" && st != "PARCIALMENTE_APROBADO" {
 		return errors.New("la solicitud no está en un estado que permita aprobación")
@@ -456,8 +455,6 @@ func (s *Solicitud) Approve() error {
 
 	hasIda := s.GetItemIda() != nil
 	hasVuelta := s.GetItemVuelta() != nil
-	// Si tiene ambos tramos, aprobamos ambos por defecto.
-	// Si solo hay uno, aprobamos los que están en SOLICITADO y no son marcados como PENDIENTE (sin fecha).
 	approveAll := hasIda && hasVuelta
 
 	for i := range s.Items {
@@ -467,7 +464,6 @@ func (s *Solicitud) Approve() error {
 		if approveAll {
 			shouldApprove = true
 		} else {
-			// Approve only if it has a confirmed date (i.e., not PENDING placeholder)
 			if item.GetEstado() != "PENDIENTE" {
 				shouldApprove = true
 			}
@@ -510,7 +506,6 @@ func (s *Solicitud) Finalize() error {
 }
 
 func (s *Solicitud) RevertApproval() error {
-	// Revertir solo si no tiene pasajes emitidos (esto lo valida el servicio usualmente, pero pongamos base aquí)
 	if s.GetEstado() == "FINALIZADO" {
 		return errors.New("no se puede revertir una solicitud ya finalizada")
 	}
@@ -519,6 +514,20 @@ func (s *Solicitud) RevertApproval() error {
 		item := &s.Items[i]
 		if item.GetEstado() == "APROBADO" {
 			item.RevertApproval()
+		}
+	}
+	s.UpdateStatusBasedOnItems()
+	return nil
+}
+
+func (s *Solicitud) RevertReject() error {
+	if s.GetEstado() != "RECHAZADO" {
+		return errors.New("solo se pueden revertir solicitudes en estado RECHAZADO")
+	}
+
+	for i := range s.Items {
+		if s.Items[i].GetEstado() == "RECHAZADO" {
+			s.Items[i].RevertReject()
 		}
 	}
 	s.UpdateStatusBasedOnItems()
@@ -827,7 +836,6 @@ func (s Solicitud) GetDiasRestantesDescargo() int {
 		}
 	}
 
-	// 2. Contar días hábiles desde HOY hasta el límite
 	hoy := time.Now().Truncate(24 * time.Hour)
 	limiteTrunc := limite.Truncate(24 * time.Hour)
 
@@ -915,18 +923,13 @@ func (s Solicitud) CanEdit(u ...*Usuario) bool {
 	}
 
 	estado := s.GetEstado()
-	// No se puede editar en estados finales, independientemente del rol.
-	// Si un Admin necesita editar, debe revertir la aprobación primero.
 	if estado == "APROBADO" || estado == "EMITIDO" || estado == "FINALIZADO" {
 		return false
 	}
 
-	// El Administrador o Responsable tiene poder de edición administrativa en estados abiertos
 	if user.IsAdminOrResponsable() {
 		return s.CanView(user)
 	}
-
-	// Para usuarios normales, solo si está en estados editables
 	isEditableState := (estado == "SOLICITADO" || estado == "RECHAZADO" || estado == "PARCIALMENTE_APROBADO")
 	if !isEditableState {
 		return false
@@ -959,7 +962,6 @@ func (s Solicitud) CanAssignPasaje(u ...*Usuario) bool {
 		return false
 	}
 	st := s.GetEstado()
-	// Solo tiene sentido asignar pasajes en flujos aprobados o activos
 	return st == "APROBADO" || st == "PARCIALMENTE_APROBADO" || st == "EMITIDO" || st == "FINALIZADO"
 }
 
@@ -990,7 +992,6 @@ func (s Solicitud) CanMakeDescargo(u ...*Usuario) bool {
 
 func (s Solicitud) CanPrint(u ...*Usuario) bool {
 	user := s.getAuthUser(u...)
-	// Se puede imprimir en cualquier estado mientras se tenga permiso de ver
 	return s.CanView(user)
 }
 
@@ -1060,7 +1061,6 @@ func (s Solicitud) GetConcepto() string {
 func (s Solicitud) GetStatusBadgeClass() string {
 	if s.EstadoSolicitud != nil && s.EstadoSolicitud.Color != "" {
 		color := s.EstadoSolicitud.Color
-		// Casos especiales (neutral black, success bold, etc)
 		if color == "neutral-800" || color == "black" {
 			return "bg-neutral-800 text-white"
 		}
@@ -1075,7 +1075,6 @@ func (s Solicitud) GetStatusBadgeClass() string {
 }
 
 func GetAvailableStatuses() []StatusFilter {
-	// Nota: Estos filtros podrían moverse a un repositorio para ser cargados desde la DB
 	return []StatusFilter{
 		{Codigo: "SOLICITADO", Nombre: "Solicitados", Class: "bg-primary"},
 		{Codigo: "APROBADO", Nombre: "Aprobados", Class: "bg-success-600"},
@@ -1114,7 +1113,6 @@ func (s Solicitud) HasCompleteDescargo() bool {
 		return false
 	}
 
-	// 1. Validar Itinerario (Billete, Pase, Archivo)
 	hasItinerary := false
 	for _, it := range s.Descargo.Tramos {
 		if !it.EsOpenTicket {
@@ -1125,12 +1123,9 @@ func (s Solicitud) HasCompleteDescargo() bool {
 		}
 	}
 
-	// Si no tiene itinerario registrado, lo consideramos incompleto (a menos que todo sea devolución)
 	if !hasItinerary && !s.Descargo.allDevolucion() {
 		return false
 	}
-
-	// 2. Validar Informe Oficial (si aplica)
 	if s.GetConceptoCodigo() == "OFICIAL" {
 		if s.Descargo.Oficial == nil {
 			return false

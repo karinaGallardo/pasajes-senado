@@ -17,9 +17,6 @@ type IPRateLimiter struct {
 	b   int
 }
 
-// NewIPRateLimiter crea un nuevo limitador de tasa basado en IP.
-// r: peticiones por segundo.
-// b: ráfaga (burst) permitida.
 func NewIPRateLimiter(r rate.Limit, b int) *IPRateLimiter {
 	return &IPRateLimiter{
 		ips: make(map[string]*rate.Limiter),
@@ -60,13 +57,10 @@ func RateLimitMiddleware(limiter *IPRateLimiter) gin.HandlerFunc {
 	}
 }
 
-// CleanupIPLimiters limpia limitadores antiguos periódicamente.
-// (Opcional, para evitar consumo infinito de memoria en servidores de larga duración)
 func (i *IPRateLimiter) CleanupIPLimiters() {
 	for {
 		time.Sleep(time.Hour)
 		i.mu.Lock()
-		// Reiniciar el mapa si crece demasiado (estrategia simple)
 		if len(i.ips) > 10000 {
 			i.ips = make(map[string]*rate.Limiter)
 		}

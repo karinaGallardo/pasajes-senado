@@ -388,6 +388,26 @@ func (s *SolicitudService) Reject(ctx context.Context, id string) error {
 	})
 }
 
+func (s *SolicitudService) RevertReject(ctx context.Context, id string) error {
+	return s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
+		solicitud, err := repoTx.FindByID(ctx, id)
+		if err != nil {
+			return err
+		}
+
+		stOld := solicitud.GetEstado()
+		if err := solicitud.RevertReject(); err != nil {
+			return err
+		}
+
+		if err := repoTx.Update(ctx, solicitud); err != nil {
+			return err
+		}
+
+		return s.auditService.Log(ctx, "REVERTIR_RECHAZO", "solicitud", solicitud.ID, stOld, "SOLICITADO", "", "")
+	})
+}
+
 func (s *SolicitudService) Update(ctx context.Context, solicitud *models.Solicitud) error {
 	return s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
 		// 1. Obtener el estado ACTUAL de la DB
@@ -403,7 +423,6 @@ func (s *SolicitudService) Update(ctx context.Context, solicitud *models.Solicit
 			dbItems[it.ID] = it
 		}
 
-		// 2. Procesar tramos
 		for i := range solicitud.Items {
 			item := &solicitud.Items[i]
 			old, exists := dbItems[item.ID]
@@ -425,8 +444,6 @@ func (s *SolicitudService) Update(ctx context.Context, solicitud *models.Solicit
 			}
 		}
 
-		// 3. Actualizar Solicitud (Padre)
-		// UpdateStatusBasedOnItems() se ejecuta vía Hooks GORM al guardar/actualizar
 		parentChanges := solicitud.GetChanges(dbSol)
 
 		if len(parentChanges) > 0 {
@@ -484,7 +501,6 @@ func (s *SolicitudService) ApproveItem(ctx context.Context, solicitudID, itemID 
 			return err
 		}
 
-		// Si es derecho, marcar como reservado
 		if solicitud.CupoDerechoItemID != nil {
 			itemRepoTx := s.itemRepo.WithTx(tx)
 			item, err := itemRepoTx.FindByID(ctx, *solicitud.CupoDerechoItemID)
@@ -527,25 +543,20 @@ func (s *SolicitudService) RejectItem(ctx context.Context, solicitudID, itemID s
 
 func (s *SolicitudService) RevertApprovalItem(ctx context.Context, solicitudID, itemID string) error {
 	return s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
-		// 1. Verificar si existe la solicitud
 		sol, err := repoTx.FindByID(ctx, solicitudID)
 		if err != nil {
 			return err
 		}
 
-		// 2. Verificar si el tramo (item) existe
 		item := sol.GetItemByID(itemID)
 		if item == nil {
 			return fmt.Errorf("tramo no encontrado")
 		}
 
-		// 3. Verificar si tiene pasajes activos o emitidos (distintos de ANULADO)
-		// Usamos el helper HasActivePasaje que ya ignora los anulados
 		if item.HasActivePasaje() {
 			return fmt.Errorf("no se puede revertir: tiene pasajes activos o emitidos. Debe anularlos primero.")
 		}
 
-		// 4. Revertir aprobación via model
 		if !sol.RevertApprovalItem(itemID) {
 			return fmt.Errorf("error al revertir aprobación del tramo")
 		}

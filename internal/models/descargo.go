@@ -22,8 +22,8 @@ type DescargoPermissions struct {
 	CanRevert             bool
 	CanPrint              bool
 	CanCompleteOpenTicket bool
-	RevertLabel           string // Dinámico: "Revertir a Borrador" o "Revertir a Open Ticket"
-	ApproveLabel          string // Dinámico: "Aprobar y Finalizar", "Aprobar y Generar OT", etc.
+	RevertLabel           string
+	ApproveLabel          string
 }
 
 type Descargo struct {
@@ -38,15 +38,11 @@ type Descargo struct {
 	FechaPresentacion time.Time `gorm:"not null;type:timestamp"`
 	Observaciones     string    `gorm:"type:text"`
 
-	// Tramos de Viaje (FV-05) - Relación granular por conexiones
 	Tramos []DescargoTramo `gorm:"foreignKey:DescargoID"`
 
-	Estado EstadoDescargo `gorm:"size:50;default:'BORRADOR'"`
-
-	// Detalle opcional para informes oficiales (PV-06)
+	Estado  EstadoDescargo   `gorm:"size:50;default:'BORRADOR'"`
 	Oficial *DescargoOficial `gorm:"foreignKey:DescargoID"`
 
-	// Contexto de runtime (no persistido)
 	authUser    *Usuario             `gorm:"-"`
 	Permissions *DescargoPermissions `gorm:"-"`
 }
@@ -62,8 +58,6 @@ func (d Descargo) HasChanges(other Descargo) bool {
 }
 
 func (d Descargo) IsComplete() bool {
-	// 1. Validar Itinerario (Billete, Pase, Archivo)
-	// Solo validamos los que no son devoluciones
 	hasItinerary := false
 	for _, it := range d.Tramos {
 		if !it.EsOpenTicket {
@@ -74,13 +68,10 @@ func (d Descargo) IsComplete() bool {
 		}
 	}
 
-	// Si no tiene itinerario registrado, lo consideramos incompleto
 	if !hasItinerary && !d.allDevolucion() {
 		return false
 	}
 
-	// 2. Validar Informe Oficial (si aplica)
-	// Si la solicitud es OFICIAL, DEBE tener el reporte oficial lleno
 	isOficial := false
 	if d.Solicitud != nil {
 		isOficial = d.Solicitud.GetConceptoCodigo() == "OFICIAL"
@@ -256,8 +247,6 @@ func (Descargo) TableName() string {
 	return "descargos"
 }
 
-// --- Display Helpers (Refactored to use Enum Info) ---
-
 func (d Descargo) GetEstadoColorClass() string {
 	return d.Estado.Info().ColorClass
 }
@@ -373,7 +362,6 @@ func (d Descargo) CanRevert(user *Usuario) bool {
 }
 
 func (d Descargo) CanPrint(user *Usuario) bool {
-	// Solo se puede imprimir si no está en borrador o si el usuario tiene privilegios para ver previsualizaciones
 	return d.Estado != EstadoDescargoBorrador
 }
 
@@ -382,11 +370,9 @@ func (d Descargo) ShouldShowFinancialSection() bool {
 }
 
 func (d Descargo) ShouldShowPaymentProof() bool {
-	// Solo si hay un monto real que devolver
 	if d.GetTotalDevolucionPasajes() <= 0 {
 		return false
 	}
-	// Se presume que si está FINALIZADO, al menos un pasaje tiene el archivo
 	return d.Estado == EstadoDescargoFinalizado
 }
 
@@ -400,29 +386,21 @@ func (d Descargo) isOwnerOrAdmin(user *Usuario) bool {
 	if user == nil {
 		return false
 	}
-	// 1. Administradores y Responsables de Pasajes
 	if user.IsAdminOrResponsable() {
 		return true
 	}
-
-	// 2. Verificación basada en la Solicitud (Fuente de verdad del viaje)
 	if d.Solicitud != nil {
-		// El Titular del viaje (Senador/Funcionario beneficiario)
 		if d.Solicitud.UsuarioID == user.ID {
 			return true
 		}
-		// El Asistente/Encargado asignado al titular del viaje
 		if d.Solicitud.Usuario.ID != "" && d.Solicitud.Usuario.EncargadoID != nil && *d.Solicitud.Usuario.EncargadoID == user.ID {
 			return true
 		}
 	}
 
-	// 3. Propietario del registro de Descargo (Fallback)
 	if d.UsuarioID == user.ID {
 		return true
 	}
-
-	// 4. Creador Físico del registro
 	if d.CreatedBy != nil && *d.CreatedBy == user.ID {
 		return true
 	}

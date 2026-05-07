@@ -40,13 +40,10 @@ type SolicitudItem struct {
 	AerolineaID *string    `gorm:"size:36;index;default:null"`
 	Aerolinea   *Aerolinea `gorm:"foreignKey:AerolineaID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;<-:false"`
 
-	// Seq is an auto-incrementing field managed by DB to ensure atomic sequential ordering
 	Seq int64 `gorm:"autoIncrement;not null;<-:false"`
 
-	// Relation to Pasajes (History of tickets for this leg)
 	Pasajes []Pasaje `gorm:"foreignKey:SolicitudItemID"`
 
-	// OpenTicket usage
 	OpenTicketID *string     `gorm:"size:36;index;default:null"`
 	OpenTicket   *OpenTicket `gorm:"foreignKey:OpenTicketID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;<-:false"`
 
@@ -170,7 +167,6 @@ func (t SolicitudItem) GetPasajeActivo() *Pasaje {
 	if len(t.Pasajes) == 0 {
 		return nil
 	}
-	// Devuelve el primer pasaje que no esté anulado (ahora solo debería haber uno activo por diseño)
 	for i := range t.Pasajes {
 		p := &t.Pasajes[i]
 		if p.EstadoPasajeCodigo != "" {
@@ -180,7 +176,6 @@ func (t SolicitudItem) GetPasajeActivo() *Pasaje {
 	return nil
 }
 
-// GetChanges compares current item with old state and returns dirty fields map for GORM Updates
 func (t *SolicitudItem) GetChanges(old SolicitudItem) map[string]any {
 	changes := make(map[string]any)
 
@@ -200,7 +195,6 @@ func (t *SolicitudItem) GetChanges(old SolicitudItem) map[string]any {
 		changes["estado_codigo"] = t.EstadoCodigo
 	}
 
-	// Comparar fechas usando Segundos Unix para evitar líos de precisión
 	if (t.Fecha == nil) != (old.Fecha == nil) ||
 		(t.Fecha != nil && old.Fecha != nil && t.Fecha.Unix() != old.Fecha.Unix()) {
 		changes["fecha"] = t.Fecha
@@ -224,7 +218,7 @@ func (t SolicitudItem) CanBeReverted(user *Usuario) bool {
 	if user == nil {
 		return false
 	}
-	return user.IsAdminOrResponsable() && (t.IsAprobado() || t.IsEmitido()) && !t.HasActivePasaje()
+	return user.IsAdminOrResponsable() && (t.IsAprobado() || t.IsEmitido() || t.IsRechazado()) && !t.HasActivePasaje()
 }
 
 func (t SolicitudItem) CanAssignPasaje(user *Usuario) bool {
@@ -248,12 +242,10 @@ func (t SolicitudItem) GetDestinoLabel() string {
 	return t.Destino.GetNombreCorto()
 }
 
-// GetCostoTotal suma el costo de todos los pasajes asociados a este tramo que no estén anulados.
 func (t SolicitudItem) GetCostoTotal() float64 {
 	total := 0.0
 	for _, p := range t.Pasajes {
 		estado := p.GetEstadoCodigo()
-		// No sumamos pasajes anulados o que no tengan costo registrado
 		if estado != "" {
 			total += p.Costo
 		}
@@ -285,6 +277,11 @@ func (t *SolicitudItem) Finalize() {
 }
 
 func (t *SolicitudItem) RevertApproval() {
+	st := "SOLICITADO"
+	t.EstadoCodigo = &st
+}
+
+func (t *SolicitudItem) RevertReject() {
 	st := "SOLICITADO"
 	t.EstadoCodigo = &st
 }

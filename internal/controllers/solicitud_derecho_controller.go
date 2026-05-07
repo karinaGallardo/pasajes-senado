@@ -91,11 +91,9 @@ func (ctrl *SolicitudDerechoController) GetCreateModal(c *gin.Context) {
 		sedeDefault = &sedesAutorizadas[0]
 	}
 
-	// Default orientation: from Senator's origin to first authorized sede
 	origen = userLoc
 	destino = sedeDefault
 
-	// Preparar Orígenes Autorizados para el Senador
 	origenesAutorizados := []models.Destino{}
 	if userLoc != nil {
 		origenesAutorizados = append(origenesAutorizados, *userLoc)
@@ -241,7 +239,6 @@ func (ctrl *SolicitudDerechoController) GetEditModal(c *gin.Context) {
 		}
 	}
 
-	// Calcular banderas especializadas para solicitudes de Derecho (Ida/Vuelta únicas)
 	canEditIda := (ida != nil && ida.CanEdit())
 	canEditVuelta := (vuelta != nil && vuelta.CanEdit())
 	isIdaProgramada := (ida != nil && !ida.IsPendiente())
@@ -286,9 +283,8 @@ func (ctrl *SolicitudDerechoController) Update(c *gin.Context) {
 	}
 
 	utils.SetSuccessMessage(c, "Solicitud actualizada correctamente")
-	c.Header("HX-Trigger", "solicitudUpdated") // Opcional si necesitas disparar algún evento
+	c.Header("HX-Trigger", "solicitudUpdated")
 
-	// If HTMX request, re-render the edit modal with updated data
 	if c.GetHeader("HX-Request") == "true" {
 		ctrl.GetEditModal(c)
 		return
@@ -318,11 +314,9 @@ func (ctrl *SolicitudDerechoController) Show(c *gin.Context) {
 	}
 	solicitud.HydratePermissions(authUser)
 
-	// --- 2. Stepper & Status Logic delegated to Model ---
 	steps, showNextSteps := solicitud.GetStepperData()
 	statusCard := solicitud.GetStatusCardData()
 
-	// dependencies
 	aerolineas, _ := ctrl.aerolineaService.GetAllActive(c.Request.Context())
 	userIDsMap := make(map[string]bool)
 	if solicitud.CreatedBy != nil {
@@ -424,6 +418,29 @@ func (ctrl *SolicitudDerechoController) Reject(c *gin.Context) {
 		return
 	}
 	utils.SetSuccessMessage(c, "Solicitud RECHAZADA")
+	c.Redirect(http.StatusFound, "/solicitudes/derecho/"+id+"/detalle")
+}
+
+func (ctrl *SolicitudDerechoController) RevertReject(c *gin.Context) {
+	id := c.Param("id")
+	authUser := appcontext.AuthUser(c)
+	solicitud, err := ctrl.solicitudService.GetByID(c.Request.Context(), id)
+	if err != nil {
+		c.String(http.StatusNotFound, "Solicitud no encontrada")
+		return
+	}
+
+	solicitud.HydratePermissions(authUser)
+	if !solicitud.Permissions.CanRevertReject {
+		c.String(http.StatusForbidden, "No tiene permisos para realizar esta acción")
+		return
+	}
+
+	if err := ctrl.solicitudService.RevertReject(c.Request.Context(), id); err != nil {
+		c.String(http.StatusInternalServerError, "Error al revertir rechazo: "+err.Error())
+		return
+	}
+	utils.SetSuccessMessage(c, "Estado revertido a SOLICITADO")
 	c.Redirect(http.StatusFound, "/solicitudes/derecho/"+id+"/detalle")
 }
 
@@ -618,10 +635,9 @@ func (ctrl *SolicitudDerechoController) getSedesAutorizadas(ctx context.Context)
 	var sedesCodes []string
 
 	if sedesStr == "" {
-		// Fallback por defecto si no hay configuración
+
 		sedesCodes = []string{"LPB"}
 	} else {
-		// Limpiar y separar códigos
 		parts := strings.Split(sedesStr, ",")
 		for _, p := range parts {
 			code := strings.ToUpper(strings.TrimSpace(p))
@@ -631,7 +647,6 @@ func (ctrl *SolicitudDerechoController) getSedesAutorizadas(ctx context.Context)
 		}
 	}
 
-	// Buscar destinos correspondientes
 	for _, code := range sedesCodes {
 		if s, err := ctrl.destinoService.GetByIATA(ctx, code); err == nil && s != nil {
 			sedesAutorizadas = append(sedesAutorizadas, *s)

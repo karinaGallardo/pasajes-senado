@@ -458,10 +458,8 @@ func (ctrl *SolicitudController) Delete(c *gin.Context) {
 		return
 	}
 
-	// Smart Redirect: If deleting from Show page, redirect to list. If from Table, just trigger reload.
 	currentURL := c.GetHeader("HX-Current-URL")
 	if strings.Contains(currentURL, "/detalle") {
-		// Determine which list to return to (default to derecho)
 		redirectURL := "/solicitudes/derecho"
 		if strings.Contains(currentURL, "/oficial/") {
 			redirectURL = "/solicitudes/oficial"
@@ -524,6 +522,35 @@ func (ctrl *SolicitudController) RevertFinalize(c *gin.Context) {
 	}
 
 	if err := ctrl.service.RevertFinalize(c.Request.Context(), id); err != nil {
+		c.JSON(400, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.Header("HX-Refresh", "true")
+	c.Status(200)
+}
+
+func (ctrl *SolicitudController) RevertReject(c *gin.Context) {
+	id := c.Param("id")
+	authUser := appcontext.AuthUser(c)
+	if authUser == nil {
+		c.JSON(401, gin.H{"error": "No autorizado"})
+		return
+	}
+
+	solicitud, err := ctrl.service.GetByID(c.Request.Context(), id)
+	if err != nil {
+		c.JSON(404, gin.H{"error": "Solicitud no encontrada"})
+		return
+	}
+
+	solicitud.HydratePermissions(authUser)
+	if !solicitud.Permissions.CanRevertReject {
+		c.JSON(403, gin.H{"error": "No tiene permisos para revertir el rechazo"})
+		return
+	}
+
+	if err := ctrl.service.RevertReject(c.Request.Context(), id); err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}

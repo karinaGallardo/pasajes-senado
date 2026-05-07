@@ -152,7 +152,6 @@ func (u *Usuario) IsResponsable() bool {
 }
 
 func (u *Usuario) IsSenador() bool {
-	// Es senador si tiene el rol SENADOR o si su tipo contiene la palabra SENADOR
 	return (u.RolCodigo != nil && *u.RolCodigo == RolSenador) || strings.Contains(u.Tipo, "SENADOR")
 }
 
@@ -284,10 +283,8 @@ func (u Usuario) GetPermissions(user ...*Usuario) UserPermissions {
 	isSelf := authUser.IsSelf(u.ID)
 	isEncargado := u.IsManagedBy(authUser)
 
-	// El contacto lo puede editar el propio usuario, su encargado (asistente) o un admin
 	canEditContact := isSelf || isEncargado || isAdmin
 
-	// Atomismo de validación
 	hasOrigin := u.OrigenIATA != nil && *u.OrigenIATA != ""
 	hasCargo := u.CargoID != nil && *u.CargoID != ""
 	hasOficina := u.OficinaID != nil && *u.OficinaID != ""

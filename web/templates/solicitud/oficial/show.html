@@ -236,6 +236,18 @@
               Revertir Aprobación Global
             </button>
           {{ end }}
+          {{ if .Solicitud.Permissions.CanRevertReject }}
+            <button
+              type="button"
+              hx-post="/solicitudes/oficial/{{ .Solicitud.ID }}/revertir-rechazo"
+              hx-confirm="¿Está seguro de que desea REVERTIR el rechazo? Volverá a estado SOLICITADO."
+              hx-target="body"
+              class="btn-xs btn-white text-danger-700 border-danger-200 rounded-sm"
+            >
+              <i class="ph ph-arrow-u-up-left"></i>
+              Revertir Rechazo Global
+            </button>
+          {{ end }}
         </div>
 
         <div class="transition-all">
@@ -575,7 +587,7 @@
             <button
               type="button"
               hx-post="/solicitudes/oficial/{{ $solicitud.ID }}/items/{{ $item.ID }}/revertir-aprobacion"
-              hx-confirm="¿Está seguro de revertir la aprobación de este tramo? Volverá a estado SOLICITADO."
+              hx-confirm="{{ if $item.IsRechazado }}¿Está seguro de revertir el rechazo de este tramo?{{ else }}¿Está seguro de revertir la aprobación de este tramo?{{ end }} Volverá a estado SOLICITADO."
               hx-target="body"
               class="btn-xs btn-white text-warning-700 border-warning-200 rounded-sm text-[13px]"
             >

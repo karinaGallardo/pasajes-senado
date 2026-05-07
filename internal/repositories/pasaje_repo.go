@@ -120,8 +120,6 @@ func (r *PasajeRepository) FindConsolidado(ctx context.Context, filter dtos.Repo
 	}
 
 	if filter.Concepto != "" && filter.Concepto != "ALL" {
-		// DERECHO or OFICIAL
-		// We join with tipo_solicitudes to check ConceptoViaje
 		query = query.Joins("INNER JOIN tipo_solicitudes ts ON ts.codigo = solicitudes.tipo_solicitud_codigo").
 			Joins("INNER JOIN concepto_viajes cv ON cv.codigo = ts.concepto_viaje_codigo").
 			Where("cv.codigo = ?", filter.Concepto)

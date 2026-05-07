@@ -533,3 +533,12 @@ func (s *PasajeService) CreateCargo(ctx context.Context, req dtos.CreatePasajeCa
 
 	return s.repo.GetDB().WithContext(ctx).Create(cargo).Error
 }
+
+func (s *PasajeService) DeleteCargo(ctx context.Context, cargoID string, deletedBy string) error {
+	return s.repo.GetDB().WithContext(ctx).Transaction(func(tx *gorm.DB) error {
+		if err := tx.Model(&models.PasajeCargo{}).Where("id = ?", cargoID).Update("deleted_by", deletedBy).Error; err != nil {
+			return err
+		}
+		return tx.Delete(&models.PasajeCargo{}, "id = ?", cargoID).Error
+	})
+}

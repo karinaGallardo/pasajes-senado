@@ -40,23 +40,17 @@ func (ctrl *OpenTicketController) List(c *gin.Context) {
 	title := "Gestión de Pasajes No Utilizados (Open Tickets)"
 
 	if user.IsAdminOrResponsable() {
-		// Admin/Responsable: Ver todo
 		tickets, err = ctrl.service.GetAll(c.Request.Context(), nil)
 	} else if user.IsSenador() {
-		// Senador: Ver sus propios tickets
 		tickets, err = ctrl.service.GetForUser(c.Request.Context(), user.ID)
 		title = "Mis Tramos No Utilizados (Open Tickets)"
 	} else {
-		// Asistente/Encargado: Ver tickets de sus asignados
 		managedUsers, _ := ctrl.usuarioRepo.FindByEncargadoID(c.Request.Context(), user.ID)
 		if len(managedUsers) > 0 {
 			managedIDs := make([]string, 0, len(managedUsers))
 			for _, u := range managedUsers {
 				managedIDs = append(managedIDs, u.ID)
 			}
-			// Necesitamos un método en el repo/service que acepte múltiples IDs o filtrar manualmente
-			// Por simplicidad, implementaremos GetByUsuarioIDs en el service si es necesario
-			// O podemos iterar (no muy eficiente pero para pocos asignados está ok)
 			allTickets := []models.OpenTicket{}
 			for _, id := range managedIDs {
 				tks, _ := ctrl.service.GetForUser(c.Request.Context(), id)
@@ -81,7 +75,6 @@ func (ctrl *OpenTicketController) List(c *gin.Context) {
 }
 
 func (ctrl *OpenTicketController) ListByUser(c *gin.Context) {
-	// Reutilizamos la lógica o redirigimos
 	ctrl.List(c)
 }
 
@@ -95,7 +88,6 @@ func (ctrl *OpenTicketController) GetProgramarModal(c *gin.Context) {
 		return
 	}
 
-	// Obtener solicitudes pendientes/borradores del beneficiario para vincular
 	solicitudes, _ := ctrl.solicitudRepo.FindPendientesByUsuarioID(ctx, ticket.UsuarioID)
 
 	utils.Render(c, "pasajes/components/modal_programar_open_ticket", gin.H{
@@ -132,8 +124,6 @@ func (ctrl *OpenTicketController) ProgramarUso(c *gin.Context) {
 		ticket.Estado = models.EstadoOpenTicketReservado
 	} else {
 		ticket.SolicitudConsumoID = nil
-		// Si se quita la solicitud, vuelve a disponible (o se mantiene reservado si hay obs, 
-		// pero usualmente reservado implica intención de uso formal)
 		ticket.Estado = models.EstadoOpenTicketDisponible
 	}
 

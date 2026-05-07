@@ -11,7 +11,6 @@ import (
 
 func SetupRoutes(r *gin.Engine, container *app.Container, loginLimiter *middleware.IPRateLimiter) {
 	authCtrl := container.AuthController
-	// ... (las otras asignaciones se mantienen igual)
 	solicitudCtrl := container.SolicitudController
 	solicitudDerechoCtrl := container.SolicitudDerechoController
 	solicitudOficialCtrl := container.SolicitudOficialController
@@ -105,6 +104,7 @@ func SetupRoutes(r *gin.Engine, container *app.Container, loginLimiter *middlewa
 		protected.POST("/solicitudes/derecho/:id/aprobar", solicitudDerechoCtrl.Approve)
 		protected.POST("/solicitudes/derecho/:id/revertir-aprobacion", solicitudDerechoCtrl.RevertApproval)
 		protected.POST("/solicitudes/derecho/:id/rechazar", solicitudDerechoCtrl.Reject)
+		protected.POST("/solicitudes/derecho/:id/revertir-rechazo", solicitudDerechoCtrl.RevertReject)
 		protected.POST("/solicitudes/derecho/:id/items/:item_id/aprobar", solicitudDerechoCtrl.ApproveItem)
 		protected.POST("/solicitudes/derecho/:id/items/:item_id/revertir-aprobacion", solicitudDerechoCtrl.RevertApprovalItem)
 		protected.POST("/solicitudes/derecho/:id/items/:item_id/rechazar", solicitudDerechoCtrl.RejectItem)
@@ -135,6 +135,7 @@ func SetupRoutes(r *gin.Engine, container *app.Container, loginLimiter *middlewa
 		protected.POST("/solicitudes/oficial/:id/aprobar", solicitudOficialCtrl.Approve)
 		protected.POST("/solicitudes/oficial/:id/revertir-aprobacion", solicitudOficialCtrl.RevertApproval)
 		protected.POST("/solicitudes/oficial/:id/rechazar", solicitudOficialCtrl.Reject)
+		protected.POST("/solicitudes/oficial/:id/revertir-rechazo", solicitudOficialCtrl.RevertReject)
 		protected.POST("/solicitudes/oficial/:id/items/:item_id/aprobar", solicitudOficialCtrl.ApproveItem)
 		protected.POST("/solicitudes/oficial/:id/items/:item_id/revertir-aprobacion", solicitudOficialCtrl.RevertApprovalItem)
 		protected.POST("/solicitudes/oficial/:id/items/:item_id/rechazar", solicitudOficialCtrl.RejectItem)
@@ -153,6 +154,7 @@ func SetupRoutes(r *gin.Engine, container *app.Container, loginLimiter *middlewa
 		protected.DELETE("/pasajes/:id", pasajeCtrl.Delete)
 		protected.GET("/pasajes/:id/cargos", pasajeCtrl.GetCargosModal)
 		protected.POST("/pasajes/:id/cargos", pasajeCtrl.StoreCargo)
+		protected.DELETE("/pasajes/:id/cargos/:cargo_id", pasajeCtrl.DeleteCargo)
 
 		protected.GET("/viaticos", viaticoCtrl.Index)
 		protected.GET("/solicitudes/:id/viaticos/nuevo", viaticoCtrl.Create)

@@ -80,7 +80,6 @@ type Container struct {
 
 // NewContainer initializes the graph of dependencies
 func NewContainer(db *gorm.DB, mongoRRHH *mongo.Database, mongoChat *mongo.Database) *Container {
-	// 1. Initialize Repositories (Data Layer) - All injected with DB
 	solicitudRepo := repositories.NewSolicitudRepository(db)
 	aerolineaRepo := repositories.NewAerolineaRepository(db)
 	cupoRepo := repositories.NewCupoDerechoRepository(db)
@@ -116,7 +115,6 @@ func NewContainer(db *gorm.DB, mongoRRHH *mongo.Database, mongoChat *mongo.Datab
 	pushRepo := repositories.NewPushRepository(db)
 	openTicketRepo := repositories.NewOpenTicketRepository(db)
 
-	// 2. Initialize Services (Business Layer) - Injecting Repos and simple services
 	emailService := services.NewEmailService()
 	auditService := services.NewAuditService(auditRepo)
 	pushService := services.NewPushService(pushRepo)
@@ -205,7 +203,6 @@ func NewContainer(db *gorm.DB, mongoRRHH *mongo.Database, mongoChat *mongo.Datab
 	catViaticoService := services.NewCategoriaViaticoService(catViaticoRepo)
 	alertaService := services.NewAlertaService(solicitudRepo, descargoRepo, emailService)
 
-	// 3. Initialize Controllers - Injecting Services
 	cupoCtrl := controllers.NewCupoController(cupoService, userService, reportService)
 
 	solicitudDerechoCtrl := controllers.NewSolicitudDerechoController(

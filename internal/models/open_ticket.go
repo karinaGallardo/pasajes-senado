@@ -17,8 +17,6 @@ const (
 	EstadoOpenTicketCancelado  EstadoOpenTicket = "CANCELADO"  // Anulado o corregido
 )
 
-// OpenTicket representa un billete aéreo que quedó sin usar
-// y está disponible para ser reutilizado en un futuro viaje.
 type OpenTicket struct {
 	ID string `gorm:"primaryKey;type:uuid;default:uuidv7()" json:"id"`
 

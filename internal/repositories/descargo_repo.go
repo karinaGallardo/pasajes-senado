@@ -222,7 +222,6 @@ func (r *DescargoRepository) FindPaginated(ctx context.Context, page, limit int,
 		Preload("Oficial.TransportesTerrestres", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
 		Scopes(SearchDescargo(searchTerm))
 
-	// Scope by user IDs when provided (non-admin)
 	if len(userIDs) > 0 {
 		baseQuery = baseQuery.Where("solicitudes.usuario_id IN ?", userIDs)
 	}
@@ -251,7 +250,6 @@ func (r *DescargoRepository) FindPaginated(ctx context.Context, page, limit int,
 
 func (r *DescargoRepository) Update(ctx context.Context, descargo *models.Descargo) error {
 	return r.db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
-		// 1. Cargar el Descargo actual para comparar (Dirty Tracking)
 		var existing models.Descargo
 		if err := tx.First(&existing, "id = ?", descargo.ID).Error; err != nil {
 			return err
@@ -315,14 +313,11 @@ func (r *DescargoRepository) Update(ctx context.Context, descargo *models.Descar
 }
 
 func (r *DescargoRepository) UpdateOficial(ctx context.Context, oficial *models.DescargoOficial) error {
-	// 1. Carga el registro actual para comparar (Dirty Tracking)
 	var existing models.DescargoOficial
 	if err := r.db.WithContext(ctx).First(&existing, "id = ?", oficial.ID).Error; err != nil {
-		// Si no existe (raro en un update pero posible), procedemos con un Save normal
 		return r.db.WithContext(ctx).Save(oficial).Error
 	}
 
-	// 2. Solo actualizamos si cambió algo
 	if oficial.HasChanges(existing) {
 		return r.db.WithContext(ctx).Model(oficial).Select("*").Omit("CreatedAt", "CreatedBy").Updates(oficial).Error
 	}

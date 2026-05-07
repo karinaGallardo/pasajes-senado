@@ -31,12 +31,6 @@ func (ctrl *DashboardController) Index(c *gin.Context) {
 		return
 	}
 
-	// --- Construir el scope de usuarios según el rol ---
-	//
-	// ADMIN / RESPONSABLE_PASAJES → ve todo (sin filtro)
-	// ENCARGADO_PASAJES           → ve sus propias solicitudes + las de sus senadores asignados
-	// SENADOR / FUNCIONARIO       → solo sus propias solicitudes
-
 	isAdminOrResp := authUser.IsAdminOrResponsable()
 
 	// Senadores que atiende este usuario (encargado)
@@ -53,14 +47,11 @@ func (ctrl *DashboardController) Index(c *gin.Context) {
 		solicitudes, _ = ctrl.solicitudService.GetByUserIdOrAccesibleByEncargadoID(c.Request.Context(), authUser.ID, "", "")
 	}
 
-	// Construir lista de user IDs para el conteo de descargos
-	// Para admins: nil → GetAll; para el resto: los IDs del scope
 	var descargoCount int64
 	if isAdminOrResp {
 		descargos, _ := ctrl.descargoService.GetAll(c.Request.Context())
 		descargoCount = int64(len(descargos))
 	} else {
-		// IDs en scope: el propio usuario + sus senadores asignados
 		scopeIDs := []string{authUser.ID}
 		for _, s := range senadoresCalculados {
 			scopeIDs = append(scopeIDs, s.ID)
@@ -68,7 +59,6 @@ func (ctrl *DashboardController) Index(c *gin.Context) {
 		descargoCount = ctrl.descargoService.GetCountByUserIDs(c.Request.Context(), scopeIDs)
 	}
 
-	// Contar estados en las solicitudes del scope
 	var pendientes, aprobados int
 	for _, s := range solicitudes {
 		st := "SOLICITADO"

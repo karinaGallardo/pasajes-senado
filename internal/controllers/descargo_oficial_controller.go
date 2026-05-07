@@ -70,7 +70,6 @@ func (ctrl *DescargoOficialController) Store(c *gin.Context) {
 		return
 	}
 
-	// Redirigir siempre a edición
 	c.Redirect(http.StatusFound, "/descargos/oficial/"+descargo.ID+"/editar")
 }
 
@@ -148,17 +147,14 @@ func (ctrl *DescargoOficialController) Edit(c *gin.Context) {
 		c.Redirect(http.StatusFound, "/descargos/oficial/"+id+"?error=SinPermisoEdicion")
 		return
 	}
-	// 2. Sincronización Proactiva (Si hay nuevos pasajes tras la creación)
+
 	if descargo.Solicitud != nil {
-		// Pasamos el puntero; el servicio se encarga de persistir y el Slice se actualiza
 		if err := ctrl.descargoOficialService.SyncItineraryFromSolicitud(c.Request.Context(), descargo, descargo.Solicitud); err == nil {
-			// Recargamos solo si es vital para asegurar que los nuevos DescargoTramo tengan sus Preloads (Ruta, etc.)
 			descargo, _ = ctrl.descargoService.GetByID(c.Request.Context(), id)
 			descargo.HydratePermissions(authUser)
 		}
 	}
 
-	// 3. Fallbacks de Metadatos (Objetivo, Memorandum, etc.)
 	if descargo.Solicitud != nil {
 		if descargo.Oficial == nil {
 			descargo.Oficial = &models.DescargoOficial{DescargoID: descargo.ID}
@@ -242,7 +238,6 @@ func (ctrl *DescargoOficialController) Update(c *gin.Context) {
 		return
 	}
 
-	// Delegar recolección de archivos a sus respectivos dueños
 	pasesAbordoPaths := utils.ExtractDescargoFiles(c, req.TramoID)
 	terrestrePaths := utils.ExtractTerrestreFiles(c, req.TransporteTerrestreID)
 	anexoPaths := utils.ExtractDescargoAnexos(c, id)

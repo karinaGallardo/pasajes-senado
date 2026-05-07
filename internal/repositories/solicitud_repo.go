@@ -512,8 +512,6 @@ func (r *SolicitudRepository) CountPending(ctx context.Context, userID string, i
 
 func (r *SolicitudRepository) FindPendientesByUsuarioID(ctx context.Context, usuarioID string) ([]models.Solicitud, error) {
 	var solicitudes []models.Solicitud
-	// Estados que consideramos "pendientes" o aptos para vincular un Open Ticket
-	// Generalmente: BORRADOR, SOLICITADO, APROBADO, EN_PROCESO
 	estadosExcluidos := []string{"FINALIZADA", "ANULADA", "RECHAZADA"}
 
 	err := r.db.WithContext(ctx).

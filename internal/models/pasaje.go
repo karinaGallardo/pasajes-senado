@@ -12,7 +12,6 @@ const (
 	EstadoPasajeFinalizado = "FINALIZADO"
 )
 
-// PasajePermissions define las acciones permitidas sobre un pasaje según el rol y estado.
 type PasajePermissions struct {
 	CanEdit            bool
 	CanMarkUsado       bool
@@ -60,32 +59,24 @@ type Pasaje struct {
 	NumeroFactura     string  `gorm:"size:50;index"`
 	CostoPenalidad    float64 `gorm:"type:decimal(10,2);default:0"`
 
-	// Datos de Servicio de Emisión Agencia (Opcional)
 	ServicioRazonSocial   string     `gorm:"type:varchar(255)"`
 	ServicioFacturaNumero string     `gorm:"type:varchar(100);index"`
 	ServicioFacturaFecha  *time.Time `gorm:"type:timestamp"`
 	ServicioMonto         float64    `gorm:"type:decimal(10,2);default:0"`
 	ServicioArchivo       string     `gorm:"type:varchar(255);default:''"`
 
-	// Devolución por Diferencia de Tarifa (Per Pasaje)
-	NroBoletaDeposito  string     `gorm:"size:100;index"`
-	ArchivoComprobante string     `gorm:"size:255;default:''"`
-	FechaDeposito      *time.Time `gorm:"type:timestamp"`
+	NroBoletaDeposito  string        `gorm:"size:100;index"`
+	ArchivoComprobante string        `gorm:"size:255;default:''"`
+	FechaDeposito      *time.Time    `gorm:"type:timestamp"`
+	Cargos             []PasajeCargo `gorm:"foreignKey:PasajeID"`
 
-	// Cargos Asociados al Pasaje (Facturas de Emisión, Cambios, etc.)
-	Cargos []PasajeCargo `gorm:"foreignKey:PasajeID"`
-
-	// Relación inversa para liquidación
 	DescargoTramos []DescargoTramo `gorm:"foreignKey:PasajeID;<-:false"`
 
-	// Si este pasaje se emitió usando un Open Ticket previo
 	OpenTicketID *string     `gorm:"size:36;index;default:null"`
 	OpenTicket   *OpenTicket `gorm:"foreignKey:OpenTicketID;constraint:OnUpdate:CASCADE,OnDelete:SET NULL;<-:false"`
 
-	// Seq is an auto-incrementing field managed by DB to ensure atomic sequential ordering
 	Seq int64 `gorm:"autoIncrement;not null;<-:false"`
 
-	// Contexto de runtime (no persistido)
 	authUser    *Usuario           `gorm:"-"`
 	Permissions *PasajePermissions `gorm:"-"`
 }
@@ -181,7 +172,6 @@ func (p Pasaje) IsDischargeable() bool {
 	return st == EstadoPasajeEmitido || st == EstadoPasajeFinalizado
 }
 
-// HasOpenTicket retorna true si este pasaje tiene al menos un tramo en el descargo marcado como Open Ticket
 func (p Pasaje) HasOpenTicket() bool {
 	for _, t := range p.DescargoTramos {
 		if t.EsOpenTicket {

@@ -10,12 +10,10 @@ const (
 	CargoOtros       TipoCargoPasaje = "OTROS"
 )
 
-// PasajeCargo representa cargos asociados al pasaje facturados por la agencia o aerolínea
-// vinculados a un pasaje específico (Ej: Emisión, Cambios, etc.)
 type PasajeCargo struct {
 	BaseModel
 	PasajeID string  `gorm:"size:36;not null;index"`
-	Tipo     string  `gorm:"size:50;not null;index"` // Se guarda el código de TipoCargoPasaje
+	Tipo     string  `gorm:"size:50;not null;index"`
 	Factura  string  `gorm:"size:50;index"`
 	Monto    float64 `gorm:"type:decimal(10,2);default:0"`
 	Archivo  string  `gorm:"size:255;default:''"`

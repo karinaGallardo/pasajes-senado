@@ -127,7 +127,6 @@ func (ctrl *ViaticoController) Print(c *gin.Context) {
 
 	if c.GetHeader("HX-Request") == "true" {
 		if c.Query("download") == "1" {
-			// HTMX descarga: redirigir al mismo endpoint sin HX-Request para que el navegador reciba el PDF y lo descargue
 			c.Header("HX-Redirect", fmt.Sprintf("/viaticos/%s/print?download=1", id))
 			c.Status(http.StatusOK)
 			return

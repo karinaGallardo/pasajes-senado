@@ -114,7 +114,6 @@ func (ctrl *CupoController) TomarCupo(c *gin.Context) {
 		return
 	}
 
-	// For security, ensure the destination is the authenticated user
 	req.TargetUserID = authUser.ID
 	req.Motivo = "Tomado por el propio suplente"
 
@@ -129,7 +128,6 @@ func (ctrl *CupoController) TomarCupo(c *gin.Context) {
 		return
 	}
 
-	// Monthly Check
 	gestionInt, _ := strconv.Atoi(req.Gestion)
 	mesInt, _ := strconv.Atoi(req.Mes)
 	items, _ := ctrl.service.GetCuposDerechoByUsuarioAndGestion(c.Request.Context(), authUser.ID, gestionInt)
@@ -460,7 +458,6 @@ func (ctrl *CupoController) DerechoByYear(c *gin.Context) {
 	}
 
 	for i := 1; i <= 12; i++ {
-		// Populate Permissions for each item
 		for j := range grouped[i].Items {
 			item := &grouped[i].Items[j]
 			targetHasQuota := grouped[i].TargetHasQuota
@@ -474,20 +471,17 @@ func (ctrl *CupoController) DerechoByYear(c *gin.Context) {
 	currentMonth := int(time.Now().Month())
 
 	if gestion == currentYear {
-		// Current month and future months first
 		for i := currentMonth; i <= 12; i++ {
 			if len(grouped[i].Items) > 0 {
 				displayMonths = append(displayMonths, grouped[i])
 			}
 		}
-		// Past months at the end
 		for i := 1; i < currentMonth; i++ {
 			if len(grouped[i].Items) > 0 {
 				displayMonths = append(displayMonths, grouped[i])
 			}
 		}
 	} else {
-		// Standard order for other years
 		for i := 1; i <= 12; i++ {
 			if len(grouped[i].Items) > 0 {
 				displayMonths = append(displayMonths, grouped[i])

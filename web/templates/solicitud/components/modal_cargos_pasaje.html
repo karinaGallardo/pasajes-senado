@@ -57,18 +57,30 @@
                           </p>
                         </div>
                       </div>
-                      <div class="text-right">
-                        <p class="text-xs font-black text-neutral-900">{{ .Monto }} Bs</p>
-                        {{ if .Archivo }}
-                          <a
-                            href="/{{ .Archivo }}"
-                            target="_blank"
-                            class="text-[10px] font-bold text-primary hover:underline flex items-center gap-1 justify-end mt-0.5"
-                          >
-                            <i class="ph ph-file-pdf"></i>
-                            Ver Respaldo
-                          </a>
-                        {{ end }}
+                      <div class="flex items-center gap-4">
+                        <div class="text-right">
+                          <p class="text-xs font-black text-neutral-900">{{ .Monto }} Bs</p>
+                          {{ if .Archivo }}
+                            <a
+                              href="/{{ .Archivo }}"
+                              target="_blank"
+                              class="text-[10px] font-bold text-primary hover:underline flex items-center gap-1 justify-end mt-0.5"
+                            >
+                              <i class="ph ph-file-pdf"></i>
+                              Ver Respaldo
+                            </a>
+                          {{ end }}
+                        </div>
+
+                        <button
+                          hx-delete="/pasajes/{{ $.Pasaje.ID }}/cargos/{{ .ID }}"
+                          hx-target="#modal-container"
+                          hx-confirm="¿Está seguro de eliminar este cargo?"
+                          class="p-2 text-neutral-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-all active:scale-90"
+                          title="Eliminar Cargo"
+                        >
+                          <i class="ph ph-trash text-lg"></i>
+                        </button>
                       </div>
                     </div>
                   {{ else }}

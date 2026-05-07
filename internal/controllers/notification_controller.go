@@ -21,8 +21,6 @@ func NewNotificationController(service *services.NotificationService, pushServic
 }
 
 func (ctrl *NotificationController) GetPendingStats(c *gin.Context) {
-	// ... Logic for pending stats (FV-01, FV-05) ...
-	// (Si es necesario implementarlo aquí o en otro lugar)
 }
 
 func (ctrl *NotificationController) SubscribePush(c *gin.Context) {
