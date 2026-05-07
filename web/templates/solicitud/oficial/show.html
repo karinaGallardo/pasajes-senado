@@ -587,7 +587,13 @@
             <button
               type="button"
               hx-post="/solicitudes/oficial/{{ $solicitud.ID }}/items/{{ $item.ID }}/revertir-aprobacion"
-              hx-confirm="{{ if $item.IsRechazado }}¿Está seguro de revertir el rechazo de este tramo?{{ else }}¿Está seguro de revertir la aprobación de este tramo?{{ end }} Volverá a estado SOLICITADO."
+              hx-confirm="{{ if $item.IsRechazado }}
+                ¿Está seguro de revertir el rechazo de este tramo?
+              {{ else if $item.IsCancelado }}
+                ¿Está seguro de revertir la cancelación de este tramo?
+              {{ else }}
+                ¿Está seguro de revertir la aprobación de este tramo?
+              {{ end }}"
               hx-target="body"
               class="btn-xs btn-white text-warning-700 border-warning-200 rounded-sm text-[13px]"
             >

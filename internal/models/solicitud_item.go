@@ -126,6 +126,10 @@ func (t SolicitudItem) IsFinalizado() bool {
 	return t.GetEstado() == "FINALIZADO"
 }
 
+func (t SolicitudItem) IsCancelado() bool {
+	return t.GetEstado() == "CANCELADO"
+}
+
 func (t SolicitudItem) GetIcon() string {
 	if t.Tipo == TipoSolicitudItemIda {
 		return "ph-airplane-takeoff"
@@ -218,7 +222,7 @@ func (t SolicitudItem) CanBeReverted(user *Usuario) bool {
 	if user == nil {
 		return false
 	}
-	return user.IsAdminOrResponsable() && (t.IsAprobado() || t.IsEmitido() || t.IsRechazado()) && !t.HasActivePasaje()
+	return user.IsAdminOrResponsable() && (t.IsAprobado() || t.IsEmitido() || t.IsRechazado() || t.IsCancelado() || t.IsFinalizado()) && !t.HasActivePasaje()
 }
 
 func (t SolicitudItem) CanAssignPasaje(user *Usuario) bool {
@@ -288,6 +292,14 @@ func (t *SolicitudItem) RevertReject() {
 
 func (t *SolicitudItem) Cancel() {
 	st := "CANCELADO"
+	t.EstadoCodigo = &st
+}
+
+func (t *SolicitudItem) RevertCancel() {
+	st := "SOLICITADO"
+	if t.Tipo == TipoSolicitudItemVuelta && t.Fecha == nil {
+		st = "PENDIENTE"
+	}
 	t.EstadoCodigo = &st
 }
 

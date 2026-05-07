@@ -541,16 +541,21 @@ func (s *Solicitud) RevertReject() error {
 }
 
 func (s *Solicitud) RevertFinalize() error {
-	hasFinalized := false
+	hasChanged := false
 	for i := range s.Items {
-		if s.Items[i].GetEstado() == "FINALIZADO" {
-			hasFinalized = true
+		st := s.Items[i].GetEstado()
+		switch st {
+		case "FINALIZADO":
+			hasChanged = true
 			s.Items[i].RevertFinalize()
+		case "CANCELADO":
+			hasChanged = true
+			s.Items[i].RevertCancel()
 		}
 	}
 
-	if !hasFinalized && s.GetEstado() != "EMITIDO" {
-		return errors.New("la solicitud no tiene ningún tramo FINALIZADO para revertir")
+	if !hasChanged && s.GetEstado() != "EMITIDO" {
+		return errors.New("no se encontró ningún tramo (FINALIZADO o CANCELADO) para revertir")
 	}
 
 	s.UpdateStatusBasedOnItems()
@@ -582,7 +587,17 @@ func (s *Solicitud) RejectItem(itemID string) bool {
 func (s *Solicitud) RevertApprovalItem(itemID string) bool {
 	for i := range s.Items {
 		if s.Items[i].ID == itemID {
-			s.Items[i].RevertApproval()
+			st := s.Items[i].GetEstado()
+			switch st {
+			case "RECHAZADO":
+				s.Items[i].RevertReject()
+			case "CANCELADO":
+				s.Items[i].RevertCancel()
+			case "FINALIZADO":
+				s.Items[i].RevertFinalize()
+			default:
+				s.Items[i].RevertApproval()
+			}
 			s.UpdateStatusBasedOnItems()
 			return true
 		}
