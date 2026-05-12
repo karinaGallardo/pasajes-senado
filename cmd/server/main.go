@@ -177,8 +177,8 @@ func main() {
 	}
 	r.LoadHTMLFiles(templates...)
 
-	// Hardening: Rate Limiting para Login (5 peticiones por minuto por IP)
-	loginLimiter := middleware.NewIPRateLimiter(5.0/60.0, 5)
+	// Hardening: Rate Limiting para Login (5 peticiones cada 5 minutos por IP)
+	loginLimiter := middleware.NewIPRateLimiter(5.0/300.0, 5)
 
 	routes.SetupRoutes(r, container, loginLimiter)
 

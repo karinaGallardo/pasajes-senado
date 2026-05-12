@@ -62,7 +62,7 @@ func (s *AuthService) Authenticate(ctx context.Context, username, password strin
 		if err.Error() == "credenciales inválidas" && localUser != nil {
 			maxAttempts := viper.GetInt("AUTH_MAX_ATTEMPTS")
 			if maxAttempts == 0 {
-				maxAttempts = 5 // Default
+				maxAttempts = 30
 			}
 
 			localUser.LoginAttempts++

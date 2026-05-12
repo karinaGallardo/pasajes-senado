@@ -2343,7 +2343,7 @@ func (s *ReportService) drawSolicitudSegment(_ context.Context, pdf *gofpdf.Fpdf
 		// Data Row
 		pdf.SetX(startX)
 		pdf.SetFont("Arial", "", 8)
-		pdf.CellFormat(w1, 8, item.UpdatedAt.Format("02/01/2006 15:04"), "1", 0, "C", false, 0, "")
+		pdf.CellFormat(w1, 8, item.CreatedAt.Format("02/01/2006 15:04"), "1", 0, "C", false, 0, "")
 
 		pdf.SetFont("Arial", "B", 7)
 		pdf.SetTextColor(0, 0, 128)
