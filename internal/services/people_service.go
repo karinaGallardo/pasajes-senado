@@ -19,3 +19,7 @@ func NewPeopleService(repo *repositories.PeopleViewRepository) *PeopleService {
 func (s *PeopleService) GetSenatorDataByCI(ctx context.Context, ci string) (*models.MongoPersonaView, error) {
 	return s.repo.WithContext(ctx).FindSenatorDataByCI(ci)
 }
+
+func (s *PeopleService) SyncView(ctx context.Context) error {
+	return s.repo.SyncView(ctx)
+}

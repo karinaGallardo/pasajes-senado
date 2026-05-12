@@ -14,13 +14,15 @@ type ConfiguracionController struct {
 	service        *services.ConfiguracionService
 	emailService   *services.EmailService
 	destinoService *services.DestinoService
+	peopleService  *services.PeopleService
 }
 
-func NewConfiguracionController(service *services.ConfiguracionService, emailService *services.EmailService, destinoService *services.DestinoService) *ConfiguracionController {
+func NewConfiguracionController(service *services.ConfiguracionService, emailService *services.EmailService, destinoService *services.DestinoService, peopleService *services.PeopleService) *ConfiguracionController {
 	return &ConfiguracionController{
 		service:        service,
 		emailService:   emailService,
 		destinoService: destinoService,
+		peopleService:  peopleService,
 	}
 }
 
@@ -65,4 +67,13 @@ func (ctrl *ConfiguracionController) TestEmail(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"message": "Email enviado correctamente"})
+}
+func (ctrl *ConfiguracionController) SyncMongo(c *gin.Context) {
+	err := ctrl.peopleService.SyncView(c.Request.Context())
+	if err != nil {
+		utils.SetErrorMessage(c, "Error al sincronizar MongoDB: "+err.Error())
+	} else {
+		utils.SetSuccessMessage(c, "Base de datos de Senadores/Funcionarios sincronizada correctamente")
+	}
+	c.Redirect(http.StatusFound, "/admin/configuracion")
 }

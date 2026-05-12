@@ -216,6 +216,7 @@ func (s *SolicitudOficialService) UpdateOficial(ctx context.Context, id string, 
 						if existing.IsRechazado() {
 							solicitado := "SOLICITADO"
 							existing.EstadoCodigo = &solicitado
+							existing.CreatedAt = time.Now()
 						}
 
 						if err := tx.Save(existing).Error; err != nil {
@@ -252,6 +253,7 @@ func (s *SolicitudOficialService) UpdateOficial(ctx context.Context, id string, 
 			return err
 		}
 		solicitud.UpdateStatusBasedOnItems()
+
 		if err := tx.Model(solicitud).Update("estado_solicitud_codigo", solicitud.EstadoSolicitudCodigo).Error; err != nil {
 			return err
 		}

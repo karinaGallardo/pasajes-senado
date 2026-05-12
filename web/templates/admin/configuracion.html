@@ -1,41 +1,47 @@
-{{ define "admin/configuracion" }} {{ template "layout_header" . }}
+{{ define "admin/configuracion" }}
+  {{ template "layout_header" . }}
 
-<h1 class="text-2xl font-bold text-primary-800 mb-6 flex items-center mt-6">
-  <i class="ph ph-gear text-3xl mr-2 text-primary-500"></i>
-  Configuración Global
-</h1>
 
-<div class="bg-white rounded-md shadow-lg overflow-hidden">
-  <div class="bg-primary-50 px-6 py-4 border-b border-neutral-200">
-    <h2 class="text-lg font-bold text-primary-800">Variables del Sistema</h2>
-    <p class="text-sm text-neutral-500">Estos valores afectan a todos los cálculos del sistema. Modifique con precaución.</p>
-  </div>
+  <h1 class="text-2xl font-bold text-primary-800 mb-6 flex items-center mt-6">
+    <i class="ph ph-gear text-3xl mr-2 text-primary-500"></i>
+    Configuración Global
+  </h1>
 
-  <ul class="divide-y divide-neutral-200">
-    {{ range .Configs }}
-    <li class="px-6 py-4 flex items-center justify-between hover:bg-neutral-50 group">
-      <div class="flex-1 pr-4">
-        <div class="font-bold text-primary-800 flex items-center gap-2">
-          {{ .Clave }}
+  <div class="bg-white rounded-md shadow-lg overflow-hidden">
+    <div class="bg-primary-50 px-6 py-4 border-b border-neutral-200">
+      <h2 class="text-lg font-bold text-primary-800">Variables del Sistema</h2>
+      <p class="text-sm text-neutral-500">Estos valores afectan a todos los cálculos del sistema. Modifique con precaución.</p>
+    </div>
+
+    <ul class="divide-y divide-neutral-200">
+      {{ range .Configs }}
+        <li class="px-6 py-4 flex items-center justify-between hover:bg-neutral-50 group">
+          <div class="flex-1 pr-4">
+            <div class="font-bold text-primary-800 flex items-center gap-2">
+              {{ .Clave }}
+              {{ if eq .Clave "SEDES_AUTORIZADAS" }}
+                <span
+                  class="px-1.5 py-0.5 rounded-md bg-primary-100 text-primary-700 text-[10px] font-black uppercase tracking-wider border border-primary-200"
+                >
+                  Configuración de Sedes
+                </span>
+              {{ end }}
+            </div>
+            <div class="text-xs text-neutral-500 mt-1">
+              Valor actual:
+              <span class="font-mono bg-neutral-100 px-1.5 py-0.5 rounded text-neutral-700 border border-neutral-200">
+                {{ .Valor }}
+              </span>
+            </div>
+          </div>
+
           {{ if eq .Clave "SEDES_AUTORIZADAS" }}
-          <span class="px-1.5 py-0.5 rounded-md bg-primary-100 text-primary-700 text-[10px] font-black uppercase tracking-wider border border-primary-200">
-            Configuración de Sedes
-          </span>
-          {{ end }}
-        </div>
-        <div class="text-xs text-neutral-500 mt-1">
-          Valor actual:
-          <span class="font-mono bg-neutral-100 px-1.5 py-0.5 rounded text-neutral-700 border border-neutral-200">{{ .Valor }}</span>
-        </div>
-      </div>
-
-      {{ if eq .Clave "SEDES_AUTORIZADAS" }}
-      <!-- CASO ESPECIAL: SEDES (Selector dinámico) -->
-      <form
-        action="/admin/configuracion"
-        method="POST"
-        class="w-full max-w-lg"
-        x-data="{
+            <!-- CASO ESPECIAL: SEDES (Selector dinámico) -->
+            <form
+              action="/admin/configuracion"
+              method="POST"
+              class="w-full max-w-lg"
+              x-data="{
           editing: false,
           selectedSedes: '{{ .Valor }}'.split(',').filter(s => s !== ''),
           allDestinos: {{ json $.DestinosNacionales }},
@@ -54,113 +60,194 @@
             }
           }
         }"
-      >
-        <input type="hidden" name="clave" value="{{ .Clave }}" />
-        <input type="hidden" name="valor" :value="selectedSedes.join(',')" />
+            >
+              <input type="hidden" name="clave" value="{{ .Clave }}" />
+              <input type="hidden" name="valor" :value="selectedSedes.join(',')" />
 
-        <div x-show="!editing" class="flex flex-wrap items-center justify-end gap-2">
-          <div class="flex flex-wrap gap-1 mr-4 max-w-[300px] justify-end">
-            <template x-for="s in selectedSedes" :key="s">
-              <span
-                class="px-2 py-0.5 rounded-md text-[11px] font-bold border flex items-center gap-1"
-                :class="s === 'LPB' ? 'bg-primary text-white border-primary shadow-sm' : 'bg-primary/10 text-primary border-primary/20'"
+              <div x-show="!editing" class="flex flex-wrap items-center justify-end gap-2">
+                <div class="flex flex-wrap gap-1 mr-4 max-w-[300px] justify-end">
+                  <template x-for="s in selectedSedes" :key="s">
+                    <span
+                      class="px-2 py-0.5 rounded-md text-[11px] font-bold border flex items-center gap-1"
+                      :class="s === 'LPB' ? 'bg-primary text-white border-primary shadow-sm' : 'bg-primary/10 text-primary border-primary/20'"
+                    >
+                      <i x-show="s === 'LPB'" class="ph ph-lock-key text-[9px]"></i>
+                      <span x-text="s"></span>
+                    </span>
+                  </template>
+                  <span x-show="selectedSedes.length === 0" class="text-neutral-400 italic text-xs">
+                    Ninguna sede seleccionada
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  @click="editing = true"
+                  class="text-primary-600 hover:text-primary-800 text-sm font-bold flex items-center gap-1 bg-primary-50 px-3 py-1.5 rounded-md transition-colors"
+                >
+                  <i class="ph ph-note-pencil"></i>
+                  Gestionar Sedes
+                </button>
+              </div>
+
+              <div
+                x-show="editing"
+                class="bg-neutral-50 p-4 rounded-md border border-neutral-200 shadow-inner"
+                style="display: none"
               >
-                <i x-show="s === 'LPB'" class="ph ph-lock-key text-[9px]"></i>
-                <span x-text="s"></span>
-              </span>
-            </template>
-            <span x-show="selectedSedes.length === 0" class="text-neutral-400 italic text-xs">Ninguna sede seleccionada</span>
-          </div>
-          <button type="button" @click="editing = true" class="text-primary-600 hover:text-primary-800 text-sm font-bold flex items-center gap-1 bg-primary-50 px-3 py-1.5 rounded-md transition-colors">
-            <i class="ph ph-note-pencil"></i>
-            Gestionar Sedes
-          </button>
-        </div>
+                <div class="mb-3 flex items-center justify-between">
+                  <span class="text-[11px] font-black text-neutral-500 uppercase tracking-widest">
+                    Sedes autorizadas (La Paz obligatoria):
+                  </span>
+                  <span class="text-[10px] font-bold text-primary" x-text="selectedSedes.length + ' seleccionadas'"></span>
+                </div>
 
-        <div x-show="editing" class="bg-neutral-50 p-4 rounded-md border border-neutral-200 shadow-inner" style="display: none">
-          <div class="mb-3 flex items-center justify-between">
-            <span class="text-[11px] font-black text-neutral-500 uppercase tracking-widest">Sedes autorizadas (La Paz obligatoria):</span>
-            <span class="text-[10px] font-bold text-primary" x-text="selectedSedes.length + ' seleccionadas'"></span>
-          </div>
-
-          <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
-            <template x-for="dest in allDestinos" :key="dest.iata">
-              <button
-                type="button"
-                @click="toggleSede(dest.iata)"
-                :disabled="dest.iata === 'LPB'"
-                :class="{
+                <div class="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-4">
+                  <template x-for="dest in allDestinos" :key="dest.iata">
+                    <button
+                      type="button"
+                      @click="toggleSede(dest.iata)"
+                      :disabled="dest.iata === 'LPB'"
+                      :class="{
                   'bg-primary text-white border-primary shadow-md cursor-default': dest.iata === 'LPB',
                   'bg-primary text-white border-primary shadow-sm': selectedSedes.includes(dest.iata) && dest.iata !== 'LPB',
                   'bg-white text-neutral-600 border-neutral-200 opacity-60': !selectedSedes.includes(dest.iata)
                 }"
-                class="flex flex-col items-center p-2 border rounded-md transition-all hover:scale-[1.02] relative"
-              >
-                <!-- Lock Icon for LPB -->
-                <i x-show="dest.iata === 'LPB'" class="ph-fill ph-lock-key absolute top-1 right-1 text-[8px] text-white/70"></i>
-                
-                <div class="text-[11px] font-black leading-none" x-text="dest.ciudad"></div>
-                <div class="text-[9px] font-bold mt-0.5 uppercase" x-text="dest.iata" :class="selectedSedes.includes(dest.iata) ? 'text-primary-100' : 'text-neutral-400'"></div>
-              </button>
-            </template>
-          </div>
+                      class="flex flex-col items-center p-2 border rounded-md transition-all hover:scale-[1.02] relative"
+                    >
+                      <!-- Lock Icon for LPB -->
+                      <i
+                        x-show="dest.iata === 'LPB'"
+                        class="ph-fill ph-lock-key absolute top-1 right-1 text-[8px] text-white/70"
+                      ></i>
 
-          <div class="flex justify-end space-x-2">
-            <button type="submit" class="bg-primary text-white px-4 py-2 rounded-md text-xs font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:bg-primary-700 transition-all">
-              Guardar Cambios
-            </button>
-            <button type="button" @click="editing = false" class="text-neutral-500 hover:text-neutral-700 text-[11px] font-bold px-3 py-2 uppercase tracking-tight">
-              Cancelar
-            </button>
-          </div>
-        </div>
-      </form>
-      {{ else }}
-      <!-- CASO GENERAL -->
-      <form action="/admin/configuracion" method="POST" class="flex items-center space-x-2" x-data="{ editing: false }">
-        <input type="hidden" name="clave" value="{{ .Clave }}" />
+                      <div class="text-[11px] font-black leading-none" x-text="dest.ciudad"></div>
+                      <div
+                        class="text-[9px] font-bold mt-0.5 uppercase"
+                        x-text="dest.iata"
+                        :class="selectedSedes.includes(dest.iata) ? 'text-primary-100' : 'text-neutral-400'"
+                      ></div>
+                    </button>
+                  </template>
+                </div>
 
-        <div x-show="!editing" class="flex items-center">
-          <span class="text-neutral-700 font-mono mr-4 font-bold">{{ .Valor }}</span>
-          <button type="button" @click="editing = true" class="text-primary-600 hover:text-primary-800 text-sm font-bold flex items-center gap-1">
-            <i class="ph ph-note-pencil"></i>
-            Editar
-          </button>
-        </div>
+                <div class="flex justify-end space-x-2">
+                  <button
+                    type="submit"
+                    class="bg-primary text-white px-4 py-2 rounded-md text-xs font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:bg-primary-700 transition-all"
+                  >
+                    Guardar Cambios
+                  </button>
+                  <button
+                    type="button"
+                    @click="editing = false"
+                    class="text-neutral-500 hover:text-neutral-700 text-[11px] font-bold px-3 py-2 uppercase tracking-tight"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </div>
+            </form>
+          {{ else }}
+            <!-- CASO GENERAL -->
+            <form action="/admin/configuracion" method="POST" class="flex items-center space-x-2" x-data="{ editing: false }">
+              <input type="hidden" name="clave" value="{{ .Clave }}" />
 
-        <div x-show="editing" class="flex items-center space-x-2" style="display: none">
-          <input
-            type="text"
-            name="valor"
-            value="{{ .Valor }}"
-            class="w-32 rounded-md border-neutral-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 text-sm font-bold" />
-          <button type="submit" class="bg-primary text-white px-3 py-1.5 rounded-md text-xs font-bold hover:bg-primary-700 shadow-sm transition-colors">Guardar</button>
-          <button type="button" @click="editing = false" class="text-neutral-500 hover:text-neutral-700 text-xs font-bold">Cancelar</button>
-        </div>
-      </form>
+              <div x-show="!editing" class="flex items-center">
+                <span class="text-neutral-700 font-mono mr-4 font-bold">{{ .Valor }}</span>
+                <button
+                  type="button"
+                  @click="editing = true"
+                  class="text-primary-600 hover:text-primary-800 text-sm font-bold flex items-center gap-1"
+                >
+                  <i class="ph ph-note-pencil"></i>
+                  Editar
+                </button>
+              </div>
+
+              <div x-show="editing" class="flex items-center space-x-2" style="display: none">
+                <input
+                  type="text"
+                  name="valor"
+                  value="{{ .Valor }}"
+                  class="w-32 rounded-md border-neutral-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 text-sm font-bold"
+                />
+                <button
+                  type="submit"
+                  class="bg-primary text-white px-3 py-1.5 rounded-md text-xs font-bold hover:bg-primary-700 shadow-sm transition-colors"
+                >
+                  Guardar
+                </button>
+                <button type="button" @click="editing = false" class="text-neutral-500 hover:text-neutral-700 text-xs font-bold">
+                  Cancelar
+                </button>
+              </div>
+            </form>
+          {{ end }}
+        </li>
       {{ end }}
-    </li>
-    {{ end }}
-  </ul>
-</div>
-
-<div class="mt-8 bg-white rounded-md shadow-lg overflow-hidden" x-data="{ testEmail: '', sending: false, message: '', isError: false }">
-  <div class="bg-primary-50 px-6 py-4 border-b border-neutral-200">
-    <h2 class="text-lg font-bold text-primary-800">Prueba de Envío de Correos</h2>
-    <p class="text-sm text-neutral-500">Verifique que la configuración SMTP es correcta enviando un correo de prueba.</p>
+    </ul>
   </div>
-  <div class="p-6">
-    <div class="flex items-end gap-4">
-      <div class="flex-1">
-        <label class="block text-sm font-medium text-neutral-700 mb-1">Correo Destino</label>
-        <input
-          type="email"
-          x-model="testEmail"
-          placeholder="ejemplo@senado.gob.bo"
-          class="w-full rounded-md border-neutral-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm" />
+
+  <div class="mt-8 bg-white rounded-md shadow-lg overflow-hidden">
+    <div class="bg-primary-50 px-6 py-4 border-b border-neutral-200">
+      <h2 class="text-lg font-bold text-primary-800">Sincronización de Datos Externos (MongoDB)</h2>
+      <p class="text-sm text-neutral-500">
+        Actualiza la base de datos local de Senadores y Funcionarios desde los sistemas centrales.
+      </p>
+    </div>
+    <div class="p-6">
+      <div class="bg-neutral-50 border border-neutral-200 rounded-md p-4 mb-4">
+        <div class="flex items-start gap-3">
+          <i class="ph ph-info text-2xl text-primary-500 mt-1"></i>
+          <div class="text-sm text-neutral-600">
+            <p class="font-bold text-neutral-800 mb-1">¿Cuándo sincronizar?</p>
+            <p>
+              Utilice este botón si nota que faltan senadores o funcionarios nuevos, o si los cargos y dependencias están
+              desactualizados. Este proceso reconstruye la vista materializada en MongoDB.
+            </p>
+          </div>
+        </div>
       </div>
-      <button
-        @click="
+
+      <form action="/admin/configuracion/sync-mongo" method="POST" class="flex items-center justify-between">
+        <div class="flex flex-col">
+          <span class="text-xs font-bold text-neutral-400 uppercase tracking-widest">Base de Datos Destino</span>
+          <span class="text-sm font-black text-primary-800 font-mono">view_people_pasajes</span>
+        </div>
+
+        <button
+          type="submit"
+          onclick="this.disabled=true; this.innerHTML='<i class=\'ph ph-circle-notch animate-spin\'></i> Sincronizando...'; this.form.submit();"
+          class="bg-primary text-white px-6 py-2.5 rounded-md text-sm font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:bg-primary-700 transition-all flex items-center gap-2"
+        >
+          <i class="ph ph-arrows-counter-clockwise"></i>
+          Sincronizar Ahora
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <div
+    class="mt-8 bg-white rounded-md shadow-lg overflow-hidden"
+    x-data="{ testEmail: '', sending: false, message: '', isError: false }"
+  >
+    <div class="bg-primary-50 px-6 py-4 border-b border-neutral-200">
+      <h2 class="text-lg font-bold text-primary-800">Prueba de Envío de Correos</h2>
+      <p class="text-sm text-neutral-500">Verifique que la configuración SMTP es correcta enviando un correo de prueba.</p>
+    </div>
+    <div class="p-6">
+      <div class="flex items-end gap-4">
+        <div class="flex-1">
+          <label class="block text-sm font-medium text-neutral-700 mb-1">Correo Destino</label>
+          <input
+            type="email"
+            x-model="testEmail"
+            placeholder="ejemplo@senado.gob.bo"
+            class="w-full rounded-md border-neutral-300 shadow-sm focus:border-primary-500 focus:ring-primary-500 sm:text-sm"
+          />
+        </div>
+        <button
+          @click="
             if(!testEmail) return;
             sending = true;
             message = '';
@@ -186,13 +273,20 @@
               message = 'Error de conexión';
             })
           "
-        :disabled="sending || !testEmail"
-        class="bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2">
-        <span x-show="sending" class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-md"></span>
-        Enviar Prueba
-      </button>
+          :disabled="sending || !testEmail"
+          class="bg-primary-600 text-white px-4 py-2 rounded-md hover:bg-primary-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+        >
+          <span x-show="sending" class="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-md"></span>
+          Enviar Prueba
+        </button>
+      </div>
+      <div
+        x-show="message"
+        class="mt-4 p-3 rounded"
+        :class="isError ? 'bg-danger-100 text-danger-700' : 'bg-success-100 text-success-700'"
+        x-text="message"
+      ></div>
     </div>
-    <div x-show="message" class="mt-4 p-3 rounded" :class="isError ? 'bg-danger-100 text-danger-700' : 'bg-success-100 text-success-700'" x-text="message"></div>
   </div>
-  {{ template "layout_footer" . }} {{ end }}
-</div>
+  {{ template "layout_footer" . }}
+{{ end }}

@@ -268,6 +268,7 @@ func (s *SolicitudDerechoService) UpdateDerecho(ctx context.Context, id string, 
 					it.Fecha = nil
 				} else {
 					it.EstadoCodigo = utils.Ptr("SOLICITADO")
+					it.CreatedAt = time.Now()
 					it.Fecha = fechaIda
 					hasProgrammed = true
 				}
@@ -283,6 +284,7 @@ func (s *SolicitudDerechoService) UpdateDerecho(ctx context.Context, id string, 
 					it.Fecha = nil
 				} else {
 					it.EstadoCodigo = utils.Ptr("SOLICITADO")
+					it.CreatedAt = time.Now()
 					it.Fecha = fechaVuelta
 					hasProgrammed = true
 				}

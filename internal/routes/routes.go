@@ -253,6 +253,7 @@ func SetupRoutes(r *gin.Engine, container *app.Container, loginLimiter *middlewa
 			sysAdmin.GET("/admin/configuracion", confCtrl.Index)
 			sysAdmin.POST("/admin/configuracion", confCtrl.Update)
 			sysAdmin.POST("/admin/configuracion/test-email", confCtrl.TestEmail)
+			sysAdmin.POST("/admin/configuracion/sync-mongo", confCtrl.SyncMongo)
 
 			sysAdmin.GET("/admin/compensaciones/categorias", catCompCtrl.Index)
 			sysAdmin.POST("/admin/compensaciones/categorias", catCompCtrl.Store)

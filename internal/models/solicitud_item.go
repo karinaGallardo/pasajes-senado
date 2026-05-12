@@ -283,11 +283,13 @@ func (t *SolicitudItem) Finalize() {
 func (t *SolicitudItem) RevertApproval() {
 	st := "SOLICITADO"
 	t.EstadoCodigo = &st
+	t.CreatedAt = time.Now()
 }
 
 func (t *SolicitudItem) RevertReject() {
 	st := "SOLICITADO"
 	t.EstadoCodigo = &st
+	t.CreatedAt = time.Now()
 }
 
 func (t *SolicitudItem) Cancel() {
@@ -301,6 +303,9 @@ func (t *SolicitudItem) RevertCancel() {
 		st = "PENDIENTE"
 	}
 	t.EstadoCodigo = &st
+	if st == "SOLICITADO" {
+		t.CreatedAt = time.Now()
+	}
 }
 
 func (t *SolicitudItem) RevertFinalize() {
@@ -326,6 +331,7 @@ func NewSolicitudItem(solicitudID string, tipoStr string, origen, destino string
 	}
 
 	return &SolicitudItem{
+		BaseModel:    BaseModel{CreatedAt: time.Now()},
 		SolicitudID:  solicitudID,
 		Tipo:         tipo,
 		OrigenIATA:   origen,

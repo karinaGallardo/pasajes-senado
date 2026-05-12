@@ -278,7 +278,7 @@ func NewContainer(db *gorm.DB, mongoRRHH *mongo.Database, mongoChat *mongo.Datab
 	aerolineaCtrl := controllers.NewAerolineaController(aerolineaService)
 	agenciaCtrl := controllers.NewAgenciaController(agenciaService)
 	rutaCtrl := controllers.NewRutaController(rutaService, aerolineaService, destinoService)
-	configCtrl := controllers.NewConfiguracionController(configService, emailService, destinoService)
+	configCtrl := controllers.NewConfiguracionController(configService, emailService, destinoService, peopleService)
 	catCompCtrl := controllers.NewCategoriaCompensacionController(compensacionService)
 	orgCtrl := controllers.NewOrganigramaController(organigramaService)
 	catViaticoCtrl := controllers.NewCategoriaViaticoController(catViaticoService, viaticoService)
