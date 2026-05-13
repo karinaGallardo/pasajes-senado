@@ -363,7 +363,7 @@
                         type="text"
                         readonly
                         name="fecha_emision"
-                        value="{{ .Pasaje.FechaEmision.Format "2006-01-02" }}"
+                        value="{{ if .Pasaje.FechaEmision }}{{ .Pasaje.FechaEmision.Format `2006-01-02` }}{{ end }}"
                         x-datepicker="{ timepicker: false, position: 'top' }"
                         required
                         class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md border p-2 bg-white cursor-pointer"
@@ -392,7 +392,7 @@
                         type="text"
                         readonly
                         name="fecha_vuelo"
-                        value="{{ .Pasaje.FechaVuelo.Format `2006-01-02 15:04` }}"
+                        value="{{ if .Pasaje.FechaVuelo }}{{ .Pasaje.FechaVuelo.Format `2006-01-02 15:04` }}{{ end }}"
                         x-datepicker="{ position: 'top' }"
                         required
                         class="mt-1 focus:ring-secondary focus:border-secondary block w-full shadow-sm sm:text-sm border-neutral-300 rounded-md border p-2 bg-white cursor-pointer"
