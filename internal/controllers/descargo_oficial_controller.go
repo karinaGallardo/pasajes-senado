@@ -234,7 +234,8 @@ func (ctrl *DescargoOficialController) Update(c *gin.Context) {
 	var req dtos.CreateDescargoRequest
 	if err := req.Bind(c); err != nil {
 		log.Printf("[ERROR] Bind error en Descargo Oficial (ID: %s): %v", id, err)
-		c.Redirect(http.StatusFound, "/descargos/oficial/"+id+"/editar?error=DatosInvalidos")
+		utils.SetErrorMessage(c, "Datos inválidos: "+err.Error())
+		c.Redirect(http.StatusFound, "/descargos/oficial/"+id+"/editar")
 		return
 	}
 
@@ -245,10 +246,12 @@ func (ctrl *DescargoOficialController) Update(c *gin.Context) {
 	memoPath := utils.ExtractMemorandumFile(c, id)
 
 	if err := ctrl.descargoOficialService.UpdateOficial(c.Request.Context(), id, req, authUser.ID, pasesAbordoPaths, terrestrePaths, anexoPaths, boletasPaths, memoPath); err != nil {
-		c.Redirect(http.StatusFound, "/descargos/oficial/"+id+"/editar?error=ErrorActualizacion")
+		utils.SetErrorMessage(c, "Error al actualizar el descargo oficial: "+err.Error())
+		c.Redirect(http.StatusFound, "/descargos/oficial/"+id+"/editar")
 		return
 	}
 
+	utils.SetSuccessMessage(c, "Descargo oficial actualizado correctamente")
 	c.Redirect(http.StatusFound, "/descargos/oficial/"+id+"/editar")
 }
 

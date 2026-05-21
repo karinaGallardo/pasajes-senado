@@ -174,6 +174,7 @@
         </button>
         <a
           href="/descargos/oficial/{{ .Descargo.ID }}"
+          :class="submitting ? 'pointer-events-none opacity-50' : ''"
           class="inline-flex items-center gap-2 px-4 py-2 border border-neutral-300 shadow-sm text-[11px] font-black rounded-md text-neutral-600 bg-white hover:bg-neutral-50 transition-all active:scale-95 uppercase tracking-widest"
         >
           <i class="ph ph-arrow-left text-sm text-neutral-400"></i>
@@ -188,6 +189,7 @@
       method="POST"
       enctype="multipart/form-data"
       @submit="submitting = true; syncFiles()"
+      :class="{ 'pointer-events-none opacity-80': submitting }"
       class="bg-white shadow-xl rounded-md border border-neutral-200"
     >
       <input type="hidden" name="_csrf" value="{{ .csrf_token }}" />
@@ -826,7 +828,7 @@
                             type="text"
                             name="terrestre_fecha[]"
                             x-model="item.fecha"
-                            x-datepicker="{ position: 'top center', timepicker: false }"
+                            x-datepicker="{ position: 'top center', timepicker: false, dateFormat: 'dd/MM/yyyy' }"
                             autocomplete="off"
                             class="w-full text-[11px] border border-neutral-300 rounded py-0.5 px-1 h-9 font-bold"
                           />
@@ -977,9 +979,9 @@
                             </span>
                             <input
                               type="number"
-                              step="0.01"
+                              step="0.10"
                               name="liquidacion_monto_devolucion[]"
-                              value="{{ printf "%.2f" $p.MontoReembolso }}"
+                              value="{{ printf `%.2f` $p.MontoReembolso }}"
                               data-billete="{{ $p.NumeroBillete }}"
                               data-tipo="{{ $item.Tipo }}"
                               @input="updateTotalDevolucion()"

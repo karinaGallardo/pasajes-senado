@@ -110,6 +110,7 @@ func ExtractPasajeBoletas(c *gin.Context, pasajeIDs []string) []string {
 	}
 	return paths
 }
+
 // ExtractMemorandumFile procesa el archivo PDF del memorándum para un descargo oficial.
 func ExtractMemorandumFile(c *gin.Context, id string) string {
 	path := c.PostForm("archivo_memorandum_existente")

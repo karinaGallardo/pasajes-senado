@@ -209,7 +209,11 @@ func (s *DescargoOficialService) UpdateOficial(ctx context.Context, id string, r
 	// 1. Basic Metadata
 	descargo.Observaciones = req.Observaciones
 	if req.FechaPresentacion != "" {
-		if fp, err := utils.ParseDateTime(req.FechaPresentacion); err == nil && fp != nil {
+		fp, err := utils.ParseDateTime(req.FechaPresentacion)
+		if err != nil {
+			return fmt.Errorf("fecha de presentación del informe inválida: %w", err)
+		}
+		if fp != nil {
 			descargo.FechaPresentacion = *fp
 		}
 	}
@@ -277,11 +281,19 @@ func (s *DescargoOficialService) UpdateOficial(ctx context.Context, id string, r
 	descargo.Oficial.PlacaVehiculo = req.PlacaVehiculo
 	descargo.Oficial.ArchivoMemorandum = memoPath
 
-	if fs, err := utils.ParseDateAndTime(req.FechaSalida, req.HoraSalida); err == nil && fs != nil {
+	fs, err := utils.ParseDateAndTime(req.FechaSalida, req.HoraSalida)
+	if err != nil {
+		return fmt.Errorf("fecha/hora de salida de la comisión inválida: %w", err)
+	}
+	if fs != nil {
 		descargo.Oficial.FechaSalida = *fs
 	}
 
-	if fr, err := utils.ParseDateAndTime(req.FechaRetorno, req.HoraRetorno); err == nil && fr != nil {
+	fr, err := utils.ParseDateAndTime(req.FechaRetorno, req.HoraRetorno)
+	if err != nil {
+		return fmt.Errorf("fecha/hora de retorno de la comisión inválida: %w", err)
+	}
+	if fr != nil {
 		descargo.Oficial.FechaRetorno = *fr
 	}
 
@@ -323,7 +335,10 @@ func (s *DescargoOficialService) UpdateOficial(ctx context.Context, id string, r
 		var terrestres []models.TransporteTerrestreDescargo
 		for i, fRaw := range req.TransporteTerrestreFecha {
 			if fRaw != "" {
-				fechaTerrestre, _ := utils.ParseDateTime(fRaw)
+				fechaTerrestre, err := utils.ParseDateTime(fRaw)
+				if err != nil {
+					return fmt.Errorf("fecha de transporte terrestre inválida: %w", err)
+				}
 				if fechaTerrestre != nil {
 					terrestres = append(terrestres, models.TransporteTerrestreDescargo{
 						DescargoOficialID: oficialID,
@@ -397,7 +412,10 @@ func (s *DescargoOficialService) UpdateOficial(ctx context.Context, id string, r
 		if strings.HasPrefix(idRow, "new_") {
 			idRow = ""
 		}
-		fecha, _ := utils.ParseDateTime(row.Fecha)
+		fecha, err := utils.ParseDateTime(row.Fecha)
+		if err != nil {
+			return fmt.Errorf("fecha de itinerario inválida (%s): %w", row.Fecha, err)
+		}
 		rutaID := utils.NilIfEmpty(row.RutaID)
 		pasajeID := utils.NilIfEmpty(row.PasajeID)
 		solItemID := utils.NilIfEmpty(row.SolicitudItemID)

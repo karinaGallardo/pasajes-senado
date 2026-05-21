@@ -295,7 +295,8 @@ document.addEventListener("alpine:init", function () {
     // Clean up when element is removed
     el._dp_instance = dp;
     el._dp_cleanup = Alpine.effect(() => {
-      const val = el.getAttribute("value") || el.value;
+      const rawVal = el.getAttribute("value") || el.value;
+      const val = typeof rawVal === "string" ? rawVal.trim() : rawVal;
       if (val && dp.selectedDates.length === 0) {
         let dateToSelect = val;
 

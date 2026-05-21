@@ -532,14 +532,16 @@ func (r *SolicitudRepository) CountPending(ctx context.Context, userID string, i
 
 func (r *SolicitudRepository) FindPendientesByUsuarioID(ctx context.Context, usuarioID string) ([]models.Solicitud, error) {
 	var solicitudes []models.Solicitud
-	estadosExcluidos := []string{"FINALIZADA", "ANULADA", "RECHAZADA"}
 
 	err := r.db.WithContext(ctx).
 		Preload("Items").
 		Preload("Items.Origen").
 		Preload("Items.Destino").
-		Where("usuario_id = ? AND estado_codigo NOT IN ?", usuarioID, estadosExcluidos).
-		Order("created_at DESC").
+		Preload("TipoSolicitud").
+		Joins("JOIN tipo_solicitudes ON solicitudes.tipo_solicitud_codigo = tipo_solicitudes.codigo").
+		Where("solicitudes.usuario_id = ? AND tipo_solicitudes.concepto_viaje_codigo = ? AND solicitudes.estado_solicitud_codigo IN ?",
+			usuarioID, "DERECHO", []string{"SOLICITADO", "APROBADO", "PARCIALMENTE_APROBADO"}).
+		Order("solicitudes.created_at DESC").
 		Find(&solicitudes).Error
 
 	return solicitudes, err

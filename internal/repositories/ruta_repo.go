@@ -77,11 +77,11 @@ func (r *RutaRepository) FindPaginated(ctx context.Context, page, limit int, que
 
 	return &PaginatedRutas{
 		Rutas:      rutas,
-		Total:       total,
-		Page:        page,
-		Limit:       limit,
-		TotalPages:  totalPages,
-		SearchTerm:  query,
+		Total:      total,
+		Page:       page,
+		Limit:      limit,
+		TotalPages: totalPages,
+		SearchTerm: query,
 	}, err
 }
 
