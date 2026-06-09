@@ -226,7 +226,7 @@
                 <input type="hidden" name="cupo_derecho_item_id" value="{{ .CupoItem.ID }}" />
                 <input type="hidden" name="target_user_id" value="{{ .TargetUser.ID }}" />
                 <input type="hidden" name="return_url" value="{{ .ReturnURL }}" />
-                <input type="hidden" name="sede_iata" :value="sedeIATA" />
+                 <input type="hidden" name="sede_iata" :value="sedeIATA" />
 
                 <!-- SECCIÓN A: RESUMEN DE DERECHO -->
                 <section class="bg-primary-50/50 p-4 rounded-md border border-primary-100/50 flex flex-wrap gap-6 items-center">
@@ -242,13 +242,13 @@
                       {{ .TipoSolicitud.Nombre }}
                     </span>
                   </div>
-                </section>
+                 </section>
 
-                <!-- VISUALIZACIÓN DE RUTA (ASIMÉTRICA) -->
+                 <!-- VISUALIZACIÓN DE RUTA (ASIMÉTRICA) -->
                 <section class="bg-white p-6 rounded-md border border-neutral-100 shadow-sm relative group mb-4">
                   <div class="relative flex items-center justify-between gap-2">
-                    <!-- 1. ORIGEN IDA -->
-                    <div class="flex-1 relative">
+                     <!-- 1. ORIGEN IDA -->
+                     <div class="flex-1 relative">
                       <div class="flex items-center space-x-2">
                         <div
                           class="h-10 w-10 rounded-md bg-primary/10 flex items-center justify-center text-primary shadow-inner"
@@ -367,13 +367,13 @@
                       </div>
                     </div>
 
-                    <!-- Flecha/Conexión Vuelta -->
-                    <div class="flex items-center text-neutral-300">
-                      <i class="ph ph-caret-right text-xs"></i>
+                     <!-- Flecha/Conexión Vuelta -->
+                     <div class="flex items-center text-neutral-300">
+                       <i class="ph ph-caret-right text-xs"></i>
                     </div>
 
-                    <!-- 3. DESTINO VUELTA -->
-                    <div class="flex-1 text-right relative">
+                     <!-- 3. DESTINO VUELTA -->
+                     <div class="flex-1 text-right relative">
                       <div class="flex items-center justify-end space-x-2">
                         <div class="flex-1 min-w-0">
                           <div class="flex items-center justify-end gap-1">
@@ -458,16 +458,16 @@
                           <th class="px-4 py-3 text-left text-[10px] font-bold text-neutral-500 uppercase tracking-wider w-1/4">
                             Aerolínea Sugerida
                           </th>
-                          <th
-                            class="px-4 py-3 text-left text-[10px] font-bold text-neutral-500 uppercase tracking-wider rounded-tr-xl w-1/3"
-                          >
-                            Fecha y Hora
-                          </th>
+                           <th
+                             class="px-4 py-3 text-left text-[10px] font-bold text-neutral-500 uppercase tracking-wider rounded-tr-xl w-1/3"
+                           >
+                             Fecha y Hora
+                           </th>
                         </tr>
                       </thead>
                       <tbody class="bg-white divide-y divide-neutral-200">
-                        <!-- IDA -->
-                        <tr>
+                         <!-- IDA -->
+                         <tr>
                           <td class="px-4 py-4 whitespace-nowrap">
                             <div class="flex items-center space-x-3">
                               <div class="h-8 w-8 rounded bg-primary/10 flex items-center justify-center text-primary">
@@ -534,12 +534,12 @@
                               name="fecha_salida"
                               :value="!idaProgramada ? '' : (fechaIda ? fechaIda.replace(' ', 'T') : '')"
                             />
-                            <input type="hidden" name="ida_por_confirmar" :value="!idaProgramada" />
-                          </td>
-                        </tr>
+                             <input type="hidden" name="ida_por_confirmar" :value="!idaProgramada" />
+                           </td>
+                         </tr>
 
-                        <!-- VUELTA -->
-                        <tr>
+                         <!-- VUELTA -->
+                         <tr>
                           <td class="px-4 py-4 whitespace-nowrap">
                             <div class="flex items-center space-x-3 text-secondary">
                               <div class="h-8 w-8 rounded bg-secondary/10 flex items-center justify-center text-secondary">
@@ -606,12 +606,62 @@
                               name="fecha_retorno"
                               :value="!vueltaProgramada ? '' : (fechaVuelta ? fechaVuelta.replace(' ', 'T') : '')"
                             />
-                            <input type="hidden" name="vuelta_por_confirmar" :value="!vueltaProgramada" />
-                          </td>
-                        </tr>
+                             <input type="hidden" name="vuelta_por_confirmar" :value="!vueltaProgramada" />
+                           </td>
+                         </tr>
                       </tbody>
                     </table>
                   </div>
+                </section>
+
+                <!-- TRAMOS EXTRA CON CRÉDITO OT -->
+                <section class="bg-amber-50/30 p-4 rounded-md border border-amber-200" x-data="{ tramosExtra: [] }">
+                  <div class="flex items-center justify-between mb-3">
+                    <span class="text-xs font-bold text-amber-800 uppercase tracking-widest">
+                      <i class="ph ph-ticket mr-1"></i> Tramos con crédito Open Ticket
+                    </span>
+                    <button type="button" @click="tramosExtra.push({origen:'',destino:'',fecha:'',aerolinea_id:'',open_ticket_id:'',por_confirmar:false})"
+                      class="inline-flex items-center justify-center px-3 py-1.5 border border-amber-300 bg-amber-50 text-amber-700 text-[10px] font-black uppercase tracking-wider rounded-md shadow-sm hover:bg-amber-100 transition-all">
+                      <i class="ph ph-plus-circle text-sm mr-1.5"></i>Agregar tramo
+                    </button>
+                  </div>
+
+                  <template x-if="tramosExtra.length === 0">
+                    <p class="text-[11px] text-amber-600/60 italic">Sin tramos adicionales. Usá el botón para agregar un tramo que consuma un crédito OT.</p>
+                  </template>
+
+                  <template x-for="(t, i) in tramosExtra" :key="i">
+                    <div class="bg-white p-3 rounded-md border border-amber-100 mb-2 flex items-center gap-3">
+                      <span class="text-[10px] font-black text-amber-500 w-4" x-text="i+1"></span>
+                      <select x-model="t.origen" class="w-28 px-2 py-1.5 border border-neutral-200 rounded text-[10px] font-bold">
+                        <option value="">Origen</option>
+                        {{ range .Destinos }}
+                          <option value="{{ .IATA }}">{{ .IATA }} — {{ .Ciudad }}</option>
+                        {{ end }}
+                      </select>
+                      <i class="ph ph-arrow-right text-neutral-300 text-xs"></i>
+                      <select x-model="t.destino" class="w-28 px-2 py-1.5 border border-neutral-200 rounded text-[10px] font-bold">
+                        <option value="">Destino</option>
+                        {{ range .Destinos }}
+                          <option value="{{ .IATA }}">{{ .IATA }} — {{ .Ciudad }}</option>
+                        {{ end }}
+                      </select>
+                      <input type="text" x-model="t.fecha" placeholder="Fecha" x-datepicker="{ position: 'top center' }" readonly
+                        class="w-32 px-2 py-1.5 border border-neutral-200 rounded text-[10px] font-bold" />
+                      <select x-model="t.open_ticket_id" class="flex-1 px-2 py-1.5 border border-neutral-200 rounded text-[10px] font-bold">
+                        <option value="">Sin crédito</option>
+                        {{ range .OpenTickets }}
+                          <option value="{{ .ID }}">Bs. {{ printf "%.0f" .MontoCredito }} — {{ .NumeroBillete }}</option>
+                        {{ end }}
+                      </select>
+                      <button type="button" @click="tramosExtra.splice(i,1)"
+                        class="text-neutral-400 hover:text-red-500 transition-colors p-1">
+                        <i class="ph ph-x-circle text-sm"></i>
+                      </button>
+                    </div>
+                  </template>
+
+                  <input type="hidden" name="tramos_extra_json" :value="JSON.stringify(tramosExtra)" />
                 </section>
 
                 <!-- SECCIÓN C: DESTINO Y JUSTIFICACIÓN -->

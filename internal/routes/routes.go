@@ -25,14 +25,12 @@ func SetupRoutes(r *gin.Engine, container *app.Container, loginLimiter *middlewa
 	descargoOficialCtrl := container.DescargoOficialController
 	compensacionCtrl := container.CompensacionController
 	catalogoCtrl := container.CatalogoController
-	viaticoCtrl := container.ViaticoController
 	aerolineaCtrl := container.AerolineaController
 	agenciaCtrl := container.AgenciaController
 	rutaCtrl := container.RutaController
 	confCtrl := container.ConfiguracionController
 	catCompCtrl := container.CatCompensacionController
 	orgCtrl := container.OrganigramaController
-	catViaticoCtrl := container.CategoriaViaticoController
 	notifCtrl := container.NotificationController
 	landingCtrl := container.LandingController
 	openTicketCtrl := container.OpenTicketController
@@ -57,6 +55,9 @@ func SetupRoutes(r *gin.Engine, container *app.Container, loginLimiter *middlewa
 		protected.GET("/pasajes/open-tickets", openTicketCtrl.List)
 		protected.GET("/pasajes/open-tickets/:id/modal-programar", openTicketCtrl.GetProgramarModal)
 		protected.POST("/pasajes/open-tickets/:id/programar", openTicketCtrl.ProgramarUso)
+		protected.POST("/pasajes/open-tickets/:id/approve", openTicketCtrl.Approve)
+		protected.POST("/pasajes/open-tickets/:id/release", openTicketCtrl.Release)
+		protected.POST("/pasajes/open-tickets/:id/revert", openTicketCtrl.Revert)
 
 		protected.GET("/cupos/derecho/:senador_user_id/:gestion", cupoCtrl.DerechoByYear)
 		protected.GET("/cupos/derecho/:senador_user_id/:gestion/:mes", cupoCtrl.DerechoByMonth)
@@ -155,11 +156,6 @@ func SetupRoutes(r *gin.Engine, container *app.Container, loginLimiter *middlewa
 		protected.GET("/pasajes/:id/cargos", pasajeCtrl.GetCargosModal)
 		protected.POST("/pasajes/:id/cargos", pasajeCtrl.StoreCargo)
 		protected.DELETE("/pasajes/:id/cargos/:cargo_id", pasajeCtrl.DeleteCargo)
-
-		protected.GET("/viaticos", viaticoCtrl.Index)
-		protected.GET("/solicitudes/:id/viaticos/nuevo", viaticoCtrl.Create)
-		protected.POST("/solicitudes/:id/viaticos", viaticoCtrl.Store)
-		protected.GET("/viaticos/:id/print", viaticoCtrl.Print)
 
 		// Descargos Comunes (Manejados por Derecho Controller para conveniencia)
 		protected.GET("/descargos", descargoDerechoCtrl.Index)
@@ -266,10 +262,6 @@ func SetupRoutes(r *gin.Engine, container *app.Container, loginLimiter *middlewa
 			sysAdmin.GET("/admin/oficinas", orgCtrl.IndexOficinas)
 			sysAdmin.POST("/admin/oficinas", orgCtrl.StoreOficina)
 			sysAdmin.POST("/admin/oficinas/:id/delete", orgCtrl.DeleteOficina)
-
-			sysAdmin.GET("/admin/viaticos/categorias", catViaticoCtrl.Index)
-			sysAdmin.POST("/admin/viaticos/categorias", catViaticoCtrl.Store)
-			protected.POST("/admin/viaticos/zonas", catViaticoCtrl.StoreZona)
 
 			sysAdmin.GET("/admin/destinos", destinoCtrl.Index)
 			sysAdmin.GET("/admin/destinos/table", destinoCtrl.Table)

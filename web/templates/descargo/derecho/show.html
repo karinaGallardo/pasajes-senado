@@ -425,6 +425,18 @@
                                 <i class="ph ph-arrows-merge mr-1 text-xs"></i>
                                 Tramo Modificado
                               </span>
+                            {{ else if and .SolicitudItem .SolicitudItem.OpenTicketID }}
+                              <span
+                                class="inline-flex items-center px-2 py-1 rounded text-[9px] font-black bg-violet-100 text-violet-700 border border-violet-200 uppercase tracking-tighter"
+                              >
+                                <i class="ph ph-ticket mr-1 text-xs"></i>
+                                Pagado con Crédito OT
+                              </span>
+                              {{ if .SolicitudItem.OpenTicket }}
+                                <div class="mt-1 text-[9px] text-violet-600 font-bold">
+                                  {{ .SolicitudItem.OpenTicket.NumeroBillete }}
+                                </div>
+                              {{ end }}
                             {{ else }}
                               <span
                                 class="inline-flex items-center px-2 py-1 rounded text-[9px] font-black bg-success-100 text-success-700 border border-success-200 uppercase tracking-tighter"
@@ -601,6 +613,18 @@
                                   <i class="ph ph-arrows-merge mr-1 text-xs"></i>
                                   Tramo Modificado
                                 </span>
+                              {{ else if and .SolicitudItem .SolicitudItem.OpenTicketID }}
+                                <span
+                                  class="inline-flex items-center px-2 py-1 rounded text-[9px] font-black bg-violet-100 text-violet-700 border border-violet-200 uppercase tracking-tighter"
+                                >
+                                  <i class="ph ph-ticket mr-1 text-xs"></i>
+                                  Pagado con Crédito OT
+                                </span>
+                                {{ if .SolicitudItem.OpenTicket }}
+                                  <div class="mt-1 text-[9px] text-violet-600 font-bold">
+                                    {{ .SolicitudItem.OpenTicket.NumeroBillete }}
+                                  </div>
+                                {{ end }}
                               {{ else }}
                                 <span
                                   class="inline-flex items-center px-2 py-1 rounded text-[9px] font-black bg-success-100 text-success-700 border border-success-200 uppercase tracking-tighter"
@@ -682,6 +706,60 @@
                             </td>
                           </tr>
                         {{ end }}
+                      {{ end }}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            {{ end }}
+            {{ if .Extras }}
+              <div class="mt-8">
+                <div class="flex items-center gap-2 mb-4">
+                  <div class="w-8 h-8 rounded bg-violet-100 flex items-center justify-center text-violet-600">
+                    <i class="ph ph-ticket text-lg"></i>
+                  </div>
+                  <h4 class="text-xs font-black text-neutral-800 uppercase tracking-widest">
+                    Tramos con Crédito Open Ticket
+                  </h4>
+                </div>
+                <div class="overflow-hidden border border-violet-200 rounded-md">
+                  <table class="min-w-full divide-y divide-neutral-200">
+                    <thead class="bg-violet-50/50">
+                      <tr>
+                        <th class="px-6 py-3 text-left text-[9px] font-black text-neutral-500 uppercase tracking-widest">Ruta</th>
+                        <th class="px-6 py-3 text-left text-[9px] font-black text-neutral-500 uppercase tracking-widest">Detalle</th>
+                        <th class="px-6 py-3 text-center text-[9px] font-black text-neutral-500 uppercase tracking-widest">Estado</th>
+                      </tr>
+                    </thead>
+                    <tbody class="divide-y divide-neutral-100 bg-white">
+                      {{ range .Extras }}
+                        <tr class="hover:bg-neutral-50/80 transition-all">
+                          <td class="px-6 py-4 whitespace-nowrap font-bold text-neutral-900 border-l-4 border-violet-500">
+                            {{ .GetRutaDisplay }}
+                          </td>
+                          <td class="px-6 py-4 text-[10px]">
+                            <span class="text-neutral-400">Billete:</span>
+                            <span class="text-neutral-700 font-mono font-bold">{{ if .Billete }}{{ .Billete }}{{ else }}-{{ end }}</span>
+                          </td>
+                          <td class="px-6 py-4 text-center">
+                            {{ if .EsOpenTicket }}
+                              <span class="inline-flex items-center px-2 py-1 rounded text-[9px] font-black bg-danger-100 text-danger-700 border border-danger-200 uppercase">
+                                <i class="ph ph-x-circle mr-1 text-xs"></i>No Utilizado
+                              </span>
+                            {{ else if and .SolicitudItem .SolicitudItem.OpenTicketID }}
+                              <span class="inline-flex items-center px-2 py-1 rounded text-[9px] font-black bg-violet-100 text-violet-700 border border-violet-200 uppercase">
+                                <i class="ph ph-ticket mr-1 text-xs"></i>Pagado con OT
+                              </span>
+                              {{ if .SolicitudItem.OpenTicket }}
+                                <div class="mt-1 text-[9px] text-violet-600 font-bold">{{ .SolicitudItem.OpenTicket.NumeroBillete }}</div>
+                              {{ end }}
+                            {{ else }}
+                              <span class="inline-flex items-center px-2 py-1 rounded text-[9px] font-black bg-success-100 text-success-700 border border-success-200 uppercase">
+                                <i class="ph ph-check-circle mr-1 text-xs"></i>Realizado
+                              </span>
+                            {{ end }}
+                          </td>
+                        </tr>
                       {{ end }}
                     </tbody>
                   </table>

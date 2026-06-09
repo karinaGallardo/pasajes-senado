@@ -22,10 +22,8 @@ type DescargoDerechoController struct {
 	descargoService        *services.DescargoService
 	descargoDerechoService *services.DescargoDerechoService
 	solicitudService       *services.SolicitudService
-	destinoService         *services.DestinoService
 	reportService          *services.ReportService
 	peopleService          *services.PeopleService
-	aerolineaService       *services.AerolineaService
 	configService          *services.ConfiguracionService
 }
 
@@ -33,21 +31,16 @@ func NewDescargoDerechoController(
 	descargoService *services.DescargoService,
 	descargoDerechoService *services.DescargoDerechoService,
 	solicitudService *services.SolicitudService,
-	destinoService *services.DestinoService,
 	reportService *services.ReportService,
 	peopleService *services.PeopleService,
-	aerolineaService *services.AerolineaService,
-	usuarioService *services.UsuarioService,
 	configService *services.ConfiguracionService,
 ) *DescargoDerechoController {
 	return &DescargoDerechoController{
 		descargoService:        descargoService,
 		descargoDerechoService: descargoDerechoService,
 		solicitudService:       solicitudService,
-		destinoService:         destinoService,
 		reportService:          reportService,
 		peopleService:          peopleService,
-		aerolineaService:       aerolineaService,
 		configService:          configService,
 	}
 }
@@ -248,8 +241,6 @@ func (ctrl *DescargoDerechoController) UpdateUtilizacion(c *gin.Context) {
 	// Comprobantes de Pago (Per Pasaje)
 	boletasPaths := utils.ExtractPasajeBoletas(c, req.LiquidacionPasajeID)
 
-	// Asegurar que el estado se mantiene en OPEN_TICKET durante este flujo
-	descargo.Estado = models.EstadoDescargoOpenTicket
 	if err := ctrl.descargoDerechoService.UpdateDerecho(c.Request.Context(), id, req, authUser.ID, pasesAbordoPaths, boletasPaths); err != nil {
 		log.Printf("[ERROR] Error en UpdateDerecho (Utilización): %v", id)
 		c.Redirect(http.StatusFound, "/descargos/derecho/"+id+"/completar?error=ErrorActualizacion")

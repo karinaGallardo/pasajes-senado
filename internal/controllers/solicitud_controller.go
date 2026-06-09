@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"context"
 	"sistema-pasajes/internal/appcontext"
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/services"
@@ -13,16 +12,14 @@ import (
 )
 
 type SolicitudController struct {
-	service           *services.SolicitudService
-	userService       *services.UsuarioService
-	openTicketService *services.OpenTicketService
+	service     *services.SolicitudService
+	userService *services.UsuarioService
 }
 
-func NewSolicitudController(service *services.SolicitudService, userService *services.UsuarioService, openTicketService *services.OpenTicketService) *SolicitudController {
+func NewSolicitudController(service *services.SolicitudService, userService *services.UsuarioService) *SolicitudController {
 	return &SolicitudController{
-		service:           service,
-		userService:       userService,
-		openTicketService: openTicketService,
+		service:     service,
+		userService: userService,
 	}
 }
 
@@ -37,54 +34,19 @@ func (ctrl *SolicitudController) IndexPendientesDescargo(c *gin.Context) {
 		return
 	}
 
+	ctx := c.Request.Context()
 	searchTerm := c.Query("q")
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 
-	result, err := ctrl.service.GetPendientesDescargoPaginated(c.Request.Context(), authUser.ID, authUser.IsAdminOrResponsable(), page, limit, searchTerm)
+	result, err := ctrl.service.GetPendientesDescargoPaginated(ctx, authUser.ID, authUser.IsAdminOrResponsable(), page, limit, searchTerm)
 	if err != nil {
 		// handle empty
 	}
 
-	solicitudes := result.Solicitudes
-
-	// Get users for map
-	userIDsMap := make(map[string]bool)
-	for _, s := range solicitudes {
-		if s.CreatedBy != nil {
-			userIDsMap[*s.CreatedBy] = true
-		}
-		if s.UpdatedBy != nil {
-			userIDsMap[*s.UpdatedBy] = true
-		}
-	}
-	var ids []string
-	for id := range userIDsMap {
-		ids = append(ids, id)
-	}
-	usuariosMap := make(map[string]*models.Usuario)
-	if len(ids) > 0 {
-		usuarios, _ := ctrl.userService.GetByIDs(c.Request.Context(), ids)
-		for i := range usuarios {
-			usuariosMap[usuarios[i].ID] = &usuarios[i]
-		}
-	}
-
-	// Stats for sidebar/topbar
-	pendingRequests, _ := ctrl.service.GetPendingCount(c.Request.Context(), authUser.ID, authUser.IsAdminOrResponsable())
-	pendingDescargosCount, _ := ctrl.service.GetPendientesDescargo(c.Request.Context(), authUser.ID, authUser.IsAdminOrResponsable())
-	var userIDs []string
-	if !authUser.IsAdminOrResponsable() {
-		userIDs = []string{authUser.ID}
-		if senators, err := ctrl.userService.GetSenatorsByEncargado(c.Request.Context(), authUser.ID); err == nil {
-			for _, s := range senators {
-				userIDs = append(userIDs, s.ID)
-			}
-		}
-	}
-	openTicketCount := ctrl.openTicketService.GetPendingCount(c.Request.Context(), userIDs)
-	openTicketDescargoCount := ctrl.service.GetConDescargoOpenTicketCount(c.Request.Context(), authUser.ID, authUser.IsAdminOrResponsable())
-	enRevisionCount := ctrl.service.GetEnRevisionDescargoCount(c.Request.Context(), authUser.ID, authUser.IsAdminOrResponsable())
+	usuariosMap := ctrl.userService.BuildUsuariosMapFromSolicitudes(ctx, result.Solicitudes)
+	scopedUserIDs := ctrl.userService.GetScopedUserIDs(ctx, authUser)
+	stats := ctrl.service.GetPendingStats(ctx, authUser.ID, authUser.IsAdminOrResponsable(), scopedUserIDs)
 
 	utils.Render(c, "solicitud/pendientes_descargo", gin.H{
 		"Title":                   "Solicitudes Pendientes de Descargo",
@@ -92,12 +54,12 @@ func (ctrl *SolicitudController) IndexPendientesDescargo(c *gin.Context) {
 		"Usuarios":                usuariosMap,
 		"PendientesDescargo":      true,
 		"LinkBase":                "/solicitudes/pendientes-descargo",
-		"PendingRequests":         pendingRequests,
-		"PendingDescargos":        len(pendingDescargosCount),
-		"OpenTicketCount":         openTicketCount,
-		"OpenTicketDescargoCount": openTicketDescargoCount,
-		"EnRevisionCount":         enRevisionCount,
-		"TotalPending":            pendingRequests + int64(len(pendingDescargosCount)) + openTicketCount + openTicketDescargoCount + enRevisionCount,
+		"PendingRequests":         stats.PendingRequests,
+		"PendingDescargos":        stats.PendingDescargos,
+		"OpenTicketCount":         stats.OpenTicketCount,
+		"OpenTicketDescargoCount": stats.OpenTicketDescargoCount,
+		"EnRevisionCount":         stats.EnRevisionCount,
+		"TotalPending":            stats.TotalPending,
 	})
 }
 
@@ -108,38 +70,17 @@ func (ctrl *SolicitudController) TablePendientesDescargo(c *gin.Context) {
 		return
 	}
 
+	ctx := c.Request.Context()
 	searchTerm := c.Query("q")
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 
-	result, err := ctrl.service.GetPendientesDescargoPaginated(c.Request.Context(), authUser.ID, authUser.IsAdminOrResponsable(), page, limit, searchTerm)
+	result, err := ctrl.service.GetPendientesDescargoPaginated(ctx, authUser.ID, authUser.IsAdminOrResponsable(), page, limit, searchTerm)
 	if err != nil {
 		// handle empty
 	}
 
-	solicitudes := result.Solicitudes
-
-	// Get users for map
-	userIDsMap := make(map[string]bool)
-	for _, s := range solicitudes {
-		if s.CreatedBy != nil {
-			userIDsMap[*s.CreatedBy] = true
-		}
-		if s.UpdatedBy != nil {
-			userIDsMap[*s.UpdatedBy] = true
-		}
-	}
-	var ids []string
-	for id := range userIDsMap {
-		ids = append(ids, id)
-	}
-	usuariosMap := make(map[string]*models.Usuario)
-	if len(ids) > 0 {
-		usuarios, _ := ctrl.userService.GetByIDs(c.Request.Context(), ids)
-		for i := range usuarios {
-			usuariosMap[usuarios[i].ID] = &usuarios[i]
-		}
-	}
+	usuariosMap := ctrl.userService.BuildUsuariosMapFromSolicitudes(ctx, result.Solicitudes)
 
 	utils.Render(c, "solicitud/table_pendientes_descargo", gin.H{
 		"Result":             result,
@@ -156,53 +97,20 @@ func (ctrl *SolicitudController) EnRevisionDescargo(c *gin.Context) {
 		return
 	}
 
+	ctx := c.Request.Context()
 	searchTerm := c.Query("q")
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 
-	result, err := ctrl.service.GetEnRevisionDescargoPaginated(c.Request.Context(), authUser.ID, authUser.IsAdminOrResponsable(), page, limit, searchTerm)
+	result, err := ctrl.service.GetEnRevisionDescargoPaginated(ctx, authUser.ID, authUser.IsAdminOrResponsable(), page, limit, searchTerm)
 	if err != nil {
 		utils.Render(c, "error.html", gin.H{"error": err.Error()})
 		return
 	}
 
-	solicitudes := result.Solicitudes
-	userIDsMap := make(map[string]bool)
-	for _, s := range solicitudes {
-		if s.CreatedBy != nil {
-			userIDsMap[*s.CreatedBy] = true
-		}
-		if s.UpdatedBy != nil {
-			userIDsMap[*s.UpdatedBy] = true
-		}
-	}
-	var ids []string
-	for id := range userIDsMap {
-		ids = append(ids, id)
-	}
-	usuariosMap := make(map[string]*models.Usuario)
-	if len(ids) > 0 {
-		usuarios, _ := ctrl.userService.GetByIDs(c.Request.Context(), ids)
-		for i := range usuarios {
-			usuariosMap[usuarios[i].ID] = &usuarios[i]
-		}
-	}
-
-	// Sidebar counts
-	pendingRequests, _ := ctrl.service.GetPendingCount(c.Request.Context(), authUser.ID, authUser.IsAdminOrResponsable())
-	pendingDescargos, _ := ctrl.service.GetPendientesDescargo(c.Request.Context(), authUser.ID, authUser.IsAdminOrResponsable())
-	var userIDs []string
-	if !authUser.IsAdminOrResponsable() {
-		userIDs = []string{authUser.ID}
-		if senators, err := ctrl.userService.GetSenatorsByEncargado(c.Request.Context(), authUser.ID); err == nil {
-			for _, s := range senators {
-				userIDs = append(userIDs, s.ID)
-			}
-		}
-	}
-	openTicketCount := ctrl.openTicketService.GetPendingCount(c.Request.Context(), userIDs)
-	openTicketDescargoCount := ctrl.service.GetConDescargoOpenTicketCount(c.Request.Context(), authUser.ID, authUser.IsAdminOrResponsable())
-	enRevisionCount := ctrl.service.GetEnRevisionDescargoCount(c.Request.Context(), authUser.ID, authUser.IsAdminOrResponsable())
+	usuariosMap := ctrl.userService.BuildUsuariosMapFromSolicitudes(ctx, result.Solicitudes)
+	scopedUserIDs := ctrl.userService.GetScopedUserIDs(ctx, authUser)
+	stats := ctrl.service.GetPendingStats(ctx, authUser.ID, authUser.IsAdminOrResponsable(), scopedUserIDs)
 
 	utils.Render(c, "solicitud/en_revision_descargo", gin.H{
 		"Title":                   "Descargos en Revisión",
@@ -210,12 +118,12 @@ func (ctrl *SolicitudController) EnRevisionDescargo(c *gin.Context) {
 		"Usuarios":                usuariosMap,
 		"EnRevisionDescargo":      true,
 		"LinkBase":                "/solicitudes/en-revision-descargo",
-		"PendingRequests":         pendingRequests,
-		"PendingDescargos":        len(pendingDescargos),
-		"OpenTicketCount":         openTicketCount,
-		"OpenTicketDescargoCount": openTicketDescargoCount,
-		"EnRevisionCount":         enRevisionCount,
-		"TotalPending":            pendingRequests + int64(len(pendingDescargos)) + openTicketCount + openTicketDescargoCount + enRevisionCount,
+		"PendingRequests":         stats.PendingRequests,
+		"PendingDescargos":        stats.PendingDescargos,
+		"OpenTicketCount":         stats.OpenTicketCount,
+		"OpenTicketDescargoCount": stats.OpenTicketDescargoCount,
+		"EnRevisionCount":         stats.EnRevisionCount,
+		"TotalPending":            stats.TotalPending,
 	})
 }
 
@@ -226,11 +134,12 @@ func (ctrl *SolicitudController) TableEnRevisionDescargo(c *gin.Context) {
 		return
 	}
 
+	ctx := c.Request.Context()
 	searchTerm := c.Query("q")
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 
-	result, err := ctrl.service.GetEnRevisionDescargoPaginated(c.Request.Context(), authUser.ID, authUser.IsAdminOrResponsable(), page, limit, searchTerm)
+	result, err := ctrl.service.GetEnRevisionDescargoPaginated(ctx, authUser.ID, authUser.IsAdminOrResponsable(), page, limit, searchTerm)
 	if err != nil {
 		if c.GetHeader("HX-Request") == "true" {
 			c.String(500, "Error al cargar la tabla: "+err.Error())
@@ -240,27 +149,7 @@ func (ctrl *SolicitudController) TableEnRevisionDescargo(c *gin.Context) {
 		return
 	}
 
-	solicitudes := result.Solicitudes
-	userIDsMap := make(map[string]bool)
-	for _, s := range solicitudes {
-		if s.CreatedBy != nil {
-			userIDsMap[*s.CreatedBy] = true
-		}
-		if s.UpdatedBy != nil {
-			userIDsMap[*s.UpdatedBy] = true
-		}
-	}
-	var ids []string
-	for id := range userIDsMap {
-		ids = append(ids, id)
-	}
-	usuariosMap := make(map[string]*models.Usuario)
-	if len(ids) > 0 {
-		usuarios, _ := ctrl.userService.GetByIDs(c.Request.Context(), ids)
-		for i := range usuarios {
-			usuariosMap[usuarios[i].ID] = &usuarios[i]
-		}
-	}
+	usuariosMap := ctrl.userService.BuildUsuariosMapFromSolicitudes(ctx, result.Solicitudes)
 
 	utils.Render(c, "solicitud/table_en_revision_descargo", gin.H{
 		"Result":             result,
@@ -293,44 +182,21 @@ func (ctrl *SolicitudController) renderIndex(c *gin.Context, concepto string, ti
 		return
 	}
 
+	ctx := c.Request.Context()
 	status := c.Query("estado")
 	searchTerm := c.Query("q")
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 
-	result, err := ctrl.service.GetPaginated(c.Request.Context(), authUser.ID, authUser.IsAdminOrResponsable(), status, concepto, page, limit, searchTerm)
+	result, err := ctrl.service.GetPaginated(ctx, authUser.ID, authUser.IsAdminOrResponsable(), status, concepto, page, limit, searchTerm)
 	if err != nil {
 		// handle or initialize empty result
 	}
 
-	solicitudes := result.Solicitudes
+	usuariosMap := ctrl.userService.BuildUsuariosMapFromSolicitudes(ctx, result.Solicitudes)
 
-	userIDsMap := make(map[string]bool)
-	for _, s := range solicitudes {
-		if s.CreatedBy != nil {
-			userIDsMap[*s.CreatedBy] = true
-		}
-		if s.UpdatedBy != nil {
-			userIDsMap[*s.UpdatedBy] = true
-		}
-	}
-
-	var ids []string
-	for id := range userIDsMap {
-		ids = append(ids, id)
-	}
-
-	usuariosMap := make(map[string]*models.Usuario)
-	if len(ids) > 0 {
-		usuarios, _ := ctrl.userService.GetByIDs(c.Request.Context(), ids)
-		for i := range usuarios {
-			usuariosMap[usuarios[i].ID] = &usuarios[i]
-		}
-	}
-
-	// Hydrate permissions for all items in the list
-	for i := range solicitudes {
-		solicitudes[i].HydratePermissions(authUser)
+	for i := range result.Solicitudes {
+		result.Solicitudes[i].HydratePermissions(authUser)
 	}
 
 	linkBase := "/solicitudes"
@@ -359,30 +225,17 @@ func (ctrl *SolicitudController) GetPendingStats(c *gin.Context) {
 		return
 	}
 
-	pendingRequests, _ := ctrl.service.GetPendingCount(c.Request.Context(), authUser.ID, authUser.IsAdminOrResponsable())
-	pendingDescargos, _ := ctrl.service.GetPendientesDescargo(c.Request.Context(), authUser.ID, authUser.IsAdminOrResponsable())
-
-	// Open Tickets count (PENDIENTE states for badge)
-	var userIDs []string
-	if !authUser.IsAdminOrResponsable() {
-		userIDs = []string{authUser.ID}
-		if senators, err := ctrl.userService.GetSenatorsByEncargado(c.Request.Context(), authUser.ID); err == nil {
-			for _, s := range senators {
-				userIDs = append(userIDs, s.ID)
-			}
-		}
-	}
-	openTicketCount := ctrl.openTicketService.GetPendingCount(c.Request.Context(), userIDs)
-	openTicketDescargoCount := ctrl.service.GetConDescargoOpenTicketCount(c.Request.Context(), authUser.ID, authUser.IsAdminOrResponsable())
-	enRevisionCount := ctrl.service.GetEnRevisionDescargoCount(c.Request.Context(), authUser.ID, authUser.IsAdminOrResponsable())
+	ctx := c.Request.Context()
+	scopedUserIDs := ctrl.userService.GetScopedUserIDs(ctx, authUser)
+	stats := ctrl.service.GetPendingStats(ctx, authUser.ID, authUser.IsAdminOrResponsable(), scopedUserIDs)
 
 	utils.Render(c, "layouts/components/pending_stats", gin.H{
-		"PendingRequests":         pendingRequests,
-		"PendingDescargos":        len(pendingDescargos),
-		"OpenTicketCount":         openTicketCount,
-		"OpenTicketDescargoCount": openTicketDescargoCount,
-		"EnRevisionCount":         enRevisionCount,
-		"TotalPending":            pendingRequests + int64(len(pendingDescargos)) + openTicketCount + openTicketDescargoCount + enRevisionCount,
+		"PendingRequests":         stats.PendingRequests,
+		"PendingDescargos":        stats.PendingDescargos,
+		"OpenTicketCount":         stats.OpenTicketCount,
+		"OpenTicketDescargoCount": stats.OpenTicketDescargoCount,
+		"EnRevisionCount":         stats.EnRevisionCount,
+		"TotalPending":            stats.TotalPending,
 	})
 }
 
@@ -441,19 +294,7 @@ func (ctrl *SolicitudController) Delete(c *gin.Context) {
 		return
 	}
 
-	solicitud, err := ctrl.service.GetByID(c.Request.Context(), id)
-	if err != nil {
-		c.JSON(404, gin.H{"error": "Solicitud no encontrada"})
-		return
-	}
-
-	solicitud.HydratePermissions(authUser)
-	if !solicitud.Permissions.CanDelete {
-		c.JSON(403, gin.H{"error": "No tiene permisos para eliminar esta solicitud"})
-		return
-	}
-
-	if err := ctrl.service.Delete(c.Request.Context(), id, authUser.ID); err != nil {
+	if err := ctrl.service.Delete(c.Request.Context(), id, authUser); err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
@@ -480,19 +321,7 @@ func (ctrl *SolicitudController) Finalize(c *gin.Context) {
 		return
 	}
 
-	solicitud, err := ctrl.service.GetByID(c.Request.Context(), id)
-	if err != nil {
-		c.JSON(404, gin.H{"error": "Solicitud no encontrada"})
-		return
-	}
-
-	solicitud.HydratePermissions(authUser)
-	if !solicitud.Permissions.CanFinalize {
-		c.JSON(403, gin.H{"error": "No tiene permisos para finalizar esta solicitud"})
-		return
-	}
-
-	if err := ctrl.service.Finalize(c.Request.Context(), id); err != nil {
+	if err := ctrl.service.Finalize(c.Request.Context(), id, authUser); err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
@@ -509,19 +338,7 @@ func (ctrl *SolicitudController) RevertFinalize(c *gin.Context) {
 		return
 	}
 
-	solicitud, err := ctrl.service.GetByID(c.Request.Context(), id)
-	if err != nil {
-		c.JSON(404, gin.H{"error": "Solicitud no encontrada"})
-		return
-	}
-
-	solicitud.HydratePermissions(authUser)
-	if !solicitud.Permissions.CanRevertFinalize {
-		c.JSON(403, gin.H{"error": "No tiene permisos para revertir la finalización"})
-		return
-	}
-
-	if err := ctrl.service.RevertFinalize(c.Request.Context(), id); err != nil {
+	if err := ctrl.service.RevertFinalize(c.Request.Context(), id, authUser); err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
@@ -538,19 +355,7 @@ func (ctrl *SolicitudController) RevertReject(c *gin.Context) {
 		return
 	}
 
-	solicitud, err := ctrl.service.GetByID(c.Request.Context(), id)
-	if err != nil {
-		c.JSON(404, gin.H{"error": "Solicitud no encontrada"})
-		return
-	}
-
-	solicitud.HydratePermissions(authUser)
-	if !solicitud.Permissions.CanRevertReject {
-		c.JSON(403, gin.H{"error": "No tiene permisos para revertir el rechazo"})
-		return
-	}
-
-	if err := ctrl.service.RevertReject(c.Request.Context(), id); err != nil {
+	if err := ctrl.service.RevertReject(c.Request.Context(), id, authUser); err != nil {
 		c.JSON(400, gin.H{"error": err.Error()})
 		return
 	}
@@ -566,39 +371,27 @@ func (ctrl *SolicitudController) IndexOpenTicketDescargo(c *gin.Context) {
 		return
 	}
 
+	ctx := c.Request.Context()
 	searchTerm := c.Query("q")
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 
-	result, _ := ctrl.service.GetConDescargoOpenTicketPaginated(c.Request.Context(), authUser.ID, authUser.IsAdminOrResponsable(), page, limit, searchTerm)
+	result, _ := ctrl.service.GetConDescargoOpenTicketPaginated(ctx, authUser.ID, authUser.IsAdminOrResponsable(), page, limit, searchTerm)
 
-	// Stats for sidebar/topbar
-	pendingRequests, _ := ctrl.service.GetPendingCount(c.Request.Context(), authUser.ID, authUser.IsAdminOrResponsable())
-	pendingDescargos, _ := ctrl.service.GetPendientesDescargo(c.Request.Context(), authUser.ID, authUser.IsAdminOrResponsable())
-	var userIDs []string
-	if !authUser.IsAdminOrResponsable() {
-		userIDs = []string{authUser.ID}
-		if senators, err := ctrl.userService.GetSenatorsByEncargado(c.Request.Context(), authUser.ID); err == nil {
-			for _, s := range senators {
-				userIDs = append(userIDs, s.ID)
-			}
-		}
-	}
-	openTicketCount := ctrl.openTicketService.GetPendingCount(c.Request.Context(), userIDs)
-	openTicketDescargoCount := ctrl.service.GetConDescargoOpenTicketCount(c.Request.Context(), authUser.ID, authUser.IsAdminOrResponsable())
-
-	usuariosMap := ctrl.getUsuariosMapFromSolicitudes(c.Request.Context(), result.Solicitudes)
+	scopedUserIDs := ctrl.userService.GetScopedUserIDs(ctx, authUser)
+	stats := ctrl.service.GetPendingStats(ctx, authUser.ID, authUser.IsAdminOrResponsable(), scopedUserIDs)
+	usuariosMap := ctrl.userService.BuildUsuariosMapFromSolicitudes(ctx, result.Solicitudes)
 
 	utils.Render(c, "solicitud/open_ticket_descargo_index", gin.H{
 		"Title":                   "Solicitudes con Descargo Open Ticket",
 		"Result":                  result,
 		"Usuarios":                usuariosMap,
 		"LinkBase":                "/solicitudes/con-open-ticket",
-		"PendingRequests":         pendingRequests,
-		"PendingDescargos":        len(pendingDescargos),
-		"OpenTicketCount":         openTicketCount,
-		"OpenTicketDescargoCount": openTicketDescargoCount,
-		"TotalPending":            pendingRequests + int64(len(pendingDescargos)) + openTicketCount + openTicketDescargoCount,
+		"PendingRequests":         stats.PendingRequests,
+		"PendingDescargos":        stats.PendingDescargos,
+		"OpenTicketCount":         stats.OpenTicketCount,
+		"OpenTicketDescargoCount": stats.OpenTicketDescargoCount,
+		"TotalPending":            stats.TotalPending,
 	})
 }
 
@@ -609,41 +402,17 @@ func (ctrl *SolicitudController) TableOpenTicketDescargo(c *gin.Context) {
 		return
 	}
 
+	ctx := c.Request.Context()
 	searchTerm := c.Query("q")
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "10"))
 
-	result, _ := ctrl.service.GetConDescargoOpenTicketPaginated(c.Request.Context(), authUser.ID, authUser.IsAdminOrResponsable(), page, limit, searchTerm)
-
-	usuariosMap := ctrl.getUsuariosMapFromSolicitudes(c.Request.Context(), result.Solicitudes)
+	result, _ := ctrl.service.GetConDescargoOpenTicketPaginated(ctx, authUser.ID, authUser.IsAdminOrResponsable(), page, limit, searchTerm)
+	usuariosMap := ctrl.userService.BuildUsuariosMapFromSolicitudes(ctx, result.Solicitudes)
 
 	utils.Render(c, "solicitud/table_solicitudes", gin.H{
 		"Result":   result,
 		"Usuarios": usuariosMap,
 		"LinkBase": "/solicitudes/con-open-ticket",
 	})
-}
-
-func (ctrl *SolicitudController) getUsuariosMapFromSolicitudes(ctx context.Context, solicitudes []models.Solicitud) map[string]*models.Usuario {
-	userIDsMap := make(map[string]bool)
-	for _, s := range solicitudes {
-		if s.CreatedBy != nil {
-			userIDsMap[*s.CreatedBy] = true
-		}
-		if s.UpdatedBy != nil {
-			userIDsMap[*s.UpdatedBy] = true
-		}
-	}
-	var ids []string
-	for id := range userIDsMap {
-		ids = append(ids, id)
-	}
-	usuariosMap := make(map[string]*models.Usuario)
-	if len(ids) > 0 {
-		usuarios, _ := ctrl.userService.GetByIDs(ctx, ids)
-		for i := range usuarios {
-			usuariosMap[usuarios[i].ID] = &usuarios[i]
-		}
-	}
-	return usuariosMap
 }

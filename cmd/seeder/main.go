@@ -22,7 +22,7 @@ func main() {
 	seedEstadosSolicitudItem()
 	seedEstadosCupoDerecho()
 	seedEstadosPasaje()
-	seedViaticosAndConfig()
+	seedConfig()
 	seedGeneros()
 	seedCodigoSecuencia()
 }
@@ -208,51 +208,8 @@ func seedEstadosSolicitud() {
 	}
 }
 
-func seedViaticosAndConfig() {
-	fmt.Println("Sincronizando Categorías de Viáticos y Configuración...")
-
-	zonas := []string{
-		"INTERIOR",
-		"EXTERIOR",
-		"NORTE AMERICA, EUROPA, ASIA, AFRICA U OCEANIA",
-		"CENTRO AMERICA, SUD AMERICA O EL CARIBE",
-		"INTERDEPARTAMENTAL",
-		"INTRADEPARTAMENTAL",
-		"FRANJA DE FRONTERA",
-	}
-
-	zonaMap := make(map[string]string)
-	for _, zName := range zonas {
-		var zona models.ZonaViatico
-		configs.DB.Where("nombre = ?", zName).FirstOrCreate(&zona, models.ZonaViatico{Nombre: zName})
-		zonaMap[zName] = zona.ID
-	}
-
-	categorias := []models.CategoriaViatico{
-		{Nombre: "CATEGORIA 1", Codigo: 1, Monto: 360.00, Moneda: "USD", Ubicacion: "EXTERIOR", ZonaViaticoID: utils.Ptr(zonaMap["NORTE AMERICA, EUROPA, ASIA, AFRICA U OCEANIA"])},
-		{Nombre: "CATEGORIA 2", Codigo: 2, Monto: 300.00, Moneda: "USD", Ubicacion: "EXTERIOR", ZonaViaticoID: utils.Ptr(zonaMap["NORTE AMERICA, EUROPA, ASIA, AFRICA U OCEANIA"])},
-		{Nombre: "CATEGORIA 3", Codigo: 3, Monto: 276.00, Moneda: "USD", Ubicacion: "EXTERIOR", ZonaViaticoID: utils.Ptr(zonaMap["NORTE AMERICA, EUROPA, ASIA, AFRICA U OCEANIA"])},
-
-		{Nombre: "CATEGORIA 1", Codigo: 1, Monto: 300.00, Moneda: "USD", Ubicacion: "EXTERIOR", ZonaViaticoID: utils.Ptr(zonaMap["CENTRO AMERICA, SUD AMERICA O EL CARIBE"])},
-		{Nombre: "CATEGORIA 2", Codigo: 2, Monto: 240.00, Moneda: "USD", Ubicacion: "EXTERIOR", ZonaViaticoID: utils.Ptr(zonaMap["CENTRO AMERICA, SUD AMERICA O EL CARIBE"])},
-		{Nombre: "CATEGORIA 3", Codigo: 3, Monto: 207.00, Moneda: "USD", Ubicacion: "EXTERIOR", ZonaViaticoID: utils.Ptr(zonaMap["CENTRO AMERICA, SUD AMERICA O EL CARIBE"])},
-
-		{Nombre: "CATEGORIA 1", Codigo: 1, Monto: 553.00, Moneda: "Bs", Ubicacion: "INTERIOR", ZonaViaticoID: utils.Ptr(zonaMap["INTERDEPARTAMENTAL"])},
-		{Nombre: "CATEGORIA 2", Codigo: 2, Monto: 465.00, Moneda: "Bs", Ubicacion: "INTERIOR", ZonaViaticoID: utils.Ptr(zonaMap["INTERDEPARTAMENTAL"])},
-		{Nombre: "CATEGORIA 3", Codigo: 3, Monto: 371.00, Moneda: "Bs", Ubicacion: "INTERIOR", ZonaViaticoID: utils.Ptr(zonaMap["INTERDEPARTAMENTAL"])},
-
-		{Nombre: "CATEGORIA 1", Codigo: 1, Monto: 332.00, Moneda: "Bs", Ubicacion: "INTERIOR", ZonaViaticoID: utils.Ptr(zonaMap["INTRADEPARTAMENTAL"])},
-		{Nombre: "CATEGORIA 2", Codigo: 2, Monto: 277.00, Moneda: "Bs", Ubicacion: "INTERIOR", ZonaViaticoID: utils.Ptr(zonaMap["INTRADEPARTAMENTAL"])},
-		{Nombre: "CATEGORIA 3", Codigo: 3, Monto: 222.00, Moneda: "Bs", Ubicacion: "INTERIOR", ZonaViaticoID: utils.Ptr(zonaMap["INTRADEPARTAMENTAL"])},
-
-		{Nombre: "CATEGORIA 1", Codigo: 1, Monto: 583.00, Moneda: "Bs", Ubicacion: "INTERIOR", ZonaViaticoID: utils.Ptr(zonaMap["FRANJA DE FRONTERA"])},
-		{Nombre: "CATEGORIA 2", Codigo: 2, Monto: 491.00, Moneda: "Bs", Ubicacion: "INTERIOR", ZonaViaticoID: utils.Ptr(zonaMap["FRANJA DE FRONTERA"])},
-		{Nombre: "CATEGORIA 3", Codigo: 3, Monto: 391.00, Moneda: "Bs", Ubicacion: "INTERIOR", ZonaViaticoID: utils.Ptr(zonaMap["FRANJA DE FRONTERA"])},
-	}
-
-	for _, c := range categorias {
-		configs.DB.Where("nombre = ? AND zona_viatico_id = ?", c.Nombre, c.ZonaViaticoID).FirstOrCreate(&c)
-	}
+func seedConfig() {
+	fmt.Println("Sincronizando Configuración del Sistema...")
 
 	confList := []models.Configuracion{
 		{Clave: "RC_IVA_TASA", Valor: "0.13", Tipo: "FLOAT"},
@@ -482,9 +439,9 @@ func seedEstadosCupoDerecho() {
 func seedEstadosPasaje() {
 	fmt.Println("Sincronizando Estados de Pasaje...")
 	estados := []models.EstadoPasaje{
-		{Codigo: "REGISTRADO", Nombre: "Registrado", Color: "#64748B", Icon: "ph ph-paper-plane", Descripcion: "Pasaje registrado en el sistema pero no emitido"},
-		{Codigo: "EMITIDO", Nombre: "Emitido", Color: "#0284C7", Icon: "ph ph-airplane-takeoff", Descripcion: "Pasaje emitido correctamente"},
-		{Codigo: "FINALIZADO", Nombre: "Finalizado", Color: "#1E1B4B", Icon: "ph ph-airplane-landing", Descripcion: "Pasaje procesado (viaje realizado o crédito generado)"},
+		{Codigo: "REGISTRADO", Nombre: "Registrado", Color: "#8B5CF6", Icon: "ph ph-paper-plane", Descripcion: "Pasaje registrado en el sistema pero no emitido"},
+		{Codigo: "EMITIDO", Nombre: "Emitido", Color: "#10B981", Icon: "ph ph-airplane-takeoff", Descripcion: "Pasaje emitido correctamente"},
+		{Codigo: "FINALIZADO", Nombre: "Finalizado", Color: "#374151", Icon: "ph ph-airplane-landing", Descripcion: "Pasaje procesado (viaje realizado o crédito generado)"},
 	}
 
 	for _, e := range estados {

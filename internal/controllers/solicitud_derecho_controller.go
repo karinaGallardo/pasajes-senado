@@ -1,7 +1,6 @@
 package controllers
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"sistema-pasajes/internal/appcontext"
@@ -9,8 +8,6 @@ import (
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/services"
 	"sistema-pasajes/internal/utils"
-	"strings"
-	"time"
 
 	"github.com/gin-gonic/gin"
 )
@@ -19,19 +16,13 @@ type SolicitudDerechoController struct {
 	solicitudService        *services.SolicitudService
 	solicitudDerechoService *services.SolicitudDerechoService
 	destinoService          *services.DestinoService
-	conceptoService         *services.ConceptoService
 	tipoSolicitudService    *services.TipoSolicitudService
-	ambitoService           *services.AmbitoService
 	cupoService             *services.CupoService
 	userService             *services.UsuarioService
 	peopleService           *services.PeopleService
 	reportService           *services.ReportService
 	aerolineaService        *services.AerolineaService
-	agenciaService          *services.AgenciaService
-	tipoItinerarioService   *services.TipoItinerarioService
-	rutaService             *services.RutaService
 	descargoService         *services.DescargoService
-	configuracionService    *services.ConfiguracionService
 	openTicketService       *services.OpenTicketService
 }
 
@@ -39,44 +30,33 @@ func NewSolicitudDerechoController(
 	solicitudService *services.SolicitudService,
 	solicitudDerechoService *services.SolicitudDerechoService,
 	destinoService *services.DestinoService,
-	conceptoService *services.ConceptoService,
 	tipoSolicitudService *services.TipoSolicitudService,
-	ambitoService *services.AmbitoService,
 	cupoService *services.CupoService,
 	userService *services.UsuarioService,
 	peopleService *services.PeopleService,
 	reportService *services.ReportService,
 	aerolineaService *services.AerolineaService,
-	agenciaService *services.AgenciaService,
-	tipoItinerarioService *services.TipoItinerarioService,
-	rutaService *services.RutaService,
 	descargoService *services.DescargoService,
-	configuracionService *services.ConfiguracionService,
 	openTicketService *services.OpenTicketService,
 ) *SolicitudDerechoController {
 	return &SolicitudDerechoController{
 		solicitudService:        solicitudService,
 		solicitudDerechoService: solicitudDerechoService,
 		destinoService:          destinoService,
-		conceptoService:         conceptoService,
 		tipoSolicitudService:    tipoSolicitudService,
-		ambitoService:           ambitoService,
 		cupoService:             cupoService,
 		userService:             userService,
 		peopleService:           peopleService,
 		reportService:           reportService,
 		aerolineaService:        aerolineaService,
-		agenciaService:          agenciaService,
-		tipoItinerarioService:   tipoItinerarioService,
-		rutaService:             rutaService,
 		descargoService:         descargoService,
-		configuracionService:    configuracionService,
 		openTicketService:       openTicketService,
 	}
 }
 
 func (ctrl *SolicitudDerechoController) GetCreateModal(c *gin.Context) {
 	itemID := c.Param("item_id")
+	authUser := appcontext.AuthUser(c)
 	cupoItem, _ := ctrl.cupoService.GetCupoDerechoItemByID(c.Request.Context(), itemID)
 	targetUser, _ := ctrl.userService.GetByID(c.Request.Context(), cupoItem.SenAsignadoID)
 
@@ -85,7 +65,7 @@ func (ctrl *SolicitudDerechoController) GetCreateModal(c *gin.Context) {
 
 	var origen, destino *models.Destino
 	userLoc, _ := ctrl.destinoService.GetByIATA(c.Request.Context(), targetUser.GetOrigenIATA())
-	sedesAutorizadas := ctrl.getSedesAutorizadas(c.Request.Context())
+	sedesAutorizadas := ctrl.solicitudDerechoService.GetSedesAutorizadas(c.Request.Context())
 	var sedeDefault *models.Destino
 	if len(sedesAutorizadas) > 0 {
 		sedeDefault = &sedesAutorizadas[0]
@@ -94,19 +74,21 @@ func (ctrl *SolicitudDerechoController) GetCreateModal(c *gin.Context) {
 	origen = userLoc
 	destino = sedeDefault
 
-	origenesAutorizados := []models.Destino{}
-	if userLoc != nil {
-		origenesAutorizados = append(origenesAutorizados, *userLoc)
-	}
-	for _, alt := range targetUser.OrigenesAlternativos {
-		if alt.Destino != nil {
-			origenesAutorizados = append(origenesAutorizados, *alt.Destino)
-		}
-	}
+	origenesAutorizados := ctrl.userService.BuildOrigenesAutorizados(targetUser, userLoc)
 
 	referer := c.Request.Referer()
 	if referer == "" {
 		referer = "/cupos/derecho/" + targetUser.ID
+	}
+
+	defaultIda, defaultVuelta := ctrl.solicitudDerechoService.GetDefaultTravelDates()
+	openTickets, _ := ctrl.openTicketService.GetDisponiblesByUsuarioID(c.Request.Context(), targetUser.ID)
+	allDestinos, _ := ctrl.destinoService.GetAll(c.Request.Context())
+	var destinos []models.Destino
+	for _, d := range allDestinos {
+		if d.AmbitoCodigo == "NACIONAL" {
+			destinos = append(destinos, d)
+		}
 	}
 
 	utils.Render(c, "solicitud/derecho/modal_create", gin.H{
@@ -122,8 +104,12 @@ func (ctrl *SolicitudDerechoController) GetCreateModal(c *gin.Context) {
 		"SedesAutorizadas":    sedesAutorizadas,
 		"Sede":                sedeDefault,
 		"ReturnURL":           referer,
-		"DefaultDateIda":      time.Now().AddDate(0, 0, 1).Format("2006-01-02"),
-		"DefaultDateVuelta":   time.Now().AddDate(0, 0, 4).Format("2006-01-02"),
+		"DefaultDateIda":      defaultIda,
+		"DefaultDateVuelta":   defaultVuelta,
+		"OpenTickets":         openTickets,
+		"CanManageSystem":     authUser.IsAdminOrResponsable(),
+		"AuthUser":            authUser,
+		"Destinos":            destinos,
 	})
 }
 
@@ -170,79 +156,29 @@ func (ctrl *SolicitudDerechoController) GetEditModal(c *gin.Context) {
 		return
 	}
 
-	// Cargar datos complementarios
 	cupoItem, _ := ctrl.cupoService.GetCupoDerechoItemByID(c.Request.Context(), *solicitud.CupoDerechoItemID)
 	aerolineas, _ := ctrl.aerolineaService.GetAllActive(c.Request.Context())
-	sedesAutorizadas := ctrl.getSedesAutorizadas(c.Request.Context())
+	sedesAutorizadas := ctrl.solicitudDerechoService.GetSedesAutorizadas(c.Request.Context())
 	referer := c.Request.Referer()
 
-	var sedeDefault *models.Destino
-	if len(sedesAutorizadas) > 0 {
-		sedeDefault = &sedesAutorizadas[0]
-	}
-
-	// Hidratar permisos de los ítems una sola vez
 	for i := range solicitud.Items {
 		solicitud.Items[i].HydratePermissions(authUser)
 	}
 
 	userLoc, _ := ctrl.destinoService.GetByIATA(c.Request.Context(), solicitud.Usuario.GetOrigenIATA())
+	defaults := ctrl.solicitudDerechoService.GetEditFormDefaults(c.Request.Context(), solicitud, userLoc)
+
+	origenesAutorizados := ctrl.userService.BuildOrigenesAutorizados(&solicitud.Usuario, userLoc)
+
 	ida := solicitud.GetItemIda()
 	vuelta := solicitud.GetItemVuelta()
 	itin := solicitud.TipoItinerario
-
-	// Determinar Origen, Destino y Sede con fallbacks limpios
-	var origen, destino, sede *models.Destino
-
-	if ida != nil {
-		origen = ida.Origen
-		sede = ida.Destino
-	}
-
-	if vuelta != nil {
-		if origen == nil {
-			origen = vuelta.Destino
-		}
-		destino = vuelta.Destino
-		if sede == nil {
-			sede = vuelta.Origen
-		}
-	}
-
-	// Fallback final para visualización inicial
-	if origen == nil {
-		origen = userLoc
-	}
-
-	if destino == nil {
-		if vuelta != nil && vuelta.Destino != nil {
-			destino = vuelta.Destino
-		} else if ida != nil && ida.Destino != nil {
-			destino = ida.Destino
-		} else {
-			destino = sedeDefault
-		}
-	}
-
-	if sede == nil {
-		sede = sedeDefault
-	}
-
-	// Orígenes alternativos autorizados
-	origenesAutorizados := []models.Destino{}
-	if userLoc != nil {
-		origenesAutorizados = append(origenesAutorizados, *userLoc)
-	}
-	for _, alt := range solicitud.Usuario.OrigenesAlternativos {
-		if alt.Destino != nil {
-			origenesAutorizados = append(origenesAutorizados, *alt.Destino)
-		}
-	}
-
 	canEditIda := (ida != nil && ida.CanEdit())
 	canEditVuelta := (vuelta != nil && vuelta.CanEdit())
 	isIdaProgramada := (ida != nil && !ida.IsPendiente())
 	isVueltaProgramada := (vuelta != nil && !vuelta.IsPendiente())
+
+	openTickets, _ := ctrl.openTicketService.GetDisponiblesByUsuarioID(c.Request.Context(), solicitud.UsuarioID)
 
 	utils.Render(c, "solicitud/derecho/modal_edit", gin.H{
 		"Aerolineas":          aerolineas,
@@ -258,11 +194,12 @@ func (ctrl *SolicitudDerechoController) GetEditModal(c *gin.Context) {
 		"Ambito":              solicitud.AmbitoViaje,
 		"Itinerario":          itin,
 		"ReturnURL":           referer,
-		"Origen":              origen,
-		"Destino":             destino,
-		"Sede":                sede,
+		"Origen":              defaults.Origen,
+		"Destino":             defaults.Destino,
+		"Sede":                defaults.Sede,
 		"SedesAutorizadas":    sedesAutorizadas,
 		"OrigenesAutorizados": origenesAutorizados,
+		"OpenTickets":         openTickets,
 	})
 }
 
@@ -318,22 +255,7 @@ func (ctrl *SolicitudDerechoController) Show(c *gin.Context) {
 	statusCard := solicitud.GetStatusCardData()
 
 	aerolineas, _ := ctrl.aerolineaService.GetAllActive(c.Request.Context())
-	userIDsMap := make(map[string]bool)
-	if solicitud.CreatedBy != nil {
-		userIDsMap[*solicitud.CreatedBy] = true
-	}
-	if solicitud.UpdatedBy != nil {
-		userIDsMap[*solicitud.UpdatedBy] = true
-	}
-	var ids []string
-	for id := range userIDsMap {
-		ids = append(ids, id)
-	}
-	usuarios, _ := ctrl.userService.GetByIDs(c.Request.Context(), ids)
-	usuariosMap := make(map[string]*models.Usuario)
-	for i := range usuarios {
-		usuariosMap[usuarios[i].ID] = &usuarios[i]
-	}
+	usuariosMap := ctrl.userService.BuildUsuariosMapFromSolicitudes(c.Request.Context(), []models.Solicitud{*solicitud})
 
 	var descargoID string
 	if descargo, _ := ctrl.descargoService.GetBySolicitudID(c.Request.Context(), id); descargo != nil && descargo.ID != "" {
@@ -355,20 +277,8 @@ func (ctrl *SolicitudDerechoController) Show(c *gin.Context) {
 func (ctrl *SolicitudDerechoController) Approve(c *gin.Context) {
 	id := c.Param("id")
 	authUser := appcontext.AuthUser(c)
-	solicitud, err := ctrl.solicitudService.GetByID(c.Request.Context(), id)
-	if err != nil {
-		c.String(http.StatusNotFound, "Solicitud no encontrada")
-		return
-	}
-
-	solicitud.HydratePermissions(authUser)
-	if !solicitud.Permissions.CanApproveReject {
-		c.String(http.StatusForbidden, "No tiene permisos para aprobar esta solicitud en su estado actual")
-		return
-	}
-
-	if err := ctrl.solicitudService.Approve(c.Request.Context(), id); err != nil {
-		c.String(http.StatusInternalServerError, "Error al aprobar la solicitud: "+err.Error())
+	if err := ctrl.solicitudService.Approve(c.Request.Context(), id, authUser); err != nil {
+		c.String(http.StatusForbidden, err.Error())
 		return
 	}
 	utils.SetSuccessMessage(c, "Solicitud APROBADA correctamente")
@@ -378,20 +288,8 @@ func (ctrl *SolicitudDerechoController) Approve(c *gin.Context) {
 func (ctrl *SolicitudDerechoController) RevertApproval(c *gin.Context) {
 	id := c.Param("id")
 	authUser := appcontext.AuthUser(c)
-	solicitud, err := ctrl.solicitudService.GetByID(c.Request.Context(), id)
-	if err != nil {
-		c.String(http.StatusNotFound, "Solicitud no encontrada")
-		return
-	}
-
-	solicitud.HydratePermissions(authUser)
-	if !solicitud.Permissions.CanRevertApproval {
-		c.String(http.StatusForbidden, "No tiene permisos para realizar esta acción")
-		return
-	}
-
-	if err := ctrl.solicitudService.RevertApproval(c.Request.Context(), id); err != nil {
-		c.String(http.StatusInternalServerError, "Error al revertir aprobación: "+err.Error())
+	if err := ctrl.solicitudService.RevertApproval(c.Request.Context(), id, authUser); err != nil {
+		c.String(http.StatusForbidden, err.Error())
 		return
 	}
 	utils.SetSuccessMessage(c, "Estado revertido a SOLICITADO")
@@ -401,20 +299,8 @@ func (ctrl *SolicitudDerechoController) RevertApproval(c *gin.Context) {
 func (ctrl *SolicitudDerechoController) Reject(c *gin.Context) {
 	id := c.Param("id")
 	authUser := appcontext.AuthUser(c)
-	solicitud, err := ctrl.solicitudService.GetByID(c.Request.Context(), id)
-	if err != nil {
-		c.String(http.StatusNotFound, "Solicitud no encontrada")
-		return
-	}
-
-	solicitud.HydratePermissions(authUser)
-	if !solicitud.Permissions.CanApproveReject {
-		c.String(http.StatusForbidden, "No tiene permisos para rechazar esta solicitud en su estado actual")
-		return
-	}
-
-	if err := ctrl.solicitudService.Reject(c.Request.Context(), id); err != nil {
-		c.String(http.StatusInternalServerError, "Error al rechazar la solicitud: "+err.Error())
+	if err := ctrl.solicitudService.Reject(c.Request.Context(), id, authUser); err != nil {
+		c.String(http.StatusForbidden, err.Error())
 		return
 	}
 	utils.SetSuccessMessage(c, "Solicitud RECHAZADA")
@@ -424,20 +310,8 @@ func (ctrl *SolicitudDerechoController) Reject(c *gin.Context) {
 func (ctrl *SolicitudDerechoController) RevertReject(c *gin.Context) {
 	id := c.Param("id")
 	authUser := appcontext.AuthUser(c)
-	solicitud, err := ctrl.solicitudService.GetByID(c.Request.Context(), id)
-	if err != nil {
-		c.String(http.StatusNotFound, "Solicitud no encontrada")
-		return
-	}
-
-	solicitud.HydratePermissions(authUser)
-	if !solicitud.Permissions.CanRevertReject {
-		c.String(http.StatusForbidden, "No tiene permisos para realizar esta acción")
-		return
-	}
-
-	if err := ctrl.solicitudService.RevertReject(c.Request.Context(), id); err != nil {
-		c.String(http.StatusInternalServerError, "Error al revertir rechazo: "+err.Error())
+	if err := ctrl.solicitudService.RevertReject(c.Request.Context(), id, authUser); err != nil {
+		c.String(http.StatusForbidden, err.Error())
 		return
 	}
 	utils.SetSuccessMessage(c, "Estado revertido a SOLICITADO")
@@ -481,45 +355,24 @@ func (ctrl *SolicitudDerechoController) Print(c *gin.Context) {
 func (ctrl *SolicitudDerechoController) Destroy(c *gin.Context) {
 	id := c.Param("id")
 	authUser := appcontext.AuthUser(c)
-	solicitud, err := ctrl.solicitudService.GetByID(c.Request.Context(), id)
-	if err != nil {
-		c.String(http.StatusNotFound, "Solicitud no encontrada")
+	userID := "" // fallback
+	if sol, _ := ctrl.solicitudService.GetByID(c.Request.Context(), id); sol != nil {
+		userID = sol.UsuarioID
+	}
+	if err := ctrl.solicitudService.Delete(c.Request.Context(), id, authUser); err != nil {
+		c.String(http.StatusForbidden, err.Error())
 		return
 	}
-
-	solicitud.HydratePermissions(authUser)
-	if !solicitud.Permissions.CanDelete {
-		c.String(http.StatusForbidden, "No tiene permisos para eliminar esta solicitud")
-		return
-	}
-
-	if err := ctrl.solicitudService.Delete(c.Request.Context(), id, authUser.ID); err != nil {
-		c.String(http.StatusInternalServerError, "Error eliminando: "+err.Error())
-		return
-	}
-
 	utils.SetSuccessMessage(c, "Solicitud eliminada")
-	c.Redirect(http.StatusFound, fmt.Sprintf("/cupos/derecho/%s", solicitud.UsuarioID))
+	c.Redirect(http.StatusFound, fmt.Sprintf("/cupos/derecho/%s", userID))
 }
 
 func (ctrl *SolicitudDerechoController) ApproveItem(c *gin.Context) {
 	id := c.Param("id")
 	itemID := c.Param("item_id")
 	authUser := appcontext.AuthUser(c)
-	solicitud, err := ctrl.solicitudService.GetByID(c.Request.Context(), id)
-	if err != nil {
-		c.String(http.StatusNotFound, "Solicitud no encontrada")
-		return
-	}
-
-	solicitud.HydratePermissions(authUser)
-	if !solicitud.Permissions.CanApproveReject {
-		c.String(http.StatusForbidden, "No tiene permisos para realizar esta acción")
-		return
-	}
-
-	if err := ctrl.solicitudService.ApproveItem(c.Request.Context(), id, itemID); err != nil {
-		c.String(http.StatusInternalServerError, "Error al aprobar el tramo: "+err.Error())
+	if err := ctrl.solicitudService.ApproveItem(c.Request.Context(), id, itemID, authUser); err != nil {
+		c.String(http.StatusForbidden, err.Error())
 		return
 	}
 	utils.SetSuccessMessage(c, "Tramo APROBADO correctamente")
@@ -530,20 +383,8 @@ func (ctrl *SolicitudDerechoController) RejectItem(c *gin.Context) {
 	id := c.Param("id")
 	itemID := c.Param("item_id")
 	authUser := appcontext.AuthUser(c)
-	solicitud, err := ctrl.solicitudService.GetByID(c.Request.Context(), id)
-	if err != nil {
-		c.String(http.StatusNotFound, "Solicitud no encontrada")
-		return
-	}
-
-	solicitud.HydratePermissions(authUser)
-	if !solicitud.Permissions.CanApproveReject {
-		c.String(http.StatusForbidden, "No tiene permisos para realizar esta acción")
-		return
-	}
-
-	if err := ctrl.solicitudService.RejectItem(c.Request.Context(), id, itemID); err != nil {
-		c.String(http.StatusInternalServerError, "Error al rechazar el tramo: "+err.Error())
+	if err := ctrl.solicitudService.RejectItem(c.Request.Context(), id, itemID, authUser); err != nil {
+		c.String(http.StatusForbidden, err.Error())
 		return
 	}
 	utils.SetSuccessMessage(c, "Tramo RECHAZADO")
@@ -554,26 +395,8 @@ func (ctrl *SolicitudDerechoController) RevertApprovalItem(c *gin.Context) {
 	id := c.Param("id")
 	itemID := c.Param("item_id")
 	authUser := appcontext.AuthUser(c)
-	solicitud, err := ctrl.solicitudService.GetByID(c.Request.Context(), id)
-	if err != nil {
-		c.String(http.StatusNotFound, "Solicitud no encontrada")
-		return
-	}
-
-	item := solicitud.GetItemByID(itemID)
-	if item == nil {
-		c.String(http.StatusNotFound, "Tramo no encontrado")
-		return
-	}
-
-	item.HydratePermissions(authUser)
-	if !item.Permissions.CanRevert {
-		c.String(http.StatusForbidden, "No tiene permisos para revertir la aprobación de este tramo")
-		return
-	}
-
-	if err := ctrl.solicitudService.RevertApprovalItem(c.Request.Context(), id, itemID); err != nil {
-		c.String(http.StatusInternalServerError, "Error al revertir aprobación del tramo: "+err.Error())
+	if err := ctrl.solicitudService.RevertApprovalItem(c.Request.Context(), id, itemID, authUser); err != nil {
+		c.String(http.StatusForbidden, err.Error())
 		return
 	}
 	utils.SetSuccessMessage(c, "Aprobación de tramo REVERTIDA")
@@ -625,33 +448,4 @@ func (ctrl *SolicitudDerechoController) UpdateItemRegularizacionDates(c *gin.Con
 
 	c.Header("HX-Refresh", "true")
 	c.Status(200)
-}
-
-func (ctrl *SolicitudDerechoController) getSedesAutorizadas(ctx context.Context) []models.Destino {
-	sedesAutorizadas := []models.Destino{}
-
-	// Obtener configuración de sedes (ej: "LPB,SRE,TJA")
-	sedesStr := ctrl.configuracionService.GetValue(ctx, "SEDES_AUTORIZADAS")
-	var sedesCodes []string
-
-	if sedesStr == "" {
-
-		sedesCodes = []string{"LPB"}
-	} else {
-		parts := strings.Split(sedesStr, ",")
-		for _, p := range parts {
-			code := strings.ToUpper(strings.TrimSpace(p))
-			if code != "" {
-				sedesCodes = append(sedesCodes, code)
-			}
-		}
-	}
-
-	for _, code := range sedesCodes {
-		if s, err := ctrl.destinoService.GetByIATA(ctx, code); err == nil && s != nil {
-			sedesAutorizadas = append(sedesAutorizadas, *s)
-		}
-	}
-
-	return sedesAutorizadas
 }

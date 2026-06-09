@@ -341,10 +341,6 @@ func (r *SolicitudRepository) FindByID(ctx context.Context, id string) (*models.
 			return db.Order("seq ASC")
 		}).
 		Preload("Items.Pasajes.RutaPasaje.Escalas.Destino").
-		Preload("Viaticos").
-		Preload("Viaticos.Detalles", func(db *gorm.DB) *gorm.DB {
-			return db.Order("seq ASC")
-		}).
 		Preload("TipoSolicitud.ConceptoViaje").
 		Preload("EstadoSolicitud").
 		Preload("Aerolinea").

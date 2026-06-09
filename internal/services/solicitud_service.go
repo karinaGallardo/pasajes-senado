@@ -252,13 +252,16 @@ func (s *SolicitudService) GetItemByID(ctx context.Context, id string) (*models.
 	return s.solicitudItemRepo.FindByID(ctx, id)
 }
 
-func (s *SolicitudService) Approve(ctx context.Context, id string) error {
+func (s *SolicitudService) Approve(ctx context.Context, id string, user *models.Usuario) error {
 	return s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
-		itemRepoTx := s.itemRepo.WithTx(tx)
-
 		solicitud, err := repoTx.FindByID(ctx, id)
 		if err != nil {
 			return err
+		}
+
+		solicitud.HydratePermissions(user)
+		if !solicitud.Permissions.CanApproveReject {
+			return errors.New("no tiene permisos para aprobar esta solicitud en su estado actual")
 		}
 
 		if err := solicitud.Approve(); err != nil {
@@ -270,6 +273,7 @@ func (s *SolicitudService) Approve(ctx context.Context, id string) error {
 		}
 
 		if solicitud.CupoDerechoItemID != nil {
+			itemRepoTx := s.itemRepo.WithTx(tx)
 			item, err := itemRepoTx.FindByID(ctx, *solicitud.CupoDerechoItemID)
 			if err == nil && item != nil {
 				item.EstadoCupoDerechoCodigo = "RESERVADO"
@@ -283,12 +287,17 @@ func (s *SolicitudService) Approve(ctx context.Context, id string) error {
 	})
 }
 
-func (s *SolicitudService) RevertApproval(ctx context.Context, id string) error {
+func (s *SolicitudService) RevertApproval(ctx context.Context, id string, user *models.Usuario) error {
 	var solicitudForEmail *models.Solicitud
 	err := s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
 		solicitud, err := repoTx.FindByID(ctx, id)
 		if err != nil {
 			return err
+		}
+
+		solicitud.HydratePermissions(user)
+		if !solicitud.Permissions.CanRevertApproval {
+			return errors.New("no tiene permisos para realizar esta acción")
 		}
 
 		stOld := solicitud.GetEstado()
@@ -311,16 +320,20 @@ func (s *SolicitudService) RevertApproval(ctx context.Context, id string) error 
 	return err
 }
 
-func (s *SolicitudService) Finalize(ctx context.Context, id string) error {
+func (s *SolicitudService) Finalize(ctx context.Context, id string, user *models.Usuario) error {
 	return s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
-		itemRepoTx := s.itemRepo.WithTx(tx)
-
 		solicitud, err := repoTx.FindByID(ctx, id)
 		if err != nil {
 			return err
 		}
 
-		// Mark all items as FINALIZADO and their pasajes as USADO via Model
+		solicitud.HydratePermissions(user)
+		if !solicitud.Permissions.CanFinalize {
+			return errors.New("no tiene permisos para realizar esta acción")
+		}
+
+		itemRepoTx := s.itemRepo.WithTx(tx)
+
 		if err := solicitud.Finalize(); err != nil {
 			return err
 		}
@@ -342,7 +355,6 @@ func (s *SolicitudService) Finalize(ctx context.Context, id string) error {
 			}
 		}
 
-		// Finalizar OpenTickets si existen en los tramos
 		for _, sit := range solicitud.Items {
 			if sit.OpenTicketID != nil {
 				var ot models.OpenTicket
@@ -357,14 +369,18 @@ func (s *SolicitudService) Finalize(ctx context.Context, id string) error {
 	})
 }
 
-func (s *SolicitudService) Reject(ctx context.Context, id string) error {
+func (s *SolicitudService) Reject(ctx context.Context, id string, user *models.Usuario) error {
 	return s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
 		solicitud, err := repoTx.FindByID(ctx, id)
 		if err != nil {
 			return err
 		}
 
-		// Reject all items via Model
+		solicitud.HydratePermissions(user)
+		if !solicitud.Permissions.CanApproveReject {
+			return errors.New("no tiene permisos para rechazar esta solicitud en su estado actual")
+		}
+
 		if err := solicitud.Reject(); err != nil {
 			return err
 		}
@@ -388,11 +404,16 @@ func (s *SolicitudService) Reject(ctx context.Context, id string) error {
 	})
 }
 
-func (s *SolicitudService) RevertReject(ctx context.Context, id string) error {
+func (s *SolicitudService) RevertReject(ctx context.Context, id string, user *models.Usuario) error {
 	return s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
 		solicitud, err := repoTx.FindByID(ctx, id)
 		if err != nil {
 			return err
+		}
+
+		solicitud.HydratePermissions(user)
+		if !solicitud.Permissions.CanRevertReject {
+			return errors.New("no tiene permisos para realizar esta acción")
 		}
 
 		stOld := solicitud.GetEstado()
@@ -459,19 +480,23 @@ func (s *SolicitudService) Update(ctx context.Context, solicitud *models.Solicit
 	})
 }
 
-func (s *SolicitudService) Delete(ctx context.Context, id string, deletedBy string) error {
+func (s *SolicitudService) Delete(ctx context.Context, id string, user *models.Usuario) error {
 	return s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
-		itemRepoTx := s.itemRepo.WithTx(tx)
-
 		solicitud, err := repoTx.FindByID(ctx, id)
 		if err != nil {
 			return err
+		}
+
+		solicitud.HydratePermissions(user)
+		if !solicitud.Permissions.CanDelete {
+			return errors.New("no tiene permisos para eliminar esta solicitud")
 		}
 
 		if !solicitud.IsDeletableState() {
 			return errors.New("solo se pueden eliminar solicitudes en estado SOLICITADO. El estado actual es: " + solicitud.GetEstado())
 		}
 
+		itemRepoTx := s.itemRepo.WithTx(tx)
 		if solicitud.CupoDerechoItemID != nil {
 			item, err := itemRepoTx.FindByID(ctx, *solicitud.CupoDerechoItemID)
 			if err == nil && item != nil {
@@ -482,15 +507,20 @@ func (s *SolicitudService) Delete(ctx context.Context, id string, deletedBy stri
 			}
 		}
 
-		return repoTx.Delete(ctx, id, deletedBy)
+		return repoTx.Delete(ctx, id, user.ID)
 	})
 }
 
-func (s *SolicitudService) ApproveItem(ctx context.Context, solicitudID, itemID string) error {
+func (s *SolicitudService) ApproveItem(ctx context.Context, solicitudID, itemID string, user *models.Usuario) error {
 	return s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
 		solicitud, err := repoTx.FindByID(ctx, solicitudID)
 		if err != nil {
 			return err
+		}
+
+		solicitud.HydratePermissions(user)
+		if !solicitud.Permissions.CanApproveReject {
+			return errors.New("no tiene permisos para realizar esta acción")
 		}
 
 		if !solicitud.ApproveItem(itemID) {
@@ -513,11 +543,16 @@ func (s *SolicitudService) ApproveItem(ctx context.Context, solicitudID, itemID 
 	})
 }
 
-func (s *SolicitudService) RejectItem(ctx context.Context, solicitudID, itemID string) error {
+func (s *SolicitudService) RejectItem(ctx context.Context, solicitudID, itemID string, user *models.Usuario) error {
 	return s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
 		solicitud, err := repoTx.FindByID(ctx, solicitudID)
 		if err != nil {
 			return err
+		}
+
+		solicitud.HydratePermissions(user)
+		if !solicitud.Permissions.CanApproveReject {
+			return errors.New("no tiene permisos para realizar esta acción")
 		}
 
 		if !solicitud.RejectItem(itemID) {
@@ -528,7 +563,6 @@ func (s *SolicitudService) RejectItem(ctx context.Context, solicitudID, itemID s
 			return err
 		}
 
-		// Si todos los items activos son rechazados, liberar el cupo
 		if solicitud.AreAllItemsInactive() && solicitud.CupoDerechoItemID != nil {
 			itemRepoTx := s.itemRepo.WithTx(tx)
 			item, err := itemRepoTx.FindByID(ctx, *solicitud.CupoDerechoItemID)
@@ -541,7 +575,7 @@ func (s *SolicitudService) RejectItem(ctx context.Context, solicitudID, itemID s
 	})
 }
 
-func (s *SolicitudService) RevertApprovalItem(ctx context.Context, solicitudID, itemID string) error {
+func (s *SolicitudService) RevertApprovalItem(ctx context.Context, solicitudID, itemID string, user *models.Usuario) error {
 	return s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
 		sol, err := repoTx.FindByID(ctx, solicitudID)
 		if err != nil {
@@ -551,6 +585,11 @@ func (s *SolicitudService) RevertApprovalItem(ctx context.Context, solicitudID, 
 		item := sol.GetItemByID(itemID)
 		if item == nil {
 			return fmt.Errorf("tramo no encontrado")
+		}
+
+		item.HydratePermissions(user)
+		if !item.Permissions.CanRevert {
+			return errors.New("no tiene permisos para revertir la aprobación de este tramo")
 		}
 
 		if item.HasActivePasaje() {
@@ -569,16 +608,20 @@ func (s *SolicitudService) RevertApprovalItem(ctx context.Context, solicitudID, 
 	})
 }
 
-func (s *SolicitudService) RevertFinalize(ctx context.Context, id string) error {
+func (s *SolicitudService) RevertFinalize(ctx context.Context, id string, user *models.Usuario) error {
 	return s.repo.WithContext(ctx).RunTransaction(func(repoTx *repositories.SolicitudRepository, tx *gorm.DB) error {
-		itemRepoTx := s.itemRepo.WithTx(tx)
-
 		solicitud, err := repoTx.FindByID(ctx, id)
 		if err != nil {
 			return err
 		}
 
-		// Revert to EMITIDO via Model
+		solicitud.HydratePermissions(user)
+		if !solicitud.Permissions.CanRevertFinalize {
+			return errors.New("no tiene permisos para realizar esta acción")
+		}
+
+		itemRepoTx := s.itemRepo.WithTx(tx)
+
 		if err := solicitud.RevertFinalize(); err != nil {
 			return err
 		}
@@ -600,7 +643,6 @@ func (s *SolicitudService) RevertFinalize(ctx context.Context, id string) error 
 			}
 		}
 
-		// Revertir OpenTickets si existen en los tramos
 		for _, sit := range solicitud.Items {
 			if sit.OpenTicketID != nil {
 				var ot models.OpenTicket
@@ -614,6 +656,37 @@ func (s *SolicitudService) RevertFinalize(ctx context.Context, id string) error 
 		return nil
 	})
 }
+
+type PendingStats struct {
+	PendingRequests         int64
+	PendingDescargos        int
+	OpenTicketCount         int64
+	OpenTicketDescargoCount int64
+	EnRevisionCount         int64
+	TotalPending            int64
+}
+
+func (s *SolicitudService) GetPendingStats(ctx context.Context, userID string, isAdmin bool, userIDsForOpenTickets []string) *PendingStats {
+	pendingRequests, _ := s.GetPendingCount(ctx, userID, isAdmin)
+	pendingDescargos, _ := s.GetPendientesDescargo(ctx, userID, isAdmin)
+	openTicketDescargoCount := s.GetConDescargoOpenTicketCount(ctx, userID, isAdmin)
+	enRevisionCount := s.GetEnRevisionDescargoCount(ctx, userID, isAdmin)
+
+	var openTicketCount int64
+	if s.openTicketRepo != nil {
+		openTicketCount, _ = s.openTicketRepo.CountByEstado(ctx, models.EstadoOpenTicketPendiente, userIDsForOpenTickets)
+	}
+
+	return &PendingStats{
+		PendingRequests:         pendingRequests,
+		PendingDescargos:        len(pendingDescargos),
+		OpenTicketCount:         openTicketCount,
+		OpenTicketDescargoCount: openTicketDescargoCount,
+		EnRevisionCount:         enRevisionCount,
+		TotalPending:            pendingRequests + int64(len(pendingDescargos)) + openTicketCount + openTicketDescargoCount + enRevisionCount,
+	}
+}
+
 func (s *SolicitudService) GetPendingCount(ctx context.Context, userID string, isAdmin bool) (int64, error) {
 	return s.repo.CountPending(ctx, userID, isAdmin)
 }

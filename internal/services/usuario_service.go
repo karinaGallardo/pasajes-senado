@@ -422,6 +422,56 @@ func (s *UsuarioService) SearchStaff(ctx context.Context, query string) ([]model
 	return s.repo.SearchStaff(ctx, query)
 }
 
+func (s *UsuarioService) BuildUsuariosMapFromSolicitudes(ctx context.Context, solicitudes []models.Solicitud) map[string]*models.Usuario {
+	userIDsMap := make(map[string]bool)
+	for _, sol := range solicitudes {
+		if sol.CreatedBy != nil {
+			userIDsMap[*sol.CreatedBy] = true
+		}
+		if sol.UpdatedBy != nil {
+			userIDsMap[*sol.UpdatedBy] = true
+		}
+	}
+	var ids []string
+	for id := range userIDsMap {
+		ids = append(ids, id)
+	}
+	usuariosMap := make(map[string]*models.Usuario)
+	if len(ids) > 0 {
+		usuarios, _ := s.GetByIDs(ctx, ids)
+		for i := range usuarios {
+			usuariosMap[usuarios[i].ID] = &usuarios[i]
+		}
+	}
+	return usuariosMap
+}
+
+func (s *UsuarioService) GetScopedUserIDs(ctx context.Context, authUser *models.Usuario) []string {
+	if authUser.IsAdminOrResponsable() {
+		return nil
+	}
+	userIDs := []string{authUser.ID}
+	if senators, err := s.repo.FindByEncargadoID(ctx, authUser.ID); err == nil {
+		for _, sen := range senators {
+			userIDs = append(userIDs, sen.ID)
+		}
+	}
+	return userIDs
+}
+
+func (s *UsuarioService) BuildOrigenesAutorizados(usuario *models.Usuario, userLoc *models.Destino) []models.Destino {
+	origenes := []models.Destino{}
+	if userLoc != nil {
+		origenes = append(origenes, *userLoc)
+	}
+	for _, alt := range usuario.OrigenesAlternativos {
+		if alt.Destino != nil {
+			origenes = append(origenes, *alt.Destino)
+		}
+	}
+	return origenes
+}
+
 func (s *UsuarioService) GetEditContext(ctx context.Context, userID string, authUser *models.Usuario) (*dtos.UserEditContext, error) {
 	usuario, err := s.repo.FindByID(ctx, userID)
 	if err != nil {

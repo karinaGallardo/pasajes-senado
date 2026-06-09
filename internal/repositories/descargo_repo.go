@@ -72,6 +72,7 @@ func (r *DescargoRepository) FindBySolicitudID(ctx context.Context, solicitudID 
 		Preload("Tramos.RutaPasaje.Escalas", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
 		Preload("Tramos.Origen").
 		Preload("Tramos.Destino").
+		Preload("Tramos.SolicitudItem").
 		Preload("Solicitud").
 		Preload("Solicitud.TipoSolicitud.ConceptoViaje").
 		Preload("Solicitud.CupoDerechoItem").
@@ -126,8 +127,6 @@ func (r *DescargoRepository) FindByID(ctx context.Context, id string) (*models.D
 		Preload("Solicitud.Items.Pasajes.RutaPasaje.Escalas", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
 		Preload("Solicitud.Items.Pasajes.RutaPasaje.Escalas.Destino").
 		Preload("Solicitud.Usuario.Encargado").
-		Preload("Solicitud.Viaticos").
-		Preload("Solicitud.Viaticos.Detalles").
 		Preload("Oficial").
 		Preload("Oficial.Anexos", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).
 		Preload("Oficial.TransportesTerrestres", func(db *gorm.DB) *gorm.DB { return db.Order("seq ASC") }).

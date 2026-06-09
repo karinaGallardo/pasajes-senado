@@ -54,17 +54,6 @@
         </div>
       </div>
       <div class="flex flex-wrap items-center gap-2">
-        {{ if .Solicitud.Permissions.CanAssignViatico }}
-          <!-- <button
-            type="button"
-            hx-get="/solicitudes/{{ .Solicitud.ID }}/viaticos/nuevo"
-            hx-target="#modal-container"
-            class="btn-md btn-primary rounded-sm"
-          >
-            <i class="ph ph-currency-circle-dollar text-sm"></i>
-            <span>Viáticos</span>
-          </button> -->
-        {{ end }}
         {{ if .Solicitud.Permissions.CanEdit }}
           <button
             type="button"
@@ -606,7 +595,7 @@
               type="button"
               hx-get="/solicitudes/{{ $solicitud.ID }}/pasajes/nuevo?item_id={{ $item.ID }}"
               hx-target="#modal-container"
-              class="btn-xs btn-secondary rounded-sm text-[12px]"
+              class="btn-xs btn-primary rounded-sm text-[12px]"
             >
               <i class="ph ph-ticket font-bold text-[18px]"></i>
               Registrar Pasaje

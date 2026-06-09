@@ -46,17 +46,18 @@ func (s *DescargoDerechoService) GetShowData(ctx context.Context, id string) (*d
 	}
 
 	// Sincronización proactiva: Si se emitieron nuevos pasajes (o se corrigieron)
-	if descargo.Solicitud != nil && descargo.IsEditable() {
+	if descargo.Solicitud != nil {
 		if err := s.SyncItineraryFromSolicitud(ctx, descargo, descargo.Solicitud); err == nil {
-			// Recargar para tener los tramos actualizados
 			descargo, _ = s.repo.FindByID(ctx, id)
 		}
 	}
 
-	var itinerarioIda, itinerarioVuelta []models.DescargoTramo
+	var itinerarioIda, itinerarioVuelta, itinerarioExtras []models.DescargoTramo
 	for _, item := range descargo.Tramos {
 		if strings.HasPrefix(string(item.Tipo), "VUELTA") {
 			itinerarioVuelta = append(itinerarioVuelta, item)
+		} else if strings.HasPrefix(string(item.Tipo), "EXTRA") {
+			itinerarioExtras = append(itinerarioExtras, item)
 		} else {
 			itinerarioIda = append(itinerarioIda, item)
 		}
@@ -66,6 +67,7 @@ func (s *DescargoDerechoService) GetShowData(ctx context.Context, id string) (*d
 		Descargo: descargo,
 		Ida:      itinerarioIda,
 		Vuelta:   itinerarioVuelta,
+		Extras:   itinerarioExtras,
 	}, nil
 }
 
@@ -148,6 +150,12 @@ func (s *DescargoDerechoService) SyncItineraryFromSolicitud(ctx context.Context,
 	}
 	for _, item := range solicitud.GetAllItemsVuelta() {
 		buildEsperados(item, "VUELTA")
+	}
+	for _, item := range solicitud.Items {
+		if item.Tipo == "EXTRA" {
+			it := item
+			buildEsperados(&it, "EXTRA")
+		}
 	}
 
 	// Indexar los tramos ORIGINALES ya existentes por PasajeID + Tipo + Ruta (Origen/Destino) con soporte de unicidad semántica
@@ -437,10 +445,13 @@ func (s *DescargoDerechoService) GetEditData(ctx context.Context, id string) (*d
 	// 2. Agrupar por categoría (IDA/VUELTA) pero manteniendo la estructura para el formulario
 	pasajesIda := make([]models.DescargoTramo, 0)
 	pasajesVuelta := make([]models.DescargoTramo, 0)
+	pasajesExtras := make([]models.DescargoTramo, 0)
 
 	for _, item := range descargo.Tramos {
 		if strings.HasPrefix(string(item.Tipo), "VUELTA") {
 			pasajesVuelta = append(pasajesVuelta, item)
+		} else if strings.HasPrefix(string(item.Tipo), "EXTRA") {
+			pasajesExtras = append(pasajesExtras, item)
 		} else {
 			pasajesIda = append(pasajesIda, item)
 		}
@@ -451,5 +462,6 @@ func (s *DescargoDerechoService) GetEditData(ctx context.Context, id string) (*d
 		Solicitud: descargo.Solicitud,
 		Ida:       pasajesIda,
 		Vuelta:    pasajesVuelta,
+		Extras:    pasajesExtras,
 	}, nil
 }

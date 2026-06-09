@@ -2,8 +2,6 @@ package controllers
 
 import (
 	"sistema-pasajes/internal/appcontext"
-	"sistema-pasajes/internal/models"
-	"sistema-pasajes/internal/repositories"
 	"sistema-pasajes/internal/services"
 	"sistema-pasajes/internal/utils"
 
@@ -11,20 +9,17 @@ import (
 )
 
 type OpenTicketController struct {
-	service       *services.OpenTicketService
-	usuarioRepo   *repositories.UsuarioRepository
-	solicitudRepo *repositories.SolicitudRepository
+	service          *services.OpenTicketService
+	solicitudService *services.SolicitudService
 }
 
 func NewOpenTicketController(
 	service *services.OpenTicketService,
-	usuarioRepo *repositories.UsuarioRepository,
-	solicitudRepo *repositories.SolicitudRepository,
+	solicitudService *services.SolicitudService,
 ) *OpenTicketController {
 	return &OpenTicketController{
-		service:       service,
-		usuarioRepo:   usuarioRepo,
-		solicitudRepo: solicitudRepo,
+		service:          service,
+		solicitudService: solicitudService,
 	}
 }
 
@@ -35,42 +30,26 @@ func (ctrl *OpenTicketController) List(c *gin.Context) {
 		return
 	}
 
-	var tickets []models.OpenTicket
-	var err error
 	title := "Gestión de Pasajes No Utilizados (Open Tickets)"
 
-	if user.IsAdminOrResponsable() {
-		tickets, err = ctrl.service.GetAll(c.Request.Context(), nil)
-	} else if user.IsSenador() {
-		tickets, err = ctrl.service.GetForUser(c.Request.Context(), user.ID)
-		title = "Mis Tramos No Utilizados (Open Tickets)"
-	} else {
-		managedUsers, _ := ctrl.usuarioRepo.FindByEncargadoID(c.Request.Context(), user.ID)
-		if len(managedUsers) > 0 {
-			managedIDs := make([]string, 0, len(managedUsers))
-			for _, u := range managedUsers {
-				managedIDs = append(managedIDs, u.ID)
-			}
-			allTickets := []models.OpenTicket{}
-			for _, id := range managedIDs {
-				tks, _ := ctrl.service.GetForUser(c.Request.Context(), id)
-				allTickets = append(allTickets, tks...)
-			}
-			tickets = allTickets
-		}
-		title = "Tramos No Utilizados por Beneficiarios"
-	}
-
+	tickets, err := ctrl.service.GetScoped(c.Request.Context(), user)
 	if err != nil {
 		utils.SetErrorMessage(c, "Error al obtener listado de tickets")
 		c.Redirect(302, "/dashboard")
 		return
 	}
 
+	if user.IsSenador() {
+		title = "Mis Tramos No Utilizados (Open Tickets)"
+	} else if !user.IsAdminOrResponsable() {
+		title = "Tramos No Utilizados por Beneficiarios"
+	}
+
 	utils.Render(c, "pasajes/open_tickets", gin.H{
 		"Title":           title,
 		"Tickets":         tickets,
-		"ShowBeneficiary": user.IsAdminOrResponsable() || title == "Tramos No Utilizados por Beneficiarios",
+		"ShowBeneficiary": user.IsAdminOrResponsable(),
+		"CanManage":       user.IsAdminOrResponsable(),
 	})
 }
 
@@ -88,7 +67,7 @@ func (ctrl *OpenTicketController) GetProgramarModal(c *gin.Context) {
 		return
 	}
 
-	solicitudes, _ := ctrl.solicitudRepo.FindPendientesByUsuarioID(ctx, ticket.UsuarioID)
+	solicitudes, _ := ctrl.solicitudService.GetByUserID(ctx, ticket.UsuarioID, "", "DERECHO")
 
 	utils.Render(c, "pasajes/components/modal_programar_open_ticket", gin.H{
 		"Ticket":      ticket,
@@ -99,6 +78,7 @@ func (ctrl *OpenTicketController) GetProgramarModal(c *gin.Context) {
 func (ctrl *OpenTicketController) ProgramarUso(c *gin.Context) {
 	id := c.Param("id")
 	ctx := c.Request.Context()
+	user := appcontext.AuthUser(c)
 
 	var req struct {
 		SolicitudID  string `form:"solicitud_id"`
@@ -113,27 +93,58 @@ func (ctrl *OpenTicketController) ProgramarUso(c *gin.Context) {
 		return
 	}
 
-	ticket, err := ctrl.service.GetByID(ctx, id)
-	if err != nil {
-		c.String(404, "Ticket no encontrado")
-		return
-	}
-
 	if req.SolicitudID != "" {
-		ticket.SolicitudConsumoID = &req.SolicitudID
-		ticket.Estado = models.EstadoOpenTicketReservado
+		if err := ctrl.service.Reserve(ctx, id, req.SolicitudID, user); err != nil {
+			utils.SetErrorMessage(c, "Error al programar uso: "+err.Error())
+		} else {
+			utils.SetSuccessMessage(c, "Uso de ticket programado correctamente")
+		}
 	} else {
-		ticket.SolicitudConsumoID = nil
-		ticket.Estado = models.EstadoOpenTicketDisponible
+		if err := ctrl.service.RevertToDisponible(ctx, id); err != nil {
+			utils.SetErrorMessage(c, "Error al liberar: "+err.Error())
+		} else {
+			utils.SetSuccessMessage(c, "Ticket liberado correctamente")
+		}
 	}
 
-	ticket.MontoCredito = utils.ParseFloat(req.MontoCredito)
-	ticket.Observaciones = req.Obs
+	c.Header("HX-Refresh", "true")
+	c.Status(204)
+}
 
-	if err := ctrl.service.Update(ctx, ticket); err != nil {
-		utils.SetErrorMessage(c, "Error al programar uso: "+err.Error())
+func (ctrl *OpenTicketController) Approve(c *gin.Context) {
+	id := c.Param("id")
+	user := appcontext.AuthUser(c)
+
+	if err := ctrl.service.Approve(c.Request.Context(), id, user); err != nil {
+		utils.SetErrorMessage(c, "Error al aprobar: "+err.Error())
 	} else {
-		utils.SetSuccessMessage(c, "Uso de ticket programado correctamente")
+		utils.SetSuccessMessage(c, "Open Ticket aprobado — DISPONIBLE")
+	}
+
+	c.Header("HX-Refresh", "true")
+	c.Status(204)
+}
+
+func (ctrl *OpenTicketController) Release(c *gin.Context) {
+	id := c.Param("id")
+
+	if err := ctrl.service.RevertToDisponible(c.Request.Context(), id); err != nil {
+		utils.SetErrorMessage(c, "Error al liberar: "+err.Error())
+	} else {
+		utils.SetSuccessMessage(c, "Ticket liberado — DISPONIBLE")
+	}
+
+	c.Header("HX-Refresh", "true")
+	c.Status(204)
+}
+
+func (ctrl *OpenTicketController) Revert(c *gin.Context) {
+	id := c.Param("id")
+
+	if err := ctrl.service.RevertToDisponible(c.Request.Context(), id); err != nil {
+		utils.SetErrorMessage(c, "Error al revertir: "+err.Error())
+	} else {
+		utils.SetSuccessMessage(c, "Ticket revertido — DISPONIBLE")
 	}
 
 	c.Header("HX-Refresh", "true")

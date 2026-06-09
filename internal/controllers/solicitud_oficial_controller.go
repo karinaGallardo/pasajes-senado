@@ -22,12 +22,10 @@ type SolicitudOficialController struct {
 	tipoSolicitudService    *services.TipoSolicitudService
 	ambitoService           *services.AmbitoService
 	userService             *services.UsuarioService
-	tipoItinerarioService   *services.TipoItinerarioService
 	aerolineaService        *services.AerolineaService
 	reportService           *services.ReportService
 	peopleService           *services.PeopleService
 	descargoService         *services.DescargoService
-	openTicketService       *services.OpenTicketService
 }
 
 func NewSolicitudOficialController(
@@ -37,12 +35,10 @@ func NewSolicitudOficialController(
 	tipoSolicitudService *services.TipoSolicitudService,
 	ambitoService *services.AmbitoService,
 	userService *services.UsuarioService,
-	tipoItinerarioService *services.TipoItinerarioService,
 	aerolineaService *services.AerolineaService,
 	reportService *services.ReportService,
 	peopleService *services.PeopleService,
 	descargoService *services.DescargoService,
-	openTicketService *services.OpenTicketService,
 ) *SolicitudOficialController {
 	return &SolicitudOficialController{
 		solicitudService:        solicitudService,
@@ -51,12 +47,10 @@ func NewSolicitudOficialController(
 		tipoSolicitudService:    tipoSolicitudService,
 		ambitoService:           ambitoService,
 		userService:             userService,
-		tipoItinerarioService:   tipoItinerarioService,
 		aerolineaService:        aerolineaService,
 		reportService:           reportService,
 		peopleService:           peopleService,
 		descargoService:         descargoService,
-		openTicketService:       openTicketService,
 	}
 }
 
@@ -187,22 +181,8 @@ func (ctrl *SolicitudOficialController) Show(c *gin.Context) {
 func (ctrl *SolicitudOficialController) Approve(c *gin.Context) {
 	id := c.Param("id")
 	authUser := appcontext.AuthUser(c)
-	solicitud, err := ctrl.solicitudService.GetByID(c.Request.Context(), id)
-	if err != nil {
-		utils.SetErrorMessage(c, "Solicitud no encontrada")
-		c.Redirect(http.StatusFound, "/solicitudes/oficial/"+id+"/detalle")
-		return
-	}
-
-	solicitud.HydratePermissions(authUser)
-	if !solicitud.Permissions.CanApproveReject {
-		utils.SetErrorMessage(c, "No tiene permisos para realizar esta acción")
-		c.Redirect(http.StatusFound, "/solicitudes/oficial/"+id+"/detalle")
-		return
-	}
-
-	if err := ctrl.solicitudService.Approve(c.Request.Context(), id); err != nil {
-		utils.SetErrorMessage(c, "Error al aprobar la solicitud: "+err.Error())
+	if err := ctrl.solicitudService.Approve(c.Request.Context(), id, authUser); err != nil {
+		utils.SetErrorMessage(c, err.Error())
 		c.Redirect(http.StatusFound, "/solicitudes/oficial/"+id+"/detalle")
 		return
 	}
@@ -213,22 +193,8 @@ func (ctrl *SolicitudOficialController) Approve(c *gin.Context) {
 func (ctrl *SolicitudOficialController) RevertApproval(c *gin.Context) {
 	id := c.Param("id")
 	authUser := appcontext.AuthUser(c)
-	solicitud, err := ctrl.solicitudService.GetByID(c.Request.Context(), id)
-	if err != nil {
-		utils.SetErrorMessage(c, "Solicitud no encontrada")
-		c.Redirect(http.StatusFound, "/solicitudes/oficial/"+id+"/detalle")
-		return
-	}
-
-	solicitud.HydratePermissions(authUser)
-	if !solicitud.Permissions.CanRevertApproval {
-		utils.SetErrorMessage(c, "No tiene permisos para realizar esta acción")
-		c.Redirect(http.StatusFound, "/solicitudes/oficial/"+id+"/detalle")
-		return
-	}
-
-	if err := ctrl.solicitudService.RevertApproval(c.Request.Context(), id); err != nil {
-		utils.SetErrorMessage(c, "Error al revertir aprobación: "+err.Error())
+	if err := ctrl.solicitudService.RevertApproval(c.Request.Context(), id, authUser); err != nil {
+		utils.SetErrorMessage(c, err.Error())
 		c.Redirect(http.StatusFound, "/solicitudes/oficial/"+id+"/detalle")
 		return
 	}
@@ -239,22 +205,8 @@ func (ctrl *SolicitudOficialController) RevertApproval(c *gin.Context) {
 func (ctrl *SolicitudOficialController) Reject(c *gin.Context) {
 	id := c.Param("id")
 	authUser := appcontext.AuthUser(c)
-	solicitud, err := ctrl.solicitudService.GetByID(c.Request.Context(), id)
-	if err != nil {
-		utils.SetErrorMessage(c, "Solicitud no encontrada")
-		c.Redirect(http.StatusFound, "/solicitudes/oficial/"+id+"/detalle")
-		return
-	}
-
-	solicitud.HydratePermissions(authUser)
-	if !solicitud.Permissions.CanApproveReject {
-		utils.SetErrorMessage(c, "No tiene permisos para realizar esta acción")
-		c.Redirect(http.StatusFound, "/solicitudes/oficial/"+id+"/detalle")
-		return
-	}
-
-	if err := ctrl.solicitudService.Reject(c.Request.Context(), id); err != nil {
-		utils.SetErrorMessage(c, "Error al rechazar la solicitud: "+err.Error())
+	if err := ctrl.solicitudService.Reject(c.Request.Context(), id, authUser); err != nil {
+		utils.SetErrorMessage(c, err.Error())
 		c.Redirect(http.StatusFound, "/solicitudes/oficial/"+id+"/detalle")
 		return
 	}
@@ -265,22 +217,8 @@ func (ctrl *SolicitudOficialController) Reject(c *gin.Context) {
 func (ctrl *SolicitudOficialController) RevertReject(c *gin.Context) {
 	id := c.Param("id")
 	authUser := appcontext.AuthUser(c)
-	solicitud, err := ctrl.solicitudService.GetByID(c.Request.Context(), id)
-	if err != nil {
-		utils.SetErrorMessage(c, "Solicitud no encontrada")
-		c.Redirect(http.StatusFound, "/solicitudes/oficial/"+id+"/detalle")
-		return
-	}
-
-	solicitud.HydratePermissions(authUser)
-	if !solicitud.Permissions.CanRevertReject {
-		utils.SetErrorMessage(c, "No tiene permisos para realizar esta acción")
-		c.Redirect(http.StatusFound, "/solicitudes/oficial/"+id+"/detalle")
-		return
-	}
-
-	if err := ctrl.solicitudService.RevertReject(c.Request.Context(), id); err != nil {
-		utils.SetErrorMessage(c, "Error al revertir rechazo: "+err.Error())
+	if err := ctrl.solicitudService.RevertReject(c.Request.Context(), id, authUser); err != nil {
+		utils.SetErrorMessage(c, err.Error())
 		c.Redirect(http.StatusFound, "/solicitudes/oficial/"+id+"/detalle")
 		return
 	}
@@ -292,23 +230,8 @@ func (ctrl *SolicitudOficialController) ApproveItem(c *gin.Context) {
 	id := c.Param("id")
 	itemID := c.Param("item_id")
 	authUser := appcontext.AuthUser(c)
-	solicitud, err := ctrl.solicitudService.GetByID(c.Request.Context(), id)
-	if err != nil {
-		utils.SetErrorMessage(c, "Solicitud no encontrada")
-		c.Redirect(http.StatusFound, "/solicitudes/oficial/"+id+"/detalle")
-		return
-	}
-
-	solicitud.HydratePermissions(authUser)
-	perms := solicitud.Permissions
-	if !perms.CanApproveReject {
-		utils.SetErrorMessage(c, "No tiene permisos para realizar esta acción")
-		c.Redirect(http.StatusFound, "/solicitudes/oficial/"+id+"/detalle")
-		return
-	}
-
-	if err := ctrl.solicitudService.ApproveItem(c.Request.Context(), id, itemID); err != nil {
-		utils.SetErrorMessage(c, "Error al aprobar el tramo: "+err.Error())
+	if err := ctrl.solicitudService.ApproveItem(c.Request.Context(), id, itemID, authUser); err != nil {
+		utils.SetErrorMessage(c, err.Error())
 		c.Redirect(http.StatusFound, "/solicitudes/oficial/"+id+"/detalle")
 		return
 	}
@@ -320,23 +243,8 @@ func (ctrl *SolicitudOficialController) RejectItem(c *gin.Context) {
 	id := c.Param("id")
 	itemID := c.Param("item_id")
 	authUser := appcontext.AuthUser(c)
-	solicitud, err := ctrl.solicitudService.GetByID(c.Request.Context(), id)
-	if err != nil {
-		utils.SetErrorMessage(c, "Solicitud no encontrada")
-		c.Redirect(http.StatusFound, "/solicitudes/oficial/"+id+"/detalle")
-		return
-	}
-
-	solicitud.HydratePermissions(authUser)
-	perms := solicitud.Permissions
-	if !perms.CanApproveReject {
-		utils.SetErrorMessage(c, "No tiene permisos para realizar esta acción")
-		c.Redirect(http.StatusFound, "/solicitudes/oficial/"+id+"/detalle")
-		return
-	}
-
-	if err := ctrl.solicitudService.RejectItem(c.Request.Context(), id, itemID); err != nil {
-		utils.SetErrorMessage(c, "Error al rechazar el tramo: "+err.Error())
+	if err := ctrl.solicitudService.RejectItem(c.Request.Context(), id, itemID, authUser); err != nil {
+		utils.SetErrorMessage(c, err.Error())
 		c.Redirect(http.StatusFound, "/solicitudes/oficial/"+id+"/detalle")
 		return
 	}
@@ -348,22 +256,8 @@ func (ctrl *SolicitudOficialController) RevertApprovalItem(c *gin.Context) {
 	id := c.Param("id")
 	itemID := c.Param("item_id")
 	authUser := appcontext.AuthUser(c)
-	solicitud, err := ctrl.solicitudService.GetByID(c.Request.Context(), id)
-	if err != nil {
-		utils.SetErrorMessage(c, "Solicitud no encontrada")
-		c.Redirect(http.StatusFound, "/solicitudes/oficial/"+id+"/detalle")
-		return
-	}
-
-	solicitud.HydratePermissions(authUser)
-	if !solicitud.Permissions.CanRevertApproval {
-		utils.SetErrorMessage(c, "No tiene permisos para realizar esta acción")
-		c.Redirect(http.StatusFound, "/solicitudes/oficial/"+id+"/detalle")
-		return
-	}
-
-	if err := ctrl.solicitudService.RevertApprovalItem(c.Request.Context(), id, itemID); err != nil {
-		utils.SetErrorMessage(c, "Error al revertir aprobación del tramo: "+err.Error())
+	if err := ctrl.solicitudService.RevertApprovalItem(c.Request.Context(), id, itemID, authUser); err != nil {
+		utils.SetErrorMessage(c, err.Error())
 		c.Redirect(http.StatusFound, "/solicitudes/oficial/"+id+"/detalle")
 		return
 	}

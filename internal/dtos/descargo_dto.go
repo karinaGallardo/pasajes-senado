@@ -204,12 +204,15 @@ type DescargoShowData struct {
 	Descargo *models.Descargo
 	Ida      []models.DescargoTramo
 	Vuelta   []models.DescargoTramo
+	Extras   []models.DescargoTramo
 }
 
-// DescargoEditData contiene la información estructurada para el formulario de edición
 type DescargoEditData struct {
 	Descargo  *models.Descargo
 	Solicitud *models.Solicitud
 	Ida       []models.DescargoTramo
 	Vuelta    []models.DescargoTramo
+	Extras    []models.DescargoTramo
 }
+
+// DescargoEditData contiene la información estructurada para el formulario de edición

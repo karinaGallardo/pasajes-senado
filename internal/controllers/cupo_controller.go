@@ -17,16 +17,14 @@ import (
 )
 
 type CupoController struct {
-	service       *services.CupoService
-	userService   *services.UsuarioService
-	reportService *services.ReportService
+	service     *services.CupoService
+	userService *services.UsuarioService
 }
 
-func NewCupoController(service *services.CupoService, userService *services.UsuarioService, reportService *services.ReportService) *CupoController {
+func NewCupoController(service *services.CupoService, userService *services.UsuarioService) *CupoController {
 	return &CupoController{
-		service:       service,
-		userService:   userService,
-		reportService: reportService,
+		service:     service,
+		userService: userService,
 	}
 }
 
@@ -109,42 +107,18 @@ func (ctrl *CupoController) TomarCupo(c *gin.Context) {
 	}
 
 	authUser := appcontext.AuthUser(c)
-	if !strings.Contains(authUser.Tipo, "SUPLENTE") {
-		c.String(http.StatusForbidden, "Solo los senadores suplentes pueden tomar cupos")
+
+	if err := ctrl.service.CanTakeCupo(c.Request.Context(), authUser, req.ItemID); err != nil {
+		c.Header("HX-Retarget", "#flash-messages")
+		c.String(http.StatusBadRequest, err.Error())
 		return
 	}
 
 	req.TargetUserID = authUser.ID
 	req.Motivo = "Tomado por el propio suplente"
 
-	item, err := ctrl.service.GetCupoDerechoItemByID(c.Request.Context(), req.ItemID)
-	if err != nil {
-		c.String(http.StatusNotFound, "Derecho no encontrado")
-		return
-	}
-
-	if item.IsVencido() {
-		c.String(http.StatusBadRequest, "No se puede tomar un cupo vencido")
-		return
-	}
-
-	gestionInt, _ := strconv.Atoi(req.Gestion)
-	mesInt, _ := strconv.Atoi(req.Mes)
-	items, _ := ctrl.service.GetCuposDerechoByUsuarioAndGestion(c.Request.Context(), authUser.ID, gestionInt)
-	count := 0
-	for _, it := range items {
-		if it.Mes == mesInt && it.SenAsignadoID == authUser.ID {
-			count++
-		}
-	}
-	if count > 0 {
-		c.Header("HX-Retarget", "#flash-messages")
-		c.String(http.StatusBadRequest, "Límite mensual alcanzado: Solo puede tomar 1 cupo automáticamente.")
-		return
-	}
-
 	targetUserID := authUser.ID
-	err = ctrl.service.TransferirCupoDerecho(c.Request.Context(), req.ItemID, targetUserID, req.Motivo)
+	err := ctrl.service.TransferirCupoDerecho(c.Request.Context(), req.ItemID, targetUserID, req.Motivo)
 	if err != nil {
 		c.String(http.StatusInternalServerError, "Error: "+err.Error())
 		return
@@ -166,14 +140,10 @@ func (ctrl *CupoController) AsignarCupo(c *gin.Context) {
 
 	authUser := appcontext.AuthUser(c)
 	targetUserID := req.TargetUserID
-	isEncargado := false
 	targetUser, _ := ctrl.userService.GetByID(c.Request.Context(), targetUserID)
-	if targetUser != nil && targetUser.EncargadoID != nil && *targetUser.EncargadoID == authUser.ID {
-		isEncargado = true
-	}
 
-	if !authUser.IsAdminOrResponsable() && !isEncargado {
-		c.String(http.StatusForbidden, "No tiene permiso para asignar cupos")
+	if err := ctrl.service.CanAssignCupo(c.Request.Context(), authUser, targetUser); err != nil {
+		c.String(http.StatusForbidden, err.Error())
 		return
 	}
 
@@ -211,23 +181,13 @@ func (ctrl *CupoController) Transferir(c *gin.Context) {
 	}
 
 	authUser := appcontext.AuthUser(c)
-	if !authUser.IsAdminOrResponsable() {
-		c.String(http.StatusForbidden, "No tiene permiso para transferir derechos")
+	if err := ctrl.service.CanTransferCupo(c.Request.Context(), authUser, req.ItemID); err != nil {
+		c.String(http.StatusForbidden, err.Error())
 		return
 	}
 
-	item, err := ctrl.service.GetCupoDerechoItemByID(c.Request.Context(), req.ItemID)
-	if err != nil {
-		c.String(http.StatusNotFound, "Derecho no encontrado")
-		return
-	}
-
-	if item.IsVencido() && !authUser.IsAdminOrResponsable() {
-		c.String(http.StatusBadRequest, "No se puede transferir un cupo vencido")
-		return
-	}
 	targetUserID := req.TargetUserID
-	err = ctrl.service.TransferirCupoDerecho(c.Request.Context(), req.ItemID, targetUserID, req.Motivo)
+	err := ctrl.service.TransferirCupoDerecho(c.Request.Context(), req.ItemID, targetUserID, req.Motivo)
 	if err != nil {
 		log.Printf("Error transfiriendo cupo derecho: %v\n", err)
 	}
@@ -378,21 +338,6 @@ func (ctrl *CupoController) GetTransferModal(c *gin.Context) {
 	})
 }
 
-type Permissions = models.CupoDerechoItemPermissions
-
-type CupoDerechoItemView struct {
-	models.CupoDerechoItem
-	Permissions Permissions
-}
-
-type MonthGroup struct {
-	MonthNum         int
-	MonthName        string
-	Items            []CupoDerechoItemView
-	SuplenteHasQuota bool
-	TargetHasQuota   bool
-}
-
 func (ctrl *CupoController) DerechoByYear(c *gin.Context) {
 	senadorUserID := c.Param("senador_user_id")
 	gestionStr := c.Param("gestion")
@@ -427,67 +372,11 @@ func (ctrl *CupoController) DerechoByYear(c *gin.Context) {
 		}
 	}
 
-	var idParaCupos = senadorUserID
-	if targetUser.TitularID != nil {
-		idParaCupos = *targetUser.TitularID
-	}
-
+	idParaCupos := ctrl.service.ResolveCupoOwner(targetUser)
 	items, _ := ctrl.service.GetCuposDerechoByUsuarioAndGestion(c.Request.Context(), idParaCupos, gestion)
 
-	mesesNames := utils.GetMonthNames()
-
-	grouped := make([]*MonthGroup, 13)
-	for i := 1; i <= 12; i++ {
-		grouped[i] = &MonthGroup{
-			MonthNum:  i,
-			MonthName: mesesNames[i],
-			Items:     []CupoDerechoItemView{},
-		}
-	}
-
-	for _, v := range items {
-		if v.Mes >= 1 && v.Mes <= 12 {
-			grouped[v.Mes].Items = append(grouped[v.Mes].Items, CupoDerechoItemView{CupoDerechoItem: v})
-			if strings.Contains(targetUser.Tipo, "SUPLENTE") && v.SenAsignadoID == senadorUserID {
-				grouped[v.Mes].SuplenteHasQuota = true
-			}
-			if v.SenAsignadoID == senadorUserID {
-				grouped[v.Mes].TargetHasQuota = true
-			}
-		}
-	}
-
-	for i := 1; i <= 12; i++ {
-		for j := range grouped[i].Items {
-			item := &grouped[i].Items[j]
-			targetHasQuota := grouped[i].TargetHasQuota
-			item.Permissions = item.CupoDerechoItem.GetPermissions(authUser, targetUser, targetHasQuota)
-		}
-	}
-
-	var displayMonths []*MonthGroup
-
-	currentYear := time.Now().Year()
-	currentMonth := int(time.Now().Month())
-
-	if gestion == currentYear {
-		for i := currentMonth; i <= 12; i++ {
-			if len(grouped[i].Items) > 0 {
-				displayMonths = append(displayMonths, grouped[i])
-			}
-		}
-		for i := 1; i < currentMonth; i++ {
-			if len(grouped[i].Items) > 0 {
-				displayMonths = append(displayMonths, grouped[i])
-			}
-		}
-	} else {
-		for i := 1; i <= 12; i++ {
-			if len(grouped[i].Items) > 0 {
-				displayMonths = append(displayMonths, grouped[i])
-			}
-		}
-	}
+	monthGroups := ctrl.service.BuildMonthGroups(items, targetUser, authUser)
+	displayMonths := ctrl.service.GetDisplayMonths(monthGroups, gestion)
 
 	utils.Render(c, "cupo/derecho", gin.H{
 		"TargetUser":   targetUser,
@@ -535,45 +424,20 @@ func (ctrl *CupoController) DerechoByMonth(c *gin.Context) {
 		mes = 0
 	}
 
-	var idParaCupos = senadorUserID
-	if targetUser.TitularID != nil {
-		idParaCupos = *targetUser.TitularID
-	}
-
+	idParaCupos := ctrl.service.ResolveCupoOwner(targetUser)
 	items, err := ctrl.service.GetCuposDerechoByUsuario(c.Request.Context(), idParaCupos, gestion, mes)
 	if err != nil {
 		fmt.Printf("Error obteniendo cupos: %v\n", err)
 	}
 
-	mesName := utils.GetMonthName(mes)
+	monthGroups := ctrl.service.BuildMonthGroups(items, targetUser, authUser)
 
-	var viewItems []CupoDerechoItemView
-	for _, v := range items {
-		viewItems = append(viewItems, CupoDerechoItemView{CupoDerechoItem: v})
-	}
-
-	currentMonthGroup := &MonthGroup{
-		MonthNum:  mes,
-		MonthName: mesName,
-		Items:     viewItems,
-	}
-
-	for _, v := range items {
-		if strings.Contains(targetUser.Tipo, "SUPLENTE") && v.SenAsignadoID == senadorUserID {
-			currentMonthGroup.SuplenteHasQuota = true
-		}
-		if v.SenAsignadoID == senadorUserID {
-			currentMonthGroup.TargetHasQuota = true
+	var displayMonths []*services.MonthGroup
+	for _, mg := range monthGroups {
+		if mg != nil && mg.MonthNum == mes {
+			displayMonths = append(displayMonths, mg)
 		}
 	}
-
-	for j := range currentMonthGroup.Items {
-		item := &currentMonthGroup.Items[j]
-		targetHasQuota := currentMonthGroup.TargetHasQuota
-		item.Permissions = item.CupoDerechoItem.GetPermissions(authUser, targetUser, targetHasQuota)
-	}
-
-	displayMonths := []*MonthGroup{currentMonthGroup}
 
 	utils.Render(c, "cupo/derecho", gin.H{
 		"TargetUser":   targetUser,

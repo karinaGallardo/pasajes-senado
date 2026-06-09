@@ -120,6 +120,9 @@ func (p Pasaje) getAuthUser(u ...*Usuario) *Usuario {
 	return p.authUser
 }
 
+func (p *Pasaje) SetAuthUser(u *Usuario) { p.authUser = u }
+func (p *Pasaje) GetAuthUser() *Usuario  { return p.authUser }
+
 func (p Pasaje) CanBeEdited(u ...*Usuario) bool {
 	user := p.getAuthUser(u...)
 	if user == nil {
@@ -224,20 +227,20 @@ func (p *Pasaje) HydratePermissions(u ...*Usuario) {
 
 // GetStatusBadgeClass retorna las clases de CSS para los badges según el estado del pasaje.
 func (p Pasaje) GetStatusBadgeClass() string {
-	if p.EstadoPasaje != nil {
+	if p.EstadoPasaje != nil && p.EstadoPasaje.Color != "" {
 		color := p.EstadoPasaje.Color
 		if strings.HasPrefix(color, "#") {
-			return fmt.Sprintf("bg-[%s] text-white font-bold px-2 py-0.5 rounded shadow-sm", color)
+			return fmt.Sprintf("bg-[%s] text-white font-bold", color)
 		}
 		return fmt.Sprintf("bg-%s-100 text-%s-800", color, color)
 	}
 	switch p.GetEstado() {
 	case EstadoPasajeRegistrado:
-		return "bg-secondary-100 text-secondary-800"
+		return "bg-[#8B5CF6] text-white font-bold"
 	case EstadoPasajeEmitido:
-		return "bg-success-100 text-success-800"
+		return "bg-[#10B981] text-white font-bold"
 	case EstadoPasajeFinalizado:
-		return "bg-neutral-800 text-white font-bold"
+		return "bg-[#374151] text-white font-bold"
 	default:
 		return "bg-neutral-100 text-neutral-800"
 	}

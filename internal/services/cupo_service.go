@@ -6,6 +6,7 @@ import (
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/repositories"
 	"sistema-pasajes/internal/utils"
+	"strings"
 	"time"
 
 	"fmt"
@@ -384,4 +385,138 @@ func (s *CupoService) GetCupoDerechoItemWeekDays(item *models.CupoDerechoItem) [
 
 func (s *CupoService) GetSolicitudesByCupoItem(ctx context.Context, itemID string) ([]models.Solicitud, error) {
 	return s.solicitudRepo.FindByCupoDerechoItemID(ctx, itemID)
+}
+
+func (s *CupoService) ResolveCupoOwner(user *models.Usuario) string {
+	if user.TitularID != nil {
+		return *user.TitularID
+	}
+	return user.ID
+}
+
+func (s *CupoService) CanTakeCupo(ctx context.Context, authUser *models.Usuario, itemID string) error {
+	if !strings.Contains(authUser.Tipo, "SUPLENTE") {
+		return errors.New("solo los senadores suplentes pueden tomar cupos")
+	}
+
+	item, err := s.itemRepo.WithContext(ctx).FindByID(ctx, itemID)
+	if err != nil {
+		return err
+	}
+
+	if item.IsVencido() {
+		return errors.New("no se puede tomar un cupo vencido")
+	}
+
+	gestionInt := item.Gestion
+	mesInt := item.Mes
+	items, _ := s.GetCuposDerechoByUsuarioAndGestion(ctx, authUser.ID, gestionInt)
+	count := 0
+	for _, it := range items {
+		if it.Mes == mesInt && it.SenAsignadoID == authUser.ID {
+			count++
+		}
+	}
+	if count > 0 {
+		return errors.New("límite mensual alcanzado: Solo puede tomar 1 cupo automáticamente")
+	}
+
+	return nil
+}
+
+func (s *CupoService) CanAssignCupo(ctx context.Context, authUser, targetUser *models.Usuario) error {
+	isEncargado := targetUser != nil && targetUser.EncargadoID != nil && *targetUser.EncargadoID == authUser.ID
+	if !authUser.IsAdminOrResponsable() && !isEncargado {
+		return errors.New("no tiene permiso para asignar cupos")
+	}
+	return nil
+}
+
+func (s *CupoService) CanTransferCupo(ctx context.Context, authUser *models.Usuario, itemID string) error {
+	if !authUser.IsAdminOrResponsable() {
+		return errors.New("no tiene permiso para transferir derechos")
+	}
+
+	item, err := s.itemRepo.WithContext(ctx).FindByID(ctx, itemID)
+	if err != nil {
+		return err
+	}
+
+	if item.IsVencido() && !authUser.IsAdminOrResponsable() {
+		return errors.New("no se puede transferir un cupo vencido")
+	}
+	return nil
+}
+
+type CupoDerechoItemView struct {
+	models.CupoDerechoItem
+	Permissions models.CupoDerechoItemPermissions
+}
+
+type MonthGroup struct {
+	MonthNum         int
+	MonthName        string
+	Items            []CupoDerechoItemView
+	SuplenteHasQuota bool
+	TargetHasQuota   bool
+}
+
+func (s *CupoService) BuildMonthGroups(items []models.CupoDerechoItem, targetUser, authUser *models.Usuario) []*MonthGroup {
+	mesesNames := utils.GetMonthNames()
+	grouped := make([]*MonthGroup, 13)
+	for i := 1; i <= 12; i++ {
+		grouped[i] = &MonthGroup{
+			MonthNum:  i,
+			MonthName: mesesNames[i],
+			Items:     []CupoDerechoItemView{},
+		}
+	}
+
+	for _, v := range items {
+		if v.Mes >= 1 && v.Mes <= 12 {
+			grouped[v.Mes].Items = append(grouped[v.Mes].Items, CupoDerechoItemView{CupoDerechoItem: v})
+			if strings.Contains(targetUser.Tipo, "SUPLENTE") && v.SenAsignadoID == targetUser.ID {
+				grouped[v.Mes].SuplenteHasQuota = true
+			}
+			if v.SenAsignadoID == targetUser.ID {
+				grouped[v.Mes].TargetHasQuota = true
+			}
+		}
+	}
+
+	for i := 1; i <= 12; i++ {
+		for j := range grouped[i].Items {
+			item := &grouped[i].Items[j]
+			item.Permissions = item.CupoDerechoItem.GetPermissions(authUser, targetUser, grouped[i].TargetHasQuota)
+		}
+	}
+
+	return grouped
+}
+
+func (s *CupoService) GetDisplayMonths(monthGroups []*MonthGroup, gestion int) []*MonthGroup {
+	var displayMonths []*MonthGroup
+	currentYear := time.Now().Year()
+	currentMonth := int(time.Now().Month())
+
+	if gestion == currentYear {
+		for i := currentMonth; i <= 12; i++ {
+			if i < len(monthGroups) && len(monthGroups[i].Items) > 0 {
+				displayMonths = append(displayMonths, monthGroups[i])
+			}
+		}
+		for i := 1; i < currentMonth; i++ {
+			if i < len(monthGroups) && len(monthGroups[i].Items) > 0 {
+				displayMonths = append(displayMonths, monthGroups[i])
+			}
+		}
+	} else {
+		for i := 1; i <= 12; i++ {
+			if i < len(monthGroups) && len(monthGroups[i].Items) > 0 {
+				displayMonths = append(displayMonths, monthGroups[i])
+			}
+		}
+	}
+
+	return displayMonths
 }

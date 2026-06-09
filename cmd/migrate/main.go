@@ -35,7 +35,6 @@ func main() {
 		// Configuración del Sistema
 		&models.Configuracion{},
 		&models.CodigoSecuencia{},
-		&models.CategoriaViatico{},
 		&models.CategoriaCompensacion{},
 
 		// Definiciones de Viaje
@@ -58,10 +57,6 @@ func main() {
 		&models.Pasaje{},
 		&models.PasajeCargo{},
 		&models.OpenTicket{},
-		&models.Viatico{},
-		&models.DetalleViatico{},
-		&models.ZonaViatico{},
-		&models.CategoriaViatico{},
 		&models.Agencia{},
 		&models.Compensacion{},
 		&models.Descargo{},

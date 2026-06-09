@@ -1,3 +1,5 @@
+var currentDate = new Date().toISOString().slice(0, 10);
+
 var pipeline = [
   // 1. Funcionario Permanente Lookup
   {
@@ -48,7 +50,13 @@ var pipeline = [
       pipeline: [
         {
           $match: {
-            $expr: { $eq: ["$_id", "$$eventId"] },
+            $expr: {
+              $and: [
+                { $eq: ["$_id", "$$eventId"] },
+                { $in: ["$state", ["APROBADO", "MODIFICADO"]] },
+                { $gte: ["$endDate", currentDate] },
+              ],
+            },
           },
         },
         {
@@ -156,7 +164,7 @@ var pipeline = [
 
       senador_data: {
         $cond: {
-          if: { $gt: [{ $type: "$datos_senador" }, "missing"] },
+          if: { $eq: [{ $type: "$datos_senador" }, "object"] },
           then: {
             departamento: "$datos_senador.departamento",
             sigla: "$datos_senador.sigla",
@@ -196,13 +204,13 @@ var pipeline = [
         $switch: {
           branches: [
             {
-              case: { $gt: [{ $type: "$funcionario_eventual" }, "missing"] },
+              case: { $eq: [{ $type: "$funcionario_eventual" }, "object"] },
               then: "$funcionario_eventual.unit_data.unit",
             },
             {
               case: {
                 $and: [
-                  { $gt: [{ $type: "$funcionario_permanente" }, "missing"] },
+                  { $eq: [{ $type: "$funcionario_permanente" }, "object"] },
                   { $eq: ["$funcionario_permanente.active", true] },
                   { $eq: [{ $type: "$funcionario_permanente.disconnection" }, "missing"] },
                 ],
@@ -218,13 +226,13 @@ var pipeline = [
         $switch: {
           branches: [
             {
-              case: { $gt: [{ $type: "$funcionario_eventual" }, "missing"] },
+              case: { $eq: [{ $type: "$funcionario_eventual" }, "object"] },
               then: "$funcionario_eventual.scale_data.position",
             },
             {
               case: {
                 $and: [
-                  { $gt: [{ $type: "$funcionario_permanente" }, "missing"] },
+                  { $eq: [{ $type: "$funcionario_permanente" }, "object"] },
                   { $eq: ["$funcionario_permanente.active", true] },
                   { $eq: [{ $type: "$funcionario_permanente.disconnection" }, "missing"] },
                 ],
@@ -240,7 +248,7 @@ var pipeline = [
         $cond: {
           if: {
             $and: [
-              { $gt: [{ $type: "$funcionario_permanente" }, "missing"] },
+              { $eq: [{ $type: "$funcionario_permanente" }, "object"] },
               { $eq: ["$funcionario_permanente.active", true] },
               { $eq: [{ $type: "$funcionario_permanente.disconnection" }, "missing"] },
             ],
@@ -256,7 +264,7 @@ var pipeline = [
 
       funcionario_eventual: {
         $cond: {
-          if: { $gt: [{ $type: "$funcionario_eventual" }, "missing"] },
+          if: { $eq: [{ $type: "$funcionario_eventual" }, "object"] },
           then: {
             unit_data: "$funcionario_eventual.unit_data",
             scale_data: "$funcionario_eventual.scale_data",
@@ -270,21 +278,21 @@ var pipeline = [
         $switch: {
           branches: [
             {
-              case: { $and: [{ $gt: [{ $type: "$datos_senador" }, "missing"] }, { $gt: ["$titular_relacionado.ci", null] }] },
+              case: { $and: [{ $eq: [{ $type: "$datos_senador" }, "object"] }, { $gt: ["$titular_relacionado.ci", null] }] },
               then: "SENADOR_SUPLENTE",
             },
             {
-              case: { $gt: [{ $type: "$datos_senador" }, "missing"] },
+              case: { $eq: [{ $type: "$datos_senador" }, "object"] },
               then: "SENADOR_TITULAR",
             },
             {
-              case: { $gt: [{ $type: "$funcionario_eventual" }, "missing"] },
+              case: { $eq: [{ $type: "$funcionario_eventual" }, "object"] },
               then: "FUNCIONARIO_EVENTUAL",
             },
             {
               case: {
                 $and: [
-                  { $gt: [{ $type: "$funcionario_permanente" }, "missing"] },
+                  { $eq: [{ $type: "$funcionario_permanente" }, "object"] },
                   { $eq: ["$funcionario_permanente.active", true] },
                   { $eq: [{ $type: "$funcionario_permanente.disconnection" }, "missing"] },
                 ],

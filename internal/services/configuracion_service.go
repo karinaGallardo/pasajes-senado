@@ -36,3 +36,15 @@ func (s *ConfiguracionService) GetValue(ctx context.Context, clave string) strin
 	}
 	return conf.Valor
 }
+
+func (s *ConfiguracionService) GetBankDefaults(ctx context.Context) (cuenta, nombre string) {
+	cuenta = s.GetValue(ctx, "BANCO_CUENTA_DEVOLUCION")
+	if cuenta == "" {
+		cuenta = "10000005588211"
+	}
+	nombre = s.GetValue(ctx, "BANCO_NOMBRE_DEVOLUCION")
+	if nombre == "" {
+		nombre = "BANCO UNIÓN S.A."
+	}
+	return
+}

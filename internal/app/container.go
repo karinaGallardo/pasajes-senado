@@ -35,8 +35,6 @@ type Container struct {
 	RutaService             *services.RutaService
 	AuthService             *services.AuthService
 	PasajeService           *services.PasajeService
-	ViaticoService          *services.ViaticoService
-	CatViaticoService       *services.CategoriaViaticoService
 	NotificationService     *services.NotificationService
 	EmailService            *services.EmailService
 	AlertaService           *services.AlertaService
@@ -62,14 +60,12 @@ type Container struct {
 	PasajeController           *controllers.PasajeController
 	PerfilController           *controllers.PerfilController
 	CatalogoController         *controllers.CatalogoController
-	ViaticoController          *controllers.ViaticoController
 	AerolineaController        *controllers.AerolineaController
 	AgenciaController          *controllers.AgenciaController
 	RutaController             *controllers.RutaController
 	ConfiguracionController    *controllers.ConfiguracionController
 	CatCompensacionController  *controllers.CategoriaCompensacionController
 	OrganigramaController      *controllers.OrganigramaController
-	CategoriaViaticoController *controllers.CategoriaViaticoController
 	NotificationController     *controllers.NotificationController
 	LandingController          *controllers.LandingController
 	AuditController            *controllers.AuditController
@@ -100,9 +96,6 @@ func NewContainer(db *gorm.DB, mongoRRHH *mongo.Database, mongoChat *mongo.Datab
 	descargoRepo := repositories.NewDescargoRepository(db)
 	rolRepo := repositories.NewRolRepository(db)
 	generoRepo := repositories.NewGeneroRepository(db)
-	viaticoRepo := repositories.NewViaticoRepository(db)
-	catViaticoRepo := repositories.NewCategoriaViaticoRepository(db)
-	zonaRepo := repositories.NewZonaViaticoRepository(db)
 	configRepo := repositories.NewConfiguracionRepository(db)
 	ambitoRepo := repositories.NewAmbitoViajeRepository(db)
 	destinoRepo := repositories.NewDestinoRepository(db)
@@ -122,7 +115,7 @@ func NewContainer(db *gorm.DB, mongoRRHH *mongo.Database, mongoChat *mongo.Datab
 	configService := services.NewConfiguracionService(configRepo)
 	peopleService := services.NewPeopleService(peopleRepo)
 	estadoPasajeService := services.NewEstadoPasajeService(estadoPasajeRepo)
-	openTicketService := services.NewOpenTicketService(openTicketRepo)
+	openTicketService := services.NewOpenTicketService(openTicketRepo, solicitudRepo, userRepo, pasajeRepo)
 
 	reportService := services.NewReportService(solicitudRepo, aerolineaRepo, pasajeRepo, agenciaRepo, cupoRepo, openTicketRepo, configService)
 	cupoService := services.NewCupoService(cupoRepo, userRepo, itemRepo, solicitudRepo)
@@ -151,6 +144,7 @@ func NewContainer(db *gorm.DB, mongoRRHH *mongo.Database, mongoChat *mongo.Datab
 		solicitudService,
 		destinoService,
 		openTicketRepo,
+		configService,
 	)
 	solicitudOficialService := services.NewSolicitudOficialService(
 		solicitudRepo,
@@ -163,7 +157,7 @@ func NewContainer(db *gorm.DB, mongoRRHH *mongo.Database, mongoChat *mongo.Datab
 	)
 
 	compensacionService := services.NewCompensacionService(compensacionRepo, catCompensacionRepo)
-	descargoService := services.NewDescargoService(descargoRepo, pasajeRepo, openTicketRepo, solicitudService, userService, auditService)
+	descargoService := services.NewDescargoService(descargoRepo, pasajeRepo, openTicketService, solicitudService, userService, auditService)
 	descargoDerechoService := services.NewDescargoDerechoService(descargoRepo, rutaRepo, descargoService, solicitudService, auditService, pasajeRepo)
 	descargoOficialService := services.NewDescargoOficialService(descargoRepo, rutaRepo, descargoService, solicitudService, auditService, pasajeRepo)
 	organigramaService := services.NewOrganigramaService(cargoRepo, oficinaRepo)
@@ -192,36 +186,21 @@ func NewContainer(db *gorm.DB, mongoRRHH *mongo.Database, mongoChat *mongo.Datab
 		auditService,
 	)
 
-	viaticoService := services.NewViaticoService(
-		viaticoRepo,
-		solicitudRepo,
-		catViaticoRepo,
-		zonaRepo,
-		configService,
-	)
-
-	catViaticoService := services.NewCategoriaViaticoService(catViaticoRepo)
 	alertaService := services.NewAlertaService(solicitudRepo, descargoRepo, emailService)
 
-	cupoCtrl := controllers.NewCupoController(cupoService, userService, reportService)
+	cupoCtrl := controllers.NewCupoController(cupoService, userService)
 
 	solicitudDerechoCtrl := controllers.NewSolicitudDerechoController(
 		solicitudService,
 		solicitudDerechoService,
 		destinoService,
-		conceptoService,
 		tipoSolicitudService,
-		ambitoService,
 		cupoService,
 		userService,
 		peopleService,
 		reportService,
 		aerolineaService,
-		agenciaService,
-		tipoItinerarioService,
-		rutaService,
 		descargoService,
-		configService,
 		openTicketService,
 	)
 
@@ -232,15 +211,13 @@ func NewContainer(db *gorm.DB, mongoRRHH *mongo.Database, mongoChat *mongo.Datab
 		tipoSolicitudService,
 		ambitoService,
 		userService,
-		tipoItinerarioService,
 		aerolineaService,
 		reportService,
 		peopleService,
 		descargoService,
-		openTicketService,
 	)
 
-	solicitudCtrl := controllers.NewSolicitudController(solicitudService, userService, openTicketService)
+	solicitudCtrl := controllers.NewSolicitudController(solicitudService, userService)
 	usuarioCtrl := controllers.NewUsuarioController(userService, auditService)
 	senadorCtrl := controllers.NewSenadorController(userService, auditService)
 	funcionarioCtrl := controllers.NewFuncionarioController(userService, auditService)
@@ -251,11 +228,8 @@ func NewContainer(db *gorm.DB, mongoRRHH *mongo.Database, mongoChat *mongo.Datab
 		descargoService,
 		descargoDerechoService,
 		solicitudService,
-		destinoService,
 		reportService,
 		peopleService,
-		aerolineaService,
-		userService,
 		configService,
 	)
 
@@ -274,18 +248,16 @@ func NewContainer(db *gorm.DB, mongoRRHH *mongo.Database, mongoChat *mongo.Datab
 	perfilCtrl := controllers.NewPerfilController(destinoService)
 	catalogoCtrl := controllers.NewCatalogoController(tipoSolicitudService, destinoService, userService)
 
-	viaticoCtrl := controllers.NewViaticoController(viaticoService, solicitudService, catViaticoService, reportService)
 	aerolineaCtrl := controllers.NewAerolineaController(aerolineaService)
 	agenciaCtrl := controllers.NewAgenciaController(agenciaService)
 	rutaCtrl := controllers.NewRutaController(rutaService, aerolineaService, destinoService)
 	configCtrl := controllers.NewConfiguracionController(configService, emailService, destinoService, peopleService)
 	catCompCtrl := controllers.NewCategoriaCompensacionController(compensacionService)
 	orgCtrl := controllers.NewOrganigramaController(organigramaService)
-	catViaticoCtrl := controllers.NewCategoriaViaticoController(catViaticoService, viaticoService)
 	notifCtrl := controllers.NewNotificationController(notifService, pushService)
 	landingCtrl := controllers.NewLandingController()
 	auditCtrl := controllers.NewAuditController(auditService)
-	openTicketCtrl := controllers.NewOpenTicketController(openTicketService, userRepo, solicitudRepo)
+	openTicketCtrl := controllers.NewOpenTicketController(openTicketService, solicitudService)
 	reportCtrl := controllers.NewReportController(reportService, aerolineaService, agenciaService)
 	destinoCtrl := controllers.NewDestinoController(destinoService, ambitoRepo, deptoRepo)
 
@@ -314,8 +286,6 @@ func NewContainer(db *gorm.DB, mongoRRHH *mongo.Database, mongoChat *mongo.Datab
 		RutaService:             rutaService,
 		AuthService:             authService,
 		PasajeService:           pasajeService,
-		ViaticoService:          viaticoService,
-		CatViaticoService:       catViaticoService,
 		NotificationService:     notifService,
 		EmailService:            emailService,
 		AlertaService:           alertaService,
@@ -341,14 +311,12 @@ func NewContainer(db *gorm.DB, mongoRRHH *mongo.Database, mongoChat *mongo.Datab
 		PasajeController:           pasajeCtrl,
 		PerfilController:           perfilCtrl,
 		CatalogoController:         catalogoCtrl,
-		ViaticoController:          viaticoCtrl,
 		AerolineaController:        aerolineaCtrl,
 		AgenciaController:          agenciaCtrl,
 		RutaController:             rutaCtrl,
 		ConfiguracionController:    configCtrl,
 		CatCompensacionController:  catCompCtrl,
 		OrganigramaController:      orgCtrl,
-		CategoriaViaticoController: catViaticoCtrl,
 		NotificationController:     notifCtrl,
 		LandingController:          landingCtrl,
 		AuditController:            auditCtrl,

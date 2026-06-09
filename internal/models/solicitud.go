@@ -30,8 +30,6 @@ type Solicitud struct {
 	EstadoSolicitudCodigo *string          `gorm:"size:50;index;default:'SOLICITADO'"`
 	EstadoSolicitud       *EstadoSolicitud `gorm:"foreignKey:EstadoSolicitudCodigo;references:Codigo;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT;<-:false"`
 
-	Viaticos []Viatico `gorm:"foreignKey:SolicitudID"`
-
 	Descargo *Descargo `gorm:"foreignKey:SolicitudID"`
 
 	Autorizacion string `gorm:"size:100;index"`
@@ -53,12 +51,21 @@ type Solicitud struct {
 	Permissions *SolicitudPermissions `gorm:"-"`
 }
 
+func (s Solicitud) getAuthUser(u ...*Usuario) *Usuario {
+	if len(u) > 0 {
+		return u[0]
+	}
+	return s.authUser
+}
+
+func (s *Solicitud) SetAuthUser(u *Usuario) { s.authUser = u }
+func (s *Solicitud) GetAuthUser() *Usuario  { return s.authUser }
+
 type SolicitudPermissions struct {
 	CanEdit           bool
 	CanApproveReject  bool
 	CanRevertApproval bool
 	CanMakeDescargo   bool
-	CanAssignViatico  bool
 	CanPrint          bool
 	CanDelete         bool
 	CanFinalize       bool
@@ -79,20 +86,12 @@ type StatusCardView struct {
 	TextClass   string
 }
 
-func (s Solicitud) getAuthUser(u ...*Usuario) *Usuario {
-	if len(u) > 0 {
-		return u[0]
-	}
-	return s.authUser
-}
-
 func (s Solicitud) GetPermissions(u ...*Usuario) SolicitudPermissions {
 	return SolicitudPermissions{
 		CanEdit:           s.CanEdit(u...),
 		CanApproveReject:  s.CanApprove(u...),
 		CanRevertApproval: s.CanRevertApproval(u...),
 		CanMakeDescargo:   s.CanMakeDescargo(u...),
-		CanAssignViatico:  s.CanAssignViatico(u...),
 		CanPrint:          s.CanPrint(u...),
 		CanDelete:         s.CanDelete(u...),
 		CanFinalize:       s.CanFinalize(u...),
@@ -978,15 +977,6 @@ func (s Solicitud) CanDelete(u ...*Usuario) bool {
 }
 
 func (s Solicitud) CanAssignPasaje(u ...*Usuario) bool {
-	user := s.getAuthUser(u...)
-	if user == nil || !user.IsAdminOrResponsable() {
-		return false
-	}
-	st := s.GetEstado()
-	return st == "APROBADO" || st == "PARCIALMENTE_APROBADO" || st == "EMITIDO" || st == "FINALIZADO"
-}
-
-func (s Solicitud) CanAssignViatico(u ...*Usuario) bool {
 	user := s.getAuthUser(u...)
 	if user == nil || !user.IsAdminOrResponsable() {
 		return false

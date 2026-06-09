@@ -44,15 +44,69 @@ func (s *DescargoOficialService) GetShowData(ctx context.Context, id string) (*m
 		return nil, err
 	}
 
-	// Sincronización proactiva: Si se emitieron nuevos pasajes
 	if descargo.Solicitud != nil && descargo.IsEditable() {
 		if err := s.SyncItineraryFromSolicitud(ctx, descargo, descargo.Solicitud); err == nil {
-			// Recargar para tener tramos pre-cargados
 			descargo, _ = s.repo.FindByID(ctx, id)
 		}
 	}
 
 	return descargo, nil
+}
+
+func (s *DescargoOficialService) GetEditData(ctx context.Context, id string) (*models.Descargo, error) {
+	descargo, err := s.repo.FindByID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+
+	if descargo.Solicitud != nil {
+		if err := s.SyncItineraryFromSolicitud(ctx, descargo, descargo.Solicitud); err == nil {
+			descargo, _ = s.repo.FindByID(ctx, id)
+		}
+
+		s.defaultOfficialData(descargo)
+	}
+
+	return descargo, nil
+}
+
+func (s *DescargoOficialService) defaultOfficialData(descargo *models.Descargo) {
+	if descargo.Solicitud == nil {
+		return
+	}
+	if descargo.Oficial == nil {
+		descargo.Oficial = &models.DescargoOficial{DescargoID: descargo.ID}
+	}
+	if descargo.Oficial.ObjetivoViaje == "" {
+		descargo.Oficial.ObjetivoViaje = descargo.Solicitud.Motivo
+	}
+	if descargo.Oficial.NroMemorandum == "" {
+		descargo.Oficial.NroMemorandum = descargo.Solicitud.Autorizacion
+	}
+}
+
+func (s *DescargoOficialService) ClassifyTramos(descargo *models.Descargo) (idaOrig, idaRepro, vueltaOrig, vueltaRepro []models.DescargoTramo) {
+	idaOrig = make([]models.DescargoTramo, 0)
+	idaRepro = make([]models.DescargoTramo, 0)
+	vueltaOrig = make([]models.DescargoTramo, 0)
+	vueltaRepro = make([]models.DescargoTramo, 0)
+
+	for _, t := range descargo.Tramos {
+		if strings.HasPrefix(string(t.Tipo), "IDA") {
+			if t.IsReprogramacion() {
+				idaRepro = append(idaRepro, t)
+			} else {
+				idaOrig = append(idaOrig, t)
+			}
+		} else if strings.HasPrefix(string(t.Tipo), "VUELTA") {
+			if t.IsReprogramacion() {
+				vueltaRepro = append(vueltaRepro, t)
+			} else {
+				vueltaOrig = append(vueltaOrig, t)
+			}
+		}
+	}
+	return
 }
 
 func (s *DescargoOficialService) AutoCreateFromSolicitud(ctx context.Context, solicitud *models.Solicitud, userID string) (*models.Descargo, error) {

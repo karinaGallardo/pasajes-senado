@@ -9,7 +9,6 @@ import (
 	"sistema-pasajes/internal/models"
 	"sistema-pasajes/internal/services"
 	"sistema-pasajes/internal/utils"
-	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -81,35 +80,8 @@ func (ctrl *DescargoOficialController) Show(c *gin.Context) {
 		return
 	}
 
-	tramosIdaOrig := make([]models.DescargoTramo, 0)
-	tramosIdaRepro := make([]models.DescargoTramo, 0)
-	tramosVueltaOrig := make([]models.DescargoTramo, 0)
-	tramosVueltaRepro := make([]models.DescargoTramo, 0)
-
-	for _, t := range descargo.Tramos {
-		if strings.HasPrefix(string(t.Tipo), "IDA") {
-			if t.IsReprogramacion() {
-				tramosIdaRepro = append(tramosIdaRepro, t)
-			} else {
-				tramosIdaOrig = append(tramosIdaOrig, t)
-			}
-		} else if strings.HasPrefix(string(t.Tipo), "VUELTA") {
-			if t.IsReprogramacion() {
-				tramosVueltaRepro = append(tramosVueltaRepro, t)
-			} else {
-				tramosVueltaOrig = append(tramosVueltaOrig, t)
-			}
-		}
-	}
-
-	bancoCuenta := ctrl.configService.GetValue(c.Request.Context(), "BANCO_CUENTA_DEVOLUCION")
-	if bancoCuenta == "" {
-		bancoCuenta = "10000005588211"
-	}
-	bancoNombre := ctrl.configService.GetValue(c.Request.Context(), "BANCO_NOMBRE_DEVOLUCION")
-	if bancoNombre == "" {
-		bancoNombre = "BANCO UNIÓN S.A."
-	}
+	tramosIdaOrig, tramosIdaRepro, tramosVueltaOrig, tramosVueltaRepro := ctrl.descargoOficialService.ClassifyTramos(descargo)
+	bancoCuenta, bancoNombre := ctrl.configService.GetBankDefaults(c.Request.Context())
 
 	authUser := appcontext.AuthUser(c)
 	descargo.HydratePermissions(authUser)
@@ -132,7 +104,7 @@ func (ctrl *DescargoOficialController) Show(c *gin.Context) {
 
 func (ctrl *DescargoOficialController) Edit(c *gin.Context) {
 	id := c.Param("id")
-	descargo, err := ctrl.descargoService.GetByID(c.Request.Context(), id)
+	descargo, err := ctrl.descargoOficialService.GetEditData(c.Request.Context(), id)
 	if err != nil {
 		c.Redirect(http.StatusFound, "/descargos")
 		return
@@ -148,54 +120,8 @@ func (ctrl *DescargoOficialController) Edit(c *gin.Context) {
 		return
 	}
 
-	if descargo.Solicitud != nil {
-		if err := ctrl.descargoOficialService.SyncItineraryFromSolicitud(c.Request.Context(), descargo, descargo.Solicitud); err == nil {
-			descargo, _ = ctrl.descargoService.GetByID(c.Request.Context(), id)
-			descargo.HydratePermissions(authUser)
-		}
-	}
-
-	if descargo.Solicitud != nil {
-		if descargo.Oficial == nil {
-			descargo.Oficial = &models.DescargoOficial{DescargoID: descargo.ID}
-		}
-		if descargo.Oficial.ObjetivoViaje == "" {
-			descargo.Oficial.ObjetivoViaje = descargo.Solicitud.Motivo
-		}
-		if descargo.Oficial.NroMemorandum == "" {
-			descargo.Oficial.NroMemorandum = descargo.Solicitud.Autorizacion
-		}
-	}
-
-	tramosIdaOrig := make([]models.DescargoTramo, 0)
-	tramosIdaRepro := make([]models.DescargoTramo, 0)
-	tramosVueltaOrig := make([]models.DescargoTramo, 0)
-	tramosVueltaRepro := make([]models.DescargoTramo, 0)
-
-	for _, t := range descargo.Tramos {
-		if strings.HasPrefix(string(t.Tipo), "IDA") {
-			if t.IsReprogramacion() {
-				tramosIdaRepro = append(tramosIdaRepro, t)
-			} else {
-				tramosIdaOrig = append(tramosIdaOrig, t)
-			}
-		} else if strings.HasPrefix(string(t.Tipo), "VUELTA") {
-			if t.IsReprogramacion() {
-				tramosVueltaRepro = append(tramosVueltaRepro, t)
-			} else {
-				tramosVueltaOrig = append(tramosVueltaOrig, t)
-			}
-		}
-	}
-
-	bancoCuenta := ctrl.configService.GetValue(c.Request.Context(), "BANCO_CUENTA_DEVOLUCION")
-	if bancoCuenta == "" {
-		bancoCuenta = "10000005588211"
-	}
-	bancoNombre := ctrl.configService.GetValue(c.Request.Context(), "BANCO_NOMBRE_DEVOLUCION")
-	if bancoNombre == "" {
-		bancoNombre = "BANCO UNIÓN S.A."
-	}
+	tramosIdaOrig, tramosIdaRepro, tramosVueltaOrig, tramosVueltaRepro := ctrl.descargoOficialService.ClassifyTramos(descargo)
+	bancoCuenta, bancoNombre := ctrl.configService.GetBankDefaults(c.Request.Context())
 
 	utils.Render(c, "descargo/oficial/edit", gin.H{
 		"Title":                     "Editar Descargo (Oficial)",

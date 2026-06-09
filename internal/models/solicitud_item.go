@@ -89,6 +89,9 @@ func (t SolicitudItem) getAuthUser(u ...*Usuario) *Usuario {
 	return t.authUser
 }
 
+func (t *SolicitudItem) SetAuthUser(u *Usuario) { t.authUser = u }
+func (t *SolicitudItem) GetAuthUser() *Usuario  { return t.authUser }
+
 func (t SolicitudItem) CanEdit() bool {
 	st := t.GetEstado()
 	return st == "PENDIENTE" || st == "SOLICITADO" || st == "RECHAZADO"
