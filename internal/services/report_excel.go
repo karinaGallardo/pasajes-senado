@@ -46,7 +46,7 @@ func (s *ReportService) GenerateConsolidadoPasajesExcel(ctx context.Context, fil
 
 	// Encabezados
 	headers := []string{
-		"N°", "FECHA EMISIÓN", "FECHA VUELO", "IDA/VUELTA", "CÓDIGO SOL.", "CONCEPTO", "TIPO DE SOLICITUD", "BENEFICIARIO", "UNIDAD ORGANIZACIONAL", "CARGO", "RUTA / TRAMOS", "AEROLÍNEA", "AGENCIA", "NRO. BILLETE",
+		"N°", "FECHA EMISIÓN", "FECHA VUELO", "HORA VUELO", "N° VUELO", "IDA/VUELTA", "CÓDIGO SOL.", "CONCEPTO", "TIPO DE SOLICITUD", "ÁMBITO", "BENEFICIARIO", "TIPO PASAJERO", "UNIDAD ORGANIZACIONAL", "CARGO", "ORIGEN", "DESTINO", "RUTA / TRAMOS", "AEROLÍNEA", "AGENCIA", "NRO. BILLETE",
 		"COSTO ORIGEN (BS)", "DEV DIF TARIFA", "COSTO CONSUMO", "CARGOS ASOCIADOS", "COSTO TOTAL",
 		"ESTADO PASAJE", "ESTADO SOLICITUD", "ESTADO DESCARGO",
 	}
@@ -116,36 +116,79 @@ func (s *ReportService) GenerateConsolidadoPasajesExcel(ctx context.Context, fil
 		}
 		f.SetCellValue(sheet, fmt.Sprintf("C%d", row), fechaVuelo)
 
+		horaVuelo := "-"
+		if !p.FechaVuelo.IsZero() {
+			horaVuelo = p.FechaVuelo.Format("15:04")
+		}
+		f.SetCellValue(sheet, fmt.Sprintf("D%d", row), horaVuelo)
+
+		f.SetCellValue(sheet, fmt.Sprintf("E%d", row), p.NumeroVuelo)
+
 		tipoVuelo := "-"
 		if p.SolicitudItem != nil {
 			tipoVuelo = string(p.SolicitudItem.Tipo)
 		}
-		f.SetCellValue(sheet, fmt.Sprintf("D%d", row), tipoVuelo)
+		f.SetCellValue(sheet, fmt.Sprintf("F%d", row), tipoVuelo)
 
-		f.SetCellValue(sheet, fmt.Sprintf("E%d", row), codigoSolicitud)
-		f.SetCellValue(sheet, fmt.Sprintf("F%d", row), concepto)
-		f.SetCellValue(sheet, fmt.Sprintf("G%d", row), tipoSolicitud)
-		f.SetCellValue(sheet, fmt.Sprintf("H%d", row), beneficiario)
-		f.SetCellValue(sheet, fmt.Sprintf("I%d", row), unidadOrg)
-		f.SetCellValue(sheet, fmt.Sprintf("J%d", row), cargo)
-		f.SetCellValue(sheet, fmt.Sprintf("K%d", row), p.GetRutaDisplay())
+		f.SetCellValue(sheet, fmt.Sprintf("G%d", row), codigoSolicitud)
+		f.SetCellValue(sheet, fmt.Sprintf("H%d", row), concepto)
+		f.SetCellValue(sheet, fmt.Sprintf("I%d", row), tipoSolicitud)
+
+		ambito := "-"
+		if p.SolicitudItem != nil && p.SolicitudItem.Solicitud != nil {
+			ambito = p.SolicitudItem.Solicitud.AmbitoViajeCodigo
+		}
+		f.SetCellValue(sheet, fmt.Sprintf("J%d", row), ambito)
+
+		f.SetCellValue(sheet, fmt.Sprintf("K%d", row), beneficiario)
+
+		tipoBeneficiario := "FUNCIONARIO"
+		if p.SolicitudItem != nil && p.SolicitudItem.Solicitud != nil {
+			if p.SolicitudItem.Solicitud.Usuario.IsSenador() {
+				tipoBeneficiario = "SENADOR"
+			}
+		}
+		f.SetCellValue(sheet, fmt.Sprintf("L%d", row), tipoBeneficiario)
+
+		f.SetCellValue(sheet, fmt.Sprintf("M%d", row), unidadOrg)
+		f.SetCellValue(sheet, fmt.Sprintf("N%d", row), cargo)
+
+		origen := "-"
+		destino := "-"
+		if p.RutaPasaje != nil {
+			if p.RutaPasaje.Origen.IATA != "" {
+				origen = p.RutaPasaje.Origen.GetNombreCorto()
+			} else {
+				origen = p.RutaPasaje.OrigenIATA
+			}
+
+			if p.RutaPasaje.Destino.IATA != "" {
+				destino = p.RutaPasaje.Destino.GetNombreCorto()
+			} else {
+				destino = p.RutaPasaje.DestinoIATA
+			}
+		}
+		f.SetCellValue(sheet, fmt.Sprintf("O%d", row), origen)
+		f.SetCellValue(sheet, fmt.Sprintf("P%d", row), destino)
+
+		f.SetCellValue(sheet, fmt.Sprintf("Q%d", row), p.GetRutaDisplay())
 
 		if p.Aerolinea != nil {
-			f.SetCellValue(sheet, fmt.Sprintf("L%d", row), p.Aerolinea.Sigla)
+			f.SetCellValue(sheet, fmt.Sprintf("R%d", row), p.Aerolinea.Sigla)
 		}
 		if p.Agencia != nil {
-			f.SetCellValue(sheet, fmt.Sprintf("M%d", row), p.Agencia.Nombre)
+			f.SetCellValue(sheet, fmt.Sprintf("S%d", row), p.Agencia.Nombre)
 		}
 
-		f.SetCellValue(sheet, fmt.Sprintf("N%d", row), p.NumeroBillete)
-		f.SetCellValue(sheet, fmt.Sprintf("O%d", row), p.Costo)
-		f.SetCellValue(sheet, fmt.Sprintf("P%d", row), p.MontoReembolso)
-		f.SetCellValue(sheet, fmt.Sprintf("Q%d", row), p.CostoUtilizado)
-		f.SetCellValue(sheet, fmt.Sprintf("R%d", row), montoCargos)
-		f.SetCellValue(sheet, fmt.Sprintf("S%d", row), costoTotalPasaje)
-		f.SetCellValue(sheet, fmt.Sprintf("T%d", row), p.GetEstado())
-		f.SetCellValue(sheet, fmt.Sprintf("U%d", row), solicitudEstado)
-		f.SetCellValue(sheet, fmt.Sprintf("V%d", row), descargoEstado)
+		f.SetCellValue(sheet, fmt.Sprintf("T%d", row), p.NumeroBillete)
+		f.SetCellValue(sheet, fmt.Sprintf("U%d", row), p.Costo)
+		f.SetCellValue(sheet, fmt.Sprintf("V%d", row), p.MontoReembolso)
+		f.SetCellValue(sheet, fmt.Sprintf("W%d", row), p.CostoUtilizado)
+		f.SetCellValue(sheet, fmt.Sprintf("X%d", row), montoCargos)
+		f.SetCellValue(sheet, fmt.Sprintf("Y%d", row), costoTotalPasaje)
+		f.SetCellValue(sheet, fmt.Sprintf("Z%d", row), p.GetEstado())
+		f.SetCellValue(sheet, fmt.Sprintf("AA%d", row), solicitudEstado)
+		f.SetCellValue(sheet, fmt.Sprintf("AB%d", row), descargoEstado)
 
 		totalCostoOrigen += p.Costo
 		totalCargos += montoCargos
@@ -158,20 +201,49 @@ func (s *ReportService) GenerateConsolidadoPasajesExcel(ctx context.Context, fil
 
 	// Fila de Totales
 	totalRow := len(pasajes) + 2
-	f.SetCellValue(sheet, fmt.Sprintf("N%d", totalRow), "TOTALES:")
-	f.SetCellValue(sheet, fmt.Sprintf("O%d", totalRow), totalCostoOrigen)
-	f.SetCellValue(sheet, fmt.Sprintf("R%d", totalRow), totalCargos)
-	f.SetCellValue(sheet, fmt.Sprintf("S%d", totalRow), totalGeneral)
+	f.SetCellValue(sheet, fmt.Sprintf("T%d", totalRow), "TOTALES:")
+	f.SetCellValue(sheet, fmt.Sprintf("U%d", totalRow), totalCostoOrigen)
+	f.SetCellValue(sheet, fmt.Sprintf("X%d", totalRow), totalCargos)
+	f.SetCellValue(sheet, fmt.Sprintf("Y%d", totalRow), totalGeneral)
 
 	totalStyle, _ := f.NewStyle(&excelize.Style{
 		Font:      &excelize.Font{Bold: true},
 		Fill:      excelize.Fill{Type: "pattern", Color: []string{"F3F4F6"}, Pattern: 1},
 		Alignment: &excelize.Alignment{Horizontal: "right"},
 	})
-	f.SetCellStyle(sheet, fmt.Sprintf("N%d", totalRow), fmt.Sprintf("S%d", totalRow), totalStyle)
+	f.SetCellStyle(sheet, fmt.Sprintf("T%d", totalRow), fmt.Sprintf("Y%d", totalRow), totalStyle)
 
 	// Autoajustar anchos (aproximado)
-	widths := []float64{5, 15, 15, 15, 15, 12, 20, 35, 30, 30, 45, 12, 25, 15, 18, 15, 15, 18, 18, 15, 18, 18}
+	widths := []float64{
+		5,  // A: N°
+		15, // B: FECHA EMISIÓN
+		15, // C: FECHA VUELO
+		12, // D: HORA VUELO
+		12, // E: N° VUELO
+		15, // F: IDA/VUELTA
+		15, // G: CÓDIGO SOL.
+		12, // H: CONCEPTO
+		20, // I: TIPO DE SOLICITUD
+		15, // J: ÁMBITO
+		35, // K: BENEFICIARIO
+		18, // L: TIPO PASAJERO
+		30, // M: UNIDAD ORGANIZACIONAL
+		30, // N: CARGO
+		25, // O: ORIGEN
+		25, // P: DESTINO
+		45, // Q: RUTA / TRAMOS
+		12, // R: AEROLÍNEA
+		25, // S: AGENCIA
+		18, // T: NRO. BILLETE
+		18, // U: COSTO ORIGEN (BS)
+		15, // V: DEV DIF TARIFA
+		15, // W: COSTO CONSUMO
+		18, // X: CARGOS ASOCIADOS
+		18, // Y: COSTO TOTAL
+		15, // Z: ESTADO PASAJE
+		18, // AA: ESTADO SOLICITUD
+		18, // AB: ESTADO DESCARGO
+	}
 	for i, w := range widths {
 		col, _ := excelize.ColumnNumberToName(i + 1)
 		f.SetColWidth(sheet, col, col, w)
